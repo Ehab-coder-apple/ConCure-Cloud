@@ -1,3 +1,4 @@
+
 # 🏥 ConCure Clinic Management System
 
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
@@ -259,4 +260,4 @@ Made with ❤️ by [Connect Pure](https://connectpure.com)
 [⭐ Star this repo](https://github.com/your-username/concure) | [🐛 Report Bug](https://github.com/your-username/concure/issues) | [💡 Request Feature](https://github.com/your-username/concure/issues)
 
 </div>
-# ConCure
+
