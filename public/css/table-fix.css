@@ -1,0 +1,105 @@
+/* Table text color fixes */
+.table {
+    color: #333 !important;
+}
+
+.table td, 
+.table th, 
+.table tbody tr td,
+.table tbody tr th,
+.table thead tr th {
+    color: #333 !important;
+}
+
+.table td strong,
+.table td div,
+.table td span:not(.badge),
+.table td small,
+.table td p {
+    color: #333 !important;
+}
+
+/* Badge styles */
+.badge-primary {
+    background-color: #007bff !important;
+    color: #fff !important;
+}
+
+.badge-secondary {
+    background-color: #6c757d !important;
+    color: #fff !important;
+}
+
+.badge-success {
+    background-color: #28a745 !important;
+    color: #fff !important;
+}
+
+.badge-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.badge-info {
+    background-color: #17a2b8 !important;
+    color: #fff !important;
+}
+
+.badge-light {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+.badge-dark {
+    background-color: #343a40 !important;
+    color: #fff !important;
+}
+
+/* Text colors */
+.text-dark {
+    color: #333 !important;
+}
+
+.text-secondary {
+    color: #6c757d !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Table hover states */
+.table-hover tbody tr:hover {
+    color: #333 !important;
+    background-color: rgba(0, 0, 0, 0.075) !important;
+}
+
+.table-hover tbody tr:hover td,
+.table-hover tbody tr:hover th,
+.table-hover tbody tr:hover td * {
+    color: #333 !important;
+}
+
+/* Force all table content to be dark */
+.card .table-responsive .table tbody tr td,
+.card .table-responsive .table tbody tr td strong,
+.card .table-responsive .table tbody tr td div {
+    color: #333 !important;
+}
+
+/* Specific overrides for food groups table */
+#food-groups-table td,
+#food-groups-table th,
+#food-groups-table td *,
+#food-groups-table th * {
+    color: #333 !important;
+}
+
+/* Ensure badges keep their colors */
+#food-groups-table .badge {
+    color: #fff !important;
+}
+
+#food-groups-table .badge-warning {
+    color: #212529 !important;
+}

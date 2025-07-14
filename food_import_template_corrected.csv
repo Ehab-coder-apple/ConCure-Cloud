@@ -1,0 +1,11 @@
+name,name_en,name_ar,name_ku_bahdini,name_ku_sorani,food_group,calories,protein,carbohydrates,fat,fiber,sugar,sodium,serving_size,serving_weight,description,description_en,description_ar,description_ku_bahdini,description_ku_sorani
+Apple,Apple,تفاح,سێو,سێو,Fruits,52,0.3,14,0.2,2.4,10.4,1,1 medium apple,182,Fresh apple fruit,Fresh apple fruit,تفاح طازج,سێوی تازە,سێوی تازە
+Banana,Banana,موز,مۆز,مۆز,Fruits,89,1.1,23,0.3,2.6,12.2,1,1 medium banana,118,Fresh banana fruit,Fresh banana fruit,موز طازج,مۆزی تازە,مۆزی تازە
+Orange,Orange,برتقال,پرتەقاڵ,پرتەقاڵ,Fruits,47,0.9,12,0.1,2.4,9.4,0,1 medium orange,154,Fresh orange fruit,Fresh orange fruit,برتقال طازج,پرتەقاڵی تازە,پرتەقاڵی تازە
+Chicken Breast,Chicken Breast,صدر دجاج,سنگی مریشک,سنگی مریشک,Proteins,165,31,0,3.6,0,0,74,100g,100,Skinless chicken breast,Skinless chicken breast,صدر دجاج بدون جلد,سنگی مریشکی بێ پێست,سنگی مریشکی بێ پێست
+Rice,Rice,أرز,برنج,برنج,Grains,130,2.7,28,0.3,0.4,0.1,1,1 cup cooked,158,Cooked white rice,Cooked white rice,أرز أبيض مطبوخ,برنجی سپی لێنراو,برنجی سپی لێنراو
+Green Salad,Green Salad,سلطة خضراء,سەوزەی تازە,سەوزەی تازە,Vegetables,15,1.4,3,0.2,1.3,1.8,28,1 cup,36,Mixed green salad,Mixed green salad,سلطة خضراء مشكلة,سەوزەی تێکەڵ,سەوزەی تێکەڵ
+Olive Oil,Olive Oil,زيت الزيتون,ڕۆنی زەیتوون,ڕۆنی زەیتوون,Fats & Oils,119,0,0,13.5,0,0,0,1 tbsp,14,Extra virgin olive oil,Extra virgin olive oil,زيت زيتون بكر ممتاز,ڕۆنی زەیتوونی پاک,ڕۆنی زەیتوونی پاک
+Tomato,Tomato,طماطم,تەماتە,تەماتە,Vegetables,18,0.9,3.9,0.2,1.2,2.6,5,1 medium tomato,123,Fresh tomato,Fresh tomato,طماطم طازجة,تەماتەی تازە,تەماتەی تازە
+Cucumber,Cucumber,خيار,خیار,خیار,Vegetables,16,0.7,4,0.1,0.5,1.7,2,1 cup sliced,119,Fresh cucumber,Fresh cucumber,خيار طازج,خیاری تازە,خیاری تازە
+Yogurt,Yogurt,زبادي,ماست,ماست,Dairy,59,10,3.6,0.4,0,3.6,36,1 cup,245,Plain low-fat yogurt,Plain low-fat yogurt,زبادي قليل الدسم,ماستی کەم چەوری,ماستی کەم چەوری

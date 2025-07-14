@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  concure:
+    build: .
+    ports:
+      - "8000:80"
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./database:/var/www/html/database
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+    restart: unless-stopped
+
+networks:
+  default:
+    name: concure-network
