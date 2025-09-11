@@ -131,8 +131,7 @@ php artisan serve
 
 ## 👥 User Roles
 
-- **Program Owner**: Manages activation codes and clinic access
-- **Admin**: Full clinic management access
+- **Admin**: Full clinic and system management access
 - **Doctor**: Patient management and recommendations
 - **Assistant**: Patient support and basic management
 - **Nurse**: Patient care and checkup management
@@ -261,3 +260,5 @@ Made with ❤️ by [Connect Pure](https://connectpure.com)
 
 </div>
 
+
+# ConCure-Cloud
