@@ -107,11 +107,19 @@ class LoginController extends Controller
                 ]);
             }
 
-            if ($user->clinic->subscription_expires_at && $user->clinic->subscription_expires_at->isPast()) {
+            // Subscription expiry check removed - no longer needed
+            if (false) { // Disabled subscription check
                 throw ValidationException::withMessages([
                     $this->username() => ['Your clinic subscription has expired. Please renew to continue.'],
                 ]);
             }
+        }
+
+        // Enforce account expiry if set
+        if ($user->expires_at && now()->greaterThan($user->expires_at)) {
+            throw ValidationException::withMessages([
+                $this->username() => ['Your account has expired. Please contact your administrator.'],
+            ]);
         }
 
         return $this->guard()->attempt($credentials, $request->filled('remember'));
@@ -145,6 +153,10 @@ class LoginController extends Controller
             app()->setLocale($user->language);
         }
 
+        // Super Admins go to master dashboard; others to app dashboard
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('master.dashboard');
+        }
         return redirect()->intended($this->redirectPath());
     }
 

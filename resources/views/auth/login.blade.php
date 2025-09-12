@@ -1,16 +1,16 @@
-@extends('layouts.app')
+@extends('layouts.guest')
 
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
+<div class="container min-vh-100 d-flex align-items-center justify-content-center">
+    <div class="row justify-content-center w-100">
         <div class="col-md-6 col-lg-5">
-            <div class="card shadow">
+            <div class="card">
                 <div class="card-body p-5">
-                    <!-- Logo/Header -->
+                    <!-- Brand / Header -->
                     <div class="text-center mb-4">
-                        <i class="fas fa-clinic-medical fa-3x text-primary mb-3"></i>
-                        <h2 class="h4 text-primary fw-bold">{{ config('app.name') }}</h2>
-                        <p class="text-muted">Clinic Management System</p>
+                        <i class="fas fa-hospital fa-3x text-primary mb-3"></i>
+                        <h2 class="h4 text-primary fw-bold mb-1">{{ config('app.name') }}</h2>
+                        <p class="text-muted mb-0">Secure unified access for Super Admin and Clinic Staff</p>
                     </div>
 
                     <form method="POST" action="{{ route('login') }}">
