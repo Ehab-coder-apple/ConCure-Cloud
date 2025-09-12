@@ -37,15 +37,41 @@
                             <label for="password" class="form-label">
                                 <i class="fas fa-lock"></i> Password
                             </label>
-                            <input id="password" type="password" 
-                                   class="form-control @error('password') is-invalid @enderror" 
-                                   name="password" required autocomplete="current-password">
+                            <div class="input-group">
+                                <input id="password" type="password"
+                                       class="form-control @error('password') is-invalid @enderror"
+                                       name="password" required autocomplete="current-password">
+                                <button type="button" class="btn btn-outline-secondary" id="togglePasswordAuth" aria-label="Show password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
                             @error('password')
                                 <div class="invalid-feedback">
                                     {{ $message }}
                                 </div>
                             @enderror
                         </div>
+
+                        @push('scripts')
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const input = document.getElementById('password');
+                            const btn = document.getElementById('togglePasswordAuth');
+                            if (input && btn) {
+                                btn.addEventListener('click', function () {
+                                    const isPassword = input.type === 'password';
+                                    input.type = isPassword ? 'text' : 'password';
+                                    const icon = btn.querySelector('i');
+                                    if (icon) {
+                                        icon.classList.toggle('fa-eye');
+                                        icon.classList.toggle('fa-eye-slash');
+                                    }
+                                    btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+                                });
+                            }
+                        });
+                        </script>
+                        @endpush
 
                         <!-- Remember Me -->
                         <div class="mb-3 form-check">
@@ -64,20 +90,24 @@
                         </div>
                     </form>
 
-                    <!-- Registration Link -->
-                    <div class="text-center mt-4">
-                        <p class="text-muted">Don't have an account?</p>
-                        <a href="{{ route('register') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-user-plus"></i> Register with Activation Code
-                        </a>
-                    </div>
+                    <!-- Registration disabled: accounts are created by master admin -->
 
-                    <!-- Demo Credentials -->
+                    <!-- Demo Access -->
                     @if(config('app.env') === 'local')
                     <div class="mt-4 p-3 bg-light rounded">
-                        <h6 class="text-muted mb-2">Demo Credentials:</h6>
-                        <small class="text-muted">
-                            <strong>Admin:</strong> admin / admin123<br>
+                        <h6 class="text-muted mb-2"><i class="fas fa-info-circle me-1"></i> Demo Access</h6>
+                        <div class="d-grid gap-2 mb-2">
+                            <a href="/dev/login-admin" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-user-shield me-1"></i>
+                                Demo as Admin
+                            </a>
+                            <a href="/dev/login-doctor" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-user-md me-1"></i>
+                                Demo as Doctor
+                            </a>
+                        </div>
+                        <small class="text-muted d-block">
+                            <strong>Admin:</strong> admin / admin123 &nbsp; • &nbsp;
                             <strong>Doctor:</strong> doctor / doctor123
                         </small>
                     </div>
