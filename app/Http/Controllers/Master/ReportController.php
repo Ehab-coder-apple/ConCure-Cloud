@@ -40,6 +40,14 @@ class ReportController extends Controller
             ->pluck('count', 'role')
             ->toArray();
 
+        // Financials (master subscriptions)
+        $currencySymbol = config('concure.currency_symbol', '$');
+        $activeSubscribers = Clinic::where('is_active', true)->count();
+        $monthlyFee = (float) config('concure.subscription.monthly_fee', 29);
+        $expectedMonthlyFees = $activeSubscribers * $monthlyFee;
+        // Collected amount placeholder: no subscription payment records yet
+        $collectedAmount = 0.0;
+
         $filters = [
             'from' => $from?->toDateString(),
             'to'   => $to?->toDateString(),
@@ -48,7 +56,8 @@ class ReportController extends Controller
         return view('master.reports.index', compact(
             'filters',
             'clinicsTotal', 'clinicsActive', 'clinicsInactive',
-            'usersByRole'
+            'usersByRole',
+            'currencySymbol', 'activeSubscribers', 'monthlyFee', 'expectedMonthlyFees', 'collectedAmount'
         ));
     }
 

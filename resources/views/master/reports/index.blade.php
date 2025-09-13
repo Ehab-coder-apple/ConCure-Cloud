@@ -40,6 +40,44 @@
     </div>
 </form>
 
+<!-- Financial summary -->
+<div class="row g-3 mb-2">
+  <div class="col-md-4">
+    <div class="card reports-card border-left-success">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-success mb-1">Collected (Subscriptions)</div>
+          <div class="h5 mb-0 text-gray-800">{{ $currencySymbol }}{{ number_format($collectedAmount, 2) }}</div>
+        </div>
+        <div class="icon-circle bg-success text-white"><i class="fas fa-coins"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card reports-card border-left-primary">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-primary mb-1">Expected Monthly Fees</div>
+          <div class="h5 mb-0 text-gray-800">{{ $currencySymbol }}{{ number_format($expectedMonthlyFees, 2) }}</div>
+          <small class="text-muted">{{ $activeSubscribers }} active subscribers × {{ $currencySymbol }}{{ number_format($monthlyFee, 2) }}</small>
+        </div>
+        <div class="icon-circle bg-primary text-white"><i class="fas fa-file-invoice-dollar"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card reports-card border-left-info">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-info mb-1">Active Subscribers</div>
+          <div class="h5 mb-0 text-gray-800">{{ $activeSubscribers }}</div>
+        </div>
+        <div class="icon-circle bg-info text-white"><i class="fas fa-user-check"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="row g-3">
     <div class="col-lg-6">
         <div class="card h-100 border-left-primary reports-card">

@@ -77,7 +77,13 @@ return [
         'id_prefix' => env('CONCURE_INVOICE_ID_PREFIX', 'INV'),
         'id_length' => env('CONCURE_INVOICE_ID_LENGTH', 8),
     ],
-    
+
+    // Master subscription defaults
+    'subscription' => [
+        // Default monthly fee per active clinic subscriber (master billing)
+        'monthly_fee' => env('CONCURE_SUBSCRIPTION_MONTHLY_FEE', 29),
+    ],
+
     'uploads' => [
         'max_file_size' => env('CONCURE_MAX_FILE_SIZE', 10240), // KB
         'allowed_extensions' => ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
