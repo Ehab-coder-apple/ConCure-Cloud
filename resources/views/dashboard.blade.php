@@ -4,8 +4,7 @@
 
 @section('content')
 <div class="container">
-    <!-- Trial Notification -->
-    @include('components.trial-notification')
+    {{-- Trial notification removed - subscription system no longer needed --}}
 
     <div class="row">
         <div class="col-12">
@@ -232,6 +231,15 @@
                             <a href="{{ route('recommendations.lab-requests') }}" class="btn btn-outline-warning w-100">
                                 <i class="fas fa-vial d-block mb-1"></i>
                                 <small>Lab Request</small>
+                            </a>
+                        </div>
+                        @endcan
+
+                        @can('create-prescriptions')
+                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                            <a href="{{ route('recommendations.radiology.index') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-x-ray d-block mb-1"></i>
+                                <small>Radiology Request</small>
                             </a>
                         </div>
                         @endcan

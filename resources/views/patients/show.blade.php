@@ -21,17 +21,52 @@
                     </nav>
                 </div>
                 <div>
-                    <a href="{{ route('patients.edit', $patient->id ?? 1) }}" class="btn btn-outline-primary me-2">
+                    <div class="btn-group me-1" role="group">
+                        <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-file-medical me-1"></i>
+                            {{ __('Report') }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('patient.report', $patient) }}" target="_blank">
+                                    <i class="fas fa-eye me-2"></i>
+                                    {{ __('View Report') }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('patient.report', $patient) }}?format=pdf" target="_blank">
+                                    <i class="fas fa-file-pdf me-2"></i>
+                                    {{ __('Download PDF') }}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="showReportModal()">
+                                    <i class="fas fa-calendar-alt me-2"></i>
+                                    {{ __('Custom Date Range') }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <a href="{{ route('patients.edit', $patient->id ?? 1) }}" class="btn btn-outline-primary btn-sm me-1">
                         <i class="fas fa-edit me-1"></i>
-                        {{ __('Edit Patient') }}
+                        {{ __('Edit') }}
                     </a>
-                    <button type="button" class="btn btn-info me-2" onclick="newAppointment()">
+                    <button type="button" class="btn btn-info btn-sm me-1" onclick="newAppointment()">
                         <i class="fas fa-calendar-plus me-1"></i>
-                        {{ __('New Appointment') }}
+                        {{ __('Appointment') }}
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="newPrescription()">
+                    <a href="{{ route('patients.vital-signs.index', $patient) }}" class="btn btn-info btn-sm me-1">
+                        <i class="fas fa-stethoscope me-1"></i>
+                        {{ __('Vital Signs') }}
+                    </a>
+                    <a href="{{ route('patients.checkup-templates.index', $patient) }}" class="btn btn-warning btn-sm me-1">
+                        <i class="fas fa-clipboard-list me-1"></i>
+                        {{ __('Templates') }}
+                    </a>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="newPrescription()">
                         <i class="fas fa-prescription-bottle-alt me-1"></i>
-                        {{ __('New Prescription') }}
+                        {{ __('Prescription') }}
                     </button>
                 </div>
             </div>
@@ -323,7 +358,11 @@
                                 <i class="fas fa-heartbeat me-2"></i>
                                 {{ __('Recent Checkups') }}
                             </h6>
-                            <button type="button" class="btn btn-sm btn-outline-success" onclick="newCheckup()">
+                            <a href="{{ route('checkups.index', $patient) }}" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-list me-1"></i>
+                            {{ __('View All Checkups') }}
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="newCheckup()">
                                 <i class="fas fa-plus me-1"></i>
                                 {{ __('Add Checkup') }}
                             </button>
@@ -381,7 +420,7 @@
                                 </div>
                                 @if($patient->checkups->count() >= 10)
                                 <div class="text-center mt-3">
-                                    <a href="#" class="btn btn-sm btn-outline-secondary">
+                                    <a href="{{ route('checkups.index', $patient) }}" class="btn btn-sm btn-outline-secondary">
                                         {{ __('View All Checkups') }}
                                     </a>
                                 </div>
@@ -420,9 +459,340 @@
     </div>
 </div>
 
+<!-- Add Checkup Modal -->
+<div class="modal fade" id="checkupModal" tabindex="-1" aria-labelledby="checkupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="checkupModalLabel">
+                    <i class="fas fa-heartbeat me-2"></i>
+                    {{ __('Add New Checkup') }} - {{ $patient->full_name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('checkups.store', $patient) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Vital Signs -->
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-heartbeat me-1"></i>
+                                {{ __('Vital Signs') }}
+                            </h6>
+
+                            <div class="mb-3">
+                                <label for="weight" class="form-label">{{ __('Weight (kg)') }}</label>
+                                <input type="number" class="form-control" id="weight" name="weight"
+                                       step="0.1" min="1" max="500" placeholder="70.5">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="height" class="form-label">{{ __('Height (cm)') }}</label>
+                                <input type="number" class="form-control" id="height" name="height"
+                                       step="0.1" min="50" max="300" placeholder="175">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="blood_pressure" class="form-label">{{ __('Blood Pressure') }}</label>
+                                <input type="text" class="form-control" id="blood_pressure" name="blood_pressure"
+                                       placeholder="120/80" pattern="\d{2,3}/\d{2,3}">
+                                <div class="form-text">{{ __('Format: 120/80') }}</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="heart_rate" class="form-label">{{ __('Heart Rate (bpm)') }}</label>
+                                <input type="number" class="form-control" id="heart_rate" name="heart_rate"
+                                       min="30" max="200" placeholder="72">
+                            </div>
+                        </div>
+
+                        <!-- Additional Measurements -->
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-thermometer-half me-1"></i>
+                                {{ __('Additional Measurements') }}
+                            </h6>
+
+                            <div class="mb-3">
+                                <label for="temperature" class="form-label">{{ __('Temperature (°C)') }}</label>
+                                <input type="number" class="form-control" id="temperature" name="temperature"
+                                       step="0.1" min="30" max="45" placeholder="36.5">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="respiratory_rate" class="form-label">{{ __('Respiratory Rate (per min)') }}</label>
+                                <input type="number" class="form-control" id="respiratory_rate" name="respiratory_rate"
+                                       min="5" max="50" placeholder="16">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="blood_sugar" class="form-label">{{ __('Blood Sugar (mg/dL)') }}</label>
+                                <input type="number" class="form-control" id="blood_sugar" name="blood_sugar"
+                                       step="0.1" min="20" max="600" placeholder="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Template Selection -->
+                    @php
+                        $patientTemplates = $patient->assigned_checkup_templates;
+                    @endphp
+
+                    @if($patientTemplates->count() > 0)
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="checkup_template" class="form-label">{{ __('Checkup Template') }}</label>
+                            <select class="form-select" id="checkup_template" name="template_id" onchange="loadTemplateFields()">
+                                <option value="">{{ __('Standard Checkup (No Template)') }}</option>
+                                @foreach($patientTemplates as $assignment)
+                                    <option value="{{ $assignment->template->id }}"
+                                            data-template="{{ json_encode($assignment->template->form_sections) }}">
+                                        {{ $assignment->template->name }}
+                                        @if($assignment->medical_condition) - {{ $assignment->medical_condition }} @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="form-text text-muted">{{ __('Select a specialized checkup template or use standard checkup') }}</small>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Custom Vital Signs -->
+                    @php
+                        $patientCustomSigns = $patient->assigned_custom_vital_signs;
+                    @endphp
+
+                    @if($patientCustomSigns->count() > 0)
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-stethoscope me-1"></i>
+                                {{ __('Additional Vital Signs') }}
+                            </h6>
+
+                            <div class="row">
+                                @foreach($patientCustomSigns as $assignment)
+                                    @php $sign = $assignment->customVitalSign; @endphp
+                                    <div class="col-md-6 mb-3">
+                                        <label for="custom_{{ $sign->id }}" class="form-label">
+                                            {{ $sign->display_name }}
+                                            @if($sign->normal_range)
+                                                <small class="text-muted">(Normal: {{ $sign->normal_range }})</small>
+                                            @endif
+                                            @if($assignment->medical_condition)
+                                                <br><small class="text-info">{{ $assignment->medical_condition }}</small>
+                                            @endif
+                                        </label>
+
+                                        @if($sign->type === 'select')
+                                            <select class="form-select" id="custom_{{ $sign->id }}" name="custom_vital_signs[{{ $sign->id }}]">
+                                                <option value="">{{ __('Select...') }}</option>
+                                                @foreach($sign->options as $value => $label)
+                                                    <option value="{{ $value }}">{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <input type="number" class="form-control" id="custom_{{ $sign->id }}"
+                                                   name="custom_vital_signs[{{ $sign->id }}]"
+                                                   @if($sign->min_value) min="{{ $sign->min_value }}" @endif
+                                                   @if($sign->max_value) max="{{ $sign->max_value }}" @endif
+                                                   step="0.1" placeholder="{{ $sign->unit ? 'Enter value in ' . $sign->unit : 'Enter value' }}">
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    @else
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    {{ __('No Custom Vital Signs Assigned') }}
+                                </h6>
+                                <p class="mb-2">{{ __('This patient has no custom vital signs assigned yet.') }}</p>
+                                <a href="{{ route('patients.vital-signs.index', $patient) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-stethoscope me-1"></i>
+                                    {{ __('Assign Vital Signs') }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Custom Template Fields -->
+                    <div id="customTemplateFields" style="display: none;">
+                        <!-- Template fields will be loaded here dynamically -->
+                    </div>
+
+                    <!-- Clinical Notes -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-notes-medical me-1"></i>
+                                {{ __('Clinical Notes') }}
+                            </h6>
+
+                            <div class="mb-3">
+                                <label for="symptoms" class="form-label">{{ __('Symptoms') }}</label>
+                                <textarea class="form-control" id="symptoms" name="symptoms" rows="3"
+                                          placeholder="{{ __('Describe any symptoms the patient is experiencing...') }}"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">{{ __('Clinical Notes') }}</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3"
+                                          placeholder="{{ __('Additional observations and notes...') }}"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="recommendations" class="form-label">{{ __('Recommendations') }}</label>
+                                <textarea class="form-control" id="recommendations" name="recommendations" rows="3"
+                                          placeholder="{{ __('Treatment recommendations and follow-up instructions...') }}"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        {{ __('Cancel') }}
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i>
+                        {{ __('Save Checkup') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Report Date Range Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reportModalLabel">
+                    <i class="fas fa-file-medical me-2"></i>
+                    {{ __('Generate Custom Report') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="reportForm" method="GET" action="{{ route('patient.report', $patient) }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="report_date_from" class="form-label">{{ __('From Date') }}</label>
+                            <input type="date" class="form-control" id="report_date_from" name="date_from"
+                                   value="{{ now()->subMonths(6)->format('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="report_date_to" class="form-label">{{ __('To Date') }}</label>
+                            <input type="date" class="form-control" id="report_date_to" name="date_to"
+                                   value="{{ now()->format('Y-m-d') }}" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <label for="report_format" class="form-label">{{ __('Format') }}</label>
+                            <select class="form-select" id="report_format" name="format">
+                                <option value="html">{{ __('View in Browser') }}</option>
+                                <option value="pdf">{{ __('Download PDF') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        {{ __('Cancel') }}
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-file-medical me-1"></i>
+                        {{ __('Generate Report') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 function newPrescription() {
     window.location.href = `/simple-prescriptions/create?patient_id={{ $patient->id ?? 1 }}`;
+}
+
+function loadTemplateFields() {
+    const templateSelect = document.getElementById('checkup_template');
+    const customFieldsContainer = document.getElementById('customTemplateFields');
+
+    if (templateSelect.value) {
+        const selectedOption = templateSelect.selectedOptions[0];
+        const templateData = JSON.parse(selectedOption.dataset.template || '{}');
+
+        let fieldsHtml = '<div class="row mt-4"><div class="col-12"><h5><i class="fas fa-clipboard-list me-2"></i>Template Fields</h5></div></div>';
+
+        Object.keys(templateData).forEach(sectionKey => {
+            const section = templateData[sectionKey];
+            fieldsHtml += `<div class="row mt-3"><div class="col-12"><h6 class="text-primary">${section.title || sectionKey}</h6></div></div>`;
+            fieldsHtml += '<div class="row">';
+
+            Object.keys(section.fields || {}).forEach(fieldKey => {
+                const field = section.fields[fieldKey];
+                fieldsHtml += `<div class="col-md-6 mb-3">`;
+                fieldsHtml += `<label for="custom_field_${fieldKey}" class="form-label">${field.label}`;
+                if (field.required) fieldsHtml += ' <span class="text-danger">*</span>';
+                fieldsHtml += '</label>';
+
+                switch (field.type) {
+                    case 'select':
+                        fieldsHtml += `<select class="form-select" id="custom_field_${fieldKey}" name="custom_fields[${fieldKey}]"${field.required ? ' required' : ''}>`;
+                        fieldsHtml += '<option value="">Select...</option>';
+                        if (field.options && Array.isArray(field.options)) {
+                            field.options.forEach(option => {
+                                fieldsHtml += `<option value="${option}">${option}</option>`;
+                            });
+                        }
+                        fieldsHtml += '</select>';
+                        break;
+                    case 'textarea':
+                        fieldsHtml += `<textarea class="form-control" id="custom_field_${fieldKey}" name="custom_fields[${fieldKey}]" rows="3"${field.required ? ' required' : ''}></textarea>`;
+                        break;
+                    case 'checkbox':
+                        fieldsHtml += `<div class="form-check"><input class="form-check-input" type="checkbox" id="custom_field_${fieldKey}" name="custom_fields[${fieldKey}]" value="1"><label class="form-check-label" for="custom_field_${fieldKey}">${field.label}</label></div>`;
+                        break;
+                    case 'date':
+                        fieldsHtml += `<input type="date" class="form-control" id="custom_field_${fieldKey}" name="custom_fields[${fieldKey}]"${field.required ? ' required' : ''}>`;
+                        break;
+                    case 'time':
+                        fieldsHtml += `<input type="time" class="form-control" id="custom_field_${fieldKey}" name="custom_fields[${fieldKey}]"${field.required ? ' required' : ''}>`;
+                        break;
+                    case 'number':
+                        fieldsHtml += `<input type="number" class="form-control" id="custom_field_${fieldKey}" name="custom_fields[${fieldKey}]"`;
+                        if (field.min) fieldsHtml += ` min="${field.min}"`;
+                        if (field.max) fieldsHtml += ` max="${field.max}"`;
+                        if (field.step) fieldsHtml += ` step="${field.step}"`;
+                        fieldsHtml += `${field.required ? ' required' : ''}>`;
+                        break;
+                    default:
+                        fieldsHtml += `<input type="text" class="form-control" id="custom_field_${fieldKey}" name="custom_fields[${fieldKey}]"${field.required ? ' required' : ''}>`;
+                }
+
+                fieldsHtml += '</div>';
+            });
+
+            fieldsHtml += '</div>';
+        });
+
+        customFieldsContainer.innerHTML = fieldsHtml;
+        customFieldsContainer.style.display = 'block';
+    } else {
+        customFieldsContainer.style.display = 'none';
+        customFieldsContainer.innerHTML = '';
+    }
 }
 
 function newAppointment() {
@@ -430,8 +800,28 @@ function newAppointment() {
 }
 
 function newCheckup() {
-    // For now, we'll show an alert. In a full implementation, this would open a checkup form
-    alert('{{ __("Checkup functionality will be implemented in the next update.") }}');
+    const modal = new bootstrap.Modal(document.getElementById('checkupModal'));
+    modal.show();
 }
+
+function showReportModal() {
+    const modal = new bootstrap.Modal(document.getElementById('reportModal'));
+    modal.show();
+}
+
+// Handle report form submission
+document.getElementById('reportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const params = new URLSearchParams(formData);
+    const url = this.action + '?' + params.toString();
+
+    // Open in new tab
+    window.open(url, '_blank');
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+    modal.hide();
+});
 </script>
 @endsection

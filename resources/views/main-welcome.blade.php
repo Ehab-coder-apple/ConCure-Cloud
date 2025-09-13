@@ -573,15 +573,12 @@
                                         <li><i class="fas fa-check me-2"></i>Activation Codes & Platform Configuration</li>
                                     </ul>
                                     <div class="d-grid gap-2">
-                                        <a href="{{ route('master.welcome.index') }}" class="btn btn-master">
-                                            <i class="fas fa-user-shield me-2"></i>
-                                            Access Master Control
+                                        <a href="{{ url('/master/login') }}" class="btn btn-primary">
+                                            <i class="fas fa-sign-in-alt me-2"></i>
+                                            Open Master Dashboard
                                         </a>
-                                        <small class="text-center mt-2">
-                                            <span class="badge bg-danger">
-                                                <i class="fas fa-shield-alt me-1"></i>
-                                                Program Owners Only
-                                            </span>
+                                        <small class="text-center mt-2 text-muted">
+                                            Super Admin only. Use your super admin credentials to sign in.
                                         </small>
                                     </div>
                                 </div>

@@ -6,8 +6,10 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Expense;
 use App\Models\Patient;
+use App\Mail\InvoiceMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -36,7 +38,7 @@ class FinanceController extends Controller
     public function invoices(Request $request)
     {
         $user = auth()->user();
-        
+
         if (!$user->canAccessFinance()) {
             abort(403, 'Access denied to invoices.');
         }
@@ -69,7 +71,14 @@ class FinanceController extends Controller
 
         $invoices = $query->latest()->paginate(15);
 
-        return view('finance.invoices', compact('invoices'));
+        // Get patients for the create invoice form
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->orderBy('last_name')
+                          ->get();
+
+        return view('finance.invoices', compact('invoices', 'patients'));
     }
 
     /**
@@ -85,7 +94,7 @@ class FinanceController extends Controller
 
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
-            'due_date' => 'nullable|date|after:today',
+            'due_date' => 'nullable|date|after_or_equal:today',
             'tax_rate' => 'nullable|numeric|min:0|max:100',
             'discount_rate' => 'nullable|numeric|min:0|max:100',
             'discount_amount' => 'nullable|numeric|min:0',
@@ -282,6 +291,207 @@ class FinanceController extends Controller
         
         return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
     }
+
+    /**
+     * Display invoice for printing.
+     */
+    public function printInvoice(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+            abort(403, 'Unauthorized access to invoice.');
+        }
+
+        $invoice->load(['patient', 'clinic', 'items']);
+
+        return view('finance.invoice-print', compact('invoice'));
+    }
+
+    /**
+     * Generate public PDF access for invoice (no authentication required).
+     */
+    public function publicInvoicePDF(Invoice $invoice, $token)
+    {
+        // Verify the token
+        $expectedToken = $this->generateInvoiceToken($invoice);
+        if (!hash_equals($expectedToken, $token)) {
+            abort(403, 'Invalid access token for invoice.');
+        }
+
+        $invoice->load(['patient', 'clinic', 'items']);
+
+        $pdf = Pdf::loadView('finance.invoice-pdf', compact('invoice'));
+
+        return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
+    }
+
+    /**
+     * Get invoice data for editing.
+     */
+    public function getInvoiceForEdit(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to invoice.'
+            ], 403);
+        }
+
+        // Load invoice with relationships
+        $invoice->load(['patient', 'items']);
+
+        return response()->json([
+            'success' => true,
+            'invoice' => [
+                'id' => $invoice->id,
+                'patient_id' => $invoice->patient_id,
+                'due_date' => $invoice->due_date,
+                'notes' => $invoice->notes,
+                'items' => $invoice->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'description' => $item->description,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->unit_price,
+                        'item_type' => $item->item_type,
+                    ];
+                })
+            ]
+        ]);
+    }
+
+    /**
+     * Update an existing invoice.
+     */
+    public function updateInvoice(Request $request, Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to invoice.'
+            ], 403);
+        }
+
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'due_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:1000',
+            'items' => 'required|array|min:1',
+            'items.*.description' => 'required|string|max:255',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.item_type' => 'nullable|in:consultation,procedure,medication,lab_test,other',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Update invoice basic info
+            $invoice->update([
+                'patient_id' => $request->patient_id,
+                'due_date' => $request->due_date,
+                'notes' => $request->notes,
+            ]);
+
+            // Delete existing items
+            $invoice->items()->delete();
+
+            // Add new items and calculate totals
+            $subtotal = 0;
+            foreach ($request->items as $itemData) {
+                $total = $itemData['quantity'] * $itemData['unit_price'];
+                $subtotal += $total;
+
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'description' => $itemData['description'],
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => $itemData['unit_price'],
+                    'total_price' => $total,
+                    'item_type' => $itemData['item_type'] ?? 'other', // Default to 'other' if not provided
+                ]);
+            }
+
+            // Update invoice totals (assuming no tax for now)
+            $taxAmount = 0; // You can implement tax calculation here
+            $totalAmount = $subtotal + $taxAmount;
+
+            $invoice->update([
+                'subtotal' => $subtotal,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'balance' => $totalAmount, // Assuming no payments made yet
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice updated successfully!'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating invoice: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate secure token for invoice public access.
+     */
+    private function generateInvoiceToken(Invoice $invoice)
+    {
+        // Create a secure token based on invoice data and app key
+        return hash('sha256', $invoice->id . $invoice->invoice_number . $invoice->created_at . config('app.key'));
+    }
+
+    /**
+     * Get public PDF URL for invoice (for WhatsApp sharing).
+     */
+    public function getPublicPdfUrl(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to invoice.'
+            ], 403);
+        }
+
+        // Generate secure token
+        $token = $this->generateInvoiceToken($invoice);
+
+        // Create public URL
+        $publicUrl = route('invoice.public.pdf', [
+            'invoice' => $invoice->id,
+            'token' => $token
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'public_url' => $publicUrl,
+            'invoice_number' => $invoice->invoice_number
+        ]);
+    }
+
+
 
     /**
      * Display financial reports dashboard.
@@ -540,4 +750,132 @@ class FinanceController extends Controller
 
         return $data;
     }
+
+    /**
+     * Send invoice via email.
+     */
+    public function emailInvoice(Request $request, Invoice $invoice)
+    {
+        $user = auth()->user();
+
+
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to invoice.'
+            ], 403);
+        }
+
+        try {
+            $validated = $request->validate([
+                'email' => 'required|email',
+                'subject' => 'nullable|string|max:255',
+                'message' => 'nullable|string|max:1000',
+            ]);
+
+
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Invoice email validation failed', [
+                'invoice_id' => $invoice->id,
+                'errors' => $e->errors()
+            ]);
+
+            $errorMessages = [];
+            foreach ($e->errors() as $field => $messages) {
+                $errorMessages = array_merge($errorMessages, $messages);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . implode(', ', $errorMessages)
+            ], 422);
+        }
+
+        $recipientEmail = $request->email;
+        $customMessage = $request->message;
+        // Handle checkbox value properly - "on" means checked, null/empty means unchecked
+        $attachPdf = $request->has('attach_pdf') && in_array($request->attach_pdf, ['on', 'true', '1', true]);
+
+        try {
+            $invoice->load(['patient', 'clinic', 'items']);
+
+            // Send the email
+            Mail::to($recipientEmail)->send(new InvoiceMail($invoice, $attachPdf, $customMessage));
+
+            // Update invoice status to 'sent' if it was draft
+            if ($invoice->status === 'draft') {
+                $invoice->markAsSent();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice sent successfully to ' . $recipientEmail
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Invoice email failed', [
+                'invoice_id' => $invoice->id,
+                'recipient' => $recipientEmail,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send invoice email. Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Show email invoice form.
+     */
+    public function showEmailForm(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+            abort(403, 'Unauthorized access to invoice.');
+        }
+
+        $invoice->load(['patient', 'clinic']);
+
+        return response()->json([
+            'success' => true,
+            'invoice' => [
+                'id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'patient_name' => $invoice->patient->first_name . ' ' . $invoice->patient->last_name,
+                'patient_email' => $invoice->patient->email,
+                'total_amount' => $invoice->total_amount,
+                'status' => $invoice->status,
+            ]
+        ]);
+    }
+
+    /**
+     * Public invoice view (no authentication required).
+     */
+    public function publicInvoiceView(Invoice $invoice, $token)
+    {
+        // Verify the token
+        $expectedToken = $this->generateInvoiceToken($invoice);
+        if (!hash_equals($expectedToken, $token)) {
+            abort(403, 'Invalid access token for invoice.');
+        }
+
+        $invoice->load(['patient', 'clinic', 'items']);
+
+        return view('finance.invoice-print', compact('invoice'));
+    }
+
+
 }

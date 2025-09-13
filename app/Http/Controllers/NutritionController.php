@@ -40,8 +40,8 @@ class NutritionController extends Controller
             $q->where('clinic_id', $user->clinic_id);
         });
 
-        // Filter by doctor if user is a doctor
-        if ($user->role === 'doctor') {
+        // Filter by doctor if user is a doctor or nutritionist
+        if (in_array($user->role, ['doctor', 'nutritionist'])) {
             $query->where('doctor_id', $user->id);
         }
 
@@ -145,13 +145,24 @@ class NutritionController extends Controller
         // Check if editing existing plan
         $dietPlan = null;
         if ($request->filled('edit')) {
+            $editId = $request->edit;
+
+            // First check if the diet plan exists at all
+            $planExists = DietPlan::where('id', $editId)->exists();
+            if (!$planExists) {
+                return redirect()->route('nutrition.index')->with('error', "Nutrition plan with ID {$editId} not found.");
+            }
+
+            // Then check if user has access to it
             $dietPlan = DietPlan::with(['patient', 'meals.foods.food'])
-                              ->where('id', $request->edit)
-                              ->where('doctor_id', $user->id)
+                              ->where('id', $editId)
+                              ->whereHas('patient', function($query) use ($user) {
+                                  $query->where('clinic_id', $user->clinic_id);
+                              })
                               ->first();
 
             if (!$dietPlan) {
-                abort(404, 'Nutrition plan not found or access denied.');
+                return redirect()->route('nutrition.index')->with('error', 'You do not have permission to edit this nutrition plan.');
             }
         }
 
@@ -162,7 +173,7 @@ class NutritionController extends Controller
                           ->get();
 
         // Get food groups for the food selection modal
-        $foodGroups = FoodGroup::active()->ordered()->get();
+        $foodGroups = FoodGroup::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
 
         // Pre-select patient if provided or from existing plan
         $selectedPatient = null;
@@ -182,6 +193,7 @@ class NutritionController extends Controller
      */
     public function store(Request $request)
     {
+        \Log::info('NutritionController::store method called');
         $user = Auth::user();
 
         if (!$user->canCreateNutritionPlans()) {
@@ -209,7 +221,8 @@ class NutritionController extends Controller
             'restrictions' => 'nullable|string',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
-            'meal_data' => 'nullable|string', // JSON string of meal data
+            'meal_data' => 'nullable|string', // JSON string of meal data (legacy)
+            'meal_options' => 'nullable|string', // JSON string of meal options data
             'weekly_meal_data' => 'nullable|string', // JSON string of weekly meal data
             'meals' => 'nullable|array',
             'meals.*.name' => 'required_with:meals|string|max:255',
@@ -285,49 +298,17 @@ class NutritionController extends Controller
                 ]);
             }
 
-            // Handle weekly meal data from template forms
-            if ($request->filled('weekly_meal_data')) {
-                $weeklyMealData = json_decode($request->weekly_meal_data, true);
 
-                if ($weeklyMealData && is_array($weeklyMealData)) {
-                    $mealTypes = [
-                        'breakfast' => ['name' => 'Breakfast', 'time' => '08:00'],
-                        'lunch' => ['name' => 'Lunch', 'time' => '12:00'],
-                        'dinner' => ['name' => 'Dinner', 'time' => '18:00'],
-                        'snacks' => ['name' => 'Snacks', 'time' => '15:00']
-                    ];
 
-                    foreach ($weeklyMealData as $dayNumber => $dayMeals) {
-                        foreach ($dayMeals as $mealType => $foods) {
-                            if (!empty($foods) && isset($mealTypes[$mealType])) {
-                                $meal = $nutritionPlan->meals()->create([
-                                    'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
-                                    'meal_name' => $mealTypes[$mealType]['name'],
-                                    'suggested_time' => $mealTypes[$mealType]['time'],
-                                    'day_number' => (int) $dayNumber,
-                                ]);
-
-                                // Add foods to meal
-                                foreach ($foods as $foodData) {
-                                    $food = Food::find($foodData['id']);
-                                    // Use displayName if available (translated name), otherwise fall back to name
-                                    $foodName = $foodData['displayName'] ?? $foodData['name'] ?? ($food ? $food->name : '');
-                                    $meal->foods()->create([
-                                        'food_id' => $foodData['id'],
-                                        'food_name' => $foodName,
-                                        'quantity' => $foodData['quantity'],
-                                        'unit' => $foodData['unit'],
-                                        'preparation_notes' => $foodData['notes'] ?? null,
-                                    ]);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
             // Handle enhanced meal data from detailed form (single day)
-            elseif ($request->filled('meal_data')) {
+            if ($request->filled('meal_data')) {
                 $mealData = json_decode($request->meal_data, true);
+
+                // Debug: Log the received meal data (can be removed in production)
+                \Log::info('Received meal data:', [
+                    'raw_meal_data' => $request->meal_data,
+                    'decoded_meal_data' => $mealData
+                ]);
 
                 if ($mealData && is_array($mealData)) {
                     $mealTypes = [
@@ -338,6 +319,8 @@ class NutritionController extends Controller
                     ];
 
                     foreach ($mealData as $mealType => $foods) {
+                        \Log::info("Processing meal type: {$mealType}", ['foods_count' => count($foods)]);
+
                         if (!empty($foods) && isset($mealTypes[$mealType])) {
                             $meal = $nutritionPlan->meals()->create([
                                 'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
@@ -346,19 +329,117 @@ class NutritionController extends Controller
                                 'day_number' => 1, // Default to day 1
                             ]);
 
+                            \Log::info("Created meal: {$meal->id}", [
+                                'meal_type' => $meal->meal_type,
+                                'meal_name' => $meal->meal_name
+                            ]);
+
                             // Add foods to meal
                             foreach ($foods as $foodData) {
                                 $food = Food::find($foodData['id']);
                                 // Use displayName if available (translated name), otherwise fall back to name
                                 $foodName = $foodData['displayName'] ?? $foodData['name'] ?? ($food ? $food->name : '');
-                                $meal->foods()->create([
+                                $mealFood = $meal->foods()->create([
                                     'food_id' => $foodData['id'],
                                     'food_name' => $foodName,
                                     'quantity' => $foodData['quantity'],
                                     'unit' => $foodData['unit'],
                                     'preparation_notes' => $foodData['notes'] ?? null,
                                 ]);
+
+                                \Log::info("Added food to meal: {$mealFood->id}", [
+                                    'food_name' => $foodName,
+                                    'quantity' => $foodData['quantity'],
+                                    'unit' => $foodData['unit']
+                                ]);
                             }
+                        } else {
+                            \Log::warning("Skipped meal type: {$mealType}", [
+                                'foods_empty' => empty($foods),
+                                'meal_type_exists' => isset($mealTypes[$mealType])
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Handle enhanced meal options data (multiple options per meal type)
+            if ($request->filled('meal_options')) {
+                $mealOptionsData = json_decode($request->meal_options, true);
+
+                // Debug: Log the received meal options data
+                \Log::info('Received meal options data:', [
+                    'raw_meal_options' => $request->meal_options,
+                    'decoded_meal_options' => $mealOptionsData
+                ]);
+
+                // Additional debug: Check the structure of each meal type
+                foreach ($mealOptionsData as $mealType => $options) {
+                    \Log::info("Meal type {$mealType} structure:", [
+                        'options_count' => count($options),
+                        'first_option_structure' => !empty($options[0]) ? array_keys($options[0]) : 'No options',
+                        'first_option_foods' => !empty($options[0]['foods']) ? count($options[0]['foods']) : 0,
+                        'first_food_structure' => !empty($options[0]['foods'][0]) ? array_keys($options[0]['foods'][0]) : 'No foods'
+                    ]);
+                }
+
+                if ($mealOptionsData && is_array($mealOptionsData)) {
+                    foreach ($mealOptionsData as $mealType => $options) {
+                        \Log::info("Processing meal type: {$mealType}", ['options_count' => count($options)]);
+
+                        if (!empty($options) && is_array($options)) {
+                            foreach ($options as $option) {
+                                // Create meal option
+                                $meal = $nutritionPlan->meals()->create([
+                                    'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
+                                    'option_number' => $option['option_number'] ?? 1,
+                                    'is_option_based' => true,
+                                    'option_description' => $option['option_description'] ?? "Option {$option['option_number']}",
+                                    'meal_name' => $option['option_description'] ?? "Option {$option['option_number']}",
+                                    'day_number' => null, // Not used in option-based system
+                                ]);
+
+                                \Log::info("Created meal option: {$meal->id}", [
+                                    'meal_type' => $meal->meal_type,
+                                    'option_number' => $meal->option_number,
+                                    'option_description' => $meal->option_description
+                                ]);
+
+                                // Add foods to the meal option
+                                if (!empty($option['foods']) && is_array($option['foods'])) {
+                                    foreach ($option['foods'] as $foodData) {
+                                        // Debug: Log the food data structure
+                                        \Log::info('Processing food data:', $foodData);
+
+                                        try {
+                                            $mealFood = $meal->foods()->create([
+                                                'food_id' => $foodData['food_id'] ?? null,
+                                                'food_name' => $foodData['food_name'] ?? $foodData['displayName'] ?? 'Unknown Food',
+                                                'quantity' => $foodData['quantity'] ?? 0,
+                                                'unit' => $foodData['unit'] ?? 'g',
+                                                'preparation_notes' => $foodData['preparation_notes'] ?? null,
+                                            ]);
+                                        } catch (\Exception $e) {
+                                            \Log::error('Error creating meal food:', [
+                                                'error' => $e->getMessage(),
+                                                'food_data' => $foodData,
+                                                'available_keys' => array_keys($foodData)
+                                            ]);
+                                            throw $e;
+                                        }
+
+                                        \Log::info("Added food to meal option: {$mealFood->id}", [
+                                            'food_name' => $mealFood->food_name,
+                                            'quantity' => $foodData['quantity'],
+                                            'unit' => $foodData['unit']
+                                        ]);
+                                    }
+                                }
+                            }
+                        } else {
+                            \Log::warning("Skipped meal type: {$mealType}", [
+                                'options_empty' => empty($options)
+                            ]);
                         }
                     }
                 }
@@ -464,6 +545,49 @@ class NutritionController extends Controller
     }
 
     /**
+     * Show the enhanced form for editing the specified nutrition plan.
+     */
+    public function editEnhanced(DietPlan $dietPlan)
+    {
+        $user = Auth::user();
+
+        // Check access and permissions
+        if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to nutrition plan.');
+        }
+
+        if (!$user->canEditNutritionPlans()) {
+            abort(403, 'You do not have permission to edit nutrition plans.');
+        }
+
+        if (!$dietPlan->canBeModified()) {
+            return back()->with('error', 'This nutrition plan cannot be modified.');
+        }
+
+        // Get patients for dropdown
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
+        // Get food groups and foods
+        $foodGroups = FoodGroup::with(['foods' => function ($query) use ($user) {
+            $query->where(function ($q) use ($user) {
+                $q->where('is_custom', false)
+                  ->orWhere('clinic_id', $user->clinic_id);
+            })->where('is_active', true);
+        }])->get();
+
+        // Load the diet plan with all related data
+        $dietPlan->load(['patient', 'meals.foods.food']);
+
+        // Set selected patient for the form
+        $selectedPatient = $dietPlan->patient;
+
+        return view('nutrition.create-enhanced', compact('dietPlan', 'patients', 'foodGroups', 'selectedPatient'));
+    }
+
+    /**
      * Update the specified nutrition plan.
      */
     public function update(Request $request, DietPlan $dietPlan)
@@ -498,6 +622,7 @@ class NutritionController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
             'status' => 'required|in:active,completed,cancelled',
+            'meal_options' => 'nullable|string', // JSON string of meal options data
         ]);
 
         $dietPlan->update($request->only([
@@ -505,6 +630,72 @@ class NutritionController extends Controller
             'target_calories', 'target_protein', 'target_carbs', 'target_fat',
             'instructions', 'restrictions', 'start_date', 'end_date', 'status'
         ]));
+
+        // Debug: Check if meal_options is present in request
+        \Log::info('Update request debug:', [
+            'diet_plan_id' => $dietPlan->id,
+            'has_meal_options' => $request->has('meal_options'),
+            'meal_options_filled' => $request->filled('meal_options'),
+            'meal_options_length' => $request->has('meal_options') ? strlen($request->meal_options) : 0,
+            'all_request_keys' => array_keys($request->all())
+        ]);
+
+        // Handle meal options data update
+        if ($request->filled('meal_options')) {
+            $mealOptionsData = json_decode($request->meal_options, true);
+
+            // Debug: Log the received meal options data
+            \Log::info('Updating meal options data:', [
+                'diet_plan_id' => $dietPlan->id,
+                'raw_meal_options' => $request->meal_options,
+                'decoded_meal_options' => $mealOptionsData,
+                'json_decode_error' => json_last_error_msg()
+            ]);
+
+            if ($mealOptionsData && is_array($mealOptionsData)) {
+                // Delete existing meals for this diet plan
+                $dietPlan->meals()->delete();
+
+                // Process each meal type and its options
+                foreach ($mealOptionsData as $mealType => $options) {
+                    if (!empty($options) && is_array($options)) {
+                        foreach ($options as $optionIndex => $option) {
+                            if (!empty($option['foods']) && is_array($option['foods'])) {
+                                // Create a meal for this option
+                                $meal = $dietPlan->meals()->create([
+                                    'meal_type' => $mealType,
+                                    'day_number' => 1, // Single day plan
+                                    'option_number' => $optionIndex + 1,
+                                ]);
+
+                                // Add foods to this meal
+                                foreach ($option['foods'] as $food) {
+                                    $meal->foods()->create([
+                                        'food_id' => $food['food_id'] ?? null,
+                                        'food_name' => $food['food_name'] ?? $food['displayName'] ?? 'Unknown Food',
+                                        'quantity' => $food['quantity'] ?? 100,
+                                        'unit' => $food['unit'] ?? 'g',
+                                        'preparation_notes' => $food['preparation_notes'] ?? $food['notes'] ?? null,
+                                    ]);
+                                }
+
+                                \Log::info("Created meal option for {$mealType}", [
+                                    'meal_id' => $meal->id,
+                                    'option_number' => $optionIndex + 1,
+                                    'foods_count' => count($option['foods'])
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            \Log::warning('No meal options data received in update request', [
+                'diet_plan_id' => $dietPlan->id,
+                'request_has_meal_options' => $request->has('meal_options'),
+                'meal_options_value' => $request->get('meal_options', 'NOT_SET')
+            ]);
+        }
 
         return redirect()->route('nutrition.show', $dietPlan)
                        ->with('success', 'Nutrition plan updated successfully.');
@@ -545,6 +736,27 @@ class NutritionController extends Controller
         }
 
         $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
+
+        // Debug: Log meal data for PDF generation
+        \Log::info("PDF Generation - Diet Plan {$dietPlan->id}", [
+            'meals_count' => $dietPlan->meals->count(),
+            'meals' => $dietPlan->meals->map(function($meal) {
+                return [
+                    'id' => $meal->id,
+                    'meal_type' => $meal->meal_type,
+                    'meal_name' => $meal->meal_name,
+                    'foods_count' => $meal->foods->count(),
+                    'foods' => $meal->foods->map(function($food) {
+                        return [
+                            'food_name' => $food->food_name,
+                            'quantity' => $food->quantity,
+                            'unit' => $food->unit
+                        ];
+                    })
+                ];
+            })
+        ]);
+
         $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
 
         // Use font loader for proper Kurdish font support
@@ -557,8 +769,14 @@ class NutritionController extends Controller
         // Create configured DomPDF instance
         $dompdf = $fontLoader->createConfiguredDomPdf();
 
-        // Generate HTML content with simplified template
-        $html = view('nutrition.pdf-simple', compact('dietPlan', 'nutritionalTotals'))->render();
+        // Check if this is a flexible meal plan (option-based)
+        $isFlexiblePlan = $dietPlan->meals()->where('is_option_based', true)->exists();
+
+        // Choose appropriate template
+        $template = $isFlexiblePlan ? 'nutrition.pdf-flexible-options' : 'nutrition.pdf-simple';
+
+        // Generate HTML content with appropriate template
+        $html = view($template, compact('dietPlan', 'nutritionalTotals'))->render();
 
         // Load and render PDF
         $dompdf->loadHtml($html, 'UTF-8');
@@ -599,6 +817,128 @@ class NutritionController extends Controller
         ]);
     }
 
+
+
+    /**
+     * Show the form for creating a flexible nutrition plan with meal options.
+     */
+    public function createFlexible(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->canCreateNutritionPlans()) {
+            abort(403, 'You do not have permission to create nutrition plans.');
+        }
+
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
+        // Pre-select patient if provided
+        $selectedPatient = null;
+        if ($request->filled('patient_id')) {
+            $selectedPatient = Patient::where('id', $request->patient_id)
+                                    ->where('clinic_id', $user->clinic_id)
+                                    ->first();
+        }
+
+        return view('nutrition.create-flexible', compact('patients', 'selectedPatient'));
+    }
+
+    /**
+     * Store a flexible nutrition plan with meal options.
+     */
+    public function storeFlexible(Request $request)
+    {
+        \Log::info('NutritionController::storeFlexible method called');
+        $user = Auth::user();
+
+        if (!$user->canCreateNutritionPlans()) {
+            abort(403, 'You do not have permission to create nutrition plans.');
+        }
+
+        // Validate basic plan data
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'title' => 'required|string|max:255',
+            'goal' => 'required|in:' . implode(',', array_keys(DietPlan::GOALS)),
+            'target_calories' => 'nullable|numeric|min:500|max:5000',
+            'duration_days' => 'nullable|integer|min:1|max:365',
+            'instructions' => 'nullable|string',
+            'restrictions' => 'nullable|string',
+            'meal_options' => 'required|json',
+        ]);
+
+        // Verify patient belongs to user's clinic
+        $patient = Patient::where('id', $request->patient_id)
+                         ->where('clinic_id', $user->clinic_id)
+                         ->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+
+            // Create nutrition plan
+            $nutritionPlan = DietPlan::create([
+                'patient_id' => $request->patient_id,
+                'doctor_id' => $user->id,
+                'title' => $request->title,
+                'description' => 'Flexible meal plan with multiple options for each meal type',
+                'goal' => $request->goal,
+                'duration_days' => $request->duration_days,
+                'target_calories' => $request->target_calories,
+                'instructions' => $request->instructions,
+                'restrictions' => $request->restrictions,
+                'start_date' => now()->toDateString(),
+            ]);
+
+            // Parse meal options data
+            $mealOptionsData = json_decode($request->meal_options, true);
+
+            if ($mealOptionsData && is_array($mealOptionsData)) {
+                foreach ($mealOptionsData as $mealType => $options) {
+                    if (!empty($options) && is_array($options)) {
+                        foreach ($options as $option) {
+                            // Create meal option
+                            $meal = $nutritionPlan->meals()->create([
+                                'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
+                                'option_number' => $option['option_number'] ?? 1,
+                                'is_option_based' => true,
+                                'option_description' => $option['option_description'] ?? "Option {$option['option_number']}",
+                                'meal_name' => $option['option_description'] ?? "Option {$option['option_number']}",
+                                'day_number' => null, // Not used in option-based system
+                            ]);
+
+                            // Add foods to the meal option
+                            if (!empty($option['foods']) && is_array($option['foods'])) {
+                                foreach ($option['foods'] as $foodData) {
+                                    $meal->foods()->create([
+                                        'food_id' => $foodData['food_id'] ?? null,
+                                        'food_name' => $foodData['food_name'] ?? $foodData['displayName'] ?? 'Unknown Food',
+                                        'quantity' => $foodData['quantity'] ?? 0,
+                                        'unit' => $foodData['unit'] ?? 'g',
+                                        'preparation_notes' => $foodData['preparation_notes'] ?? null,
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('nutrition.show', $nutritionPlan)
+                           ->with('success', 'Flexible nutrition plan created successfully! Patients can choose from the meal options you\'ve provided.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return back()->withInput()
+                        ->withErrors(['error' => 'Failed to create nutrition plan: ' . $e->getMessage()]);
+        }
+    }
+
     /**
      * Process Kurdish text in meals for proper PDF rendering
      */
@@ -632,7 +972,14 @@ class NutritionController extends Controller
      */
     private function processKurdishTextWithShaping($dietPlan)
     {
-        $arabic = new \ArPHP\I18N\Arabic();
+        // Check if ArPHP library is available
+        if (!class_exists('\ArPHP\I18N\Arabic')) {
+            // Skip Arabic processing if library is not installed
+            return;
+        }
+
+        try {
+            $arabic = new \ArPHP\I18N\Arabic();
 
         foreach ($dietPlan->meals as $meal) {
             foreach ($meal->foods as $mealFood) {
@@ -679,6 +1026,10 @@ class NutritionController extends Controller
                 }
             }
         }
+        } catch (\Exception $e) {
+            // Log error but don't fail the export
+            \Log::warning('Arabic text processing failed: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -696,25 +1047,155 @@ class NutritionController extends Controller
     }
 
     /**
-     * Create weight loss nutrition plan.
+     * Calculate target calories for a patient based on their goals.
      */
-    public function createWeightLoss(Request $request)
+    public function calculateTargetCalories(Request $request)
     {
-        $user = Auth::user();
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'goal' => 'required|in:weight_loss,weight_gain,maintenance,muscle_gain',
+            'weekly_weight_goal' => 'nullable|numeric|min:0.1|max:2.0',
+            'activity_level' => 'required|in:sedentary,light,moderate,active,very_active',
+            'target_weight' => 'nullable|numeric|min:30|max:300'
+        ]);
 
-        if (!$user->canCreateNutritionPlans()) {
-            abort(403, 'You do not have permission to create nutrition plans.');
+        $user = Auth::user();
+        $patient = Patient::where('clinic_id', $user->clinic_id)->findOrFail($request->patient_id);
+
+        // Default weekly weight goals based on goal type
+        $weeklyWeightGoal = $request->weekly_weight_goal;
+        if (!$weeklyWeightGoal) {
+            switch ($request->goal) {
+                case 'weight_loss':
+                    $weeklyWeightGoal = 0.5; // 0.5kg per week (safe rate)
+                    break;
+                case 'weight_gain':
+                case 'muscle_gain':
+                    $weeklyWeightGoal = 0.3; // 0.3kg per week
+                    break;
+                case 'maintenance':
+                    $weeklyWeightGoal = 0;
+                    break;
+            }
         }
 
-        $patients = Patient::where('clinic_id', $user->clinic_id)
-                          ->where('is_active', true)
-                          ->orderBy('first_name')
-                          ->get();
+        // Calculate target calories
+        $calorieData = $patient->calculateTargetCalories(
+            $request->goal,
+            $weeklyWeightGoal,
+            $request->activity_level
+        );
 
-        $template = $this->getWeightLossTemplate();
+        if (!$calorieData) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to calculate calories. Please ensure patient has complete data (weight, height, age, gender).'
+            ], 400);
+        }
 
-        return view('nutrition.create-weight-loss', compact('patients', 'template'));
+        // Calculate macronutrient distribution
+        $macros = $this->calculateMacronutrients($calorieData['target_calories'], $request->goal);
+
+        // Calculate time to reach target weight if provided
+        $timeToGoal = null;
+        if ($request->target_weight && $weeklyWeightGoal > 0) {
+            $weightDifference = abs($request->target_weight - $patient->weight);
+            $weeksToGoal = $weightDifference / $weeklyWeightGoal;
+            $timeToGoal = [
+                'weeks' => round($weeksToGoal, 1),
+                'months' => round($weeksToGoal / 4.33, 1),
+                'weight_difference' => round($weightDifference, 1)
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'patient' => [
+                'name' => $patient->full_name,
+                'current_weight' => $patient->weight,
+                'height' => $patient->height,
+                'age' => $patient->age,
+                'gender' => $patient->gender,
+                'bmi' => $patient->bmi,
+                'bmi_category' => $patient->bmi_category
+            ],
+            'calories' => $calorieData,
+            'macronutrients' => $macros,
+            'time_to_goal' => $timeToGoal,
+            'recommendations' => $this->getCalorieRecommendations($request->goal, $calorieData)
+        ]);
     }
+
+    /**
+     * Calculate macronutrient distribution based on goal.
+     */
+    private function calculateMacronutrients(float $targetCalories, string $goal): array
+    {
+        // Macronutrient ratios based on goal
+        $ratios = [
+            'weight_loss' => ['protein' => 0.30, 'carbs' => 0.35, 'fat' => 0.35],
+            'weight_gain' => ['protein' => 0.25, 'carbs' => 0.45, 'fat' => 0.30],
+            'muscle_gain' => ['protein' => 0.35, 'carbs' => 0.40, 'fat' => 0.25],
+            'maintenance' => ['protein' => 0.25, 'carbs' => 0.45, 'fat' => 0.30]
+        ];
+
+        $ratio = $ratios[$goal] ?? $ratios['maintenance'];
+
+        // Calculate grams (protein: 4 cal/g, carbs: 4 cal/g, fat: 9 cal/g)
+        $proteinCalories = $targetCalories * $ratio['protein'];
+        $carbsCalories = $targetCalories * $ratio['carbs'];
+        $fatCalories = $targetCalories * $ratio['fat'];
+
+        return [
+            'protein' => [
+                'grams' => round($proteinCalories / 4, 0),
+                'calories' => round($proteinCalories, 0),
+                'percentage' => round($ratio['protein'] * 100, 0)
+            ],
+            'carbs' => [
+                'grams' => round($carbsCalories / 4, 0),
+                'calories' => round($carbsCalories, 0),
+                'percentage' => round($ratio['carbs'] * 100, 0)
+            ],
+            'fat' => [
+                'grams' => round($fatCalories / 9, 0),
+                'calories' => round($fatCalories, 0),
+                'percentage' => round($ratio['fat'] * 100, 0)
+            ]
+        ];
+    }
+
+    /**
+     * Get recommendations based on calorie calculation.
+     */
+    private function getCalorieRecommendations(string $goal, array $calorieData): array
+    {
+        $recommendations = [];
+
+        // Safety recommendations
+        if ($goal === 'weight_loss' && $calorieData['target_calories'] <= 1200) {
+            $recommendations[] = 'This is a very low-calorie plan. Consider medical supervision.';
+        }
+
+        if ($calorieData['daily_calorie_adjustment'] > 500) {
+            $recommendations[] = 'Large calorie deficit detected. Consider a more gradual approach.';
+        }
+
+        // Activity recommendations
+        $activityAdvice = [
+            'sedentary' => 'Consider adding light physical activity to boost metabolism.',
+            'light' => 'Good activity level. Try to maintain consistency.',
+            'moderate' => 'Excellent activity level for your goals.',
+            'active' => 'Very good activity level. Monitor recovery.',
+            'very_active' => 'High activity level. Ensure adequate nutrition and rest.'
+        ];
+
+        $recommendations[] = $activityAdvice[$calorieData['activity_level']] ?? '';
+
+        return array_filter($recommendations);
+    }
+
+
 
     /**
      * Create muscle gain nutrition plan.
@@ -776,55 +1257,31 @@ class NutritionController extends Controller
                 $food = $mealFood->food;
                 $quantity = $mealFood->quantity;
 
+                // Skip if food record doesn't exist (might have been deleted)
+                if (!$food) {
+                    \Log::warning('Food record not found for meal food', [
+                        'meal_food_id' => $mealFood->id,
+                        'food_id' => $mealFood->food_id,
+                        'food_name' => $mealFood->food_name
+                    ]);
+                    continue;
+                }
+
                 // Calculate based on quantity (assuming nutritional info is per 100g)
                 $multiplier = $quantity / 100;
 
-                $totals['calories'] += $food->calories * $multiplier;
-                $totals['protein'] += $food->protein * $multiplier;
-                $totals['carbs'] += $food->carbohydrates * $multiplier;
-                $totals['fat'] += $food->fat * $multiplier;
-                $totals['fiber'] += $food->fiber * $multiplier;
+                $totals['calories'] += ($food->calories ?? 0) * $multiplier;
+                $totals['protein'] += ($food->protein ?? 0) * $multiplier;
+                $totals['carbs'] += ($food->carbohydrates ?? 0) * $multiplier;
+                $totals['fat'] += ($food->fat ?? 0) * $multiplier;
+                $totals['fiber'] += ($food->fiber ?? 0) * $multiplier;
             }
         }
 
         return $totals;
     }
 
-    /**
-     * Get weight loss template.
-     */
-    private function getWeightLossTemplate(): array
-    {
-        return [
-            'title' => 'Weight Loss Nutrition Plan',
-            'goal' => 'weight_loss',
-            'description' => 'A balanced nutrition plan designed to promote healthy weight loss through calorie deficit and proper nutrition.',
-            'target_calories' => 1500,
-            'target_protein' => 120,
-            'target_carbs' => 150,
-            'target_fat' => 50,
-            'duration_days' => 30,
-            'instructions' => 'Follow this plan consistently. Drink plenty of water (8-10 glasses daily). Include 30 minutes of moderate exercise daily.',
-            'restrictions' => 'Avoid processed foods, sugary drinks, and excessive fats. Limit portion sizes.',
-            'sample_meals' => [
-                [
-                    'name' => 'Breakfast',
-                    'time' => '08:00',
-                    'foods' => ['Oatmeal with berries', 'Greek yogurt', 'Green tea']
-                ],
-                [
-                    'name' => 'Lunch',
-                    'time' => '13:00',
-                    'foods' => ['Grilled chicken salad', 'Brown rice', 'Steamed vegetables']
-                ],
-                [
-                    'name' => 'Dinner',
-                    'time' => '19:00',
-                    'foods' => ['Baked fish', 'Quinoa', 'Mixed vegetables']
-                ]
-            ]
-        ];
-    }
+
 
     /**
      * Get muscle gain template.
@@ -959,6 +1416,8 @@ class NutritionController extends Controller
 
         $request->validate([
             'weight' => 'required|numeric|min:20|max:500',
+            'target_weight' => 'nullable|numeric|min:20|max:500',
+            'target_bmi' => 'nullable|numeric|min:10|max:50',
             'height' => 'nullable|numeric|min:100|max:250',
             'record_date' => 'required|date|before_or_equal:today',
             'notes' => 'nullable|string|max:1000',
@@ -1000,6 +1459,19 @@ class NutritionController extends Controller
 
         $dietPlan->addWeightRecord($recordData);
 
+        // Update target weight and BMI if provided
+        $updateData = [];
+        if ($request->filled('target_weight')) {
+            $updateData['target_weight'] = $request->target_weight;
+        }
+        if ($request->filled('target_bmi')) {
+            $updateData['target_bmi'] = $request->target_bmi;
+        }
+
+        if (!empty($updateData)) {
+            $dietPlan->update($updateData);
+        }
+
         return back()->with('success', 'Weight record added successfully.');
     }
 
@@ -1021,6 +1493,8 @@ class NutritionController extends Controller
 
         $request->validate([
             'weight' => 'required|numeric|min:20|max:500',
+            'target_weight' => 'nullable|numeric|min:20|max:500',
+            'target_bmi' => 'nullable|numeric|min:10|max:50',
             'height' => 'nullable|numeric|min:100|max:250',
             'record_date' => 'required|date|before_or_equal:today',
             'notes' => 'nullable|string|max:1000',
@@ -1054,6 +1528,19 @@ class NutritionController extends Controller
         }
 
         $weightRecord->update($updateData);
+
+        // Update target weight and BMI if provided
+        $dietPlanUpdateData = [];
+        if ($request->filled('target_weight')) {
+            $dietPlanUpdateData['target_weight'] = $request->target_weight;
+        }
+        if ($request->filled('target_bmi')) {
+            $dietPlanUpdateData['target_bmi'] = $request->target_bmi;
+        }
+
+        if (!empty($dietPlanUpdateData)) {
+            $dietPlan->update($dietPlanUpdateData);
+        }
 
         return back()->with('success', 'Weight record updated successfully.');
     }

@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <form action="{{ isset($dietPlan) ? route('nutrition.update', $dietPlan) : route('nutrition.store') }}" method="POST" id="nutrition-form">
+    <form action="{{ isset($dietPlan) ? route('nutrition.update', $dietPlan) : route('nutrition.store-flexible') }}" method="POST" id="nutrition-form">
         @csrf
         @if(isset($dietPlan))
             @method('PUT')
@@ -78,7 +78,7 @@
 
                             <div class="col-md-6 mb-3">
                                 <label for="goal" class="form-label">{{ __('Goal') }} <span class="text-danger">*</span></label>
-                                <select class="form-select @error('goal') is-invalid @enderror" id="goal" name="goal" required>
+                                <select class="form-select @error('goal') is-invalid @enderror" id="goal" name="goal" required onchange="updateCalorieCalculation()">
                                     <option value="">{{ __('Select Goal') }}</option>
                                     <option value="weight_loss" {{ old('goal', $dietPlan?->goal ?? '') == 'weight_loss' ? 'selected' : '' }}>{{ __('Weight Loss') }}</option>
                                     <option value="weight_gain" {{ old('goal', $dietPlan?->goal ?? '') == 'weight_gain' ? 'selected' : '' }}>{{ __('Weight Gain') }}</option>
@@ -100,6 +100,29 @@
                                 @error('duration_days')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                            </div>
+                        </div>
+
+                        <!-- Activity Level -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="activity_level" class="form-label">{{ __('Activity Level') }} <span class="text-danger">*</span></label>
+                                <select class="form-select" id="activity_level" name="activity_level" required onchange="updateCalorieCalculation()">
+                                    <option value="sedentary">{{ __('Sedentary (little/no exercise)') }}</option>
+                                    <option value="light" selected>{{ __('Light (light exercise 1-3 days/week)') }}</option>
+                                    <option value="moderate">{{ __('Moderate (moderate exercise 3-5 days/week)') }}</option>
+                                    <option value="active">{{ __('Active (hard exercise 6-7 days/week)') }}</option>
+                                    <option value="very_active">{{ __('Very Active (very hard exercise, physical job)') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="target_weight" class="form-label">{{ __('Target Weight (kg)') }}</label>
+                                <input type="number" class="form-control" id="target_weight" name="target_weight_quick"
+                                       min="30" max="300" step="0.1"
+                                       onchange="syncTargetWeights(this); updateCalorieCalculation()"
+                                       oninput="syncTargetWeights(this); debounceCalorieCalculation()"
+                                       placeholder="{{ __('Optional: for time estimation') }}">
+                                <small class="text-muted">{{ __('Leave empty if not applicable') }}</small>
                             </div>
                         </div>
 
@@ -157,7 +180,7 @@
                                 <label for="target_protein" class="form-label">{{ __('Protein (g)') }}</label>
                                 <input type="number" class="form-control @error('target_protein') is-invalid @enderror"
                                        id="target_protein" name="target_protein" value="{{ old('target_protein', $dietPlan?->target_protein ?? 150) }}"
-                                       min="0" max="500" step="5">
+                                       min="0" max="500" step="any">
                                 @error('target_protein')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -170,7 +193,7 @@
                                 <label for="target_carbs" class="form-label">{{ __('Carbohydrates (g)') }}</label>
                                 <input type="number" class="form-control @error('target_carbs') is-invalid @enderror"
                                        id="target_carbs" name="target_carbs" value="{{ old('target_carbs', $dietPlan?->target_carbs ?? 250) }}"
-                                       min="0" max="1000" step="5">
+                                       min="0" max="1000" step="any">
                                 @error('target_carbs')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -180,7 +203,7 @@
                                 <label for="target_fat" class="form-label">{{ __('Fat (g)') }}</label>
                                 <input type="number" class="form-control @error('target_fat') is-invalid @enderror"
                                        id="target_fat" name="target_fat" value="{{ old('target_fat', $dietPlan?->target_fat ?? 65) }}"
-                                       min="0" max="300" step="5">
+                                       min="0" max="300" step="any">
                                 @error('target_fat')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -212,18 +235,21 @@
                                 <input type="number" class="form-control @error('initial_weight') is-invalid @enderror"
                                        id="initial_weight" name="initial_weight"
                                        value="{{ old('initial_weight', $dietPlan?->initial_weight ?? ($selectedPatient?->weight ?? '')) }}"
-                                       min="20" max="500" step="0.1" placeholder="70.5">
+                                       min="20" max="500" step="0.1" placeholder="70.5"
+                                       oninput="updateBMIDisplay()" onchange="updateBMIDisplay()">
                                 @error('initial_weight')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="target_weight" class="form-label">{{ __('Target Weight (kg)') }}</label>
+                                <label for="target_weight_goal" class="form-label">{{ __('Target Weight (kg)') }}</label>
                                 <input type="number" class="form-control @error('target_weight') is-invalid @enderror"
-                                       id="target_weight" name="target_weight"
+                                       id="target_weight_goal" name="target_weight"
                                        value="{{ old('target_weight', $dietPlan?->target_weight ?? '') }}"
-                                       min="20" max="500" step="0.1" placeholder="65.0">
+                                       min="20" max="500" step="0.1" placeholder="65.0"
+                                       onchange="syncTargetWeights(this); updateCalorieCalculation(); updateBMIDisplay()"
+                                       oninput="syncTargetWeights(this); debounceCalorieCalculation(); updateBMIDisplay()">
                                 @error('target_weight')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -237,7 +263,8 @@
                                 <input type="number" class="form-control @error('initial_height') is-invalid @enderror"
                                        id="initial_height" name="initial_height"
                                        value="{{ old('initial_height', $dietPlan?->initial_height ?? ($selectedPatient?->height ?? '')) }}"
-                                       min="100" max="250" step="0.1" placeholder="170.0">
+                                       min="100" max="250" step="0.1" placeholder="170.0"
+                                       oninput="updateBMIDisplay()" onchange="updateBMIDisplay()">
                                 @error('initial_height')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -246,7 +273,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="weekly_weight_goal" class="form-label">{{ __('Weekly Weight Goal (kg)') }}</label>
                                 <select class="form-select @error('weekly_weight_goal') is-invalid @enderror"
-                                        id="weekly_weight_goal" name="weekly_weight_goal">
+                                        id="weekly_weight_goal" name="weekly_weight_goal" onchange="updateCalorieCalculation(); updateBMIDisplay()">
                                     <option value="">{{ __('Select Weekly Goal') }}</option>
                                     <option value="-1.0" {{ old('weekly_weight_goal', $dietPlan?->weekly_weight_goal ?? '') == '-1.0' ? 'selected' : '' }}>{{ __('Lose 1.0 kg/week') }}</option>
                                     <option value="-0.75" {{ old('weekly_weight_goal', $dietPlan?->weekly_weight_goal ?? '') == '-0.75' ? 'selected' : '' }}>{{ __('Lose 0.75 kg/week') }}</option>
@@ -265,7 +292,7 @@
                         </div>
 
                         <!-- BMI Display -->
-                        <div class="row" id="bmi-display" style="display: none;">
+                        <div class="row" id="bmi-display" style="display: block;">
                             <div class="col-12">
                                 <div class="alert alert-info">
                                     <div class="row text-center">
@@ -282,7 +309,7 @@
                                         <div class="col-md-4">
                                             <strong>{{ __('Weight to Goal') }}</strong><br>
                                             <span id="weight-to-goal" class="h5 text-warning">--</span><br>
-                                            <small class="text-muted">{{ __('Set weekly goal for estimate') }}</small>
+                                            <small id="estimated-time" class="text-muted">{{ __('Set weekly goal for estimate') }}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -308,330 +335,125 @@
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="fas fa-calendar-week me-2"></i>
-                            {{ __('Weekly Meal Plan') }}
+                            <i class="fas fa-utensils me-2"></i>
+                            {{ __('Daily Meal Plan') }}
                         </h5>
-                        <small class="text-muted">{{ __('Plan meals for each day of the week with specific foods and portions') }}</small>
+                        <small class="text-muted">{{ __('Plan your daily meals with specific foods and portions') }}</small>
                     </div>
                     <div class="card-body">
-                        <!-- Day Selection Navigation -->
-                        <div class="alert alert-warning mb-4" style="border: 3px solid #ff6b35; background-color: #fff3cd; padding: 20px;">
-                            <h3 class="alert-heading text-center" style="color: #d63384; font-weight: bold;">
-                                <i class="fas fa-calendar-week me-2"></i>
-                                {{ __('🗓️ SELECT DAY TO PLAN MEALS') }}
-                            </h3>
-                            <p class="mb-3 text-center" style="font-size: 16px; font-weight: 500;">{{ __('👇 Click on any day below to start planning meals for that day') }}</p>
 
-                            <!-- Day Navigation Buttons -->
-                            <div class="d-flex flex-wrap justify-content-center gap-3 mb-4" style="padding: 15px; background-color: #f8f9fa; border-radius: 10px;">
-                                <button class="btn btn-success active" id="day1-tab" data-bs-target="#day1" type="button"
-                                        style="min-width: 100px; height: 80px; font-size: 14px; font-weight: bold; border: 2px solid #198754;">
-                                    <i class="fas fa-calendar-day me-1" style="font-size: 16px;"></i>
-                                    {{ __('DAY 1') }}
-                                    <br>
-                                    <small><span class="badge bg-light text-dark" id="day1-total-calories" style="font-size: 11px;">0 cal</span></small>
+                        <!-- Meal Types Tabs -->
+                        <ul class="nav nav-tabs" id="mealTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="breakfast-tab" data-bs-toggle="tab" data-bs-target="#breakfast" type="button" role="tab">
+                                    <i class="fas fa-coffee me-1"></i>
+                                    {{ __('Breakfast') }}
+                                    <span class="badge bg-primary ms-1" id="breakfast-calories">0 cal</span>
                                 </button>
-                                <button class="btn btn-outline-success" id="day2-tab" data-bs-target="#day2" type="button"
-                                        style="min-width: 100px; height: 80px; font-size: 14px; font-weight: bold; border: 2px solid #198754;">
-                                    <i class="fas fa-calendar-day me-1" style="font-size: 16px;"></i>
-                                    {{ __('DAY 2') }}
-                                    <br>
-                                    <small><span class="badge bg-light text-dark" id="day2-total-calories" style="font-size: 11px;">0 cal</span></small>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="lunch-tab" data-bs-toggle="tab" data-bs-target="#lunch" type="button" role="tab">
+                                    <i class="fas fa-sun me-1"></i>
+                                    {{ __('Lunch') }}
+                                    <span class="badge bg-primary ms-1" id="lunch-calories">0 cal</span>
                                 </button>
-                                <button class="btn btn-outline-success" id="day3-tab" data-bs-target="#day3" type="button"
-                                        style="min-width: 100px; height: 80px; font-size: 14px; font-weight: bold; border: 2px solid #198754;">
-                                    <i class="fas fa-calendar-day me-1" style="font-size: 16px;"></i>
-                                    {{ __('DAY 3') }}
-                                    <br>
-                                    <small><span class="badge bg-light text-dark" id="day3-total-calories" style="font-size: 11px;">0 cal</span></small>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="dinner-tab" data-bs-toggle="tab" data-bs-target="#dinner" type="button" role="tab">
+                                    <i class="fas fa-moon me-1"></i>
+                                    {{ __('Dinner') }}
+                                    <span class="badge bg-primary ms-1" id="dinner-calories">0 cal</span>
                                 </button>
-                                <button class="btn btn-outline-success" id="day4-tab" data-bs-target="#day4" type="button"
-                                        style="min-width: 100px; height: 80px; font-size: 14px; font-weight: bold; border: 2px solid #198754;">
-                                    <i class="fas fa-calendar-day me-1" style="font-size: 16px;"></i>
-                                    {{ __('DAY 4') }}
-                                    <br>
-                                    <small><span class="badge bg-light text-dark" id="day4-total-calories" style="font-size: 11px;">0 cal</span></small>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="snacks-tab" data-bs-toggle="tab" data-bs-target="#snacks" type="button" role="tab">
+                                    <i class="fas fa-cookie-bite me-1"></i>
+                                    {{ __('Snacks') }}
+                                    <span class="badge bg-primary ms-1" id="snacks-calories">0 cal</span>
                                 </button>
-                                <button class="btn btn-outline-success" id="day5-tab" data-bs-target="#day5" type="button"
-                                        style="min-width: 100px; height: 80px; font-size: 14px; font-weight: bold; border: 2px solid #198754;">
-                                    <i class="fas fa-calendar-day me-1" style="font-size: 16px;"></i>
-                                    {{ __('DAY 5') }}
-                                    <br>
-                                    <small><span class="badge bg-light text-dark" id="day5-total-calories" style="font-size: 11px;">0 cal</span></small>
-                                </button>
-                                <button class="btn btn-outline-success" id="day6-tab" data-bs-target="#day6" type="button"
-                                        style="min-width: 100px; height: 80px; font-size: 14px; font-weight: bold; border: 2px solid #198754;">
-                                    <i class="fas fa-calendar-day me-1" style="font-size: 16px;"></i>
-                                    {{ __('DAY 6') }}
-                                    <br>
-                                    <small><span class="badge bg-light text-dark" id="day6-total-calories" style="font-size: 11px;">0 cal</span></small>
-                                </button>
-                                <button class="btn btn-outline-success" id="day7-tab" data-bs-target="#day7" type="button"
-                                        style="min-width: 100px; height: 80px; font-size: 14px; font-weight: bold; border: 2px solid #198754;">
-                                    <i class="fas fa-calendar-day me-1" style="font-size: 16px;"></i>
-                                    {{ __('DAY 7') }}
-                                    <br>
-                                    <small><span class="badge bg-light text-dark" id="day7-total-calories" style="font-size: 11px;">0 cal</span></small>
-                                </button>
-                            </div>
+                            </li>
+                        </ul>
 
-                            <!-- Navigation Arrows -->
-                            <div class="d-flex justify-content-between align-items-center">
-                                <button type="button" class="btn btn-sm btn-secondary" id="prevDayBtn" onclick="navigateDay(-1)" disabled>
-                                    <i class="fas fa-chevron-left me-1"></i>
-                                    {{ __('Previous Day') }}
-                                </button>
-                                <span class="text-muted small">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    {{ __('Click day buttons above to switch between days') }}
-                                </span>
-                                <button type="button" class="btn btn-sm btn-secondary" id="nextDayBtn" onclick="navigateDay(1)">
-                                    {{ __('Next Day') }}
-                                    <i class="fas fa-chevron-right ms-1"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Day Content -->
-                        <div class="tab-content" id="dayTabContent">
-                            <!-- Day 1 -->
-                            <div class="tab-pane fade show active" id="day1" role="tabpanel">
-                                <div class="day-content" data-day="1">
-                                    <h6 class="mb-3">{{ __('Day 1 - Meal Plan') }}</h6>
-
-                                    <!-- Meal Types Tabs for Day 1 -->
-                                    <ul class="nav nav-tabs" id="day1MealTabs" role="tablist">
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link active" id="day1-breakfast-tab" data-bs-toggle="tab" data-bs-target="#day1-breakfast" type="button" role="tab">
-                                                <i class="fas fa-coffee me-1"></i>
-                                                {{ __('Breakfast') }}
-                                                <span class="badge bg-primary ms-1" id="day1-breakfast-calories">0 cal</span>
-                                            </button>
-                                        </li>
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="day1-lunch-tab" data-bs-toggle="tab" data-bs-target="#day1-lunch" type="button" role="tab">
-                                                <i class="fas fa-sun me-1"></i>
-                                                {{ __('Lunch') }}
-                                                <span class="badge bg-primary ms-1" id="day1-lunch-calories">0 cal</span>
-                                            </button>
-                                        </li>
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="day1-dinner-tab" data-bs-toggle="tab" data-bs-target="#day1-dinner" type="button" role="tab">
-                                                <i class="fas fa-moon me-1"></i>
-                                                {{ __('Dinner') }}
-                                                <span class="badge bg-primary ms-1" id="day1-dinner-calories">0 cal</span>
-                                            </button>
-                                        </li>
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="day1-snacks-tab" data-bs-toggle="tab" data-bs-target="#day1-snacks" type="button" role="tab">
-                                                <i class="fas fa-cookie-bite me-1"></i>
-                                                {{ __('Snacks') }}
-                                                <span class="badge bg-primary ms-1" id="day1-snacks-calories">0 cal</span>
-                                            </button>
-                                        </li>
-                                    </ul>
-
-                                    <!-- Day 1 Meal Content -->
-                                    <div class="tab-content mt-3" id="day1MealTabContent">
-                                        <!-- Day 1 Breakfast -->
-                                        <div class="tab-pane fade show active" id="day1-breakfast" role="tabpanel">
-                                            <div class="meal-section" data-day="1" data-meal="breakfast">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <h6 class="mb-0">{{ __('Breakfast Foods') }}</h6>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary add-food-btn" data-day="1" data-meal="breakfast">
-                                                        <i class="fas fa-plus me-1"></i>
-                                                        {{ __('Add Food') }}
-                                                    </button>
-                                                </div>
-                                                <div class="foods-container" id="day1-breakfast-foods">
-                                                    <div class="text-center text-muted py-4">
-                                                        <i class="fas fa-utensils fa-2x mb-2"></i>
-                                                        <p>{{ __('No foods added yet. Click "Add Food" to start building this meal.') }}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Day 1 Lunch -->
-                                        <div class="tab-pane fade" id="day1-lunch" role="tabpanel">
-                                            <div class="meal-section" data-day="1" data-meal="lunch">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <h6 class="mb-0">{{ __('Lunch Foods') }}</h6>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary add-food-btn" data-day="1" data-meal="lunch">
-                                                        <i class="fas fa-plus me-1"></i>
-                                                        {{ __('Add Food') }}
-                                                    </button>
-                                                </div>
-                                                <div class="foods-container" id="day1-lunch-foods">
-                                                    <div class="text-center text-muted py-4">
-                                                        <i class="fas fa-utensils fa-2x mb-2"></i>
-                                                        <p>{{ __('No foods added yet. Click "Add Food" to start building this meal.') }}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Day 1 Dinner -->
-                                        <div class="tab-pane fade" id="day1-dinner" role="tabpanel">
-                                            <div class="meal-section" data-day="1" data-meal="dinner">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <h6 class="mb-0">{{ __('Dinner Foods') }}</h6>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary add-food-btn" data-day="1" data-meal="dinner">
-                                                        <i class="fas fa-plus me-1"></i>
-                                                        {{ __('Add Food') }}
-                                                    </button>
-                                                </div>
-                                                <div class="foods-container" id="day1-dinner-foods">
-                                                    <div class="text-center text-muted py-4">
-                                                        <i class="fas fa-utensils fa-2x mb-2"></i>
-                                                        <p>{{ __('No foods added yet. Click "Add Food" to start building this meal.') }}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Day 1 Snacks -->
-                                        <div class="tab-pane fade" id="day1-snacks" role="tabpanel">
-                                            <div class="meal-section" data-day="1" data-meal="snacks">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <h6 class="mb-0">{{ __('Snack Foods') }}</h6>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary add-food-btn" data-day="1" data-meal="snacks">
-                                                        <i class="fas fa-plus me-1"></i>
-                                                        {{ __('Add Food') }}
-                                                    </button>
-                                                </div>
-                                                <div class="foods-container" id="day1-snacks-foods">
-                                                    <div class="text-center text-muted py-4">
-                                                        <i class="fas fa-utensils fa-2x mb-2"></i>
-                                                        <p>{{ __('No foods added yet. Click "Add Food" to start building this meal.') }}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
+                        <!-- Meal Content -->
+                        <div class="tab-content mt-3" id="mealTabContent">
+                            <!-- Breakfast -->
+                            <div class="tab-pane fade show active" id="breakfast" role="tabpanel">
+                                <div class="meal-section" data-meal="breakfast">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0">{{ __('Breakfast Options') }}</h6>
+                                        <button type="button" class="btn btn-sm btn-success add-option-btn" data-meal="breakfast">
+                                            <i class="fas fa-plus me-1"></i>
+                                            {{ __('Add Breakfast Option') }}
+                                        </button>
+                                    </div>
+                                    <div class="options-container" id="breakfast-options">
+                                        <div class="text-center text-muted py-4">
+                                            <i class="fas fa-coffee fa-2x mb-2"></i>
+                                            <p>{{ __('No breakfast options added yet. Click "Add Breakfast Option" to start.') }}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Days 2-7 -->
-                            @for($day = 2; $day <= 7; $day++)
-                            <div class="tab-pane fade" id="day{{ $day }}" role="tabpanel">
-                                <div class="day-content" data-day="{{ $day }}">
-                                    <h6 class="mb-3">{{ __('Day :day - Meal Plan', ['day' => $day]) }}</h6>
-
-                                    <!-- Meal Types Tabs for Day {{ $day }} -->
-                                    <ul class="nav nav-tabs" id="day{{ $day }}MealTabs" role="tablist">
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link active" id="day{{ $day }}-breakfast-tab" data-bs-toggle="tab" data-bs-target="#day{{ $day }}-breakfast" type="button" role="tab">
-                                                <i class="fas fa-coffee me-1"></i>
-                                                {{ __('Breakfast') }}
-                                                <span class="badge bg-primary ms-1" id="day{{ $day }}-breakfast-calories">0 cal</span>
-                                            </button>
-                                        </li>
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="day{{ $day }}-lunch-tab" data-bs-toggle="tab" data-bs-target="#day{{ $day }}-lunch" type="button" role="tab">
-                                                <i class="fas fa-sun me-1"></i>
-                                                {{ __('Lunch') }}
-                                                <span class="badge bg-primary ms-1" id="day{{ $day }}-lunch-calories">0 cal</span>
-                                            </button>
-                                        </li>
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="day{{ $day }}-dinner-tab" data-bs-toggle="tab" data-bs-target="#day{{ $day }}-dinner" type="button" role="tab">
-                                                <i class="fas fa-moon me-1"></i>
-                                                {{ __('Dinner') }}
-                                                <span class="badge bg-primary ms-1" id="day{{ $day }}-dinner-calories">0 cal</span>
-                                            </button>
-                                        </li>
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="day{{ $day }}-snacks-tab" data-bs-toggle="tab" data-bs-target="#day{{ $day }}-snacks" type="button" role="tab">
-                                                <i class="fas fa-cookie-bite me-1"></i>
-                                                {{ __('Snacks') }}
-                                                <span class="badge bg-primary ms-1" id="day{{ $day }}-snacks-calories">0 cal</span>
-                                            </button>
-                                        </li>
-                                    </ul>
-
-                                    <!-- Day {{ $day }} Meal Content -->
-                                    <div class="tab-content mt-3" id="day{{ $day }}MealTabContent">
-                                        <!-- Day {{ $day }} Breakfast -->
-                                        <div class="tab-pane fade show active" id="day{{ $day }}-breakfast" role="tabpanel">
-                                            <div class="meal-section" data-day="{{ $day }}" data-meal="breakfast">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <h6 class="mb-0">{{ __('Breakfast Foods') }}</h6>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary add-food-btn" data-day="{{ $day }}" data-meal="breakfast">
-                                                        <i class="fas fa-plus me-1"></i>
-                                                        {{ __('Add Food') }}
-                                                    </button>
-                                                </div>
-                                                <div class="foods-container" id="day{{ $day }}-breakfast-foods">
-                                                    <div class="text-center text-muted py-4">
-                                                        <i class="fas fa-utensils fa-2x mb-2"></i>
-                                                        <p>{{ __('No foods added yet. Click "Add Food" to start building this meal.') }}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Day {{ $day }} Lunch -->
-                                        <div class="tab-pane fade" id="day{{ $day }}-lunch" role="tabpanel">
-                                            <div class="meal-section" data-day="{{ $day }}" data-meal="lunch">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <h6 class="mb-0">{{ __('Lunch Foods') }}</h6>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary add-food-btn" data-day="{{ $day }}" data-meal="lunch">
-                                                        <i class="fas fa-plus me-1"></i>
-                                                        {{ __('Add Food') }}
-                                                    </button>
-                                                </div>
-                                                <div class="foods-container" id="day{{ $day }}-lunch-foods">
-                                                    <div class="text-center text-muted py-4">
-                                                        <i class="fas fa-utensils fa-2x mb-2"></i>
-                                                        <p>{{ __('No foods added yet. Click "Add Food" to start building this meal.') }}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Day {{ $day }} Dinner -->
-                                        <div class="tab-pane fade" id="day{{ $day }}-dinner" role="tabpanel">
-                                            <div class="meal-section" data-day="{{ $day }}" data-meal="dinner">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <h6 class="mb-0">{{ __('Dinner Foods') }}</h6>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary add-food-btn" data-day="{{ $day }}" data-meal="dinner">
-                                                        <i class="fas fa-plus me-1"></i>
-                                                        {{ __('Add Food') }}
-                                                    </button>
-                                                </div>
-                                                <div class="foods-container" id="day{{ $day }}-dinner-foods">
-                                                    <div class="text-center text-muted py-4">
-                                                        <i class="fas fa-utensils fa-2x mb-2"></i>
-                                                        <p>{{ __('No foods added yet. Click "Add Food" to start building this meal.') }}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Day {{ $day }} Snacks -->
-                                        <div class="tab-pane fade" id="day{{ $day }}-snacks" role="tabpanel">
-                                            <div class="meal-section" data-day="{{ $day }}" data-meal="snacks">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <h6 class="mb-0">{{ __('Snack Foods') }}</h6>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary add-food-btn" data-day="{{ $day }}" data-meal="snacks">
-                                                        <i class="fas fa-plus me-1"></i>
-                                                        {{ __('Add Food') }}
-                                                    </button>
-                                                </div>
-                                                <div class="foods-container" id="day{{ $day }}-snacks-foods">
-                                                    <div class="text-center text-muted py-4">
-                                                        <i class="fas fa-utensils fa-2x mb-2"></i>
-                                                        <p>{{ __('No foods added yet. Click "Add Food" to start building this meal.') }}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
+                            <!-- Lunch -->
+                            <div class="tab-pane fade" id="lunch" role="tabpanel">
+                                <div class="meal-section" data-meal="lunch">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0">{{ __('Lunch Options') }}</h6>
+                                        <button type="button" class="btn btn-sm btn-success add-option-btn" data-meal="lunch">
+                                            <i class="fas fa-plus me-1"></i>
+                                            {{ __('Add Lunch Option') }}
+                                        </button>
+                                    </div>
+                                    <div class="options-container" id="lunch-options">
+                                        <div class="text-center text-muted py-4">
+                                            <i class="fas fa-sun fa-2x mb-2"></i>
+                                            <p>{{ __('No lunch options added yet. Click "Add Lunch Option" to start.') }}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            @endfor
+
+                            <!-- Dinner -->
+                            <div class="tab-pane fade" id="dinner" role="tabpanel">
+                                <div class="meal-section" data-meal="dinner">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0">{{ __('Dinner Options') }}</h6>
+                                        <button type="button" class="btn btn-sm btn-success add-option-btn" data-meal="dinner">
+                                            <i class="fas fa-plus me-1"></i>
+                                            {{ __('Add Dinner Option') }}
+                                        </button>
+                                    </div>
+                                    <div class="options-container" id="dinner-options">
+                                        <div class="text-center text-muted py-4">
+                                            <i class="fas fa-moon fa-2x mb-2"></i>
+                                            <p>{{ __('No dinner options added yet. Click "Add Dinner Option" to start.') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Snacks -->
+                            <div class="tab-pane fade" id="snacks" role="tabpanel">
+                                <div class="meal-section" data-meal="snacks">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0">{{ __('Snack Options') }}</h6>
+                                        <button type="button" class="btn btn-sm btn-success add-option-btn" data-meal="snacks">
+                                            <i class="fas fa-plus me-1"></i>
+                                            {{ __('Add Snack Option') }}
+                                        </button>
+                                    </div>
+                                    <div class="options-container" id="snacks-options">
+                                        <div class="text-center text-muted py-4">
+                                            <i class="fas fa-cookie-bite fa-2x mb-2"></i>
+                                            <p>{{ __('No snack options added yet. Click "Add Snack Option" to start.') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+
 
                         <!-- Daily Nutrition Summary -->
                         <div class="row mt-4">
@@ -727,6 +549,38 @@
             </div>
         </div>
 
+        @if(isset($dietPlan))
+        <!-- Plan Status (Only for editing) -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle text-primary"></i>
+                            {{ __('Plan Status') }}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="status" class="form-label">{{ __('Status') }} <span class="text-danger">*</span></label>
+                            <select class="form-select @error('status') is-invalid @enderror"
+                                    id="status" name="status" required>
+                                @foreach(\App\Models\DietPlan::STATUSES as $key => $label)
+                                <option value="{{ $key }}" {{ old('status', $dietPlan->status ?? 'active') == $key ? 'selected' : '' }}>
+                                    {{ __($label) }}
+                                </option>
+                                @endforeach
+                            </select>
+                            @error('status')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Action Buttons -->
         <div class="row mt-4">
             <div class="col-12">
@@ -737,7 +591,7 @@
                     </a>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-1"></i>
-                        {{ __('Create Nutrition Plan') }}
+                        {{ isset($dietPlan) ? __('Update Nutrition Plan') : __('Create Nutrition Plan') }}
                     </button>
                 </div>
             </div>
@@ -849,7 +703,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
                 <button type="button" class="btn btn-primary" id="add-food-to-meal" disabled>{{ __('Add to Meal') }}</button>
             </div>
         </div>
@@ -859,155 +713,101 @@
 @push('scripts')
 <script>
 // Global variables
-let currentDay = 1;
 let currentMeal = '';
+let currentOption = 0;
 let selectedFood = null;
-let weeklyMealFoods = {};
+let mealOptions = {
+    breakfast: [],
+    lunch: [],
+    dinner: [],
+    snacks: []
+};
+let optionCounters = {
+    breakfast: 0,
+    lunch: 0,
+    dinner: 0,
+    snacks: 0
+};
 
-// Initialize weekly meal structure
-for (let day = 1; day <= 7; day++) {
-    weeklyMealFoods[day] = {
-        breakfast: [],
-        lunch: [],
-        dinner: [],
-        snacks: []
-    };
-}
 
-// Navigate between days
-function navigateDay(direction) {
-    const currentActiveTab = document.querySelector('[id$="-tab"].active');
-    if (!currentActiveTab) return;
-
-    const currentDayId = currentActiveTab.id;
-    const currentDayNumber = parseInt(currentDayId.replace('day', '').replace('-tab', ''));
-    const newDayNumber = currentDayNumber + direction;
-
-    if (newDayNumber >= 1 && newDayNumber <= 7) {
-        const newTab = document.getElementById(`day${newDayNumber}-tab`);
-        if (newTab) {
-            // Simulate click to trigger the tab change
-            newTab.click();
-        }
-    }
-}
-
-// Update day navigation button states
-function updateDayNavigationButtons() {
-    const currentActiveTab = document.querySelector('[id$="-tab"].active');
-    if (!currentActiveTab) return;
-
-    const currentDayId = currentActiveTab.id;
-    const currentDayNumber = parseInt(currentDayId.replace('day', '').replace('-tab', ''));
-
-    const prevBtn = document.getElementById('prevDayBtn');
-    const nextBtn = document.getElementById('nextDayBtn');
-
-    if (prevBtn) {
-        prevBtn.disabled = currentDayNumber <= 1;
-        prevBtn.classList.toggle('disabled', currentDayNumber <= 1);
-    }
-
-    if (nextBtn) {
-        nextBtn.disabled = currentDayNumber >= 7;
-        nextBtn.classList.toggle('disabled', currentDayNumber >= 7);
-    }
-}
-
-// Update day total calories
-function updateDayTotal(day) {
-    let dayTotalCalories = 0;
-
-    // Sum calories from all meals for this day
-    Object.values(weeklyMealFoods[day]).forEach(mealFoods => {
-        mealFoods.forEach(food => {
-            dayTotalCalories += food.calories;
-        });
-    });
-
-    // Update day tab badge
-    document.getElementById(`day${day}-total-calories`).textContent = dayTotalCalories + ' cal';
-}
 
 // Initialize when document is ready
 document.addEventListener('DOMContentLoaded', function() {
     initializeMealPlanning();
     calculateTotalCalories(); // Calculate calories on page load
     updateNutritionTargets();
-    updateDayNavigationButtons();
+
+    // Remove step validation from macronutrient fields
+    ['target_protein', 'target_carbs', 'target_fat'].forEach(id => {
+        const field = document.getElementById(id);
+        if (field) {
+            field.removeAttribute('step');
+            field.setAttribute('step', 'any');
+            // Override browser validation
+            field.addEventListener('invalid', function(e) {
+                e.preventDefault();
+                this.setCustomValidity('');
+            });
+            field.addEventListener('input', function() {
+                this.setCustomValidity('');
+            });
+        }
+    });
+
+    // Initialize calorie calculation on page load
+    updateCalorieCalculation();
+
+    // Add event listeners for real-time calorie calculation
+    const calorieCalculationInputs = ['patient_id', 'goal', 'weekly_weight_goal', 'activity_level', 'target_weight', 'target_weight_goal'];
+    calorieCalculationInputs.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', updateCalorieCalculation);
+            element.addEventListener('input', debounce(updateCalorieCalculation, 500)); // Debounced for input events
+        }
+    });
 });
+
+// Debounce function to prevent too many API calls
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Debounced version of calorie calculation for input events
+const debounceCalorieCalculation = debounce(updateCalorieCalculation, 500);
+
+// Sync target weight fields
+function syncTargetWeights(changedField) {
+    const targetWeight1 = document.getElementById('target_weight');
+    const targetWeight2 = document.getElementById('target_weight_goal');
+
+    if (changedField.id === 'target_weight' && targetWeight2) {
+        targetWeight2.value = changedField.value;
+    } else if (changedField.id === 'target_weight_goal' && targetWeight1) {
+        targetWeight1.value = changedField.value;
+    }
+
+    console.log('Target weights synced:', {
+        field1: targetWeight1?.value,
+        field2: targetWeight2?.value
+    });
+}
 
 // Initialize meal planning functionality
 function initializeMealPlanning() {
-    // Add food button handlers
-    document.querySelectorAll('.add-food-btn').forEach(btn => {
+    // Add option button handlers
+    document.querySelectorAll('.add-option-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            currentDay = parseInt(this.dataset.day);
-            currentMeal = this.dataset.meal;
-            const modal = new bootstrap.Modal(document.getElementById('foodSelectionModal'));
-            modal.show();
-            clearFoodSelection();
-            loadFoodGroups();
-        });
-    });
-
-    // Day tab click handlers (only for day selection buttons)
-    document.querySelectorAll('[id^="day"][id$="-tab"]:not([id*="-breakfast"]):not([id*="-lunch"]):not([id*="-dinner"]):not([id*="-snacks"])').forEach(tab => {
-        tab.addEventListener('click', function() {
-            const targetDay = this.getAttribute('data-bs-target');
-
-            // Hide all day content
-            document.querySelectorAll('#dayTabContent > .tab-pane').forEach(pane => {
-                pane.classList.remove('show', 'active');
-            });
-
-            // Show target day content
-            const targetPane = document.querySelector(targetDay);
-            if (targetPane) {
-                targetPane.classList.add('show', 'active');
-            }
-
-            // Remove active class from all day buttons
-            document.querySelectorAll('[id^="day"][id$="-tab"]:not([id*="-breakfast"]):not([id*="-lunch"]):not([id*="-dinner"]):not([id*="-snacks"])').forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.add('btn-outline-success');
-                btn.classList.remove('btn-success');
-            });
-
-            // Add active class to clicked button
-            this.classList.add('active');
-            this.classList.remove('btn-outline-success');
-            this.classList.add('btn-success');
-
-            updateDayNavigationButtons();
-            updateNutritionSummary(); // Update summary for the newly selected day
-        });
-    });
-
-    // Meal tab click handlers (for meal tabs within each day)
-    document.querySelectorAll('[id*="-breakfast-tab"], [id*="-lunch-tab"], [id*="-dinner-tab"], [id*="-snacks-tab"]').forEach(tab => {
-        tab.addEventListener('click', function() {
-            const targetMeal = this.getAttribute('data-bs-target');
-            const dayId = this.id.split('-')[0]; // Extract day from id like "day1-breakfast-tab"
-
-            // Hide all meal content for this day
-            document.querySelectorAll(`#${dayId}MealTabContent .tab-pane`).forEach(pane => {
-                pane.classList.remove('show', 'active');
-            });
-
-            // Show target meal content
-            const targetPane = document.querySelector(targetMeal);
-            if (targetPane) {
-                targetPane.classList.add('show', 'active');
-            }
-
-            // Remove active class from all meal tabs for this day
-            document.querySelectorAll(`#${dayId}MealTabs .nav-link`).forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Add active class to clicked meal tab
-            this.classList.add('active');
+            const mealType = this.dataset.meal;
+            addNewMealOption(mealType);
         });
     });
 
@@ -1076,7 +876,161 @@ function calculateTotalCalories() {
     updateCalorieBreakdown(protein, carbs, fat, totalCalories);
 
     // Trigger any dependent calculations
-    updateMealNutritionSummary();
+    if (typeof updateMealNutritionSummary === 'function') {
+        updateMealNutritionSummary();
+    }
+}
+
+// Update meal nutrition summary (placeholder function)
+function updateMealNutritionSummary() {
+    // This function can be used to update meal-specific nutrition summaries
+    // Currently a placeholder to prevent JavaScript errors
+    console.log('Meal nutrition summary updated');
+}
+
+// Calculate and update macronutrients from actual meal options data
+function updateMacronutrientsFromMeals() {
+    let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
+
+    // Calculate totals from all meal options (using first option of each meal type)
+    Object.values(mealOptions).forEach(options => {
+        if (options.length > 0) {
+            // Use first option for calculation
+            const firstOption = options[0];
+            totalCalories += firstOption.total_calories || 0;
+            totalProtein += firstOption.total_protein || 0;
+            totalCarbs += firstOption.total_carbs || 0;
+            totalFat += firstOption.total_fat || 0;
+        }
+    });
+
+    // For flexible meal plans, we use the totals directly (no daily averaging needed)
+    if (totalCalories > 0) {
+        // Ensure minimum calorie requirement (500 calories minimum)
+        const finalCalories = Math.max(totalCalories, 500);
+
+        // If we had to adjust calories, proportionally adjust macronutrients
+        let finalProtein = totalProtein;
+        let finalCarbs = totalCarbs;
+        let finalFat = totalFat;
+
+        if (finalCalories > totalCalories && totalCalories > 0) {
+            const scaleFactor = finalCalories / totalCalories;
+            finalProtein = Math.round((totalProtein * scaleFactor) * 10) / 10;
+            finalCarbs = Math.round((totalCarbs * scaleFactor) * 10) / 10;
+            finalFat = Math.round((totalFat * scaleFactor) * 10) / 10;
+        }
+
+        // Update the form fields with calculated values
+        document.getElementById('target_calories').value = finalCalories;
+        document.getElementById('target_protein').value = finalProtein;
+        document.getElementById('target_carbs').value = finalCarbs;
+        document.getElementById('target_fat').value = finalFat;
+
+        console.log('Auto-updated macronutrients from meals:', {
+            originalCalories: totalCalories,
+            finalCalories: finalCalories,
+            protein: finalProtein,
+            carbs: finalCarbs,
+            fat: finalFat,
+            adjusted: finalCalories > totalCalories
+        });
+    } else {
+        // No meal data - ensure minimum valid values
+        const currentCalories = parseInt(document.getElementById('target_calories').value) || 0;
+        const currentProtein = parseFloat(document.getElementById('target_protein').value) || 0;
+        const currentCarbs = parseFloat(document.getElementById('target_carbs').value) || 0;
+        const currentFat = parseFloat(document.getElementById('target_fat').value) || 0;
+
+        // Ensure minimum calories if current value is too low
+        if (currentCalories < 500) {
+            document.getElementById('target_calories').value = Math.max(currentCalories, 1200);
+            // Set reasonable defaults if values are 0
+            if (currentProtein === 0) document.getElementById('target_protein').value = 120;
+            if (currentCarbs === 0) document.getElementById('target_carbs').value = 150;
+            if (currentFat === 0) document.getElementById('target_fat').value = 40;
+
+            console.log('Set minimum valid macronutrient values (no meal data)');
+        }
+    }
+}
+
+// Load existing meal data when editing
+function loadExistingMealData() {
+    @if(isset($dietPlan) && $dietPlan->meals->count() > 0)
+        console.log('Loading existing meal data...');
+
+        // Load meals from server data (grouped by meal_type and option_number)
+        // For flexible plans, day_number is null, for traditional plans it's 1
+        const existingMeals = @json($dietPlan->meals->where('is_option_based', true)->groupBy(['meal_type', 'option_number']));
+
+        console.log('Raw existing meals data:', existingMeals);
+
+        Object.keys(existingMeals).forEach(mealType => {
+            // Map meal types to our structure
+            let mappedMealType = mealType;
+            if (mealType.startsWith('snack')) {
+                mappedMealType = 'snacks';
+            }
+
+            // Clear existing options for this meal type
+            mealOptions[mappedMealType] = [];
+
+            const mealTypeOptions = existingMeals[mealType];
+            Object.keys(mealTypeOptions).forEach(optionNumber => {
+                const meals = mealTypeOptions[optionNumber];
+
+                // Create a new meal option
+                const mealOption = {
+                    foods: [],
+                    total_calories: 0,
+                    total_protein: 0,
+                    total_carbs: 0,
+                    total_fat: 0
+                };
+
+                // Process all meals for this option (should typically be just one)
+                meals.forEach(meal => {
+                    meal.foods.forEach(mealFood => {
+                        const food = mealFood.food;
+                        if (food) {
+                            const foodItem = {
+                                food_id: food.id,
+                                food_name: mealFood.food_name,
+                                displayName: mealFood.food_name,
+                                quantity: parseFloat(mealFood.quantity),
+                                unit: mealFood.unit,
+                                preparation_notes: mealFood.preparation_notes || '',
+                                calories: Math.round((food.calories * mealFood.quantity) / 100),
+                                protein: Math.round(((food.protein * mealFood.quantity) / 100) * 10) / 10,
+                                carbs: Math.round(((food.carbohydrates * mealFood.quantity) / 100) * 10) / 10,
+                                fat: Math.round(((food.fat * mealFood.quantity) / 100) * 10) / 10
+                            };
+
+                            mealOption.foods.push(foodItem);
+                            mealOption.total_calories += foodItem.calories;
+                            mealOption.total_protein += foodItem.protein;
+                            mealOption.total_carbs += foodItem.carbs;
+                            mealOption.total_fat += foodItem.fat;
+                        }
+                    });
+                });
+
+                // Add this option to the meal type
+                mealOptions[mappedMealType].push(mealOption);
+            });
+        });
+
+        // Render all meal options
+        ['breakfast', 'lunch', 'dinner', 'snacks'].forEach(mealType => {
+            renderAllMealOptions(mealType);
+        });
+
+        // Update nutrition summary
+        updateNutritionSummary();
+
+        console.log('Loaded meal options data:', mealOptions);
+    @endif
 }
 
 // Update calorie breakdown display
@@ -1125,6 +1079,236 @@ function updateCalorieBreakdown(protein, carbs, fat, totalCalories) {
         `;
     } else {
         breakdownElement.innerHTML = '<small class="text-muted">{{ __("Enter macronutrient values to see calorie breakdown") }}</small>';
+    }
+}
+
+// Load food groups
+function loadFoodGroups() {
+    fetch('/food-groups/api/list')
+        .then(response => response.json())
+        .then(groups => {
+            const select = document.getElementById('food-group-filter');
+            select.innerHTML = '<option value="">{{ __("All Food Groups") }}</option>';
+            groups.forEach(group => {
+                select.innerHTML += `<option value="${group.id}">${group.name}</option>`;
+            });
+
+            // Load initial popular foods
+            loadInitialFoods();
+        })
+        .catch(error => console.error('Error loading food groups:', error));
+}
+
+// Load initial popular foods when modal opens
+function loadInitialFoods() {
+    console.log('loadInitialFoods called'); // Debug log
+
+    // Show loading
+    document.getElementById('food-results').innerHTML = `
+        <div class="col-12 text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">{{ __('Loading...') }}</span>
+            </div>
+            <p class="mt-2 text-muted">{{ __('Loading popular foods...') }}</p>
+        </div>
+    `;
+
+    // Load popular foods (get first 20 foods without search filter)
+    console.log('Fetching foods from:', `{{ route('foods.search') }}?limit=20`); // Debug log
+    fetch(`{{ route('foods.search') }}?limit=20`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Received data:', data); // Debug log
+            const foods = data.foods || [];
+            console.log('Foods array:', foods); // Debug log
+
+            // Debug: Check if any foods have null nutrition values
+            foods.forEach((food, index) => {
+                if (!food.calories && food.calories !== 0) {
+                    console.warn(`Food ${index} missing calories:`, food);
+                }
+                if (!food.protein && food.protein !== 0) {
+                    console.warn(`Food ${index} missing protein:`, food);
+                }
+                if (!food.carbohydrates && food.carbohydrates !== 0) {
+                    console.warn(`Food ${index} missing carbohydrates:`, food);
+                }
+                if (!food.fat && food.fat !== 0) {
+                    console.warn(`Food ${index} missing fat:`, food);
+                }
+            });
+            if (foods.length === 0) {
+                // No foods found, show helpful message
+                document.getElementById('food-results').innerHTML = `
+                    <div class="col-12 text-center text-muted py-4">
+                        <i class="fas fa-search fa-2x mb-2"></i>
+                        <p>{{ __('No foods available. Start typing to search or select a food group...') }}</p>
+                        <small class="text-muted">{{ __('Contact your administrator to add foods to the database.') }}</small>
+                    </div>
+                `;
+            } else {
+                displayFoodResults(foods);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading initial foods:', error);
+            console.error('Error details:', error.message); // More detailed error logging
+            document.getElementById('food-results').innerHTML = `
+                <div class="col-12 text-center text-muted py-4">
+                    <i class="fas fa-search fa-2x mb-2"></i>
+                    <p>{{ __('Start typing to search for foods or select a food group...') }}</p>
+                    <small class="text-danger d-block mt-2">Debug: ${error.message}</small>
+                </div>
+            `;
+        });
+}
+
+// Add new meal option
+function addNewMealOption(mealType) {
+    optionCounters[mealType]++;
+    const optionNumber = optionCounters[mealType];
+
+    // Create new option object
+    const newOption = {
+        option_number: optionNumber,
+        meal_type: mealType,
+        option_description: `Option ${optionNumber}`,
+        foods: [],
+        total_calories: 0,
+        total_protein: 0,
+        total_carbs: 0,
+        total_fat: 0
+    };
+
+    // Add to meal options
+    mealOptions[mealType].push(newOption);
+
+    // Render the option card
+    renderMealOption(mealType, newOption, mealOptions[mealType].length - 1);
+
+    // Remove empty state if it exists
+    const container = document.getElementById(`${mealType}-options`);
+    const emptyState = container.querySelector('.text-center.text-muted');
+    if (emptyState) {
+        emptyState.remove();
+    }
+}
+
+// Render meal option card
+function renderMealOption(mealType, option, optionIndex) {
+    const container = document.getElementById(`${mealType}-options`);
+
+    const optionCard = document.createElement('div');
+    optionCard.className = 'card mb-3 option-card';
+    optionCard.dataset.mealType = mealType;
+    optionCard.dataset.optionIndex = optionIndex;
+
+    optionCard.innerHTML = `
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">${option.option_description}</h6>
+                    <small class="text-muted">${getMealTypeDisplayName(mealType)}</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary add-food-to-option-btn"
+                            data-meal-type="${mealType}" data-option-index="${optionIndex}">
+                        <i class="fas fa-plus me-1"></i>
+                        Add Food
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-option-btn"
+                            data-meal-type="${mealType}" data-option-index="${optionIndex}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="foods-list" id="${mealType}-option-${optionIndex}-foods">
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-utensils"></i>
+                    <p class="mb-0">No foods added yet. Click "Add Food" to start building this option.</p>
+                </div>
+            </div>
+            <div class="option-summary mt-3 p-2 bg-light rounded" id="${mealType}-option-${optionIndex}-summary">
+                <strong>Total: 0 calories | 0g protein | 0g carbs | 0g fat</strong>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(optionCard);
+
+    // Add event listeners
+    optionCard.querySelector('.add-food-to-option-btn').addEventListener('click', function() {
+        currentMeal = mealType;
+        currentOption = optionIndex;
+        const modal = new bootstrap.Modal(document.getElementById('foodSelectionModal'));
+        modal.show();
+        clearFoodSelection();
+        loadFoodGroups();
+        loadInitialFoods(); // Load initial foods when modal opens
+    });
+
+    optionCard.querySelector('.remove-option-btn').addEventListener('click', function() {
+        removeOption(mealType, optionIndex);
+    });
+}
+
+// Get meal type display name
+function getMealTypeDisplayName(mealType) {
+    const names = {
+        breakfast: 'Breakfast',
+        lunch: 'Lunch',
+        dinner: 'Dinner',
+        snacks: 'Snacks'
+    };
+    return names[mealType] || mealType;
+}
+
+// Remove option
+function removeOption(mealType, optionIndex) {
+    if (confirm('Are you sure you want to remove this option?')) {
+        mealOptions[mealType].splice(optionIndex, 1);
+        renderAllMealOptions(mealType);
+    }
+}
+
+// Render all meal options for a meal type
+function renderAllMealOptions(mealType) {
+    const container = document.getElementById(`${mealType}-options`);
+    container.innerHTML = '';
+
+    if (mealOptions[mealType].length === 0) {
+        const mealIcons = {
+            breakfast: 'coffee',
+            lunch: 'sun',
+            dinner: 'moon',
+            snacks: 'cookie-bite'
+        };
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-${mealIcons[mealType]} fa-2x mb-2"></i>
+                <p>No ${mealType} options added yet. Click "Add ${getMealTypeDisplayName(mealType)} Option" to start.</p>
+            </div>
+        `;
+    } else {
+        mealOptions[mealType].forEach((option, index) => {
+            renderMealOption(mealType, option, index);
+        });
     }
 }
 
@@ -1304,10 +1488,10 @@ function updateNutritionPreview() {
     else if (unit === 'tbsp') multiplier = quantity * 0.15;
     else if (unit === 'tsp') multiplier = quantity * 0.05;
 
-    const calories = Math.round(selectedFood.calories * multiplier);
-    const protein = Math.round(selectedFood.protein * multiplier * 10) / 10;
-    const carbs = Math.round(selectedFood.carbs * multiplier * 10) / 10;
-    const fat = Math.round(selectedFood.fat * multiplier * 10) / 10;
+    const calories = Math.round((selectedFood?.calories || 0) * multiplier);
+    const protein = Math.round((selectedFood?.protein || 0) * multiplier * 10) / 10;
+    const carbs = Math.round((selectedFood?.carbs || selectedFood?.carbohydrates || 0) * multiplier * 10) / 10;
+    const fat = Math.round((selectedFood?.fat || 0) * multiplier * 10) / 10;
 
     document.getElementById('preview-calories').textContent = calories;
     document.getElementById('preview-protein').textContent = protein + 'g';
@@ -1315,9 +1499,19 @@ function updateNutritionPreview() {
     document.getElementById('preview-fat').textContent = fat + 'g';
 }
 
-// Add food to current meal
+// Add food to current meal option
 function addFoodToMeal() {
-    if (!selectedFood || !currentMeal || !currentDay) return;
+    if (!selectedFood || !currentMeal || currentOption === undefined) {
+        console.error('Missing required data:', { selectedFood, currentMeal, currentOption });
+        return;
+    }
+
+    // Validate selectedFood has required properties
+    if (!selectedFood.id || (!selectedFood.calories && selectedFood.calories !== 0)) {
+        console.error('Selected food missing required properties:', selectedFood);
+        alert('Error: Selected food is missing required nutrition data. Please try selecting the food again.');
+        return;
+    }
 
     const quantity = parseFloat(document.getElementById('food-quantity').value) || 0;
     const unit = document.getElementById('food-unit').value;
@@ -1332,37 +1526,148 @@ function addFoodToMeal() {
     else if (unit === 'tbsp') multiplier = quantity * 0.15;
     else if (unit === 'tsp') multiplier = quantity * 0.05;
 
+    // Debug: Log the selected food data
+    console.log('Selected food data:', selectedFood);
+    console.log('Selected food name:', selectedFood.name);
+    console.log('Selected food translated_name:', selectedFood.translated_name);
+
     const foodItem = {
-        id: selectedFood.id,
-        name: selectedFood.name, // Original name for database
-        displayName: selectedFood.displayName || selectedFood.name, // Display name for UI
+        food_id: selectedFood.id,
+        food_name: selectedFood.translated_name || selectedFood.name || 'Unknown Food', // Use translated name first
+        displayName: selectedFood.translated_name || selectedFood.name || 'Unknown Food', // Display name for UI
         quantity: quantity,
         unit: unit,
-        notes: notes,
-        calories: Math.round(selectedFood.calories * multiplier),
-        protein: Math.round(selectedFood.protein * multiplier * 10) / 10,
-        carbs: Math.round(selectedFood.carbs * multiplier * 10) / 10,
-        fat: Math.round(selectedFood.fat * multiplier * 10) / 10
+        preparation_notes: notes,
+        calories: Math.round((selectedFood?.calories || 0) * multiplier),
+        protein: Math.round((selectedFood?.protein || 0) * multiplier * 10) / 10,
+        carbs: Math.round((selectedFood?.carbs || selectedFood?.carbohydrates || 0) * multiplier * 10) / 10,
+        fat: Math.round((selectedFood?.fat || 0) * multiplier * 10) / 10
     };
 
-    // Add to meal for specific day
-    weeklyMealFoods[currentDay][currentMeal].push(foodItem);
+    // Debug: Log the created food item
+    console.log('Created food item:', foodItem);
 
-    // Update UI
-    updateMealDisplay(currentDay, currentMeal);
+    // Add to meal option
+    mealOptions[currentMeal][currentOption].foods.push(foodItem);
+
+    // Update option display
+    updateOptionDisplay(currentMeal, currentOption);
     updateNutritionSummary();
 
-    // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('foodSelectionModal'));
-    modal.hide();
+    // Clear the current selection but keep modal open for adding more foods
+    clearFoodSelection();
+
+    // Show success message
+    showSuccessMessage(`${foodItem.displayName} added to ${currentMeal}!`);
+
+    // Reset search to show all foods again
+    const foodSearch = document.getElementById('food-search');
+    const foodGroupFilter = document.getElementById('food-group-filter');
+    const foodLanguage = document.getElementById('food-language');
+    searchFoods('', '', foodLanguage.value);
+}
+
+// Show success message
+function showSuccessMessage(message) {
+    // Create or update success message element
+    let successDiv = document.getElementById('food-success-message');
+    if (!successDiv) {
+        successDiv = document.createElement('div');
+        successDiv.id = 'food-success-message';
+        successDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+        successDiv.style.position = 'relative';
+
+        // Insert after the modal header
+        const modalBody = document.querySelector('#foodSelectionModal .modal-body');
+        modalBody.insertBefore(successDiv, modalBody.firstChild);
+    }
+
+    successDiv.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        if (successDiv) {
+            successDiv.remove();
+        }
+    }, 3000);
+}
+
+// Update option display
+function updateOptionDisplay(mealType, optionIndex) {
+    const option = mealOptions[mealType][optionIndex];
+    const foodsContainer = document.getElementById(`${mealType}-option-${optionIndex}-foods`);
+    const summaryContainer = document.getElementById(`${mealType}-option-${optionIndex}-summary`);
+
+    if (option.foods.length === 0) {
+        foodsContainer.innerHTML = `
+            <div class="text-center text-muted py-3">
+                <i class="fas fa-utensils"></i>
+                <p class="mb-0">No foods added yet. Click "Add Food" to start building this option.</p>
+            </div>
+        `;
+    } else {
+        let html = '';
+        let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
+
+        option.foods.forEach((food, foodIndex) => {
+            totalCalories += food.calories;
+            totalProtein += food.protein;
+            totalCarbs += food.carbs;
+            totalFat += food.fat;
+
+            html += `
+                <div class="food-item d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                    <div>
+                        <strong>${food.displayName}</strong>
+                        <div class="text-muted small">${food.quantity}${food.unit} | ${food.calories} cal</div>
+                        ${food.preparation_notes ? `<div class="text-info small">${food.preparation_notes}</div>` : ''}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                            onclick="removeFoodFromOption('${mealType}', ${optionIndex}, ${foodIndex})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        });
+
+        foodsContainer.innerHTML = html;
+
+        // Update option totals
+        option.total_calories = totalCalories;
+        option.total_protein = totalProtein;
+        option.total_carbs = totalCarbs;
+        option.total_fat = totalFat;
+
+        // Update summary
+        summaryContainer.innerHTML = `
+            <strong>Total: ${Math.round(totalCalories)} calories | ${totalProtein.toFixed(1)}g protein | ${totalCarbs.toFixed(1)}g carbs | ${totalFat.toFixed(1)}g fat</strong>
+        `;
+    }
+}
+
+// Remove food from option
+function removeFoodFromOption(mealType, optionIndex, foodIndex) {
+    mealOptions[mealType][optionIndex].foods.splice(foodIndex, 1);
+    updateOptionDisplay(mealType, optionIndex);
+    updateNutritionSummary();
 }
 
 // Update meal display
-function updateMealDisplay(day, meal) {
-    const container = document.getElementById(`day${day}-${meal}-foods`);
-    const foods = weeklyMealFoods[day][meal];
+function updateMealDisplay(meal) {
+    const container = document.getElementById(`${meal}-foods`);
 
-    if (foods.length === 0) {
+    // Check if container exists
+    if (!container) {
+        console.warn(`Container not found for meal: ${meal}-foods`);
+        return;
+    }
+
+    const foods = mealFoods[meal];
+
+    if (!foods || foods.length === 0) {
         container.innerHTML = `
             <div class="text-center text-muted py-4">
                 <i class="fas fa-utensils fa-2x mb-2"></i>
@@ -1400,7 +1705,7 @@ function updateMealDisplay(day, meal) {
                             ${food.notes ? `<small class="text-muted">${food.notes}</small>` : ''}
                         </div>
                         <div class="col-md-2 text-end">
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFoodFromMeal(${day}, '${meal}', ${index})">
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFoodFromMeal('${meal}', ${index})">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -1414,48 +1719,43 @@ function updateMealDisplay(day, meal) {
 
     // Update meal tab badge
     const totalCalories = foods.reduce((sum, food) => sum + food.calories, 0);
-    document.getElementById(`day${day}-${meal}-calories`).textContent = totalCalories + ' cal';
-
-    // Update day total
-    updateDayTotal(day);
+    const mealCaloriesElement = document.getElementById(`${meal}-calories`);
+    if (mealCaloriesElement) {
+        mealCaloriesElement.textContent = totalCalories + ' cal';
+    }
 }
 
 // Remove food from meal
-function removeFoodFromMeal(day, meal, index) {
-    weeklyMealFoods[day][meal].splice(index, 1);
-    updateMealDisplay(day, meal);
+function removeFoodFromMeal(meal, index) {
+    mealFoods[meal].splice(index, 1);
+
+    // Only update display if container exists
+    const container = document.getElementById(`${meal}-foods`);
+    if (container) {
+        updateMealDisplay(meal);
+    }
+
     updateNutritionSummary();
 }
 
-// Get currently active day
-function getCurrentActiveDay() {
-    // Find the active day tab
-    const activeTab = document.querySelector('.btn.active[data-bs-target]');
-    if (activeTab) {
-        const target = activeTab.getAttribute('data-bs-target');
-        return target.replace('#', ''); // Remove # to get day name (e.g., 'day1')
-    }
-    return 'day1'; // Default to day1 if no active tab found
-}
+
 
 // Update nutrition summary
 function updateNutritionSummary() {
     let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
 
-    // Get the currently active day
-    const activeDay = getCurrentActiveDay();
-
-    // Calculate totals from current day's meals only
-    if (weeklyMealFoods[activeDay]) {
-        Object.values(weeklyMealFoods[activeDay]).forEach(foods => {
-            foods.forEach(food => {
-                totalCalories += food.calories;
-                totalProtein += food.protein;
-                totalCarbs += food.carbs;
-                totalFat += food.fat;
-            });
-        });
-    }
+    // Calculate totals from all meal options (using first option of each meal type for summary)
+    Object.keys(mealOptions).forEach(mealType => {
+        const options = mealOptions[mealType];
+        if (options.length > 0) {
+            // Use first option for summary calculation
+            const firstOption = options[0];
+            totalCalories += firstOption.total_calories || 0;
+            totalProtein += firstOption.total_protein || 0;
+            totalCarbs += firstOption.total_carbs || 0;
+            totalFat += firstOption.total_fat || 0;
+        }
+    });
 
     // Update display with current day totals (no averaging)
     document.getElementById('total-calories').textContent = Math.round(totalCalories);
@@ -1469,10 +1769,10 @@ function updateNutritionSummary() {
     const targetCarbs = parseFloat(document.getElementById('target_carbs').value) || 250;
     const targetFat = parseFloat(document.getElementById('target_fat').value) || 65;
 
-    document.getElementById('calories-progress').style.width = Math.min((avgCalories / targetCalories) * 100, 100) + '%';
-    document.getElementById('protein-progress').style.width = Math.min((avgProtein / targetProtein) * 100, 100) + '%';
-    document.getElementById('carbs-progress').style.width = Math.min((avgCarbs / targetCarbs) * 100, 100) + '%';
-    document.getElementById('fat-progress').style.width = Math.min((avgFat / targetFat) * 100, 100) + '%';
+    document.getElementById('calories-progress').style.width = Math.min((totalCalories / targetCalories) * 100, 100) + '%';
+    document.getElementById('protein-progress').style.width = Math.min((totalProtein / targetProtein) * 100, 100) + '%';
+    document.getElementById('carbs-progress').style.width = Math.min((totalCarbs / targetCarbs) * 100, 100) + '%';
+    document.getElementById('fat-progress').style.width = Math.min((totalFat / targetFat) * 100, 100) + '%';
 }
 
 // Update nutrition targets display
@@ -1536,9 +1836,12 @@ function getBMICategoryClass(bmi) {
 
 function updateBMIDisplay() {
     const currentWeight = parseFloat(document.getElementById('initial_weight').value);
-    const targetWeight = parseFloat(document.getElementById('target_weight').value);
+    const targetWeight = parseFloat(document.getElementById('target_weight')?.value ||
+                                   document.getElementById('target_weight_goal')?.value);
     const height = parseFloat(document.getElementById('initial_height').value);
     const weeklyGoal = parseFloat(document.getElementById('weekly_weight_goal').value);
+
+
 
     const bmiDisplay = document.getElementById('bmi-display');
 
@@ -1605,7 +1908,7 @@ function updateBMIDisplay() {
 
 // Add event listeners for BMI calculation
 document.addEventListener('DOMContentLoaded', function() {
-    const weightHeightInputs = ['initial_weight', 'target_weight', 'initial_height', 'weekly_weight_goal'];
+    const weightHeightInputs = ['initial_weight', 'target_weight', 'target_weight_goal', 'initial_height', 'weekly_weight_goal'];
     weightHeightInputs.forEach(id => {
         const element = document.getElementById(id);
         if (element) {
@@ -1617,6 +1920,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial BMI calculation
     updateBMIDisplay();
 
+    // Load existing meal data if editing
+    @if(isset($dietPlan) && $dietPlan->meals->count() > 0)
+        loadExistingMealData();
+    @endif
+
     // Auto-populate from patient data when patient is selected
     document.getElementById('patient_id').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
@@ -1626,18 +1934,366 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(updateBMIDisplay, 100);
         }
     });
-});
 
-// Form submission handler
-document.getElementById('nutrition-form').addEventListener('submit', function(e) {
-    // Add weekly meal data to form
-    const weeklyMealData = JSON.stringify(weeklyMealFoods);
+    // Form submission handler - MOVED INSIDE DOMContentLoaded
+    const formElement = document.getElementById('nutrition-form');
+    if (!formElement) {
+        console.error('❌ FORM NOT FOUND! ID: nutrition-form');
+        alert('Form not found!');
+    } else {
+        console.log('✅ Form found, attaching handler');
+    }
+
+    formElement.addEventListener('submit', function(e) {
+    console.log('🚀 FORM SUBMISSION STARTED');
+    console.log('mealOptions object:', mealOptions);
+
+    // Calculate and update macronutrients from actual meal data
+    updateMacronutrientsFromMeals();
+
+    // Remove any validation constraints that might interfere
+    ['target_protein', 'target_carbs', 'target_fat'].forEach(id => {
+        const field = document.getElementById(id);
+        if (field) {
+            field.removeAttribute('step');
+            field.setAttribute('step', 'any');
+            // Clear any validation state
+            field.setCustomValidity('');
+        }
+    });
+
+    // Add meal options data to form
+    const mealOptionsData = JSON.stringify(mealOptions);
+
+    // Debug: Log the meal options data being submitted
+    console.log('=== FORM SUBMISSION DEBUG ===');
+    console.log('Raw mealOptions object:', mealOptions);
+    console.log('JSON string length:', mealOptionsData.length);
+    console.log('JSON string preview:', mealOptionsData.substring(0, 500) + '...');
+
+    // Check if mealOptions is empty
+    const isEmpty = Object.values(mealOptions).every(options => options.length === 0);
+    console.log('Is mealOptions empty?', isEmpty);
+
+    if (isEmpty) {
+        console.warn('⚠️ WARNING: mealOptions is empty! No meal data will be submitted.');
+        alert('Warning: No meal options detected. Please add some foods to meals before submitting.');
+    }
+
+    // Debug: Log the structure of the first option with foods
+    Object.keys(mealOptions).forEach(mealType => {
+        if (mealOptions[mealType].length > 0) {
+            console.log(`${mealType} first option:`, mealOptions[mealType][0]);
+            if (mealOptions[mealType][0].foods && mealOptions[mealType][0].foods.length > 0) {
+                console.log(`${mealType} first food:`, mealOptions[mealType][0].foods[0]);
+                console.log(`${mealType} first food keys:`, Object.keys(mealOptions[mealType][0].foods[0]));
+            }
+        }
+    });
+
+    // Additional debugging - check if meal options data is empty
+    const totalOptions = Object.values(mealOptions).reduce((total, options) => total + options.length, 0);
+    const totalFoods = Object.values(mealOptions).reduce((total, options) => {
+        return total + options.reduce((optionTotal, option) => optionTotal + option.foods.length, 0);
+    }, 0);
+    console.log('Total options across all meals:', totalOptions);
+    console.log('Total foods across all options:', totalFoods);
+
+    if (totalOptions === 0) {
+        console.warn('WARNING: No meal options added!');
+        if (!confirm('No meal options have been added. Do you want to continue creating the nutrition plan?')) {
+            e.preventDefault();
+            return false;
+        }
+    }
+
     const hiddenInput = document.createElement('input');
     hiddenInput.type = 'hidden';
-    hiddenInput.name = 'weekly_meal_data';
-    hiddenInput.value = weeklyMealData;
+    hiddenInput.name = 'meal_options';
+    hiddenInput.value = mealOptionsData;
     this.appendChild(hiddenInput);
+    });
 });
+
+// Dynamic calorie calculation based on patient goals
+function updateCalorieCalculation() {
+    console.log('updateCalorieCalculation called');
+
+    const patientId = document.getElementById('patient_id').value;
+    const goal = document.getElementById('goal').value;
+    const weeklyWeightGoal = document.getElementById('weekly_weight_goal').value;
+    const activityLevel = document.getElementById('activity_level').value;
+    // Check both target weight fields (there might be two in different sections)
+    const targetWeight = document.getElementById('target_weight')?.value ||
+                        document.getElementById('target_weight_goal')?.value;
+
+    console.log('Calorie calculation inputs:', {
+        patientId, goal, weeklyWeightGoal, activityLevel, targetWeight
+    });
+
+    // Only calculate if we have the required data
+    if (!patientId || !goal || !activityLevel) {
+        console.log('Missing required data for calorie calculation');
+        return;
+    }
+
+    // Show loading state
+    const caloriesField = document.getElementById('target_calories');
+    const proteinField = document.getElementById('target_protein');
+    const carbsField = document.getElementById('target_carbs');
+    const fatField = document.getElementById('target_fat');
+
+    const originalValues = {
+        calories: caloriesField.value,
+        protein: proteinField.value,
+        carbs: carbsField.value,
+        fat: fatField.value
+    };
+
+    // Show calculating state
+    caloriesField.value = 'Calculating...';
+    caloriesField.style.backgroundColor = '#f8f9fa';
+    caloriesField.disabled = true;
+
+    // Prepare request data
+    const requestData = {
+        patient_id: patientId,
+        goal: goal,
+        activity_level: activityLevel
+    };
+
+    if (weeklyWeightGoal) {
+        requestData.weekly_weight_goal = Math.abs(parseFloat(weeklyWeightGoal));
+    }
+
+    if (targetWeight) {
+        requestData.target_weight = parseFloat(targetWeight);
+    }
+
+    // Make API call to calculate calories
+    console.log('Making API call with data:', requestData);
+    fetch('/nutrition/calculate-calories', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('Please log in to calculate calories');
+            } else if (response.status === 419) {
+                throw new Error('Session expired. Please refresh the page');
+            } else if (response.status === 422) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Validation error');
+                });
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Update calories and macronutrients with smooth transition
+            document.getElementById('target_calories').value = data.calories.target_calories;
+            document.getElementById('target_protein').value = data.macronutrients.protein.grams;
+            document.getElementById('target_carbs').value = data.macronutrients.carbs.grams;
+            document.getElementById('target_fat').value = data.macronutrients.fat.grams;
+
+            // Update the visual calorie breakdown display
+            updateCalorieBreakdown(
+                data.macronutrients.protein.grams,
+                data.macronutrients.carbs.grams,
+                data.macronutrients.fat.grams,
+                data.calories.target_calories
+            );
+
+            // Update nutrition targets display
+            updateNutritionTargets();
+
+            // Show calculation details
+            showCalorieCalculationDetails(data);
+
+            // Visual feedback for successful calculation
+            caloriesField.style.backgroundColor = '#d4edda'; // Light green
+            setTimeout(() => {
+                caloriesField.style.backgroundColor = '';
+            }, 1000);
+
+            console.log('Calorie calculation successful:', data);
+        } else {
+            console.error('Calorie calculation failed:', data.message);
+            // Restore original values
+            document.getElementById('target_calories').value = originalValues.calories;
+            document.getElementById('target_protein').value = originalValues.protein;
+            document.getElementById('target_carbs').value = originalValues.carbs;
+            document.getElementById('target_fat').value = originalValues.fat;
+
+            // Show error feedback
+            caloriesField.style.backgroundColor = '#f8d7da'; // Light red
+            setTimeout(() => {
+                caloriesField.style.backgroundColor = '';
+            }, 2000);
+
+            // Show user-friendly error messages
+            if (data.message) {
+                if (data.message.includes('complete data')) {
+                    console.log('Patient data incomplete for calorie calculation');
+                    // Don't show alert for missing data - just log it
+                } else {
+                    alert('Unable to calculate calories: ' + data.message);
+                }
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error calculating calories:', error);
+        // Restore original values
+        document.getElementById('target_calories').value = originalValues.calories;
+        document.getElementById('target_protein').value = originalValues.protein;
+        document.getElementById('target_carbs').value = originalValues.carbs;
+        document.getElementById('target_fat').value = originalValues.fat;
+
+        // Show error feedback
+        caloriesField.style.backgroundColor = '#f8d7da'; // Light red
+        setTimeout(() => {
+            caloriesField.style.backgroundColor = '';
+        }, 2000);
+
+        // Show appropriate error message
+        if (error.message.includes('log in')) {
+            alert('Please log in to calculate calories');
+        } else if (error.message.includes('Session expired')) {
+            alert('Session expired. Please refresh the page and try again.');
+        } else if (error.message.includes('Validation error')) {
+            alert('Please check your input data: ' + error.message);
+        } else if (!error.message.includes('Failed to fetch')) {
+            alert('Error calculating calories: ' + error.message);
+        }
+    })
+    .finally(() => {
+        // Re-enable the field and reset style
+        document.getElementById('target_calories').disabled = false;
+        document.getElementById('target_calories').style.backgroundColor = '';
+    });
+}
+
+// Show calorie calculation details
+function showCalorieCalculationDetails(data) {
+    // Create or update the calculation details display
+    let detailsElement = document.getElementById('calorie-calculation-details');
+    if (!detailsElement) {
+        detailsElement = document.createElement('div');
+        detailsElement.id = 'calorie-calculation-details';
+        detailsElement.className = 'alert alert-info mt-3';
+
+        // Insert after the nutritional targets card
+        const nutritionalTargetsCard = document.querySelector('.card-header h6').closest('.card');
+        nutritionalTargetsCard.parentNode.insertBefore(detailsElement, nutritionalTargetsCard.nextSibling);
+    }
+
+    let timeToGoalHtml = '';
+    if (data.time_to_goal) {
+        timeToGoalHtml = `
+            <div class="col-md-4">
+                <strong>{{ __('Time to Goal') }}</strong><br>
+                <span class="text-primary">${data.time_to_goal.weeks} weeks (${data.time_to_goal.months} months)</span><br>
+                <small class="text-muted">${data.time_to_goal.weight_difference}kg to go</small>
+            </div>
+        `;
+    }
+
+    detailsElement.innerHTML = `
+        <div class="row">
+            <div class="col-md-12 mb-2">
+                <h6 class="mb-2">
+                    <i class="fas fa-calculator text-primary"></i>
+                    {{ __('Calorie Calculation for') }} ${data.patient.name}
+                </h6>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <strong>{{ __('BMR') }}</strong><br>
+                <span class="text-info">${data.calories.bmr} cal/day</span><br>
+                <small class="text-muted">{{ __('Base metabolism') }}</small>
+            </div>
+            <div class="col-md-3">
+                <strong>{{ __('TDEE') }}</strong><br>
+                <span class="text-warning">${data.calories.tdee} cal/day</span><br>
+                <small class="text-muted">{{ __('With activity') }}</small>
+            </div>
+            <div class="col-md-3">
+                <strong>{{ __('Target Calories') }}</strong><br>
+                <span class="text-success">${data.calories.target_calories} cal/day</span><br>
+                <small class="text-muted">{{ __('For your goal') }}</small>
+            </div>
+            ${timeToGoalHtml}
+        </div>
+        ${data.recommendations.length > 0 ? `
+            <div class="mt-3">
+                <strong>{{ __('Recommendations:') }}</strong>
+                <ul class="mb-0 mt-1">
+                    ${data.recommendations.map(rec => `<li class="small">${rec}</li>`).join('')}
+                </ul>
+            </div>
+        ` : ''}
+    `;
+}
+
+// Basic debugging to ensure script loads
+console.log('✅ Nutrition plan JavaScript loaded successfully');
+console.log('Current mealOptions:', mealOptions);
+
+// Test if form exists
+const form = document.getElementById('nutrition-form');
+console.log('Form element found:', !!form);
+if (form) {
+    console.log('Form action:', form.action);
+    console.log('Form method:', form.method);
+}
+
 </script>
 @endpush
+
+@push('styles')
+<style>
+.option-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.option-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #20B2AA;
+}
+
+.food-item {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.food-item:hover {
+    background: #e9ecef;
+}
+
+.option-summary {
+    background: linear-gradient(135deg, #20B2AA 0%, #17a2b8 100%);
+    color: white;
+    border-radius: 6px;
+}
+
+.options-container {
+    min-height: 200px;
+}
+</style>
+@endpush
+
 @endsection

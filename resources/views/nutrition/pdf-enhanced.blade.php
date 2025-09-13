@@ -205,18 +205,31 @@
     </div>
 
     @php
-        $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+        $mealTypes = ['breakfast', 'lunch', 'dinner', 'snacks'];
+        $mealTypeMapping = [
+            'breakfast' => 'Breakfast',
+            'lunch' => 'Lunch',
+            'dinner' => 'Dinner',
+            'snacks' => 'Snacks'
+        ];
     @endphp
 
     @foreach($mealTypes as $mealType)
         @php
-            $meals = $dietPlan->meals->where('meal_type', $mealType);
+            // Handle different snack variations
+            if ($mealType === 'snacks') {
+                $meals = $dietPlan->meals->filter(function($meal) {
+                    return in_array($meal->meal_type, ['snack', 'snack_1', 'snack_2', 'snack_3']);
+                });
+            } else {
+                $meals = $dietPlan->meals->where('meal_type', $mealType);
+            }
         @endphp
-        
+
         @if($meals->count() > 0)
             <div class="meal-section no-break">
                 <div class="meal-header">
-                    {{ ucfirst($mealType) }}
+                    {{ $mealTypeMapping[$mealType] ?? ucfirst($mealType) }}
                 </div>
                 <div class="meal-foods">
                     @php

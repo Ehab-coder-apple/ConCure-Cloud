@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->string('phone')->nullable();
-            $table->enum('role', ['program_owner', 'admin', 'doctor', 'assistant', 'nurse', 'accountant', 'patient']);
+            $table->enum('role', ['super_admin', 'admin', 'doctor', 'assistant', 'nurse', 'accountant', 'patient', 'nutritionist']);
             $table->boolean('is_active')->default(true);
             $table->string('activation_code')->nullable();
             $table->timestamp('activated_at')->nullable();

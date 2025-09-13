@@ -20,21 +20,13 @@ class Clinic extends Model
         'is_active',
         'max_users',
         'activated_at',
-        'subscription_status',
-        'subscription_expires_at',
-        'trial_started_at',
-        'trial_expires_at',
-        'is_trial',
+        'activation_code',
     ];
 
     protected $casts = [
         'settings' => 'array',
         'is_active' => 'boolean',
         'activated_at' => 'datetime',
-        'subscription_expires_at' => 'date',
-        'trial_started_at' => 'datetime',
-        'trial_expires_at' => 'datetime',
-        'is_trial' => 'boolean',
     ];
 
     /**
@@ -142,97 +134,14 @@ class Clinic extends Model
     }
 
     /**
-     * Check if clinic is active and subscription is valid.
+     * Check if clinic is active.
      */
     public function isActiveWithValidSubscription(): bool
     {
-        return $this->is_active &&
-               $this->activated_at !== null &&
-               ($this->subscription_expires_at === null || $this->subscription_expires_at->isFuture()) &&
-               ($this->is_trial ? $this->isTrialValid() : true);
+        return $this->is_active && $this->activated_at !== null;
     }
 
-    /**
-     * Start a 7-day free trial.
-     */
-    public function startTrial(): void
-    {
-        $this->update([
-            'is_trial' => true,
-            'trial_started_at' => now(),
-            'trial_expires_at' => now()->addDays(7),
-            'subscription_status' => 'trial',
-            'max_users' => 5, // Trial limit matches Basic plan
-        ]);
-    }
-
-    /**
-     * Check if trial is still valid.
-     */
-    public function isTrialValid(): bool
-    {
-        return $this->is_trial &&
-               $this->trial_expires_at &&
-               $this->trial_expires_at->isFuture();
-    }
-
-    /**
-     * Check if trial has expired.
-     */
-    public function isTrialExpired(): bool
-    {
-        return $this->is_trial &&
-               $this->trial_expires_at &&
-               $this->trial_expires_at->isPast();
-    }
-
-    /**
-     * Get remaining trial days.
-     */
-    public function getRemainingTrialDays(): int
-    {
-        if (!$this->is_trial || !$this->trial_expires_at) {
-            return 0;
-        }
-
-        return max(0, now()->diffInDays($this->trial_expires_at, false));
-    }
-
-    /**
-     * Get trial status message.
-     */
-    public function getTrialStatusMessage(): string
-    {
-        if (!$this->is_trial) {
-            return 'Not on trial';
-        }
-
-        $remainingDays = $this->getRemainingTrialDays();
-
-        if ($remainingDays > 0) {
-            return "Trial expires in {$remainingDays} day" . ($remainingDays > 1 ? 's' : '');
-        }
-
-        return 'Trial expired';
-    }
-
-    /**
-     * Convert trial to paid subscription.
-     */
-    public function convertTrialToSubscription(int $months = 12, string $plan = 'professional', int $maxUsers = 15): void
-    {
-        $this->update([
-            'is_trial' => false,
-            'subscription_status' => 'active',
-            'subscription_expires_at' => now()->addMonths($months),
-            'trial_started_at' => null,
-            'trial_expires_at' => null,
-            'max_users' => $maxUsers,
-        ]);
-
-        // Store the plan type in settings
-        $this->setSetting('subscription_plan', $plan);
-    }
+    // Subscription and trial methods removed - no longer needed
 
     /**
      * Check if clinic has reached user limit.
@@ -240,14 +149,6 @@ class Clinic extends Model
     public function hasReachedUserLimit(): bool
     {
         return $this->users()->active()->count() >= $this->max_users;
-    }
-
-    /**
-     * Get current subscription plan.
-     */
-    public function getSubscriptionPlan(): string
-    {
-        return $this->getSetting('subscription_plan', 'trial');
     }
 
     /**
@@ -269,43 +170,7 @@ class Clinic extends Model
             'max_users' => $this->max_users,
             'remaining_slots' => $this->getRemainingUserSlots(),
             'has_reached_limit' => $this->hasReachedUserLimit(),
-            'plan' => $this->getSubscriptionPlan(),
         ];
-    }
-
-    /**
-     * Get plan details by plan name.
-     */
-    public static function getPlanDetails(string $planName): array
-    {
-        $plans = [
-            'basic' => [
-                'name' => 'Basic Plan',
-                'max_users' => 5,
-                'price' => '$29',
-                'period' => 'month',
-            ],
-            'professional' => [
-                'name' => 'Professional Plan',
-                'max_users' => 15,
-                'price' => '$59',
-                'period' => 'month',
-            ],
-            'enterprise' => [
-                'name' => 'Enterprise Plan',
-                'max_users' => 30,
-                'price' => '$99',
-                'period' => 'month',
-            ],
-            'trial' => [
-                'name' => 'Trial',
-                'max_users' => 5,
-                'price' => 'Free',
-                'period' => '7 days',
-            ],
-        ];
-
-        return $plans[$planName] ?? $plans['trial'];
     }
 
     /**
@@ -343,14 +208,5 @@ class Clinic extends Model
         return $query->whereNotNull('activated_at');
     }
 
-    /**
-     * Scope to filter clinics with valid subscriptions.
-     */
-    public function scopeWithValidSubscription($query)
-    {
-        return $query->where(function ($q) {
-            $q->whereNull('subscription_expires_at')
-              ->orWhere('subscription_expires_at', '>', now());
-        });
-    }
+    // Subscription scope removed - no longer needed
 }

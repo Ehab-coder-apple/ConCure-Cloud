@@ -14,6 +14,7 @@ class ExternalLab extends Model
         'name',
         'address',
         'phone',
+        'whatsapp',
         'email',
         'website',
         'notes',

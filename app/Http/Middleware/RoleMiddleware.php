@@ -45,7 +45,7 @@ class RoleMiddleware
         if ($user->clinic) {
             if (!$user->clinic->isActiveWithValidSubscription()) {
                 auth()->logout();
-                return redirect()->route('login')->with('error', 'Clinic subscription has expired or is inactive.');
+                return redirect()->route('login')->with('error', 'Clinic is inactive.');
             }
         }
 

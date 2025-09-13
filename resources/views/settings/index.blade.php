@@ -21,7 +21,11 @@
                             <h6 class="mb-0">{{ __('Settings Categories') }}</h6>
                         </div>
                         <div class="list-group list-group-flush">
-                            <a href="#general" class="list-group-item list-group-item-action active" data-bs-toggle="pill">
+                            <a href="#profile" class="list-group-item list-group-item-action active" data-bs-toggle="pill">
+                                <i class="fas fa-user me-2"></i>
+                                {{ __('My Profile') }}
+                            </a>
+                            <a href="#general" class="list-group-item list-group-item-action" data-bs-toggle="pill">
                                 <i class="fas fa-cog me-2"></i>
                                 {{ __('General Settings') }}
                             </a>
@@ -37,14 +41,102 @@
                                 <i class="fas fa-server me-2"></i>
                                 {{ __('System Settings') }}
                             </a>
+                            <a href="#user-guide" class="list-group-item list-group-item-action" data-bs-toggle="pill">
+                                <i class="fas fa-book me-2"></i>
+                                {{ __('User Guide') }}
+                            </a>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-lg-9">
                     <div class="tab-content">
+                        <!-- My Profile -->
+                        <div class="tab-pane fade show active" id="profile">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-user me-2"></i>
+                                        {{ __('My Profile') }}
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <form id="profileForm">
+                                        @csrf
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="first_name" class="form-label">{{ __('First Name') }}</label>
+                                                    <input type="text" class="form-control" id="first_name" name="first_name"
+                                                           value="{{ auth()->user()->first_name }}" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="last_name" class="form-label">{{ __('Last Name') }}</label>
+                                                    <input type="text" class="form-control" id="last_name" name="last_name"
+                                                           value="{{ auth()->user()->last_name }}" required>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="email" class="form-label">{{ __('Email') }}</label>
+                                                    <input type="email" class="form-control" id="email" name="email"
+                                                           value="{{ auth()->user()->email }}" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="phone" class="form-label">{{ __('Phone') }}</label>
+                                                    <input type="text" class="form-control" id="phone" name="phone"
+                                                           value="{{ auth()->user()->phone }}">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="role" class="form-label">{{ __('Role') }}</label>
+                                                    <input type="text" class="form-control" id="role"
+                                                           value="{{ auth()->user()->role_display }}" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="title_prefix" class="form-label">{{ __('Title/Prefix') }}</label>
+                                                    <select class="form-select" id="title_prefix" name="title_prefix">
+                                                        <option value="">{{ __('Select Title/Prefix') }}</option>
+                                                        @foreach(auth()->user()->getAvailableTitlePrefixes() as $prefix)
+                                                            <option value="{{ $prefix }}"
+                                                                {{ auth()->user()->title_prefix === $prefix ? 'selected' : '' }}>
+                                                                {{ $prefix }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    <div class="form-text">
+                                                        {{ __('This will be used in documents and reports (e.g., Dr. John Smith, Nutritionist Jane Doe)') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save me-1"></i>
+                                                {{ __('Update Profile') }}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- General Settings -->
-                        <div class="tab-pane fade show active" id="general">
+                        <div class="tab-pane fade" id="general">
                             <div class="card">
                                 <div class="card-header">
                                     <h6 class="mb-0">
@@ -141,6 +233,43 @@
                                                     <option value="IQD" {{ ($clinicSettings['currency'] ?? 'USD') == 'IQD' ? 'selected' : '' }}>IQD (د.ع)</option>
                                                 </select>
                                             </div>
+
+                                            <!-- Communication Settings -->
+                                            <div class="col-12 mt-4">
+                                                <h6 class="text-primary">{{ __('Communication Settings') }}</h6>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="whatsapp_number" class="form-label">
+                                                    <i class="fab fa-whatsapp text-success me-1"></i>
+                                                    {{ __('WhatsApp Number') }}
+                                                </label>
+                                                <input type="tel"
+                                                       class="form-control"
+                                                       id="whatsapp_number"
+                                                       name="whatsapp_number"
+                                                       value="{{ $clinicSettings['whatsapp_number'] ?? '' }}"
+                                                       placeholder="9647501234567">
+                                                <div class="form-text">
+                                                    {{ __('Default WhatsApp number for sending lab requests and reports. Include country code (e.g., 9647501234567 for Iraq)') }}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">{{ __('Notification Preferences') }}</label>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="email_notifications" name="email_notifications" value="1" {{ ($clinicSettings['email_notifications'] ?? true) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="email_notifications">
+                                                        <i class="fas fa-envelope me-1"></i>
+                                                        {{ __('Email Notifications') }}
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="sms_notifications" name="sms_notifications" value="1" {{ ($clinicSettings['sms_notifications'] ?? false) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="sms_notifications">
+                                                        <i class="fas fa-sms me-1"></i>
+                                                        {{ __('SMS Notifications') }}
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div class="mt-3">
                                             <button type="submit" class="btn btn-primary">
@@ -163,29 +292,32 @@
                                     </h6>
                                 </div>
                                 <div class="card-body">
-                                    <form>
+                                    <form id="clinicInfoForm">
+                                        @csrf
                                         <div class="row g-3">
                                             <div class="col-md-6">
                                                 <label for="clinic_name" class="form-label">{{ __('Clinic Name') }}</label>
-                                                <input type="text" class="form-control" id="clinic_name" value="Demo Clinic">
+                                                <input type="text" class="form-control" id="clinic_name" name="clinic_name"
+                                                       value="{{ $clinicInfo['name'] ?? '' }}" required>
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="clinic_phone" class="form-label">{{ __('Phone Number') }}</label>
-                                                <input type="tel" class="form-control" id="clinic_phone" value="+1-555-0123">
+                                                <input type="tel" class="form-control" id="clinic_phone" name="clinic_phone"
+                                                       value="{{ $clinicInfo['phone'] ?? '' }}">
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="clinic_email" class="form-label">{{ __('Email Address') }}</label>
-                                                <input type="email" class="form-control" id="clinic_email" value="info@democlinic.com">
+                                                <input type="email" class="form-control" id="clinic_email" name="clinic_email"
+                                                       value="{{ $clinicInfo['email'] ?? '' }}" required>
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="clinic_website" class="form-label">{{ __('Website') }}</label>
-                                                <input type="url" class="form-control" id="clinic_website" value="https://democlinic.com">
+                                                <input type="url" class="form-control" id="clinic_website" name="clinic_website"
+                                                       value="{{ $clinicInfo['website'] ?? '' }}">
                                             </div>
                                             <div class="col-12">
                                                 <label for="clinic_address" class="form-label">{{ __('Address') }}</label>
-                                                <textarea class="form-control" id="clinic_address" rows="3">123 Medical Center Drive
-City, State 12345
-Country</textarea>
+                                                <textarea class="form-control" id="clinic_address" name="clinic_address" rows="3">{{ $clinicInfo['address'] ?? '' }}</textarea>
                                             </div>
                                         </div>
                                         <div class="mt-3">
@@ -291,18 +423,111 @@ Country</textarea>
                                         </div>
                                         <div class="col-12">
                                             <div class="d-flex gap-2">
-                                                <button type="button" class="btn btn-outline-warning">
+                                                @if(auth()->user()->role === 'admin')
+                                                <button type="button" class="btn btn-outline-warning" onclick="clearCache()">
                                                     <i class="fas fa-broom me-1"></i>
                                                     {{ __('Clear Cache') }}
                                                 </button>
-                                                <button type="button" class="btn btn-outline-info">
+                                                <button type="button" class="btn btn-outline-info" onclick="backupDatabase()">
                                                     <i class="fas fa-download me-1"></i>
                                                     {{ __('Backup Database') }}
                                                 </button>
-                                                <button type="button" class="btn btn-outline-success">
+                                                <button type="button" class="btn btn-outline-success" onclick="updateSystem()">
                                                     <i class="fas fa-sync me-1"></i>
                                                     {{ __('Update System') }}
                                                 </button>
+                                                @else
+                                                <div class="text-muted">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    {{ __('System maintenance functions are available to administrators only.') }}
+                                                </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Guide -->
+                        <div class="tab-pane fade" id="user-guide">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-book me-2"></i>
+                                        {{ __('ConCure User Guide') }}
+                                    </h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="mb-4">
+                                        <i class="fas fa-book fa-4x text-primary mb-3"></i>
+                                        <h5 class="text-primary">{{ __('Comprehensive User Guide') }}</h5>
+                                        <p class="text-muted">
+                                            {{ __('Access the complete ConCure user guide with step-by-step instructions, available in multiple languages with PDF export functionality.') }}
+                                        </p>
+                                    </div>
+
+                                    <div class="row justify-content-center">
+                                        <div class="col-md-8">
+                                            <div class="list-group list-group-flush">
+                                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-flag-usa me-3 text-primary"></i>
+                                                        <span>English Guide</span>
+                                                    </div>
+                                                    <span class="badge bg-success">Available</span>
+                                                </div>
+                                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-flag me-3 text-success"></i>
+                                                        <span>Arabic Guide (العربية)</span>
+                                                    </div>
+                                                    <span class="badge bg-success">Available</span>
+                                                </div>
+                                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-flag me-3 text-warning"></i>
+                                                        <span>Kurdish Bahdeni (کوردی بادینی)</span>
+                                                    </div>
+                                                    <span class="badge bg-success">Available</span>
+                                                </div>
+                                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-flag me-3 text-info"></i>
+                                                        <span>Kurdish Sorani (کوردی سۆرانی)</span>
+                                                    </div>
+                                                    <span class="badge bg-success">Available</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <a href="{{ route('settings.user-guide') }}" class="btn btn-primary btn-lg" target="_blank">
+                                            <i class="fas fa-external-link-alt me-2"></i>
+                                            {{ __('Open User Guide') }}
+                                        </a>
+                                        <p class="text-muted mt-2 small">
+                                            {{ __('Opens in a new window with fullscreen view and PDF export options') }}
+                                        </p>
+                                    </div>
+
+                                    <div class="mt-4 pt-3 border-top">
+                                        <h6 class="text-secondary">{{ __('Features') }}</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <ul class="list-unstyled text-start">
+                                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Step-by-step instructions') }}</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Multi-language support') }}</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('PDF export functionality') }}</li>
+                                                </ul>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <ul class="list-unstyled text-start">
+                                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Fullscreen reading mode') }}</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Printable format') }}</li>
+                                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Always up-to-date') }}</li>
+                                                </ul>
                                             </div>
                                         </div>
                                     </div>
@@ -353,15 +578,190 @@ Country</textarea>
 
 @push('scripts')
 <script>
+// System maintenance functions
+function backupDatabase() {
+    if (!confirm('{{ __("Create a database backup? This may take a few moments.") }}')) {
+        return;
+    }
+
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>{{ __("Creating Backup...") }}';
+    button.disabled = true;
+
+    fetch('{{ route("settings.backup") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+
+        if (data.success) {
+            alert(data.message);
+            if (data.download_url) {
+                // Automatically start download
+                const link = document.createElement('a');
+                link.href = data.download_url;
+                link.download = '';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        } else {
+            alert(data.message || '{{ __("Failed to create backup") }}');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.innerHTML = originalText;
+        button.disabled = false;
+        alert('{{ __("An error occurred while creating backup") }}');
+    });
+}
+
+function clearCache() {
+    if (!confirm('{{ __("Clear all application caches? This will temporarily slow down the system.") }}')) {
+        return;
+    }
+
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>{{ __("Clearing Cache...") }}';
+    button.disabled = true;
+
+    fetch('{{ route("settings.clear-cache") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+
+        if (data.success) {
+            alert(data.message);
+        } else {
+            alert(data.message || '{{ __("Failed to clear cache") }}');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.innerHTML = originalText;
+        button.disabled = false;
+        alert('{{ __("An error occurred while clearing cache") }}');
+    });
+}
+
+function updateSystem() {
+    alert('{{ __("System update feature is coming soon.") }}');
+}
+
+console.log('=== JAVASCRIPT LOADED ===');
+console.log('Form element found:', document.getElementById('clinicSettingsForm'));
+
+// Add click listener to submit button as backup
+const submitButton = document.querySelector('#clinicSettingsForm button[type="submit"]');
+console.log('Submit button found:', submitButton);
+
+if (submitButton) {
+    submitButton.addEventListener('click', function(e) {
+        console.log('=== SUBMIT BUTTON CLICKED ===');
+        e.preventDefault(); // Prevent default form submission
+
+        // Manually trigger our form handling
+        handleFormSubmission();
+    });
+}
+
+function handleFormSubmission() {
+    console.log('=== MANUAL FORM SUBMISSION STARTED ===');
+
+    const form = document.getElementById('clinicSettingsForm');
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+
+    // Debug form data
+    console.log('Form data entries:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
+
+    console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    console.log('Route URL:', '{{ route("settings.update") }}');
+
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> {{ __("Saving...") }}';
+    submitBtn.disabled = true;
+
+    console.log('About to send fetch request...');
+
+    fetch('{{ route("settings.update") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Response received:', response);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            alert('✅ ' + data.message);
+            // Reload page to show updated settings
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            alert('❌ ' + (data.message || '{{ __("An error occurred while updating settings.") }}'));
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('❌ {{ __("An error occurred while updating settings.") }}');
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+
+// Keep the original form submit listener as backup
 document.getElementById('clinicSettingsForm').addEventListener('submit', function(e) {
     e.preventDefault();
+
+    console.log('=== FORM SUBMISSION STARTED ===');
 
     const formData = new FormData(this);
     const submitBtn = this.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
 
+    // Debug form data
+    console.log('Form data entries:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
+
+    console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    console.log('Route URL:', '{{ route("settings.update") }}');
+    console.log('Form element:', this);
+    console.log('Submit button:', submitBtn);
+
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> {{ __("Saving...") }}';
     submitBtn.disabled = true;
+
+    console.log('About to send fetch request...');
 
     fetch('{{ route("settings.update") }}', {
         method: 'POST',
@@ -370,14 +770,27 @@ document.getElementById('clinicSettingsForm').addEventListener('submit', functio
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
             // Check if logo was uploaded (reload page to show new logo)
             const logoFile = document.getElementById('clinic_logo').files[0];
             if (logoFile) {
-                // Reload page to show new logo
-                location.reload();
+                // Add a small delay to ensure database transaction is committed
+                console.log('Logo uploaded, debug path:', data.debug_logo_path);
+                setTimeout(() => {
+                    location.reload();
+                }, 1000); // 1 second delay
             } else {
                 // Show success message for other settings
                 const alertDiv = document.createElement('div');
@@ -410,8 +823,70 @@ document.getElementById('clinicSettingsForm').addEventListener('submit', functio
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('Error details:', error);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
 
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+        alertDiv.innerHTML = `
+            {{ __("An error occurred. Please try again.") }}<br>
+            <small>Debug: ${error.message}</small>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        this.insertBefore(alertDiv, this.firstChild);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Handle profile form submission
+document.getElementById('profileForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const form = this;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+
+    // Clear previous alerts
+    form.querySelectorAll('.alert').forEach(alert => alert.remove());
+
+    // Show loading state
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> {{ __("Updating...") }}';
+    submitBtn.disabled = true;
+
+    const formData = new FormData(form);
+
+    fetch('{{ route("settings.update-profile") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${data.success ? 'success' : 'danger'} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${data.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        form.insertBefore(alertDiv, form.firstChild);
+
+        if (data.success) {
+            // Optionally reload page to show updated data
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
         const alertDiv = document.createElement('div');
         alertDiv.className = 'alert alert-danger alert-dismissible fade show';
         alertDiv.innerHTML = `
@@ -419,7 +894,66 @@ document.getElementById('clinicSettingsForm').addEventListener('submit', functio
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
 
-        this.insertBefore(alertDiv, this.firstChild);
+        form.insertBefore(alertDiv, form.firstChild);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Handle clinic info form submission
+document.getElementById('clinicInfoForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const form = this;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+
+    // Clear previous alerts
+    form.querySelectorAll('.alert').forEach(alert => alert.remove());
+
+    // Show loading state
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> {{ __("Saving...") }}';
+    submitBtn.disabled = true;
+
+    const formData = new FormData(form);
+
+    fetch('{{ route("settings.update-clinic-info") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${data.success ? 'success' : 'danger'} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${data.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        form.insertBefore(alertDiv, form.firstChild);
+
+        if (data.success) {
+            // Optionally reload page to show updated data
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+        alertDiv.innerHTML = `
+            {{ __("An error occurred. Please try again.") }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        form.insertBefore(alertDiv, form.firstChild);
     })
     .finally(() => {
         submitBtn.innerHTML = originalText;
@@ -465,6 +999,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+
 </script>
 @endpush
 

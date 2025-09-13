@@ -36,7 +36,6 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
 
-            // Master Dashboard Routes (separate from tenant routes)
             Route::middleware('web')
                 ->group(base_path('routes/master.php'));
         });

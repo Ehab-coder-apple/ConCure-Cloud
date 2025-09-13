@@ -413,7 +413,13 @@
         @forelse($dietPlan->meals->groupBy('meal_type') as $mealType => $meals)
             <div class="meal">
                 <div class="meal-header">
-                    {{ ucfirst($mealType) }}
+                    @php
+                        $displayName = match($mealType) {
+                            'snack_1', 'snack_2', 'snack_3', 'snack' => 'Snacks',
+                            default => ucfirst($mealType)
+                        };
+                    @endphp
+                    {{ $displayName }}
                 </div>
                 <div class="meal-foods">
                     @php

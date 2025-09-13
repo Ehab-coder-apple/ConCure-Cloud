@@ -21,12 +21,30 @@ class LabRequest extends Model
         'status',
         'priority',
         'lab_name',
+        'lab_email',
+        'lab_phone',
+        'lab_whatsapp',
         'notes',
+        'sent_at',
+        'communication_method',
+        'communication_notes',
+        'result_file_path',
+        'result_received_at',
+        'result_received_by',
     ];
 
     protected $casts = [
         'requested_date' => 'date',
         'due_date' => 'date',
+        'sent_at' => 'datetime',
+        'result_received_at' => 'datetime',
+    ];
+
+    /**
+     * The attributes that should be appended to the model's array form.
+     */
+    protected $appends = [
+        'communication_method_display',
     ];
 
     /**
@@ -87,6 +105,23 @@ class LabRequest extends Model
     public function tests(): HasMany
     {
         return $this->hasMany(LabRequestTest::class);
+    }
+
+    /**
+     * Get the user who received the results.
+     */
+    public function resultReceiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'result_received_by');
+    }
+
+    /**
+     * Get communication logs for this lab request.
+     */
+    public function communicationLogs(): HasMany
+    {
+        return $this->hasMany(CommunicationLog::class, 'patient_id', 'patient_id')
+                    ->where('subject', 'like', '%' . $this->request_number . '%');
     }
 
     /**
@@ -173,6 +208,88 @@ class LabRequest extends Model
     public function markAsCancelled(): void
     {
         $this->update(['status' => 'cancelled']);
+    }
+
+    /**
+     * Mark lab request as sent.
+     */
+    public function markAsSent(string $method, ?string $notes = null): void
+    {
+        $this->update([
+            'sent_at' => now(),
+            'communication_method' => $method,
+            'communication_notes' => $notes,
+        ]);
+    }
+
+    /**
+     * Add result file to lab request.
+     */
+    public function addResultFile(string $filePath, ?int $receivedBy = null): void
+    {
+        $this->update([
+            'result_file_path' => $filePath,
+            'result_received_at' => now(),
+            'result_received_by' => $receivedBy ?: auth()->id(),
+            'status' => 'completed',
+        ]);
+    }
+
+    /**
+     * Check if lab request has been sent.
+     */
+    public function isSent(): bool
+    {
+        return $this->sent_at !== null;
+    }
+
+    /**
+     * Check if lab request has results.
+     */
+    public function hasResults(): bool
+    {
+        return $this->result_file_path !== null;
+    }
+
+    /**
+     * Get the communication method display name.
+     */
+    public function getCommunicationMethodDisplayAttribute(): string
+    {
+        return match($this->communication_method) {
+            'email' => 'Email',
+            'whatsapp' => 'WhatsApp',
+            'manual' => 'Manual',
+            default => 'Not sent',
+        };
+    }
+
+    /**
+     * Convert the model instance to an array.
+     */
+    public function toArray(): array
+    {
+        $array = parent::toArray();
+
+        // Ensure communication fields are always included, even if null
+        $communicationFields = [
+            'communication_method',
+            'sent_at',
+            'result_file_path',
+            'result_received_at',
+            'communication_notes',
+            'lab_email',
+            'lab_phone',
+            'lab_whatsapp',
+        ];
+
+        foreach ($communicationFields as $field) {
+            if (!array_key_exists($field, $array)) {
+                $array[$field] = $this->getAttribute($field);
+            }
+        }
+
+        return $array;
     }
 
     /**

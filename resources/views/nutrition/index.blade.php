@@ -25,6 +25,12 @@
                             {{ __('New Plan') }}
                         </button>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ route('nutrition.create.flexible') }}">
+                                <i class="fas fa-list-alt me-2 text-success"></i>
+                                {{ __('Flexible Meal Options') }}
+                                <small class="d-block text-muted">{{ __('Patients choose from meal options') }}</small>
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ route('nutrition.create.enhanced') }}">
                                 <i class="fas fa-utensils me-2"></i>
                                 {{ __('Detailed Plan with Foods') }}
@@ -243,13 +249,32 @@
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 @if($plan->canBeModified())
-                                                <a href="{{ route('nutrition.edit', $plan) }}" class="btn btn-outline-warning" title="{{ __('Edit') }}">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-outline-warning dropdown-toggle" data-bs-toggle="dropdown" title="{{ __('Edit') }}">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" href="{{ route('nutrition.edit.enhanced', $plan) }}">
+                                                            <i class="fas fa-utensils me-2"></i>
+                                                            {{ __('Enhanced Editor') }}
+                                                        </a></li>
+                                                        <li><a class="dropdown-item" href="{{ route('nutrition.edit', $plan) }}">
+                                                            <i class="fas fa-file-alt me-2"></i>
+                                                            {{ __('Basic Editor') }}
+                                                        </a></li>
+                                                    </ul>
+                                                </div>
                                                 @endif
                                                 <a href="{{ route('nutrition.pdf', $plan) }}" class="btn btn-outline-danger" title="{{ __('PDF') }}">
                                                     <i class="fas fa-file-pdf"></i>
                                                 </a>
+                                                @if($plan->canBeModified())
+                                                <button type="button" class="btn btn-outline-danger"
+                                                        onclick="deletePlan({{ $plan->id }}, '{{ $plan->title }}')"
+                                                        title="{{ __('Delete') }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -278,4 +303,39 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+function deletePlan(planId, planTitle) {
+    // Show confirmation dialog
+    if (confirm(`{{ __('Are you sure you want to delete the nutrition plan') }} "${planTitle}"?\n\n{{ __('This action cannot be undone and will permanently remove all associated meals and data.') }}`)) {
+
+        // Create form and submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/nutrition/${planId}`;
+        form.style.display = 'none';
+
+        // Add CSRF token
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = '{{ csrf_token() }}';
+        form.appendChild(csrfToken);
+
+        // Add method override for DELETE
+        const methodField = document.createElement('input');
+        methodField.type = 'hidden';
+        methodField.name = '_method';
+        methodField.value = 'DELETE';
+        form.appendChild(methodField);
+
+        // Add to body and submit
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+@endpush
+
 @endsection

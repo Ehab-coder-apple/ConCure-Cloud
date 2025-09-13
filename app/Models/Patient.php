@@ -247,6 +247,112 @@ class Patient extends Model
     }
 
     /**
+     * Calculate BMR (Basal Metabolic Rate) using Mifflin-St Jeor Equation.
+     */
+    public function calculateBMR(): ?float
+    {
+        if (!$this->weight || !$this->height || !$this->date_of_birth || !$this->gender) {
+            return null;
+        }
+
+        $age = $this->age;
+        $weight = $this->weight; // in kg
+        $height = $this->height; // in cm
+
+        // Mifflin-St Jeor Equation
+        if ($this->gender === 'male') {
+            $bmr = (10 * $weight) + (6.25 * $height) - (5 * $age) + 5;
+        } else {
+            $bmr = (10 * $weight) + (6.25 * $height) - (5 * $age) - 161;
+        }
+
+        return round($bmr, 0);
+    }
+
+    /**
+     * Calculate TDEE (Total Daily Energy Expenditure) based on activity level.
+     */
+    public function calculateTDEE(string $activityLevel = 'sedentary'): ?float
+    {
+        $bmr = $this->calculateBMR();
+        if (!$bmr) {
+            return null;
+        }
+
+        // Activity multipliers
+        $multipliers = [
+            'sedentary' => 1.2,      // Little/no exercise
+            'light' => 1.375,        // Light exercise 1-3 days/week
+            'moderate' => 1.55,      // Moderate exercise 3-5 days/week
+            'active' => 1.725,       // Hard exercise 6-7 days/week
+            'very_active' => 1.9     // Very hard exercise, physical job
+        ];
+
+        $multiplier = $multipliers[$activityLevel] ?? 1.2;
+        return round($bmr * $multiplier, 0);
+    }
+
+    /**
+     * Calculate target calories for weight loss/gain goal.
+     */
+    public function calculateTargetCalories(string $goal, float $weeklyWeightGoal = 0.5, string $activityLevel = 'sedentary'): ?array
+    {
+        $tdee = $this->calculateTDEE($activityLevel);
+        if (!$tdee) {
+            return null;
+        }
+
+        // 1 kg of fat = approximately 7700 calories
+        $caloriesPerKg = 7700;
+        $dailyCalorieAdjustment = ($weeklyWeightGoal * $caloriesPerKg) / 7;
+
+        $targetCalories = $tdee;
+        $recommendedWeeklyGoal = $weeklyWeightGoal;
+
+        switch ($goal) {
+            case 'weight_loss':
+                // For weight loss, create calorie deficit
+                $targetCalories = $tdee - abs($dailyCalorieAdjustment);
+
+                // Safety limits: minimum 1200 calories for women, 1500 for men
+                $minCalories = $this->gender === 'male' ? 1500 : 1200;
+                if ($targetCalories < $minCalories) {
+                    $targetCalories = $minCalories;
+                    // Recalculate safe weekly weight loss
+                    $recommendedWeeklyGoal = (($tdee - $minCalories) * 7) / $caloriesPerKg;
+                }
+                break;
+
+            case 'weight_gain':
+                // For weight gain, create calorie surplus
+                $targetCalories = $tdee + abs($dailyCalorieAdjustment);
+
+                // Safety limit: maximum reasonable surplus
+                $maxSurplus = 500; // 500 calories surplus per day
+                if (($targetCalories - $tdee) > $maxSurplus) {
+                    $targetCalories = $tdee + $maxSurplus;
+                    $recommendedWeeklyGoal = ($maxSurplus * 7) / $caloriesPerKg;
+                }
+                break;
+
+            case 'maintenance':
+                // For maintenance, use TDEE
+                $targetCalories = $tdee;
+                $recommendedWeeklyGoal = 0;
+                break;
+        }
+
+        return [
+            'target_calories' => round($targetCalories, 0),
+            'bmr' => $this->calculateBMR(),
+            'tdee' => $tdee,
+            'recommended_weekly_goal' => round($recommendedWeeklyGoal, 2),
+            'daily_calorie_adjustment' => round($dailyCalorieAdjustment, 0),
+            'activity_level' => $activityLevel
+        ];
+    }
+
+    /**
      * Scope to filter active patients.
      */
     public function scopeActive($query)
@@ -257,8 +363,13 @@ class Patient extends Model
     /**
      * Scope to filter by clinic.
      */
-    public function scopeByClinic($query, int $clinicId)
+    public function scopeByClinic($query, ?int $clinicId)
     {
+        if ($clinicId === null) {
+            // If no clinic ID provided, return empty result set for security
+            return $query->whereRaw('1 = 0');
+        }
+
         return $query->where('clinic_id', $clinicId);
     }
 
@@ -291,7 +402,91 @@ class Patient extends Model
     {
         $minDate = now()->subYears($maxAge)->startOfYear();
         $maxDate = now()->subYears($minAge)->endOfYear();
-        
+
         return $query->whereBetween('date_of_birth', [$minDate, $maxDate]);
+    }
+
+    /**
+     * Get the patient's vital signs assignments.
+     */
+    public function vitalSignsAssignments()
+    {
+        return $this->hasMany(\App\Models\PatientVitalSignsAssignment::class);
+    }
+
+    /**
+     * Get the patient's active vital signs assignments.
+     */
+    public function activeVitalSignsAssignments()
+    {
+        return $this->hasMany(\App\Models\PatientVitalSignsAssignment::class)->where('is_active', true);
+    }
+
+    /**
+     * Get the patient's assigned custom vital signs.
+     */
+    public function getAssignedCustomVitalSignsAttribute()
+    {
+        return \App\Models\PatientVitalSignsAssignment::getPatientActiveVitalSigns($this);
+    }
+
+    /**
+     * Check if patient has any assigned custom vital signs.
+     */
+    public function hasAssignedVitalSigns(): bool
+    {
+        return $this->activeVitalSignsAssignments()->exists();
+    }
+
+    /**
+     * Get patient's medical conditions from vital signs assignments.
+     */
+    public function getMedicalConditionsAttribute(): array
+    {
+        return $this->activeVitalSignsAssignments()
+                   ->whereNotNull('medical_condition')
+                   ->distinct('medical_condition')
+                   ->pluck('medical_condition')
+                   ->toArray();
+    }
+
+    /**
+     * Get the patient's checkup template assignments.
+     */
+    public function checkupTemplateAssignments()
+    {
+        return $this->hasMany(\App\Models\PatientCheckupTemplateAssignment::class);
+    }
+
+    /**
+     * Get the patient's active checkup template assignments.
+     */
+    public function activeCheckupTemplateAssignments()
+    {
+        return $this->hasMany(\App\Models\PatientCheckupTemplateAssignment::class)->where('is_active', true);
+    }
+
+    /**
+     * Get the patient's assigned checkup templates.
+     */
+    public function getAssignedCheckupTemplatesAttribute()
+    {
+        return \App\Models\PatientCheckupTemplateAssignment::getPatientActiveTemplates($this);
+    }
+
+    /**
+     * Check if patient has any assigned checkup templates.
+     */
+    public function hasAssignedCheckupTemplates(): bool
+    {
+        return $this->activeCheckupTemplateAssignments()->exists();
+    }
+
+    /**
+     * Get recommended checkup templates for this patient.
+     */
+    public function getRecommendedCheckupTemplatesAttribute()
+    {
+        return \App\Models\PatientCheckupTemplateAssignment::getRecommendedTemplates($this);
     }
 }

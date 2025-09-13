@@ -20,6 +20,9 @@ class PatientCheckup extends Model
         'temperature',
         'respiratory_rate',
         'blood_sugar',
+        'custom_vital_signs',
+        'custom_fields',
+        'template_id',
         'symptoms',
         'notes',
         'recommendations',
@@ -33,6 +36,8 @@ class PatientCheckup extends Model
         'bmi' => 'decimal:2',
         'temperature' => 'decimal:1',
         'blood_sugar' => 'decimal:2',
+        'custom_vital_signs' => 'array',
+        'custom_fields' => 'array',
         'checkup_date' => 'datetime',
     ];
 
@@ -218,5 +223,193 @@ class PatientCheckup extends Model
     public function scopeLatest($query)
     {
         return $query->orderBy('checkup_date', 'desc');
+    }
+
+    /**
+     * Get custom vital signs with their configurations.
+     */
+    public function getCustomVitalSignsWithConfigAttribute(): array
+    {
+        if (!$this->custom_vital_signs || !$this->patient) {
+            return [];
+        }
+
+        $configs = \App\Models\CustomVitalSignsConfig::forClinic($this->patient->clinic_id)
+                                        ->active()
+                                        ->ordered()
+                                        ->get()
+                                        ->keyBy('id');
+
+        $result = [];
+        foreach ($this->custom_vital_signs as $configId => $value) {
+            if (isset($configs[$configId]) && $value !== null && $value !== '') {
+                $config = $configs[$configId];
+                $result[] = [
+                    'config' => $config,
+                    'value' => $value,
+                    'formatted_value' => $config->formatValue($value),
+                    'is_normal' => $config->isValueNormal($value),
+                    'status_class' => $config->getValueStatusClass($value),
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Set custom vital sign value.
+     */
+    public function setCustomVitalSign(int $configId, $value): void
+    {
+        $customSigns = $this->custom_vital_signs ?? [];
+        $customSigns[$configId] = $value;
+        $this->custom_vital_signs = $customSigns;
+    }
+
+    /**
+     * Get custom vital sign value.
+     */
+    public function getCustomVitalSign(int $configId)
+    {
+        return $this->custom_vital_signs[$configId] ?? null;
+    }
+
+    /**
+     * Check if checkup has any custom vital signs.
+     */
+    public function hasCustomVitalSigns(): bool
+    {
+        return !empty($this->custom_vital_signs);
+    }
+
+    /**
+     * Get the custom checkup template used for this checkup.
+     */
+    public function template()
+    {
+        return $this->belongsTo(\App\Models\CustomCheckupTemplate::class, 'template_id');
+    }
+
+    /**
+     * Get custom field value by field name.
+     */
+    public function getCustomFieldValue(string $fieldName)
+    {
+        return $this->custom_fields[$fieldName] ?? null;
+    }
+
+    /**
+     * Set custom field value.
+     */
+    public function setCustomFieldValue(string $fieldName, $value): void
+    {
+        $customFields = $this->custom_fields ?? [];
+        $customFields[$fieldName] = $value;
+        $this->custom_fields = $customFields;
+    }
+
+    /**
+     * Get formatted custom fields with their configurations.
+     */
+    public function getCustomFieldsWithConfigAttribute(): array
+    {
+        if (!$this->template || empty($this->custom_fields)) {
+            return [];
+        }
+
+        $formFields = $this->template->form_fields;
+        $customFieldsWithConfig = [];
+
+        foreach ($this->custom_fields as $fieldName => $value) {
+            if (isset($formFields[$fieldName])) {
+                $config = $formFields[$fieldName];
+                $customFieldsWithConfig[] = [
+                    'field_name' => $fieldName,
+                    'config' => $config,
+                    'value' => $value,
+                    'formatted_value' => $this->formatCustomFieldValue($value, $config),
+                    'section' => $config['section'] ?? 'additional',
+                ];
+            }
+        }
+
+        return $customFieldsWithConfig;
+    }
+
+    /**
+     * Format custom field value for display.
+     */
+    private function formatCustomFieldValue($value, array $config): string
+    {
+        if (is_null($value) || $value === '') {
+            return '-';
+        }
+
+        switch ($config['type']) {
+            case 'select':
+            case 'radio':
+                if (isset($config['options']) && is_array($config['options'])) {
+                    return $config['options'][$value] ?? $value;
+                }
+                return $value;
+
+            case 'checkbox':
+                return $value ? 'Yes' : 'No';
+
+            case 'date':
+                try {
+                    return \Carbon\Carbon::parse($value)->format('M d, Y');
+                } catch (\Exception $e) {
+                    return $value;
+                }
+
+            case 'time':
+                try {
+                    return \Carbon\Carbon::parse($value)->format('g:i A');
+                } catch (\Exception $e) {
+                    return $value;
+                }
+
+            case 'datetime':
+                try {
+                    return \Carbon\Carbon::parse($value)->format('M d, Y g:i A');
+                } catch (\Exception $e) {
+                    return $value;
+                }
+
+            case 'number':
+                return is_numeric($value) ? number_format($value, 2) : $value;
+
+            default:
+                return $value;
+        }
+    }
+
+    /**
+     * Check if checkup has any custom fields.
+     */
+    public function hasCustomFields(): bool
+    {
+        return !empty($this->custom_fields);
+    }
+
+    /**
+     * Get custom fields grouped by section.
+     */
+    public function getCustomFieldsBySectionAttribute(): array
+    {
+        $customFieldsWithConfig = $this->custom_fields_with_config;
+        $sections = [];
+
+        foreach ($customFieldsWithConfig as $field) {
+            $sectionName = $field['section'];
+            if (!isset($sections[$sectionName])) {
+                $sections[$sectionName] = [];
+            }
+            $sections[$sectionName][] = $field;
+        }
+
+        return $sections;
     }
 }

@@ -54,12 +54,10 @@ class WelcomeController extends Controller
                 'address' => $request->clinic_address,
                 'phone' => $request->clinic_phone,
                 'email' => $request->clinic_email,
+                'activation_code' => Str::upper(Str::random(10)),
                 'activated_at' => now(), // Automatically activate
                 'is_active' => true,
-                'subscription_status' => 'trial', // Start with trial
-                'is_trial' => true,
-                'trial_started_at' => now(),
-                'trial_expires_at' => now()->addDays(7), // 7-day trial
+                // Subscription system removed - direct activation
             ]);
 
             // Create the admin user
@@ -90,7 +88,7 @@ class WelcomeController extends Controller
             auth()->login($admin);
 
             return redirect()->route('dashboard')
-                           ->with('success', 'Welcome to ConCure! Your clinic has been successfully registered. You have a 7-day free trial.');
+                           ->with('success', 'Welcome to ConCure! Your clinic has been successfully registered and activated.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -131,19 +129,23 @@ class WelcomeController extends Controller
 
             $user = auth()->user();
 
-            // Check if clinic is active
-            if (!$user->clinic->is_active) {
+            // Check if user and clinic exist and are active
+            if (!$user) {
+                auth()->logout();
+                return back()->withErrors([
+                    'email' => 'Authentication failed. Please try again.',
+                ]);
+            }
+
+            // Check if clinic exists and is active (only for non-program_owner users)
+            if ($user->role !== 'program_owner' && (!$user->clinic || !$user->clinic->is_active)) {
                 auth()->logout();
                 return back()->withErrors([
                     'email' => 'Your clinic account has been suspended. Please contact support.',
                 ]);
             }
 
-            // Check subscription status
-            if ($user->clinic->subscription_status === 'expired') {
-                return redirect()->route('dashboard')
-                               ->with('warning', 'Your subscription has expired. Please renew to continue using all features.');
-            }
+            // Subscription checks removed - direct access
 
             return redirect()->intended(route('dashboard'));
         }

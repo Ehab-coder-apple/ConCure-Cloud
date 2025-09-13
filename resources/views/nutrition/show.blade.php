@@ -20,10 +20,22 @@
                         {{ __('Back to Plans') }}
                     </a>
                     @if($dietPlan->canBeModified())
-                    <a href="{{ route('nutrition.edit', $dietPlan) }}" class="btn btn-warning">
-                        <i class="fas fa-edit me-1"></i>
-                        {{ __('Edit Plan') }}
-                    </a>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-edit me-1"></i>
+                            {{ __('Edit Plan') }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ route('nutrition.edit.enhanced', $dietPlan) }}">
+                                <i class="fas fa-utensils me-2"></i>
+                                {{ __('Enhanced Editor') }}
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ route('nutrition.edit', $dietPlan) }}">
+                                <i class="fas fa-file-alt me-2"></i>
+                                {{ __('Basic Editor') }}
+                            </a></li>
+                        </ul>
+                    </div>
                     <a href="{{ route('nutrition.create.enhanced') }}?edit={{ $dietPlan->id }}" class="btn btn-success">
                         <i class="fas fa-utensils me-1"></i>
                         {{ __('Manage Meals') }}
@@ -37,6 +49,24 @@
                         <i class="fab fa-whatsapp me-1"></i>
                         {{ __('Send via WhatsApp') }}
                     </button>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-download me-1"></i>
+                            {{ __('Export') }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header">{{ __('Daily Format') }}</h6></li>
+                            <li><a class="dropdown-item" href="{{ route('nutrition.pdf', $dietPlan) }}">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                {{ __('Daily PDF') }}
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ route('nutrition.word', $dietPlan) }}">
+                                <i class="fas fa-file-word me-2"></i>
+                                {{ __('Daily Word') }}
+                            </a></li>
+
+                        </ul>
+                    </div>
                     <a href="{{ route('nutrition.word', $dietPlan) }}" class="btn btn-primary">
                         <i class="fas fa-file-word me-1"></i>
                         {{ __('Download Word') }}
@@ -311,64 +341,131 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-utensils"></i>
-                        {{ __('Daily Meal Plan') }}
+                        @if($dietPlan->meals->where('is_option_based', true)->count() > 0)
+                            {{ __('Flexible Meal Plan') }}
+                            <small class="text-muted">{{ __('- Choose from the options below') }}</small>
+                        @else
+                            {{ __('Daily Meal Plan') }}
+                        @endif
                     </h6>
                 </div>
                 <div class="card-body">
                     @php
-                        $mealsByDay = $dietPlan->meals->groupBy('day_number');
+                        $isFlexiblePlan = $dietPlan->meals->where('is_option_based', true)->count() > 0;
+
+                        if ($isFlexiblePlan) {
+                            // Group by meal type and option for flexible plans
+                            $mealsByType = $dietPlan->meals->where('is_option_based', true)->groupBy('meal_type');
+                        } else {
+                            // Group by day for traditional plans
+                            $mealsByDay = $dietPlan->meals->groupBy('day_number');
+                        }
                     @endphp
 
-                    @foreach($mealsByDay as $dayNumber => $dayMeals)
-                    <div class="mb-4">
-                        <h6 class="text-primary mb-3">
-                            <i class="fas fa-calendar-day me-2"></i>
-                            {{ __('Day') }} {{ $dayNumber }}
-                        </h6>
+                    @if($isFlexiblePlan)
+                        {{-- Flexible meal plan display --}}
+                        @foreach($mealsByType as $mealType => $meals)
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-{{ $mealType === 'breakfast' ? 'coffee' : ($mealType === 'lunch' ? 'sun' : ($mealType === 'dinner' ? 'moon' : 'cookie-bite')) }} me-2"></i>
+                                {{ ucfirst($mealType === 'snack_1' ? 'snacks' : $mealType) }} Options
+                            </h6>
 
-                        @foreach($dayMeals->sortBy('suggested_time') as $meal)
-                        <div class="meal-item mb-3 p-3 border rounded">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <h6 class="mb-1">
-                                        <i class="fas fa-clock me-1 text-muted"></i>
-                                        {{ $meal->suggested_time ? \Carbon\Carbon::parse($meal->suggested_time)->format('g:i A') : '' }}
-                                        - {{ $meal->meal_name ?: ucfirst($meal->meal_type) }}
-                                    </h6>
-                                    @if($meal->instructions)
-                                    <p class="text-muted small mb-2">{{ $meal->instructions }}</p>
-                                    @endif
-                                </div>
-                                <span class="badge bg-{{ $meal->meal_type === 'breakfast' ? 'warning' : ($meal->meal_type === 'lunch' ? 'success' : ($meal->meal_type === 'dinner' ? 'primary' : 'info')) }}">
-                                    {{ ucfirst($meal->meal_type) }}
-                                </span>
-                            </div>
-
-                            @if($meal->foods->count() > 0)
-                            <div class="foods-list">
-                                <div class="row">
-                                    @foreach($meal->foods as $food)
-                                    <div class="col-md-6 mb-2">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <strong>{{ $food->food_name }}</strong>
-                                                @if($food->preparation_notes)
-                                                <br><small class="text-muted">{{ $food->preparation_notes }}</small>
-                                                @endif
-                                            </div>
-                                            <span class="badge bg-light text-dark">
-                                                {{ $food->quantity }} {{ $food->unit }}
-                                            </span>
-                                        </div>
+                            @foreach($meals->sortBy('option_number') as $meal)
+                            <div class="meal-item mb-3 p-3 border rounded">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-list-ol me-1 text-muted"></i>
+                                            {{ $meal->option_description ?: 'Option ' . $meal->option_number }}
+                                        </h6>
+                                        @if($meal->instructions)
+                                        <p class="text-muted small mb-2">{{ $meal->instructions }}</p>
+                                        @endif
                                     </div>
-                                    @endforeach
+                                    <span class="badge bg-{{ $meal->meal_type === 'breakfast' ? 'warning' : ($meal->meal_type === 'lunch' ? 'success' : ($meal->meal_type === 'dinner' ? 'primary' : 'info')) }}">
+                                        {{ ucfirst($meal->meal_type === 'snack_1' ? 'snacks' : $meal->meal_type) }}
+                                    </span>
                                 </div>
+
+                                @if($meal->foods->count() > 0)
+                                <div class="foods-list">
+                                    <div class="row">
+                                        @foreach($meal->foods as $food)
+                                        <div class="col-md-6 mb-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong>{{ $food->food_name }}</strong>
+                                                    @if($food->preparation_notes)
+                                                    <br><small class="text-muted">{{ $food->preparation_notes }}</small>
+                                                    @endif
+                                                </div>
+                                                <span class="badge bg-light text-dark">
+                                                    {{ $food->quantity }} {{ $food->unit }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endif
                             </div>
-                            @endif
+                            @endforeach
                         </div>
                         @endforeach
-                    </div>
-                    @endforeach
+                    @else
+                        {{-- Traditional daily meal plan display --}}
+                        @foreach($mealsByDay as $dayNumber => $dayMeals)
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-calendar-day me-2"></i>
+                                {{ __('Day') }} {{ $dayNumber }}
+                            </h6>
+
+                            @foreach($dayMeals->sortBy('suggested_time') as $meal)
+                            <div class="meal-item mb-3 p-3 border rounded">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-clock me-1 text-muted"></i>
+                                            {{ $meal->suggested_time ? \Carbon\Carbon::parse($meal->suggested_time)->format('g:i A') : '' }}
+                                            - {{ $meal->meal_name ?: ucfirst($meal->meal_type) }}
+                                        </h6>
+                                        @if($meal->instructions)
+                                        <p class="text-muted small mb-2">{{ $meal->instructions }}</p>
+                                        @endif
+                                    </div>
+                                    <span class="badge bg-{{ $meal->meal_type === 'breakfast' ? 'warning' : ($meal->meal_type === 'lunch' ? 'success' : ($meal->meal_type === 'dinner' ? 'primary' : 'info')) }}">
+                                        {{ ucfirst($meal->meal_type) }}
+                                    </span>
+                                </div>
+
+                                @if($meal->foods->count() > 0)
+                                <div class="foods-list">
+                                    <div class="row">
+                                        @foreach($meal->foods as $food)
+                                        <div class="col-md-6 mb-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong>{{ $food->food_name }}</strong>
+                                                    @if($food->preparation_notes)
+                                                    <br><small class="text-muted">{{ $food->preparation_notes }}</small>
+                                                    @endif
+                                                </div>
+                                                <span class="badge bg-light text-dark">
+                                                    {{ $food->quantity }} {{ $food->unit }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                        @endforeach
+                    @endif
                 </div>
             </div>
             @endif
@@ -528,28 +625,76 @@
 <script>
 function shareOnWhatsApp() {
     // Get nutrition plan data
-    const patientName = "{{ $dietPlan->patient->name }}";
+    const patientName = "{{ $dietPlan->patient->full_name }}";
     const planTitle = "{{ $dietPlan->title }}";
     const planNumber = "{{ $dietPlan->plan_number }}";
-    const doctorName = "{{ $dietPlan->doctor->name }}";
+    const doctorName = "{{ $dietPlan->doctor ? $dietPlan->doctor->first_name . ' ' . $dietPlan->doctor->last_name : 'Unknown' }}";
     const targetCalories = "{{ $dietPlan->target_calories }}";
     const targetProtein = "{{ $dietPlan->target_protein }}";
     const targetCarbs = "{{ $dietPlan->target_carbs }}";
     const targetFat = "{{ $dietPlan->target_fat }}";
 
+    // Check if this is a flexible meal plan
+    const isFlexiblePlan = {{ $dietPlan->meals()->where('is_option_based', true)->exists() ? 'true' : 'false' }};
+
     // Build meal summary
     let mealSummary = "";
-    @foreach(['breakfast', 'lunch', 'dinner', 'snack'] as $mealType)
-        @php $meals = $dietPlan->meals->where('meal_type', $mealType); @endphp
-        @if($meals->count() > 0)
-            mealSummary += "\n*{{ ucfirst($mealType) }}:*\n";
-            @foreach($meals as $meal)
-                @foreach($meal->foods as $mealFood)
-                    mealSummary += "• {{ $mealFood->food_name }} - {{ $mealFood->quantity }}{{ $mealFood->unit }}\n";
+
+    if (isFlexiblePlan) {
+        // Flexible meal plan format
+        mealSummary += "\n🔄 *Flexible Meal Plan - Choose one option from each meal:*\n";
+
+        @php
+            // Group meals by type and option for flexible plans
+            $mealsByType = [];
+            $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack_1'];
+            $mealTypeNames = [
+                'breakfast' => 'Breakfast',
+                'lunch' => 'Lunch',
+                'dinner' => 'Dinner',
+                'snack_1' => 'Snack'
+            ];
+
+            foreach ($mealTypes as $mealType) {
+                $mealsByType[$mealType] = [];
+            }
+
+            foreach ($dietPlan->meals->where('is_option_based', true) as $meal) {
+                $mealType = $meal->meal_type;
+                if (in_array($mealType, $mealTypes)) {
+                    $mealsByType[$mealType][] = $meal;
+                }
+            }
+        @endphp
+
+        @foreach($mealTypes as $mealType)
+            @if(count($mealsByType[$mealType]) > 0)
+                mealSummary += "\n*{{ $mealTypeNames[$mealType] }} Options:*\n";
+                @foreach($mealsByType[$mealType] as $index => $meal)
+                    mealSummary += "📋 *Option {{ $meal->option_number }}:*\n";
+                    @foreach($meal->foods as $mealFood)
+                        mealSummary += "  • {{ $mealFood->food_name }} - {{ $mealFood->quantity }}{{ $mealFood->unit }}\n";
+                    @endforeach
+                    mealSummary += "\n";
                 @endforeach
-            @endforeach
-        @endif
-    @endforeach
+            @endif
+        @endforeach
+
+        mealSummary += "💡 *Instructions:* Choose one option from each meal type for each day. You can mix and match different options throughout the week for variety!\n";
+    } else {
+        // Regular meal plan format
+        @foreach(['breakfast', 'lunch', 'dinner', 'snack'] as $mealType)
+            @php $meals = $dietPlan->meals->where('meal_type', $mealType)->where('is_option_based', false); @endphp
+            @if($meals->count() > 0)
+                mealSummary += "\n*{{ ucfirst($mealType) }}:*\n";
+                @foreach($meals as $meal)
+                    @foreach($meal->foods as $mealFood)
+                        mealSummary += "• {{ $mealFood->food_name }} - {{ $mealFood->quantity }}{{ $mealFood->unit }}\n";
+                    @endforeach
+                @endforeach
+            @endif
+        @endforeach
+    }
 
     // Create WhatsApp message
     const message = `🍎 *Nutrition Plan*

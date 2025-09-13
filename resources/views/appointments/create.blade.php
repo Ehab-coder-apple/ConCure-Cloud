@@ -39,14 +39,19 @@
                                     <!-- Patient Selection -->
                                     <div class="col-md-6 mb-3">
                                         <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
-                                        <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id" required>
-                                            <option value="">{{ __('Select patient...') }}</option>
-                                            @foreach($patients as $patient)
-                                                <option value="{{ $patient->id }}" {{ (old('patient_id') == $patient->id || request('patient_id') == $patient->id) ? 'selected' : '' }}>
-                                                    {{ $patient->first_name }} {{ $patient->last_name }} ({{ $patient->patient_id }})
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        <div class="input-group">
+                                            <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id" required>
+                                                <option value="">{{ __('Select patient...') }}</option>
+                                                @foreach($patients as $patient)
+                                                    <option value="{{ $patient->id }}" {{ (old('patient_id') == $patient->id || request('patient_id') == $patient->id) ? 'selected' : '' }}>
+                                                        {{ $patient->first_name }} {{ $patient->last_name }} ({{ $patient->patient_id }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <button type="button" class="btn btn-outline-success" onclick="openQuickAddPatient()" title="{{ __('Add New Patient') }}">
+                                                <i class="fas fa-user-plus"></i>
+                                            </button>
+                                        </div>
                                         @error('patient_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -213,6 +218,73 @@
     </div>
 </div>
 
+<!-- Quick Add Patient Modal -->
+<div class="modal fade" id="quickAddPatientModal" tabindex="-1" aria-labelledby="quickAddPatientModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickAddPatientModalLabel">
+                    <i class="fas fa-user-plus me-2"></i>
+                    {{ __('Quick Add New Patient') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickAddPatientForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="quick_first_name" class="form-label">{{ __('First Name') }} <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="quick_first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="quick_last_name" class="form-label">{{ __('Last Name') }} <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="quick_last_name" name="last_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="quick_phone" class="form-label">{{ __('Phone') }} <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="quick_phone" name="phone" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="quick_email" class="form-label">{{ __('Email') }}</label>
+                            <input type="email" class="form-control" id="quick_email" name="email">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="quick_date_of_birth" class="form-label">{{ __('Date of Birth') }}</label>
+                            <input type="date" class="form-control" id="quick_date_of_birth" name="date_of_birth">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="quick_gender" class="form-label">{{ __('Gender') }}</label>
+                            <select class="form-select" id="quick_gender" name="gender">
+                                <option value="">{{ __('Select gender...') }}</option>
+                                <option value="male">{{ __('Male') }}</option>
+                                <option value="female">{{ __('Female') }}</option>
+                                <option value="other">{{ __('Other') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="quick_address" class="form-label">{{ __('Address') }}</label>
+                            <textarea class="form-control" id="quick_address" name="address" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div id="quickAddPatientError" class="alert alert-danger d-none"></div>
+                    <div id="quickAddPatientSuccess" class="alert alert-success d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        {{ __('Cancel') }}
+                    </button>
+                    <button type="submit" class="btn btn-success" id="quickAddPatientBtn">
+                        <i class="fas fa-user-plus me-1"></i>
+                        {{ __('Add Patient') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 // Auto-populate patient info when selected
 document.getElementById('patient_id').addEventListener('change', function() {
@@ -228,6 +300,82 @@ document.getElementById('doctor_id').addEventListener('change', function() {
 document.addEventListener('DOMContentLoaded', function() {
     // You can add AJAX call here to get today's appointment count
     document.getElementById('todayCount').textContent = '0';
+});
+
+// Quick Add Patient functionality
+function openQuickAddPatient() {
+    const modal = new bootstrap.Modal(document.getElementById('quickAddPatientModal'));
+    modal.show();
+}
+
+// Handle quick add patient form submission
+document.getElementById('quickAddPatientForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('quickAddPatientBtn');
+    const errorDiv = document.getElementById('quickAddPatientError');
+    const successDiv = document.getElementById('quickAddPatientSuccess');
+
+    // Reset alerts
+    errorDiv.classList.add('d-none');
+    successDiv.classList.add('d-none');
+
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>{{ __("Adding...") }}';
+
+    // Prepare form data
+    const formData = new FormData(this);
+
+    // Send AJAX request
+    fetch('{{ route("patients.store") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add new patient to dropdown
+            const patientSelect = document.getElementById('patient_id');
+            const newOption = document.createElement('option');
+            newOption.value = data.patient.id;
+            newOption.textContent = `${data.patient.first_name} ${data.patient.last_name} (${data.patient.patient_id})`;
+            newOption.selected = true;
+            patientSelect.appendChild(newOption);
+
+            // Show success message
+            successDiv.textContent = '{{ __("Patient added successfully!") }}';
+            successDiv.classList.remove('d-none');
+
+            // Close modal after 1 second
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('quickAddPatientModal'));
+                modal.hide();
+
+                // Reset form
+                document.getElementById('quickAddPatientForm').reset();
+                successDiv.classList.add('d-none');
+            }, 1000);
+        } else {
+            // Show error message
+            errorDiv.textContent = data.message || '{{ __("Error adding patient. Please try again.") }}';
+            errorDiv.classList.remove('d-none');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        errorDiv.textContent = '{{ __("Error adding patient. Please try again.") }}';
+        errorDiv.classList.remove('d-none');
+    })
+    .finally(() => {
+        // Reset button state
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-user-plus me-1"></i>{{ __("Add Patient") }}';
+    });
 });
 </script>
 @endsection

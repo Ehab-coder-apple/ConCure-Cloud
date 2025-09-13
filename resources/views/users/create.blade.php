@@ -120,6 +120,7 @@
                                             <option value="">{{ __('Select Role') }}</option>
                                             <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>{{ __('Administrator') }}</option>
                                             <option value="doctor" {{ old('role') == 'doctor' ? 'selected' : '' }}>{{ __('Doctor') }}</option>
+                                            <option value="nutritionist" {{ old('role') == 'nutritionist' ? 'selected' : '' }}>{{ __('Nutritionist') }}</option>
                                             <option value="assistant" {{ old('role') == 'assistant' ? 'selected' : '' }}>{{ __('Medical Assistant') }}</option>
                                             <option value="nurse" {{ old('role') == 'nurse' ? 'selected' : '' }}>{{ __('Nurse') }}</option>
                                             <option value="accountant" {{ old('role') == 'accountant' ? 'selected' : '' }}>{{ __('Accountant') }}</option>
@@ -408,6 +409,7 @@ function updateRoleDescription() {
     const descriptions = {
         'admin': '{{ __("Full system access including user management, settings, and all clinic operations.") }}',
         'doctor': '{{ __("Access to patient records, prescriptions, lab requests, and medical features.") }}',
+        'nutritionist': '{{ __("Specialized access to nutrition plans, diet management, food database, and patient dietary care.") }}',
         'assistant': '{{ __("Patient management, appointment scheduling, and basic medical record access.") }}',
         'nurse': '{{ __("Patient care features, vital signs recording, and medication administration.") }}',
         'accountant': '{{ __("Financial management, invoicing, expense tracking, and reporting features.") }}'

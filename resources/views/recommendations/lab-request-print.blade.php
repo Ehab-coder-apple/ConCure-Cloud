@@ -1,221 +1,301 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ __('Lab Request') }} - {{ $labRequest->request_number }}</title>
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Request #{{ $labRequest->request_number }}</title>
     <style>
         @media print {
             .no-print { display: none !important; }
-            body { font-size: 12px; }
+            body { font-size: 11px; }
             .container { max-width: none; }
         }
-        
-        .header-section {
-            border-bottom: 2px solid #dee2e6;
-            padding-bottom: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .info-section {
-            margin-bottom: 1.5rem;
-        }
-        
-        .tests-section {
-            border: 1px solid #dee2e6;
-            border-radius: 0.375rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .signature-section {
-            margin-top: 3rem;
-            border-top: 1px solid #dee2e6;
-            padding-top: 1rem;
-        }
+
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 11px;
+            line-height: 1.3;
+            color: #000;
+            margin: 0;
+            padding: 15px;
+            background: #fff;
     </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <!-- Print Button -->
-        <div class="no-print mb-3">
-            <button onclick="window.print()" class="btn btn-primary">
-                <i class="fas fa-print me-1"></i>
-                {{ __('Print') }}
-            </button>
-            <button onclick="window.close()" class="btn btn-secondary ms-2">
-                {{ __('Close') }}
-            </button>
-        </div>
+    <!-- Print Button -->
+    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+        <button onclick="window.print()" style="background: #2c5aa0; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+            🖨️ Print Lab Request
+        </button>
+    </div>
 
-        <!-- Header -->
-        <div class="header-section">
-            @php
-                $clinicLogo = \App\Http\Controllers\SettingsController::getClinicLogo($labRequest->patient->clinic_id);
-                $clinicName = $labRequest->patient->clinic->name ?? 'ConCure Clinic';
-            @endphp
+    <!-- Professional Header -->
+    @php
+        $clinicId = auth()->user()->clinic_id ?? $labRequest->doctor->clinic_id ?? 2;
+        $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($clinicId);
+        $clinicLogo = \App\Http\Controllers\SettingsController::getClinicLogo($clinicId);
+    @endphp
 
-            <!-- Clinic Header with Logo -->
-            <div class="d-flex align-items-center justify-content-center mb-3">
+    <div style="border: 3px solid #2c5aa0; padding: 12px; margin-bottom: 15px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <!-- Left Section: Logo -->
                 @if($clinicLogo)
-                    <img src="{{ $clinicLogo }}" alt="Clinic Logo" style="max-height: 80px; max-width: 80px; object-fit: cover; margin-right: 15px; border-radius: 8px; border: 1px solid #e9ecef; padding: 2px;">
+                    <td style="width: 25%; vertical-align: middle; text-align: left; padding-right: 15px;">
+                        <img src="{{ $clinicLogo }}"
+                             alt=""
+                             style="max-height: 110px; max-width: 115px; object-fit: contain; border-radius: 6px; border: 1px solid #dee2e6; padding: 2px; background: white;">
+                    </td>
+                @else
+                    <td style="width: 25%;"></td>
                 @endif
-                <div class="text-center">
-                    <h3 class="text-primary mb-1">{{ $clinicName }}</h3>
-                    <p class="text-muted mb-0">{{ __('Laboratory Test Request') }}</p>
-                </div>
-            </div>
 
-            <div class="row">
-                <div class="col-md-8">
-                    <h4 class="text-primary">{{ $labRequest->request_number }}</h4>
-                </div>
-                <div class="col-md-4 text-end">
-                    <p class="mb-1"><strong>{{ __('Date') }}:</strong> {{ $labRequest->created_at->format('M d, Y') }}</p>
-                    <p class="mb-1"><strong>{{ __('Priority') }}:</strong>
-                        <span class="badge {{ $labRequest->priority === 'urgent' ? 'bg-warning' : ($labRequest->priority === 'stat' ? 'bg-danger' : 'bg-secondary') }}">
-                            {{ strtoupper($labRequest->priority) }}
-                        </span>
-                    </p>
-                    @if($labRequest->due_date)
-                        <p class="mb-0"><strong>{{ __('Due Date') }}:</strong> {{ $labRequest->due_date->format('M d, Y') }}</p>
-                    @endif
-                </div>
-            </div>
-        </div>
+                <!-- Middle Section: Clinic Name -->
+                <td style="width: 50%; vertical-align: middle; text-align: center;">
+                    <h1 style="color: #2c5aa0; margin: 0; font-size: 28px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', serif;">{{ $clinicInfo['name'] }}</h1>
+                </td>
 
+                <!-- Right Section: Request Number -->
+                <td style="width: 25%; vertical-align: middle; text-align: right; padding-left: 15px;">
+                    <div style="background: #2c5aa0; color: white; padding: 8px 16px; border-radius: 20px; font-size: 16px; font-weight: bold; display: inline-block; letter-spacing: 1px;">{{ $labRequest->request_number }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+
+    <!-- Patient Information & Requesting Physician Side by Side -->
+    <div style="margin-bottom: 15px; display: table; width: 100%; border-collapse: separate; border-spacing: 10px 0;">
         <!-- Patient Information -->
-        <div class="info-section">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>{{ __('Patient Information') }}</h5>
-                    <table class="table table-borderless table-sm">
-                        <tr>
-                            <td><strong>{{ __('Name') }}:</strong></td>
-                            <td>{{ $labRequest->patient->first_name }} {{ $labRequest->patient->last_name }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>{{ __('Patient ID') }}:</strong></td>
-                            <td>{{ $labRequest->patient->patient_id }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>{{ __('Date of Birth') }}:</strong></td>
-                            <td>{{ $labRequest->patient->date_of_birth ? $labRequest->patient->date_of_birth->format('M d, Y') : __('Not specified') }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>{{ __('Gender') }}:</strong></td>
-                            <td>{{ $labRequest->patient->gender ? ucfirst($labRequest->patient->gender) : __('Not specified') }}</td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="col-md-6">
-                    <h5>{{ __('Requesting Physician') }}</h5>
-                    <table class="table table-borderless table-sm">
-                        <tr>
-                            <td><strong>{{ __('Doctor') }}:</strong></td>
-                            <td>{{ $labRequest->doctor->first_name }} {{ $labRequest->doctor->last_name }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>{{ __('Request Date') }}:</strong></td>
-                            <td>{{ $labRequest->created_at->format('M d, Y H:i') }}</td>
-                        </tr>
-                        @if($labRequest->lab_name)
-                        <tr>
-                            <td><strong>{{ __('Laboratory') }}:</strong></td>
-                            <td>{{ $labRequest->lab_name }}</td>
-                        </tr>
-                        @endif
-                    </table>
-                </div>
+        <div style="display: table-cell; width: 50%; border: 2px solid #dee2e6; border-radius: 6px; padding: 12px; background: #f8f9fa; vertical-align: top;">
+            <h3 style="color: #2c5aa0; margin: 0 0 8px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #2c5aa0; padding-bottom: 3px;">Patient Information</h3>
+            <div style="margin-bottom: 4px;">
+                <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Patient Name:</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->patient->full_name }}</span>
+            </div>
+            <div style="margin-bottom: 4px;">
+                <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Patient ID:</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->patient->patient_id }}</span>
+            </div>
+            <div style="margin-bottom: 4px;">
+                <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Date of Birth:</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->patient->date_of_birth->format('M d, Y') }}</span>
+            </div>
+            <div style="margin-bottom: 4px;">
+                <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Gender:</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ ucfirst($labRequest->patient->gender) }}</span>
             </div>
         </div>
 
-        <!-- Clinical Notes -->
-        @if($labRequest->clinical_notes)
-        <div class="info-section">
-            <h5>{{ __('Clinical Notes') }}</h5>
-            <div class="bg-light p-3 rounded">
-                {{ $labRequest->clinical_notes }}
+        <!-- Requesting Physician -->
+        <div style="display: table-cell; width: 50%; border: 2px solid #dee2e6; border-radius: 6px; padding: 12px; background: #f8f9fa; vertical-align: top;">
+            <h3 style="color: #2c5aa0; margin: 0 0 8px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #2c5aa0; padding-bottom: 3px;">Requesting Physician</h3>
+            <div style="margin-bottom: 4px;">
+                <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Doctor:</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">Dr. {{ $labRequest->doctor->first_name }} {{ $labRequest->doctor->last_name }}</span>
             </div>
-        </div>
-        @endif
-
-        <!-- Tests Required -->
-        <div class="tests-section">
-            <h5>{{ __('Tests Required') }}</h5>
-            @if($labRequest->tests->count() > 0)
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 5%">#</th>
-                                <th style="width: 40%">{{ __('Test Name') }}</th>
-                                <th style="width: 35%">{{ __('Instructions') }}</th>
-                                <th style="width: 20%">{{ __('Result') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($labRequest->tests as $index => $test)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td><strong>{{ $test->test_name }}</strong></td>
-                                <td>{{ $test->instructions ?: __('No special instructions') }}</td>
-                                <td style="border-left: 1px solid #dee2e6;">
-                                    <!-- Space for lab results -->
-                                    <div style="height: 40px;"></div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <p class="text-muted">{{ __('No tests specified') }}</p>
+            @if($labRequest->due_date)
+            <div style="margin-bottom: 4px;">
+                <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Due Date:</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->due_date->format('M d, Y') }}</span>
+            </div>
             @endif
-        </div>
-
-        <!-- Additional Notes -->
-        @if($labRequest->notes)
-        <div class="info-section">
-            <h5>{{ __('Additional Notes') }}</h5>
-            <div class="bg-light p-3 rounded">
-                {{ $labRequest->notes }}
+            @if($labRequest->lab_name)
+            <div style="margin-bottom: 4px;">
+                <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Laboratory:</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->lab_name }}</span>
             </div>
-        </div>
-        @endif
-
-        <!-- Signature Section -->
-        <div class="signature-section">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="border-top pt-2 mt-4">
-                        <p class="mb-0"><strong>{{ __('Physician Signature') }}</strong></p>
-                        <p class="text-muted small">{{ $labRequest->doctor->first_name }} {{ $labRequest->doctor->last_name }}</p>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="border-top pt-2 mt-4">
-                        <p class="mb-0"><strong>{{ __('Date') }}</strong></p>
-                        <p class="text-muted small">{{ $labRequest->created_at->format('M d, Y') }}</p>
-                    </div>
-                </div>
+            @endif
+            <div style="margin-bottom: 4px;">
+                <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Clinic:</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ auth()->user()->clinic->name ?? 'ConCure Clinic' }}</span>
             </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="text-center mt-4 text-muted small">
-            <p>{{ __('This is a computer-generated lab request.') }}</p>
         </div>
     </div>
 
-    <!-- Auto-print script -->
-    <script>
-        // Auto-print when page loads (optional)
-        // window.onload = function() { window.print(); }
-    </script>
+    @if($labRequest->clinical_notes)
+    <div style="margin-bottom: 15px; border: 2px solid #f39c12; border-left: 6px solid #e67e22; padding: 15px; border-radius: 6px; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);">
+        <h4 style="color: #d35400; margin: 0 0 10px 0; font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Clinical Notes</h4>
+        <p style="margin-bottom: 0; font-style: italic; line-height: 1.4;">{{ $labRequest->clinical_notes }}</p>
+    </div>
+    @endif
+
+    <!-- Tests Required -->
+    @if($isMultiPage)
+        @foreach($testChunks as $pageIndex => $testsChunk)
+            @if($pageIndex > 0)
+                <div style="page-break-before: always;"></div>
+
+                <!-- Repeat header for new page -->
+                <div style="border: 3px solid #2c5aa0; padding: 12px; margin-bottom: 15px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <!-- Left Section: Logo -->
+                            @if($clinicLogo)
+                                <td style="width: 25%; vertical-align: middle; text-align: left; padding-right: 15px;">
+                                    <img src="{{ $clinicLogo }}"
+                                         alt=""
+                                         style="max-height: 110px; max-width: 115px; object-fit: contain; border-radius: 6px; border: 1px solid #dee2e6; padding: 2px; background: white;">
+                                </td>
+                            @else
+                                <td style="width: 25%;"></td>
+                            @endif
+
+                            <!-- Middle Section: Clinic Name -->
+                            <td style="width: 50%; vertical-align: middle; text-align: center;">
+                                <h1 style="color: #2c5aa0; margin: 0; font-size: 28px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', serif;">{{ $clinicInfo['name'] }}</h1>
+                            </td>
+
+                            <!-- Right Section: Request Number -->
+                            <td style="width: 25%; vertical-align: middle; text-align: right; padding-left: 15px;">
+                                <div style="background: #2c5aa0; color: white; padding: 8px 16px; border-radius: 20px; font-size: 16px; font-weight: bold; display: inline-block; letter-spacing: 1px;">{{ $labRequest->request_number }} - Page {{ $pageIndex + 1 }}</div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Repeat patient info for new page -->
+                <div style="margin-bottom: 15px; display: table; width: 100%; border-collapse: separate; border-spacing: 10px 0;">
+                    <div style="display: table-cell; width: 50%; border: 2px solid #dee2e6; border-radius: 6px; padding: 12px; background: #f8f9fa; vertical-align: top;">
+                        <h3 style="color: #2c5aa0; margin: 0 0 8px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #2c5aa0; padding-bottom: 3px;">Patient Information</h3>
+                        <div style="margin-bottom: 4px;">
+                            <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Patient Name:</span>
+                            <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->patient->full_name }}</span>
+                        </div>
+                        <div style="margin-bottom: 4px;">
+                            <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Patient ID:</span>
+                            <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->patient->patient_id }}</span>
+                        </div>
+                    </div>
+                    <div style="display: table-cell; width: 50%; border: 2px solid #dee2e6; border-radius: 6px; padding: 12px; background: #f8f9fa; vertical-align: top;">
+                        <h3 style="color: #2c5aa0; margin: 0 0 8px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #2c5aa0; padding-bottom: 3px;">Tests Required - Page {{ $pageIndex + 1 }} of {{ $totalPages }}</h3>
+                    </div>
+                </div>
+            @endif
+
+            <div style="margin-bottom: 15px; border: 2px solid #dee2e6; border-radius: 6px; padding: 15px; background: #f8f9fa;">
+                @if($pageIndex == 0)
+                    <h3 style="color: #2c5aa0; margin: 0 0 12px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #2c5aa0; padding-bottom: 5px;">
+                        Tests Required
+                        @if($totalPages > 1)
+                            <span style="float: right; font-size: 12px; color: #6c757d; font-weight: normal;">Page 1 of {{ $totalPages }}</span>
+                        @endif
+                    </h3>
+                @endif
+
+                <table style="width: 100%; border-collapse: collapse; border: 2px solid #2c5aa0; border-radius: 6px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%);">
+                            <th style="width: 8%; border: 1px solid #2c5aa0; text-align: center; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 5px;">#</th>
+                            <th style="width: 42%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Test Name</th>
+                            <th style="width: 30%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Instructions</th>
+                            <th style="width: 20%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($testsChunk as $index => $test)
+                        <tr style="background-color: {{ $loop->even ? '#f8f9fa' : '#ffffff' }};">
+                            <td style="border: 1px solid #2c5aa0; text-align: center; vertical-align: top; background: #e9ecef; font-weight: bold; color: #495057; padding: 8px 5px;">{{ ($pageIndex * 6) + $index + 1 }}</td>
+                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; font-weight: bold; color: #2c5aa0; padding: 8px;">{{ $test->test_name }}</td>
+                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px;">{{ $test->instructions ?: 'Fasting required' }}</td>
+                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; background: #fff; border-left: 3px solid #28a745; padding: 8px; position: relative;">
+                                <!-- Space for lab results -->
+                            </td>
+                        </tr>
+                        @endforeach
+
+                        @if($testsChunk->count() < 6)
+                            @for($i = $testsChunk->count(); $i < 6; $i++)
+                            <tr style="background-color: {{ $i % 2 == 1 ? '#f8f9fa' : '#ffffff' }};">
+                                <td style="border: 1px solid #2c5aa0; text-align: center; vertical-align: top; background: #e9ecef; font-weight: bold; color: #495057; padding: 8px 5px;">{{ ($pageIndex * 6) + $i + 1 }}</td>
+                                <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px; color: #6c757d; font-style: italic;">-</td>
+                                <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px; color: #6c757d; font-style: italic;">-</td>
+                                <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; background: #fff; border-left: 3px solid #28a745; padding: 8px;">
+                                    <!-- Space for lab results -->
+                                </td>
+                            </tr>
+                            @endfor
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        @endforeach
+    @else
+        <div style="margin-bottom: 15px; border: 2px solid #dee2e6; border-radius: 6px; padding: 15px; background: #f8f9fa;">
+            <h3 style="color: #2c5aa0; margin: 0 0 12px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #2c5aa0; padding-bottom: 5px;">Tests Required</h3>
+            @if($labRequest->tests->count() > 0)
+                <table style="width: 100%; border-collapse: collapse; border: 2px solid #2c5aa0; border-radius: 6px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%);">
+                            <th style="width: 8%; border: 1px solid #2c5aa0; text-align: center; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 5px;">#</th>
+                            <th style="width: 42%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Test Name</th>
+                            <th style="width: 30%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Instructions</th>
+                            <th style="width: 20%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($labRequest->tests->take(6) as $index => $test)
+                        <tr style="background-color: {{ $loop->even ? '#f8f9fa' : '#ffffff' }};">
+                            <td style="border: 1px solid #2c5aa0; text-align: center; vertical-align: top; background: #e9ecef; font-weight: bold; color: #495057; padding: 8px 5px;">{{ $index + 1 }}</td>
+                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; font-weight: bold; color: #2c5aa0; padding: 8px;">{{ $test->test_name }}</td>
+                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px;">{{ $test->instructions ?: 'Fasting required' }}</td>
+                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; background: #fff; border-left: 3px solid #28a745; padding: 8px; position: relative;">
+                                <!-- Space for lab results -->
+                            </td>
+                        </tr>
+                        @endforeach
+
+                        @if($labRequest->tests->count() < 6)
+                            @for($i = $labRequest->tests->count(); $i < 6; $i++)
+                            <tr style="background-color: {{ $i % 2 == 1 ? '#f8f9fa' : '#ffffff' }};">
+                                <td style="border: 1px solid #2c5aa0; text-align: center; vertical-align: top; background: #e9ecef; font-weight: bold; color: #495057; padding: 8px 5px;">{{ $i + 1 }}</td>
+                                <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px; color: #6c757d; font-style: italic;">-</td>
+                                <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px; color: #6c757d; font-style: italic;">-</td>
+                                <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; background: #fff; border-left: 3px solid #28a745; padding: 8px;">
+                                    <!-- Space for lab results -->
+                                </td>
+                            </tr>
+                            @endfor
+                        @endif
+                    </tbody>
+                </table>
+            @else
+                <div style="text-align: center; padding: 20px; color: #6c757d;">
+                    <em>No tests specified for this request.</em>
+                </div>
+            @endif
+        </div>
+    @endif
+
+
+    <!-- Signature Section -->
+    <div style="margin-top: 30px; border-top: 3px solid #2c5aa0; padding-top: 20px;">
+        <div style="display: table; width: 100%;">
+            <div style="display: table-cell; width: 50%; padding-right: 20px;">
+                <div style="border-bottom: 2px solid #000; height: 50px; margin-bottom: 10px;"></div>
+                <div style="text-align: center;">
+                    <strong style="color: #2c5aa0; text-transform: uppercase; font-size: 12px;">Physician Signature</strong><br>
+                    <small style="color: #495057;">Dr. {{ $labRequest->doctor->first_name }} {{ $labRequest->doctor->last_name }}</small><br>
+                    <small style="color: #6c757d;">{{ auth()->user()->clinic->name ?? 'ConCure Clinic' }}</small>
+                </div>
+            </div>
+            <div style="display: table-cell; width: 50%; padding-left: 20px;">
+                <div style="border-bottom: 2px solid #000; height: 50px; margin-bottom: 10px;"></div>
+                <div style="text-align: center;">
+                    <strong style="color: #2c5aa0; text-transform: uppercase; font-size: 12px;">Date & Time</strong><br>
+                    <small style="color: #495057;">{{ $labRequest->created_at->format('M d, Y') }}</small><br>
+                    <small style="color: #6c757d;">{{ $labRequest->created_at->format('H:i') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="margin-top: 30px; text-align: center; border-top: 1px solid #dee2e6; padding-top: 15px; color: #6c757d; font-size: 10px;">
+        <p style="margin: 0 0 5px 0;"><strong>{{ auth()->user()->clinic->name ?? 'ConCure Clinic' }}</strong> - Laboratory Request Form</p>
+        <p style="margin: 0;">Generated on {{ now()->format('M d, Y \a\t H:i') }} | Request #{{ $labRequest->request_number }}</p>
+        <p style="margin: 5px 0 0 0; font-style: italic;">This is a computer-generated document. No signature is required for processing.</p>
+    </div>
 </body>
 </html>
+

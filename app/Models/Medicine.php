@@ -114,8 +114,13 @@ class Medicine extends Model
     /**
      * Scope to filter by clinic.
      */
-    public function scopeByClinic($query, int $clinicId)
+    public function scopeByClinic($query, ?int $clinicId)
     {
+        if ($clinicId === null) {
+            // If no clinic ID provided, return empty result set for security
+            return $query->whereRaw('1 = 0');
+        }
+
         return $query->where('clinic_id', $clinicId);
     }
 

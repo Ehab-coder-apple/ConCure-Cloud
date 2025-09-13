@@ -54,11 +54,11 @@ class ConCureServiceProvider extends ServiceProvider
     {
         // User management gates
         Gate::define('manage-users', function (User $user) {
-            return in_array($user->role, ['program_owner', 'admin']);
+            return $user->role === 'admin';
         });
 
         Gate::define('manage-patients', function (User $user) {
-            return in_array($user->role, ['admin', 'doctor', 'assistant', 'nurse']);
+            return in_array($user->role, ['admin', 'doctor', 'nutritionist', 'assistant', 'nurse']);
         });
 
 
@@ -68,7 +68,7 @@ class ConCureServiceProvider extends ServiceProvider
         });
 
         Gate::define('manage-advertisements', function (User $user) {
-            return in_array($user->role, ['program_owner', 'admin']);
+            return $user->role === 'admin';
         });
 
         Gate::define('view-audit-logs', function (User $user) {
@@ -76,11 +76,11 @@ class ConCureServiceProvider extends ServiceProvider
         });
 
         Gate::define('manage-activation-codes', function (User $user) {
-            return in_array($user->role, ['program_owner', 'admin']);
+            return $user->role === 'admin';
         });
 
         Gate::define('manage-food-composition', function (User $user) {
-            return in_array($user->role, ['program_owner', 'admin', 'doctor']);
+            return in_array($user->role, ['admin', 'doctor']);
         });
 
         // System-wide permission gates
@@ -230,11 +230,11 @@ class ConCureServiceProvider extends ServiceProvider
             if ($user->role === 'patient') {
                 return $user->id === $patient->user_id; // If patient has user account
             }
-            return in_array($user->role, ['admin', 'doctor', 'assistant', 'nurse']);
+            return in_array($user->role, ['admin', 'doctor', 'nutritionist', 'assistant', 'nurse']);
         });
 
         Gate::define('edit-patient', function (User $user, $patient) {
-            return in_array($user->role, ['admin', 'doctor', 'assistant', 'nurse']);
+            return in_array($user->role, ['admin', 'doctor', 'nutritionist', 'assistant', 'nurse']);
         });
 
         Gate::define('delete-patient', function (User $user, $patient) {

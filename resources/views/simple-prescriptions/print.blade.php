@@ -7,11 +7,11 @@
     <style>
         /* Screen styles */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
+            font-family: 'Times New Roman', 'Georgia', serif;
+            line-height: 1.5;
+            color: #1a1a1a;
             margin: 0;
-            padding: 20px;
+            padding: 25px;
             background: #f8f9fa;
         }
         
@@ -19,9 +19,10 @@
             max-width: 800px;
             margin: 0 auto;
             background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.15);
+            border: 2px solid #2c3e50;
         }
         
         .print-header {
@@ -117,24 +118,27 @@
         }
         
         .clinic-name {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
-            color: #0d6efd;
-            margin-bottom: 5px;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        
+
         .clinic-info {
             font-size: 14px;
-            color: #666;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        .medical-symbol {
+            font-size: 24px;
+            color: #e74c3c;
+            margin-right: 8px;
         }
         
-        .prescription-header {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border-left: 4px solid #0d6efd;
-        }
+
         
         .prescription-number {
             font-size: 18px;
@@ -182,36 +186,103 @@
         }
         
         .medicines-list {
-            margin-bottom: 20px;
+            margin-bottom: 8px;
+        }
+
+        /* Dynamic sizing based on number of medicines */
+        .medicines-list[data-count="1"] .medicine-item,
+        .medicines-list[data-count="2"] .medicine-item,
+        .medicines-list[data-count="3"] .medicine-item {
+            padding: 16px 20px;
+            margin-bottom: 15px;
+        }
+
+        .medicines-list[data-count="4"] .medicine-item,
+        .medicines-list[data-count="5"] .medicine-item {
+            padding: 12px 16px;
+            margin-bottom: 10px;
+        }
+
+        .medicines-list[data-count="6"] .medicine-item,
+        .medicines-list[data-count="7"] .medicine-item {
+            padding: 8px 12px;
+            margin-bottom: 6px;
+        }
+
+        .medicines-list[data-count="8"] .medicine-item,
+        .medicines-list[data-count="9"] .medicine-item,
+        .medicines-list[data-count="10"] .medicine-item {
+            padding: 6px 10px;
+            margin-bottom: 4px;
+        }
+
+        /* For 11+ medicines - ultra compact */
+        .medicines-list[data-count="11"] .medicine-item,
+        .medicines-list[data-count="12"] .medicine-item,
+        .medicines-list[data-count="13"] .medicine-item,
+        .medicines-list[data-count="14"] .medicine-item,
+        .medicines-list[data-count="15"] .medicine-item,
+        .medicines-list[data-count="16"] .medicine-item,
+        .medicines-list[data-count="17"] .medicine-item,
+        .medicines-list[data-count="18"] .medicine-item,
+        .medicines-list[data-count="19"] .medicine-item,
+        .medicines-list[data-count="20"] .medicine-item {
+            padding: 4px 8px;
+            margin-bottom: 3px;
         }
 
         .medicine-item {
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
             background: #fafafa;
+        }
+
+
+
+        /* Dynamic font sizing for medicine names */
+        .medicines-list[data-count="1"] .medicine-name,
+        .medicines-list[data-count="2"] .medicine-name,
+        .medicines-list[data-count="3"] .medicine-name {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .medicines-list[data-count="4"] .medicine-name,
+        .medicines-list[data-count="5"] .medicine-name {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .medicines-list[data-count="6"] .medicine-name,
+        .medicines-list[data-count="7"] .medicine-name {
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .medicines-list[data-count="8"] .medicine-name,
+        .medicines-list[data-count="9"] .medicine-name,
+        .medicines-list[data-count="10"] .medicine-name {
+            font-size: 10px;
+            margin-bottom: 4px;
         }
 
         .medicine-name {
             font-weight: bold;
             color: #0d6efd;
-            font-size: 16px;
-            margin-bottom: 12px;
         }
 
         .medicine-details {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 10px;
+            gap: 8px;
+            margin-bottom: 4px;
         }
 
         .medicine-detail-item {
             background: white;
-            padding: 10px;
-            border-radius: 6px;
-            border-left: 3px solid #0d6efd;
+            padding: 4px 6px;
+            border-radius: 4px;
+            border-left: 2px solid #0d6efd;
         }
 
         .detail-label {
@@ -221,10 +292,40 @@
             margin-bottom: 4px;
         }
 
-        .detail-value {
-            color: #333;
+        /* Dynamic sizing for detail values */
+        .medicines-list[data-count="1"] .detail-value,
+        .medicines-list[data-count="2"] .detail-value,
+        .medicines-list[data-count="3"] .detail-value {
             font-size: 14px;
-            font-weight: 500;
+            padding: 8px 10px;
+        }
+
+        .medicines-list[data-count="4"] .detail-value,
+        .medicines-list[data-count="5"] .detail-value {
+            font-size: 12px;
+            padding: 6px 8px;
+        }
+
+        .medicines-list[data-count="6"] .detail-value,
+        .medicines-list[data-count="7"] .detail-value {
+            font-size: 10px;
+            padding: 4px 6px;
+        }
+
+        .medicines-list[data-count="8"] .detail-value,
+        .medicines-list[data-count="9"] .detail-value,
+        .medicines-list[data-count="10"] .detail-value {
+            font-size: 9px;
+            padding: 3px 4px;
+        }
+
+        .detail-value {
+            color: #2c3e50;
+            font-weight: 600;
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
         }
 
         .medicine-instructions {
@@ -278,19 +379,7 @@
             margin: 30px 0 10px auto;
         }
         
-        .warning-box {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 6px;
-            padding: 15px;
-            margin-top: 25px;
-        }
-        
-        .warning-title {
-            font-weight: bold;
-            color: #856404;
-            margin-bottom: 8px;
-        }
+
     </style>
 </head>
 <body>
@@ -320,7 +409,9 @@
                     <img src="{{ $clinicLogo }}" alt="Clinic Logo" style="max-height: 80px; max-width: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #e9ecef; padding: 2px;">
                 @endif
                 <div style="text-align: {{ $clinicLogo ? 'left' : 'center' }};">
-                    <div class="clinic-name">{{ $prescription->clinic->name ?? 'ConCure Clinic' }}</div>
+                    <div class="clinic-name">
+                        ⚕ {{ $prescription->clinic->name ?? 'ConCure Clinic' }}
+                    </div>
                     <div class="clinic-info">
                         @if($prescription->clinic->address ?? false)
                             {{ $prescription->clinic->address }}<br>
@@ -336,10 +427,7 @@
             </div>
         </div>
 
-        <div class="prescription-header">
-            <div class="prescription-number">Prescription #{{ $prescription->prescription_number }}</div>
-            <div>Date: {{ $prescription->prescribed_date->format('F d, Y') }}</div>
-        </div>
+
 
         <div class="info-grid">
             <div class="info-section">
@@ -364,8 +452,9 @@
                         Phone: {{ $prescription->doctor->phone }}<br>
                     @endif
                     @if($prescription->doctor->email)
-                        Email: {{ $prescription->doctor->email }}
+                        Email: {{ $prescription->doctor->email }}<br>
                     @endif
+                    <strong>Date: {{ $prescription->prescribed_date->format('F d, Y') }}</strong>
                 </div>
             </div>
         </div>
@@ -382,21 +471,20 @@
         @if($prescription->medicines->count() > 0)
             <div class="section">
                 <div class="section-title">Prescribed Medicines</div>
-                <div class="medicines-list">
+                <div class="medicines-list" data-count="{{ $prescription->medicines->count() }}">
                     @foreach($prescription->medicines as $index => $medicine)
                         <div class="medicine-item">
                             <div class="medicine-name">{{ $index + 1 }}. {{ $medicine->medicine_name }}</div>
+
+                            {{-- Show values for all medicines without labels --}}
                             <div class="medicine-details">
                                 <div class="medicine-detail-item">
-                                    <div class="detail-label">Dosage</div>
                                     <div class="detail-value">{{ $medicine->dosage ?? 'Not specified' }}</div>
                                 </div>
                                 <div class="medicine-detail-item">
-                                    <div class="detail-label">Frequency</div>
                                     <div class="detail-value">{{ $medicine->frequency ?? 'Not specified' }}</div>
                                 </div>
                                 <div class="medicine-detail-item">
-                                    <div class="detail-label">Duration</div>
                                     <div class="detail-value">{{ $medicine->duration ?? 'Not specified' }}</div>
                                 </div>
                             </div>
@@ -420,13 +508,7 @@
             </div>
         @endif
 
-        <div class="warning-box">
-            <div class="warning-title">Important Instructions:</div>
-            • Please follow the prescribed dosage and timing strictly<br>
-            • Do not stop medication without consulting your doctor<br>
-            • Contact your doctor immediately if you experience any adverse reactions<br>
-            • Keep medicines out of reach of children
-        </div>
+
 
         <div class="doctor-signature">
             <div class="signature-line"></div>

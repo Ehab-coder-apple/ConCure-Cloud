@@ -417,13 +417,15 @@ class FoodController extends Controller
         if ($searchTerm && strlen($searchTerm) >= 2) {
             $query->search($searchTerm);
         }
+        // If no search term provided, we'll return the first foods (popular/recent foods)
 
         // Handle food group filter
         if ($request->food_group_id) {
             $query->byFoodGroup($request->food_group_id);
         }
 
-        $foods = $query->limit($request->limit ?? 20)
+        $foods = $query->orderBy('name')
+                      ->limit($request->limit ?? 20)
                       ->get()
                       ->map(function ($food) {
                           return [

@@ -4,12 +4,18 @@
     <meta charset="UTF-8">
     <title>Daily Meal Plan</title>
     <style>
+        @page {
+            margin: 15mm 10mm;
+            size: A4;
+        }
+
         body {
             font-family: "dejavu sans", sans-serif;
-            font-size: 14px;
-            line-height: 1.6;
+            font-size: 11px;
+            line-height: 1.3;
             color: #333;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
         }
 
         /* Kurdish/Arabic text styling - optimized for letter connection */
@@ -30,34 +36,34 @@
         }
 
         .header {
-            margin-bottom: 30px;
+            margin-bottom: 15px;
         }
 
         .clinic-header-table {
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .clinic-logo {
-            max-height: 85px;
-            max-width: 85px;
+            max-height: 60px;
+            max-width: 60px;
             object-fit: cover;
-            border-radius: 6px;
+            border-radius: 4px;
             border: 1px solid #e9ecef;
             padding: 1px;
         }
 
         .header h1 {
             color: #20B2AA;
-            font-size: 24px;
+            font-size: 18px;
             margin: 0;
         }
 
         .clinic-name {
             color: #20B2AA;
-            font-size: 22px;
+            font-size: 16px;
             font-weight: bold;
-            margin: 0 0 5px 0;
+            margin: 0 0 3px 0;
         }
 
         .clinic-info {
@@ -72,27 +78,28 @@
         }
 
         .patient-info {
-            margin-bottom: 20px;
-            padding: 15px;
+            margin-bottom: 12px;
+            padding: 8px 10px;
             border: 1px solid #ddd;
             background-color: #f9f9f9;
+            font-size: 10px;
         }
 
         .meal-section {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             border: 1px solid #ddd;
         }
 
         .meal-header {
             background-color: #20B2AA;
             color: white;
-            padding: 10px 15px;
-            font-size: 16px;
+            padding: 6px 10px;
+            font-size: 13px;
             font-weight: bold;
         }
 
         .food-item {
-            padding: 10px 15px;
+            padding: 6px 10px;
             border-bottom: 1px solid #eee;
         }
 
@@ -107,20 +114,21 @@
 
         .food-details {
             color: #666;
-            font-size: 12px;
+            font-size: 9px;
         }
 
         .meal-total {
             background-color: #f0f8ff;
-            padding: 10px 15px;
+            padding: 6px 10px;
             font-weight: bold;
             color: #20B2AA;
             border-top: 1px solid #20B2AA;
+            font-size: 10px;
         }
 
         .summary {
-            margin-top: 30px;
-            padding: 20px;
+            margin-top: 15px;
+            padding: 12px;
             border: 2px solid #20B2AA;
             background-color: #f0f8ff;
         }
@@ -184,18 +192,31 @@
     </div>
 
     @php
-        $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+        $mealTypes = ['breakfast', 'lunch', 'dinner', 'snacks'];
+        $mealTypeMapping = [
+            'breakfast' => 'Breakfast',
+            'lunch' => 'Lunch',
+            'dinner' => 'Dinner',
+            'snacks' => 'Snacks'
+        ];
     @endphp
 
     @foreach($mealTypes as $mealType)
         @php
-            $meals = $dietPlan->meals->where('meal_type', $mealType);
+            // Handle different snack variations
+            if ($mealType === 'snacks') {
+                $meals = $dietPlan->meals->filter(function($meal) {
+                    return in_array($meal->meal_type, ['snack', 'snack_1', 'snack_2', 'snack_3']);
+                });
+            } else {
+                $meals = $dietPlan->meals->where('meal_type', $mealType);
+            }
         @endphp
         
         @if($meals->count() > 0)
             <div class="meal-section">
                 <div class="meal-header">
-                    {{ ucfirst($mealType) }}
+                    {{ $mealTypeMapping[$mealType] ?? ucfirst($mealType) }}
                 </div>
                 
                 @php

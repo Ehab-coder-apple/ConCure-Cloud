@@ -15,6 +15,9 @@ class DietPlanMeal extends Model
         'diet_plan_id',
         'day_number',
         'meal_type',
+        'option_number',
+        'is_option_based',
+        'option_description',
         'meal_name',
         'instructions',
         'suggested_time',
@@ -167,6 +170,63 @@ class DietPlanMeal extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('day_number')
-                    ->orderByRaw("FIELD(meal_type, 'breakfast', 'snack_1', 'lunch', 'snack_2', 'dinner', 'snack_3')");
+                    ->orderByRaw("FIELD(meal_type, 'breakfast', 'snack_1', 'lunch', 'snack_2', 'dinner', 'snack_3')")
+                    ->orderBy('option_number');
+    }
+
+    /**
+     * Scope to filter by option number.
+     */
+    public function scopeByOption($query, int $optionNumber)
+    {
+        return $query->where('option_number', $optionNumber);
+    }
+
+    /**
+     * Scope to filter option-based meals.
+     */
+    public function scopeOptionBased($query)
+    {
+        return $query->where('is_option_based', true);
+    }
+
+    /**
+     * Scope to filter day-based meals.
+     */
+    public function scopeDayBased($query)
+    {
+        return $query->where('is_option_based', false);
+    }
+
+    /**
+     * Scope to order by meal type and option number for option-based plans.
+     */
+    public function scopeOrderedByOptions($query)
+    {
+        return $query->orderByRaw("FIELD(meal_type, 'breakfast', 'snack_1', 'lunch', 'snack_2', 'dinner', 'snack_3')")
+                    ->orderBy('option_number');
+    }
+
+    /**
+     * Get the option display name.
+     */
+    public function getOptionDisplayAttribute(): string
+    {
+        if ($this->is_option_based) {
+            return $this->option_description ?: "Option {$this->option_number}";
+        }
+        return "Day {$this->day_number}";
+    }
+
+    /**
+     * Get the full meal display name including option.
+     */
+    public function getFullMealNameAttribute(): string
+    {
+        $baseName = $this->meal_name_display;
+        if ($this->is_option_based) {
+            return "{$baseName} - {$this->option_display}";
+        }
+        return "{$baseName} (Day {$this->day_number})";
     }
 }

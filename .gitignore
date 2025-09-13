@@ -1,86 +1,39 @@
-# Laravel & PHP
-/vendor/
-/node_modules/
+/node_modules
 /public/hot
 /public/storage
 /storage/*.key
-/storage/app/public/*
-!/storage/app/public/.gitkeep
-/storage/framework/cache/data/*
-!/storage/framework/cache/data/.gitkeep
-/storage/framework/sessions/*
-!/storage/framework/sessions/.gitkeep
-/storage/framework/testing/*
-!/storage/framework/testing/.gitkeep
-/storage/framework/views/*
-!/storage/framework/views/.gitkeep
-/storage/logs/*
-!/storage/logs/.gitkeep
-
-# Environment & Configuration
+/vendor
 .env
 .env.backup
-.env.production
 .phpunit.result.cache
+docker-compose.override.yml
 Homestead.json
 Homestead.yaml
-auth.json
 npm-debug.log
 yarn-error.log
+/.idea
+/.vscode
 
-# Database
-*.sqlite
-*.sqlite-journal
+# Database files
 /database/*.sqlite
 /database/*.sqlite-journal
 
-# IDE & Editor Files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
-
-# Build & Compilation
-/public/build/
-/public/css/app.css
-/public/js/app.js
-/public/mix-manifest.json
-/public/hot
-
-# Logs & Debugging
-*.log
+# Log files
 /storage/logs/*.log
-/storage/debugbar/
 
-# Temporary & Cache Files
+# Cache files
 /bootstrap/cache/*.php
-/storage/framework/cache/
-/storage/framework/sessions/
-/storage/framework/views/
-/tmp/
-*.tmp
-*.cache
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
 
-# ConCure Specific
-/public/uploads/*
-!/public/uploads/.gitkeep
-/storage/fonts/
-/storage/*.pdf
+# Uploaded files
+/storage/app/public/uploads/*
+/storage/app/public/logos/*
+/storage/app/public/medicines/*
+/storage/app/public/foods/*
 
-# Testing
-/coverage/
-.phpunit.cache
-/tests/coverage/
-
-# Deployment
-/deploy.php
-/Envoy.blade.php
-/.vagrant/
-
-# OS Generated Files
+# OS generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -89,62 +42,17 @@ Thumbs.db
 ehthumbs.db
 Thumbs.db
 
-# Backup Files
-*.bak
-*.backup
-*.old
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
 
-# Development Tools
-/docker/data/
-/.docker/
-/docker-compose.override.yml
 
-# Package Managers
-composer.phar
-/vendor/
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Runtime
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage Reports
-/coverage
-/.nyc_output
-
-# Dependency directories
-jspm_packages/
-
-# Optional npm cache directory
-.npm
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variables file
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Serverless directories
-.serverless
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
-
-# TernJS port file
-.tern-port
+# Node/NPM and Puppeteer
+node_modules
+whatsapp-server/node_modules/
+whatsapp-server/.wwebjs_auth/
+whatsapp-server/.local-chromium/
+whatsapp-server/.env.bak

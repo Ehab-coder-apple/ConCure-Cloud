@@ -214,6 +214,8 @@
         /* Navigation Styles */
         .sidebar-nav {
             padding: 1rem 0;
+            padding-bottom: 120px; /* Add space for footer */
+            min-height: calc(100vh - 200px);
         }
 
         .nav-list {
@@ -289,6 +291,7 @@
             overflow: hidden;
             transition: max-height 0.3s ease;
             background: rgba(0, 0, 0, 0.2);
+            margin-bottom: 1rem; /* Add margin to prevent footer overlap */
         }
 
         .submenu-item {
@@ -325,12 +328,14 @@
 
         /* Sidebar Footer */
         .sidebar-footer {
-            position: absolute;
+            position: fixed;
             bottom: 0;
             left: 0;
-            right: 0;
+            width: var(--sidebar-width);
             padding: 1rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--sidebar-bg);
+            z-index: 1001;
         }
 
         .logout-btn {
@@ -665,6 +670,16 @@
                         </li>
                         @endif
 
+                        <!-- Radiology Requests -->
+                        @if(Auth::user()->canViewRadiologyRequests())
+                        <li class="nav-item">
+                            <a href="{{ route('recommendations.radiology.index') }}" class="nav-link {{ request()->routeIs('recommendations.radiology.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-x-ray"></i>
+                                <span class="nav-text">{{ __('Radiology Requests') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
 
 
                         <!-- Nutrition Plans -->
@@ -718,8 +733,8 @@
                         @endif
 
                         <!-- Administration -->
-                        @if(Auth::user()->canAccessSection('users') || Auth::user()->canAccessSection('settings') || in_array(Auth::user()->role, ['admin', 'program_owner']))
-                        <li class="nav-item has-submenu {{ request()->routeIs(['users.*', 'settings.*', 'external-labs.*', 'subscription.*']) ? 'active' : '' }}">
+                        @if(Auth::user()->canAccessSection('users') || Auth::user()->canAccessSection('settings') || Auth::user()->role === 'admin')
+                        <li class="nav-item has-submenu {{ request()->routeIs(['users.*', 'settings.*', 'external-labs.*', 'whatsapp.*', 'admin.custom-vital-signs.*', 'admin.checkup-templates.*']) ? 'active' : '' }}">
                             <a href="#" class="nav-link submenu-toggle">
                                 <i class="nav-icon fas fa-cogs"></i>
                                 <span class="nav-text">{{ __('Administration') }}</span>
@@ -742,6 +757,30 @@
                                     </a>
                                 </li>
                                 @endif
+                                @if(Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner')
+                                <li class="submenu-item">
+                                    <a href="{{ route('admin.custom-vital-signs.index') }}" class="submenu-link {{ request()->routeIs('admin.custom-vital-signs.*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-stethoscope"></i>
+                                        <span class="submenu-text">{{ __('Custom Vital Signs') }}</span>
+                                    </a>
+                                </li>
+                                @endif
+                                @if(Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner')
+                                <li class="submenu-item">
+                                    <a href="{{ route('admin.checkup-templates.index') }}" class="submenu-link {{ request()->routeIs('admin.checkup-templates.*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-clipboard-list"></i>
+                                        <span class="submenu-text">{{ __('Checkup Templates') }}</span>
+                                    </a>
+                                </li>
+                                @endif
+                                @if(Auth::user()->role === 'admin')
+                                <li class="submenu-item">
+                                    <a href="{{ route('whatsapp.index') }}" class="submenu-link {{ request()->routeIs('whatsapp.*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fab fa-whatsapp"></i>
+                                        <span class="submenu-text">{{ __('WhatsApp') }}</span>
+                                    </a>
+                                </li>
+                                @endif
                                 @if(Auth::user()->canAccessSection('settings'))
                                 <li class="submenu-item">
                                     <a href="{{ route('settings.index') }}" class="submenu-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
@@ -750,17 +789,7 @@
                                     </a>
                                 </li>
                                 @endif
-                                @if(in_array(Auth::user()->role, ['admin', 'program_owner']))
-                                <li class="submenu-item">
-                                    <a href="{{ route('subscription.status') }}" class="submenu-link {{ request()->routeIs('subscription.*') ? 'active' : '' }}">
-                                        <i class="submenu-icon fas fa-crown"></i>
-                                        <span class="submenu-text">{{ __('Subscription') }}</span>
-                                        @if(Auth::user()->clinic && Auth::user()->clinic->is_trial)
-                                            <span class="badge bg-warning ms-1">{{ __('Trial') }}</span>
-                                        @endif
-                                    </a>
-                                </li>
-                                @endif
+                                {{-- Subscription menu removed - no longer needed --}}
                             </ul>
                         </li>
                         @endif

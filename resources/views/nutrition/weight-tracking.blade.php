@@ -111,7 +111,7 @@
             </div>
 
             <!-- BMI Progress -->
-            @if($dietPlan->initial_bmi || $dietPlan->current_bmi)
+            @if($dietPlan->initial_bmi || $dietPlan->current_bmi || $dietPlan->target_bmi)
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
@@ -121,44 +121,75 @@
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
-                        <div class="col-md-4">
-                            <h5>{{ __('Initial BMI') }}</h5>
-                            <h3 class="text-primary">{{ $dietPlan->initial_bmi ? number_format($dietPlan->initial_bmi, 1) : '--' }}</h3>
-                            <small class="text-muted">
-                                @if($dietPlan->initial_bmi)
-                                    @if($dietPlan->initial_bmi < 18.5) {{ __('Underweight') }}
-                                    @elseif($dietPlan->initial_bmi < 25) {{ __('Normal weight') }}
-                                    @elseif($dietPlan->initial_bmi < 30) {{ __('Overweight') }}
-                                    @else {{ __('Obese') }}
+                        <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
+                            <div class="border-end border-lg-block d-none d-lg-block h-100"></div>
+                            <h5 class="mb-2">{{ __('Initial BMI') }}</h5>
+                            @if($dietPlan->initial_bmi)
+                                <h3 class="mb-1">
+                                    <span class="badge bg-secondary fs-5">{{ number_format($dietPlan->initial_bmi, 1) }}</span>
+                                </h3>
+                                <small class="text-muted">
+                                    @if($dietPlan->initial_bmi < 18.5)
+                                        <span class="badge bg-info">{{ __('Underweight') }}</span>
+                                    @elseif($dietPlan->initial_bmi < 25)
+                                        <span class="badge bg-success">{{ __('Normal weight') }}</span>
+                                    @elseif($dietPlan->initial_bmi < 30)
+                                        <span class="badge bg-warning">{{ __('Overweight') }}</span>
+                                    @else
+                                        <span class="badge bg-danger">{{ __('Obese') }}</span>
                                     @endif
-                                @endif
-                            </small>
+                                </small>
+                            @else
+                                <h3 class="text-muted">--</h3>
+                                <small class="text-muted">{{ __('Not set') }}</small>
+                            @endif
                         </div>
-                        <div class="col-md-4">
-                            <h5>{{ __('Current BMI') }}</h5>
-                            <h3 class="text-success">{{ $dietPlan->current_bmi ? number_format($dietPlan->current_bmi, 1) : '--' }}</h3>
-                            <small class="text-muted">
-                                @if($dietPlan->current_bmi)
-                                    @if($dietPlan->current_bmi < 18.5) {{ __('Underweight') }}
-                                    @elseif($dietPlan->current_bmi < 25) {{ __('Normal weight') }}
-                                    @elseif($dietPlan->current_bmi < 30) {{ __('Overweight') }}
-                                    @else {{ __('Obese') }}
+
+                        <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
+                            <div class="border-end border-lg-block d-none d-lg-block h-100"></div>
+                            <h5 class="mb-2">{{ __('Current BMI') }}</h5>
+                            @if($dietPlan->current_bmi)
+                                <h3 class="mb-1">
+                                    <span class="badge bg-primary fs-5">{{ number_format($dietPlan->current_bmi, 1) }}</span>
+                                </h3>
+                                <small class="text-muted">
+                                    @if($dietPlan->current_bmi < 18.5)
+                                        <span class="badge bg-info">{{ __('Underweight') }}</span>
+                                    @elseif($dietPlan->current_bmi < 25)
+                                        <span class="badge bg-success">{{ __('Normal weight') }}</span>
+                                    @elseif($dietPlan->current_bmi < 30)
+                                        <span class="badge bg-warning">{{ __('Overweight') }}</span>
+                                    @else
+                                        <span class="badge bg-danger">{{ __('Obese') }}</span>
                                     @endif
-                                @endif
-                            </small>
+                                </small>
+                            @else
+                                <h3 class="text-muted">--</h3>
+                                <small class="text-muted">{{ __('Not recorded') }}</small>
+                            @endif
                         </div>
-                        <div class="col-md-4">
-                            <h5>{{ __('Target BMI') }}</h5>
-                            <h3 class="text-warning">{{ $dietPlan->target_bmi ? number_format($dietPlan->target_bmi, 1) : '--' }}</h3>
-                            <small class="text-muted">
-                                @if($dietPlan->target_bmi)
-                                    @if($dietPlan->target_bmi < 18.5) {{ __('Underweight') }}
-                                    @elseif($dietPlan->target_bmi < 25) {{ __('Normal weight') }}
-                                    @elseif($dietPlan->target_bmi < 30) {{ __('Overweight') }}
-                                    @else {{ __('Obese') }}
+
+                        <div class="col-lg-4 col-md-12">
+                            <h5 class="mb-2">{{ __('Target BMI') }}</h5>
+                            @if($dietPlan->target_bmi)
+                                <h3 class="mb-1">
+                                    <span class="badge bg-warning fs-5">{{ number_format($dietPlan->target_bmi, 1) }}</span>
+                                </h3>
+                                <small class="text-muted">
+                                    @if($dietPlan->target_bmi < 18.5)
+                                        <span class="badge bg-info">{{ __('Underweight') }}</span>
+                                    @elseif($dietPlan->target_bmi < 25)
+                                        <span class="badge bg-success">{{ __('Normal weight') }}</span>
+                                    @elseif($dietPlan->target_bmi < 30)
+                                        <span class="badge bg-warning">{{ __('Overweight') }}</span>
+                                    @else
+                                        <span class="badge bg-danger">{{ __('Obese') }}</span>
                                     @endif
-                                @endif
-                            </small>
+                                </small>
+                            @else
+                                <h3 class="text-muted">--</h3>
+                                <small class="text-muted">{{ __('Not set') }}</small>
+                            @endif
                         </div>
                     </div>
                     @if($stats['bmi_change'])
@@ -273,10 +304,12 @@
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
                                                         data-bs-toggle="modal" data-bs-target="#editWeightRecordModal"
                                                         data-record-id="{{ $record->id }}"
                                                         data-weight="{{ $record->weight }}"
+                                                        data-target-weight="{{ $record->dietPlan->target_weight }}"
+                                                        data-target-bmi="{{ $record->dietPlan->target_bmi }}"
                                                         data-height="{{ $record->height }}"
                                                         data-date="{{ $record->record_date->format('Y-m-d') }}"
                                                         data-notes="{{ $record->notes }}"
@@ -335,13 +368,35 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="weight" class="form-label">{{ __('Weight (kg)') }} <span class="text-danger">*</span></label>
+                            <label for="weight" class="form-label">{{ __('Current Weight (kg)') }} <span class="text-danger">*</span></label>
                             <input type="number" class="form-control @error('weight') is-invalid @enderror"
                                    id="weight" name="weight" value="{{ old('weight') }}"
                                    step="0.1" min="20" max="500" required>
                             @error('weight')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="target_weight" class="form-label">{{ __('Target Weight (kg)') }}</label>
+                            <input type="number" class="form-control @error('target_weight') is-invalid @enderror"
+                                   id="target_weight" name="target_weight" value="{{ old('target_weight', $dietPlan->target_weight) }}"
+                                   step="0.1" min="20" max="500">
+                            @error('target_weight')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <div class="form-text">{{ __('Leave empty to keep current target weight') }}</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="target_bmi" class="form-label">{{ __('Target BMI') }}</label>
+                            <input type="number" class="form-control @error('target_bmi') is-invalid @enderror"
+                                   id="target_bmi" name="target_bmi" value="{{ old('target_bmi', $dietPlan->target_bmi) }}"
+                                   step="0.1" min="10" max="50">
+                            @error('target_bmi')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <div class="form-text">{{ __('Calculated automatically or enter manually') }}</div>
                         </div>
 
                         <div class="col-md-6">
@@ -446,10 +501,26 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="edit_weight" class="form-label">{{ __('Weight (kg)') }} <span class="text-danger">*</span></label>
+                            <label for="edit_weight" class="form-label">{{ __('Current Weight (kg)') }} <span class="text-danger">*</span></label>
                             <input type="number" class="form-control"
                                    id="edit_weight" name="weight"
                                    step="0.1" min="20" max="500" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="edit_target_weight" class="form-label">{{ __('Target Weight (kg)') }}</label>
+                            <input type="number" class="form-control"
+                                   id="edit_target_weight" name="target_weight"
+                                   step="0.1" min="20" max="500">
+                            <div class="form-text">{{ __('Leave empty to keep current target weight') }}</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="edit_target_bmi" class="form-label">{{ __('Target BMI') }}</label>
+                            <input type="number" class="form-control"
+                                   id="edit_target_bmi" name="target_bmi"
+                                   step="0.1" min="10" max="50">
+                            <div class="form-text">{{ __('Calculated automatically or enter manually') }}</div>
                         </div>
 
                         <div class="col-md-6">
@@ -558,11 +629,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Target BMI calculation for add form
+    function updateAddTargetBMI() {
+        const targetWeight = parseFloat(document.getElementById('target_weight').value);
+        const height = parseFloat(document.getElementById('height').value);
+        const targetBmiInput = document.getElementById('target_bmi');
+
+        if (targetWeight && height) {
+            const targetBmi = calculateBMI(targetWeight, height);
+            targetBmiInput.value = targetBmi.toFixed(1);
+        }
+    }
+
+    // Target BMI calculation for edit form
+    function updateEditTargetBMI() {
+        const targetWeight = parseFloat(document.getElementById('edit_target_weight').value);
+        const height = parseFloat(document.getElementById('edit_height').value);
+        const targetBmiInput = document.getElementById('edit_target_bmi');
+
+        if (targetWeight && height) {
+            const targetBmi = calculateBMI(targetWeight, height);
+            targetBmiInput.value = targetBmi.toFixed(1);
+        }
+    }
+
     // Add event listeners for BMI calculation
     document.getElementById('weight').addEventListener('input', updateAddBMI);
-    document.getElementById('height').addEventListener('input', updateAddBMI);
+    document.getElementById('height').addEventListener('input', function() {
+        updateAddBMI();
+        updateAddTargetBMI();
+    });
+    document.getElementById('target_weight').addEventListener('input', updateAddTargetBMI);
+
     document.getElementById('edit_weight').addEventListener('input', updateEditBMI);
-    document.getElementById('edit_height').addEventListener('input', updateEditBMI);
+    document.getElementById('edit_height').addEventListener('input', function() {
+        updateEditBMI();
+        updateEditTargetBMI();
+    });
+    document.getElementById('edit_target_weight').addEventListener('input', updateEditTargetBMI);
 
     // Handle edit modal
     const editModal = document.getElementById('editWeightRecordModal');
@@ -570,6 +674,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const button = event.relatedTarget;
         const recordId = button.getAttribute('data-record-id');
         const weight = button.getAttribute('data-weight');
+        const targetWeight = button.getAttribute('data-target-weight');
+        const targetBmi = button.getAttribute('data-target-bmi');
         const height = button.getAttribute('data-height');
         const date = button.getAttribute('data-date');
         const notes = button.getAttribute('data-notes');
@@ -580,12 +686,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Populate form fields
         document.getElementById('edit_weight').value = weight;
+        document.getElementById('edit_target_weight').value = targetWeight || '';
+        document.getElementById('edit_target_bmi').value = targetBmi || '';
         document.getElementById('edit_height').value = height || '';
         document.getElementById('edit_record_date').value = date;
         document.getElementById('edit_notes').value = notes || '';
 
         // Calculate BMI
         updateEditBMI();
+        updateEditTargetBMI();
     });
 
     // Initialize tooltips

@@ -164,13 +164,13 @@
                     <div class="col-lg-8 mx-auto">
                         <h2 class="display-6 fw-bold text-dark mb-3">Ready to Transform Your Clinic?</h2>
                         <p class="lead text-muted mb-4">
-                            Join thousands of healthcare professionals who trust ConCure for their clinic management needs. 
-                            Start your free 30-day trial today - no credit card required.
+                            Join thousands of healthcare professionals who trust ConCure for their clinic management needs.
+                            Get started with ConCure today and streamline your clinic operations.
                         </p>
                         <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
                             <a href="{{ route('welcome.register') }}" class="btn btn-primary-custom btn-lg">
                                 <i class="fas fa-rocket me-2"></i>
-                                Get Started Free
+                                Get Started
                             </a>
                             <a href="#features" class="btn btn-outline-custom btn-lg">
                                 <i class="fas fa-info-circle me-2"></i>
@@ -191,8 +191,8 @@
                     </div>
                     <div class="col-md-6 text-md-end text-center">
                         <p class="mb-0">
-                            <a href="{{ route('master.welcome.index') }}" class="text-white text-decoration-none me-3">
-                                <i class="fas fa-crown me-1"></i>Master Control
+                            <a href="{{ route('main.welcome') }}" class="text-white text-decoration-none me-3">
+                                <i class="fas fa-home me-1"></i>Platform Home
                             </a>
                             <a href="#" class="text-white text-decoration-none me-3">Privacy Policy</a>
                             <a href="#" class="text-white text-decoration-none me-3">Terms of Service</a>

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->integer('max_users')->default(10); // User limit per clinic
             $table->string('activation_code')->unique();
             $table->timestamp('activated_at')->nullable();
-            $table->date('subscription_expires_at')->nullable();
+
             $table->timestamps();
             
             $table->index('is_active');

@@ -127,8 +127,13 @@
 
                         <div class="col-md-6 mb-3">
                             <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
-                            <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                                   id="password" name="password" placeholder="Minimum 8 characters" required>
+                            <div class="input-group">
+                                <input type="password" class="form-control @error('password') is-invalid @enderror"
+                                       id="password" name="password" placeholder="Minimum 8 characters" required>
+                                <button type="button" class="btn btn-outline-secondary" id="togglePassword" aria-label="Show password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
                             @error('password')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -136,9 +141,14 @@
 
                         <div class="col-md-6 mb-3">
                             <label for="password_confirmation" class="form-label">Confirm Password <span class="text-danger">*</span></label>
-                            <input type="password" class="form-control" 
-                                   id="password_confirmation" name="password_confirmation" 
-                                   placeholder="Confirm your password" required>
+                            <div class="input-group">
+                                <input type="password" class="form-control"
+                                       id="password_confirmation" name="password_confirmation"
+                                       placeholder="Confirm your password" required>
+                                <button type="button" class="btn btn-outline-secondary" id="toggleConfirmPassword" aria-label="Show password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -158,17 +168,17 @@
                     </div>
                 </div>
 
-                <!-- Trial Information -->
+                <!-- Registration Information -->
                 <div class="alert alert-info mb-4">
                     <h6 class="alert-heading">
-                        <i class="fas fa-gift me-1"></i>
-                        30-Day Free Trial
+                        <i class="fas fa-info-circle me-1"></i>
+                        ConCure Registration
                     </h6>
                     <ul class="mb-0">
                         <li>Full access to all features</li>
-                        <li>No credit card required</li>
-                        <li>Cancel anytime during trial</li>
-                        <li>24/7 customer support</li>
+                        <li>Complete clinic management solution</li>
+                        <li>Professional support included</li>
+                        <li>Secure and reliable platform</li>
                     </ul>
                 </div>
 
@@ -176,7 +186,7 @@
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-primary-custom btn-lg">
                         <i class="fas fa-rocket me-2"></i>
-                        Start Free Trial
+                        Register Clinic
                     </button>
                 </div>
 
@@ -209,25 +219,48 @@
         const passwordInput = document.getElementById('password');
         const confirmPasswordInput = document.getElementById('password_confirmation');
 
-        passwordInput.addEventListener('input', function() {
-            const password = this.value;
-            const strength = getPasswordStrength(password);
-            // You can add password strength indicator here
-        });
+        // Show/Hide password toggles
+        function setupToggle(inputId, btnId) {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            if (!input || !btn) return;
+            btn.addEventListener('click', function() {
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('fa-eye');
+                    icon.classList.toggle('fa-eye-slash');
+                }
+                btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+            });
+        }
+        setupToggle('password', 'togglePassword');
+        setupToggle('password_confirmation', 'toggleConfirmPassword');
 
-        // Real-time password confirmation
-        confirmPasswordInput.addEventListener('input', function() {
-            const password = passwordInput.value;
-            const confirmPassword = this.value;
-            
-            if (confirmPassword && password !== confirmPassword) {
-                this.setCustomValidity('Passwords do not match');
-                this.classList.add('is-invalid');
-            } else {
-                this.setCustomValidity('');
-                this.classList.remove('is-invalid');
-            }
-        });
+        if (passwordInput) {
+            passwordInput.addEventListener('input', function() {
+                const password = this.value;
+                const strength = getPasswordStrength(password);
+                // You can add password strength indicator here
+            });
+        }
+
+        if (confirmPasswordInput) {
+            // Real-time password confirmation
+            confirmPasswordInput.addEventListener('input', function() {
+                const password = passwordInput ? passwordInput.value : '';
+                const confirmPassword = this.value;
+
+                if (confirmPassword && password !== confirmPassword) {
+                    this.setCustomValidity('Passwords do not match');
+                    this.classList.add('is-invalid');
+                } else {
+                    this.setCustomValidity('');
+                    this.classList.remove('is-invalid');
+                }
+            });
+        }
 
         // Phone number formatting
         const phoneInputs = document.querySelectorAll('input[type="tel"]');

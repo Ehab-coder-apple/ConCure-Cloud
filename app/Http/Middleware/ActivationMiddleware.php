@@ -34,8 +34,8 @@ class ActivationMiddleware
                            ->with('error', 'Your account has been deactivated. Please contact your administrator.');
         }
 
-        // Check clinic status for non-program-owner users
-        if ($user->role !== 'program_owner' && $user->clinic) {
+        // Check clinic status for all users (program_owner role removed)
+        if ($user->clinic) {
             if (!$user->clinic->is_active) {
                 auth()->logout();
                 return redirect()->route('login')
@@ -47,17 +47,9 @@ class ActivationMiddleware
                                ->with('error', 'Your clinic requires activation. Please contact support.');
             }
 
-            // Check subscription expiry
-            if ($user->clinic->subscription_expires_at && $user->clinic->subscription_expires_at->isPast()) {
-                return redirect()->route('subscription.expired')
-                               ->with('error', 'Your clinic subscription has expired. Please renew to continue.');
-            }
+            // Subscription checks removed - no longer needed
 
-            // Check trial expiry
-            if ($user->clinic->is_trial && $user->clinic->isTrialExpired()) {
-                return redirect()->route('subscription.expired')
-                               ->with('error', 'Your 7-day free trial has expired. Please upgrade to continue using ConCure.');
-            }
+            // Trial system removed - no longer needed
         }
 
         return $next($request);

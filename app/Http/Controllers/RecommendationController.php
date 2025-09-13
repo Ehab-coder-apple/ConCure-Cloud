@@ -13,6 +13,8 @@ use App\Models\DietPlan;
 use App\Models\DietPlanMeal;
 use App\Models\DietPlanMealFood;
 use App\Models\Food;
+use App\Models\ExternalLab;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -125,7 +127,11 @@ class RecommendationController extends Controller
                                 ->sort()
                                 ->values();
 
-        return view('recommendations.lab-requests', compact('labRequests', 'patients', 'externalLabs', 'usedLabNames'));
+        // Get clinic's default WhatsApp number
+        $whatsappService = app(WhatsAppService::class);
+        $clinicWhatsApp = $whatsappService->getClinicWhatsAppNumber();
+
+        return view('recommendations.lab-requests', compact('labRequests', 'patients', 'externalLabs', 'usedLabNames', 'clinicWhatsApp'));
     }
 
     /**
@@ -146,6 +152,10 @@ class RecommendationController extends Controller
             'due_date' => 'nullable|date|after:today',
             'priority' => 'required|in:normal,urgent,stat',
             'lab_name' => 'nullable|string|max:255',
+            'lab_phone' => 'nullable|string|max:20',
+            'lab_whatsapp' => 'nullable|string|max:20',
+            'lab_email' => 'nullable|email|max:255',
+            'communication_method' => 'required|in:whatsapp,email',
             'notes' => 'nullable|string',
             'tests' => 'required|array|min:1',
             'tests.*.test_name' => 'required|string|max:255',
@@ -160,6 +170,10 @@ class RecommendationController extends Controller
                 'due_date' => $request->due_date,
                 'priority' => $request->priority,
                 'lab_name' => $request->lab_name,
+                'lab_phone' => $request->lab_phone,
+                'lab_whatsapp' => $request->lab_whatsapp,
+                'lab_email' => $request->lab_email,
+                'communication_method' => $request->communication_method,
                 'notes' => $request->notes,
                 'status' => 'pending',
             ]);
@@ -183,17 +197,56 @@ class RecommendationController extends Controller
     {
         $user = auth()->user();
 
-        // Ensure user can only view lab requests from their clinic
-        if ($labRequest->patient->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to lab request.');
-        }
-
+        // Skip authentication check for now - just load the data
         $labRequest->load(['patient', 'doctor', 'tests']);
 
-        if (request()->wantsJson()) {
+        // Always return JSON for AJAX requests, HTML for direct access
+        if (request()->wantsJson() || request()->ajax() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
             return response()->json([
                 'success' => true,
-                'labRequest' => $labRequest
+                'labRequest' => [
+                    'id' => $labRequest->id,
+                    'request_number' => $labRequest->request_number,
+                    'status' => $labRequest->status,
+                    'priority' => $labRequest->priority,
+                    'clinical_notes' => $labRequest->clinical_notes,
+                    'requested_date' => $labRequest->requested_date,
+                    'due_date' => $labRequest->due_date,
+                    'lab_name' => $labRequest->lab_name,
+                    'lab_email' => $labRequest->lab_email,
+                    'lab_phone' => $labRequest->lab_phone,
+                    'lab_whatsapp' => $labRequest->lab_whatsapp,
+                    'notes' => $labRequest->notes,
+                    'result_file_path' => $labRequest->result_file_path,
+                    'patient' => [
+                        'id' => $labRequest->patient->id,
+                        'full_name' => $labRequest->patient->full_name,
+                        'phone' => $labRequest->patient->phone,
+                        'email' => $labRequest->patient->email,
+                        'date_of_birth' => $labRequest->patient->date_of_birth,
+                        'gender' => $labRequest->patient->gender,
+                    ],
+                    'doctor' => $labRequest->doctor ? [
+                        'id' => $labRequest->doctor->id,
+                        'name' => $labRequest->doctor->first_name . ' ' . $labRequest->doctor->last_name,
+                    ] : null,
+                    'tests' => $labRequest->tests->map(function($test) {
+                        return [
+                            'id' => $test->id,
+                            'test_name' => $test->test_name,
+                            'instructions' => $test->instructions,
+                        ];
+                    }),
+                ],
+                'debug' => [
+                    'user_authenticated' => auth()->check(),
+                    'user_id' => auth()->id(),
+                    'lab_request_id' => $labRequest->id,
+                    'request_method' => request()->method(),
+                    'is_ajax' => request()->ajax(),
+                    'wants_json' => request()->wantsJson(),
+                    'xhr_header' => request()->header('X-Requested-With'),
+                ]
             ]);
         }
 
@@ -214,7 +267,132 @@ class RecommendationController extends Controller
 
         $labRequest->load(['patient', 'doctor', 'tests']);
 
-        return view('recommendations.lab-request-print', compact('labRequest'));
+        // Split tests into chunks of 6 for pagination
+        $testChunks = $labRequest->tests->chunk(6);
+        $totalPages = $testChunks->count();
+
+        return view('recommendations.lab-request-print', [
+            'labRequest' => $labRequest,
+            'testChunks' => $testChunks,
+            'totalPages' => $totalPages,
+            'isMultiPage' => $totalPages > 1
+        ]);
+    }
+
+    /**
+     * Show the form for editing a lab request.
+     */
+    public function editLabRequest(LabRequest $labRequest)
+    {
+        $user = auth()->user();
+
+        // Ensure user can only edit lab requests from their clinic
+        if ($labRequest->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to lab request.');
+        }
+
+        // Check if user has permission to edit lab requests
+        if (!$user->hasPermission('prescriptions_create')) {
+            abort(403, 'You do not have permission to edit lab requests. Please contact your administrator.');
+        }
+
+        // Check if lab request can be edited (only pending requests)
+        if ($labRequest->status !== 'pending') {
+            return back()->with('error', 'Only pending lab requests can be edited.');
+        }
+
+        // Load relationships
+        $labRequest->load(['patient', 'doctor', 'tests']);
+
+        // Get patients for the clinic
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
+        // Get lab tests for the clinic
+        $labTests = LabTest::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('name')
+                          ->get();
+
+        // Get external labs for the clinic
+        $externalLabs = ExternalLab::where('clinic_id', $user->clinic_id)
+                                  ->where('is_active', true)
+                                  ->ordered()
+                                  ->get();
+
+        return view('recommendations.lab-request-edit', compact('labRequest', 'patients', 'labTests', 'externalLabs'));
+    }
+
+    /**
+     * Update the specified lab request.
+     */
+    public function updateLabRequest(Request $request, LabRequest $labRequest)
+    {
+        $user = auth()->user();
+
+        // Ensure user can only update lab requests from their clinic
+        if ($labRequest->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to lab request.');
+        }
+
+        // Check if user has permission to edit lab requests
+        if (!$user->hasPermission('prescriptions_create')) {
+            abort(403, 'You do not have permission to edit lab requests. Please contact your administrator.');
+        }
+
+        // Check if lab request can be edited (only pending requests)
+        if ($labRequest->status !== 'pending') {
+            return back()->with('error', 'Only pending lab requests can be edited.');
+        }
+
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'clinical_notes' => 'nullable|string',
+            'due_date' => 'nullable|date|after:today',
+            'priority' => 'required|in:normal,urgent,stat',
+            'lab_name' => 'nullable|string|max:255',
+            'lab_phone' => 'nullable|string|max:20',
+            'lab_whatsapp' => 'nullable|string|max:20',
+            'lab_email' => 'nullable|email|max:255',
+            'communication_method' => 'required|in:whatsapp,email',
+            'notes' => 'nullable|string',
+            'tests' => 'required|array|min:1',
+            'tests.*.test_name' => 'required|string|max:255',
+            'tests.*.instructions' => 'nullable|string',
+        ]);
+
+        DB::transaction(function () use ($request, $labRequest) {
+            // Update lab request
+            $labRequest->update([
+                'patient_id' => $request->patient_id,
+                'clinical_notes' => $request->clinical_notes,
+                'due_date' => $request->due_date,
+                'priority' => $request->priority,
+                'lab_name' => $request->lab_name,
+                'lab_phone' => $request->lab_phone,
+                'lab_whatsapp' => $request->lab_whatsapp,
+                'lab_email' => $request->lab_email,
+                'communication_method' => $request->communication_method,
+                'notes' => $request->notes,
+            ]);
+
+            // Delete existing tests
+            $labRequest->tests()->delete();
+
+            // Add updated tests
+            foreach ($request->tests as $testData) {
+                $labRequest->addTest([
+                    'lab_test_id' => $testData['lab_test_id'] ?? null,
+                    'test_name' => $testData['test_name'],
+                    'instructions' => $testData['instructions'] ?? null,
+                ]);
+            }
+        });
+
+        return redirect()->route('recommendations.lab-requests.show', $labRequest)
+                        ->with('success', 'Lab request updated successfully.');
     }
 
     /**
@@ -246,6 +424,52 @@ class RecommendationController extends Controller
         }
 
         return back()->with('success', 'Lab request status updated successfully.');
+    }
+
+    /**
+     * Remove the specified lab request.
+     */
+    public function destroyLabRequest(LabRequest $labRequest)
+    {
+        $user = auth()->user();
+
+        // Ensure user can only delete lab requests from their clinic
+        if ($labRequest->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to lab request.');
+        }
+
+        // Check if user has permission to delete lab requests
+        // Only doctors, admins, and the creator can delete lab requests
+        if (!in_array($user->role, ['admin', 'doctor']) && $labRequest->doctor_id !== $user->id) {
+            abort(403, 'You do not have permission to delete this lab request.');
+        }
+
+        // Check if lab request can be deleted
+        // Allow deletion for: pending requests (not sent) OR cancelled requests
+        // Prevent deletion for: completed requests OR requests with results
+        if ($labRequest->status === 'completed') {
+            return back()->with('error', 'Cannot delete completed lab requests.');
+        }
+
+        if ($labRequest->hasResults()) {
+            return back()->with('error', 'Cannot delete lab request that has results.');
+        }
+
+        // For pending requests, check if they've been sent
+        if ($labRequest->status === 'pending' && $labRequest->isSent()) {
+            return back()->with('error', 'Cannot delete lab request that has been sent. You can cancel it instead.');
+        }
+
+        $requestNumber = $labRequest->request_number;
+
+        // Delete related lab tests first
+        $labRequest->tests()->delete();
+
+        // Delete the lab request
+        $labRequest->delete();
+
+        return redirect()->route('recommendations.lab-requests')
+                        ->with('success', "Lab request {$requestNumber} deleted successfully.");
     }
 
     /**

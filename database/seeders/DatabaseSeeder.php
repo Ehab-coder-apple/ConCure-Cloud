@@ -13,12 +13,13 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ClinicSeeder::class,
+            DefaultUserSeeder::class,
             FoodGroupSeeder::class,
             FoodSeeder::class,
             LabTestSeeder::class,
             MedicineSeeder::class,
+            RadiologyTestsSeeder::class,
             SettingsSeeder::class,
-            DefaultUserSeeder::class,
         ]);
     }
 }

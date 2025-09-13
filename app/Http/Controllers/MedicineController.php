@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Medicine;
+use App\Imports\MedicinesImport;
+use App\Exports\MedicinesTemplateExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 
 class MedicineController extends Controller
@@ -280,5 +283,158 @@ class MedicineController extends Controller
             });
 
         return response()->json($medicines);
+    }
+
+    /**
+     * Show the import form.
+     */
+    public function showImport()
+    {
+        return view('medicines.import');
+    }
+
+    /**
+     * Download the import template.
+     */
+    public function downloadTemplate(Request $request)
+    {
+        $includeSampleData = $request->boolean('sample', true);
+        $format = $request->get('format', 'xlsx'); // Default to Excel
+
+        // Only use CSV if explicitly requested
+        if ($format === 'csv') {
+            return $this->downloadCsvTemplate($includeSampleData);
+        }
+
+        // Excel generation with enhanced error handling
+        try {
+            // Clear any output buffers that might interfere
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            $filename = 'medicines_import_template_' . date('Y-m-d') . '.xlsx';
+
+            // Create and validate the export instance
+            $export = new MedicinesTemplateExport($includeSampleData);
+
+            // Pre-validate the export data
+            $headers = $export->headings();
+            $data = $export->array();
+
+            if (empty($headers)) {
+                throw new \Exception('Template headers are missing');
+            }
+
+            if (!$includeSampleData && empty($data)) {
+                throw new \Exception('Empty template data is invalid');
+            }
+
+            // Generate and return the Excel file
+            return Excel::download($export, $filename, \Maatwebsite\Excel\Excel::XLSX, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]);
+
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::error('Excel template generation failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Only fallback to CSV if Excel completely fails
+            \Log::info('Falling back to CSV template due to Excel generation failure');
+
+            return response()->json([
+                'error' => 'Excel template generation failed. Please try the CSV format or contact support.',
+                'fallback_url' => route('medicines.import.template', ['sample' => $includeSampleData, 'format' => 'csv'])
+            ], 500);
+        }
+    }
+
+    /**
+     * Download CSV template as fallback.
+     */
+    private function downloadCsvTemplate(bool $includeSampleData): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $filename = 'medicines_import_template_' . date('Y-m-d') . '.csv';
+        $headers = MedicinesImport::getExpectedHeaders();
+        $sampleData = $includeSampleData ? MedicinesImport::getSampleData() : [];
+
+        $callback = function() use ($headers, $sampleData) {
+            $file = fopen('php://output', 'w');
+
+            // Write headers
+            fputcsv($file, array_keys($headers));
+
+            // Write sample data if requested
+            if (!empty($sampleData)) {
+                foreach ($sampleData as $row) {
+                    fputcsv($file, $row);
+                }
+            } else {
+                // Write a few empty rows for template structure
+                for ($i = 0; $i < 5; $i++) {
+                    $emptyRow = array_fill(0, count($headers), '');
+                    fputcsv($file, $emptyRow);
+                }
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
+     * Import medicines from uploaded file.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
+        ]);
+
+        try {
+            $import = new MedicinesImport();
+
+            Excel::import($import, $request->file('file'));
+
+            $message = "Import completed successfully! ";
+            $message .= "Imported: {$import->getImportedCount()} medicines. ";
+
+            if ($import->getSkippedCount() > 0) {
+                $message .= "Skipped: {$import->getSkippedCount()} medicines (duplicates or errors).";
+            }
+
+            if ($import->hasErrors()) {
+                $errorMessage = "Some medicines could not be imported:\n" . implode("\n", array_slice($import->getErrors(), 0, 10));
+                if (count($import->getErrors()) > 10) {
+                    $errorMessage .= "\n... and " . (count($import->getErrors()) - 10) . " more errors.";
+                }
+
+                return redirect()->route('medicines.import')
+                    ->with('warning', $message)
+                    ->with('import_errors', $errorMessage);
+            }
+
+            return redirect()->route('medicines.index')
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            \Log::error('Medicine import failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return redirect()->route('medicines.import')
+                ->with('error', 'Import failed: ' . $e->getMessage());
+        }
     }
 }

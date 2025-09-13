@@ -26,56 +26,7 @@
 
     <!-- Template Cards -->
     <div class="row">
-        <!-- Weight Loss Template -->
-        <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card h-100 border-success">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-weight me-2"></i>
-                        {{ __('Weight Loss Plan') }}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h6 class="text-success">{{ __('Target Goals:') }}</h6>
-                        <ul class="list-unstyled mb-0">
-                            <li><i class="fas fa-check text-success me-2"></i>{{ __('Reduce body weight') }}</li>
-                            <li><i class="fas fa-check text-success me-2"></i>{{ __('Burn excess fat') }}</li>
-                            <li><i class="fas fa-check text-success me-2"></i>{{ __('Maintain muscle mass') }}</li>
-                            <li><i class="fas fa-check text-success me-2"></i>{{ __('Improve metabolism') }}</li>
-                        </ul>
-                    </div>
-                    <div class="mb-3">
-                        <h6 class="text-success">{{ __('Plan Features:') }}</h6>
-                        <div class="row text-center">
-                            <div class="col-6">
-                                <div class="bg-light p-2 rounded">
-                                    <div class="fw-bold text-success">1500</div>
-                                    <small class="text-muted">{{ __('Calories/day') }}</small>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="bg-light p-2 rounded">
-                                    <div class="fw-bold text-success">30</div>
-                                    <small class="text-muted">{{ __('Days') }}</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <small class="text-muted">
-                            {{ __('Balanced nutrition plan with calorie deficit to promote healthy weight loss through proper nutrition and portion control.') }}
-                        </small>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="{{ route('nutrition.create.weight-loss') }}" class="btn btn-success w-100">
-                        <i class="fas fa-plus me-1"></i>
-                        {{ __('Create Weight Loss Plan') }}
-                    </a>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Muscle Gain Template -->
         <div class="col-lg-4 col-md-6 mb-4">

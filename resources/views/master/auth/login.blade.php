@@ -1,294 +1,178 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <title>{{ __('Master Dashboard Login') }} - ConCure SaaS</title>
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-    <!-- Bootstrap CSS -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConCure Master Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --master-primary: #dc3545;
-            --master-secondary: #6f42c1;
-            --master-dark: #212529;
-            --master-light: #f8f9fa;
-        }
-
         body {
-            font-family: 'Figtree', sans-serif;
-            background: linear-gradient(135deg, var(--master-primary) 0%, var(--master-secondary) 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-
-        .master-login-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: none;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            max-width: 450px;
+            max-width: 400px;
             width: 100%;
         }
-
-        .master-header {
-            background: linear-gradient(45deg, var(--master-primary), var(--master-secondary));
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 2rem;
             text-align: center;
-            position: relative;
         }
-
-        .master-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-            opacity: 0.3;
+        .login-body {
+            padding: 2rem;
         }
-
-        .master-header h1 {
-            position: relative;
-            z-index: 1;
-            margin: 0;
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        .master-header p {
-            position: relative;
-            z-index: 1;
-            margin: 0.5rem 0 0 0;
-            opacity: 0.9;
-        }
-
-        .crown-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #ffd700;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
         .form-control {
+            border-radius: 10px;
             border: 2px solid #e9ecef;
-            border-radius: 12px;
-            padding: 15px 20px;
-            font-size: 1rem;
+            padding: 12px 15px;
             transition: all 0.3s ease;
         }
-
         .form-control:focus {
-            border-color: var(--master-primary);
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
-
-        .btn-master {
-            background: linear-gradient(45deg, var(--master-primary), var(--master-secondary));
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 12px;
-            padding: 15px 30px;
+            border-radius: 10px;
+            padding: 12px;
             font-weight: 600;
-            color: white;
             transition: all 0.3s ease;
-            width: 100%;
         }
-
-        .btn-master:hover {
+        .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
-            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
-
-        .alert {
-            border: none;
-            border-radius: 12px;
-            padding: 15px 20px;
-        }
-
-        .security-notice {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.3);
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        .tenant-link {
-            position: absolute;
-            top: 20px;
-            right: 20px;
+        .master-badge {
             background: rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 8px 15px;
+            padding: 5px 15px;
             border-radius: 20px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-
-        .tenant-link:hover {
-            background: rgba(255, 255, 255, 0.3);
-            color: white;
-            text-decoration: none;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .master-login-card {
-            animation: fadeInUp 0.6s ease-out;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            display: inline-block;
         }
     </style>
 </head>
-
 <body>
-    <!-- Tenant Login Link -->
-    <a href="{{ route('login') }}" class="tenant-link">
-        <i class="fas fa-hospital me-1"></i>
-        {{ __('Clinic Login') }}
-    </a>
-
-    <div class="master-login-card">
-        <!-- Header -->
-        <div class="master-header">
-            <i class="fas fa-crown crown-icon"></i>
-            <h1>{{ __('Master Dashboard') }}</h1>
-            <p>{{ __('ConCure SaaS Platform Control') }}</p>
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-crown fa-3x mb-3"></i>
+            <h3 class="mb-0">ConCure Master</h3>
+            <div class="master-badge">
+                <i class="fas fa-shield-alt me-1"></i>
+                Super Admin Access
+            </div>
         </div>
 
-        <!-- Login Form -->
-        <div class="p-4">
+        <div class="login-body">
             @if ($errors->any())
-                <div class="alert alert-danger">
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     @foreach ($errors->all() as $error)
                         {{ $error }}
                     @endforeach
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
-            @if (session('success'))
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle me-2"></i>
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if (session('error'))
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            <form method="POST" action="{{ route('master.login.submit') }}">
+            <form method="POST" action="{{ route('master.login') }}">
                 @csrf
-                
+
                 <div class="mb-3">
-                    <label for="username" class="form-label fw-bold">
-                        <i class="fas fa-user me-2"></i>
-                        {{ __('Master Username') }}
+                    <label for="email" class="form-label">
+                        <i class="fas fa-envelope me-2"></i>Email Address
                     </label>
-                    <input type="text" 
-                           class="form-control @error('username') is-invalid @enderror" 
-                           id="username" 
-                           name="username" 
-                           value="{{ old('username') }}" 
-                           required 
+                    <input type="email"
+                           class="form-control @error('email') is-invalid @enderror"
+                           id="email"
+                           name="email"
+                           value="{{ old('email') }}"
+                           required
                            autofocus
-                           placeholder="{{ __('Enter your master username') }}">
-                    @error('username')
+                           placeholder="Enter your email">
+                    @error('email')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
-                <div class="mb-4">
-                    <label for="password" class="form-label fw-bold">
-                        <i class="fas fa-lock me-2"></i>
-                        {{ __('Master Password') }}
+                <div class="mb-3">
+                    <label for="password" class="form-label">
+                        <i class="fas fa-lock me-2"></i>Password
                     </label>
-                    <input type="password" 
-                           class="form-control @error('password') is-invalid @enderror" 
-                           id="password" 
-                           name="password" 
-                           required
-                           placeholder="{{ __('Enter your master password') }}">
+                    <div class="input-group">
+                        <input type="password"
+                               class="form-control @error('password') is-invalid @enderror"
+                               id="password"
+                               name="password"
+                               required
+                               placeholder="Enter your password">
+                        <button type="button" class="btn btn-outline-secondary" id="toggleMasterPassword" aria-label="Show password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                     @error('password')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
-                <button type="submit" class="btn btn-master">
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                    <label class="form-check-label" for="remember">
+                        Remember me
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-login w-100">
                     <i class="fas fa-sign-in-alt me-2"></i>
-                    {{ __('Access Master Dashboard') }}
+                    Access Master Dashboard
                 </button>
             </form>
 
-            <!-- Security Notice -->
-            <div class="security-notice">
-                <i class="fas fa-shield-alt text-warning me-2"></i>
-                <strong>{{ __('Restricted Access') }}</strong><br>
-                <small>{{ __('This is the master control panel for ConCure SaaS platform. Only authorized program owners can access this area.') }}</small>
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Super admin access only
+                </small>
+            </div>
+
+            <div class="text-center mt-3">
+                <a href="{{ url('/') }}" class="text-decoration-none">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Back to Main Site
+                </a>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('password');
+            const btn = document.getElementById('toggleMasterPassword');
+            if (input && btn) {
+                btn.addEventListener('click', function() {
+                    const isPassword = input.type === 'password';
+                    input.type = isPassword ? 'text' : 'password';
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.classList.toggle('fa-eye');
+                        icon.classList.toggle('fa-eye-slash');
+                    }
+                    btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+                });
+            }
+        });
+    </script>
+
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script>
-        // Auto-dismiss alerts after 5 seconds
-        document.addEventListener('DOMContentLoaded', function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                setTimeout(function() {
-                    alert.style.opacity = '0';
-                    setTimeout(function() {
-                        alert.remove();
-                    }, 300);
-                }, 5000);
-            });
-        });
-
-        // Form submission loading state
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>' + '{{ __("Authenticating...") }}';
-            submitBtn.disabled = true;
-            
-            // Re-enable after 10 seconds as fallback
-            setTimeout(function() {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }, 10000);
-        });
-    </script>
 </body>
 </html>

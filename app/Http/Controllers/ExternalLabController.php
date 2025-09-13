@@ -17,7 +17,7 @@ class ExternalLabController extends Controller
         // DEVELOPMENT MODE: Disable role checks
         if (!config('app.debug') && !env('DISABLE_PERMISSIONS', true)) {
             // Only admins can manage external labs
-            if (!in_array($user->role, ['admin', 'program_owner'])) {
+            if ($user->role !== 'admin') {
                 abort(403, 'Only administrators can manage external laboratories.');
             }
         }
@@ -86,6 +86,7 @@ class ExternalLabController extends Controller
             'name' => 'required|string|max:255',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
+            'whatsapp' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
             'website' => 'nullable|url|max:255',
             'notes' => 'nullable|string',
@@ -96,6 +97,7 @@ class ExternalLabController extends Controller
             'name' => $request->name,
             'address' => $request->address,
             'phone' => $request->phone,
+            'whatsapp' => $request->whatsapp,
             'email' => $request->email,
             'website' => $request->website,
             'notes' => $request->notes,
@@ -128,6 +130,7 @@ class ExternalLabController extends Controller
             'name' => 'required|string|max:255',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
+            'whatsapp' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
             'website' => 'nullable|url|max:255',
             'notes' => 'nullable|string',
@@ -139,6 +142,7 @@ class ExternalLabController extends Controller
             'name' => $request->name,
             'address' => $request->address,
             'phone' => $request->phone,
+            'whatsapp' => $request->whatsapp,
             'email' => $request->email,
             'website' => $request->website,
             'notes' => $request->notes,

@@ -11,10 +11,16 @@
                     <i class="fas fa-users text-primary me-2"></i>
                     {{ __('Patient Management') }}
                 </h1>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPatientModal">
-                    <i class="fas fa-plus me-2"></i>
-                    {{ __('Add New Patient') }}
-                </button>
+                <div class="btn-group">
+                    <a href="{{ route('patients.import') }}" class="btn btn-success">
+                        <i class="fas fa-file-import me-2"></i>
+                        {{ __('Import Patients') }}
+                    </a>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPatientModal">
+                        <i class="fas fa-plus me-2"></i>
+                        {{ __('Add New Patient') }}
+                    </button>
+                </div>
             </div>
 
             <!-- Search and Filter -->
@@ -114,6 +120,9 @@
                                             <div class="btn-group btn-group-sm" role="group">
                                                 <a href="{{ route('patients.show', $patient->id) }}" class="btn btn-outline-primary" title="{{ __('View Details') }}">
                                                     <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ route('patient.report', $patient->id) }}" class="btn btn-outline-success" title="{{ __('Generate Report') }}" target="_blank">
+                                                    <i class="fas fa-file-medical"></i>
                                                 </a>
                                                 <a href="{{ route('patients.edit', $patient->id) }}" class="btn btn-outline-secondary" title="{{ __('Edit') }}">
                                                     <i class="fas fa-edit"></i>

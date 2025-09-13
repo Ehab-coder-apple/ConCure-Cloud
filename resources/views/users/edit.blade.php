@@ -132,6 +132,7 @@
                                             <option value="">{{ __('Select Role') }}</option>
                                             <option value="admin" {{ old('role', $user->role ?? 'admin') == 'admin' ? 'selected' : '' }}>{{ __('Administrator') }}</option>
                                             <option value="doctor" {{ old('role', $user->role ?? '') == 'doctor' ? 'selected' : '' }}>{{ __('Doctor') }}</option>
+                                            <option value="nutritionist" {{ old('role', $user->role ?? '') == 'nutritionist' ? 'selected' : '' }}>{{ __('Nutritionist') }}</option>
                                             <option value="assistant" {{ old('role', $user->role ?? '') == 'assistant' ? 'selected' : '' }}>{{ __('Medical Assistant') }}</option>
                                             <option value="nurse" {{ old('role', $user->role ?? '') == 'nurse' ? 'selected' : '' }}>{{ __('Nurse') }}</option>
                                             <option value="accountant" {{ old('role', $user->role ?? '') == 'accountant' ? 'selected' : '' }}>{{ __('Accountant') }}</option>
@@ -162,6 +163,9 @@
                                                         @break
                                                     @case('doctor')
                                                         {{ __('Access to patient records, prescriptions, lab requests, and medical features.') }}
+                                                        @break
+                                                    @case('nutritionist')
+                                                        {{ __('Specialized access to nutrition plans, diet management, food database, and patient dietary care.') }}
                                                         @break
                                                     @case('assistant')
                                                         {{ __('Patient management, appointment scheduling, and basic medical record access.') }}
@@ -433,6 +437,7 @@ function updateRoleDescription() {
     const descriptions = {
         'admin': '{{ __("Administrative access to manage users, settings, and clinic operations.") }}',
         'doctor': '{{ __("Access to patient records, prescriptions, lab requests, and medical features.") }}',
+        'nutritionist': '{{ __("Specialized access to nutrition plans, diet management, food database, and patient dietary care.") }}',
         'assistant': '{{ __("Patient management, appointment scheduling, and basic medical record access.") }}',
         'nurse': '{{ __("Patient care features, vital signs recording, and medication administration.") }}',
         'accountant': '{{ __("Financial management, invoicing, expense tracking, and reporting features.") }}'

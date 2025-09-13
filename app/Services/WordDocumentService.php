@@ -11,9 +11,11 @@ class WordDocumentService
     {
         // Create Word document content as HTML that can be opened by Word
         $html = $this->generateWordHtml($dietPlan, $nutritionalTotals);
-        
+
         return $html;
     }
+
+
 
     /**
      * Generate HTML content optimized for Word
@@ -196,46 +198,148 @@ class WordDocumentService
             <strong>Doctor:</strong> ' . htmlspecialchars($dietPlan->doctor->name) . '
         </div>';
 
-        // Meals
-        $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
-        
-        foreach ($mealTypes as $mealType) {
-            $meals = $dietPlan->meals->where('meal_type', $mealType);
-            
-            if ($meals->count() > 0) {
-                $html .= '<div class="meal-section">
-                    <div class="meal-header">' . ucfirst($mealType) . '</div>';
-                
-                $mealCalories = 0;
-                
-                foreach ($meals as $meal) {
-                    foreach ($meal->foods as $mealFood) {
-                        $food = $mealFood->food;
-                        $quantity = $mealFood->quantity;
-                        $calories = ($food->calories * $quantity) / 100;
-                        $protein = ($food->protein * $quantity) / 100;
-                        $carbs = ($food->carbohydrates * $quantity) / 100;
-                        $fat = ($food->fat * $quantity) / 100;
-                        
-                        $mealCalories += $calories;
-                        
-                        $html .= '<div class="food-item">
-                            <div class="food-name kurdish">' . $mealFood->food_name . '</div>
-                            <div class="food-details">
-                                ' . $mealFood->quantity . ' ' . $mealFood->unit . ' | 
-                                ' . number_format($calories, 0) . ' cal | 
-                                ' . number_format($protein, 1) . 'g protein | 
-                                ' . number_format($carbs, 1) . 'g carbs | 
-                                ' . number_format($fat, 1) . 'g fat
-                            </div>
-                        </div>';
+        // Group meals by day and organize properly
+        $mealsByDay = $dietPlan->meals->groupBy('day_number')->sortKeys();
+
+        if ($mealsByDay->count() > 0) {
+            foreach ($mealsByDay as $dayNumber => $dayMeals) {
+                // Skip day 0 or invalid days
+                if ($dayNumber < 1) {
+                    continue;
+                }
+
+                $html .= '<div class="day-section">
+                    <h3 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5pt; margin-top: 20pt;">Day ' . $dayNumber . '</h3>';
+
+                // Group meals by type for this day
+                $mealTypeGroups = [
+                    'breakfast' => ['breakfast'],
+                    'lunch' => ['lunch'],
+                    'dinner' => ['dinner'],
+                    'snacks' => ['snack', 'snack_1', 'snack_2', 'snack_3']
+                ];
+
+                $dayTotalCalories = 0;
+
+                foreach ($mealTypeGroups as $displayName => $mealTypes) {
+                    $meals = $dayMeals->whereIn('meal_type', $mealTypes);
+
+                    if ($meals->count() > 0) {
+                        $html .= '<div class="meal-section">
+                            <div class="meal-header">' . ucfirst($displayName) . '</div>';
+
+                        $mealCalories = 0;
+
+                        foreach ($meals as $meal) {
+                            foreach ($meal->foods as $mealFood) {
+                                $food = $mealFood->food;
+                                $quantity = $mealFood->quantity;
+
+                                // Handle case where food relationship might be missing
+                                if ($food) {
+                                    $calories = ($food->calories * $quantity) / 100;
+                                    $protein = ($food->protein * $quantity) / 100;
+                                    $carbs = ($food->carbohydrates * $quantity) / 100;
+                                    $fat = ($food->fat * $quantity) / 100;
+                                } else {
+                                    // Fallback if food is not found
+                                    $calories = 0;
+                                    $protein = 0;
+                                    $carbs = 0;
+                                    $fat = 0;
+                                }
+
+                                $mealCalories += $calories;
+                                $dayTotalCalories += $calories;
+
+                                $html .= '<div class="food-item">
+                                    <div class="food-name kurdish">' . htmlspecialchars($mealFood->food_name) . '</div>
+                                    <div class="food-details">
+                                        ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . ' |
+                                        ' . number_format($calories, 0) . ' cal |
+                                        ' . number_format($protein, 1) . 'g protein |
+                                        ' . number_format($carbs, 1) . 'g carbs |
+                                        ' . number_format($fat, 1) . 'g fat
+                                    </div>
+                                </div>';
+                            }
+                        }
+
+                        $html .= '<div class="meal-total">
+                            Total: ' . number_format($mealCalories, 0) . ' calories
+                        </div></div>';
                     }
                 }
-                
-                $html .= '<div class="meal-total">
-                    Total: ' . number_format($mealCalories, 0) . ' calories
+
+                // Add day total
+                $html .= '<div style="text-align: right; font-weight: bold; color: #2c3e50; margin-top: 10pt; padding-top: 10pt; border-top: 1pt solid #bdc3c7;">
+                    Day ' . $dayNumber . ' Total: ' . number_format($dayTotalCalories, 0) . ' calories
                 </div></div>';
             }
+        } else {
+            // Fallback: try to organize meals without day grouping
+            $mealTypeGroups = [
+                'breakfast' => ['breakfast'],
+                'lunch' => ['lunch'],
+                'dinner' => ['dinner'],
+                'snacks' => ['snack', 'snack_1', 'snack_2', 'snack_3']
+            ];
+
+            foreach ($mealTypeGroups as $displayName => $mealTypes) {
+                $meals = $dietPlan->meals->whereIn('meal_type', $mealTypes);
+
+                if ($meals->count() > 0) {
+                    $html .= '<div class="meal-section">
+                        <div class="meal-header">' . ucfirst($displayName) . '</div>';
+
+                    $mealCalories = 0;
+
+                    foreach ($meals as $meal) {
+                        foreach ($meal->foods as $mealFood) {
+                            $food = $mealFood->food;
+                            $quantity = $mealFood->quantity;
+
+                            if ($food) {
+                                $calories = ($food->calories * $quantity) / 100;
+                                $protein = ($food->protein * $quantity) / 100;
+                                $carbs = ($food->carbohydrates * $quantity) / 100;
+                                $fat = ($food->fat * $quantity) / 100;
+                            } else {
+                                $calories = 0;
+                                $protein = 0;
+                                $carbs = 0;
+                                $fat = 0;
+                            }
+
+                            $mealCalories += $calories;
+
+                            $html .= '<div class="food-item">
+                                <div class="food-name kurdish">' . htmlspecialchars($mealFood->food_name) . '</div>
+                                <div class="food-details">
+                                    ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . ' |
+                                    ' . number_format($calories, 0) . ' cal |
+                                    ' . number_format($protein, 1) . 'g protein |
+                                    ' . number_format($carbs, 1) . 'g carbs |
+                                    ' . number_format($fat, 1) . 'g fat
+                                </div>
+                            </div>';
+                        }
+                    }
+
+                    $html .= '<div class="meal-total">
+                        Total: ' . number_format($mealCalories, 0) . ' calories
+                    </div></div>';
+                }
+            }
+        }
+
+        // Add message if no meals found
+        $totalMeals = $dietPlan->meals->count();
+        if ($totalMeals === 0) {
+            $html .= '<div class="no-meals">
+                <p><strong>No meals have been added to this nutrition plan yet.</strong></p>
+                <p>Please add meals to the plan to see them in the exported document.</p>
+            </div>';
         }
 
         // Summary

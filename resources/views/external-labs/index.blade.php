@@ -175,11 +175,16 @@
                     </div>
 
                     <div class="row mt-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="phone" class="form-label">{{ __('Phone') }}</label>
                             <input type="text" class="form-control" id="phone" name="phone">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label for="whatsapp" class="form-label">{{ __('WhatsApp') }}</label>
+                            <input type="text" class="form-control" id="whatsapp" name="whatsapp"
+                                   placeholder="{{ __('e.g., +9647595432033') }}">
+                        </div>
+                        <div class="col-md-4">
                             <label for="email" class="form-label">{{ __('Email') }}</label>
                             <input type="email" class="form-control" id="email" name="email">
                         </div>
@@ -237,11 +242,16 @@
                     </div>
 
                     <div class="row mt-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="edit_phone" class="form-label">{{ __('Phone') }}</label>
                             <input type="text" class="form-control" id="edit_phone" name="phone">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label for="edit_whatsapp" class="form-label">{{ __('WhatsApp') }}</label>
+                            <input type="text" class="form-control" id="edit_whatsapp" name="whatsapp"
+                                   placeholder="{{ __('e.g., +9647595432033') }}">
+                        </div>
+                        <div class="col-md-4">
                             <label for="edit_email" class="form-label">{{ __('Email') }}</label>
                             <input type="email" class="form-control" id="edit_email" name="email">
                         </div>
@@ -289,13 +299,25 @@
 <script>
 function editLab(labId) {
     // Fetch lab data and populate edit modal
-    fetch(`/external-labs/${labId}`)
-        .then(response => response.json())
+    fetch(`/external-labs/${labId}`, {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Lab data received:', data);
             if (data.success) {
                 const lab = data.lab;
                 document.getElementById('edit_name').value = lab.name || '';
                 document.getElementById('edit_phone').value = lab.phone || '';
+                document.getElementById('edit_whatsapp').value = lab.whatsapp || '';
                 document.getElementById('edit_email').value = lab.email || '';
                 document.getElementById('edit_website').value = lab.website || '';
                 document.getElementById('edit_address').value = lab.address || '';
@@ -309,12 +331,13 @@ function editLab(labId) {
                 // Show modal
                 new bootstrap.Modal(document.getElementById('editLabModal')).show();
             } else {
+                console.error('Server returned error:', data);
                 alert('{{ __("Error loading laboratory data.") }}');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('{{ __("Error loading laboratory data.") }}');
+            console.error('Fetch error:', error);
+            alert('{{ __("Error loading laboratory data: ") }}' + error.message);
         });
 }
 

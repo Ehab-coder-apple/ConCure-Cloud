@@ -14,7 +14,11 @@
                     </h1>
                     <p class="text-muted mb-0">{{ __('Manage your clinic\'s medicine inventory') }}</p>
                 </div>
-                <div>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('medicines.import') }}" class="btn btn-success">
+                        <i class="fas fa-file-import me-1"></i>
+                        {{ __('Import from Excel') }}
+                    </a>
                     <a href="{{ route('medicines.create') }}" class="btn btn-primary">
                         <i class="fas fa-plus me-1"></i>
                         {{ __('Add Medicine') }}

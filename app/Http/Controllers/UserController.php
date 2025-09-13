@@ -69,7 +69,7 @@ class UserController extends Controller
             $userLimitInfo = $user->clinic->getUserLimitInfo();
             if ($userLimitInfo['has_reached_limit']) {
                 return redirect()->route('users.index')
-                    ->with('error', 'Cannot create new user. Your clinic has reached its user limit. Please upgrade your subscription plan.');
+                    ->with('error', 'Cannot create new user. Your clinic has reached its user limit. Please contact your administrator.');
             }
         }
 
@@ -112,7 +112,7 @@ class UserController extends Controller
             if ($clinic && $clinic->hasReachedUserLimit()) {
                 $userLimitInfo = $clinic->getUserLimitInfo();
                 return back()->withErrors([
-                    'clinic_id' => "Cannot create user. Your clinic has reached its user limit ({$userLimitInfo['current_users']}/{$userLimitInfo['max_users']} users on {$userLimitInfo['plan']} plan). Please upgrade your subscription to add more users."
+                    'clinic_id' => "Cannot create user. Your clinic has reached its user limit ({$userLimitInfo['current_users']}/{$userLimitInfo['max_users']} users). Please contact your administrator to increase the user limit."
                 ]);
             }
         }
@@ -311,11 +311,7 @@ class UserController extends Controller
             abort(403, 'You do not have permission to access user management.');
         }
 
-        // Program owners can access users across all clinics
-        if ($currentUser->role === 'program_owner') {
-            return;
-        }
-
+        // Admins can access users across all clinics in their clinic
         // Other users can only access users in their clinic
         if ($user->clinic_id !== $currentUser->clinic_id) {
             abort(403, 'Unauthorized access to user from different clinic.');

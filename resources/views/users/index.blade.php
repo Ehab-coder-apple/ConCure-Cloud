@@ -27,7 +27,6 @@
                     <div class="flex-grow-1">
                         <strong>{{ __('User Limit') }}:</strong>
                         {{ $userLimitInfo['current_users'] }} / {{ $userLimitInfo['max_users'] }} {{ __('users') }}
-                        ({{ ucfirst($userLimitInfo['plan']) }} {{ __('plan') }})
                         @if($userLimitInfo['remaining_slots'] > 0)
                             - {{ $userLimitInfo['remaining_slots'] }} {{ __('slots remaining') }}
                         @else
@@ -35,10 +34,7 @@
                         @endif
                     </div>
                     @if($userLimitInfo['has_reached_limit'])
-                        <a href="{{ route('subscription.plans') }}" class="btn btn-sm btn-warning ms-2">
-                            <i class="fas fa-arrow-up me-1"></i>
-                            {{ __('Upgrade Plan') }}
-                        </a>
+                        {{-- Subscription upgrade removed - no longer needed --}}
                     @endif
                 </div>
             @endif
@@ -136,7 +132,7 @@
                                                 {{ $user->is_active ? __('Active') : __('Inactive') }}
                                             </span>
                                         </td>
-                                        <td>{{ $user->last_login_at ? $user->last_login_at->format('M d, Y') : __('Never') }}</td>
+                                        <td>{{ $user->last_login_at && is_object($user->last_login_at) ? $user->last_login_at->format('M d, Y') : __('Never') }}</td>
                                         <td>{{ $user->created_at ? $user->created_at->format('M d, Y') : now()->format('M d, Y') }}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
@@ -153,6 +149,11 @@
                                                 @else
                                                     <button type="button" class="btn btn-outline-success" title="{{ __('Activate') }}" onclick="toggleUserStatus({{ $user->id }}, true)">
                                                         <i class="fas fa-user-check"></i>
+                                                    </button>
+                                                @endif
+                                                @if($user->id !== auth()->id())
+                                                    <button type="button" class="btn btn-outline-danger" title="{{ __('Delete User') }}" onclick="deleteUser({{ $user->id }}, '{{ $user->name }}')">
+                                                        <i class="fas fa-trash"></i>
                                                     </button>
                                                 @endif
                                             </div>
@@ -282,11 +283,37 @@
 function toggleUserStatus(userId, activate) {
     const action = activate ? 'activate' : 'deactivate';
     const message = activate ? 'activate' : 'deactivate';
-    
+
     if (confirm(`Are you sure you want to ${message} this user?`)) {
         // In a real application, this would make an AJAX request
         alert(`User ${action}d successfully!`);
         location.reload();
+    }
+}
+
+function deleteUser(userId, userName) {
+    if (confirm(`Are you sure you want to permanently delete the user "${userName}"? This action cannot be undone.`)) {
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/users/${userId}`;
+
+        // Add CSRF token
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = '{{ csrf_token() }}';
+        form.appendChild(csrfToken);
+
+        // Add method override for DELETE
+        const methodField = document.createElement('input');
+        methodField.type = 'hidden';
+        methodField.name = '_method';
+        methodField.value = 'DELETE';
+        form.appendChild(methodField);
+
+        document.body.appendChild(form);
+        form.submit();
     }
 }
 </script>

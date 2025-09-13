@@ -253,10 +253,7 @@
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-2">
-                            <button type="button" class="btn btn-outline-success btn-sm" onclick="applyWeightLossTemplate()">
-                                <i class="fas fa-weight me-1"></i>
-                                {{ __('Weight Loss') }}
-                            </button>
+
                             <button type="button" class="btn btn-outline-primary btn-sm" onclick="applyMuscleGainTemplate()">
                                 <i class="fas fa-dumbbell me-1"></i>
                                 {{ __('Muscle Gain') }}
@@ -292,16 +289,6 @@
 @push('scripts')
 <script>
 // Template functions
-function applyWeightLossTemplate() {
-    document.getElementById('goal').value = 'weight_loss';
-    document.getElementById('target_calories').value = '1500';
-    document.getElementById('target_protein').value = '120';
-    document.getElementById('target_carbs').value = '150';
-    document.getElementById('target_fat').value = '50';
-    document.getElementById('duration_days').value = '30';
-    document.getElementById('instructions').value = 'Follow this plan consistently. Drink plenty of water (8-10 glasses daily). Include 30 minutes of moderate exercise daily.';
-    document.getElementById('restrictions').value = 'Avoid processed foods, sugary drinks, and excessive fats. Limit portion sizes.';
-}
 
 function applyMuscleGainTemplate() {
     document.getElementById('goal').value = 'muscle_gain';

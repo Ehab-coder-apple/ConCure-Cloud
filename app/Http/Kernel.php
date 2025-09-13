@@ -68,7 +68,7 @@ class Kernel extends HttpKernel
         'role' => \App\Http\Middleware\RoleMiddleware::class,
         'activation' => \App\Http\Middleware\ActivationMiddleware::class,
         'audit' => \App\Http\Middleware\AuditMiddleware::class,
-        'master.auth' => \App\Http\Middleware\MasterAuth::class,
-        'master.guest' => \App\Http\Middleware\MasterGuest::class,
+        'super.admin' => \App\Http\Middleware\SuperAdminAuth::class,
+        'super.guest' => \App\Http\Middleware\SuperAdminGuest::class,
     ];
 }
