@@ -575,10 +575,21 @@
                 <i class="fas fa-globe me-1"></i>
                 {{ strtoupper(app()->getLocale()) }}
             </button>
+            @php
+                // Build a safe list of language codes, regardless of how it's provided
+                $langs = [];
+                if (isset($supportedLanguages) && is_array($supportedLanguages)) {
+                    $langs = array_keys($supportedLanguages) === range(0, count($supportedLanguages) - 1)
+                        ? $supportedLanguages // already a flat list of codes
+                        : array_keys($supportedLanguages); // associative: take keys as codes
+                } else {
+                    $langs = array_keys(config('concure.supported_languages', ['en' => 'English', 'ar' => 'العربية', 'ku' => 'کوردی']));
+                }
+            @endphp
             <ul class="dropdown-menu dropdown-menu-end">
-                @foreach($supportedLanguages as $lang)
+                @foreach($langs as $lang)
                     <li>
-                        <a class="dropdown-item {{ app()->getLocale() === $lang ? 'active' : '' }}" 
+                        <a class="dropdown-item {{ app()->getLocale() === $lang ? 'active' : '' }}"
                            href="{{ route('language.switch', $lang) }}">
                             @switch($lang)
                                 @case('en')
@@ -590,6 +601,8 @@
                                 @case('ku')
                                     <i class="fas fa-flag me-2"></i> کوردی
                                     @break
+                                @default
+                                    {{ strtoupper($lang) }}
                             @endswitch
                         </a>
                     </li>
