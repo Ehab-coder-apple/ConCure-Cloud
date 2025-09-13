@@ -145,26 +145,36 @@ return new class extends Migration
             }
         }
 
+        // Ensure 'changes' column exists on audit_logs before inserting (SQLite-safe)
+        if (!Schema::hasColumn('audit_logs', 'changes')) {
+            Schema::table('audit_logs', function (Blueprint $table) {
+                $table->json('changes')->nullable()->after('description');
+            });
+        }
+
         // Log the migration
-        DB::table('audit_logs')->insert([
+        $logData = [
             'user_id' => null,
             'clinic_id' => null,
             'action' => 'system_migration',
             'model_type' => 'PatientCheckup',
             'model_id' => null,
             'description' => 'Added custom vital signs support to patient checkups',
-            'changes' => json_encode([
-                'migration' => 'add_custom_vital_signs_to_checkups',
-                'added_fields' => ['custom_vital_signs'],
-                'created_tables' => ['custom_vital_signs_config'],
-                'default_signs_added' => 5
-            ]),
             'ip_address' => '127.0.0.1',
             'user_agent' => 'System Migration',
             'performed_at' => now(),
             'created_at' => now(),
             'updated_at' => now()
-        ]);
+        ];
+        if (Schema::hasColumn('audit_logs', 'changes')) {
+            $logData['changes'] = json_encode([
+                'migration' => 'add_custom_vital_signs_to_checkups',
+                'added_fields' => ['custom_vital_signs'],
+                'created_tables' => ['custom_vital_signs_config'],
+                'default_signs_added' => 5
+            ]);
+        }
+        DB::table('audit_logs')->insert($logData);
 
         echo "Added custom vital signs support to patient checkups\n";
     }
@@ -180,25 +190,28 @@ return new class extends Migration
 
         Schema::dropIfExists('custom_vital_signs_config');
 
-        // Log the rollback
-        DB::table('audit_logs')->insert([
+        // Log the rollback (insert without 'changes' if column missing)
+        $rollbackLog = [
             'user_id' => null,
             'clinic_id' => null,
             'action' => 'system_migration_rollback',
             'model_type' => 'PatientCheckup',
             'model_id' => null,
             'description' => 'Removed custom vital signs support from patient checkups',
-            'changes' => json_encode([
-                'migration' => 'add_custom_vital_signs_to_checkups_rollback',
-                'removed_fields' => ['custom_vital_signs'],
-                'dropped_tables' => ['custom_vital_signs_config']
-            ]),
             'ip_address' => '127.0.0.1',
             'user_agent' => 'System Migration Rollback',
             'performed_at' => now(),
             'created_at' => now(),
             'updated_at' => now()
-        ]);
+        ];
+        if (Schema::hasColumn('audit_logs', 'changes')) {
+            $rollbackLog['changes'] = json_encode([
+                'migration' => 'add_custom_vital_signs_to_checkups_rollback',
+                'removed_fields' => ['custom_vital_signs'],
+                'dropped_tables' => ['custom_vital_signs_config']
+            ]);
+        }
+        DB::table('audit_logs')->insert($rollbackLog);
 
         echo "Removed custom vital signs support from patient checkups\n";
     }

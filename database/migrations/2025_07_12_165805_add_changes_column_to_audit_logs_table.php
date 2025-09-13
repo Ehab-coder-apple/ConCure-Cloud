@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('audit_logs', function (Blueprint $table) {
-            $table->text('changes')->nullable()->after('model_id');
-        });
+        if (!Schema::hasColumn('audit_logs', 'changes')) {
+            Schema::table('audit_logs', function (Blueprint $table) {
+                $table->text('changes')->nullable()->after('model_id');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('audit_logs', function (Blueprint $table) {
-            $table->dropColumn('changes');
-        });
+        if (Schema::hasColumn('audit_logs', 'changes')) {
+            Schema::table('audit_logs', function (Blueprint $table) {
+                $table->dropColumn('changes');
+            });
+        }
     }
 };
