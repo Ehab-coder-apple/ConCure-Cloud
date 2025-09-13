@@ -1,126 +1,163 @@
 @extends('layouts.guest')
 
 @section('content')
-<div class="container min-vh-100 d-flex align-items-center justify-content-center">
-    <div class="row justify-content-center w-100">
-        <div class="col-md-6 col-lg-5">
-            <div class="card">
-                <div class="card-body p-5">
-                    <!-- Brand / Header -->
-                    <div class="text-center mb-4">
-                        <i class="fas fa-hospital fa-3x text-primary mb-3"></i>
-                        <h2 class="h4 text-primary fw-bold mb-1">{{ config('app.name') }}</h2>
-                        <p class="text-muted mb-0">Secure unified access for Super Admin and Clinic Staff</p>
+<div class="login-container">
+    <div class="login-background">
+        <div class="floating-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+            <div class="shape shape-4"></div>
+        </div>
+    </div>
+
+    <div class="container min-vh-100 d-flex align-items-center justify-content-center">
+        <div class="row justify-content-center w-100">
+            <div class="col-md-6 col-lg-5">
+                <div class="login-card">
+                    <div class="login-card-header">
+                        <div class="brand-logo">
+                            <div class="logo-icon">
+                                <i class="fas fa-hospital"></i>
+                            </div>
+                            <h2 class="brand-name">{{ config('app.name') }}</h2>
+                            <p class="brand-subtitle">Professional Clinic Management</p>
+                        </div>
                     </div>
 
-                    <form method="POST" action="{{ route('login') }}">
-                        @csrf
-
-                        <!-- Username -->
-                        <div class="mb-3">
-                            <label for="username" class="form-label">
-                                <i class="fas fa-user"></i> Username
-                            </label>
-                            <input id="username" type="text" 
-                                   class="form-control @error('username') is-invalid @enderror" 
-                                   name="username" value="{{ old('username') }}" 
-                                   required autocomplete="username" autofocus>
-                            @error('username')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
-                            @enderror
+                    <div class="login-card-body">
+                        <div class="login-header-text">
+                            <h3 class="login-title">Welcome Back</h3>
+                            <p class="login-subtitle">Sign in to your clinic dashboard</p>
                         </div>
 
-                        <!-- Password -->
-                        <div class="mb-3">
-                            <label for="password" class="form-label">
-                                <i class="fas fa-lock"></i> Password
-                            </label>
-                            <div class="input-group">
-                                <input id="password" type="password"
-                                       class="form-control @error('password') is-invalid @enderror"
-                                       name="password" required autocomplete="current-password">
-                                <button type="button" class="btn btn-outline-secondary" id="togglePasswordAuth" aria-label="Show password">
-                                    <i class="fas fa-eye"></i>
+                        <form method="POST" action="{{ route('login') }}" class="login-form needs-validation" novalidate id="loginForm">
+                            @csrf
+
+                            <!-- Username -->
+                            <div class="form-group">
+                                <label for="username" class="form-label">
+                                    <i class="fas fa-user"></i> Username
+                                </label>
+                                <div class="input-wrapper">
+                                    <input id="username" type="text"
+                                           class="form-control @error('username') is-invalid @enderror"
+                                           name="username" value="{{ old('username') }}" required autofocus
+                                           placeholder="Enter your username">
+                                    <div class="input-focus-line"></div>
+                                </div>
+                                @error('username')
+                                    <div class="invalid-feedback">
+                                        <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+
+                            <!-- Password -->
+                            <div class="form-group">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-lock"></i> Password
+                                </label>
+                                <div class="input-wrapper">
+                                    <div class="password-input-group">
+                                        <input id="password" type="password"
+                                               class="form-control @error('password') is-invalid @enderror"
+                                               name="password" required autocomplete="current-password"
+                                               placeholder="Enter your password">
+                                        <button type="button" class="password-toggle" id="togglePasswordAuth" aria-label="Show password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="input-focus-line"></div>
+                                </div>
+                                @error('password')
+                                    <div class="invalid-feedback">
+                                        <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+
+                            <!-- Remember Me -->
+                            <div class="form-group remember-group">
+                                <div class="custom-checkbox">
+                                    <input class="checkbox-input" type="checkbox" name="remember" id="remember"
+                                           {{ old('remember') ? 'checked' : '' }}>
+                                    <label class="checkbox-label" for="remember">
+                                        <span class="checkbox-custom"></span>
+                                        <span class="checkbox-text">Remember me for 30 days</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="form-group">
+                                <button type="submit" class="btn-login" id="loginButton">
+                                    <span class="btn-text">
+                                        <i class="fas fa-sign-in-alt"></i>
+                                        Sign In to Dashboard
+                                    </span>
+                                    <div class="btn-loading">
+                                        <div class="spinner"></div>
+                                        <span>Signing in...</span>
+                                    </div>
                                 </button>
                             </div>
-                            @error('password')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
+                        </form>
+
+                        <!-- Additional Options -->
+                        <div class="login-footer">
+                            <div class="divider">
+                                <span>or</span>
+                            </div>
+
+                            <div class="access-links">
+                                <a href="{{ route('master.login') }}" class="access-link master-access">
+                                    <i class="fas fa-crown"></i>
+                                    <span>Master Admin Access</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+
+                            <!-- Demo Access -->
+                            @if(config('app.env') === 'local')
+                            <div class="demo-section">
+                                <div class="demo-header">
+                                    <i class="fas fa-flask"></i>
+                                    <span>Demo Access</span>
                                 </div>
-                            @enderror
+                                <div class="demo-buttons">
+                                    <a href="/dev/login-admin" class="demo-btn admin">
+                                        <i class="fas fa-user-shield"></i>
+                                        <span>Admin Demo</span>
+                                    </a>
+                                    <a href="/dev/login-doctor" class="demo-btn doctor">
+                                        <i class="fas fa-user-md"></i>
+                                        <span>Doctor Demo</span>
+                                    </a>
+                                </div>
+                                <div class="demo-credentials">
+                                    <small>Admin: admin/admin123 • Doctor: doctor/doctor123</small>
+                                </div>
+                            </div>
+                            @endif
                         </div>
-
-                        @push('scripts')
-                        <script>
-                        document.addEventListener('DOMContentLoaded', function () {
-                            const input = document.getElementById('password');
-                            const btn = document.getElementById('togglePasswordAuth');
-                            if (input && btn) {
-                                btn.addEventListener('click', function () {
-                                    const isPassword = input.type === 'password';
-                                    input.type = isPassword ? 'text' : 'password';
-                                    const icon = btn.querySelector('i');
-                                    if (icon) {
-                                        icon.classList.toggle('fa-eye');
-                                        icon.classList.toggle('fa-eye-slash');
-                                    }
-                                    btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
-                                });
-                            }
-                        });
-                        </script>
-                        @endpush
-
-                        <!-- Remember Me -->
-                        <div class="mb-3 form-check">
-                            <input class="form-check-input" type="checkbox" name="remember" id="remember" 
-                                   {{ old('remember') ? 'checked' : '' }}>
-                            <label class="form-check-label" for="remember">
-                                Remember me
-                            </label>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-sign-in-alt"></i> Login
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Registration disabled: accounts are created by master admin -->
-
-                    <!-- Demo Access -->
-                    @if(config('app.env') === 'local')
-                    <div class="mt-4 p-3 bg-light rounded">
-                        <h6 class="text-muted mb-2"><i class="fas fa-info-circle me-1"></i> Demo Access</h6>
-                        <div class="d-grid gap-2 mb-2">
-                            <a href="/dev/login-admin" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-user-shield me-1"></i>
-                                Demo as Admin
-                            </a>
-                            <a href="/dev/login-doctor" class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-user-md me-1"></i>
-                                Demo as Doctor
-                            </a>
-                        </div>
-                        <small class="text-muted d-block">
-                            <strong>Admin:</strong> admin / admin123 &nbsp; • &nbsp;
-                            <strong>Doctor:</strong> doctor / doctor123
-                        </small>
                     </div>
-                    @endif
                 </div>
-            </div>
 
-            <!-- Company Info -->
-            <div class="text-center mt-4">
-                <p class="text-muted">
-                    <i class="fas fa-building"></i>
-                    Powered by {{ $companyName ?? 'Connect Pure' }}
-                </p>
+                <!-- Footer -->
+                <div class="login-page-footer">
+                    <div class="footer-content">
+                        <p class="powered-by">
+                            <i class="fas fa-heart"></i>
+                            Powered by <strong>{{ $companyName ?? 'ConCure' }}</strong>
+                        </p>
+                        <div class="footer-links">
+                            <a href="#" class="footer-link">Privacy Policy</a>
+                            <a href="#" class="footer-link">Terms of Service</a>
+                            <a href="#" class="footer-link">Support</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
