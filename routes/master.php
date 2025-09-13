@@ -6,6 +6,7 @@ use App\Http\Controllers\Master\DashboardController;
 use App\Http\Controllers\Master\ClinicController;
 use App\Http\Controllers\Master\UserController;
 use App\Http\Controllers\Master\SubscriptionController;
+use App\Http\Controllers\Master\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,9 +69,7 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     })->name('settings');
     
     // Reports
-    Route::get('/reports', function () {
-        return view('master.reports.index');
-    })->name('reports');
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports');
 });
 
 // Redirect /master to dashboard if authenticated, login if not

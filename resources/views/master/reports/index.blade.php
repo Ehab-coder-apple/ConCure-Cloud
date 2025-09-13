@@ -11,9 +11,29 @@
     </div>
 </div>
 
+{{-- Filters --}}
+<form method="GET" class="card mb-4">
+    <div class="card-body row g-3 align-items-end">
+        <div class="col-sm-4 col-md-3">
+            <label class="form-label">From</label>
+            <input type="date" name="from" class="form-control" value="{{ $filters['from'] ?? '' }}">
+        </div>
+        <div class="col-sm-4 col-md-3">
+            <label class="form-label">To</label>
+            <input type="date" name="to" class="form-control" value="{{ $filters['to'] ?? '' }}">
+        </div>
+        <div class="col-sm-4 col-md-3">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-filter me-1"></i> Apply Filters
+            </button>
+            <a href="{{ route('master.reports') }}" class="btn btn-outline-secondary ms-1">Reset</a>
+        </div>
+    </div>
+</form>
+
 <div class="row g-3">
-    <div class="col-md-4">
-        <div class="card border-left-primary h-100">
+    <div class="col-lg-6">
+        <div class="card h-100 border-left-primary">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -24,12 +44,19 @@
                         <i class="fas fa-hospital"></i>
                     </div>
                 </div>
-                <p class="text-muted mt-3 mb-0">Summary of registered clinics and activation status.</p>
+                <div class="mt-3">
+                    <canvas id="clinicsChart" height="130"></canvas>
+                </div>
+                <div class="text-muted mt-3">
+                    Total in range: <strong>{{ $clinicsTotal }}</strong>
+                    <span class="ms-3">Active: <strong>{{ $clinicsActive }}</strong></span>
+                    <span class="ms-3">Inactive: <strong>{{ $clinicsInactive }}</strong></span>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-left-success h-100">
+    <div class="col-lg-6">
+        <div class="card h-100 border-left-success">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -40,37 +67,62 @@
                         <i class="fas fa-users"></i>
                     </div>
                 </div>
-                <p class="text-muted mt-3 mb-0">Track user growth and distribution across roles.</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-left-info h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-xs text-uppercase text-info mb-1">Activity</div>
-                        <div class="h5 mb-0 text-gray-800">Audit Highlights</div>
-                    </div>
-                    <div class="icon-circle bg-info text-white">
-                        <i class="fas fa-clipboard-list"></i>
-                    </div>
+                <div class="mt-3">
+                    <canvas id="usersChart" height="130"></canvas>
                 </div>
-                <p class="text-muted mt-3 mb-0">Top recent activities across the platform.</p>
+                <div class="text-muted mt-3">
+                    @forelse($usersByRole as $role => $count)
+                        <span class="me-3">{{ ucfirst(str_replace('_',' ', $role)) }}: <strong>{{ $count }}</strong></span>
+                    @empty
+                        <em>No users in selected range.</em>
+                    @endforelse
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card mt-4">
-    <div class="card-header d-flex align-items-center">
-        <i class="fas fa-tools me-2 text-muted"></i>
-        <strong class="me-2">Coming soon</strong>
-        <span class="text-muted">Downloadable CSV/PDF and filters</span>
-    </div>
-    <div class="card-body">
-        <p class="text-muted mb-0">This page is a placeholder to prevent 500 errors. Detailed reports and exports will be added here.</p>
-    </div>
-</div>
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function(){
+    const clinicsCtx = document.getElementById('clinicsChart');
+    if (clinicsCtx) {
+        new Chart(clinicsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Active', 'Inactive'],
+                datasets: [{
+                    data: [{{ (int) $clinicsActive }}, {{ (int) $clinicsInactive }}],
+                    backgroundColor: ['#1cc88a', '#f6c23e'],
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    const usersCtx = document.getElementById('usersChart');
+    if (usersCtx) {
+        const labels = {!! json_encode(array_keys($usersByRole)) !!};
+        const data = {!! json_encode(array_values($usersByRole)) !!};
+        new Chart(usersCtx, {
+            type: 'bar',
+            data: {
+                labels: labels.map(l => l.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase())),
+                datasets: [{
+                    label: 'Users',
+                    data,
+                    backgroundColor: '#36b9cc'
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, precision: 0 } }
+            }
+        });
+    }
+})();
+</script>
+@endpush
 @endsection
 
