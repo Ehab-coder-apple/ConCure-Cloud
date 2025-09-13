@@ -811,7 +811,7 @@
 
                 <!-- Sidebar Footer -->
                 <div class="sidebar-footer">
-                    <form method="POST" action="{{ route('welcome.logout') }}">
+                    <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="logout-btn">
                             <i class="fas fa-sign-out-alt"></i>
