@@ -37,13 +37,13 @@
                             <!-- Username -->
                             <div class="form-group">
                                 <label for="username" class="form-label">
-                                    <i class="fas fa-user"></i> Username
+                                    <i class="fas fa-user"></i> Username or Email
                                 </label>
                                 <div class="input-wrapper">
                                     <input id="username" type="text"
                                            class="form-control @error('username') is-invalid @enderror"
                                            name="username" value="{{ old('username') }}" required autofocus
-                                           placeholder="Enter your username">
+                                           placeholder="Enter your username or email">
                                     <div class="input-focus-line"></div>
                                 </div>
                                 @error('username')

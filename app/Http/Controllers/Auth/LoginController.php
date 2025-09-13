@@ -72,11 +72,18 @@ class LoginController extends Controller
      */
     protected function attemptLogin(Request $request)
     {
-        $credentials = $this->credentials($request);
-        
+        // Support username OR email in the same "username" field
+        $loginInput = $request->input($this->username());
+        $field = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $credentials = [
+            $field => $loginInput,
+            'password' => $request->input('password'),
+        ];
+
         // First check if user exists and is active
-        $user = \App\Models\User::where($this->username(), $credentials[$this->username()])->first();
-        
+        $user = \App\Models\User::where($field, $loginInput)->first();
+
         if (!$user) {
             return false;
         }
