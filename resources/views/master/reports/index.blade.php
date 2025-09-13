@@ -3,13 +3,22 @@
 @section('title', 'Reports | ConCure Master')
 
 @section('content')
-<div class="d-flex align-items-center mb-4">
+<div class="d-flex align-items-center mb-3">
     <i class="fas fa-chart-bar fa-2x text-primary me-3"></i>
     <div>
-        <h4 class="mb-0">System Reports</h4>
+        <h5 class="mb-0">System Reports</h5>
         <small class="text-muted">High-level analytics across all clinics</small>
     </div>
 </div>
+
+@push('styles')
+<style>
+    .reports-card .card-body { padding: 1rem; }
+    .chart-wrap { position: relative; height: 220px; width: 100%; }
+    @media (max-width: 991.98px) { .chart-wrap { height: 200px; } }
+    @media (max-width: 575.98px) { .chart-wrap { height: 180px; } }
+</style>
+@endpush
 
 {{-- Filters --}}
 <form method="GET" class="card mb-4">
@@ -33,7 +42,7 @@
 
 <div class="row g-3">
     <div class="col-lg-6">
-        <div class="card h-100 border-left-primary">
+        <div class="card h-100 border-left-primary reports-card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -44,8 +53,8 @@
                         <i class="fas fa-hospital"></i>
                     </div>
                 </div>
-                <div class="mt-3">
-                    <canvas id="clinicsChart" height="130"></canvas>
+                <div class="chart-wrap mt-3">
+                    <canvas id="clinicsChart"></canvas>
                 </div>
                 <div class="text-muted mt-3">
                     Total in range: <strong>{{ $clinicsTotal }}</strong>
@@ -56,7 +65,7 @@
         </div>
     </div>
     <div class="col-lg-6">
-        <div class="card h-100 border-left-success">
+        <div class="card h-100 border-left-success reports-card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -67,8 +76,8 @@
                         <i class="fas fa-users"></i>
                     </div>
                 </div>
-                <div class="mt-3">
-                    <canvas id="usersChart" height="130"></canvas>
+                <div class="chart-wrap mt-3">
+                    <canvas id="usersChart"></canvas>
                 </div>
                 <div class="text-muted mt-3">
                     @forelse($usersByRole as $role => $count)
@@ -95,9 +104,16 @@
                 datasets: [{
                     data: [{{ (int) $clinicsActive }}, {{ (int) $clinicsInactive }}],
                     backgroundColor: ['#1cc88a', '#f6c23e'],
+                    borderWidth: 0,
                 }]
             },
-            options: { plugins: { legend: { position: 'bottom' } } }
+            options: {
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } }
+                }
+            }
         });
     }
 
@@ -112,12 +128,19 @@
                 datasets: [{
                     label: 'Users',
                     data,
-                    backgroundColor: '#36b9cc'
+                    backgroundColor: '#36b9cc',
+                    borderWidth: 0,
+                    barThickness: 22,
+                    maxBarThickness: 26,
                 }]
             },
             options: {
+                maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, precision: 0 } }
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 }, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
             }
         });
     }
