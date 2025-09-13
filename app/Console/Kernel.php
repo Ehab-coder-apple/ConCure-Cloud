@@ -4,9 +4,20 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Console\Commands\ResetSuperAdmin;
 
 class Kernel extends ConsoleKernel
 {
+    /**
+     * The Artisan commands provided by your application.
+     * Explicitly list commands to ensure availability after deploys.
+     *
+     * @var array
+     */
+    protected $commands = [
+        ResetSuperAdmin::class,
+    ];
+
     /**
      * Define the application's command schedule.
      */
