@@ -1,6 +1,6 @@
 @php
     $clinicLogo = \App\Http\Controllers\SettingsController::getClinicLogo(auth()->user()->clinic_id ?? $clinicId ?? null);
-    $clinicName = auth()->user()->clinic->name ?? $clinicName ?? 'ConCure Clinic';
+    $clinicName = auth()->user()->clinic?->name ?? ($clinicName ?? 'ConCure Clinic');
     $clinicInfo = $clinicInfo ?? '';
 @endphp
 
