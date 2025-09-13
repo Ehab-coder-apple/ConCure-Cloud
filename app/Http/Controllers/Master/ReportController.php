@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Clinic;
 use App\Models\User;
+use App\Models\SubscriptionPayment;
 use Carbon\Carbon;
 
 class ReportController extends Controller
@@ -45,19 +46,29 @@ class ReportController extends Controller
         $activeSubscribers = Clinic::where('is_active', true)->count();
         $monthlyFee = (float) config('concure.subscription.monthly_fee', 29);
         $expectedMonthlyFees = $activeSubscribers * $monthlyFee;
-        // Collected amount placeholder: no subscription payment records yet
-        $collectedAmount = 0.0;
+
+        // Collected amount for selected period (defaults to current month)
+        $payments = SubscriptionPayment::query();
+        if ($from) { $payments->whereDate('paid_at', '>=', $from->toDateString()); }
+        if ($to)   { $payments->whereDate('paid_at', '<=', $to->toDateString()); }
+        if (!$from && !$to) {
+            $payments->whereBetween('paid_at', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()]);
+        }
+        $collectedAmount = (float) $payments->sum('amount');
 
         $filters = [
             'from' => $from?->toDateString(),
             'to'   => $to?->toDateString(),
         ];
 
+        $clinics = Clinic::orderBy('name')->get(['id','name']);
+
         return view('master.reports.index', compact(
             'filters',
             'clinicsTotal', 'clinicsActive', 'clinicsInactive',
             'usersByRole',
-            'currencySymbol', 'activeSubscribers', 'monthlyFee', 'expectedMonthlyFees', 'collectedAmount'
+            'currencySymbol', 'activeSubscribers', 'monthlyFee', 'expectedMonthlyFees', 'collectedAmount',
+            'clinics'
         ));
     }
 

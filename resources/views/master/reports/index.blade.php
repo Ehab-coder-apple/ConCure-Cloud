@@ -20,6 +20,13 @@
 </style>
 @endpush
 
+{{-- Filters & Flash --}}
+@if(session('success'))
+  <div class="alert alert-success py-2 px-3">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+  <div class="alert alert-danger py-2 px-3">{{ session('error') }}</div>
+@endif
 {{-- Filters --}}
 <form method="GET" class="card mb-4">
     <div class="card-body row g-3 align-items-end">
@@ -39,6 +46,48 @@
         </div>
     </div>
 </form>
+
+<!-- Quick add payment + import -->
+<div class="card reports-card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small">Clinic</label>
+        <form class="d-flex gap-2" method="POST" action="{{ route('master.reports.payments.store') }}">
+          @csrf
+          <select name="clinic_id" class="form-select form-select-sm" required>
+            @foreach(($clinics ?? []) as $c)
+              <option value="{{ $c->id }}">{{ $c->name }}</option>
+            @endforeach
+          </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small">Amount</label>
+        <input type="number" name="amount" step="0.01" min="0.01" class="form-control form-control-sm" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small">Paid at</label>
+        <input type="date" name="paid_at" value="{{ now()->toDateString() }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small">Method</label>
+        <input type="text" name="method" class="form-control form-control-sm" placeholder="e.g. bank">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-success btn-sm w-100"><i class="fas fa-plus me-1"></i>Add Payment</button>
+        </form>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ route('master.reports.payments.import') }}" enctype="multipart/form-data" class="mt-2 d-flex gap-2 align-items-center">
+      @csrf
+      <label class="form-label small mb-0">Import CSV</label>
+      <input type="file" name="csv" accept=".csv" class="form-control form-control-sm" style="max-width:300px">
+      <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="fas fa-file-import me-1"></i>Import</button>
+      <span class="text-muted small">Headers: clinic_id, paid_at, amount, method, reference, notes</span>
+    </form>
+  </div>
+</div>
 
 <!-- Financial summary -->
 <div class="row g-3 mb-2">

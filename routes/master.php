@@ -7,6 +7,7 @@ use App\Http\Controllers\Master\ClinicController;
 use App\Http\Controllers\Master\UserController;
 use App\Http\Controllers\Master\SubscriptionController;
 use App\Http\Controllers\Master\ReportController;
+use App\Http\Controllers\Master\PaymentsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -70,6 +71,8 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+    Route::post('/reports/payments', [PaymentsController::class, 'store'])->name('reports.payments.store');
+    Route::post('/reports/payments/import', [PaymentsController::class, 'import'])->name('reports.payments.import');
 });
 
 // Redirect /master to dashboard if authenticated, login if not
