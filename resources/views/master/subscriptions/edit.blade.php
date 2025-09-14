@@ -37,16 +37,34 @@
                         @csrf
                         @method('PUT')
 
-                        <!-- Current Plan Info -->
-                        <div class="alert alert-info">
-                            <h6 class="alert-heading">
-                                <i class="fas fa-info-circle me-2"></i>
-                                Current Plan: Basic Plan
-                            </h6>
-                            <p class="mb-0">
-                                This clinic is currently on the Basic Plan ($29/month) with basic features.
-                                Advanced plan management will be available in future updates.
-                            </p>
+                        <!-- Plan Selection -->
+                        <div class="mb-4">
+                            <label for="plan_id" class="form-label">
+                                <i class="fas fa-layer-group me-2"></i>
+                                Subscription Plan
+                            </label>
+                            <select id="plan_id" name="plan_id" class="form-select">
+                                <option value="">No plan</option>
+                                @foreach($plans as $plan)
+                                    <option value="{{ $plan->id }}" {{ (string)old('plan_id', $clinic->plan_id) === (string)$plan->id ? 'selected' : '' }}>
+                                        {{ $plan->name }} — ${{ number_format($plan->monthly_price,2) }}/month @if($plan->yearly_price) or ${{ number_format($plan->yearly_price,2) }}/year @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">Changing plan may also update the clinic's max users to match the plan.</div>
+                        </div>
+
+                        <!-- Billing Cycle -->
+                        <div class="mb-4">
+                            <label for="billing_cycle" class="form-label">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                Billing Cycle
+                            </label>
+                            <select id="billing_cycle" name="billing_cycle" class="form-select">
+                                @php($cycle = old('billing_cycle', $clinic->billing_cycle ?? 'monthly'))
+                                <option value="monthly" {{ $cycle === 'monthly' ? 'selected' : '' }}>Monthly</option>
+                                <option value="yearly" {{ $cycle === 'yearly' ? 'selected' : '' }}>Yearly</option>
+                            </select>
                         </div>
 
                         <!-- User Limit -->

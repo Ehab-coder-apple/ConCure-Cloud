@@ -277,16 +277,10 @@
         </div>
     </div>
 
-    <!-- Coming Soon Notice -->
+    <!-- Note -->
     <div class="alert alert-info">
-        <h6 class="alert-heading">
-            <i class="fas fa-info-circle me-2"></i>
-            Advanced Billing Features Coming Soon
-        </h6>
-        <p class="mb-0">
-            Full billing integration, payment history, invoices, and automated billing management 
-            will be available in future updates.
-        </p>
+        <i class="fas fa-info-circle me-2"></i>
+        Automated billing (Stripe) will be added later. Current subscription management supports plans and usage stats.
     </div>
 </div>
 @endsection

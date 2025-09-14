@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Clinic extends Model
 {
@@ -21,13 +22,25 @@ class Clinic extends Model
         'max_users',
         'activated_at',
         'activation_code',
+        'plan_id',
+        'billing_cycle',
+        'next_billing_at',
     ];
 
     protected $casts = [
         'settings' => 'array',
         'is_active' => 'boolean',
         'activated_at' => 'datetime',
+        'next_billing_at' => 'datetime',
     ];
+
+    /**
+     * The subscription plan this clinic is assigned to.
+     */
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
+    }
 
     /**
      * Get the users for the clinic.

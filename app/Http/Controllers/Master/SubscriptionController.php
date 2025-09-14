@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Clinic;
 use App\Models\User;
+use App\Models\SubscriptionPlan;
 
 class SubscriptionController extends Controller
 {
@@ -83,20 +84,26 @@ class SubscriptionController extends Controller
             'monthly_patients' => $clinic->patients()->whereMonth('created_at', now()->month)->count(),
         ];
 
-        // Subscription details (placeholder)
-        $subscriptionDetails = [
-            'plan' => 'Basic Plan',
-            'price' => '$29/month',
-            'features' => [
+        // Subscription details from assigned plan
+        $plan = $clinic->plan;
+        $billingCycle = $clinic->billing_cycle ?? 'monthly';
+        $priceValue = $plan ? (($billingCycle === 'yearly' && $plan->yearly_price) ? $plan->yearly_price : $plan->monthly_price) : 0;
+        $price = $priceValue ? ('$' . number_format($priceValue, 2) . ($billingCycle === 'yearly' ? '/year' : '/month')) : 'N/A';
+        $features = $plan?->features ?? [];
+        if (empty($features)) {
+            $features = [
                 'Up to ' . $clinic->max_users . ' users',
                 'Unlimited patients',
                 'Prescription management',
                 'Appointment scheduling',
-                'Basic reporting',
-                'Email support'
-            ],
-            'billing_cycle' => 'Monthly',
-            'next_billing' => now()->addMonth(),
+            ];
+        }
+        $subscriptionDetails = [
+            'plan' => $plan?->name ?? 'No plan',
+            'price' => $price,
+            'features' => $features,
+            'billing_cycle' => ucfirst($billingCycle),
+            'next_billing' => $clinic->next_billing_at ?? now()->addMonth(),
             'status' => $clinic->is_active ? 'Active' : 'Inactive'
         ];
 
@@ -109,7 +116,8 @@ class SubscriptionController extends Controller
     public function edit(Clinic $subscription)
     {
         $clinic = $subscription;
-        return view('master.subscriptions.edit', compact('clinic'));
+        $plans = SubscriptionPlan::where('is_active', true)->orderBy('monthly_price')->get();
+        return view('master.subscriptions.edit', compact('clinic', 'plans'));
     }
 
     /**
@@ -118,14 +126,30 @@ class SubscriptionController extends Controller
     public function update(Request $request, Clinic $subscription)
     {
         $clinic = $subscription;
-        
+
         $request->validate([
-            'max_users' => 'required|integer|min:1|max:1000',
+            'plan_id' => 'nullable|exists:subscription_plans,id',
+            'billing_cycle' => 'required|in:monthly,yearly',
+            'max_users' => 'nullable|integer|min:1|max:100000',
         ]);
 
-        $clinic->update([
-            'max_users' => $request->max_users,
-        ]);
+        $data = [
+            'plan_id' => $request->plan_id,
+            'billing_cycle' => $request->billing_cycle,
+        ];
+
+        // If a plan is selected, align max_users with the plan unless overridden
+        if ($request->filled('plan_id')) {
+            $plan = SubscriptionPlan::find($request->plan_id);
+            if ($plan && $plan->max_users) {
+                $data['max_users'] = $plan->max_users;
+            }
+        }
+        if ($request->filled('max_users')) {
+            $data['max_users'] = (int) $request->max_users;
+        }
+
+        $clinic->update($data);
 
         return redirect()->route('master.subscriptions.show', $clinic)
             ->with('success', 'Subscription updated successfully.');

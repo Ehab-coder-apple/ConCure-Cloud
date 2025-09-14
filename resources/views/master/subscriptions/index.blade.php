@@ -16,10 +16,10 @@
                     <p class="text-muted mb-0">Manage clinic subscriptions and billing</p>
                 </div>
                 <div>
-                    <button class="btn btn-outline-info me-2" disabled>
+                    <a class="btn btn-outline-info me-2" href="{{ route('master.plans.create') }}">
                         <i class="fas fa-plus me-2"></i>
-                        Create Plan (Coming Soon)
-                    </button>
+                        Create Plan
+                    </a>
                 </div>
             </div>
         </div>
@@ -185,8 +185,19 @@
                                     </td>
                                     <td>
                                         <div>
-                                            <div class="font-weight-bold">Basic Plan</div>
-                                            <div class="text-muted small">$29/month</div>
+                                            @php($plan = $clinic->plan)
+                                            @if($plan)
+                                                <div class="font-weight-bold">{{ $plan->name }}</div>
+                                                <div class="text-muted small">
+                                                    @if(($clinic->billing_cycle ?? 'monthly') === 'yearly' && $plan->yearly_price)
+                                                        ${{ number_format($plan->yearly_price, 2) }}/year
+                                                    @else
+                                                        ${{ number_format($plan->monthly_price, 2) }}/month
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <div class="text-muted">No plan</div>
+                                            @endif
                                         </div>
                                     </td>
                                     <td>
@@ -279,20 +290,10 @@
         </div>
     </div>
 
-    <!-- Coming Soon Notice -->
+    <!-- Note -->
     <div class="alert alert-info mt-4">
-        <h6 class="alert-heading">
-            <i class="fas fa-info-circle me-2"></i>
-            Subscription Management Features Coming Soon
-        </h6>
-        <p class="mb-2">The following features are planned for future releases:</p>
-        <ul class="mb-0">
-            <li><strong>Multiple Subscription Plans:</strong> Basic, Professional, Enterprise tiers</li>
-            <li><strong>Billing Integration:</strong> Automated billing and payment processing</li>
-            <li><strong>Usage Analytics:</strong> Track feature usage and limits</li>
-            <li><strong>Plan Upgrades/Downgrades:</strong> Self-service plan changes</li>
-            <li><strong>Revenue Reporting:</strong> Detailed financial analytics</li>
-        </ul>
+        <i class="fas fa-info-circle me-2"></i>
+        Subscription plans and assignments are active. Automated billing will be added later.
     </div>
 </div>
 @endsection

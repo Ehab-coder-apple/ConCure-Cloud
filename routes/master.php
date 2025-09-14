@@ -8,6 +8,7 @@ use App\Http\Controllers\Master\UserController;
 use App\Http\Controllers\Master\SubscriptionController;
 use App\Http\Controllers\Master\ReportController;
 use App\Http\Controllers\Master\PaymentsController;
+use App\Http\Controllers\Master\PlanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,7 +56,10 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     
-    // Subscription Management
+    // Plans CRUD
+    Route::resource('plans', PlanController::class)->except(['show']);
+
+    // Subscription Management (per-clinic assignment)
     Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::get('/subscriptions/create', [SubscriptionController::class, 'create'])->name('subscriptions.create');
     Route::post('/subscriptions', [SubscriptionController::class, 'store'])->name('subscriptions.store');
@@ -63,7 +67,7 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::get('/subscriptions/{subscription}/edit', [SubscriptionController::class, 'edit'])->name('subscriptions.edit');
     Route::put('/subscriptions/{subscription}', [SubscriptionController::class, 'update'])->name('subscriptions.update');
     Route::delete('/subscriptions/{subscription}', [SubscriptionController::class, 'destroy'])->name('subscriptions.destroy');
-    
+
     // System Settings
     Route::get('/settings', function () {
         return view('master.settings.index');
