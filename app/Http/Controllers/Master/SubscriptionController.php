@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Clinic;
 use App\Models\User;
 use App\Models\SubscriptionPlan;
+use Illuminate\Support\Facades\Schema;
 
 class SubscriptionController extends Controller
 {
@@ -120,7 +121,9 @@ class SubscriptionController extends Controller
     public function edit(Clinic $subscription)
     {
         $clinic = $subscription;
-        $plans = SubscriptionPlan::where('is_active', true)->orderBy('monthly_price')->get();
+        $plans = Schema::hasTable('subscription_plans')
+            ? SubscriptionPlan::where('is_active', true)->orderBy('monthly_price')->get()
+            : collect();
         return view('master.subscriptions.edit', compact('clinic', 'plans'));
     }
 
