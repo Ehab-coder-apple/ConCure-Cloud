@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Clinic;
 use App\Models\User;
 use App\Models\SubscriptionPayment;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class ReportController extends Controller
@@ -48,13 +49,16 @@ class ReportController extends Controller
         $expectedMonthlyFees = $activeSubscribers * $monthlyFee;
 
         // Collected amount for selected period (defaults to current month)
-        $payments = SubscriptionPayment::query();
-        if ($from) { $payments->whereDate('paid_at', '>=', $from->toDateString()); }
-        if ($to)   { $payments->whereDate('paid_at', '<=', $to->toDateString()); }
-        if (!$from && !$to) {
-            $payments->whereBetween('paid_at', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()]);
+        $collectedAmount = 0.0;
+        if (Schema::hasTable('subscription_payments')) {
+            $payments = SubscriptionPayment::query();
+            if ($from) { $payments->whereDate('paid_at', '>=', $from->toDateString()); }
+            if ($to)   { $payments->whereDate('paid_at', '<=', $to->toDateString()); }
+            if (!$from && !$to) {
+                $payments->whereBetween('paid_at', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()]);
+            }
+            $collectedAmount = (float) $payments->sum('amount');
         }
-        $collectedAmount = (float) $payments->sum('amount');
 
         $filters = [
             'from' => $from?->toDateString(),
