@@ -95,6 +95,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Alias for creator relation to match existing views expecting createdBy.
+     */
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+
+    /**
      * Get the users created by this user.
      */
     public function createdUsers(): HasMany
