@@ -189,10 +189,12 @@
                                             @if($plan)
                                                 <div class="font-weight-bold">{{ $plan->name }}</div>
                                                 <div class="text-muted small">
-                                                    @if(($clinic->billing_cycle ?? 'monthly') === 'yearly' && $plan->yearly_price)
-                                                        ${{ number_format($plan->yearly_price, 2) }}/year
+                                                    @php($cycle = $clinic->billing_cycle ?? 'monthly')
+                                                    @php($price = $cycle === 'yearly' ? ($clinic->custom_yearly_price ?? $plan->yearly_price) : ($clinic->custom_monthly_price ?? $plan->monthly_price))
+                                                    @if($cycle === 'yearly')
+                                                        ${{ $price !== null ? number_format($price, 2) : '0.00' }}/year
                                                     @else
-                                                        ${{ number_format($plan->monthly_price, 2) }}/month
+                                                        ${{ $price !== null ? number_format($price, 2) : '0.00' }}/month
                                                     @endif
                                                 </div>
                                             @else

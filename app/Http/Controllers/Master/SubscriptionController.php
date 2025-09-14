@@ -87,8 +87,12 @@ class SubscriptionController extends Controller
         // Subscription details from assigned plan
         $plan = $clinic->plan;
         $billingCycle = $clinic->billing_cycle ?? 'monthly';
-        $priceValue = $plan ? (($billingCycle === 'yearly' && $plan->yearly_price) ? $plan->yearly_price : $plan->monthly_price) : 0;
-        $price = $priceValue ? ('$' . number_format($priceValue, 2) . ($billingCycle === 'yearly' ? '/year' : '/month')) : 'N/A';
+        if ($billingCycle === 'yearly') {
+            $priceValue = $clinic->custom_yearly_price ?? ($plan?->yearly_price ?? null);
+        } else {
+            $priceValue = $clinic->custom_monthly_price ?? ($plan?->monthly_price ?? null);
+        }
+        $price = $priceValue !== null ? ('$' . number_format((float)$priceValue, 2) . ($billingCycle === 'yearly' ? '/year' : '/month')) : 'N/A';
         $features = $plan?->features ?? [];
         if (empty($features)) {
             $features = [
@@ -131,11 +135,15 @@ class SubscriptionController extends Controller
             'plan_id' => 'nullable|exists:subscription_plans,id',
             'billing_cycle' => 'required|in:monthly,yearly',
             'max_users' => 'nullable|integer|min:1|max:100000',
+            'custom_monthly_price' => 'nullable|numeric|min:0',
+            'custom_yearly_price' => 'nullable|numeric|min:0',
         ]);
 
         $data = [
             'plan_id' => $request->plan_id,
             'billing_cycle' => $request->billing_cycle,
+            'custom_monthly_price' => $request->filled('custom_monthly_price') ? $request->custom_monthly_price : null,
+            'custom_yearly_price' => $request->filled('custom_yearly_price') ? $request->custom_yearly_price : null,
         ];
 
         // If a plan is selected, align max_users with the plan unless overridden

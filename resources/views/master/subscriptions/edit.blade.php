@@ -67,19 +67,53 @@
                             </select>
                         </div>
 
+                            <!-- Custom Prices (optional) -->
+                            <div class="mb-4">
+                                <label class="form-label">
+                                    <i class="fas fa-dollar-sign me-2"></i>
+                                    Custom Prices (optional)
+                                </label>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="custom_monthly_price" class="form-label small text-muted">Monthly Price</label>
+                                        <input type="number" step="0.01" min="0"
+                                               class="form-control @error('custom_monthly_price') is-invalid @enderror"
+                                               id="custom_monthly_price" name="custom_monthly_price"
+                                               value="{{ old('custom_monthly_price', $clinic->custom_monthly_price) }}"
+                                               placeholder="Leave blank to use plan's monthly price">
+                                        @error('custom_monthly_price')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="custom_yearly_price" class="form-label small text-muted">Yearly Price</label>
+                                        <input type="number" step="0.01" min="0"
+                                               class="form-control @error('custom_yearly_price') is-invalid @enderror"
+                                               id="custom_yearly_price" name="custom_yearly_price"
+                                               value="{{ old('custom_yearly_price', $clinic->custom_yearly_price) }}"
+                                               placeholder="Leave blank to use plan's yearly price">
+                                        @error('custom_yearly_price')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="form-text">If set, these values override the plan prices for this clinic.</div>
+                            </div>
+
+
                         <!-- User Limit -->
                         <div class="mb-4">
                             <label for="max_users" class="form-label">
                                 <i class="fas fa-users me-2"></i>
                                 Maximum Users
                             </label>
-                            <input type="number" 
-                                   class="form-control @error('max_users') is-invalid @enderror" 
-                                   id="max_users" 
-                                   name="max_users" 
-                                   value="{{ old('max_users', $clinic->max_users) }}" 
-                                   min="1" 
-                                   max="1000" 
+                            <input type="number"
+                                   class="form-control @error('max_users') is-invalid @enderror"
+                                   id="max_users"
+                                   name="max_users"
+                                   value="{{ old('max_users', $clinic->max_users) }}"
+                                   min="1"
+                                   max="1000"
                                    required>
                             <div class="form-text">
                                 Current users: {{ $clinic->users->count() }} / {{ $clinic->max_users }}

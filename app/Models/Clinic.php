@@ -25,6 +25,8 @@ class Clinic extends Model
         'plan_id',
         'billing_cycle',
         'next_billing_at',
+        'custom_monthly_price',
+        'custom_yearly_price',
     ];
 
     protected $casts = [
@@ -32,6 +34,8 @@ class Clinic extends Model
         'is_active' => 'boolean',
         'activated_at' => 'datetime',
         'next_billing_at' => 'datetime',
+        'custom_monthly_price' => 'decimal:2',
+        'custom_yearly_price' => 'decimal:2',
     ];
 
     /**
