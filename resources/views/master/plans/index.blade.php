@@ -9,6 +9,19 @@
     <a href="{{ route('master.plans.create') }}" class="btn btn-primary"><i class="fas fa-plus me-2"></i>New Plan</a>
   </div>
 
+  @if(!empty($missingTable))
+    <div class="alert alert-warning d-flex align-items-center" role="alert">
+      <i class="fas fa-database me-2"></i>
+      <div>
+        Subscription plans table is not migrated yet. Please run migrations on the server, then clear caches.
+        <div class="small mt-2">
+          <code>php artisan migrate</code> &nbsp; then &nbsp; <code>php artisan optimize:clear</code>
+        </div>
+      </div>
+    </div>
+  @endif
+
+
   <div class="card">
     <div class="card-body table-responsive">
       <table class="table table-hover">

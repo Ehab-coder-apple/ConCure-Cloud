@@ -4,12 +4,25 @@ namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use App\Models\SubscriptionPlan;
 
 class PlanController extends Controller
 {
     public function index()
     {
+        // Guard against missing table on servers that haven't run new migrations yet
+        if (!Schema::hasTable('subscription_plans')) {
+            $plans = new \Illuminate\Pagination\LengthAwarePaginator(collect(), 0, 20, 1, [
+                'path' => request()->url(),
+                'pageName' => 'page',
+            ]);
+            return view('master.plans.index', [
+                'plans' => $plans,
+                'missingTable' => true,
+            ]);
+        }
+
         $plans = SubscriptionPlan::orderBy('monthly_price')->paginate(20);
         return view('master.plans.index', compact('plans'));
     }
