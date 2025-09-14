@@ -134,58 +134,41 @@
                                         <div class="text-muted small">{{ $clinic->created_at->diffForHumans() }}</div>
                                     </td>
                                     <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
-                                                    type="button" 
-                                                    data-bs-toggle="dropdown">
-                                                Actions
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <a class="dropdown-item" href="{{ route('master.clinics.show', $clinic) }}">
-                                                        <i class="fas fa-eye me-2"></i>View Details
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="{{ route('master.clinics.edit', $clinic) }}">
-                                                        <i class="fas fa-edit me-2"></i>Edit
-                                                    </a>
-                                                </li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                @if($clinic->is_active)
-                                                    <li>
-                                                        <form method="POST" action="{{ route('master.clinics.deactivate', $clinic) }}" class="d-inline">
-                                                            @csrf
-                                                            @method('PATCH')
-                                                            <button type="submit" class="dropdown-item text-warning"
-                                                                    onclick="return confirm('Are you sure you want to deactivate this clinic?')">
-                                                                <i class="fas fa-pause me-2"></i>Deactivate
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                @else
-                                                    <li>
-                                                        <form method="POST" action="{{ route('master.clinics.activate', $clinic) }}" class="d-inline">
-                                                            @csrf
-                                                            @method('PATCH')
-                                                            <button type="submit" class="dropdown-item text-success">
-                                                                <i class="fas fa-play me-2"></i>Activate
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                @endif
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <form method="POST" action="{{ route('master.clinics.destroy', $clinic) }}" class="d-inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="dropdown-item text-danger"
-                                                                onclick="return confirm('Are you sure you want to delete this clinic? This action cannot be undone.')">
-                                                            <i class="fas fa-trash me-2"></i>Delete
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                            </ul>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <a href="{{ route('master.clinics.show', $clinic) }}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-eye me-1"></i> View
+                                            </a>
+                                            <a href="{{ route('master.clinics.edit', $clinic) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit me-1"></i> Edit
+                                            </a>
+
+                                            @if($clinic->is_active)
+                                                <form method="POST" action="{{ route('master.clinics.deactivate', $clinic) }}" class="d-inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning"
+                                                            onclick="return confirm('Are you sure you want to deactivate this clinic?')">
+                                                        <i class="fas fa-pause me-1"></i> Deactivate
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <form method="POST" action="{{ route('master.clinics.activate', $clinic) }}" class="d-inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                                        <i class="fas fa-play me-1"></i> Activate
+                                                    </button>
+                                                </form>
+                                            @endif
+
+                                            <form method="POST" action="{{ route('master.clinics.destroy', $clinic) }}" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        onclick="return confirm('Are you sure you want to delete this clinic? This action cannot be undone.')">
+                                                    <i class="fas fa-trash me-1"></i> Delete
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
