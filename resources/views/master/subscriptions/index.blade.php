@@ -240,41 +240,24 @@
                                         <div class="text-muted small">{{ $clinic->created_at->diffForHumans() }}</div>
                                     </td>
                                     <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
-                                                    type="button" 
-                                                    data-bs-toggle="dropdown">
-                                                Actions
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <a href="{{ route('master.subscriptions.show', $clinic) }}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-eye me-1"></i> View
+                                            </a>
+                                            <a href="{{ route('master.subscriptions.edit', $clinic) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit me-1"></i> Edit Plan
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-info" onclick="alert('Billing management coming soon!')">
+                                                <i class="fas fa-receipt me-1"></i> Billing
                                             </button>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <a class="dropdown-item" href="{{ route('master.subscriptions.show', $clinic) }}">
-                                                        <i class="fas fa-eye me-2"></i>View Details
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="{{ route('master.subscriptions.edit', $clinic) }}">
-                                                        <i class="fas fa-edit me-2"></i>Edit Plan
-                                                    </a>
-                                                </li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <a class="dropdown-item text-info" href="#" onclick="alert('Billing management coming soon!')">
-                                                        <i class="fas fa-receipt me-2"></i>View Billing
-                                                    </a>
-                                                </li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <form method="POST" action="{{ route('master.subscriptions.destroy', $clinic) }}" class="d-inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="dropdown-item text-danger"
-                                                                onclick="return confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')">
-                                                            <i class="fas fa-times me-2"></i>Cancel Subscription
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                            </ul>
+                                            <form method="POST" action="{{ route('master.subscriptions.destroy', $clinic) }}" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        onclick="return confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')">
+                                                    <i class="fas fa-times me-1"></i> Cancel
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
