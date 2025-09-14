@@ -62,8 +62,10 @@
                             </label>
                             <select id="billing_cycle" name="billing_cycle" class="form-select">
                                 @php($cycle = old('billing_cycle', $clinic->billing_cycle ?? 'monthly'))
-                                <option value="monthly" {{ $cycle === 'monthly' ? 'selected' : '' }}>Monthly</option>
-                                <option value="yearly" {{ $cycle === 'yearly' ? 'selected' : '' }}>Yearly</option>
+                                <option value="monthly" {{ $cycle === 'monthly' ? 'selected' : '' }}>Monthly (every month)</option>
+                                <option value="quarterly" {{ $cycle === 'quarterly' ? 'selected' : '' }}>Quarterly (4x/year)</option>
+                                <option value="semiannual" {{ $cycle === 'semiannual' ? 'selected' : '' }}>Semiannual (2x/year)</option>
+                                <option value="yearly" {{ $cycle === 'yearly' ? 'selected' : '' }}>Yearly (1x/year)</option>
                             </select>
                         </div>
 

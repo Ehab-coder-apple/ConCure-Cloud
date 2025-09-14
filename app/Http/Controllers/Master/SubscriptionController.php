@@ -88,12 +88,37 @@ class SubscriptionController extends Controller
         // Subscription details from assigned plan
         $plan = $clinic->plan;
         $billingCycle = $clinic->billing_cycle ?? 'monthly';
-        if ($billingCycle === 'yearly') {
-            $priceValue = $clinic->custom_yearly_price ?? ($plan?->yearly_price ?? null);
-        } else {
-            $priceValue = $clinic->custom_monthly_price ?? ($plan?->monthly_price ?? null);
+        $effectiveMonthly = $clinic->custom_monthly_price ?? ($plan?->monthly_price ?? null);
+        $effectiveYearly  = $clinic->custom_yearly_price  ?? ($plan?->yearly_price  ?? null);
+        $priceValue = null;
+        switch ($billingCycle) {
+            case 'yearly':
+                $priceValue = $effectiveYearly ?? ($effectiveMonthly !== null ? $effectiveMonthly * 12 : null);
+                break;
+            case 'quarterly':
+                if ($effectiveYearly !== null) {
+                    $priceValue = $effectiveYearly / 4;
+                } elseif ($effectiveMonthly !== null) {
+                    $priceValue = $effectiveMonthly * 3;
+                }
+                break;
+            case 'semiannual':
+                if ($effectiveYearly !== null) {
+                    $priceValue = $effectiveYearly / 2;
+                } elseif ($effectiveMonthly !== null) {
+                    $priceValue = $effectiveMonthly * 6;
+                }
+                break;
+            default: // monthly
+                $priceValue = $effectiveMonthly;
         }
-        $price = $priceValue !== null ? ('$' . number_format((float)$priceValue, 2) . ($billingCycle === 'yearly' ? '/year' : '/month')) : 'N/A';
+        $suffix = match ($billingCycle) {
+            'yearly' => '/year',
+            'quarterly' => '/quarter',
+            'semiannual' => '/6 months',
+            default => '/month',
+        };
+        $price = $priceValue !== null ? ('$' . number_format((float)$priceValue, 2) . $suffix) : 'N/A';
         $features = $plan?->features ?? [];
         if (empty($features)) {
             $features = [
@@ -136,7 +161,7 @@ class SubscriptionController extends Controller
 
         $request->validate([
             'plan_id' => 'nullable|exists:subscription_plans,id',
-            'billing_cycle' => 'required|in:monthly,yearly',
+            'billing_cycle' => 'required|in:monthly,quarterly,semiannual,yearly',
             'max_users' => 'nullable|integer|min:1|max:100000',
             'custom_monthly_price' => 'nullable|numeric|min:0',
             'custom_yearly_price' => 'nullable|numeric|min:0',

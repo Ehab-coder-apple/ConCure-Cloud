@@ -190,12 +190,26 @@
                                                 <div class="font-weight-bold">{{ $plan->name }}</div>
                                                 <div class="text-muted small">
                                                     @php($cycle = $clinic->billing_cycle ?? 'monthly')
-                                                    @php($price = $cycle === 'yearly' ? ($clinic->custom_yearly_price ?? $plan->yearly_price) : ($clinic->custom_monthly_price ?? $plan->monthly_price))
-                                                    @if($cycle === 'yearly')
-                                                        ${{ $price !== null ? number_format($price, 2) : '0.00' }}/year
-                                                    @else
-                                                        ${{ $price !== null ? number_format($price, 2) : '0.00' }}/month
-                                                    @endif
+                                                    @php($m = $clinic->custom_monthly_price ?? $plan->monthly_price)
+                                                    @php($y = $clinic->custom_yearly_price ?? $plan->yearly_price)
+                                                    @php($price = null)
+                                                    @switch($cycle)
+                                                        @case('yearly')
+                                                            @php($price = $y ?? ($m !== null ? $m * 12 : null))
+                                                            ${{ $price !== null ? number_format($price, 2) : '0.00' }}/year
+                                                            @break
+                                                        @case('quarterly')
+                                                            @php($price = $y !== null ? $y/4 : ($m !== null ? $m*3 : null))
+                                                            ${{ $price !== null ? number_format($price, 2) : '0.00' }}/quarter
+                                                            @break
+                                                        @case('semiannual')
+                                                            @php($price = $y !== null ? $y/2 : ($m !== null ? $m*6 : null))
+                                                            ${{ $price !== null ? number_format($price, 2) : '0.00' }}/6 months
+                                                            @break
+                                                        @default
+                                                            @php($price = $m)
+                                                            ${{ $price !== null ? number_format($price, 2) : '0.00' }}/month
+                                                    @endswitch
                                                 </div>
                                             @else
                                                 <div class="text-muted">No plan</div>
