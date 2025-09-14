@@ -10,12 +10,22 @@
   </div>
 
   @if(!empty($missingTable))
-    <div class="alert alert-warning d-flex align-items-center" role="alert">
-      <i class="fas fa-database me-2"></i>
-      <div>
-        Subscription plans table is not migrated yet. Please run migrations on the server, then clear caches.
-        <div class="small mt-2">
-          <code>php artisan migrate</code> &nbsp; then &nbsp; <code>php artisan optimize:clear</code>
+    <div class="alert alert-warning" role="alert">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="me-3">
+          <i class="fas fa-database me-2"></i>
+          Subscription plans table is not migrated yet. Please run migrations on the server, then clear caches.
+          <div class="small mt-2">
+            <code>php artisan migrate</code> &nbsp; then &nbsp; <code>php artisan optimize:clear</code>
+          </div>
+        </div>
+        <div>
+          <form method="POST" action="{{ route('master.maintenance.server-update') }}" onsubmit="return confirm('Run server update now? This will download latest migrations and run them.');">
+            @csrf
+            <button type="submit" class="btn btn-sm btn-warning">
+              <i class="fas fa-wrench me-1"></i> Fix and run migrations now
+            </button>
+          </form>
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ use App\Http\Controllers\Master\SubscriptionController;
 use App\Http\Controllers\Master\ReportController;
 use App\Http\Controllers\Master\PaymentsController;
 use App\Http\Controllers\Master\PlanController;
+use App\Http\Controllers\Master\MaintenanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,11 +69,14 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::put('/subscriptions/{subscription}', [SubscriptionController::class, 'update'])->name('subscriptions.update');
     Route::delete('/subscriptions/{subscription}', [SubscriptionController::class, 'destroy'])->name('subscriptions.destroy');
 
+    // Maintenance (super admin only)
+    Route::post('/maintenance/server-update', [MaintenanceController::class, 'runServerUpdate'])->name('maintenance.server-update');
+
     // System Settings
     Route::get('/settings', function () {
         return view('master.settings.index');
     })->name('settings');
-    
+
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
     Route::post('/reports/payments', [PaymentsController::class, 'store'])->name('reports.payments.store');
