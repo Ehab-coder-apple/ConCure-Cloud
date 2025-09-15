@@ -38,7 +38,7 @@
                         <div class="card-body">
                             <form action="{{ route('patients.store') }}" method="POST">
                                 @csrf
-                                
+
                                 <div class="row g-3">
                                     <!-- Basic Information -->
                                     <div class="col-12">
@@ -47,37 +47,37 @@
                                             {{ __('Basic Information') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="first_name" class="form-label">{{ __('First Name') }} <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control @error('first_name') is-invalid @enderror" 
-                                               id="first_name" name="first_name" 
+                                        <input type="text" class="form-control @error('first_name') is-invalid @enderror"
+                                               id="first_name" name="first_name"
                                                value="{{ old('first_name') }}" required>
                                         @error('first_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="last_name" class="form-label">{{ __('Last Name') }} <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control @error('last_name') is-invalid @enderror" 
-                                               id="last_name" name="last_name" 
+                                        <input type="text" class="form-control @error('last_name') is-invalid @enderror"
+                                               id="last_name" name="last_name"
                                                value="{{ old('last_name') }}" required>
                                         @error('last_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="date_of_birth" class="form-label">{{ __('Date of Birth') }} <span class="text-danger">*</span></label>
-                                        <input type="date" class="form-control @error('date_of_birth') is-invalid @enderror" 
-                                               id="date_of_birth" name="date_of_birth" 
+                                        <input type="date" class="form-control @error('date_of_birth') is-invalid @enderror"
+                                               id="date_of_birth" name="date_of_birth"
                                                value="{{ old('date_of_birth') }}" required>
                                         @error('date_of_birth')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="gender" class="form-label">{{ __('Gender') }} <span class="text-danger">*</span></label>
                                         <select class="form-select @error('gender') is-invalid @enderror" id="gender" name="gender" required>
@@ -98,7 +98,7 @@
                                             {{ __('Contact Information') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="phone" class="form-label">{{ __('Phone Number') }}</label>
                                         <input type="tel" class="form-control @error('phone') is-invalid @enderror"
@@ -123,7 +123,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="email" class="form-label">{{ __('Email Address') }}</label>
                                         <input type="email" class="form-control @error('email') is-invalid @enderror"
@@ -134,7 +134,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="address" class="form-label">{{ __('Address') }}</label>
                                         <textarea class="form-control @error('address') is-invalid @enderror"
@@ -152,7 +152,7 @@
                                             {{ __('Personal Information') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="job" class="form-label">{{ __('Occupation') }}</label>
                                         <input type="text" class="form-control @error('job') is-invalid @enderror"
@@ -163,7 +163,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="education" class="form-label">{{ __('Education Level') }}</label>
                                         <input type="text" class="form-control @error('education') is-invalid @enderror"
@@ -182,7 +182,7 @@
                                             {{ __('Physical Information') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="height" class="form-label">{{ __('Height (cm)') }}</label>
                                         <input type="number" class="form-control @error('height') is-invalid @enderror"
@@ -193,7 +193,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="weight" class="form-label">{{ __('Weight (kg)') }}</label>
                                         <input type="number" class="form-control @error('weight') is-invalid @enderror"
@@ -204,6 +204,25 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
+                                    <div class="col-md-6">
+                                        <label for="blood_type" class="form-label">{{ __('Blood Type') }}</label>
+                                        <select class="form-select @error('blood_type') is-invalid @enderror" id="blood_type" name="blood_type">
+                                            <option value="">{{ __('Select Blood Type') }}</option>
+                                            <option value="NA" {{ old('blood_type') == 'NA' ? 'selected' : '' }}>{{ __('NA - Not available') }}</option>
+                                            <option value="A+" {{ old('blood_type') == 'A+' ? 'selected' : '' }}>A+</option>
+                                            <option value="A-" {{ old('blood_type') == 'A-' ? 'selected' : '' }}>A-</option>
+                                            <option value="B+" {{ old('blood_type') == 'B+' ? 'selected' : '' }}>B+</option>
+                                            <option value="B-" {{ old('blood_type') == 'B-' ? 'selected' : '' }}>B-</option>
+                                            <option value="AB+" {{ old('blood_type') == 'AB+' ? 'selected' : '' }}>AB+</option>
+                                            <option value="AB-" {{ old('blood_type') == 'AB-' ? 'selected' : '' }}>AB-</option>
+                                            <option value="O+" {{ old('blood_type') == 'O+' ? 'selected' : '' }}>O+</option>
+                                            <option value="O-" {{ old('blood_type') == 'O-' ? 'selected' : '' }}>O-</option>
+                                        </select>
+                                        @error('blood_type')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
 
                                     <!-- Medical Information -->
                                     <div class="col-12 mt-4">
@@ -212,7 +231,7 @@
                                             {{ __('Medical Information') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-12">
                                         <label for="allergies" class="form-label">{{ __('Allergies') }}</label>
                                         <textarea class="form-control @error('allergies') is-invalid @enderror"
@@ -222,7 +241,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-12">
                                         <label for="chronic_illnesses" class="form-label">{{ __('Chronic Illnesses') }}</label>
                                         <textarea class="form-control @error('chronic_illnesses') is-invalid @enderror"
@@ -232,7 +251,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-12">
                                         <label for="surgeries_history" class="form-label">{{ __('Surgery History') }}</label>
                                         <textarea class="form-control @error('surgeries_history') is-invalid @enderror"
@@ -242,7 +261,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-12">
                                         <label for="diet_history" class="form-label">{{ __('Diet History') }}</label>
                                         <textarea class="form-control @error('diet_history') is-invalid @enderror"
@@ -260,10 +279,10 @@
                                             {{ __('Special Conditions') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-12">
                                         <div class="form-check">
-                                            <input class="form-check-input @error('is_pregnant') is-invalid @enderror" 
+                                            <input class="form-check-input @error('is_pregnant') is-invalid @enderror"
                                                    type="checkbox" id="is_pregnant" name="is_pregnant" value="1"
                                                    {{ old('is_pregnant') ? 'checked' : '' }}>
                                             <label class="form-check-label" for="is_pregnant">
@@ -282,7 +301,7 @@
                                             {{ __('Emergency Contact') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="emergency_contact_name" class="form-label">{{ __('Emergency Contact Name') }}</label>
                                         <input type="text" class="form-control @error('emergency_contact_name') is-invalid @enderror"
@@ -293,7 +312,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="emergency_contact_phone" class="form-label">{{ __('Emergency Contact Phone') }}</label>
                                         <input type="tel" class="form-control @error('emergency_contact_phone') is-invalid @enderror"
@@ -312,7 +331,7 @@
                                             {{ __('Additional Notes') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-12">
                                         <label for="notes" class="form-label">{{ __('Notes') }}</label>
                                         <textarea class="form-control @error('notes') is-invalid @enderror"
