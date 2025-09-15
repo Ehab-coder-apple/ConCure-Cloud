@@ -174,13 +174,14 @@
                                         <label for="blood_type" class="form-label">{{ __('Blood Type') }}</label>
                                         <select class="form-select @error('blood_type') is-invalid @enderror" id="blood_type" name="blood_type">
                                             <option value="">{{ __('Select Blood Type') }}</option>
-                                            <option value="A+" {{ old('blood_type', $patient->blood_type ?? 'O+') == 'A+' ? 'selected' : '' }}>A+</option>
+                                            <option value="NA" {{ old('blood_type', $patient->blood_type ?? '') == 'NA' ? 'selected' : '' }}>{{ __('NA - Not available') }}</option>
+                                            <option value="A+" {{ old('blood_type', $patient->blood_type ?? '') == 'A+' ? 'selected' : '' }}>A+</option>
                                             <option value="A-" {{ old('blood_type', $patient->blood_type ?? '') == 'A-' ? 'selected' : '' }}>A-</option>
                                             <option value="B+" {{ old('blood_type', $patient->blood_type ?? '') == 'B+' ? 'selected' : '' }}>B+</option>
                                             <option value="B-" {{ old('blood_type', $patient->blood_type ?? '') == 'B-' ? 'selected' : '' }}>B-</option>
                                             <option value="AB+" {{ old('blood_type', $patient->blood_type ?? '') == 'AB+' ? 'selected' : '' }}>AB+</option>
                                             <option value="AB-" {{ old('blood_type', $patient->blood_type ?? '') == 'AB-' ? 'selected' : '' }}>AB-</option>
-                                            <option value="O+" {{ old('blood_type', $patient->blood_type ?? 'O+') == 'O+' ? 'selected' : '' }}>O+</option>
+                                            <option value="O+" {{ old('blood_type', $patient->blood_type ?? '') == 'O+' ? 'selected' : '' }}>O+</option>
                                             <option value="O-" {{ old('blood_type', $patient->blood_type ?? '') == 'O-' ? 'selected' : '' }}>O-</option>
                                         </select>
                                         @error('blood_type')
