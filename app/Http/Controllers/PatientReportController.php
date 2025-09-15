@@ -93,9 +93,9 @@ class PatientReportController extends Controller
         
         // Get appointments in date range
         $appointments = Appointment::where('patient_id', $patient->id)
-            ->whereBetween('appointment_date', [$dateFromCarbon, $dateToCarbon])
+            ->whereBetween('appointment_datetime', [$dateFromCarbon, $dateToCarbon])
             ->with('doctor')
-            ->orderBy('appointment_date', 'desc')
+            ->orderBy('appointment_datetime', 'desc')
             ->get();
         
         // Calculate vital signs trends
