@@ -154,7 +154,7 @@
                                 </div>
                                 <div class="col-6">
                                     <small class="text-muted">{{ __('Blood Type') }}</small>
-                                    <div class="fw-bold">{{ $patient->blood_type ?? 'O+' }}</div>
+                                    <div class="fw-bold">{{ $patient->blood_type ?: 'N/A' }}</div>
                                 </div>
                             </div>
                         </div>
