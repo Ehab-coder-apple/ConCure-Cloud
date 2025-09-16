@@ -40,7 +40,9 @@
                                 @csrf
 
                                 @if(request('assign_to'))
-                                    @php($parentUser = \App\Models\User::find(request('assign_to')))
+                                    @php
+                                        $parentUser = \App\Models\User::find(request('assign_to'));
+                                    @endphp
                                     <input type="hidden" name="assign_to_user_id" value="{{ request('assign_to') }}">
                                     <div class="alert alert-success d-flex align-items-center" role="alert">
                                         <i class="fas fa-link me-2"></i>
