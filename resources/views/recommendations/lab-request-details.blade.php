@@ -277,13 +277,13 @@ function sendViaWhatsApp(labRequestId) {
 
     // If lab has WhatsApp number, use it automatically (user can still change it in the message prompt)
 
-    const message = prompt(`Sending to WhatsApp: ${phone}\n\nEnter custom message (optional):`, '');
+    const message = prompt('Sending to WhatsApp: ' + phone + '\n\nEnter custom message (optional):', '');
 
     const formData = new FormData();
     formData.append('phone_number', phone);
     if (message) formData.append('message', message);
 
-    fetch(`/recommendations/lab-requests/${labRequestId}/send-whatsapp`, {
+    fetch('/recommendations/lab-requests/' + labRequestId + '/send-whatsapp', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -328,7 +328,7 @@ function sendViaEmail(labRequestId) {
         email = prompt('Enter email address:');
         if (!email) return;
     } else {
-        const useLabEmail = confirm(`Send to lab's email: ${labEmail}?\n\nClick OK to use this email, or Cancel to enter a different email.`);
+        const useLabEmail = confirm("Send to lab's email: " + labEmail + "?\n\nClick OK to use this email, or Cancel to enter a different email.");
         if (!useLabEmail) {
             email = prompt('Enter email address:', labEmail);
             if (!email) return;
@@ -343,7 +343,7 @@ function sendViaEmail(labRequestId) {
     if (subject) formData.append('subject', subject);
     if (message) formData.append('message', message);
 
-    fetch(`/recommendations/lab-requests/${labRequestId}/send-email`, {
+    fetch('/recommendations/lab-requests/' + labRequestId + '/send-email', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -386,7 +386,7 @@ function uploadResult(labRequestId) {
         loadingAlert.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading result file...';
         document.body.appendChild(loadingAlert);
 
-        fetch(`/recommendations/lab-requests/${labRequestId}/upload-result`, {
+        fetch('/recommendations/lab-requests/' + labRequestId + '/upload-result', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -423,7 +423,7 @@ function deleteLabRequest(id) {
         // Create a form to submit the DELETE request
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `{{ url('recommendations/lab-requests') }}/${id}`;
+        form.action = '{{ url('recommendations/lab-requests') }}' + '/' + id;
         form.style.display = 'none';
 
         // Add CSRF token

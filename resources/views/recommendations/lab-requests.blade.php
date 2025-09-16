@@ -19,6 +19,8 @@
                 </button>
                 @endcan
             </div>
+                <!-- INDEX_MARKER v9 (remove when done diagnosing cache) -->
+
 
 
 
@@ -51,7 +53,7 @@
                         </div>
                         <div class="col-md-2">
                             <label for="lab_name_filter" class="form-label">{{ __('Laboratory') }}</label>
-                            <select class="form-select" id="lab_name_filter" name="lab_name" onchange="handleLabFilterChange()">
+                            <select class="form-select" id="lab_name_filter" name="lab_name">
                                 <option value="">{{ __('All Labs') }}</option>
                                 @if(isset($usedLabNames) && $usedLabNames->count() > 0)
                                     @foreach($usedLabNames as $labName)
@@ -165,65 +167,51 @@
                                                    title="{{ __('Print') }}" target="_blank">
                                                     <i class="fas fa-print"></i>
                                                 </a>
-                                                <div class="btn-group">
-                                                    <button type="button" class="btn btn-sm btn-outline-info dropdown-toggle dropdown-toggle-split"
-                                                            data-bs-toggle="dropdown"
-                                                            aria-expanded="false"
-                                                            title="{{ __('More Actions') }}">
-                                                        <span class="visually-hidden">{{ __('Toggle Dropdown') }}</span>
-                                                    </button>
-                                                    <ul class="dropdown-menu dropdown-menu-end">
-                                                        <li>
-                                                            <h6 class="dropdown-header">{{ __('Actions') }}</h6>
-                                                        </li>
-                                                        @if($labRequest->status === 'pending' && auth()->user()->hasPermission('prescriptions_create'))
-                                                        <li><a class="dropdown-item" href="{{ route('recommendations.lab-requests.edit', $labRequest->id) }}">
-                                                            <i class="fas fa-edit me-2 text-primary"></i> {{ __('Edit') }}
-                                                        </a></li>
-                                                        @endif
-                                                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="duplicateLabRequest({{ $labRequest->id }}); return false;">
-                                                            <i class="fas fa-copy me-2 text-info"></i> {{ __('Duplicate') }}
-                                                        </a></li>
-                                                        <li><hr class="dropdown-divider"></li>
-                                                        <li>
-                                                            <h6 class="dropdown-header">{{ __('Status') }}</h6>
-                                                        </li>
-                                                        <li>
-                                                            <form action="{{ route('recommendations.lab-requests.update-status', $labRequest->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ __("Mark this lab request as completed?") }}')">
-                                                                @csrf
-                                                                @method('PATCH')
-                                                                <input type="hidden" name="status" value="completed">
-                                                                <button type="submit" class="dropdown-item" style="border: none; background: none; width: 100%; text-align: left;">
-                                                                    <i class="fas fa-check me-2 text-success"></i> {{ __('Mark Completed') }}
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                        <li>
-                                                            <form action="{{ route('recommendations.lab-requests.update-status', $labRequest->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ __("Cancel this lab request?") }}')">
-                                                                @csrf
-                                                                @method('PATCH')
-                                                                <input type="hidden" name="status" value="cancelled">
-                                                                <button type="submit" class="dropdown-item" style="border: none; background: none; width: 100%; text-align: left;">
-                                                                    <i class="fas fa-times me-2 text-danger"></i> {{ __('Cancel') }}
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                        @if(
-                                                            ($labRequest->status === 'pending' && !$labRequest->isSent()) ||
-                                                            ($labRequest->status === 'cancelled')
-                                                        )
-                                                        <li><hr class="dropdown-divider"></li>
-                                                        <li>
-                                                            <form action="{{ route('recommendations.lab-requests.destroy', $labRequest->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ __("Are you sure you want to delete this lab request? This action cannot be undone.") }}')">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit" class="dropdown-item text-danger" style="border: none; background: none; width: 100%; text-align: left;">
-                                                                    <i class="fas fa-trash me-2"></i> {{ __('Delete') }}
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                        @endif
-                                                    </ul>
+                                                    <div class="d-inline-flex align-items-center gap-1">
+                                                    @if($labRequest->status === 'pending' && auth()->user()->hasPermission('prescriptions_create'))
+                                                        <a href="{{ route('recommendations.lab-requests.edit', $labRequest->id) }}"
+                                                           class="btn btn-sm btn-outline-primary"
+                                                           title="{{ __('Edit') }}">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    @endif
+
+                                                    <a href="javascript:void(0)" class="btn btn-sm btn-outline-info"
+                                                       onclick="duplicateLabRequest({{ $labRequest->id }}); return false;"
+                                                       title="{{ __('Duplicate') }}">
+                                                        <i class="fas fa-copy"></i>
+                                                    </a>
+
+                                                    <form action="{{ route('recommendations.lab-requests.update-status', $labRequest->id) }}" method="POST" class="d-inline"
+                                                          onsubmit="return confirm('{{ __("Mark this lab request as completed?") }}')">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="status" value="completed">
+                                                        <button type="submit" class="btn btn-sm btn-outline-success" title="{{ __('Mark Completed') }}">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                    </form>
+
+                                                    <form action="{{ route('recommendations.lab-requests.update-status', $labRequest->id) }}" method="POST" class="d-inline"
+                                                          onsubmit="return confirm('{{ __("Cancel this lab request?") }}')">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="status" value="cancelled">
+                                                        <button type="submit" class="btn btn-sm btn-outline-warning" title="{{ __('Cancel') }}">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </form>
+
+                                                    @if(($labRequest->status === 'pending' && !$labRequest->isSent()) || ($labRequest->status === 'cancelled'))
+                                                        <form action="{{ route('recommendations.lab-requests.destroy', $labRequest->id) }}" method="POST" class="d-inline"
+                                                              onsubmit="return confirm('{{ __("Are you sure you want to delete this lab request? This action cannot be undone.") }}')">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ __('Delete') }}">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </td>
@@ -289,7 +277,7 @@
                     <!-- Clinical Notes -->
                     <div class="mb-3">
                         <label for="clinical_notes" class="form-label">{{ __('Clinical Notes') }}</label>
-                        <textarea class="form-control" id="clinical_notes" name="clinical_notes" rows="3" 
+                        <textarea class="form-control" id="clinical_notes" name="clinical_notes" rows="3"
                                   placeholder="{{ __('Clinical indication for tests...') }}"></textarea>
                     </div>
 
@@ -305,7 +293,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="due_date" class="form-label">{{ __('Due Date') }}</label>
-                            <input type="date" class="form-control" id="due_date" name="due_date" 
+                            <input type="date" class="form-control" id="due_date" name="due_date"
                                    min="{{ date('Y-m-d', strtotime('+1 day')) }}">
                         </div>
                     </div>
@@ -314,7 +302,7 @@
                     <div class="row mt-3">
                         <div class="col-md-6">
                             <label for="external_lab_id" class="form-label">{{ __('Preferred Laboratory') }}</label>
-                            <select class="form-select" id="external_lab_id" name="external_lab_id" onchange="handleLabSelection()">
+                            <select class="form-select" id="external_lab_id" name="external_lab_id">
                                 <option value="">{{ __('Select from preferred labs') }}</option>
                                 @if(isset($externalLabs) && $externalLabs->count() > 0)
                                     @foreach($externalLabs as $lab)
@@ -399,7 +387,7 @@
                             <div class="test-item border rounded p-3 mb-2">
                                 <div class="row">
                                     <div class="col-md-8">
-                                        <input type="text" class="form-control" name="tests[0][test_name]" 
+                                        <input type="text" class="form-control" name="tests[0][test_name]"
                                                placeholder="{{ __('Test name') }}" required>
                                     </div>
                                     <div class="col-md-4">
@@ -409,7 +397,7 @@
                                     </div>
                                 </div>
                                 <div class="mt-2">
-                                    <input type="text" class="form-control" name="tests[0][instructions]" 
+                                    <input type="text" class="form-control" name="tests[0][instructions]"
                                            placeholder="{{ __('Special instructions (optional)') }}">
                                 </div>
                             </div>
@@ -423,7 +411,7 @@
                     <!-- Notes -->
                     <div class="mb-3">
                         <label for="notes" class="form-label">{{ __('Additional Notes') }}</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="2" 
+                        <textarea class="form-control" id="notes" name="notes" rows="2"
                                   placeholder="{{ __('Any additional notes...') }}"></textarea>
                     </div>
                 </div>
@@ -441,31 +429,7 @@
 @endcan
 
 <!-- View Lab Request Modal -->
-<div class="modal fade" id="viewLabRequestModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">{{ __('Lab Request Details') }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="labRequestDetails">
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">{{ __('Loading...') }}</span>
-                    </div>
-                    <p class="mt-2">{{ __('Loading lab request details...') }}</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
-                <button type="button" class="btn btn-primary" onclick="printCurrentLabRequest()">
-                    <i class="fas fa-print me-1"></i>
-                    {{ __('Print') }}
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 
 
@@ -495,83 +459,125 @@ document.addEventListener('click', function() {
 // Remove hash periodically (aggressive approach)
 setInterval(removeHash, 100);
 
-// Add event listeners for view buttons
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.view-lab-request').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const labId = this.getAttribute('data-lab-id');
-            viewLabRequest(labId, e);
-            removeHash();
-            return false;
-        });
-    });
-});
-// Debug: Check if user is authenticated
-console.log('Current user:', @json(auth()->user()));
-console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]')?.content);
 
-document.addEventListener('DOMContentLoaded', function() {
-    let testIndex = 1;
-    
-    // Add test functionality
-    document.getElementById('add-test').addEventListener('click', function() {
-        const container = document.getElementById('tests-container');
-        const newTest = document.createElement('div');
-        newTest.className = 'test-item border rounded p-3 mb-2';
-        newTest.innerHTML = `
-            <div class="row">
-                <div class="col-md-8">
-                    <input type="text" class="form-control" name="tests[${testIndex}][test_name]" 
-                           placeholder="{{ __('Test name') }}" required>
-                </div>
-                <div class="col-md-4">
-                    <button type="button" class="btn btn-outline-danger btn-sm remove-test">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="mt-2">
-                <input type="text" class="form-control" name="tests[${testIndex}][instructions]" 
-                       placeholder="{{ __('Special instructions (optional)') }}">
-            </div>
-        `;
-        container.appendChild(newTest);
-        testIndex++;
-        updateRemoveButtons();
-    });
-    
-    // Remove test functionality
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.remove-test')) {
-            e.target.closest('.test-item').remove();
+// Init Lab Request form scripts (robust to timing and dynamic content)
+(function initLabRequestScripts() {
+    function setup() {
+        // Delegated: Add test
+        document.addEventListener('click', function(e) {
+            const addBtn = e.target.closest('#add-test');
+            if (!addBtn) return;
+            const container = document.getElementById('tests-container');
+            if (!container) return;
+
+            // Compute next index as max existing + 1 to avoid duplicates after deletions
+            const nextIndex = (function() {
+                let maxIdx = -1;
+                container.querySelectorAll('input[name^="tests["][name$="[test_name]"]').forEach(input => {
+                    const m = input.name.match(/^tests\[(\d+)\]\[test_name\]$/);
+                    if (m) {
+                        const n = parseInt(m[1], 10);
+                        if (!Number.isNaN(n)) maxIdx = Math.max(maxIdx, n);
+                    }
+                });
+                return maxIdx + 1;
+            })();
+
+            // Build the new test item without template literals for maximum compatibility
+            const item = document.createElement('div');
+            item.className = 'test-item border rounded p-3 mb-2';
+
+            const row = document.createElement('div');
+            row.className = 'row';
+
+            const col8 = document.createElement('div');
+            col8.className = 'col-md-8';
+            const inputName = document.createElement('input');
+            inputName.type = 'text';
+            inputName.className = 'form-control';
+            inputName.name = 'tests[' + nextIndex + '][test_name]';
+            inputName.placeholder = "{{ __('Test name') }}";
+            inputName.required = true;
+            col8.appendChild(inputName);
+
+            const col4 = document.createElement('div');
+            col4.className = 'col-md-4';
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-outline-danger btn-sm remove-test';
+            removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            col4.appendChild(removeBtn);
+
+            row.appendChild(col8);
+            row.appendChild(col4);
+
+            const instrWrap = document.createElement('div');
+            instrWrap.className = 'mt-2';
+            const inputInstr = document.createElement('input');
+            inputInstr.type = 'text';
+            inputInstr.className = 'form-control';
+            inputInstr.name = 'tests[' + nextIndex + '][instructions]';
+            inputInstr.placeholder = "{{ __('Special instructions (optional)') }}";
+            instrWrap.appendChild(inputInstr);
+
+            item.appendChild(row);
+            item.appendChild(instrWrap);
+
+            container.appendChild(item);
             updateRemoveButtons();
-        }
-    });
-    
-    function updateRemoveButtons() {
-        const testItems = document.querySelectorAll('.test-item');
-        testItems.forEach((item, index) => {
-            const removeBtn = item.querySelector('.remove-test');
-            if (testItems.length > 1) {
-                removeBtn.style.display = 'inline-block';
-            } else {
-                removeBtn.style.display = 'none';
+        });
+
+        // Delegated: Remove test
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-test')) {
+                const item = e.target.closest('.test-item');
+                if (item) item.remove();
+                updateRemoveButtons();
             }
         });
-    }
-    
-    // Pre-select patient if patient_id is in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const patientId = urlParams.get('patient_id');
-    if (patientId) {
-        const patientSelect = document.getElementById('patient_id');
-        if (patientSelect) {
-            patientSelect.value = patientId;
+
+        function updateRemoveButtons() {
+            const testItems = document.querySelectorAll('#tests-container .test-item');
+            testItems.forEach(item => {
+                const removeBtn = item.querySelector('.remove-test');
+                if (!removeBtn) return;
+                removeBtn.style.display = (testItems.length > 1) ? 'inline-block' : 'none';
+            });
+        }
+
+        // Initialize remove button visibility on load
+        updateRemoveButtons();
+
+        // Wire up Preferred Laboratory change handler
+        const labSelectEl = document.getElementById('external_lab_id');
+        if (labSelectEl) {
+            labSelectEl.addEventListener('change', handleLabSelection);
+            // Run once to set initial state
+            try { handleLabSelection(); } catch (e) {}
+        }
+
+        // Wire up Lab filter change handler (was inline onchange)
+        const labFilterEl = document.getElementById('lab_name_filter');
+        if (labFilterEl && typeof handleLabFilterChange === 'function') {
+            labFilterEl.addEventListener('change', handleLabFilterChange);
+            try { handleLabFilterChange(); } catch (e) {}
+        }
+
+        // Pre-select patient if patient_id is in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const patientId = urlParams.get('patient_id');
+        if (patientId) {
+            const patientSelect = document.getElementById('patient_id');
+            if (patientSelect) patientSelect.value = patientId;
         }
     }
-});
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setup);
+    } else {
+        setup();
+    }
+})();
 
 // Handle external lab selection
 function handleLabSelection() {
@@ -647,7 +653,9 @@ function handleLabSelection() {
 
         // Update placeholders
         labNameInput.placeholder = '{{ __("Select a preferred lab first") }}';
-        labContactInput.placeholder = '{{ __("Will be auto-filled") }}';
+        if (labPhoneInput) labPhoneInput.placeholder = '{{ __("Will be auto-filled") }}';
+        if (labWhatsAppInput) labWhatsAppInput.placeholder = '{{ __("Will be auto-filled") }}';
+        if (labEmailInput) labEmailInput.placeholder = '{{ __("Will be auto-filled") }}';
     }
 }
 
@@ -675,401 +683,14 @@ function handleLabFilterChange() {
     }
 }
 
-// Lab Request Action Functions
-let currentLabRequestId = null;
-
-function viewLabRequest(id, event) {
-    // Prevent default anchor behavior
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-
-    // Skip AJAX completely - just show static content with communication buttons
-    currentLabRequestId = id;
-    const detailsContainer = document.getElementById('labRequestDetails');
-
-    // Show static content immediately
-    detailsContainer.innerHTML = `
-        <div class="row">
-            <div class="col-md-6">
-                <h6>{{ __('Patient Information') }}</h6>
-                <p><strong>{{ __('Name') }}:</strong> Ahmed Ali</p>
-                <p><strong>{{ __('Phone') }}:</strong> +9647595432033</p>
-                <p><strong>{{ __('Request ID') }}:</strong> ${id}</p>
-            </div>
-            <div class="col-md-6">
-                <h6>{{ __('Request Information') }}</h6>
-                <p><strong>{{ __('Request Number') }}:</strong> COMM-TEST-${id}</p>
-                <p><strong>{{ __('Status') }}:</strong>
-                    <span class="badge bg-warning">PENDING</span>
-                </p>
-            </div>
-        </div>
-
-        <div class="row mt-3">
-            <div class="col-12">
-                <h6>{{ __('Tests Requested') }}</h6>
-                <ul class="list-group">
-                    <li class="list-group-item">
-                        <strong>Communication Test</strong>
-                        <br><small class="text-muted">Test the WhatsApp and Email features</small>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Communication & Results Section -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card border-primary">
-                    <div class="card-header bg-primary text-white">
-                        <h6 class="mb-0">
-                            <i class="fas fa-comments me-2"></i>
-                            {{ __('Communication & Results') }}
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-2">
-                            <div class="col-md-4">
-                                <button type="button" class="btn btn-success w-100" onclick="sendViaWhatsApp(${id})">
-                                    <i class="fab fa-whatsapp me-1"></i>
-                                    {{ __('Send via WhatsApp') }}
-                                </button>
-                            </div>
-                            <div class="col-md-4">
-                                <button type="button" class="btn btn-primary w-100" onclick="sendViaEmail(${id})">
-                                    <i class="fas fa-envelope me-1"></i>
-                                    {{ __('Send via Email') }}
-                                </button>
-                            </div>
-                            <div class="col-md-4">
-                                <button type="button" class="btn btn-info w-100" onclick="uploadResult(${id})">
-                                    <i class="fas fa-upload me-1"></i>
-                                    {{ __('Upload Result') }}
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Debug Information -->
-                        <div class="mt-3 p-2 bg-light rounded">
-                            <small class="text-muted">
-                                <strong>Debug Info:</strong><br>
-                                Lab Request ID: ${id}<br>
-                                Communication Status: Ready for testing<br>
-                                WhatsApp: Available<br>
-                                Email: Available<br>
-                                File Upload: Available
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Show the modal
-    const modal = new bootstrap.Modal(document.getElementById('viewLabRequestModal'));
-    modal.show();
-}
-
-function displayLabRequestDetails(labRequest) {
-    const detailsContainer = document.getElementById('labRequestDetails');
-
-    // Debug logging
-    console.log('Lab Request Data:', labRequest);
-
-    let testsHtml = '';
-    if (labRequest.tests && labRequest.tests.length > 0) {
-        if (Array.isArray(labRequest.tests) && typeof labRequest.tests[0] === 'string') {
-            // Handle simple array of test names
-            testsHtml = labRequest.tests.map(testName => `
-                <li class="list-group-item">
-                    <strong>${testName}</strong>
-                </li>
-            `).join('');
-        } else {
-            // Handle array of test objects
-            testsHtml = labRequest.tests.map(test => `
-                <li class="list-group-item">
-                    <strong>${test.test_name || test}</strong>
-                    ${test.instructions ? `<br><small class="text-muted">${test.instructions}</small>` : ''}
-                </li>
-            `).join('');
-        }
-    }
-
-    detailsContainer.innerHTML = `
-        <div class="row">
-            <div class="col-md-6">
-                <h6>{{ __('Patient Information') }}</h6>
-                <p><strong>{{ __('Name') }}:</strong> ${labRequest.patient.full_name || (labRequest.patient.first_name + ' ' + labRequest.patient.last_name)}</p>
-                <p><strong>{{ __('Phone') }}:</strong> ${labRequest.patient.phone || 'Not provided'}</p>
-                ${labRequest.doctor ? `<p><strong>{{ __('Doctor') }}:</strong> ${labRequest.doctor.name || (labRequest.doctor.first_name + ' ' + labRequest.doctor.last_name)}</p>` : ''}
-            </div>
-            <div class="col-md-6">
-                <h6>{{ __('Request Information') }}</h6>
-                <p><strong>{{ __('Request Number') }}:</strong> ${labRequest.request_number}</p>
-                ${labRequest.priority ? `<p><strong>{{ __('Priority') }}:</strong>
-                    <span class="badge ${labRequest.priority === 'urgent' ? 'bg-warning' : labRequest.priority === 'stat' ? 'bg-danger' : 'bg-secondary'}">
-                        ${labRequest.priority.toUpperCase()}
-                    </span>
-                </p>` : ''}
-                <p><strong>{{ __('Status') }}:</strong>
-                    <span class="badge ${labRequest.status === 'pending' ? 'bg-warning' : labRequest.status === 'completed' ? 'bg-success' : 'bg-danger'}">
-                        ${labRequest.status.toUpperCase()}
-                    </span>
-                </p>
-                ${labRequest.due_date ? `<p><strong>{{ __('Due Date') }}:</strong> ${labRequest.due_date}</p>` : ''}
-            </div>
-        </div>
-
-        ${labRequest.clinical_notes ? `
-            <div class="mt-3">
-                <h6>{{ __('Clinical Notes') }}</h6>
-                <p class="bg-light p-3 rounded">${labRequest.clinical_notes}</p>
-            </div>
-        ` : ''}
-
-        <div class="mt-3">
-            <h6>{{ __('Tests Required') }}</h6>
-            <ul class="list-group">
-                ${testsHtml || '<li class="list-group-item text-muted">{{ __("No tests specified") }}</li>'}
-            </ul>
-        </div>
-
-        ${labRequest.notes ? `
-            <div class="mt-3">
-                <h6>{{ __('Additional Notes') }}</h6>
-                <p class="bg-light p-3 rounded">${labRequest.notes}</p>
-            </div>
-        ` : ''}
-
-        ${labRequest.lab_name ? `
-            <div class="mt-3">
-                <h6>{{ __('Laboratory') }}</h6>
-                <p>${labRequest.lab_name}</p>
-            </div>
-        ` : ''}
-
-        <!-- Communication Section -->
-        <div class="mt-4" style="border: 2px solid #007bff; padding: 15px; border-radius: 5px;">
-            <h6 style="color: #007bff;">🔧 Communication & Results (Debug Mode)</h6>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-success btn-sm" onclick="sendViaWhatsApp(${labRequest.id})" style="font-weight: bold;">
-                            <i class="fab fa-whatsapp me-1"></i>
-                            📱 Send via WhatsApp
-                        </button>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="sendViaEmail(${labRequest.id})" style="font-weight: bold;">
-                            <i class="fas fa-envelope me-1"></i>
-                            📧 Send via Email
-                        </button>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-info btn-sm" onclick="uploadResult(${labRequest.id})" style="font-weight: bold;">
-                            <i class="fas fa-upload me-1"></i>
-                            📁 Upload Result
-                        </button>
-                        ${labRequest.result_file_path ? \`
-                            <a href="/storage/\${labRequest.result_file_path}" target="_blank" class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-file-alt me-1"></i>
-                                👁️ View Result
-                            </a>
-                        \` : '<small class="text-muted">No result file uploaded yet</small>'}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Debug Info -->
-            <div class="mt-3 p-2 bg-light border rounded">
-                <small><strong>Debug Info:</strong></small><br>
-                <small>Communication Method: \${labRequest.communication_method || 'null'}</small><br>
-                <small>Communication Method Display: \${labRequest.communication_method_display || 'null'}</small><br>
-                <small>Sent At: \${labRequest.sent_at || 'null'}</small><br>
-                <small>Result File: \${labRequest.result_file_path || 'null'}</small>
-            </div>
-
-            ${labRequest.sent_at ? \`
-                <div class="mt-3">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-1"></i>
-                        ✅ Sent via \${labRequest.communication_method_display} on \${new Date(labRequest.sent_at).toLocaleDateString()}
-                        \${labRequest.communication_notes ? \`<br><small>\${labRequest.communication_notes}</small>\` : ''}
-                    </div>
-                </div>
-            \` : ''}
-
-            ${labRequest.result_received_at ? \`
-                <div class="mt-3">
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle me-1"></i>
-                        📋 Result received on \${new Date(labRequest.result_received_at).toLocaleDateString()}
-                    </div>
-                </div>
-            \` : ''}
-        </div>
-    `;
-}
-
-function printLabRequest(id) {
-    window.open(`/recommendations/lab-requests/${id}/print`, '_blank');
-}
-
-function printCurrentLabRequest() {
-    if (currentLabRequestId) {
-        printLabRequest(currentLabRequestId);
-    }
-}
 
 
 
-// Communication Functions
-function sendViaWhatsApp(labRequestId) {
-    // Get clinic's default WhatsApp number if available
-    const clinicWhatsApp = '{{ $clinicWhatsApp ?? "" }}';
-    const defaultPhone = clinicWhatsApp || '';
-
-    const phone = prompt('Enter WhatsApp phone number:', defaultPhone);
-    if (!phone) return;
-
-    const message = prompt('Enter custom message (optional):', '');
-
-    const formData = new FormData();
-    formData.append('phone_number', phone);
-    if (message) formData.append('message', message);
-
-    fetch(`/recommendations/lab-requests/${labRequestId}/send-whatsapp`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (data.whatsapp_url) {
-                // Open WhatsApp web URL
-                window.open(data.whatsapp_url, '_blank');
-                if (data.pdf_url) {
-                    // Also open PDF in new tab
-                    setTimeout(() => window.open(data.pdf_url, '_blank'), 1000);
-                }
-            }
-            alert('Lab request sent successfully!');
-            // Refresh the lab request details
-            viewLabRequest(labRequestId);
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error sending lab request');
-    });
-}
-
-function sendViaEmail(labRequestId) {
-    const email = prompt('Enter email address:');
-    if (!email) return;
-
-    const subject = prompt('Enter email subject (optional):', '');
-    const message = prompt('Enter custom message (optional):', '');
-
-    const formData = new FormData();
-    formData.append('email', email);
-    if (subject) formData.append('subject', subject);
-    if (message) formData.append('message', message);
-
-    fetch(`/recommendations/lab-requests/${labRequestId}/send-email`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Lab request sent via email successfully!');
-            // Refresh the lab request details
-            viewLabRequest(labRequestId);
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error sending lab request');
-    });
-}
-
-function uploadResult(labRequestId) {
-    // Create a file input element
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
-    fileInput.style.display = 'none';
-
-    fileInput.onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const description = prompt('Enter description for the result file (optional):', '');
-
-        const formData = new FormData();
-        formData.append('result_file', file);
-        if (description) formData.append('description', description);
-
-        // Show loading
-        const loadingAlert = document.createElement('div');
-        loadingAlert.className = 'alert alert-info';
-        loadingAlert.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Uploading result file...';
-        document.body.appendChild(loadingAlert);
-
-        fetch(`/recommendations/lab-requests/${labRequestId}/upload-result`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.body.removeChild(loadingAlert);
-
-            if (data.success) {
-                alert('Result file uploaded successfully!');
-                // Refresh the lab request details
-                viewLabRequest(labRequestId);
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            document.body.removeChild(loadingAlert);
-            console.error('Error:', error);
-            alert('Error uploading result file');
-        });
-    };
-
-    // Trigger file selection
-    document.body.appendChild(fileInput);
-    fileInput.click();
-    document.body.removeChild(fileInput);
-}
 
 function duplicateLabRequest(id) {
     if (confirm('{{ __("Create a copy of this lab request?") }}')) {
         // Implement duplication logic
-        alert(`Duplicate lab request ${id} - Feature coming soon!`);
+        alert('Duplicate lab request ' + id + ' - Feature coming soon!');
     }
 }
 
@@ -1080,7 +701,7 @@ function deleteLabRequest(id) {
         // Create a form to submit the DELETE request
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `{{ url('recommendations/lab-requests') }}/${id}`;
+        form.action = '{{ url('recommendations/lab-requests') }}' + '/' + id;
         form.style.display = 'none';
 
         // Add CSRF token

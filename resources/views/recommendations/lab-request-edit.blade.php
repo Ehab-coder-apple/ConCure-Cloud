@@ -100,7 +100,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <label for="external_lab_id" class="form-label">{{ __('Preferred Laboratory') }}</label>
-                                        <select class="form-select" id="external_lab_id" name="external_lab_id" onchange="handleLabSelection()">
+                                        <select class="form-select" id="external_lab_id" name="external_lab_id">
                                             <option value="">{{ __('Select from preferred labs') }}</option>
                                             @if($externalLabs->count() > 0)
                                                 @foreach($externalLabs as $lab)
@@ -365,37 +365,76 @@ function handleLabSelection() {
     }
 }
 
-// Add new test
+// Add new test (no template literals)
 function addTest() {
     const container = document.getElementById('tests-container');
-    const testHtml = `
-        <div class="test-item border rounded p-3 mb-3" data-index="${testIndex}">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <h6 class="mb-0">{{ __('Test') }} ${testIndex + 1}</h6>
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTest(this)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <label class="form-label">{{ __('Test Name') }} <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="tests[${testIndex}][test_name]" required
-                           placeholder="{{ __('Enter test name') }}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">{{ __('Instructions') }}</label>
-                    <input type="text" class="form-control" name="tests[${testIndex}][instructions]"
-                           placeholder="{{ __('Special instructions (optional)') }}">
-                </div>
-            </div>
-        </div>
-    `;
+    if (!container) return;
 
-    container.insertAdjacentHTML('beforeend', testHtml);
-    testIndex++;
+    const idx = typeof testIndex === 'number' ? testIndex : 0;
 
-    // Focus on the new test name input
-    const newTestInput = container.lastElementChild.querySelector('input[name*="[test_name]"]');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'test-item border rounded p-3 mb-3';
+    wrapper.setAttribute('data-index', String(idx));
+
+    const headerRow = document.createElement('div');
+    headerRow.className = 'd-flex justify-content-between align-items-start mb-2';
+
+    const h6 = document.createElement('h6');
+    h6.className = 'mb-0';
+    h6.textContent = "{{ __('Test') }} " + (idx + 1);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn btn-sm btn-outline-danger';
+    removeBtn.setAttribute('onclick', 'removeTest(this)');
+    const icon = document.createElement('i');
+    icon.className = 'fas fa-times';
+    removeBtn.appendChild(icon);
+
+    headerRow.appendChild(h6);
+    headerRow.appendChild(removeBtn);
+
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const col1 = document.createElement('div');
+    col1.className = 'col-md-6';
+    const label1 = document.createElement('label');
+    label1.className = 'form-label';
+    label1.innerHTML = "{{ __('Test Name') }} <span class=\"text-danger\">*</span>";
+    const input1 = document.createElement('input');
+    input1.type = 'text';
+    input1.className = 'form-control';
+    input1.name = 'tests[' + idx + '][test_name]';
+    input1.required = true;
+    input1.placeholder = "{{ __('Enter test name') }}";
+    col1.appendChild(label1);
+    col1.appendChild(input1);
+
+    const col2 = document.createElement('div');
+    col2.className = 'col-md-6';
+    const label2 = document.createElement('label');
+    label2.className = 'form-label';
+    label2.textContent = "{{ __('Instructions') }}";
+    const input2 = document.createElement('input');
+    input2.type = 'text';
+    input2.className = 'form-control';
+    input2.name = 'tests[' + idx + '][instructions]';
+    input2.placeholder = "{{ __('Special instructions (optional)') }}";
+    col2.appendChild(label2);
+    col2.appendChild(input2);
+
+    row.appendChild(col1);
+    row.appendChild(col2);
+
+    wrapper.appendChild(headerRow);
+    wrapper.appendChild(row);
+
+    container.appendChild(wrapper);
+
+    testIndex = idx + 1;
+
+    const newTestInput = wrapper.querySelector('input[name*="[test_name]"]');
     if (newTestInput) {
         newTestInput.focus();
     }
@@ -410,46 +449,94 @@ function removeTest(button) {
     }
 }
 
-// Update test numbers after removal
+// Update test numbers after removal (no template literals)
 function updateTestNumbers() {
     const testItems = document.querySelectorAll('.test-item');
     testItems.forEach((item, index) => {
         const header = item.querySelector('h6');
         if (header) {
-            header.textContent = `{{ __('Test') }} ${index + 1}`;
+            header.textContent = "{{ __('Test') }} " + (index + 1);
         }
     });
 }
 
-// Add quick test
+// Add quick test (no template literals)
 function addQuickTest(testName, testId) {
     const container = document.getElementById('tests-container');
-    const testHtml = `
-        <div class="test-item border rounded p-3 mb-3" data-index="${testIndex}">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <h6 class="mb-0">{{ __('Test') }} ${testIndex + 1}</h6>
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTest(this)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <label class="form-label">{{ __('Test Name') }} <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="tests[${testIndex}][test_name]"
-                           value="${testName}" required placeholder="{{ __('Enter test name') }}">
-                    <input type="hidden" name="tests[${testIndex}][lab_test_id]" value="${testId}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">{{ __('Instructions') }}</label>
-                    <input type="text" class="form-control" name="tests[${testIndex}][instructions]"
-                           placeholder="{{ __('Special instructions (optional)') }}">
-                </div>
-            </div>
-        </div>
-    `;
+    if (!container) return;
 
-    container.insertAdjacentHTML('beforeend', testHtml);
-    testIndex++;
+    const idx = typeof testIndex === 'number' ? testIndex : 0;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'test-item border rounded p-3 mb-3';
+    wrapper.setAttribute('data-index', String(idx));
+
+    const headerRow = document.createElement('div');
+    headerRow.className = 'd-flex justify-content-between align-items-start mb-2';
+
+    const h6 = document.createElement('h6');
+    h6.className = 'mb-0';
+    h6.textContent = "{{ __('Test') }} " + (idx + 1);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn btn-sm btn-outline-danger';
+    removeBtn.setAttribute('onclick', 'removeTest(this)');
+    const icon = document.createElement('i');
+    icon.className = 'fas fa-times';
+    removeBtn.appendChild(icon);
+
+    headerRow.appendChild(h6);
+    headerRow.appendChild(removeBtn);
+
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const col1 = document.createElement('div');
+    col1.className = 'col-md-6';
+    const label1 = document.createElement('label');
+    label1.className = 'form-label';
+    label1.innerHTML = "{{ __('Test Name') }} <span class=\"text-danger\">*</span>";
+    const input1 = document.createElement('input');
+    input1.type = 'text';
+    input1.className = 'form-control';
+    input1.name = 'tests[' + idx + '][test_name]';
+    input1.value = testName || '';
+    input1.required = true;
+    input1.placeholder = "{{ __('Enter test name') }}";
+
+    const hiddenId = document.createElement('input');
+    hiddenId.type = 'hidden';
+    hiddenId.name = 'tests[' + idx + '][lab_test_id]';
+    hiddenId.value = String(testId != null ? testId : '');
+
+    col1.appendChild(label1);
+    col1.appendChild(input1);
+    col1.appendChild(hiddenId);
+
+    const col2 = document.createElement('div');
+    col2.className = 'col-md-6';
+    const label2 = document.createElement('label');
+    label2.className = 'form-label';
+    label2.textContent = "{{ __('Instructions') }}";
+    const input2 = document.createElement('input');
+    input2.type = 'text';
+    input2.className = 'form-control';
+    input2.name = 'tests[' + idx + '][instructions]';
+    input2.placeholder = "{{ __('Special instructions (optional)') }}";
+
+    col2.appendChild(label2);
+    col2.appendChild(input2);
+
+    row.appendChild(col1);
+    row.appendChild(col2);
+
+    wrapper.appendChild(headerRow);
+    wrapper.appendChild(row);
+
+    container.appendChild(wrapper);
+
+    testIndex = idx + 1;
 }
 
 // Filter quick tests
@@ -469,7 +556,11 @@ function filterQuickTests() {
 
 // Initialize form
 document.addEventListener('DOMContentLoaded', function() {
-    // Set initial lab selection state
+    // Wire up change handler and set initial selection state
+    const labSelectEl = document.getElementById('external_lab_id');
+    if (labSelectEl) {
+        labSelectEl.addEventListener('change', handleLabSelection);
+    }
     handleLabSelection();
 });
 </script>

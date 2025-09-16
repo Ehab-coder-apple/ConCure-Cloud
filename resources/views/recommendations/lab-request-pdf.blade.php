@@ -603,7 +603,7 @@
                         <tr style="background-color: {{ $loop->even ? '#f8f9fa' : '#ffffff' }};">
                             <td style="border: 1px solid #2c5aa0; text-align: center; vertical-align: top; background: #e9ecef; font-weight: bold; color: #495057; padding: 8px 5px;">{{ ($pageIndex * 6) + $index + 1 }}</td>
                             <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; font-weight: bold; color: #2c5aa0; padding: 8px;">{{ $test->test_name }}</td>
-                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px;">{{ $test->instructions ?: 'Fasting required' }}</td>
+                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px;">{{ $test->instructions }}</td>
                             <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; background: #fff; border-left: 3px solid #28a745; padding: 8px; position: relative;">
                                 <!-- Space for lab results -->
                             </td>
@@ -640,7 +640,7 @@
                     <tr style="background-color: {{ $loop->even ? '#f8f9fa' : '#ffffff' }};">
                         <td style="border: 1px solid #2c5aa0; text-align: center; vertical-align: top; background: #e9ecef; font-weight: bold; color: #495057; padding: 8px 5px;">{{ $index + 1 }}</td>
                         <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; font-weight: bold; color: #2c5aa0; padding: 8px;">{{ $test->test_name }}</td>
-                        <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px;">{{ $test->instructions ?: 'Fasting required' }}</td>
+                        <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px;">{{ $test->instructions }}</td>
                         <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; background: #fff; border-left: 3px solid #28a745; padding: 8px; position: relative;">
                             <!-- Space for lab results -->
                         </td>
