@@ -8,6 +8,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -768,6 +769,69 @@ class User extends Authenticatable
         ];
 
         return $suggestions[$role] ?? [];
+    }
+
+    /**
+     * Assistants assigned to this doctor.
+     */
+    public function assistants(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'doctor_assistant', 'doctor_id', 'assistant_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Doctors this assistant is assigned to.
+     */
+    public function doctors(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'doctor_assistant', 'assistant_id', 'doctor_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Return list of doctor IDs this user is allowed to access within their clinic.
+     */
+    public function allowedDoctorIds(): array
+    {
+        // Super admin: unrestricted
+        if ($this->isSuperAdmin()) {
+            return User::byRole('doctor')->pluck('id')->all();
+        }
+
+        // Admin: all doctors in their clinic
+        if ($this->isClinicAdmin()) {
+            return User::byClinic($this->clinic_id)->byRole('doctor')->pluck('id')->all();
+        }
+
+        // Doctor: only themselves
+        if ($this->role === 'doctor') {
+            return [$this->id];
+        }
+
+        // Assistant: the doctors they are assigned to (same clinic implicitly enforced by assignment UI)
+        if ($this->role === 'assistant') {
+            return $this->doctors()->pluck('users.id')->all();
+        }
+
+        // Default: none
+        return [];
+    }
+
+    /**
+     * Check if the user can access a given doctor's data.
+     */
+    public function canAccessDoctor(int $doctorId): bool
+    {
+        // Cross-clinic access not allowed for clinic users
+        if (!$this->isSuperAdmin()) {
+            $target = User::find($doctorId);
+            if (!$target || $target->clinic_id !== $this->clinic_id) {
+                return false;
+            }
+        }
+
+        return in_array($doctorId, $this->allowedDoctorIds());
     }
 
     /**

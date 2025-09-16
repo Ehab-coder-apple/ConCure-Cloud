@@ -656,6 +656,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::put('/{user}', [UserController::class, 'update'])->name('update')->middleware('can:edit-users');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy')->middleware('can:delete-users');
 
+        // Doctor ↔ Assistant assignments (controller enforces admin or self-doctor)
+        Route::post('/{user}/assistants', [UserController::class, 'attachAssistant'])->name('assistants.attach');
+        Route::delete('/{user}/assistants/{assistant}', [UserController::class, 'detachAssistant'])->name('assistants.detach');
+
         // Activation codes (Admin only)
         Route::get('/activation-codes', [UserController::class, 'activationCodes'])->name('activation-codes')->middleware('role:admin');
         Route::post('/activation-codes', [UserController::class, 'generateActivationCode'])->name('activation-codes.generate')->middleware('role:admin');

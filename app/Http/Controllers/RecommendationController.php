@@ -72,6 +72,17 @@ class RecommendationController extends Controller
             $q->where('clinic_id', $user->clinic_id);
         });
 
+        // Restrict by doctor visibility for doctor/assistant
+        if (in_array($user->role, ['doctor', 'assistant'])) {
+            $allowedDoctorIds = $user->allowedDoctorIds();
+            if (!empty($allowedDoctorIds)) {
+                $query->whereIn('doctor_id', $allowedDoctorIds);
+            } else {
+                // No allowed doctors => no results
+                $query->whereRaw('1 = 0');
+            }
+        }
+
         // Apply filters
         if ($request->filled('status')) {
             $query->byStatus($request->status);
@@ -197,7 +208,14 @@ class RecommendationController extends Controller
     {
         $user = auth()->user();
 
-        // Skip authentication check for now - just load the data
+        // Enforce clinic and doctor access
+        if ($labRequest->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to lab request.');
+        }
+        if (!$user->canAccessDoctor($labRequest->doctor_id)) {
+            abort(403, 'You are not allowed to access this doctor\'s lab requests.');
+        }
+
         $labRequest->load(['patient', 'doctor', 'tests']);
 
         // Always return JSON for AJAX requests, HTML for direct access
@@ -290,6 +308,10 @@ class RecommendationController extends Controller
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to lab request.');
         }
+        // Ensure assistants/doctors can only access assigned doctor data
+        if (!$user->canAccessDoctor($labRequest->doctor_id)) {
+            abort(403, 'You are not allowed to access this doctor\'s lab requests.');
+        }
 
         $labRequest->load(['patient', 'doctor', 'tests']);
 
@@ -319,6 +341,10 @@ class RecommendationController extends Controller
         // Ensure user can only edit lab requests from their clinic
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to lab request.');
+        }
+        // Ensure assistants/doctors can only access assigned doctor data
+        if (!$user->canAccessDoctor($labRequest->doctor_id)) {
+            abort(403, 'You are not allowed to access this doctor\'s lab requests.');
         }
 
         // Check if user has permission to edit lab requests

@@ -45,7 +45,7 @@
                             <form action="{{ route('users.update', $user->id ?? 1) }}" method="POST">
                                 @csrf
                                 @method('PUT')
-                                
+
                                 <div class="row g-3">
                                     <!-- Basic Information -->
                                     <div class="col-12">
@@ -54,58 +54,58 @@
                                             {{ __('Basic Information') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="first_name" class="form-label">{{ __('First Name') }} <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control @error('first_name') is-invalid @enderror" 
-                                               id="first_name" name="first_name" 
+                                        <input type="text" class="form-control @error('first_name') is-invalid @enderror"
+                                               id="first_name" name="first_name"
                                                value="{{ old('first_name', $user->first_name ?? 'Demo') }}" required>
                                         @error('first_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="last_name" class="form-label">{{ __('Last Name') }} <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control @error('last_name') is-invalid @enderror" 
-                                               id="last_name" name="last_name" 
+                                        <input type="text" class="form-control @error('last_name') is-invalid @enderror"
+                                               id="last_name" name="last_name"
                                                value="{{ old('last_name', $user->last_name ?? 'User') }}" required>
                                         @error('last_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="username" class="form-label">{{ __('Username') }} <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control @error('username') is-invalid @enderror" 
-                                               id="username" name="username" 
+                                        <input type="text" class="form-control @error('username') is-invalid @enderror"
+                                               id="username" name="username"
                                                value="{{ old('username', $user->username ?? 'demo_user') }}" required>
                                         <div class="form-text">{{ __('Must be unique and contain only letters, numbers, and underscores') }}</div>
                                         @error('username')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="email" class="form-label">{{ __('Email Address') }} <span class="text-danger">*</span></label>
-                                        <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                                               id="email" name="email" 
+                                        <input type="email" class="form-control @error('email') is-invalid @enderror"
+                                               id="email" name="email"
                                                value="{{ old('email', $user->email ?? 'demo@concure.com') }}" required>
                                         @error('email')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="phone" class="form-label">{{ __('Phone Number') }}</label>
-                                        <input type="tel" class="form-control @error('phone') is-invalid @enderror" 
-                                               id="phone" name="phone" 
+                                        <input type="tel" class="form-control @error('phone') is-invalid @enderror"
+                                               id="phone" name="phone"
                                                value="{{ old('phone', $user->phone ?? '+1-555-0123') }}">
                                         @error('phone')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="language" class="form-label">{{ __('Preferred Language') }}</label>
                                         <select class="form-select @error('language') is-invalid @enderror" id="language" name="language">
@@ -125,7 +125,7 @@
                                             {{ __('Role and Permissions') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="role" class="form-label">{{ __('User Role') }} <span class="text-danger">*</span></label>
                                         <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required onchange="updateRoleDescription()">
@@ -141,7 +141,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="is_active" class="form-label">{{ __('Account Status') }}</label>
                                         <select class="form-select @error('is_active') is-invalid @enderror" id="is_active" name="is_active">
@@ -152,7 +152,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-12">
                                         <div id="roleDescription" class="alert alert-info">
                                             <i class="fas fa-info-circle me-2"></i>
@@ -318,23 +318,23 @@
                                             <i class="fas fa-stethoscope me-2"></i>
                                             {{ __('Professional Information') }}
                                         </h6>
-                                        
+
                                         <div class="row g-3">
                                             <div class="col-md-6">
                                                 <label for="medical_license" class="form-label">{{ __('Medical License Number') }}</label>
-                                                <input type="text" class="form-control @error('medical_license') is-invalid @enderror" 
-                                                       id="medical_license" name="medical_license" 
+                                                <input type="text" class="form-control @error('medical_license') is-invalid @enderror"
+                                                       id="medical_license" name="medical_license"
                                                        value="{{ old('medical_license', $user->medical_license ?? 'MD123456') }}">
                                                 @error('medical_license')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror
                                             </div>
-                                            
+
                                             <div class="col-md-6">
                                                 <label for="specialization" class="form-label">{{ __('Specialization') }}</label>
-                                                <input type="text" class="form-control @error('specialization') is-invalid @enderror" 
-                                                       id="specialization" name="specialization" 
-                                                       value="{{ old('specialization', $user->specialization ?? 'General Practice') }}" 
+                                                <input type="text" class="form-control @error('specialization') is-invalid @enderror"
+                                                       id="specialization" name="specialization"
+                                                       value="{{ old('specialization', $user->specialization ?? 'General Practice') }}"
                                                        placeholder="{{ __('e.g., General Practice, Cardiology...') }}">
                                                 @error('specialization')
                                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -342,6 +342,75 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    @if(($user->role ?? '') === 'doctor')
+                                    <!-- Assistants Management -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                                            <i class="fas fa-user-friends me-2"></i>
+                                            {{ __('Assigned Assistants') }}
+                                        </h6>
+
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div class="row g-3 align-items-end">
+                                                    <div class="col-md-8">
+                                                        <label class="form-label">{{ __('Add Assistant') }}</label>
+                                                        <form action="{{ route('users.assistants.attach', $user->id) }}" method="POST" class="d-flex gap-2">
+                                                            @csrf
+                                                            <select name="assistant_id" class="form-select">
+                                                                @forelse(($availableAssistants ?? collect()) as $assistant)
+                                                                    <option value="{{ $assistant->id }}">{{ $assistant->full_name }} ({{ $assistant->email }})</option>
+                                                                @empty
+                                                                    <option value="">{{ __('No available assistants in your clinic') }}</option>
+                                                                @endforelse
+                                                            </select>
+                                                            <button type="submit" class="btn btn-outline-primary">
+                                                                <i class="fas fa-user-plus me-1"></i> {{ __('Assign') }}
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+                                                <hr>
+
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm align-middle">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>{{ __('Name') }}</th>
+                                                                <th>{{ __('Email') }}</th>
+                                                                <th class="text-end">{{ __('Actions') }}</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @forelse(($assistants ?? collect()) as $assistant)
+                                                                <tr>
+                                                                    <td>{{ $assistant->full_name }}</td>
+                                                                    <td>{{ $assistant->email }}</td>
+                                                                    <td class="text-end">
+                                                                        <form action="{{ route('users.assistants.detach', [$user->id, $assistant->id]) }}" method="POST" onsubmit="return confirm('{{ __('Remove this assistant?') }}');">
+                                                                            @csrf
+                                                                            @method('DELETE')
+                                                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                                                <i class="fas fa-user-minus me-1"></i> {{ __('Remove') }}
+                                                                            </button>
+                                                                        </form>
+                                                                    </td>
+                                                                </tr>
+                                                            @empty
+                                                                <tr>
+                                                                    <td colspan="3" class="text-muted">{{ __('No assistants assigned yet.') }}</td>
+                                                                </tr>
+                                                            @endforelse
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
+
 
                                     <!-- Password Change -->
                                     <div class="col-12 mt-4">
@@ -354,27 +423,27 @@
                                             {{ __('Leave password fields empty to keep current password.') }}
                                         </div>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="password" class="form-label">{{ __('New Password') }}</label>
-                                        <input type="password" class="form-control @error('password') is-invalid @enderror" 
+                                        <input type="password" class="form-control @error('password') is-invalid @enderror"
                                                id="password" name="password">
                                         <div class="form-text">{{ __('Minimum 8 characters with letters and numbers') }}</div>
                                         @error('password')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="password_confirmation" class="form-label">{{ __('Confirm New Password') }}</label>
-                                        <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror" 
+                                        <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror"
                                                id="password_confirmation" name="password_confirmation">
                                         @error('password_confirmation')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mt-4">
                                     <div class="col-12">
                                         <div class="d-flex justify-content-end gap-2">

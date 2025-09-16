@@ -155,13 +155,26 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $this->authorizeUserAccess($user);
-        
+
         $currentUser = auth()->user();
         $availableRoles = $this->getAvailableRoles($currentUser);
-        
+
         $clinics = collect([$currentUser->clinic]);
 
-        return view('users.edit', compact('user', 'availableRoles', 'clinics'));
+        // For doctor accounts, prepare assistants management data
+        $assistants = collect();
+        $availableAssistants = collect();
+        if ($user->role === 'doctor') {
+            $user->loadMissing('assistants');
+            $assistants = $user->assistants()->orderBy('first_name')->orderBy('last_name')->get();
+            $availableAssistants = User::byClinic($currentUser->clinic_id)
+                ->byRole('assistant')
+                ->whereNotIn('id', $assistants->pluck('id'))
+                ->orderBy('first_name')->orderBy('last_name')
+                ->get();
+        }
+
+        return view('users.edit', compact('user', 'availableRoles', 'clinics', 'assistants', 'availableAssistants'));
     }
 
     /**
@@ -407,4 +420,67 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Assign an assistant to a doctor.
+     */
+    public function attachAssistant(Request $request, User $user)
+    {
+        $this->authorizeUserAccess($user);
+
+        // Only admins or the doctor themselves can manage assignments
+        $currentUser = auth()->user();
+        $isSelfDoctor = $currentUser->id === $user->id && $currentUser->role === 'doctor';
+        if (!$currentUser->isClinicAdmin() && !$isSelfDoctor) {
+            abort(403, 'Only clinic admin or the doctor can manage assistants.');
+        }
+
+        $data = $request->validate([
+            'assistant_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        // Validate assistant belongs to same clinic and has assistant role
+        $assistant = User::where('id', $data['assistant_id'])
+            ->where('clinic_id', $currentUser->clinic_id)
+            ->where('role', 'assistant')
+            ->first();
+
+        if (!$assistant) {
+            return back()->withErrors(['assistant_id' => __('Selected assistant is invalid or from another clinic.')]);
+        }
+
+        // Attach without detaching others
+        $user->assistants()->syncWithoutDetaching([$assistant->id]);
+
+        // Optionally store clinic_id on pivot for auditing
+        $user->assistants()->updateExistingPivot($assistant->id, ['clinic_id' => $currentUser->clinic_id]);
+
+        return back()->with('success', __('Assistant assigned successfully.'));
+    }
+
+    /**
+     * Remove an assistant from a doctor.
+     */
+    public function detachAssistant(User $user, $assistantId)
+    {
+        $this->authorizeUserAccess($user);
+
+        $currentUser = auth()->user();
+        $isSelfDoctor = $currentUser->id === $user->id && $currentUser->role === 'doctor';
+        if (!$currentUser->isClinicAdmin() && !$isSelfDoctor) {
+            abort(403, 'Only clinic admin or the doctor can manage assistants.');
+        }
+
+        $assistant = User::where('id', $assistantId)
+            ->where('clinic_id', $currentUser->clinic_id)
+            ->where('role', 'assistant')
+            ->first();
+
+        if ($assistant) {
+            $user->assistants()->detach($assistant->id);
+        }
+
+        return back()->with('success', __('Assistant removed successfully.'));
+    }
 }
+
