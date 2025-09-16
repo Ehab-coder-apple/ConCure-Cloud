@@ -337,6 +337,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/lab-requests/{labRequest}/edit', [RecommendationController::class, 'editLabRequest'])->name('lab-requests.edit');
         Route::put('/lab-requests/{labRequest}', [RecommendationController::class, 'updateLabRequest'])->name('lab-requests.update');
         Route::get('/lab-requests/{labRequest}/print', [RecommendationController::class, 'printLabRequest'])->name('lab-requests.print');
+        Route::get('/lab-requests/{labRequest}/pdf', [RecommendationController::class, 'pdfLabRequest'])->name('lab-requests.pdf');
 
         // Radiology Requests
         Route::prefix('radiology')->name('radiology.')->group(function () {

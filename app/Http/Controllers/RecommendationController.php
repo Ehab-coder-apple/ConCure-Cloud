@@ -27,7 +27,7 @@ class RecommendationController extends Controller
     public function index()
     {
         $user = auth()->user();
-        
+
         // Get recent prescriptions, lab requests, and diet plans
         $clinicFilter = function ($q) use ($user) {
             $q->where('clinic_id', $user->clinic_id);
@@ -280,6 +280,36 @@ class RecommendationController extends Controller
     }
 
     /**
+     * Download a PDF of the lab request.
+     */
+    public function pdfLabRequest(LabRequest $labRequest)
+    {
+        $user = auth()->user();
+
+        // Ensure user can only access lab requests from their clinic
+        if ($labRequest->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to lab request.');
+        }
+
+        $labRequest->load(['patient', 'doctor', 'tests']);
+
+        // Split tests into chunks of 6 for pagination (same logic as print)
+        $testChunks = $labRequest->tests->chunk(6);
+        $totalPages = $testChunks->count();
+
+        $pdf = Pdf::loadView('recommendations.lab-request-pdf', [
+            'labRequest' => $labRequest,
+            'testChunks' => $testChunks,
+            'totalPages' => $totalPages,
+            'isMultiPage' => $totalPages > 1,
+        ]);
+
+        $filename = 'lab-request-' . $labRequest->request_number . '.pdf';
+        return $pdf->download($filename);
+    }
+
+
+    /**
      * Show the form for editing a lab request.
      */
     public function editLabRequest(LabRequest $labRequest)
@@ -478,7 +508,7 @@ class RecommendationController extends Controller
     public function prescriptions(Request $request)
     {
         $user = auth()->user();
-        
+
         $query = Prescription::with(['patient', 'doctor', 'medicines']);
 
         // Filter by clinic for all users
@@ -514,7 +544,7 @@ class RecommendationController extends Controller
     public function storePrescription(Request $request)
     {
         $user = auth()->user();
-        
+
         if (!$user->canPrescribe()) {
             abort(403, 'Only doctors can create prescriptions.');
         }
@@ -564,7 +594,7 @@ class RecommendationController extends Controller
     public function dietPlans(Request $request)
     {
         $user = auth()->user();
-        
+
         $query = DietPlan::with(['patient', 'doctor']);
 
         // Filter by clinic for all users
@@ -605,7 +635,7 @@ class RecommendationController extends Controller
     public function storeDietPlan(Request $request)
     {
         $user = auth()->user();
-        
+
         if (!$user->canPrescribe()) {
             abort(403, 'Only doctors can create diet plans.');
         }
@@ -655,7 +685,7 @@ class RecommendationController extends Controller
     public function generateDietPlanPDF(DietPlan $dietPlan)
     {
         $user = auth()->user();
-        
+
         // Check access
         if (
             $dietPlan->patient->clinic_id !== $user->clinic_id) {
@@ -665,7 +695,7 @@ class RecommendationController extends Controller
         $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
 
         $pdf = Pdf::loadView('recommendations.diet-plan-pdf', compact('dietPlan'));
-        
+
         return $pdf->download("diet-plan-{$dietPlan->plan_number}.pdf");
     }
 }

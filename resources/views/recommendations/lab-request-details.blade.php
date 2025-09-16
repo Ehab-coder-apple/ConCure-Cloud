@@ -22,6 +22,11 @@
                         <i class="fas fa-print me-1"></i>
                         {{ __('Print') }}
                     </a>
+                    <a href="{{ route('recommendations.lab-requests.pdf', $labRequest->id) }}"
+                       class="btn btn-outline-success me-2" target="_blank">
+                        <i class="fas fa-file-pdf me-1"></i>
+                        {{ __('Download PDF') }}
+                    </a>
                     @if(
                         ($labRequest->status === 'pending' && !$labRequest->isSent()) ||
                         ($labRequest->status === 'cancelled')
