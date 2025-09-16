@@ -167,6 +167,11 @@
                                                    title="{{ __('Print') }}" target="_blank">
                                                     <i class="fas fa-print"></i>
                                                 </a>
+                                                <a href="{{ route('recommendations.lab-requests.pdf', $labRequest->id) }}"
+                                                   class="btn btn-sm btn-outline-success"
+                                                   title="{{ __('Download PDF') }}" target="_blank">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
                                                     <div class="d-inline-flex align-items-center gap-1">
                                                     @if($labRequest->status === 'pending' && auth()->user()->hasPermission('prescriptions_create'))
                                                         <a href="{{ route('recommendations.lab-requests.edit', $labRequest->id) }}"
