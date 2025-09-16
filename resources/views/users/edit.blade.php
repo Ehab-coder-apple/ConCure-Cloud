@@ -107,6 +107,19 @@
                                     </div>
 
                                     <div class="col-md-6">
+                                        <label for="title_prefix" class="form-label">{{ __('Title / Position') }}</label>
+                                        <input type="text" class="form-control @error('title_prefix') is-invalid @enderror"
+                                               id="title_prefix" name="title_prefix"
+                                               value="{{ old('title_prefix', $user->title_prefix ?? '') }}"
+                                               placeholder="{{ __('e.g., Jr Doctor, Jr Nurse, Assistant...') }}">
+                                        <div class="form-text">{{ __('Optional. This appears before the name on records and printouts.') }}</div>
+                                        @error('title_prefix')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+
+                                    <div class="col-md-6">
                                         <label for="language" class="form-label">{{ __('Preferred Language') }}</label>
                                         <select class="form-select @error('language') is-invalid @enderror" id="language" name="language">
                                             <option value="en" {{ old('language', $user->language ?? 'en') == 'en' ? 'selected' : '' }}>English</option>

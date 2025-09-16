@@ -38,7 +38,7 @@
                         <div class="card-body">
                             <form action="{{ route('users.store') }}" method="POST">
                                 @csrf
-                                
+
                                 <div class="row g-3">
                                     <!-- Basic Information -->
                                     <div class="col-12">
@@ -47,53 +47,63 @@
                                             {{ __('Basic Information') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="first_name" class="form-label">{{ __('First Name') }} <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control @error('first_name') is-invalid @enderror" 
+                                        <input type="text" class="form-control @error('first_name') is-invalid @enderror"
                                                id="first_name" name="first_name" value="{{ old('first_name') }}" required>
                                         @error('first_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="last_name" class="form-label">{{ __('Last Name') }} <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control @error('last_name') is-invalid @enderror" 
+                                        <input type="text" class="form-control @error('last_name') is-invalid @enderror"
                                                id="last_name" name="last_name" value="{{ old('last_name') }}" required>
                                         @error('last_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="username" class="form-label">{{ __('Username') }} <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control @error('username') is-invalid @enderror" 
+                                        <input type="text" class="form-control @error('username') is-invalid @enderror"
                                                id="username" name="username" value="{{ old('username') }}" required>
                                         <div class="form-text">{{ __('Must be unique and contain only letters, numbers, and underscores') }}</div>
                                         @error('username')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="email" class="form-label">{{ __('Email Address') }} <span class="text-danger">*</span></label>
-                                        <input type="email" class="form-control @error('email') is-invalid @enderror" 
+                                        <input type="email" class="form-control @error('email') is-invalid @enderror"
                                                id="email" name="email" value="{{ old('email') }}" required>
                                         @error('email')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="phone" class="form-label">{{ __('Phone Number') }}</label>
-                                        <input type="tel" class="form-control @error('phone') is-invalid @enderror" 
+                                        <input type="tel" class="form-control @error('phone') is-invalid @enderror"
                                                id="phone" name="phone" value="{{ old('phone') }}">
                                         @error('phone')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+                                    <div class="col-md-6">
+                                        <label for="title_prefix" class="form-label">{{ __('Title / Position') }}</label>
+                                        <input type="text" class="form-control @error('title_prefix') is-invalid @enderror"
+                                               id="title_prefix" name="title_prefix" value="{{ old('title_prefix') }}" placeholder="{{ __('e.g., Jr Doctor, Jr Nurse, Assistant...') }}">
+                                        <div class="form-text">{{ __('Optional. This appears before the name on records and printouts.') }}</div>
+                                        @error('title_prefix')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+
                                     <div class="col-md-6">
                                         <label for="language" class="form-label">{{ __('Preferred Language') }}</label>
                                         <select class="form-select @error('language') is-invalid @enderror" id="language" name="language">
@@ -113,7 +123,7 @@
                                             {{ __('Role and Permissions') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="role" class="form-label">{{ __('User Role') }} <span class="text-danger">*</span></label>
                                         <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required onchange="updateRoleDescription()">
@@ -129,7 +139,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="is_active" class="form-label">{{ __('Account Status') }}</label>
                                         <select class="form-select @error('is_active') is-invalid @enderror" id="is_active" name="is_active">
@@ -140,7 +150,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-12">
                                         <div id="roleDescription" class="alert alert-info" style="display: none;">
                                             <i class="fas fa-info-circle me-2"></i>
@@ -155,26 +165,26 @@
                                             {{ __('Security Settings') }}
                                         </h6>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="password" class="form-label">{{ __('Password') }} <span class="text-danger">*</span></label>
-                                        <input type="password" class="form-control @error('password') is-invalid @enderror" 
+                                        <input type="password" class="form-control @error('password') is-invalid @enderror"
                                                id="password" name="password" required>
                                         <div class="form-text">{{ __('Minimum 8 characters with letters and numbers') }}</div>
                                         @error('password')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label for="password_confirmation" class="form-label">{{ __('Confirm Password') }} <span class="text-danger">*</span></label>
-                                        <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror" 
+                                        <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror"
                                                id="password_confirmation" name="password_confirmation" required>
                                         @error('password_confirmation')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
+
                                     <div class="col-12">
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" id="send_activation" name="send_activation" value="1" {{ old('send_activation') ? 'checked' : '' }}>
@@ -190,21 +200,21 @@
                                             <i class="fas fa-stethoscope me-2"></i>
                                             {{ __('Professional Information') }}
                                         </h6>
-                                        
+
                                         <div class="row g-3">
                                             <div class="col-md-6">
                                                 <label for="medical_license" class="form-label">{{ __('Medical License Number') }}</label>
-                                                <input type="text" class="form-control @error('medical_license') is-invalid @enderror" 
+                                                <input type="text" class="form-control @error('medical_license') is-invalid @enderror"
                                                        id="medical_license" name="medical_license" value="{{ old('medical_license') }}">
                                                 @error('medical_license')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror
                                             </div>
-                                            
+
                                             <div class="col-md-6">
                                                 <label for="specialization" class="form-label">{{ __('Specialization') }}</label>
-                                                <input type="text" class="form-control @error('specialization') is-invalid @enderror" 
-                                                       id="specialization" name="specialization" value="{{ old('specialization') }}" 
+                                                <input type="text" class="form-control @error('specialization') is-invalid @enderror"
+                                                       id="specialization" name="specialization" value="{{ old('specialization') }}"
                                                        placeholder="{{ __('e.g., General Practice, Cardiology...') }}">
                                                 @error('specialization')
                                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -532,7 +542,7 @@ function generateUsername() {
     const firstName = document.getElementById('first_name').value.toLowerCase().replace(/[^a-z]/g, '');
     const lastName = document.getElementById('last_name').value.toLowerCase().replace(/[^a-z]/g, '');
     const usernameField = document.getElementById('username');
-    
+
     if (firstName && lastName && !usernameField.value) {
         usernameField.value = firstName + '_' + lastName;
     }
