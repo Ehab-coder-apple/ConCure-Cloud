@@ -17,7 +17,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        
+
         $query = User::with('clinic', 'creator');
 
         // Filter by clinic for non-program-owner users
@@ -88,7 +88,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        
+
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -106,7 +106,7 @@ class UserController extends Controller
         ]);
 
         $clinicId = $user->clinic_id;
-        
+
         // Check clinic user limit
         if ($clinicId) {
             $clinic = Clinic::find($clinicId);
@@ -135,8 +135,26 @@ class UserController extends Controller
             'created_by' => $user->id,
         ]);
 
+        // If creating a subuser for a specific user (e.g., doctor), auto-assign as assistant
+        if ($request->filled('assign_to_user_id')) {
+            $assignTo = User::where('id', $request->integer('assign_to_user_id'))
+                ->where('clinic_id', $user->clinic_id)
+                ->first();
+
+            if ($assignTo && $newUser->role === 'assistant') {
+                $assignTo->assistants()->syncWithoutDetaching([$newUser->id]);
+                $assignTo->assistants()->updateExistingPivot($newUser->id, ['clinic_id' => $user->clinic_id]);
+            }
+        }
+
+
+        if ($request->filled('assign_to_user_id') && isset($assignTo) && $assignTo) {
+            return redirect()->route('users.show', $assignTo->id)
+                             ->with('success', __('Subuser created and assigned successfully.'));
+        }
+
         return redirect()->route('users.index')
-                        ->with('success', 'User created successfully.');
+                        ->with('success', __('User created successfully.'));
     }
 
     /**
@@ -145,9 +163,9 @@ class UserController extends Controller
     public function show(User $user)
     {
         $this->authorizeUserAccess($user);
-        
+
         $user->load('clinic', 'creator', 'createdUsers', 'auditLogs');
-        
+
         return view('users.show', compact('user'));
     }
 
@@ -185,9 +203,9 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $this->authorizeUserAccess($user);
-        
+
         $currentUser = auth()->user();
-        
+
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -235,7 +253,7 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         $this->authorizeUserAccess($user);
-        
+
         // Program owner deletion is handled in master system
 
         // Prevent self-deletion
@@ -255,7 +273,7 @@ class UserController extends Controller
     public function activationCodes(Request $request)
     {
         $user = auth()->user();
-        
+
         $query = ActivationCode::with('clinic', 'usedByUser', 'creator');
 
         // All clinic users are restricted to their clinic
@@ -286,7 +304,7 @@ class UserController extends Controller
     public function generateActivationCode(Request $request)
     {
         $user = auth()->user();
-        
+
         $request->validate([
             'type' => 'required|in:clinic,user',
             'clinic_id' => 'required_if:type,user|exists:clinics,id',

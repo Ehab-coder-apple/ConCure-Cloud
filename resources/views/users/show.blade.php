@@ -21,6 +21,12 @@
                     </nav>
                 </div>
                 <div>
+                    @if(auth()->user()->isClinicAdmin())
+                        <a href="{{ route('users.create', ['assign_to' => $user->id]) }}" class="btn btn-success me-2">
+                            <i class="fas fa-user-plus me-1"></i>
+                            {{ __('Create Subuser') }}
+                        </a>
+                    @endif
                     <a href="{{ route('users.edit', $user->id ?? 1) }}" class="btn btn-outline-primary me-2">
                         <i class="fas fa-edit me-1"></i>
                         {{ __('Edit User') }}
@@ -30,6 +36,7 @@
                         {{ __('Back to Users') }}
                     </a>
                 </div>
+
             </div>
 
             <div class="row">
@@ -215,7 +222,7 @@
                                     @endswitch
                                 </p>
                             </div>
-                            
+
                             <div class="row g-2">
                                 @php
                                     $permissions = [
@@ -228,7 +235,7 @@
                                         'settings' => __('Settings'),
                                         'users' => __('User Management')
                                     ];
-                                    
+
                                     $rolePermissions = [
                                         'program_owner' => array_keys($permissions),
                                         'admin' => ['patients', 'prescriptions', 'lab_requests', 'appointments', 'finance', 'reports', 'settings', 'users'],
@@ -237,10 +244,10 @@
                                         'nurse' => ['patients', 'appointments'],
                                         'accountant' => ['finance', 'reports']
                                     ];
-                                    
+
                                     $userPermissions = $rolePermissions[$user->role ?? 'doctor'] ?? [];
                                 @endphp
-                                
+
                                 @foreach($permissions as $key => $permission)
                                     <div class="col-md-6">
                                         <div class="d-flex align-items-center">

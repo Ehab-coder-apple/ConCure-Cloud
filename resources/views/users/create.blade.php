@@ -39,6 +39,19 @@
                             <form action="{{ route('users.store') }}" method="POST">
                                 @csrf
 
+                                @if(request('assign_to'))
+                                    @php($parentUser = \App\Models\User::find(request('assign_to')))
+                                    <input type="hidden" name="assign_to_user_id" value="{{ request('assign_to') }}">
+                                    <div class="alert alert-success d-flex align-items-center" role="alert">
+                                        <i class="fas fa-link me-2"></i>
+                                        <div>
+                                            {{ __('Creating a subuser assigned to:') }}
+                                            <strong>{{ $parentUser?->full_name_with_title ?? ('User #'.request('assign_to')) }}</strong>.
+                                            {{ __('By default, role is set to Medical Assistant so access will be limited to this user.') }}
+                                        </div>
+                                    </div>
+                                @endif
+
                                 <div class="row g-3">
                                     <!-- Basic Information -->
                                     <div class="col-12">
@@ -128,12 +141,12 @@
                                         <label for="role" class="form-label">{{ __('User Role') }} <span class="text-danger">*</span></label>
                                         <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required onchange="updateRoleDescription()">
                                             <option value="">{{ __('Select Role') }}</option>
-                                            <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>{{ __('Administrator') }}</option>
-                                            <option value="doctor" {{ old('role') == 'doctor' ? 'selected' : '' }}>{{ __('Doctor') }}</option>
-                                            <option value="nutritionist" {{ old('role') == 'nutritionist' ? 'selected' : '' }}>{{ __('Nutritionist') }}</option>
-                                            <option value="assistant" {{ old('role') == 'assistant' ? 'selected' : '' }}>{{ __('Medical Assistant') }}</option>
-                                            <option value="nurse" {{ old('role') == 'nurse' ? 'selected' : '' }}>{{ __('Nurse') }}</option>
-                                            <option value="accountant" {{ old('role') == 'accountant' ? 'selected' : '' }}>{{ __('Accountant') }}</option>
+                                            <option value="admin" {{ old('role', request('assign_to') ? 'assistant' : '') == 'admin' ? 'selected' : '' }}>{{ __('Administrator') }}</option>
+                                            <option value="doctor" {{ old('role', request('assign_to') ? 'assistant' : '') == 'doctor' ? 'selected' : '' }}>{{ __('Doctor') }}</option>
+                                            <option value="nutritionist" {{ old('role', request('assign_to') ? 'assistant' : '') == 'nutritionist' ? 'selected' : '' }}>{{ __('Nutritionist') }}</option>
+                                            <option value="assistant" {{ old('role', request('assign_to') ? 'assistant' : '') == 'assistant' ? 'selected' : '' }}>{{ __('Medical Assistant') }}</option>
+                                            <option value="nurse" {{ old('role', request('assign_to') ? 'assistant' : '') == 'nurse' ? 'selected' : '' }}>{{ __('Nurse') }}</option>
+                                            <option value="accountant" {{ old('role', request('assign_to') ? 'assistant' : '') == 'accountant' ? 'selected' : '' }}>{{ __('Accountant') }}</option>
                                         </select>
                                         @error('role')
                                             <div class="invalid-feedback">{{ $message }}</div>
