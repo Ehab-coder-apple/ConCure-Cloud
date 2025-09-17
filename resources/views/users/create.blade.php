@@ -143,12 +143,24 @@
                                         <label for="role" class="form-label">{{ __('User Role') }} <span class="text-danger">*</span></label>
                                         <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required onchange="updateRoleDescription()">
                                             <option value="">{{ __('Select Role') }}</option>
-                                            <option value="admin" {{ old('role', request('assign_to') ? 'assistant' : '') == 'admin' ? 'selected' : '' }}>{{ __('Administrator') }}</option>
-                                            <option value="doctor" {{ old('role', request('assign_to') ? 'assistant' : '') == 'doctor' ? 'selected' : '' }}>{{ __('Doctor') }}</option>
-                                            <option value="nutritionist" {{ old('role', request('assign_to') ? 'assistant' : '') == 'nutritionist' ? 'selected' : '' }}>{{ __('Nutritionist') }}</option>
-                                            <option value="assistant" {{ old('role', request('assign_to') ? 'assistant' : '') == 'assistant' ? 'selected' : '' }}>{{ __('Medical Assistant') }}</option>
-                                            <option value="nurse" {{ old('role', request('assign_to') ? 'assistant' : '') == 'nurse' ? 'selected' : '' }}>{{ __('Nurse') }}</option>
-                                            <option value="accountant" {{ old('role', request('assign_to') ? 'assistant' : '') == 'accountant' ? 'selected' : '' }}>{{ __('Accountant') }}</option>
+                                            @if(in_array('admin', $availableRoles ?? []))
+                                                <option value="admin" {{ old('role', request('assign_to') ? 'assistant' : '') == 'admin' ? 'selected' : '' }}>{{ __('Administrator') }}</option>
+                                            @endif
+                                            @if(in_array('doctor', $availableRoles ?? []))
+                                                <option value="doctor" {{ old('role', request('assign_to') ? 'assistant' : '') == 'doctor' ? 'selected' : '' }}>{{ __('Doctor') }}</option>
+                                            @endif
+                                            @if(in_array('nutritionist', $availableRoles ?? []))
+                                                <option value="nutritionist" {{ old('role', request('assign_to') ? 'assistant' : '') == 'nutritionist' ? 'selected' : '' }}>{{ __('Nutritionist') }}</option>
+                                            @endif
+                                            @if(in_array('assistant', $availableRoles ?? []))
+                                                <option value="assistant" {{ old('role', request('assign_to') ? 'assistant' : '') == 'assistant' ? 'selected' : '' }}>{{ __('Medical Assistant') }}</option>
+                                            @endif
+                                            @if(in_array('nurse', $availableRoles ?? []))
+                                                <option value="nurse" {{ old('role', request('assign_to') ? 'assistant' : '') == 'nurse' ? 'selected' : '' }}>{{ __('Nurse') }}</option>
+                                            @endif
+                                            @if(in_array('accountant', $availableRoles ?? []))
+                                                <option value="accountant" {{ old('role', request('assign_to') ? 'assistant' : '') == 'accountant' ? 'selected' : '' }}>{{ __('Accountant') }}</option>
+                                            @endif
                                         </select>
                                         @error('role')
                                             <div class="invalid-feedback">{{ $message }}</div>

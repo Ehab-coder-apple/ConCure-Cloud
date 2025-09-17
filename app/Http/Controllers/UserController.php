@@ -73,8 +73,13 @@ class UserController extends Controller
             }
         }
 
-        // Get available roles based on current user's role
+        // Determine available roles based on current user and whether this is a subuser creation
         $availableRoles = $this->getAvailableRoles($user);
+        $assignToId = request()->integer('assign_to');
+        if ($assignToId && $user->role === 'doctor' && $assignToId === $user->id) {
+            // Doctors creating a subuser for themselves may only create assistants
+            $availableRoles = ['assistant'];
+        }
 
         // Clinic users only see their own clinic
         $clinics = collect([$user->clinic]);
@@ -89,6 +94,14 @@ class UserController extends Controller
     {
         $user = auth()->user();
 
+        // Compute available roles for this request
+        $availableRolesForRequest = $this->getAvailableRoles($user);
+        if ($request->filled('assign_to_user_id') && $user->role === 'doctor' &&
+            (int) $request->assign_to_user_id === (int) $user->id) {
+            // Doctors creating subusers for themselves may only create assistants
+            $availableRolesForRequest = ['assistant'];
+        }
+
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -96,7 +109,7 @@ class UserController extends Controller
             'email' => 'required|email|max:255|unique:users',
             'phone' => 'nullable|string|max:20',
             'title_prefix' => 'nullable|string|max:100',
-            'role' => ['required', Rule::in($this->getAvailableRoles($user))],
+            'role' => ['required', Rule::in($availableRolesForRequest)],
             'clinic_id' => 'nullable',
             'password' => 'required|string|min:8|confirmed',
             'is_active' => 'boolean',
