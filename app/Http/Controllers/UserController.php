@@ -219,6 +219,12 @@ class UserController extends Controller
 
         $currentUser = auth()->user();
 
+        // Compute available roles for this request/user
+        $availableRolesForRequest = $this->getAvailableRoles($currentUser);
+        if ($currentUser->role === 'doctor') {
+            $availableRolesForRequest = ['assistant'];
+        }
+
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -226,7 +232,7 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'phone' => 'nullable|string|max:20',
             'title_prefix' => 'nullable|string|max:100',
-            'role' => ['required', Rule::in($this->getAvailableRoles($currentUser))],
+            'role' => ['required', Rule::in($availableRolesForRequest)],
             'clinic_id' => 'nullable',
             'password' => 'nullable|string|min:8|confirmed',
             'is_active' => 'boolean',
@@ -340,8 +346,19 @@ class UserController extends Controller
      */
     private function getAvailableRoles(User $user): array
     {
-        if ($user->role === 'admin') {
-            return ['doctor', 'assistant', 'nurse', 'accountant', 'patient'];
+        // Super admin can manage all roles
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            return ['admin', 'doctor', 'nutritionist', 'assistant', 'nurse', 'accountant', 'patient'];
+        }
+
+        // Clinic admin can manage clinic roles (including creating other admins)
+        if (method_exists($user, 'isClinicAdmin') && $user->isClinicAdmin()) {
+            return ['admin', 'doctor', 'nutritionist', 'assistant', 'nurse', 'accountant', 'patient'];
+        }
+
+        // Doctors can only manage assistants
+        if ($user->role === 'doctor') {
+            return ['assistant'];
         }
 
         return [];
