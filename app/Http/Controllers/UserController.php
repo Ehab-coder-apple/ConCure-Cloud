@@ -18,6 +18,11 @@ class UserController extends Controller
     {
         $user = auth()->user();
 
+        // Only clinic admins or super admins can access the full Users management
+        if (!(method_exists($user, 'isClinicAdmin') && $user->isClinicAdmin()) && !(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
+            abort(403, 'Unauthorized: user management is restricted to admins.');
+        }
+
         $query = User::with('clinic', 'creator');
 
         // Filter by clinic for non-program-owner users
@@ -63,6 +68,11 @@ class UserController extends Controller
     {
         $user = auth()->user();
 
+        // Only clinic admins or super admins can create users
+        if (!(method_exists($user, 'isClinicAdmin') && $user->isClinicAdmin()) && !(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
+            abort(403, 'Unauthorized: creating users is restricted to admins.');
+        }
+
         // Check user limit
         $userLimitInfo = null;
         if ($user->clinic) {
@@ -93,6 +103,11 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
+
+        // Only clinic admins or super admins can store users
+        if (!(method_exists($user, 'isClinicAdmin') && $user->isClinicAdmin()) && !(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
+            abort(403, 'Unauthorized: creating users is restricted to admins.');
+        }
 
         // Compute available roles for this request
         $availableRolesForRequest = $this->getAvailableRoles($user);
@@ -190,6 +205,9 @@ class UserController extends Controller
         $this->authorizeUserAccess($user);
 
         $currentUser = auth()->user();
+        if (!(method_exists($currentUser, 'isClinicAdmin') && $currentUser->isClinicAdmin()) && !(method_exists($currentUser, 'isSuperAdmin') && $currentUser->isSuperAdmin())) {
+            abort(403, 'Unauthorized: editing users is restricted to admins.');
+        }
         $availableRoles = $this->getAvailableRoles($currentUser);
 
         $clinics = collect([$currentUser->clinic]);
@@ -218,6 +236,9 @@ class UserController extends Controller
         $this->authorizeUserAccess($user);
 
         $currentUser = auth()->user();
+        if (!(method_exists($currentUser, 'isClinicAdmin') && $currentUser->isClinicAdmin()) && !(method_exists($currentUser, 'isSuperAdmin') && $currentUser->isSuperAdmin())) {
+            abort(403, 'Unauthorized: updating users is restricted to admins.');
+        }
 
         // Compute available roles for this request/user
         $availableRolesForRequest = $this->getAvailableRoles($currentUser);
@@ -273,10 +294,13 @@ class UserController extends Controller
     {
         $this->authorizeUserAccess($user);
 
-        // Program owner deletion is handled in master system
+        $currentUser = auth()->user();
+        if (!(method_exists($currentUser, 'isClinicAdmin') && $currentUser->isClinicAdmin()) && !(method_exists($currentUser, 'isSuperAdmin') && $currentUser->isSuperAdmin())) {
+            abort(403, 'Unauthorized: deleting users is restricted to admins.');
+        }
 
         // Prevent self-deletion
-        if ($user->id === auth()->id()) {
+        if ($user->id === $currentUser->id) {
             return back()->withErrors(['error' => 'Cannot delete your own account.']);
         }
 

@@ -173,8 +173,8 @@ class User extends Authenticatable
      */
     public function hasAnyRole(array $roles): bool
     {
-        // DEVELOPMENT MODE: Disable all role checks
-        if (config('app.debug') || env('DISABLE_PERMISSIONS', true)) {
+        // DEVELOPMENT MODE: Only bypass on local and when explicitly enabled
+        if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             return true;
         }
 
@@ -315,8 +315,8 @@ class User extends Authenticatable
      */
     public function canManagePatients(): bool
     {
-        // DEVELOPMENT MODE: Disable all role checks
-        if (config('app.debug') || env('DISABLE_PERMISSIONS', true)) {
+        // DEVELOPMENT MODE: Only bypass on local and when explicitly enabled
+        if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             return true;
         }
 
@@ -426,8 +426,8 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permission): bool
     {
-        // DEVELOPMENT MODE: Disable all permission checks
-        if (config('app.debug') || env('DISABLE_PERMISSIONS', true)) {
+        // DEVELOPMENT MODE: Only bypass permissions on local environment and when explicitly enabled
+        if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             return true;
         }
 
@@ -440,8 +440,8 @@ class User extends Authenticatable
      */
     public function hasAnyPermission(array $permissions): bool
     {
-        // DEVELOPMENT MODE: Disable all permission checks
-        if (config('app.debug') || env('DISABLE_PERMISSIONS', true)) {
+        // DEVELOPMENT MODE: Only bypass on local and when explicitly enabled
+        if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             return true;
         }
 
@@ -454,8 +454,8 @@ class User extends Authenticatable
      */
     public function hasAllPermissions(array $permissions): bool
     {
-        // DEVELOPMENT MODE: Disable all permission checks
-        if (config('app.debug') || env('DISABLE_PERMISSIONS', true)) {
+        // DEVELOPMENT MODE: Only bypass on local and when explicitly enabled
+        if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             return true;
         }
 
@@ -510,8 +510,8 @@ class User extends Authenticatable
      */
     public function canAccessSection(string $section): bool
     {
-        // DEVELOPMENT MODE: Disable all permission checks
-        if (config('app.debug') || env('DISABLE_PERMISSIONS', true)) {
+        // DEVELOPMENT MODE: Only bypass on local and when explicitly enabled
+        if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             return true;
         }
 
