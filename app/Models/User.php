@@ -315,7 +315,12 @@ class User extends Authenticatable
      */
     public function canManagePatients(): bool
     {
-        // DEVELOPMENT MODE: Only bypass on local and when explicitly enabled
+        // Admins and Super Admins have full access within their scope
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+
+        // Local dev bypass (explicit only)
         if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             return true;
         }
@@ -426,7 +431,12 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permission): bool
     {
-        // DEVELOPMENT MODE: Only bypass permissions on local environment and when explicitly enabled
+        // Admins and Super Admins have full access within their scope
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+
+        // Local dev bypass (explicit only)
         if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             return true;
         }
@@ -440,7 +450,12 @@ class User extends Authenticatable
      */
     public function hasAnyPermission(array $permissions): bool
     {
-        // DEVELOPMENT MODE: Only bypass on local and when explicitly enabled
+        // Admins and Super Admins have full access within their scope
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+
+        // Local dev bypass (explicit only)
         if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             return true;
         }
@@ -454,7 +469,12 @@ class User extends Authenticatable
      */
     public function hasAllPermissions(array $permissions): bool
     {
-        // DEVELOPMENT MODE: Only bypass on local and when explicitly enabled
+        // Admins and Super Admins have full access within their scope
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+
+        // Local dev bypass (explicit only)
         if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             return true;
         }
@@ -510,7 +530,12 @@ class User extends Authenticatable
      */
     public function canAccessSection(string $section): bool
     {
-        // DEVELOPMENT MODE: Only bypass on local and when explicitly enabled
+        // Admins and Super Admins have full access within their scope
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+
+        // Local dev bypass (explicit only)
         if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             return true;
         }
