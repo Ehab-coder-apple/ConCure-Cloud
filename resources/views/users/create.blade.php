@@ -152,6 +152,15 @@
                                             @if(in_array('nutritionist', $availableRoles ?? []))
                                                 <option value="nutritionist" {{ old('role', request('assign_to') ? 'assistant' : '') == 'nutritionist' ? 'selected' : '' }}>{{ __('Nutritionist') }}</option>
                                             @endif
+                                            @if(in_array('pharmacist', $availableRoles ?? []))
+                                                <option value="pharmacist" {{ old('role', request('assign_to') ? 'assistant' : '') == 'pharmacist' ? 'selected' : '' }}>{{ __('Pharmacist') }}</option>
+                                            @endif
+                                            @if(in_array('lab_dept', $availableRoles ?? []))
+                                                <option value="lab_dept" {{ old('role', request('assign_to') ? 'assistant' : '') == 'lab_dept' ? 'selected' : '' }}>{{ __('Lab Dept.') }}</option>
+                                            @endif
+                                            @if(in_array('radiology_dept', $availableRoles ?? []))
+                                                <option value="radiology_dept" {{ old('role', request('assign_to') ? 'assistant' : '') == 'radiology_dept' ? 'selected' : '' }}>{{ __('Radiology Dept.') }}</option>
+                                            @endif
                                             @if(in_array('assistant', $availableRoles ?? []))
                                                 <option value="assistant" {{ old('role', request('assign_to') ? 'assistant' : '') == 'assistant' ? 'selected' : '' }}>{{ __('Medical Assistant') }}</option>
                                             @endif
@@ -447,6 +456,9 @@ function updateRoleDescription() {
         'admin': '{{ __("Full system access including user management, settings, and all clinic operations.") }}',
         'doctor': '{{ __("Access to patient records, prescriptions, lab requests, and medical features.") }}',
         'nutritionist': '{{ __("Specialized access to nutrition plans, diet management, food database, and patient dietary care.") }}',
+        'pharmacist': '{{ __("Pharmacy operations: manage and verify prescriptions, and handle medicine inventory.") }}',
+        'lab_dept': '{{ __("Laboratory operations: process lab requests and record results.") }}',
+        'radiology_dept': '{{ __("Radiology operations: process imaging requests and record results.") }}',
         'assistant': '{{ __("Patient management, appointment scheduling, and basic medical record access.") }}',
         'nurse': '{{ __("Patient care features, vital signs recording, and medication administration.") }}',
         'accountant': '{{ __("Financial management, invoicing, expense tracking, and reporting features.") }}'

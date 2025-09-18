@@ -199,14 +199,23 @@
                                 <h6 class="text-primary">{{ ucfirst(str_replace('_', ' ', $user->role ?? 'User')) }}</h6>
                                 <p class="text-muted mb-3">
                                     @switch($user->role ?? 'doctor')
-                                        @case('program_owner')
-                                            {{ __('Full system access including user management, settings, and all clinic operations.') }}
-                                            @break
                                         @case('admin')
                                             {{ __('Administrative access to manage users, settings, and clinic operations.') }}
                                             @break
                                         @case('doctor')
                                             {{ __('Access to patient records, prescriptions, lab requests, and medical features.') }}
+                                            @break
+                                        @case('nutritionist')
+                                            {{ __('Specialized access to nutrition plans, diet management, food database, and patient dietary care.') }}
+                                            @break
+                                        @case('pharmacist')
+                                            {{ __('Pharmacy operations: manage and verify prescriptions, and handle medicine inventory.') }}
+                                            @break
+                                        @case('lab_dept')
+                                            {{ __('Laboratory operations: process lab requests and record results.') }}
+                                            @break
+                                        @case('radiology_dept')
+                                            {{ __('Radiology operations: process imaging requests and record results.') }}
                                             @break
                                         @case('assistant')
                                             {{ __('Patient management, appointment scheduling, and basic medical record access.') }}
@@ -229,6 +238,7 @@
                                         'patients' => __('Patient Management'),
                                         'prescriptions' => __('Prescriptions'),
                                         'lab_requests' => __('Lab Requests'),
+                                        'radiology' => __('Radiology'),
                                         'appointments' => __('Appointments'),
                                         'finance' => __('Financial Management'),
                                         'reports' => __('Reports'),
@@ -237,9 +247,12 @@
                                     ];
 
                                     $rolePermissions = [
-                                        'program_owner' => array_keys($permissions),
-                                        'admin' => ['patients', 'prescriptions', 'lab_requests', 'appointments', 'finance', 'reports', 'settings', 'users'],
-                                        'doctor' => ['patients', 'prescriptions', 'lab_requests', 'appointments', 'reports'],
+                                        'admin' => array_keys($permissions),
+                                        'doctor' => ['patients', 'prescriptions', 'lab_requests', 'radiology', 'appointments', 'reports'],
+                                        'nutritionist' => ['patients', 'radiology', 'appointments', 'reports'],
+                                        'pharmacist' => ['prescriptions'],
+                                        'lab_dept' => ['lab_requests', 'reports'],
+                                        'radiology_dept' => ['radiology', 'reports'],
                                         'assistant' => ['patients', 'appointments'],
                                         'nurse' => ['patients', 'appointments'],
                                         'accountant' => ['finance', 'reports']

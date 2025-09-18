@@ -152,6 +152,15 @@
                                             @if(in_array('nutritionist', $availableRoles ?? []))
                                                 <option value="nutritionist" {{ old('role', $user->role ?? '') == 'nutritionist' ? 'selected' : '' }}>{{ __('Nutritionist') }}</option>
                                             @endif
+                                            @if(in_array('pharmacist', $availableRoles ?? []))
+                                                <option value="pharmacist" {{ old('role', $user->role ?? '') == 'pharmacist' ? 'selected' : '' }}>{{ __('Pharmacist') }}</option>
+                                            @endif
+                                            @if(in_array('lab_dept', $availableRoles ?? []))
+                                                <option value="lab_dept" {{ old('role', $user->role ?? '') == 'lab_dept' ? 'selected' : '' }}>{{ __('Lab Dept.') }}</option>
+                                            @endif
+                                            @if(in_array('radiology_dept', $availableRoles ?? []))
+                                                <option value="radiology_dept" {{ old('role', $user->role ?? '') == 'radiology_dept' ? 'selected' : '' }}>{{ __('Radiology Dept.') }}</option>
+                                            @endif
                                             @if(in_array('assistant', $availableRoles ?? []))
                                                 <option value="assistant" {{ old('role', $user->role ?? '') == 'assistant' ? 'selected' : '' }}>{{ __('Medical Assistant') }}</option>
                                             @endif
@@ -191,6 +200,15 @@
                                                         @break
                                                     @case('nutritionist')
                                                         {{ __('Specialized access to nutrition plans, diet management, food database, and patient dietary care.') }}
+                                                        @break
+                                                    @case('pharmacist')
+                                                        {{ __('Pharmacy operations: manage and verify prescriptions, and handle medicine inventory.') }}
+                                                        @break
+                                                    @case('lab_dept')
+                                                        {{ __('Laboratory operations: process lab requests and record results.') }}
+                                                        @break
+                                                    @case('radiology_dept')
+                                                        {{ __('Radiology operations: process imaging requests and record results.') }}
                                                         @break
                                                     @case('assistant')
                                                         {{ __('Patient management, appointment scheduling, and basic medical record access.') }}

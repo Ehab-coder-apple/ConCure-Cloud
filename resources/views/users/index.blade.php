@@ -52,9 +52,12 @@
                             <label for="role" class="form-label">{{ __('Role') }}</label>
                             <select class="form-select" id="role" name="role">
                                 <option value="">{{ __('All Roles') }}</option>
-                                <option value="program_owner" {{ request('role') == 'program_owner' ? 'selected' : '' }}>{{ __('Program Owner') }}</option>
                                 <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>{{ __('Administrator') }}</option>
                                 <option value="doctor" {{ request('role') == 'doctor' ? 'selected' : '' }}>{{ __('Doctor') }}</option>
+                                <option value="nutritionist" {{ request('role') == 'nutritionist' ? 'selected' : '' }}>{{ __('Nutritionist') }}</option>
+                                <option value="pharmacist" {{ request('role') == 'pharmacist' ? 'selected' : '' }}>{{ __('Pharmacist') }}</option>
+                                <option value="lab_dept" {{ request('role') == 'lab_dept' ? 'selected' : '' }}>{{ __('Lab Dept.') }}</option>
+                                <option value="radiology_dept" {{ request('role') == 'radiology_dept' ? 'selected' : '' }}>{{ __('Radiology Dept.') }}</option>
                                 <option value="assistant" {{ request('role') == 'assistant' ? 'selected' : '' }}>{{ __('Assistant') }}</option>
                                 <option value="nurse" {{ request('role') == 'nurse' ? 'selected' : '' }}>{{ __('Nurse') }}</option>
                                 <option value="accountant" {{ request('role') == 'accountant' ? 'selected' : '' }}>{{ __('Accountant') }}</option>
@@ -110,7 +113,7 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <div class="avatar bg-{{ $user->role == 'program_owner' ? 'danger' : ($user->role == 'admin' ? 'warning' : ($user->role == 'doctor' ? 'success' : 'info')) }} text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                <div class="avatar bg-{{ $user->role == 'admin' ? 'warning' : ($user->role == 'doctor' ? 'success' : 'info') }} text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
                                                     {{ strtoupper(substr($user->first_name ?? 'U', 0, 1) . substr($user->last_name ?? 'S', 0, 1)) }}
                                                 </div>
                                                 <div>
@@ -123,7 +126,7 @@
                                             <span class="badge bg-light text-dark">{{ $user->username ?? 'demo_user' }}</span>
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ $user->role == 'program_owner' ? 'danger' : ($user->role == 'admin' ? 'warning' : ($user->role == 'doctor' ? 'success' : 'info')) }}">
+                                            <span class="badge bg-{{ $user->role == 'admin' ? 'warning' : ($user->role == 'doctor' ? 'success' : 'info') }}">
                                                 {{ ucfirst(str_replace('_', ' ', $user->role ?? 'User')) }}
                                             </span>
                                         </td>
@@ -185,34 +188,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar bg-danger text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
-                                                    PO
-                                                </div>
-                                                <div>
-                                                    <div class="fw-bold">Program Owner</div>
-                                                    <small class="text-muted">program_owner@concure.com</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge bg-light text-dark">program_owner</span></td>
-                                        <td><span class="badge bg-danger">Program Owner</span></td>
-                                        <td><span class="badge bg-success">Active</span></td>
-                                        <td>{{ now()->format('M d, Y') }}</td>
-                                        <td>{{ now()->subDays(30)->format('M d, Y') }}</td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <a href="{{ route('users.show', 1) }}" class="btn btn-outline-primary" title="{{ __('View Details') }}">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="{{ route('users.edit', 1) }}" class="btn btn-outline-secondary" title="{{ __('Edit') }}">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
+
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">

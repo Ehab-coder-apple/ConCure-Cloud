@@ -372,12 +372,12 @@ class UserController extends Controller
     {
         // Super admin can manage all roles
         if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
-            return ['admin', 'doctor', 'nutritionist', 'assistant', 'nurse', 'accountant', 'patient'];
+            return ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'assistant', 'nurse', 'accountant', 'patient'];
         }
 
         // Clinic admin can manage clinic roles (including creating other admins)
         if (method_exists($user, 'isClinicAdmin') && $user->isClinicAdmin()) {
-            return ['admin', 'doctor', 'nutritionist', 'assistant', 'nurse', 'accountant', 'patient'];
+            return ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'assistant', 'nurse', 'accountant', 'patient'];
         }
 
         // Doctors can only manage assistants

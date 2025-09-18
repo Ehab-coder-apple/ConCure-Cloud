@@ -73,6 +73,9 @@ class User extends Authenticatable
         'admin' => 'Admin',
         'doctor' => 'Doctor',
         'nutritionist' => 'Nutritionist',
+        'pharmacist' => 'Pharmacist',
+        'lab_dept' => 'Lab Dept.',
+        'radiology_dept' => 'Radiology Dept.',
         'assistant' => 'Assistant',
         'nurse' => 'Nurse',
         'accountant' => 'Accountant',
@@ -246,6 +249,9 @@ class User extends Authenticatable
         $defaultPrefixes = [
             'doctor' => 'Dr.',
             'nutritionist' => 'Nutritionist',
+            'pharmacist' => 'Pharmacist',
+            'lab_dept' => 'Lab',
+            'radiology_dept' => 'Radiology',
             'nurse' => 'Nurse',
             'admin' => null,
             'assistant' => null,
@@ -264,6 +270,9 @@ class User extends Authenticatable
         $prefixes = [
             'doctor' => ['Dr.', 'Prof.', 'Prof. Dr.', 'Assoc. Prof.', 'Asst. Prof.'],
             'nutritionist' => ['Nutritionist', 'Clinical Nutritionist', 'Registered Dietitian', 'RD', 'RDN'],
+            'pharmacist' => ['Pharmacist', 'RPh', 'PharmD'],
+            'lab_dept' => ['Mr.', 'Ms.', 'Mrs.', 'Lab Tech'],
+            'radiology_dept' => ['Mr.', 'Ms.', 'Mrs.', 'Radiology'],
             'nurse' => ['Nurse', 'RN', 'LPN', 'Nurse Practitioner', 'NP'],
             'admin' => ['Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Prof.'],
             'assistant' => ['Mr.', 'Ms.', 'Mrs.'],
@@ -758,6 +767,25 @@ class User extends Authenticatable
                 'radiology_view', 'radiology_create', 'radiology_edit', 'radiology_manage', 'radiology_delete',
                 'food_database_view', 'food_database_create', 'food_database_edit', 'food_database_import', 'food_database_groups', 'food_database_delete',
                 'reports_view', 'reports_generate',
+            ],
+            'pharmacist' => [
+                // Pharmacy operations
+                'dashboard_view',
+                'prescriptions_view', 'prescriptions_edit', 'prescriptions_print',
+                'medicines_view', 'medicines_inventory',
+                'reports_view',
+            ],
+            'lab_dept' => [
+                // Laboratory operations
+                'dashboard_view',
+                'lab_requests_view', 'lab_requests_edit',
+                'reports_view',
+            ],
+            'radiology_dept' => [
+                // Radiology operations
+                'dashboard_view',
+                'radiology_view', 'radiology_edit',
+                'reports_view',
             ],
             'assistant' => [
                 // Administrative support
