@@ -104,6 +104,26 @@
     return res.json();
   }
 
+
+  // Open prescription with smart fallback (handles simple vs complex)
+  window.openPrescriptionSmart = function(id, isSimple) {
+    if (!id) return;
+    try {
+      if (isSimple === true) {
+        window.open(`/simple-prescriptions/${id}`, '_blank');
+        return;
+      }
+      fetch(`/prescriptions/${id}`, { method: 'GET', headers: { 'Accept': 'text/html' }, credentials: 'same-origin' })
+        .then(res => {
+          if (res && res.ok) window.open(`/prescriptions/${id}`, '_blank');
+          else window.open(`/simple-prescriptions/${id}`, '_blank');
+        })
+        .catch(() => window.open(`/simple-prescriptions/${id}`, '_blank'));
+    } catch (_e) {
+      window.open(`/simple-prescriptions/${id}`, '_blank');
+    }
+  };
+
   function renderConversations() {
     el.conversationsList.innerHTML = '';
     state.conversations.forEach(c => {
@@ -152,7 +172,7 @@
                 ${pname ? `<div><span class="text-muted small">Patient:</span> <a href="${patientLink}" target="_blank">${pname}</a></div>` : ''}
                 ${(() => { const ref = t?.metadata?.request_number || t?.metadata?.plan_number || t?.metadata?.prescription_number; return ref ? `<div class="small text-muted mt-1">Ref: ${ref}</div>` : '' })()}
                 ${note ? `<div class="small mt-1">Note: ${note.replace(/</g,'&lt;')}</div>` : ''}
-                ${(() => { let label=null, href=null; switch(t.transfer_type){ case 'lab_request': if(t.source_id){label='Open Lab Request'; href=`/recommendations/lab-requests/${t.source_id}`;} break; case 'radiology_request': if(t.source_id){label='Open Radiology Request'; href=`/recommendations/radiology/${t.source_id}`;} break; case 'prescription': if(t.source_id){label='Open Prescription'; const isSimple = !!(t && t.metadata && (t.metadata.simple === true || t.metadata.type === 'simple')); href = isSimple ? `/simple-prescriptions/${t.source_id}` : `/prescriptions/${t.source_id}`;} break; case 'nutrition_plan': if(t.source_id){label='Open Nutrition Plan'; href=`/nutrition/${t.source_id}`;} break;} return href ? `<div class=\"mt-2\"><a class=\"btn btn-sm btn-outline-dark\" href=\"${href}\" target=\"_blank\">${label}</a></div>` : '' })()}
+                ${(() => { let label=null, inner=null; switch(t.transfer_type){ case 'lab_request': if(t.source_id){label='Open Lab Request'; inner=`<a class=\"btn btn-sm btn-outline-dark\" href=\"/recommendations/lab-requests/${t.source_id}\" target=\"_blank\">${label}</a>`;} break; case 'radiology_request': if(t.source_id){label='Open Radiology Request'; inner=`<a class=\"btn btn-sm btn-outline-dark\" href=\"/recommendations/radiology/${t.source_id}\" target=\"_blank\">${label}</a>`;} break; case 'prescription': if(t.source_id){label='Open Prescription'; const isSimple = !!(t && t.metadata && (t.metadata.simple === true || t.metadata.type === 'simple')); inner=`<button class=\"btn btn-sm btn-outline-dark\" onclick=\"openPrescriptionSmart(${t.source_id}, ${isSimple ? 'true' : 'false'})\">${label}</button>`;} break; case 'nutrition_plan': if(t.source_id){label='Open Nutrition Plan'; inner=`<a class=\"btn btn-sm btn-outline-dark\" href=\"/nutrition/${t.source_id}\" target=\"_blank\">${label}</a>`;} break;} return inner ? `<div class=\"mt-2\">${inner}</div>` : '' })()}
                 ${reportLink ? `<div class="mt-2"><a class="btn btn-sm btn-outline-primary" href="${reportLink}" target="_blank">Open Patient Report</a></div>` : ''}
               </div>
               <div class="mt-3 d-flex gap-2">
