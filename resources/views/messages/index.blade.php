@@ -105,22 +105,28 @@
   }
 
 
-  // Open prescription with smart fallback (handles simple vs complex)
+  // Open prescription with smart fallback (handles simple vs complex) and avoid popup blockers
   window.openPrescriptionSmart = function(id, isSimple) {
     if (!id) return;
+    // Open a placeholder window synchronously (user gesture) so later navigation isn't blocked
+    const w = window.open('', '_blank');
     try {
       if (isSimple === true) {
-        window.open(`/simple-prescriptions/${id}`, '_blank');
+        if (w) w.location.href = `/simple-prescriptions/${id}`; else window.location.assign(`/simple-prescriptions/${id}`);
         return;
       }
-      fetch(`/prescriptions/${id}`, { method: 'GET', headers: { 'Accept': 'text/html' }, credentials: 'same-origin' })
+      // Try HEAD to the complex route; if not ok, fall back to simple
+      fetch(`/prescriptions/${id}`, { method: 'HEAD', headers: { 'Accept': 'text/html' }, credentials: 'same-origin' })
         .then(res => {
-          if (res && res.ok) window.open(`/prescriptions/${id}`, '_blank');
-          else window.open(`/simple-prescriptions/${id}`, '_blank');
+          if (res && res.ok) {
+            if (w) w.location.href = `/prescriptions/${id}`; else window.location.assign(`/prescriptions/${id}`);
+          } else {
+            if (w) w.location.href = `/simple-prescriptions/${id}`; else window.location.assign(`/simple-prescriptions/${id}`);
+          }
         })
-        .catch(() => window.open(`/simple-prescriptions/${id}`, '_blank'));
+        .catch(() => { if (w) w.location.href = `/simple-prescriptions/${id}`; else window.location.assign(`/simple-prescriptions/${id}`); });
     } catch (_e) {
-      window.open(`/simple-prescriptions/${id}`, '_blank');
+      if (w) w.location.href = `/simple-prescriptions/${id}`; else window.location.assign(`/simple-prescriptions/${id}`);
     }
   };
 
