@@ -22,7 +22,16 @@
                                class="btn btn-danger btn-sm" title="{{ __('Download PDF') }}">
                                 <i class="fas fa-file-pdf"></i>
                             </a>
-                            <a href="{{ route('messages.index') }}"
+                            <a href="{{ route('messages.index') }}?prefill_transfer={{ urlencode(base64_encode(json_encode([
+                                 'transfer_type' => 'prescription',
+                                 'patient_id' => $prescription->patient->id ?? 0,
+                                 'source_type' => 'prescription',
+                                 'source_id' => $prescription->id ?? 0,
+                                 'metadata' => [
+                                   'patient_name' => ($prescription->patient->first_name ?? 'Demo').' '.($prescription->patient->last_name ?? 'Patient'),
+                                   'prescription_number' => $prescription->prescription_number ?? ''
+                                 ]
+                               ]))) }}"
                                class="btn btn-warning btn-sm" title="{{ __('Share Internally') }}"
                                onclick="try{var v=JSON.stringify({
                                  transfer_type:'prescription',
@@ -30,7 +39,7 @@
                                  source_type:'prescription',
                                  source_id: {{ $prescription->id ?? 0 }},
                                  metadata:{ patient_name:@json(($prescription->patient->first_name ?? 'Demo').' '.($prescription->patient->last_name ?? 'Patient')), prescription_number:@json($prescription->prescription_number ?? '') }
-                               }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v); this.href=this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));}catch(e){}">
+                               }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v);}catch(e){}">
                                 <i class="fas fa-share-nodes"></i>
                             </a>
                             <a href="{{ route('simple-prescriptions.edit', $prescription->id) }}"
