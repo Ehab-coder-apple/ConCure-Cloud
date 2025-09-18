@@ -34,7 +34,7 @@
                          transfer_type:'prescription', patient_id: {{ $prescription->patient_id ?? ($prescription->patient->id ?? 0) }},
                          source_type:'prescription', source_id: {{ $prescription->id ?? 0 }},
                          metadata:{ patient_name:@json(($prescription->patient->first_name ?? 'Demo') . ' ' . ($prescription->patient->last_name ?? 'Patient')), prescription_number:@json($prescription->prescription_number ?? '') }
-                       }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v);}catch(e){}">
+                       }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v); this.href=this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));}catch(e){}">
                         <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
                     <a href="{{ route('prescriptions.edit', $prescription->id ?? 1) }}" class="btn btn-primary">
