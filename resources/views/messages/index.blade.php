@@ -71,7 +71,7 @@
 <script>
 (function() {
   const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
-  const headers = csrf ? { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json', 'Content-Type': 'application/json' } : { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+  const headers = csrf ? { 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Content-Type': 'application/json' } : { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Content-Type': 'application/json' };
 
   let state = {
     conversations: [],
@@ -91,12 +91,12 @@
   };
 
   async function getJSON(url) {
-    const res = await fetch(url, { headers });
+    const res = await fetch(url, { headers, credentials: 'same-origin' });
     if (!res.ok) throw new Error('Request failed: ' + res.status);
     return res.json();
   }
   async function postJSON(url, body) {
-    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body || {}) });
+    const res = await fetch(url, { method: 'POST', headers, credentials: 'same-origin', body: JSON.stringify(body || {}) });
     if (!res.ok) {
       const txt = await res.text();
       throw new Error('Request failed: ' + res.status + ' ' + txt);
@@ -333,7 +333,8 @@
       await selectConversation(convId);
       await refreshUnread();
     } catch (e) {
-      alert('Failed to create conversation');
+      console.error(e);
+      alert('Failed to create conversation: ' + (e.message || ''));
     } finally {
       createConvBtn.disabled = false;
     }
