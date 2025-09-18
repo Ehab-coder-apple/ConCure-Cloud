@@ -29,7 +29,8 @@
                                  'source_id' => $prescription->id ?? 0,
                                  'metadata' => [
                                    'patient_name' => ($prescription->patient->first_name ?? 'Demo').' '.($prescription->patient->last_name ?? 'Patient'),
-                                   'prescription_number' => $prescription->prescription_number ?? ''
+                                   'prescription_number' => $prescription->prescription_number ?? '',
+                                   'simple' => true
                                  ]
                                ]))) }}"
                                class="btn btn-warning btn-sm" title="{{ __('Share Internally') }}"
@@ -38,7 +39,7 @@
                                  patient_id: {{ $prescription->patient->id ?? 0 }},
                                  source_type:'prescription',
                                  source_id: {{ $prescription->id ?? 0 }},
-                                 metadata:{ patient_name:@json(($prescription->patient->first_name ?? 'Demo').' '.($prescription->patient->last_name ?? 'Patient')), prescription_number:@json($prescription->prescription_number ?? '') }
+                                 metadata:{ patient_name:@json(($prescription->patient->first_name ?? 'Demo').' '.($prescription->patient->last_name ?? 'Patient')), prescription_number:@json($prescription->prescription_number ?? ''), simple:true }
                                }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v);}catch(e){}">
                                 <i class="fas fa-share-nodes"></i>
                             </a>
