@@ -371,7 +371,16 @@
         // try base64
         try { preset = JSON.parse(atob(prefill)); } catch (_) { preset = null; }
       }
-      if (preset) openNewConvModal(preset);
+      if (preset) {
+        openNewConvModal(preset);
+        // Fallback: if modal didn’t become visible (race with focus/ARIA), force show shortly after
+        setTimeout(() => {
+          const isOpen = newConvModalEl.classList.contains('show') || newConvModalEl.getAttribute('aria-hidden') === 'false';
+          if (!isOpen) {
+            try { newConvModal.show(); } catch (_) {}
+          }
+        }, 200);
+      }
     }
   } catch (_) {}
 
