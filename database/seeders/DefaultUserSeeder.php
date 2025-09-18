@@ -22,7 +22,7 @@ class DefaultUserSeeder extends Seeder
             'first_name' => 'Program',
             'last_name' => 'Owner',
             'phone' => '+1234567890',
-            'role' => 'program_owner',
+            'role' => 'admin',
             'is_active' => true,
             'activated_at' => now(),
             'language' => 'en',
@@ -45,7 +45,6 @@ class DefaultUserSeeder extends Seeder
             'is_active' => true,
             'max_users' => 20,
             'activated_at' => now(),
-            'subscription_expires_at' => now()->addYear(),
             'created_at' => now(),
             'updated_at' => now(),
         ]);

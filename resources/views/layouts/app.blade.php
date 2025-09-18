@@ -18,49 +18,49 @@
             --primary-dark: {{ $primaryColor ? 'color-mix(in srgb, ' . $primaryColor . ' 80%, black)' : '#006666' }};
             --primary-light: {{ $primaryColor ? 'color-mix(in srgb, ' . $primaryColor . ' 20%, white)' : '#e6f7f7' }};
         }
-        
+
         body {
             font-family: 'Figtree', sans-serif;
             background-color: #f8fafc;
         }
-        
+
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
         }
-        
+
         .btn-primary:hover {
             background-color: var(--primary-dark);
             border-color: var(--primary-dark);
         }
-        
+
         .text-primary {
             color: var(--primary-color) !important;
         }
-        
+
         .bg-primary {
             background-color: var(--primary-color) !important;
         }
-        
+
         .border-primary {
             border-color: var(--primary-color) !important;
         }
-        
+
         .navbar-brand {
             font-weight: 600;
             color: var(--primary-color) !important;
         }
-        
+
         .card {
             border: none;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         }
-        
+
         .form-control:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(0, 128, 128, 0.25);
         }
-        
+
         /* Language switcher styles moved to bottom of CSS */
 
         /* Sidebar Layout Overrides */
@@ -663,6 +663,16 @@
                         </li>
                         @endif
 
+                            <!-- Messages -->
+                            <li class="nav-item">
+                                <a href="{{ route('messages.index') }}" class="nav-link {{ request()->routeIs('messages.*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-inbox"></i>
+                                    <span class="nav-text">{{ __('Messages') }}</span>
+                                    <span class="badge bg-danger ms-auto" id="sidebarUnread">0</span>
+                                </a>
+                            </li>
+
+
                         <!-- Prescriptions -->
                         @if(Auth::user()->canAccessSection('prescriptions'))
                         <li class="nav-item">
@@ -987,6 +997,21 @@
                 if (submenu) {
                     submenu.style.maxHeight = submenu.scrollHeight + 'px';
                 }
+
+	            // Sidebar unread badge for Messages
+	            async function refreshSidebarUnread() {
+	                try {
+	                    const badge = document.getElementById('sidebarUnread');
+	                    if (!badge) return;
+	                    const res = await fetch('/messages/unread-count', { headers: { 'Accept': 'application/json' } });
+	                    if (!res.ok) return;
+	                    const data = await res.json();
+	                    badge.textContent = data.unread ?? 0;
+	                } catch (_) {}
+	            }
+	            refreshSidebarUnread();
+	            setInterval(refreshSidebarUnread, 20000);
+
             }
 
             // Close sidebar on window resize for desktop

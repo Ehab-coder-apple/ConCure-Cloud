@@ -20,7 +20,6 @@ class ClinicSeeder extends Seeder
             'is_active' => true,
             'max_users' => 50,
             'activated_at' => now(),
-            'subscription_expires_at' => now()->addYear(),
             'created_at' => now(),
             'updated_at' => now(),
         ]);

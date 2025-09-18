@@ -18,6 +18,7 @@ use App\Http\Controllers\FoodGroupController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\MainWelcomeController;
+use App\Http\Controllers\MessagingController;
 
 
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -141,10 +142,10 @@ Route::get('/clinic-activation-required', function () {
 
 // Protected routes
 Route::middleware(['auth', 'activation'])->group(function () {
-    
+
     // Tenant Dashboard (Clinic Users Only)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Patient Management
     Route::prefix('patients')->name('patients.')->group(function () {
         Route::get('/', [PatientController::class, 'index'])->name('index');
@@ -329,7 +330,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
     // Recommendations
     Route::prefix('recommendations')->name('recommendations.')->group(function () {
         Route::get('/', [RecommendationController::class, 'index'])->name('index');
-        
+
         // Lab Requests
         Route::get('/lab-requests', [RecommendationController::class, 'labRequests'])->name('lab-requests');
         Route::post('/lab-requests', [RecommendationController::class, 'storeLabRequest'])->name('lab-requests.store');
@@ -557,17 +558,17 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
             return redirect()->back()->with('success', "Granted lab request permissions to {$targetUser->full_name}");
         })->name('grant-lab-permissions');
-        
+
         // Prescriptions
         Route::get('/prescriptions', [RecommendationController::class, 'prescriptions'])->name('prescriptions');
         Route::post('/prescriptions', [RecommendationController::class, 'storePrescription'])->name('prescriptions.store');
-        
+
         // Diet Plans
         Route::get('/diet-plans', [RecommendationController::class, 'dietPlans'])->name('diet-plans');
         Route::post('/diet-plans', [RecommendationController::class, 'storeDietPlan'])->name('diet-plans.store');
         Route::get('/diet-plans/{dietPlan}/pdf', [RecommendationController::class, 'generateDietPlanPDF'])->name('diet-plans.pdf');
     });
-    
+
     // Food Composition
     Route::prefix('foods')->name('foods.')->group(function () {
         Route::get('/', [FoodController::class, 'index'])->name('index');
@@ -604,11 +605,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::delete('/{foodGroup}', [FoodGroupController::class, 'destroy'])->name('destroy');
         Route::get('/api/list', [FoodGroupController::class, 'api'])->name('api');
     });
-    
+
     // Finance Module
     Route::prefix('finance')->name('finance.')->middleware('role:admin,accountant')->group(function () {
         Route::get('/', [FinanceController::class, 'index'])->name('index');
-        
+
         // Invoices
         Route::get('/invoices', [FinanceController::class, 'invoices'])->name('invoices');
         Route::post('/invoices', [FinanceController::class, 'storeInvoice'])->name('invoices.store');
@@ -619,19 +620,19 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/invoices/{invoice}/public-pdf-url', [FinanceController::class, 'getPublicPdfUrl'])->name('invoices.public-pdf-url');
         Route::get('/invoices/{invoice}/email-form', [FinanceController::class, 'showEmailForm'])->name('invoices.email-form');
         Route::post('/invoices/{invoice}/email', [FinanceController::class, 'emailInvoice'])->name('invoices.email');
-        
+
         // Expenses
         Route::get('/expenses', [FinanceController::class, 'expenses'])->name('expenses');
         Route::post('/expenses', [FinanceController::class, 'storeExpense'])->name('expenses.store');
         Route::post('/expenses/{expense}/approve', [FinanceController::class, 'approveExpense'])->name('expenses.approve');
         Route::post('/expenses/{expense}/reject', [FinanceController::class, 'rejectExpense'])->name('expenses.reject');
-        
+
         // Reports
         Route::get('/reports', [FinanceController::class, 'reports'])->name('reports');
         Route::get('/reports/cash-flow', [FinanceController::class, 'cashFlowReport'])->name('reports.cash-flow');
         Route::get('/reports/profit-loss', [FinanceController::class, 'profitLossReport'])->name('reports.profit-loss');
     });
-    
+
     // Advertisements
     Route::prefix('advertisements')->name('advertisements.')->group(function () {
         Route::get('/', [AdvertisementController::class, 'index'])->name('index');
@@ -645,7 +646,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/{advertisement}/click', [AdvertisementController::class, 'trackClick'])->name('click');
         Route::get('/display', [AdvertisementController::class, 'getForDisplay'])->name('display');
     });
-    
+
     // User Management
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index')->middleware('can:view-users');
@@ -675,6 +676,24 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/setup-status', [App\Http\Controllers\WhatsAppController::class, 'checkSetupStatus'])->name('setup-status');
         Route::get('/qr', [App\Http\Controllers\WhatsAppController::class, 'qrCode'])->name('qr');
     });
+
+	    // Internal Messaging & Transfers
+	    Route::prefix('messages')->name('messages.')->group(function () {
+	        // UI Page
+	        Route::get('/', [\App\Http\Controllers\MessagesPageController::class, 'index'])->name('index');
+
+	        // API Endpoints
+	        Route::get('/conversations', [MessagingController::class, 'conversations'])->name('conversations');
+	        Route::post('/conversations', [MessagingController::class, 'createConversation'])->name('conversations.create');
+	        Route::get('/conversations/{conversation}/messages', [MessagingController::class, 'conversationMessages'])->name('conversations.messages');
+	        Route::post('/send', [MessagingController::class, 'sendMessage'])->name('send');
+	        Route::post('/{conversation}/read', [MessagingController::class, 'markRead'])->name('read');
+	        Route::get('/unread-count', [MessagingController::class, 'unreadCount'])->name('unread-count');
+	        Route::post('/transfers/{transfer}/action', [MessagingController::class, 'transferAction'])->name('transfers.action');
+                Route::get('/recipients', [MessagingController::class, 'recipients'])->name('recipients');
+
+	    });
+
 
     // Settings
     Route::prefix('settings')->name('settings.')->group(function () {

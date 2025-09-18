@@ -68,7 +68,13 @@
                         <i class="fas fa-prescription-bottle-alt me-1"></i>
                         {{ __('Prescription') }}
                     </button>
+                        <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary btn-sm ms-1" onclick="try{localStorage.setItem('prefill_transfer', JSON.stringify({transfer_type:'patient_file',patient_id:{{ $patient->id ?? 0 }},source_type:'patient',source_id:{{ $patient->id ?? 0 }},metadata:{patient_name:@json($patient->full_name ?? (($patient->first_name ?? 'Demo').' '.($patient->last_name ?? 'Patient')))}}));}catch(e){}">
+                            <i class="fas fa-share-nodes me-1"></i>
+                            {{ __('Share Internally') }}
+                        </a>
+
                 </div>
+
             </div>
 
             <div class="row">
@@ -89,7 +95,7 @@
                                 <h5 class="mb-1">{{ ($patient->first_name ?? 'Demo') . ' ' . ($patient->last_name ?? 'Patient') }}</h5>
                                 <span class="badge bg-primary">{{ $patient->patient_id ?? 'P000001' }}</span>
                             </div>
-                            
+
                             <div class="row g-2">
                                 <div class="col-6">
                                     <small class="text-muted">{{ __('Age') }}</small>
@@ -817,6 +823,8 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
     const url = this.action + '?' + params.toString();
 
     // Open in new tab
+
+
     window.open(url, '_blank');
 
     // Close modal
