@@ -353,13 +353,25 @@
     }
   });
 
-  // Prefill flow from other pages
+  // Prefill flow from other pages (robust: localStorage, sessionStorage, ?prefill_transfer=)
   try {
-    const prefill = localStorage.getItem('prefill_transfer');
+    let prefill = localStorage.getItem('prefill_transfer') || sessionStorage.getItem('prefill_transfer');
+    if (!prefill) {
+      const qs = new URLSearchParams(location.search);
+      const qp = qs.get('prefill_transfer');
+      if (qp) {
+        try { prefill = decodeURIComponent(qp); } catch (_) { prefill = qp; }
+      }
+    }
     if (prefill) {
       localStorage.removeItem('prefill_transfer');
-      const preset = JSON.parse(prefill);
-      openNewConvModal(preset);
+      sessionStorage.removeItem('prefill_transfer');
+      let preset = null;
+      try { preset = JSON.parse(prefill); } catch (_e) {
+        // try base64
+        try { preset = JSON.parse(atob(prefill)); } catch (_) { preset = null; }
+      }
+      if (preset) openNewConvModal(preset);
     }
   } catch (_) {}
 

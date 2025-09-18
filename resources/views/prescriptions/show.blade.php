@@ -30,11 +30,11 @@
                         {{ __('Print') }}
                     </button>
                     <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary me-2"
-                       onclick="try{localStorage.setItem('prefill_transfer', JSON.stringify({
+                       onclick="try{var v=JSON.stringify({
                          transfer_type:'prescription', patient_id: {{ $prescription->patient_id ?? ($prescription->patient->id ?? 0) }},
                          source_type:'prescription', source_id: {{ $prescription->id ?? 0 }},
                          metadata:{ patient_name:@json(($prescription->patient->first_name ?? 'Demo') . ' ' . ($prescription->patient->last_name ?? 'Patient')), prescription_number:@json($prescription->prescription_number ?? '') }
-                       }));}catch(e){}">
+                       }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v);}catch(e){}">
                         <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
                     <a href="{{ route('prescriptions.edit', $prescription->id ?? 1) }}" class="btn btn-primary">
