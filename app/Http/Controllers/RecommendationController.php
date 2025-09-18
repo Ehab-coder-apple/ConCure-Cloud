@@ -212,7 +212,7 @@ class RecommendationController extends Controller
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to lab request.');
         }
-        if (!$user->canAccessDoctor($labRequest->doctor_id)) {
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->canAccessDoctor($labRequest->doctor_id)) {
             abort(403, 'You are not allowed to access this doctor\'s lab requests.');
         }
 
@@ -309,7 +309,7 @@ class RecommendationController extends Controller
             abort(403, 'Unauthorized access to lab request.');
         }
         // Ensure assistants/doctors can only access assigned doctor data
-        if (!$user->canAccessDoctor($labRequest->doctor_id)) {
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->canAccessDoctor($labRequest->doctor_id)) {
             abort(403, 'You are not allowed to access this doctor\'s lab requests.');
         }
 
@@ -343,7 +343,7 @@ class RecommendationController extends Controller
             abort(403, 'Unauthorized access to lab request.');
         }
         // Ensure assistants/doctors can only access assigned doctor data
-        if (!$user->canAccessDoctor($labRequest->doctor_id)) {
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->canAccessDoctor($labRequest->doctor_id)) {
             abort(403, 'You are not allowed to access this doctor\'s lab requests.');
         }
 
