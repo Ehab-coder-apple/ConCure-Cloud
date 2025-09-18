@@ -67,6 +67,7 @@
 </div>
 
 
+@push('scripts')
 <script>
 (function() {
   const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -362,5 +363,6 @@
   setInterval(refreshConversations, 15000);
 })();
 </script>
+@endpush
 @endsection
 
