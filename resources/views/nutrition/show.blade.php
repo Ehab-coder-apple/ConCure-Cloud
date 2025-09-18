@@ -45,6 +45,14 @@
                         <i class="fas fa-weight me-1"></i>
                         {{ __('Weight Tracking') }}
                     </a>
+                    <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary"
+                       onclick="try{localStorage.setItem('prefill_transfer', JSON.stringify({
+                         transfer_type:'nutrition_plan', patient_id: {{ $dietPlan->patient_id }},
+                         source_type:'nutrition_plan', source_id: {{ $dietPlan->id }},
+                         metadata:{ patient_name:@json($dietPlan->patient->full_name ?? ''), plan_title:@json($dietPlan->title ?? ''), plan_number:@json($dietPlan->plan_number ?? '') }
+                       }));}catch(e){}">
+                        <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
+                    </a>
                     <button type="button" class="btn btn-success" onclick="shareOnWhatsApp()">
                         <i class="fab fa-whatsapp me-1"></i>
                         {{ __('Send via WhatsApp') }}

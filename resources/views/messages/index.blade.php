@@ -150,7 +150,9 @@
               </div>
               <div class="mt-2">
                 ${pname ? `<div><span class="text-muted small">Patient:</span> <a href="${patientLink}" target="_blank">${pname}</a></div>` : ''}
+                ${(() => { const ref = t?.metadata?.request_number || t?.metadata?.plan_number || t?.metadata?.prescription_number; return ref ? `<div class="small text-muted mt-1">Ref: ${ref}</div>` : '' })()}
                 ${note ? `<div class="small mt-1">Note: ${note.replace(/</g,'&lt;')}</div>` : ''}
+                ${(() => { let label=null, href=null; switch(t.transfer_type){ case 'lab_request': if(t.source_id){label='Open Lab Request'; href=`/recommendations/lab-requests/${t.source_id}`;} break; case 'radiology_request': if(t.source_id){label='Open Radiology Request'; href=`/recommendations/radiology/${t.source_id}`;} break; case 'prescription': if(t.source_id){label='Open Prescription'; href=`/prescriptions/${t.source_id}`;} break; case 'nutrition_plan': if(t.source_id){label='Open Nutrition Plan'; href=`/nutrition/${t.source_id}`;} break;} return href ? `<div class=\"mt-2\"><a class=\"btn btn-sm btn-outline-dark\" href=\"${href}\" target=\"_blank\">${label}</a></div>` : '' })()}
                 ${reportLink ? `<div class="mt-2"><a class="btn btn-sm btn-outline-primary" href="${reportLink}" target="_blank">Open Patient Report</a></div>` : ''}
               </div>
               <div class="mt-3 d-flex gap-2">

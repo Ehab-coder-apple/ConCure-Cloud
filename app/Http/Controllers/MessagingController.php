@@ -338,6 +338,8 @@ class MessagingController extends Controller
                         'status' => $m->transfer->status,
                         'transfer_type' => $m->transfer->transfer_type,
                         'patient_id' => $m->transfer->patient_id,
+                        'source_type' => $m->transfer->source_type,
+                        'source_id' => $m->transfer->source_id,
                         'metadata' => $m->transfer->metadata,
                         'patient' => $m->transfer->patient ? [
                             'id' => $m->transfer->patient->id,

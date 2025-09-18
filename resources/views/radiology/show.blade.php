@@ -18,9 +18,17 @@
                     </p>
                 </div>
                 <div>
-                    <a href="{{ route('recommendations.radiology.index') }}" class="btn btn-outline-secondary">
+                    <a href="{{ route('recommendations.radiology.index') }}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back to Requests') }}
+                    </a>
+                    <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary"
+                       onclick="try{localStorage.setItem('prefill_transfer', JSON.stringify({
+                         transfer_type:'radiology_request', patient_id: {{ $radiologyRequest->patient_id }},
+                         source_type:'radiology_request', source_id: {{ $radiologyRequest->id }},
+                         metadata:{ patient_name:@json($radiologyRequest->patient->full_name ?? ''), request_number:@json($radiologyRequest->request_number ?? '') }
+                       }));}catch(e){}">
+                        <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
                 </div>
             </div>
