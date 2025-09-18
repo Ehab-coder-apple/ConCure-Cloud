@@ -27,13 +27,14 @@
                         <i class="fas fa-file-pdf me-1"></i>
                         {{ __('Download PDF') }}
                     </a>
-                    <a href="{{ route('messages.index') }}" class="btn btn-warning me-2" title="{{ __('Share Internally (Messages)') }}"
+                    <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary me-2 px-3" title="{{ __('Share Internally (Messages)') }}"
                        onclick="try{var v=JSON.stringify({
                          transfer_type:'lab_request', patient_id: {{ $labRequest->patient_id }},
                          source_type:'lab_request', source_id: {{ $labRequest->id }},
                          metadata:{ patient_name:@json($labRequest->patient->full_name ?? ''), request_number:@json($labRequest->request_number ?? '') }
                        }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v); this.href=this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));}catch(e){}">
-                        <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
+                        <i class="fas fa-share-nodes me-1"></i>
+                        <span class="d-none d-sm-inline">{{ __('Share Internally') }}</span>
                     </a>
                     @if(
                         ($labRequest->status === 'pending' && !$labRequest->isSent()) ||
