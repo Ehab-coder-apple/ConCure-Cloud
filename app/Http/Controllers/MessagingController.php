@@ -318,7 +318,7 @@ class MessagingController extends Controller
         if (! $conversation->participants()->where('user_id', $user->id)->exists()) abort(403);
 
         $messages = $conversation->messages()
-            ->with(['sender:id,first_name,last_name,role', 'transfer'])
+            ->with(['sender:id,first_name,last_name,role', 'transfer.patient'])
             ->orderBy('id')
             ->limit(50)
             ->get()
@@ -338,6 +338,11 @@ class MessagingController extends Controller
                         'status' => $m->transfer->status,
                         'transfer_type' => $m->transfer->transfer_type,
                         'patient_id' => $m->transfer->patient_id,
+                        'metadata' => $m->transfer->metadata,
+                        'patient' => $m->transfer->patient ? [
+                            'id' => $m->transfer->patient->id,
+                            'full_name' => $m->transfer->patient->full_name ?? trim(($m->transfer->patient->first_name.' '.$m->transfer->patient->last_name)),
+                        ] : null,
                     ] : null,
                 ];
             });

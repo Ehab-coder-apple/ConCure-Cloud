@@ -132,17 +132,28 @@
       const when = new Date(m.created_at).toLocaleString();
       let inner = '';
       if (m.type === 'transfer' && m.transfer) {
+        const t = m.transfer;
+        const p = t.patient;
+        const pname = t?.metadata?.patient_name || p?.full_name || (p ? ('Patient #' + p.id) : (t.patient_id ? ('Patient #' + t.patient_id) : ''));
+        const patientLink = t.patient_id ? `/patients/${t.patient_id}` : null;
+        const reportLink = t.patient_id ? `/patients/${t.patient_id}/report` : null;
+        const note = (t?.metadata?.note || '').trim();
         inner = `
           <div class="card">
             <div class="card-body">
               <div class="d-flex justify-content-between">
                 <div>
-                  <div class="fw-semibold">Transfer: ${m.transfer.transfer_type.replace('_',' ')}</div>
+                  <div class="fw-semibold">Transfer: ${t.transfer_type.replace('_',' ')}</div>
                   <div class="text-muted small">From ${name} • ${when}</div>
                 </div>
-                <span class="badge bg-secondary">${m.transfer.status}</span>
+                <span class="badge bg-secondary text-uppercase">${t.status}</span>
               </div>
-              <div class="mt-2 d-flex gap-2">
+              <div class="mt-2">
+                ${pname ? `<div><span class="text-muted small">Patient:</span> <a href="${patientLink}" target="_blank">${pname}</a></div>` : ''}
+                ${note ? `<div class="small mt-1">Note: ${note.replace(/</g,'&lt;')}</div>` : ''}
+                ${reportLink ? `<div class="mt-2"><a class="btn btn-sm btn-outline-primary" href="${reportLink}" target="_blank">Open Patient Report</a></div>` : ''}
+              </div>
+              <div class="mt-3 d-flex gap-2">
                 <button class="btn btn-sm btn-success" data-action="accept">Accept</button>
                 <button class="btn btn-sm btn-outline-danger" data-action="reject">Reject</button>
                 <button class="btn btn-sm btn-outline-secondary" data-action="acknowledge">Acknowledge</button>
