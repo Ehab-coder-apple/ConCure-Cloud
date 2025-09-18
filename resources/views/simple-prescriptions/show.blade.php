@@ -22,6 +22,17 @@
                                class="btn btn-danger btn-sm" title="{{ __('Download PDF') }}">
                                 <i class="fas fa-file-pdf"></i>
                             </a>
+                            <a href="{{ route('messages.index') }}"
+                               class="btn btn-warning btn-sm" title="{{ __('Share Internally') }}"
+                               onclick="try{localStorage.setItem('prefill_transfer', JSON.stringify({
+                                 transfer_type:'prescription',
+                                 patient_id: {{ $prescription->patient->id ?? 0 }},
+                                 source_type:'prescription',
+                                 source_id: {{ $prescription->id ?? 0 }},
+                                 metadata:{ patient_name:@json(($prescription->patient->first_name ?? 'Demo').' '.($prescription->patient->last_name ?? 'Patient')), prescription_number:@json($prescription->prescription_number ?? '') }
+                               }));}catch(e){}">
+                                <i class="fas fa-share-nodes"></i>
+                            </a>
                             <a href="{{ route('simple-prescriptions.edit', $prescription->id) }}"
                                class="btn btn-light btn-sm" title="{{ __('Edit Prescription') }}">
                                 <i class="fas fa-edit"></i>
