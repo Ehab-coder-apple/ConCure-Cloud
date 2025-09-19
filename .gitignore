@@ -56,3 +56,7 @@ whatsapp-server/node_modules/
 whatsapp-server/.wwebjs_auth/
 whatsapp-server/.local-chromium/
 whatsapp-server/.env.bak
+
+
+# Backup files
+*.bak
