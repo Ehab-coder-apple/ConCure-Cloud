@@ -36,7 +36,7 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <form action="{{ route('patients.update', $patient->id ?? 1) }}" method="POST">
+                            <form action="{{ route('patients.update', $patient->id ?? 1) }}" method="POST" class="needs-validation" novalidate>
                                 @csrf
                                 @method('PUT')
                                 

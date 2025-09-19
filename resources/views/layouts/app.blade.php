@@ -1025,6 +1025,53 @@
         });
     </script>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Auto-append a red star to labels for required fields when missing
+      document.querySelectorAll('input[required], select[required], textarea[required]').forEach(function(el){
+        if(!el.id) return;
+        var lbl = document.querySelector('label[for="'+CSS.escape(el.id)+'"]');
+        if(lbl && !lbl.querySelector('.text-danger')){
+          var star = document.createElement('span');
+          star.className = 'text-danger';
+          star.textContent = ' *';
+          lbl.appendChild(star);
+        }
+      });
+
+      // Client-side required validation for forms that opt-in
+      document.querySelectorAll('form.needs-validation').forEach(function(form){
+        form.setAttribute('novalidate','novalidate');
+        form.addEventListener('submit', function(e){
+          var missing = [];
+          var fields = form.querySelectorAll('input[required], select[required], textarea[required]');
+          fields.forEach(function(f){
+            var value = (f.type === 'checkbox' || f.type === 'radio')
+                        ? (form.querySelectorAll('[name="'+CSS.escape(f.name)+'"]:checked').length ? 'x' : '')
+                        : (f.value || '').trim();
+            if(!value){
+              var label = f.id ? (form.querySelector('label[for="'+CSS.escape(f.id)+'"]').textContent || f.name) : f.name;
+              label = label.replace('*','').trim();
+              if(missing.indexOf(label) === -1) missing.push(label);
+            }
+          });
+          if(missing.length){
+            e.preventDefault(); e.stopPropagation();
+            var existing = form.querySelector('.client-required-alert');
+            if(existing) existing.remove();
+            var div = document.createElement('div');
+            div.className = 'alert alert-danger client-required-alert';
+            div.innerHTML = '<strong>Please fill the following required fields:</strong><ul class="mb-0">'+ missing.map(function(m){return '<li>'+m+'</li>';}).join('') +'</ul>';
+            form.prepend(div);
+            var first = form.querySelector('input[required], select[required], textarea[required]');
+            if(first) first.scrollIntoView({behavior:'smooth', block:'center'});
+            alert('Please fill the required fields:\n- ' + missing.join('\n- '));
+          }
+        }, {capture:true});
+      });
+    });
+    </script>
+
     @stack('scripts')
 </body>
 </html>

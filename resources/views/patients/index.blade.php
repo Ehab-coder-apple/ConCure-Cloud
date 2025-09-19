@@ -180,7 +180,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('patients.store') }}" method="POST">
+            <form action="{{ route('patients.store') }}" method="POST" class="needs-validation" novalidate>
                 @csrf
                 <div class="modal-body">
                     <div class="row g-3">
@@ -193,12 +193,12 @@
                             <input type="text" class="form-control" id="last_name" name="last_name" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="date_of_birth" class="form-label">{{ __('Date of Birth') }}</label>
-                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth">
+                            <label for="date_of_birth" class="form-label">{{ __('Date of Birth') }} <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="gender" class="form-label">{{ __('Gender') }}</label>
-                            <select class="form-select" id="gender" name="gender">
+                            <label for="gender" class="form-label">{{ __('Gender') }} <span class="text-danger">*</span></label>
+                            <select class="form-select" id="gender" name="gender" required>
                                 <option value="">{{ __('Select Gender') }}</option>
                                 <option value="male">{{ __('Male') }}</option>
                                 <option value="female">{{ __('Female') }}</option>

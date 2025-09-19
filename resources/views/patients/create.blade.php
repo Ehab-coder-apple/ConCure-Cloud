@@ -36,7 +36,7 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <form action="{{ route('patients.store') }}" method="POST">
+                            <form action="{{ route('patients.store') }}" method="POST" class="needs-validation" novalidate>
                                 @csrf
 
                                 <div class="row g-3">
