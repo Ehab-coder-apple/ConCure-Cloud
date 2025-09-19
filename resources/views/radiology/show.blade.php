@@ -40,13 +40,6 @@
                         <a href="{{ route('recommendations.radiology.edit', $radiologyRequest) }}" class="btn btn-outline-primary me-2">
                             <i class="fas fa-edit me-1"></i> {{ __('Edit') }}
                         </a>
-                        <form action="{{ route('recommendations.radiology.destroy', $radiologyRequest) }}" method="POST" class="d-inline" onsubmit="return confirm('{{ __('Are you sure you want to delete this radiology request?') }}')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-outline-danger">
-                                <i class="fas fa-trash me-1"></i> {{ __('Delete Request') }}
-                            </button>
-                        </form>
                     @endif
                 </div>
             </div>
