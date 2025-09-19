@@ -23,7 +23,7 @@
                         {{ __('Back to Requests') }}
                     </a>
 
-                    <a href="{{ url('/messages') }}" class="btn btn-outline-secondary me-2"
+                    <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary me-2"
                        onclick="try{var v=JSON.stringify({
                          transfer_type:'radiology_request', patient_id: {{ $radiologyRequest->patient_id }},
                          source_type:'radiology_request', source_id: {{ $radiologyRequest->id }},
