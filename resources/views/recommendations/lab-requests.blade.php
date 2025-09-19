@@ -176,9 +176,9 @@
                                                    class="btn btn-sm btn-outline-secondary"
                                                    title="{{ __('Share Internally') }}"
                                                    onclick="try{var v=JSON.stringify({
-                                                     transfer_type:'lab_request', patient_id: {{ $labRequest->patient_id }},
-                                                     source_type:'lab_request', source_id: {{ $labRequest->id }},
-                                                     metadata:{ patient_name:@json($labRequest->patient->full_name ?? ''), request_number:@json($labRequest->request_number ?? '') }
+                                                     transfer_type:'lab_request', patient_id: @json($labRequest->patient_id),
+                                                     source_type:'lab_request', source_id: @json($labRequest->id),
+                                                     metadata:{ patient_name:@json($labRequest->patient?->full_name ?? ''), request_number:@json($labRequest->request_number ?? '') }
                                                    }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v); this.href=this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));}catch(e){}">
                                                     <i class="fas fa-share-nodes"></i>
                                                 </a>
