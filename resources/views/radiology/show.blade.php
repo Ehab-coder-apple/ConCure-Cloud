@@ -18,12 +18,12 @@
                     </p>
                 </div>
                 <div>
-                    <a href="{{ route('recommendations.radiology.index') }}" class="btn btn-outline-secondary me-2">
+                    <a href="{{ route('recommendations.radiology.index') }}" class="btn btn-secondary me-2">
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back to Requests') }}
                     </a>
 
-                    <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary me-2"
+                    <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary me-2 px-3" title="{{ __('Share Internally (Messages)') }}"
                        onclick="try{var v=JSON.stringify({
                          transfer_type:'radiology_request', patient_id: {{ $radiologyRequest->patient_id }},
                          source_type:'radiology_request', source_id: {{ $radiologyRequest->id }},
@@ -32,12 +32,12 @@
                         <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
 
-                    <a href="{{ route('recommendations.radiology.pdf', $radiologyRequest) }}" class="btn btn-outline-danger me-2">
+                    <a href="{{ route('recommendations.radiology.pdf', $radiologyRequest) }}" class="btn btn-outline-success me-2" target="_blank">
                         <i class="fas fa-file-pdf me-1"></i> {{ __('Download PDF') }}
                     </a>
 
                     @if($radiologyRequest->status === 'pending')
-                        <a href="{{ route('recommendations.radiology.edit', $radiologyRequest) }}" class="btn btn-outline-warning me-2">
+                        <a href="{{ route('recommendations.radiology.edit', $radiologyRequest) }}" class="btn btn-outline-primary me-2">
                             <i class="fas fa-edit me-1"></i> {{ __('Edit') }}
                         </a>
                         <form action="{{ route('recommendations.radiology.destroy', $radiologyRequest) }}" method="POST" class="d-inline" onsubmit="return confirm('{{ __('Are you sure you want to delete this radiology request?') }}')">
