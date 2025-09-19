@@ -6,6 +6,8 @@ use App\Models\Patient;
 use App\Models\PatientCheckup;
 use App\Models\PatientFile;
 use App\Imports\PatientsImport;
+use App\Models\Clinic;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -94,6 +96,29 @@ class PatientController extends Controller
                            ->with('error', 'You must be assigned to a clinic to create patients. Please contact your administrator.');
         }
 
+        // Determine clinic for creation (handles super admin without assigned clinic)
+        $clinicId = $user->clinic_id;
+        if (!$clinicId && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            $clinicId = $request->input('clinic_id');
+            if (!$clinicId) {
+                // If there is exactly one clinic, default to it; otherwise ask user to pick
+                $clinicCount = Clinic::count();
+                if ($clinicCount === 1) {
+                    $clinicId = Clinic::value('id');
+                } else {
+                    $message = 'Please select a clinic to create patients.';
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $message,
+                            'errors' => ['clinic_id' => [$message]],
+                        ], 422);
+                    }
+                    return redirect()->route('patients.index')->with('error', $message);
+                }
+            }
+        }
+
         // Adjust validation rules for quick add (AJAX requests)
         $isQuickAdd = $request->wantsJson() || $request->ajax();
 
@@ -156,7 +181,7 @@ class PatientController extends Controller
             'notes' => $request->notes,
             'emergency_contact_name' => $request->emergency_contact_name,
             'emergency_contact_phone' => $request->emergency_contact_phone,
-            'clinic_id' => $user->clinic_id,
+            'clinic_id' => $clinicId,
             'created_by' => $user->id,
             'is_active' => true,
         ]);
@@ -186,7 +211,7 @@ class PatientController extends Controller
     public function show(Patient $patient)
     {
         $this->authorizePatientAccess($patient);
-        
+
         $patient->load([
             'clinic',
             'creator',
@@ -216,7 +241,7 @@ class PatientController extends Controller
     public function edit(Patient $patient)
     {
         $this->authorizePatientAccess($patient);
-        
+
         return view('patients.edit', compact('patient'));
     }
 
@@ -226,7 +251,7 @@ class PatientController extends Controller
     public function update(Request $request, Patient $patient)
     {
         $this->authorizePatientAccess($patient);
-        
+
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -287,10 +312,10 @@ class PatientController extends Controller
     public function destroy(Patient $patient)
     {
         $this->authorizePatientAccess($patient);
-        
+
         // Check if patient has any related records
-        if ($patient->prescriptions()->count() > 0 || 
-            $patient->appointments()->count() > 0 || 
+        if ($patient->prescriptions()->count() > 0 ||
+            $patient->appointments()->count() > 0 ||
             $patient->invoices()->count() > 0) {
             return back()->withErrors(['error' => 'Cannot delete patient with existing medical records. Deactivate instead.']);
         }
@@ -379,7 +404,7 @@ class PatientController extends Controller
     public function addCheckup(Request $request, Patient $patient)
     {
         $this->authorizePatientAccess($patient);
-        
+
         $validationRules = [
             'weight' => 'nullable|numeric|min:1|max:500',
             'height' => 'nullable|numeric|min:50|max:300',
@@ -452,7 +477,7 @@ class PatientController extends Controller
     public function uploadFile(Request $request, Patient $patient)
     {
         $this->authorizePatientAccess($patient);
-        
+
         $request->validate([
             'file' => 'required|file|max:' . config('app.concure.max_file_size'),
             'category' => 'required|in:lab_result,medicine_photo,medical_report,other',
@@ -461,7 +486,7 @@ class PatientController extends Controller
 
         $file = $request->file('file');
         $allowedTypes = config('app.concure.allowed_file_types');
-        
+
         if (!in_array(strtolower($file->getClientOriginalExtension()), $allowedTypes)) {
             return back()->withErrors(['file' => 'File type not allowed.']);
         }
