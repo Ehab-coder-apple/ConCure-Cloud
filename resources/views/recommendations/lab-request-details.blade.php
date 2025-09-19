@@ -27,7 +27,7 @@
                         <i class="fas fa-file-pdf me-1"></i>
                         {{ __('Download PDF') }}
                     </a>
-                    <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary me-2 px-3" title="{{ __('Share Internally (Messages)') }}"
+                    <a href="{{ url('/messages') }}" class="btn btn-outline-secondary me-2 px-3" title="{{ __('Share Internally (Messages)') }}"
                        onclick="try{var v=JSON.stringify({
                          transfer_type:'lab_request', patient_id: {{ $labRequest->patient_id }},
                          source_type:'lab_request', source_id: {{ $labRequest->id }},

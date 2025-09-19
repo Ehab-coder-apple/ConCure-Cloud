@@ -172,7 +172,7 @@
                                                    title="{{ __('Download PDF') }}" target="_blank">
                                                     <i class="fas fa-file-pdf"></i>
                                                 </a>
-                                                <a href="{{ route('messages.index') }}"
+                                                <a href="{{ url('/messages') }}"
                                                    class="btn btn-sm btn-outline-secondary"
                                                    title="{{ __('Share Internally') }}"
                                                    onclick="try{var v=JSON.stringify({
