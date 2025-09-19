@@ -22,8 +22,8 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        // Check if user has a clinic assigned
-        if (!$user->clinic_id) {
+        // Check if user has a clinic assigned (allow super admin without clinic)
+        if (!$user->clinic_id && !$user->isSuperAdmin()) {
             return redirect()->route('dashboard')
                            ->with('error', 'You must be assigned to a clinic to view patients. Please contact your administrator.');
         }
@@ -32,8 +32,10 @@ class PatientController extends Controller
             $q->latest('checkup_date')->limit(1);
         }]);
 
-        // All clinic users are restricted to their clinic
-        $query->byClinic($user->clinic_id);
+        // Restrict to clinic for clinic users; super admin sees all clinics
+        if ($user->clinic_id) {
+            $query->byClinic($user->clinic_id);
+        }
 
         // Apply filters
         if ($request->filled('search')) {
@@ -79,8 +81,8 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        // Check if user has a clinic assigned
-        if (!$user->clinic_id) {
+        // Check if user has a clinic assigned (allow super admin without clinic)
+        if (!$user->clinic_id && !$user->isSuperAdmin()) {
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
@@ -334,8 +336,8 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        // Check if user has a clinic assigned
-        if (!$user->clinic_id) {
+        // Check if user has a clinic assigned (allow super admin without clinic)
+        if (!$user->clinic_id && !$user->isSuperAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'You must be assigned to a clinic to access patients.',
@@ -344,9 +346,12 @@ class PatientController extends Controller
             ], 403);
         }
 
-        $query = Patient::where('clinic_id', $user->clinic_id)
-                        ->select('id', 'patient_id', 'first_name', 'last_name')
-                        ->orderBy('first_name')
+        $query = Patient::query()
+                        ->select('id', 'patient_id', 'first_name', 'last_name');
+        if ($user->clinic_id) {
+            $query->where('clinic_id', $user->clinic_id);
+        }
+        $query->orderBy('first_name')
                         ->orderBy('last_name');
 
         // Add search functionality if needed
