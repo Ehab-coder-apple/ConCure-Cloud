@@ -114,12 +114,12 @@
                                         </td>
                                         <td>
                                             <div>
-                                                <strong>{{ $labRequest->patient->full_name }}</strong>
+                                                <strong>{{ $labRequest->patient?->full_name ?? __('Unknown') }}</strong>
                                                 <br>
-                                                <small class="text-muted">ID: {{ $labRequest->patient->patient_id }}</small>
+                                                <small class="text-muted">ID: {{ $labRequest->patient?->patient_id ?? '—' }}</small>
                                             </div>
                                         </td>
-                                        <td>{{ $labRequest->doctor->full_name }}</td>
+                                        <td>{{ $labRequest->doctor?->full_name ?? __('Not specified') }}</td>
                                         <td>
                                             @if($labRequest->lab_name)
                                                 <div>
