@@ -27,8 +27,10 @@ class RadiologyController extends Controller
 
         $query = RadiologyRequest::with(['patient', 'doctor', 'tests']);
 
-        // Filter by clinic
-        $query->byClinic($user->clinic_id);
+        // Filter by clinic (super admin without clinic_id sees all)
+        if ($user->clinic_id) {
+            $query->byClinic($user->clinic_id);
+        }
 
         // Filter by doctor if user is a doctor
         if (in_array($user->role, ['doctor', 'nutritionist'])) {
@@ -54,16 +56,18 @@ class RadiologyController extends Controller
 
         $radiologyRequests = $query->latest()->paginate(15);
 
-        // Get statistics
+        // Get statistics (avoid byClinic when clinic_id is null)
+        $base = $user->clinic_id ? RadiologyRequest::byClinic($user->clinic_id) : RadiologyRequest::query();
         $stats = [
-            'total' => RadiologyRequest::byClinic($user->clinic_id)->count(),
-            'pending' => RadiologyRequest::byClinic($user->clinic_id)->byStatus('pending')->count(),
-            'completed' => RadiologyRequest::byClinic($user->clinic_id)->byStatus('completed')->count(),
-            'urgent' => RadiologyRequest::byClinic($user->clinic_id)->byPriority('urgent')->count(),
+            'total' => (clone $base)->count(),
+            'pending' => (clone $base)->byStatus('pending')->count(),
+            'completed' => (clone $base)->byStatus('completed')->count(),
+            'urgent' => (clone $base)->byPriority('urgent')->count(),
         ];
 
         // Get patients for filter dropdown
-        $patients = Patient::where('clinic_id', $user->clinic_id)
+        $patients = Patient::query()
+                          ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
                           ->where('is_active', true)
                           ->orderBy('first_name')
                           ->get();
@@ -83,7 +87,8 @@ class RadiologyController extends Controller
         }
 
         // Get patients for dropdown
-        $patients = Patient::where('clinic_id', $user->clinic_id)
+        $patients = Patient::query()
+                          ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
                           ->where('is_active', true)
                           ->orderBy('first_name')
                           ->get();
@@ -98,7 +103,7 @@ class RadiologyController extends Controller
         $selectedPatient = null;
         if ($request->filled('patient_id')) {
             $selectedPatient = Patient::where('id', $request->patient_id)
-                                    ->where('clinic_id', $user->clinic_id)
+                                    ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
                                     ->first();
         }
 
@@ -139,9 +144,9 @@ class RadiologyController extends Controller
             'tests.*.special_requirements' => 'nullable|string',
         ]);
 
-        // Verify patient belongs to user's clinic
+        // Verify patient belongs to user's clinic (allow super admin across clinics)
         $patient = Patient::where('id', $request->patient_id)
-                         ->where('clinic_id', $user->clinic_id)
+                         ->when(!$user->isSuperAdmin(), fn($q) => $q->where('clinic_id', $user->clinic_id))
                          ->firstOrFail();
 
         try {
@@ -196,7 +201,7 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access
-        if ($radiologyRequest->patient->clinic_id !== $user->clinic_id) {
+        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to radiology request.');
         }
 
@@ -213,7 +218,7 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access and permissions
-        if ($radiologyRequest->patient->clinic_id !== $user->clinic_id) {
+        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to radiology request.');
         }
 
@@ -227,7 +232,8 @@ class RadiologyController extends Controller
         }
 
         // Get patients for dropdown
-        $patients = Patient::where('clinic_id', $user->clinic_id)
+        $patients = Patient::query()
+                          ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
                           ->where('is_active', true)
                           ->orderBy('first_name')
                           ->get();
@@ -251,7 +257,7 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access and permissions
-        if ($radiologyRequest->patient->clinic_id !== $user->clinic_id) {
+        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to radiology request.');
         }
 
@@ -331,7 +337,7 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access and permissions
-        if ($radiologyRequest->patient->clinic_id !== $user->clinic_id) {
+        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to radiology request.');
         }
 
@@ -358,7 +364,7 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access
-        if ($radiologyRequest->patient->clinic_id !== $user->clinic_id) {
+        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to radiology request.');
         }
 
@@ -377,7 +383,7 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access
-        if ($radiologyRequest->patient->clinic_id !== $user->clinic_id) {
+        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to radiology request.');
         }
 
@@ -406,7 +412,7 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access
-        if ($radiologyRequest->patient->clinic_id !== $user->clinic_id) {
+        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to radiology request.');
         }
 
@@ -583,7 +589,7 @@ class RadiologyController extends Controller
         }
 
         // Only allow deletion of clinic-specific tests
-        if ($radiologyTest->clinic_id !== $user->clinic_id) {
+        if (!$user->isSuperAdmin() && $radiologyTest->clinic_id !== $user->clinic_id) {
             abort(403, 'You can only delete tests created by your clinic.');
         }
 
