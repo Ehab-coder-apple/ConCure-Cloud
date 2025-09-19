@@ -110,15 +110,21 @@
                                         <td>{{ Str::limit($appointment->notes ?? 'Regular checkup', 30) }}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button" class="btn btn-outline-success" title="{{ __('Confirm') }}">
+                                                <button type="button" class="btn btn-outline-success" title="{{ __('Confirm') }}"
+                                                        data-action="appt-confirm" data-url="{{ route('appointments.update-status', $appointment->id) }}">
                                                     <i class="fas fa-check"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-outline-primary" title="{{ __('Edit') }}">
+                                                <a href="{{ route('appointments.edit', $appointment->id) }}" class="btn btn-outline-primary" title="{{ __('Edit') }}">
                                                     <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-outline-danger" title="{{ __('Cancel') }}">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
+                                                </a>
+                                                <form action="{{ route('appointments.destroy', $appointment->id) }}" method="POST" class="d-inline"
+                                                      onsubmit="return confirm('{{ __('Are you sure you want to delete this appointment?') }}');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-outline-danger" title="{{ __('Delete') }}">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>
@@ -128,6 +134,11 @@
                         </div>
                     @else
                         <!-- Demo Appointments -->
+                        <div class="alert alert-info border-0 rounded-3 mx-3 mt-3" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            {{ __('No appointments match your current filters for today. Showing sample data. Action buttons are disabled.') }}
+                            <a href="#" class="ms-2" data-bs-toggle="modal" data-bs-target="#newAppointmentModal">{{ __('Create one now') }}</a>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
@@ -164,13 +175,13 @@
                                         <td>Regular checkup</td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button" class="btn btn-outline-success" title="{{ __('Confirm') }}">
+                                                <button type="button" class="btn btn-outline-success" title="{{ __('Demo only') }}" disabled>
                                                     <i class="fas fa-check"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-outline-primary" title="{{ __('Edit') }}">
+                                                <button type="button" class="btn btn-outline-primary" title="{{ __('Demo only') }}" disabled>
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-outline-danger" title="{{ __('Cancel') }}">
+                                                <button type="button" class="btn btn-outline-danger" title="{{ __('Demo only') }}" disabled>
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
@@ -198,13 +209,13 @@
                                         <td>Blood pressure check</td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button" class="btn btn-outline-success" title="{{ __('Confirm') }}">
+                                                <button type="button" class="btn btn-outline-success" title="{{ __('Demo only') }}" disabled>
                                                     <i class="fas fa-check"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-outline-primary" title="{{ __('Edit') }}">
+                                                <button type="button" class="btn btn-outline-primary" title="{{ __('Demo only') }}" disabled>
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-outline-danger" title="{{ __('Cancel') }}">
+                                                <button type="button" class="btn btn-outline-danger" title="{{ __('Demo only') }}" disabled>
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
@@ -232,10 +243,10 @@
                                         <td>Urgent care visit</td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button" class="btn btn-outline-info" title="{{ __('View Details') }}">
+                                                <button type="button" class="btn btn-outline-info" title="{{ __('Demo only') }}" disabled>
                                                     <i class="fas fa-eye"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-outline-success" title="{{ __('Create Prescription') }}">
+                                                <button type="button" class="btn btn-outline-success" title="{{ __('Demo only') }}" disabled>
                                                     <i class="fas fa-prescription-bottle-alt"></i>
                                                 </button>
                                             </div>
@@ -461,11 +472,42 @@ function showAppointmentDetails(event) {
     const bootstrapModal = new bootstrap.Modal(modal);
     bootstrapModal.show();
 
+
+
+
     // Remove modal from DOM when hidden
     modal.addEventListener('hidden.bs.modal', function() {
         document.body.removeChild(modal);
     });
 }
+
+// Handle confirm action via AJAX (global)
+(function(){
+  document.addEventListener('click', function(ev){
+    const btn = ev.target.closest('[data-action="appt-confirm"]');
+    if(!btn) return;
+    ev.preventDefault();
+    const url = btn.dataset.url;
+    const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    btn.disabled = true;
+    fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'X-CSRF-TOKEN': token,
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'status=confirmed'
+    }).then(async (r)=>{
+      if(r.ok) { window.location.reload(); return; }
+      const j = await r.json().catch(()=>({message:'Failed'}));
+      alert(j.message || 'Failed to update status');
+    }).catch(()=>{
+      alert('Network error');
+    }).finally(()=>{ btn.disabled = false; });
+  }, true);
+})();
+
 </script>
 @endpush
 @endsection
