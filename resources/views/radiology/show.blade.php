@@ -13,8 +13,8 @@
                         {{ __('Radiology Request') }} - {{ $radiologyRequest->request_number }}
                     </h1>
                     <p class="text-muted mb-0">
-                        {{ __('Created on') }} {{ $radiologyRequest->created_at->format('M d, Y \a\t g:i A') }}
-                        {{ __('by') }} {{ $radiologyRequest->doctor->full_name }}
+                        {{ __('Created on') }} {{ optional($radiologyRequest->created_at)->format('M d, Y \a\t g:i A') }}
+                        {{ __('by') }} {{ $radiologyRequest->doctor?->full_name ?? __('Unknown') }}
                     </p>
                 </div>
                 <div>
@@ -22,14 +22,32 @@
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back to Requests') }}
                     </a>
-                    <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary"
+
+                    <a href="{{ url('/messages') }}" class="btn btn-outline-secondary me-2"
                        onclick="try{var v=JSON.stringify({
                          transfer_type:'radiology_request', patient_id: {{ $radiologyRequest->patient_id }},
                          source_type:'radiology_request', source_id: {{ $radiologyRequest->id }},
-                         metadata:{ patient_name:@json($radiologyRequest->patient->full_name ?? ''), request_number:@json($radiologyRequest->request_number ?? '') }
+                         metadata:{ patient_name:@json($radiologyRequest->patient?->full_name ?? ''), request_number:@json($radiologyRequest->request_number ?? '') }
                        }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v); this.href=this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));}catch(e){}">
                         <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
+
+                    <a href="{{ route('recommendations.radiology.pdf', $radiologyRequest) }}" class="btn btn-outline-danger me-2">
+                        <i class="fas fa-file-pdf me-1"></i> {{ __('Download PDF') }}
+                    </a>
+
+                    @if($radiologyRequest->status === 'pending')
+                        <a href="{{ route('recommendations.radiology.edit', $radiologyRequest) }}" class="btn btn-outline-warning me-2">
+                            <i class="fas fa-edit me-1"></i> {{ __('Edit') }}
+                        </a>
+                        <form action="{{ route('recommendations.radiology.destroy', $radiologyRequest) }}" method="POST" class="d-inline" onsubmit="return confirm('{{ __('Are you sure you want to delete this radiology request?') }}')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-outline-danger">
+                                <i class="fas fa-trash me-1"></i> {{ __('Delete Request') }}
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>
@@ -49,19 +67,19 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <strong>{{ __('Name') }}:</strong> {{ $radiologyRequest->patient->full_name }}<br>
-                            <strong>{{ __('Patient ID') }}:</strong> {{ $radiologyRequest->patient->patient_id }}<br>
-                            <strong>{{ __('Age') }}:</strong> {{ $radiologyRequest->patient->age }} {{ __('years') }}<br>
-                            <strong>{{ __('Gender') }}:</strong> {{ ucfirst($radiologyRequest->patient->gender) }}
+                            <strong>{{ __('Name') }}:</strong> {{ $radiologyRequest->patient?->full_name ?? __('Unknown') }}<br>
+                            <strong>{{ __('Patient ID') }}:</strong> {{ $radiologyRequest->patient?->patient_id ?? '—' }}<br>
+                            <strong>{{ __('Age') }}:</strong> {{ optional($radiologyRequest->patient)->age ?? '—' }} {{ __('years') }}<br>
+                            <strong>{{ __('Gender') }}:</strong> {{ $radiologyRequest->patient?->gender ? ucfirst($radiologyRequest->patient->gender) : '—' }}
                         </div>
                         <div class="col-md-6">
-                            @if($radiologyRequest->patient->phone)
+                            @if($radiologyRequest->patient?->phone)
                             <strong>{{ __('Phone') }}:</strong> {{ $radiologyRequest->patient->phone }}<br>
                             @endif
-                            @if($radiologyRequest->patient->email)
+                            @if($radiologyRequest->patient?->email)
                             <strong>{{ __('Email') }}:</strong> {{ $radiologyRequest->patient->email }}<br>
                             @endif
-                            @if($radiologyRequest->patient->allergies)
+                            @if($radiologyRequest->patient?->allergies)
                             <strong>{{ __('Allergies') }}:</strong> <span class="text-danger">{{ $radiologyRequest->patient->allergies }}</span>
                             @endif
                         </div>
