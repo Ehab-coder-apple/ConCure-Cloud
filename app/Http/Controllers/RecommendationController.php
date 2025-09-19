@@ -114,33 +114,42 @@ class RecommendationController extends Controller
 
         $labRequests = $query->latest()->paginate(15);
 
-        // Get patients for the dropdown
-        $patients = \App\Models\Patient::where('clinic_id', $user->clinic_id)
-                                      ->select('id', 'patient_id', 'first_name', 'last_name')
-                                      ->orderBy('first_name')
-                                      ->orderBy('last_name')
-                                      ->get();
+        $clinicId = $user->clinic_id;
 
-        // Get external labs for the dropdown
-        $externalLabs = \App\Models\ExternalLab::byClinic($user->clinic_id)
-                                              ->active()
-                                              ->ordered()
-                                              ->get();
+        // Get patients for the dropdown (guard when no clinic)
+        if ($clinicId) {
+            $patients = \App\Models\Patient::where('clinic_id', $clinicId)
+                                            ->select('id', 'patient_id', 'first_name', 'last_name')
+                                            ->orderBy('first_name')
+                                            ->orderBy('last_name')
+                                            ->get();
+        } else {
+            $patients = collect();
+        }
 
-        // Get unique lab names that have been used in lab requests for filter dropdown
-        $usedLabNames = LabRequest::whereHas('patient', function ($q) use ($user) {
-                                    $q->where('clinic_id', $user->clinic_id);
-                                })
-                                ->whereNotNull('lab_name')
-                                ->where('lab_name', '!=', '')
-                                ->distinct()
-                                ->pluck('lab_name')
-                                ->sort()
-                                ->values();
+        // Get external labs for the dropdown (guard when no clinic)
+        $externalLabs = $clinicId
+            ? \App\Models\ExternalLab::byClinic($clinicId)->active()->ordered()->get()
+            : collect();
 
-        // Get clinic's default WhatsApp number
+        // Get unique lab names that have been used in lab requests for filter dropdown (guard when no clinic)
+        if ($clinicId) {
+            $usedLabNames = LabRequest::whereHas('patient', function ($q) use ($clinicId) {
+                                        $q->where('clinic_id', $clinicId);
+                                    })
+                                    ->whereNotNull('lab_name')
+                                    ->where('lab_name', '!=', '')
+                                    ->distinct()
+                                    ->pluck('lab_name')
+                                    ->sort()
+                                    ->values();
+        } else {
+            $usedLabNames = collect();
+        }
+
+        // Get clinic's default WhatsApp number (guard when no clinic)
         $whatsappService = app(WhatsAppService::class);
-        $clinicWhatsApp = $whatsappService->getClinicWhatsAppNumber();
+        $clinicWhatsApp = $whatsappService->getClinicWhatsAppNumber($clinicId);
 
         return view('recommendations.lab-requests', compact('labRequests', 'patients', 'externalLabs', 'usedLabNames', 'clinicWhatsApp'));
     }
