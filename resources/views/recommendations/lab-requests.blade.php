@@ -62,15 +62,15 @@
                                         </option>
                                     @endforeach
                                 @endif
-                                <option value="custom" {{ request('lab_name') && !$usedLabNames->contains(request('lab_name')) ? 'selected' : '' }}>
+                                <option value="custom" {{ request('lab_name') && (!isset($usedLabNames) || !$usedLabNames->contains(request('lab_name'))) ? 'selected' : '' }}>
                                     {{ __('Custom search...') }}
                                 </option>
                             </select>
                             <!-- Hidden input for custom lab name search -->
                             <input type="text" class="form-control mt-2" id="custom_lab_name" name="custom_lab_name"
-                                   value="{{ request('lab_name') && !$usedLabNames->contains(request('lab_name')) ? request('lab_name') : '' }}"
+                                   value="{{ request('lab_name') && (!isset($usedLabNames) || !$usedLabNames->contains(request('lab_name'))) ? request('lab_name') : '' }}"
                                    placeholder="{{ __('Enter lab name...') }}"
-                                   style="display: {{ request('lab_name') && !$usedLabNames->contains(request('lab_name')) ? 'block' : 'none' }};">
+                                   style="display: {{ request('lab_name') && (!isset($usedLabNames) || !$usedLabNames->contains(request('lab_name'))) ? 'block' : 'none' }};">
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
                             <button type="submit" class="btn btn-outline-primary me-2">
