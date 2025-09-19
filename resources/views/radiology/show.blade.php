@@ -3,7 +3,7 @@
 @section('page-title', __('Radiology Request') . ' - ' . $radiologyRequest->request_number)
 
 @section('content')
-<div class="container">
+<div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
