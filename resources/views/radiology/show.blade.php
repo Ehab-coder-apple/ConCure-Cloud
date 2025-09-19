@@ -23,12 +23,9 @@
                         {{ __('Back to Requests') }}
                     </a>
 
-                    <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary me-2 px-3" title="{{ __('Share Internally (Messages)') }}"
-                       onclick="try{var v=JSON.stringify({
-                         transfer_type:'radiology_request', patient_id: {{ $radiologyRequest->patient_id }},
-                         source_type:'radiology_request', source_id: {{ $radiologyRequest->id }},
-                         metadata:{ patient_name:@json($radiologyRequest->patient?->full_name ?? ''), request_number:@json($radiologyRequest->request_number ?? '') }
-                       }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v); this.href=this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));}catch(e){}">
+                    <a id="share-internal" href="{{ route('messages.index') }}" class="btn btn-outline-secondary me-2 px-3" title="{{ __('Share Internally (Messages)') }}"
+                       data-patient-id="{{ $radiologyRequest->patient_id }}" data-source-id="{{ $radiologyRequest->id }}"
+                       data-patient-name="{{ $radiologyRequest->patient?->full_name ?? '' }}" data-request-number="{{ $radiologyRequest->request_number ?? '' }}">
                         <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
 
@@ -462,5 +459,32 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const b = document.getElementById('share-internal');
+  if (!b) return;
+  b.addEventListener('click', function () {
+    try {
+      const payload = {
+        transfer_type: 'radiology_request',
+        patient_id: Number(this.dataset.patientId),
+        source_type: 'radiology_request',
+        source_id: Number(this.dataset.sourceId),
+        metadata: {
+          patient_name: this.dataset.patientName || '',
+          request_number: this.dataset.requestNumber || ''
+        }
+      };
+      const v = JSON.stringify(payload);
+      localStorage.setItem('prefill_transfer', v);
+      sessionStorage.setItem('prefill_transfer', v);
+      this.href = this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));
+    } catch (e) {}
+  }, { once: true });
+});
+</script>
+@endpush
 
 @endsection
