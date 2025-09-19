@@ -45,12 +45,9 @@
                         <i class="fas fa-weight me-1"></i>
                         {{ __('Weight Tracking') }}
                     </a>
-                    <a href="{{ route('messages.index') }}" class="btn btn-outline-secondary"
-                       onclick="try{var v=JSON.stringify({
-                         transfer_type:'nutrition_plan', patient_id: {{ $dietPlan->patient_id }},
-                         source_type:'nutrition_plan', source_id: {{ $dietPlan->id }},
-                         metadata:{ patient_name:@json($dietPlan->patient->full_name ?? ''), plan_title:@json($dietPlan->title ?? ''), plan_number:@json($dietPlan->plan_number ?? '') }
-                       }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v); this.href=this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));}catch(e){}">
+                    <a id="share-internal" href="{{ route('messages.index') }}" class="btn btn-outline-secondary" title="{{ __('Share Internally (Messages)') }}"
+                       data-patient-id="{{ $dietPlan->patient_id }}" data-source-id="{{ $dietPlan->id }}"
+                       data-patient-name="{{ $dietPlan->patient->full_name ?? '' }}" data-plan-title="{{ $dietPlan->title ?? '' }}" data-plan-number="{{ $dietPlan->plan_number ?? '' }}">
                         <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
                     <button type="button" class="btn btn-success" onclick="shareOnWhatsApp()">
@@ -631,6 +628,32 @@
 
 @push('scripts')
 <script>
+// Safer Share Internally handler (prevents giant clickable area)
+(function(){
+  document.addEventListener('DOMContentLoaded', function(){
+    var b = document.getElementById('share-internal');
+    if(!b) return;
+    b.addEventListener('click', function(){
+      try{
+        var payload = {
+          transfer_type: 'nutrition_plan',
+          patient_id: Number(this.dataset.patientId),
+          source_type: 'nutrition_plan',
+          source_id: Number(this.dataset.sourceId),
+          metadata: {
+            patient_name: this.dataset.patientName || '',
+            plan_title: this.dataset.planTitle || '',
+            plan_number: this.dataset.planNumber || ''
+          }
+        };
+        var v = JSON.stringify(payload);
+        localStorage.setItem('prefill_transfer', v);
+        sessionStorage.setItem('prefill_transfer', v);
+        this.href = this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));
+      }catch(e){}
+    }, { once: true });
+  });
+})();
 function shareOnWhatsApp() {
     // Get nutrition plan data
     const patientName = "{{ $dietPlan->patient->full_name }}";
