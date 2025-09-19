@@ -201,8 +201,11 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access
-        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to radiology request.');
+        if (!$user->isSuperAdmin()) {
+            $patientClinicId = optional($radiologyRequest->patient)->clinic_id;
+            if ($user->clinic_id && $patientClinicId && $patientClinicId !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to radiology request.');
+            }
         }
 
         $radiologyRequest->load(['patient', 'doctor', 'tests.radiologyTest', 'resultReceiver']);
@@ -218,8 +221,11 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access and permissions
-        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to radiology request.');
+        if (!$user->isSuperAdmin()) {
+            $patientClinicId = optional($radiologyRequest->patient)->clinic_id;
+            if ($user->clinic_id && $patientClinicId && $patientClinicId !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to radiology request.');
+            }
         }
 
         if (!$user->canEditRadiologyRequests()) {
@@ -257,8 +263,11 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access and permissions
-        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to radiology request.');
+        if (!$user->isSuperAdmin()) {
+            $patientClinicId = optional($radiologyRequest->patient)->clinic_id;
+            if ($user->clinic_id && $patientClinicId && $patientClinicId !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to radiology request.');
+            }
         }
 
         if (!$user->canEditRadiologyRequests()) {
@@ -337,8 +346,11 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access and permissions
-        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to radiology request.');
+        if (!$user->isSuperAdmin()) {
+            $patientClinicId = optional($radiologyRequest->patient)->clinic_id;
+            if ($user->clinic_id && $patientClinicId && $patientClinicId !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to radiology request.');
+            }
         }
 
         if (!$user->canDeleteRadiologyRequests()) {
@@ -364,8 +376,11 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access
-        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to radiology request.');
+        if (!$user->isSuperAdmin()) {
+            $patientClinicId = optional($radiologyRequest->patient)->clinic_id;
+            if ($user->clinic_id && $patientClinicId && $patientClinicId !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to radiology request.');
+            }
         }
 
         $radiologyRequest->load(['patient', 'doctor', 'tests.radiologyTest']);
@@ -383,8 +398,11 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access
-        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to radiology request.');
+        if (!$user->isSuperAdmin()) {
+            $patientClinicId = optional($radiologyRequest->patient)->clinic_id;
+            if ($user->clinic_id && $patientClinicId && $patientClinicId !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to radiology request.');
+            }
         }
 
         if (!$user->canEditRadiologyRequests()) {
@@ -412,8 +430,11 @@ class RadiologyController extends Controller
         $user = Auth::user();
 
         // Check access
-        if (!$user->isSuperAdmin() && $radiologyRequest->patient->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to radiology request.');
+        if (!$user->isSuperAdmin()) {
+            $patientClinicId = optional($radiologyRequest->patient)->clinic_id;
+            if ($user->clinic_id && $patientClinicId && $patientClinicId !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to radiology request.');
+            }
         }
 
         if (!$user->canEditRadiologyRequests()) {
