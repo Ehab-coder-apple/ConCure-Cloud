@@ -48,6 +48,32 @@
                 </div>
             @endif
 
+            @if(session('import_warnings_list'))
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>{{ __('Import Warnings') }}:</strong>
+                    <ul class="mt-2 mb-0 small">
+                        @foreach(session('import_warnings_list') as $w)
+                            <li>{{ $w }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+
+            @if(session('import_errors_list'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>{{ __('Some rows were skipped') }}:</strong>
+                    <ul class="mt-2 mb-0 small">
+                        @foreach(session('import_errors_list') as $e)
+                            <li>{{ $e }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+
             @if(session('import_errors'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <i class="fas fa-exclamation-circle me-2"></i>

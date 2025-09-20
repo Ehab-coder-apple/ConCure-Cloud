@@ -649,15 +649,14 @@ class PatientController extends Controller
                 $message .= "Skipped: {$import->getSkippedCount()} patients (duplicates or errors).";
             }
 
-            if ($import->hasErrors()) {
-                $errorMessage = "Some patients could not be imported:\n" . implode("\n", array_slice($import->getErrors(), 0, 10));
-                if (count($import->getErrors()) > 10) {
-                    $errorMessage .= "\n... and " . (count($import->getErrors()) - 10) . " more errors.";
-                }
+            if ($import->hasErrors() || (method_exists($import, 'hasWarnings') && $import->hasWarnings())) {
+                $errors = $import->getErrors();
+                $warnings = method_exists($import, 'getWarnings') ? $import->getWarnings() : [];
 
                 return redirect()->route('patients.import')
                     ->with('warning', $message)
-                    ->with('import_errors', $errorMessage);
+                    ->with('import_errors_list', array_slice($errors, 0, 50))
+                    ->with('import_warnings_list', array_slice($warnings, 0, 50));
             }
 
             return redirect()->route('patients.import')

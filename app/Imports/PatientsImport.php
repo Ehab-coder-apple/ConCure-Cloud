@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, WithChunkReading
 {
@@ -19,6 +20,7 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
     protected $importedCount = 0;
     protected $skippedCount = 0;
     protected $errors = [];
+    protected $warnings = [];
 
     public function collection(Collection $rows)
     {
@@ -27,25 +29,45 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
 
         foreach ($rows as $row) {
             $rowNumber++;
-            
+
             try {
                 // Skip empty rows
                 if (empty(trim($row['first_name'] ?? '')) && empty(trim($row['last_name'] ?? ''))) {
                     continue;
                 }
 
+                // Normalize data to bypass empty cells and odd types
+                $data = $row->toArray();
+                $data['first_name'] = trim((string)($data['first_name'] ?? ''));
+                $data['last_name'] = trim((string)($data['last_name'] ?? ''));
+                $data['phone'] = isset($data['phone']) ? trim((string)$data['phone']) : null;
+                $data['whatsapp_phone'] = isset($data['whatsapp_phone']) ? trim((string)$data['whatsapp_phone']) : null;
+                $data['email'] = isset($data['email']) ? trim((string)$data['email']) : null;
+                $data['gender'] = $this->normalizeGender($data['gender'] ?? '');
+                list($normalizedDob, $dobWarning) = $this->normalizeDate($data['date_of_birth'] ?? '');
+                $data['date_of_birth'] = $normalizedDob; // may be null
+                if ($dobWarning) { $this->warnings[] = "Row {$rowNumber}: {$dobWarning}"; }
+
                 // Validate required fields
-                $validator = Validator::make($row->toArray(), [
+                $validator = Validator::make($data, [
                     'first_name' => 'required|string|max:255',
                     'last_name' => 'required|string|max:255',
                     'date_of_birth' => 'nullable|date',
-                    'gender' => 'nullable|in:male,female',
-                    'phone' => 'nullable|string|max:20',
+                    'gender' => 'nullable|in:male,female,other',
+                    'phone' => 'nullable|max:20',
                     'email' => 'nullable|email|max:255',
+                ]);
+                $validator->setAttributeNames([
+                    'first_name' => 'First Name',
+                    'last_name' => 'Last Name',
+                    'date_of_birth' => 'Date of Birth',
+                    'gender' => 'Gender',
+                    'phone' => 'Phone',
+                    'email' => 'Email',
                 ]);
 
                 if ($validator->fails()) {
-                    $this->errors[] = "Row {$rowNumber}: " . implode(', ', $validator->errors()->all());
+                    $this->errors[] = "Row {$rowNumber}: " . implode('; ', $validator->errors()->all());
                     $this->skippedCount++;
                     continue;
                 }
@@ -55,36 +77,36 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
 
                 // Check for duplicate patient (same name and phone in the same clinic)
                 $exists = Patient::where('clinic_id', $user->clinic_id)
-                    ->where('first_name', trim($row['first_name']))
-                    ->where('last_name', trim($row['last_name']))
-                    ->when(!empty(trim($row['phone'] ?? '')), function ($q) use ($row) {
-                        return $q->where('phone', trim($row['phone']));
+                    ->where('first_name', trim($data['first_name']))
+                    ->where('last_name', trim($data['last_name']))
+                    ->when(!empty(trim($data['phone'] ?? '')), function ($q) use ($data) {
+                        return $q->where('phone', trim($data['phone']));
                     })
                     ->exists();
 
                 if ($exists) {
-                    $this->errors[] = "Row {$rowNumber}: Patient '{$row['first_name']} {$row['last_name']}' already exists";
+                    $this->errors[] = "Row {$rowNumber}: Patient '" . ($data['first_name'] ?? '') . " " . ($data['last_name'] ?? '') . "' already exists";
                     $this->skippedCount++;
                     continue;
                 }
 
-                // Parse date of birth
-                $dateOfBirth = null;
-                if (!empty(trim($row['date_of_birth'] ?? ''))) {
-                    try {
-                        $dateOfBirth = \Carbon\Carbon::parse(trim($row['date_of_birth']))->format('Y-m-d');
-                    } catch (\Exception $e) {
-                        $this->errors[] = "Row {$rowNumber}: Invalid date format for date_of_birth";
-                        $this->skippedCount++;
-                        continue;
-                    }
+                // Finalize required-but-missing fields with safe defaults (bypass null cells)
+                $finalDob = $data['date_of_birth'] ?? null;
+                if (empty($finalDob)) {
+                    $finalDob = '2000-01-01';
+                    $this->warnings[] = "Row {$rowNumber}: Date of Birth missing; set to 2000-01-01";
+                }
+                $finalGender = strtolower(trim($data['gender'] ?? ''));
+                if ($finalGender === '') {
+                    $finalGender = 'other';
+                    $this->warnings[] = "Row {$rowNumber}: Gender missing; set to 'other'";
                 }
 
                 // Parse numeric fields
-                $height = $this->parseNumeric($row['height'] ?? '');
-                $weight = $this->parseNumeric($row['weight'] ?? '');
+                $height = $this->parseNumeric($data['height'] ?? '');
+                $weight = $this->parseNumeric($data['weight'] ?? '');
                 $bmi = null;
-                
+
                 // Calculate BMI if height and weight are provided
                 if ($height && $weight && $height > 0) {
                     $heightInMeters = $height / 100; // Convert cm to meters
@@ -95,35 +117,35 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                 try {
                     Patient::create([
                         'patient_id' => $patientId,
-                        'first_name' => trim($row['first_name']),
-                        'last_name' => trim($row['last_name']),
-                        'date_of_birth' => $dateOfBirth,
-                        'gender' => strtolower(trim($row['gender'] ?? '')),
-                        'phone' => trim($row['phone'] ?? ''),
-                        'whatsapp_phone' => trim($row['whatsapp_phone'] ?? ''),
-                        'email' => trim($row['email'] ?? ''),
-                        'address' => trim($row['address'] ?? ''),
-                        'job' => trim($row['job'] ?? ''),
-                        'education' => trim($row['education'] ?? ''),
+                        'first_name' => trim($data['first_name']),
+                        'last_name' => trim($data['last_name']),
+                        'date_of_birth' => $finalDob,
+                        'gender' => $finalGender,
+                        'phone' => trim($data['phone'] ?? ''),
+                        'whatsapp_phone' => trim($data['whatsapp_phone'] ?? ''),
+                        'email' => trim($data['email'] ?? ''),
+                        'address' => trim($data['address'] ?? ''),
+                        'job' => trim($data['job'] ?? ''),
+                        'education' => trim($data['education'] ?? ''),
                         'height' => $height,
                         'weight' => $weight,
                         'bmi' => $bmi,
-                        'allergies' => trim($row['allergies'] ?? ''),
-                        'is_pregnant' => $this->parseBoolean($row['is_pregnant'] ?? ''),
-                        'chronic_illnesses' => trim($row['chronic_illnesses'] ?? ''),
-                        'surgeries_history' => trim($row['surgeries_history'] ?? ''),
-                        'diet_history' => trim($row['diet_history'] ?? ''),
-                        'notes' => trim($row['notes'] ?? ''),
-                        'emergency_contact_name' => trim($row['emergency_contact_name'] ?? ''),
-                        'emergency_contact_phone' => trim($row['emergency_contact_phone'] ?? ''),
+                        'allergies' => trim($data['allergies'] ?? ''),
+                        'is_pregnant' => $this->parseBoolean($data['is_pregnant'] ?? ''),
+                        'chronic_illnesses' => trim($data['chronic_illnesses'] ?? ''),
+                        'surgeries_history' => trim($data['surgeries_history'] ?? ''),
+                        'diet_history' => trim($data['diet_history'] ?? ''),
+                        'notes' => trim($data['notes'] ?? ''),
+                        'emergency_contact_name' => trim($data['emergency_contact_name'] ?? ''),
+                        'emergency_contact_phone' => trim($data['emergency_contact_phone'] ?? ''),
                         'clinic_id' => $user->clinic_id,
                         'created_by' => $user->id,
-                        'is_active' => $this->parseBoolean($row['is_active'] ?? 'true'),
+                        'is_active' => $this->parseBoolean($data['is_active'] ?? 'true'),
                     ]);
 
                     $this->importedCount++;
                 } catch (\Illuminate\Database\QueryException $e) {
-                    $this->errors[] = "Row {$rowNumber}: Database error - " . $e->getMessage();
+                    $this->errors[] = "Row {$rowNumber}: Database error (likely a required field is missing or invalid). Please check Date of Birth and Gender in the sheet.";
                     $this->skippedCount++;
                     continue;
                 }
@@ -155,7 +177,7 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
         if (empty(trim($value))) {
             return null;
         }
-        
+
         $cleaned = preg_replace('/[^\d.]/', '', trim($value));
         return is_numeric($cleaned) ? (float)$cleaned : null;
     }
@@ -173,6 +195,49 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
         return in_array($value, ['true', '1', 'yes', 'y', 'on']);
     }
 
+    /**
+     * Normalize gender values to male/female/other; empty -> '' (handled later)
+     */
+    private function normalizeGender($value): string
+    {
+        $v = strtolower(trim((string)$value));
+        if ($v === '') return '';
+        $map = [
+            'm' => 'male', 'male' => 'male', '1' => 'male',
+            'f' => 'female', 'female' => 'female', '0' => 'female',
+            'other' => 'other', 'o' => 'other'
+        ];
+        return $map[$v] ?? ($v === 'male' || $v === 'female' || $v === 'other' ? $v : 'other');
+    }
+
+    /**
+     * Normalize Excel dates: accepts Y-m-d strings or Excel serial numbers.
+     * Returns array [Y-m-d|null, warning|null]
+     */
+    private function normalizeDate($value): array
+    {
+        if ($value === null) return [null, null];
+        // If numeric, try Excel serial
+        if (is_numeric($value)) {
+            try {
+                $dt = ExcelDate::excelToDateTimeObject($value);
+                return [$dt->format('Y-m-d'), null];
+            } catch (\Throwable $e) {
+                return [null, 'Invalid date detected; could not convert Excel serial'];
+
+
+            }
+        }
+        $v = trim((string)$value);
+        if ($v === '') return [null, null];
+        try {
+            return [\Carbon\Carbon::parse($v)->format('Y-m-d'), null];
+        } catch (\Throwable $e) {
+            return [null, "Invalid date format '{$v}' (will use default)"];
+        }
+    }
+
+
     public function batchSize(): int
     {
         return 100;
@@ -181,6 +246,16 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
     public function chunkSize(): int
     {
         return 100;
+    }
+
+    public function getWarnings(): array
+    {
+        return $this->warnings;
+    }
+
+    public function hasWarnings(): bool
+    {
+        return !empty($this->warnings);
     }
 
     public function getImportedCount(): int
