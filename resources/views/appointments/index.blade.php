@@ -133,127 +133,13 @@
                             </table>
                         </div>
                     @else
-                        <!-- Demo Appointments -->
-                        <div class="alert alert-info border-0 rounded-3 mx-3 mt-3" role="alert">
-                            <i class="fas fa-info-circle me-2"></i>
-                            {{ __('No appointments match your current filters for today. Showing sample data. Action buttons are disabled.') }}
-                            <a href="#" class="ms-2" data-bs-toggle="modal" data-bs-target="#newAppointmentModal">{{ __('Create one now') }}</a>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>{{ __('Time') }}</th>
-                                        <th>{{ __('Patient') }}</th>
-                                        <th>{{ __('Doctor') }}</th>
-                                        <th>{{ __('Type') }}</th>
-                                        <th>{{ __('Status') }}</th>
-                                        <th>{{ __('Notes') }}</th>
-                                        <th>{{ __('Actions') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <div class="fw-bold">9:00 AM</div>
-                                            <small class="text-muted">30 min</small>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar bg-info text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
-                                                    DP
-                                                </div>
-                                                <div>
-                                                    <div class="fw-bold">Demo Patient</div>
-                                                    <small class="text-muted">+1-555-0123</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>Dr. John Smith</td>
-                                        <td><span class="badge bg-light text-dark">Consultation</span></td>
-                                        <td><span class="badge bg-success">Confirmed</span></td>
-                                        <td>Regular checkup</td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button" class="btn btn-outline-success" title="{{ __('Demo only') }}" disabled>
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-outline-primary" title="{{ __('Demo only') }}" disabled>
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-outline-danger" title="{{ __('Demo only') }}" disabled>
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div class="fw-bold">10:30 AM</div>
-                                            <small class="text-muted">45 min</small>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar bg-info text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
-                                                    JS
-                                                </div>
-                                                <div>
-                                                    <div class="fw-bold">John Smith</div>
-                                                    <small class="text-muted">+1-555-0456</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>Dr. John Smith</td>
-                                        <td><span class="badge bg-light text-dark">Follow-up</span></td>
-                                        <td><span class="badge bg-warning">Scheduled</span></td>
-                                        <td>Blood pressure check</td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button" class="btn btn-outline-success" title="{{ __('Demo only') }}" disabled>
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-outline-primary" title="{{ __('Demo only') }}" disabled>
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-outline-danger" title="{{ __('Demo only') }}" disabled>
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div class="fw-bold">2:00 PM</div>
-                                            <small class="text-muted">30 min</small>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar bg-info text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
-                                                    SA
-                                                </div>
-                                                <div>
-                                                    <div class="fw-bold">Sarah Ahmed</div>
-                                                    <small class="text-muted">+1-555-0789</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>Dr. John Smith</td>
-                                        <td><span class="badge bg-light text-dark">Emergency</span></td>
-                                        <td><span class="badge bg-primary">Completed</span></td>
-                                        <td>Urgent care visit</td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button" class="btn btn-outline-info" title="{{ __('Demo only') }}" disabled>
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-outline-success" title="{{ __('Demo only') }}" disabled>
-                                                    <i class="fas fa-prescription-bottle-alt"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <!-- Empty state (no demo rows for real clinics) -->
+                        <div class="text-center text-muted py-5">
+                            <div class="mb-2"><i class="fas fa-calendar-times fa-2x"></i></div>
+                            <p class="mb-3">{{ __('No appointments match your current filters for today.') }}</p>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newAppointmentModal">
+                                <i class="fas fa-plus me-1"></i> {{ __('Create Appointment') }}
+                            </button>
                         </div>
                     @endif
                 </div>
