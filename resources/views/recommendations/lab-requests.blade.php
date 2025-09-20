@@ -172,14 +172,15 @@
                                                    title="{{ __('Download PDF') }}" target="_blank">
                                                     <i class="fas fa-file-pdf"></i>
                                                 </a>
-                                                <a href="{{ url('/messages') }}"
-                                                   class="btn btn-sm btn-outline-secondary"
+                                                <a href="{{ route('messages.index') }}"
+                                                   class="btn btn-sm btn-outline-secondary js-share-internal"
                                                    title="{{ __('Share Internally') }}"
-                                                   onclick="try{var v=JSON.stringify({
-                                                     transfer_type:'lab_request', patient_id: @json($labRequest->patient_id),
-                                                     source_type:'lab_request', source_id: @json($labRequest->id),
-                                                     metadata:{ patient_name:@json($labRequest->patient?->full_name ?? ''), request_number:@json($labRequest->request_number ?? '') }
-                                                   }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v); this.href=this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));}catch(e){}">
+                                                   data-transfer-type="lab_request"
+                                                   data-patient-id="{{ $labRequest->patient_id }}"
+                                                   data-source-type="lab_request"
+                                                   data-source-id="{{ $labRequest->id }}"
+                                                   data-patient-name="{{ $labRequest->patient?->full_name ?? '' }}"
+                                                   data-request-number="{{ $labRequest->request_number ?? '' }}">
                                                     <i class="fas fa-share-nodes"></i>
                                                 </a>
                                                     <div class="d-inline-flex align-items-center gap-1">
@@ -738,6 +739,33 @@ function deleteLabRequest(id) {
         form.submit();
     }
 }
+
+// Delegated handler for Share Internally buttons (prevents oval overlay)
+(function(){
+  document.addEventListener('click', function(ev){
+    const link = ev.target.closest('.js-share-internal');
+    if(!link) return;
+    if (link.dataset.enhanced) return;
+    try {
+      const payload = {
+        transfer_type: link.dataset.transferType || 'lab_request',
+        patient_id: Number(link.dataset.patientId || 0),
+        source_type: link.dataset.sourceType || 'lab_request',
+        source_id: Number(link.dataset.sourceId || 0),
+        metadata: {
+          patient_name: link.dataset.patientName || '',
+          request_number: link.dataset.requestNumber || ''
+        }
+      };
+      const v = JSON.stringify(payload);
+      localStorage.setItem('prefill_transfer', v);
+      sessionStorage.setItem('prefill_transfer', v);
+      link.href = link.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));
+      link.dataset.enhanced = '1';
+    } catch(e) {}
+  }, { passive: true });
+})();
+
 
 
 </script>

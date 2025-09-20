@@ -27,12 +27,9 @@
                         <i class="fas fa-file-pdf me-1"></i>
                         {{ __('Download PDF') }}
                     </a>
-                    <a href="{{ url('/messages') }}" class="btn btn-outline-secondary me-2 px-3" title="{{ __('Share Internally (Messages)') }}"
-                       onclick="try{var v=JSON.stringify({
-                         transfer_type:'lab_request', patient_id: {{ $labRequest->patient_id }},
-                         source_type:'lab_request', source_id: {{ $labRequest->id }},
-                         metadata:{ patient_name:@json($labRequest->patient->full_name ?? ''), request_number:@json($labRequest->request_number ?? '') }
-                       }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v); this.href=this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));}catch(e){}">
+                    <a id="share-internal" href="{{ route('messages.index') }}" class="btn btn-outline-secondary me-2 px-3" title="{{ __('Share Internally (Messages)') }}"
+                       data-patient-id="{{ $labRequest->patient_id }}" data-source-id="{{ $labRequest->id }}"
+                       data-patient-name="{{ $labRequest->patient->full_name ?? '' }}" data-request-number="{{ $labRequest->request_number ?? '' }}">
                         <i class="fas fa-share-nodes me-1"></i>
                         <span class="d-none d-sm-inline">{{ __('Share Internally') }}</span>
                     </a>
@@ -151,7 +148,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Laboratory Information -->
                     @if($labRequest->lab_name || $labRequest->lab_email || $labRequest->lab_phone || $labRequest->lab_whatsapp)
                     <div class="mt-4">
@@ -261,7 +258,7 @@
                     <h5 class="mb-0">{{ __('Results') }}</h5>
                 </div>
                 <div class="card-body">
-                    <p><strong>{{ __('Result File') }}:</strong> 
+                    <p><strong>{{ __('Result File') }}:</strong>
                         <a href="{{ Storage::url($labRequest->result_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                             <i class="fas fa-download me-1"></i>
                             {{ __('Download Result') }}
@@ -383,7 +380,7 @@ function uploadResult(labRequestId) {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
-    
+
     fileInput.onchange = function() {
         const file = fileInput.files[0];
         if (!file) return;
@@ -459,5 +456,34 @@ function deleteLabRequest(id) {
         form.submit();
     }
 }
+
+// Safer Share Internally handler for details page
+(function(){
+  document.addEventListener('DOMContentLoaded', function(){
+    const b = document.getElementById('share-internal');
+    if(!b) return;
+    b.addEventListener('click', function(){
+      try{
+        const payload = {
+          transfer_type: 'lab_request',
+          patient_id: Number(this.dataset.patientId || 0),
+          source_type: 'lab_request',
+          source_id: Number(this.dataset.sourceId || 0),
+          metadata: {
+            patient_name: this.dataset.patientName || '',
+            request_number: this.dataset.requestNumber || ''
+          }
+        };
+        const v = JSON.stringify(payload);
+        localStorage.setItem('prefill_transfer', v);
+        sessionStorage.setItem('prefill_transfer', v);
+        this.href = this.href + '?prefill_transfer=' + encodeURIComponent(btoa(v));
+      }catch(e){}
+    }, { once: true });
+  });
+})();
+
 </script>
 @endpush
+
+
