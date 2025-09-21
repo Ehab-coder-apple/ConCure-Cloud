@@ -982,6 +982,8 @@ function loadExistingMealData() {
 
                 // Create a new meal option
                 const mealOption = {
+                    option_number: parseInt(optionNumber),
+                    option_description: meals[0]?.option_description || `Option ${optionNumber}`,
                     foods: [],
                     total_calories: 0,
                     total_protein: 0,
@@ -1017,6 +1019,7 @@ function loadExistingMealData() {
                 });
 
                 // Add this option to the meal type
+                optionCounters[mappedMealType] = Math.max(optionCounters[mappedMealType] || 0, parseInt(optionNumber));
                 mealOptions[mappedMealType].push(mealOption);
             });
         });
@@ -1266,6 +1269,11 @@ function renderMealOption(mealType, option, optionIndex) {
     optionCard.querySelector('.remove-option-btn').addEventListener('click', function() {
         removeOption(mealType, optionIndex);
     });
+
+    // If option already has foods (editing case), render them now
+    if (option.foods && option.foods.length > 0) {
+        updateOptionDisplay(mealType, optionIndex);
+    }
 }
 
 // Get meal type display name
