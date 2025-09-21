@@ -628,8 +628,28 @@ class NutritionController extends Controller
         $dietPlan->update($request->only([
             'title', 'description', 'goal', 'goal_description', 'duration_days',
             'target_calories', 'target_protein', 'target_carbs', 'target_fat',
+            'target_weight',
             'instructions', 'restrictions', 'start_date', 'end_date', 'status'
         ]));
+
+        // Recalculate derived BMI/weight goal fields when relevant values change
+        if ($dietPlan->initial_height) {
+            $updateData = [];
+            if (!is_null($dietPlan->initial_weight)) {
+                $initialBmi = Patient::calculateBMI($dietPlan->initial_weight, $dietPlan->initial_height);
+                $updateData['initial_bmi'] = $initialBmi;
+                $updateData['current_bmi'] = $initialBmi;
+            }
+            if (!is_null($dietPlan->target_weight)) {
+                $updateData['target_bmi'] = Patient::calculateBMI($dietPlan->target_weight, $dietPlan->initial_height);
+                if (!is_null($dietPlan->initial_weight)) {
+                    $updateData['weight_goal_kg'] = $dietPlan->target_weight - $dietPlan->initial_weight;
+                }
+            }
+            if (!empty($updateData)) {
+                $dietPlan->update($updateData);
+            }
+        }
 
         // Debug: Check if meal_options is present in request
         \Log::info('Update request debug:', [
@@ -663,9 +683,12 @@ class NutritionController extends Controller
                             if (!empty($option['foods']) && is_array($option['foods'])) {
                                 // Create a meal for this option
                                 $meal = $dietPlan->meals()->create([
-                                    'meal_type' => $mealType,
-                                    'day_number' => 1, // Single day plan
-                                    'option_number' => $optionIndex + 1,
+                                    'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
+                                    'day_number' => null, // Option-based: no day number
+                                    'option_number' => $option['option_number'] ?? ($optionIndex + 1),
+                                    'is_option_based' => true,
+                                    'option_description' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1)))),
+                                    'meal_name' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1))))
                                 ]);
 
                                 // Add foods to this meal

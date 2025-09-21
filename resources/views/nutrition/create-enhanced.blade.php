@@ -961,8 +961,10 @@ function loadExistingMealData() {
         console.log('Loading existing meal data...');
 
         // Load meals from server data (grouped by meal_type and option_number)
-        // For flexible plans, day_number is null, for traditional plans it's 1
-        const existingMeals = @json($dietPlan->meals->where('is_option_based', true)->groupBy(['meal_type', 'option_number']));
+        // Use option-based meals if present; otherwise fall back to all meals (backward compatibility)
+        const mealsOptionBased = @json($dietPlan->meals->where('is_option_based', true)->groupBy(['meal_type', 'option_number']));
+        const mealsAll = @json($dietPlan->meals->groupBy(['meal_type', 'option_number']));
+        const existingMeals = Object.keys(mealsOptionBased).length ? mealsOptionBased : mealsAll;
 
         console.log('Raw existing meals data:', existingMeals);
 
