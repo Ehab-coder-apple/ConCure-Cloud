@@ -97,7 +97,14 @@ class Food extends Model
     public function getTranslatedNameAttribute(): string
     {
         $locale = app()->getLocale();
-        return $this->name_translations[$locale] ?? $this->name;
+        $translations = $this->name_translations;
+        if (is_string($translations)) {
+            $decoded = json_decode($translations, true);
+            $translations = is_array($decoded) ? $decoded : [];
+        } elseif (!is_array($translations)) {
+            $translations = [];
+        }
+        return $translations[$locale] ?? $this->name;
     }
 
     /**
@@ -142,7 +149,14 @@ class Food extends Model
     public function getTranslatedDescriptionAttribute(): ?string
     {
         $locale = app()->getLocale();
-        return $this->description_translations[$locale] ?? $this->description;
+        $translations = $this->description_translations;
+        if (is_string($translations)) {
+            $decoded = json_decode($translations, true);
+            $translations = is_array($decoded) ? $decoded : [];
+        } elseif (!is_array($translations)) {
+            $translations = [];
+        }
+        return $translations[$locale] ?? $this->description;
     }
 
     /**
