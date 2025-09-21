@@ -249,7 +249,7 @@
                                             }
                                         @endphp
                                         <span class="badge rounded-pill category-badge" style="background-color: {{ $bgColor }}; color: {{ $textColor }};">
-                                            {{ $food->foodGroup->translated_name }}
+                                            {{ $food->foodGroup?->translated_name ?? 'Uncategorized' }}
                                         </span>
                                     </td>
                                     <td class="text-center">
