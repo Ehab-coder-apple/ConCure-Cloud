@@ -92,9 +92,9 @@ class FoodController extends Controller
     public function create()
     {
         $this->checkFoodPermission('food_database_create');
-        
+
         $foodGroups = FoodGroup::active()->ordered()->get();
-        
+
         return view('foods.create', compact('foodGroups'));
     }
 
@@ -106,7 +106,7 @@ class FoodController extends Controller
         $this->checkFoodPermission('food_database_create');
 
         $user = auth()->user();
-        
+
         $request->validate([
             'name' => 'required|string|max:255',
             'name_en' => 'nullable|string|max:255',
@@ -136,7 +136,7 @@ class FoodController extends Controller
         // Prepare translations
         $nameTranslations = [];
         $descriptionTranslations = [];
-        
+
         foreach (['en', 'ar', 'ku'] as $locale) {
             if ($request->filled("name_{$locale}")) {
                 $nameTranslations[$locale] = $request->input("name_{$locale}");
@@ -182,7 +182,7 @@ class FoodController extends Controller
     public function show(Food $food)
     {
         $food->load(['foodGroup', 'clinic', 'creator']);
-        
+
         return view('foods.show', compact('food'));
     }
 
@@ -197,9 +197,9 @@ class FoodController extends Controller
         if ($food->is_custom === false) {
             abort(403, 'Cannot edit standard food items.');
         }
-        
+
         $foodGroups = FoodGroup::active()->ordered()->get();
-        
+
         return view('foods.edit', compact('food', 'foodGroups'));
     }
 
@@ -214,7 +214,7 @@ class FoodController extends Controller
         if ($food->is_custom === false) {
             abort(403, 'Cannot edit standard food items.');
         }
-        
+
         $request->validate([
             'name' => 'required|string|max:255',
             'name_en' => 'nullable|string|max:255',
@@ -245,7 +245,7 @@ class FoodController extends Controller
         // Prepare translations
         $nameTranslations = $food->name_translations ?? [];
         $descriptionTranslations = $food->description_translations ?? [];
-        
+
         foreach (['en', 'ar', 'ku'] as $locale) {
             if ($request->filled("name_{$locale}")) {
                 $nameTranslations[$locale] = $request->input("name_{$locale}");
@@ -411,6 +411,19 @@ class FoodController extends Controller
         ]);
 
         $query = Food::with('foodGroup')->active();
+
+        // Limit results to current clinic only (multi-clinic safety)
+        $user = auth()->user();
+        if ($user && $user->clinic_id) {
+            $query->byClinic($user->clinic_id);
+        } elseif ($user) {
+            // If user has no clinic, only show their own items with null clinic_id
+            $query->where(function($q) use ($user) {
+                $q->whereNull('clinic_id')
+                  ->where('created_by', $user->id);
+            });
+        }
+
 
         // Handle search term (support both 'search' and 'q' parameters)
         $searchTerm = $request->search ?? $request->q;
