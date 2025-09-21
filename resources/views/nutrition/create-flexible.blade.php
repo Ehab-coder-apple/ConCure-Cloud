@@ -294,7 +294,7 @@
                             <label for="food-group-filter" class="form-label">Food Group</label>
                             <select class="form-select" id="food-group-filter">
                                 <option value="">All Groups</option>
-                                @foreach(\App\Models\FoodGroup::active()->ordered()->get() as $group)
+                                @foreach(\App\Models\FoodGroup::active()->forClinic(auth()->user()?->clinic_id)->ordered()->get() as $group)
                                     <option value="{{ $group->id }}">{{ $group->translated_name }}</option>
                                 @endforeach
                             </select>
