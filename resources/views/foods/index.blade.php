@@ -237,7 +237,7 @@
                                     </td>
                                     <td>
                                         @php
-                                            $bgColor = $food->foodGroup->color ?? '#6c757d';
+                                            $bgColor = optional($food->foodGroup)->color ?? '#6c757d';
                                             // Ensure we have a valid color
                                             if (empty($bgColor) || $bgColor === '#ffffff' || $bgColor === 'white') {
                                                 $bgColor = '#6c757d'; // Default gray
