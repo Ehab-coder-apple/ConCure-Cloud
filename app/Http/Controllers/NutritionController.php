@@ -1090,7 +1090,7 @@ class NutritionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to calculate calories. Please ensure patient has complete data (weight, height, age, gender).'
-            ], 400);
+            ], 422);
         }
 
         // Calculate macronutrient distribution
