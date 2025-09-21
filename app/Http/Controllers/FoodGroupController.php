@@ -31,6 +31,11 @@ class FoodGroupController extends Controller
         $this->checkFoodPermission('food_database_view');
         $query = FoodGroup::withCount('foods');
 
+        // Limit to global groups + current clinic's groups
+        $user = auth()->user();
+        $clinicId = $user?->clinic_id;
+        $query->forClinic($clinicId);
+
         if ($request->filled('search')) {
             $query->search($request->search);
         }
@@ -83,6 +88,7 @@ class FoodGroupController extends Controller
             }
         }
 
+        $user = auth()->user();
         $foodGroup = FoodGroup::create([
             'name' => $request->name,
             'name_translations' => $nameTranslations,
@@ -91,6 +97,8 @@ class FoodGroupController extends Controller
             'color' => $request->color ?? '#6c757d',
             'sort_order' => $request->sort_order ?? 0,
             'is_active' => true,
+            'clinic_id' => $user?->clinic_id,
+            'created_by' => $user?->id,
         ]);
 
         return redirect()->route('food-groups.index')
@@ -190,7 +198,10 @@ class FoodGroupController extends Controller
      */
     public function api(Request $request)
     {
+        $user = auth()->user();
+        $clinicId = $user?->clinic_id;
         $foodGroups = FoodGroup::active()
+                              ->forClinic($clinicId)
                               ->ordered()
                               ->get()
                               ->map(function ($group) {

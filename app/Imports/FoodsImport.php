@@ -63,11 +63,13 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                 // Find or create food group first - always ensure we have a food group
                 $foodGroupName = !empty($row['food_group']) ? trim($row['food_group']) : 'General';
 
-                // Try to find existing food group first
-                $foodGroup = FoodGroup::where('name', $foodGroupName)->first();
+                // Try to find existing food group first (current clinic only)
+                $foodGroup = FoodGroup::where('name', $foodGroupName)
+                    ->where('clinic_id', $user->clinic_id ?? null)
+                    ->first();
 
                 if (!$foodGroup) {
-                    // Create new food group with proper translations
+                    // Create new food group with proper translations, owned by clinic if present
                     try {
                         $foodGroup = FoodGroup::create([
                             'name' => $foodGroupName,
@@ -78,13 +80,17 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                             ],
                             'description' => 'Auto-created from food import',
                             'is_active' => true,
-                            'sort_order' => 999
+                            'sort_order' => 999,
+                            'clinic_id' => $user->clinic_id ?? null,
+                            'created_by' => $user?->id,
                         ]);
                     } catch (\Exception $e) {
-                        // If food group creation fails, use default "General" group
-                        $foodGroup = FoodGroup::where('name', 'General')->first();
+                        // If creation fails, fall back to a clinic-level "General" group
+                        $foodGroup = FoodGroup::where('name', 'General')
+                            ->where('clinic_id', $user->clinic_id ?? null)
+                            ->first();
                         if (!$foodGroup) {
-                            // Create General group as fallback
+                            // Create General group as fallback (clinic-level)
                             $foodGroup = FoodGroup::create([
                                 'name' => 'General',
                                 'name_translations' => [
@@ -94,7 +100,9 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                                 ],
                                 'description' => 'General food items',
                                 'is_active' => true,
-                                'sort_order' => 1
+                                'sort_order' => 1,
+                                'clinic_id' => $user->clinic_id ?? null,
+                                'created_by' => $user?->id,
                             ]);
                         }
                     }

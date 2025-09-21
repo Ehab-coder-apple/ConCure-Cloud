@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 
 class FoodGroup extends Model
 {
@@ -18,6 +20,8 @@ class FoodGroup extends Model
         'color',
         'sort_order',
         'is_active',
+        'clinic_id',
+        'created_by',
     ];
 
     protected $casts = [
@@ -25,6 +29,22 @@ class FoodGroup extends Model
         'description_translations' => 'array',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Clinic that owns this custom group (null = global/default group)
+     */
+    public function clinic(): BelongsTo
+    {
+        return $this->belongsTo(Clinic::class);
+    }
+
+    /**
+     * User who created the group
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 
     /**
      * Get the foods for the food group.
@@ -94,6 +114,18 @@ class FoodGroup extends Model
     public function getDescriptionTranslation(string $locale): ?string
     {
         return $this->description_translations[$locale] ?? null;
+    }
+
+    /**
+     * Scope: groups available for a clinic (global or owned by clinic)
+     */
+    public function scopeForClinic($query, ?int $clinicId)
+    {
+        if (!$clinicId) {
+            // No clinic context: show none
+            return $query->whereRaw('1 = 0');
+        }
+        return $query->where('clinic_id', $clinicId);
     }
 
     /**

@@ -81,7 +81,10 @@ class FoodController extends Controller
         }
 
         $foods = $query->active()->orderBy('name')->paginate(20);
-        $foodGroups = FoodGroup::active()->ordered()->get();
+        $user = auth()->user();
+        $clinicId = $user?->clinic_id;
+
+        $foodGroups = FoodGroup::active()->forClinic($clinicId)->ordered()->get();
 
         return view('foods.index', compact('foods', 'foodGroups'));
     }
@@ -93,7 +96,9 @@ class FoodController extends Controller
     {
         $this->checkFoodPermission('food_database_create');
 
-        $foodGroups = FoodGroup::active()->ordered()->get();
+        $user = auth()->user();
+        $clinicId = $user?->clinic_id;
+        $foodGroups = FoodGroup::active()->forClinic($clinicId)->ordered()->get();
 
         return view('foods.create', compact('foodGroups'));
     }
@@ -192,13 +197,16 @@ class FoodController extends Controller
     public function edit(Food $food)
     {
         $this->checkFoodPermission('food_database_edit');
+        $user = auth()->user();
+        $clinicId = $user?->clinic_id;
+
 
         // Only allow editing custom foods
         if ($food->is_custom === false) {
             abort(403, 'Cannot edit standard food items.');
         }
 
-        $foodGroups = FoodGroup::active()->ordered()->get();
+        $foodGroups = FoodGroup::active()->forClinic($clinicId)->ordered()->get();
 
         return view('foods.edit', compact('food', 'foodGroups'));
     }
