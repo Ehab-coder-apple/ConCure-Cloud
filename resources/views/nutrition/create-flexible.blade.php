@@ -890,7 +890,7 @@ function displayFoodResults(foods) {
 }
 
 // Select a food item
-function selectFood(id, originalName, displayName, calories, protein, carbs, fat) {
+function selectFood(id, originalName, displayName, calories, protein, carbs, fat, gramsPerPiece, servingWeight) {
     // Toggle selection
     const idx = selectedFoods.findIndex(f => f.id === id);
     const card = event.currentTarget;
@@ -899,9 +899,9 @@ function selectFood(id, originalName, displayName, calories, protein, carbs, fat
         selectedFoods.splice(idx, 1);
         card.classList.remove('border-primary');
     } else {
-        const foodObj = { id, name: originalName, displayName, calories, protein, carbs, fat };
+        const foodObj = { id, name: originalName, displayName, calories, protein, carbs, fat, grams_per_piece: gramsPerPiece, serving_weight: servingWeight };
         selectedFoods.push(foodObj);
-        lastSelectedFood = foodObj; // for preview
+        lastSelectedFood = foodObj; // keep for any legacy usage
         card.classList.add('border-primary');
     }
 
@@ -923,10 +923,11 @@ function selectFood(id, originalName, displayName, calories, protein, carbs, fat
         addBtn.disabled = true;
         const labelEl = document.getElementById('add-food-btn-label');
         if (labelEl) labelEl.textContent = 'Add Food to Option';
+        updateNutritionPreview();
     }
 }
 
-// Update nutrition preview based on quantity and unit (uses last selected item)
+// Update nutrition preview based on quantity and unit (totals across selected items)
 function updateNutritionPreview() {
     if (!selectedFoods || selectedFoods.length === 0) {
         document.getElementById('preview-calories').textContent = 0;
