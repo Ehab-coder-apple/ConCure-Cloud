@@ -50,7 +50,7 @@ class AppointmentController extends Controller
         // Get doctors for filter
         $doctors = DB::table('users')
             ->where('clinic_id', Auth::user()->clinic_id)
-            ->where('role', 'doctor')
+            ->whereIn('role', ['doctor', 'admin'])
             ->where('is_active', true)
             ->select('id', 'first_name', 'last_name')
             ->get();
@@ -120,7 +120,7 @@ class AppointmentController extends Controller
 
         $doctors = DB::table('users')
             ->where('clinic_id', Auth::user()->clinic_id)
-            ->where('role', 'doctor')
+            ->whereIn('role', ['doctor', 'admin'])
             ->where('is_active', true)
             ->select('id', 'first_name', 'last_name')
             ->get();
@@ -253,7 +253,7 @@ class AppointmentController extends Controller
 
         $doctors = DB::table('users')
             ->where('clinic_id', Auth::user()->clinic_id)
-            ->where('role', 'doctor')
+            ->whereIn('role', ['doctor', 'admin'])
             ->where('is_active', true)
             ->select('id', 'first_name', 'last_name')
             ->get();
