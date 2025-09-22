@@ -1032,10 +1032,10 @@ function addFoodToOption() {
     // Update option display
     updateOptionDisplay(currentMealType, currentOptionIndex);
 
-    // Close modal and clear
-    const modal = bootstrap.Modal.getInstance(document.getElementById('foodSelectionModal'));
-    modal.hide();
+    // Keep modal open for continued selection
     clearFoodSelection();
+    const searchEl = document.getElementById('food-search');
+    if (searchEl) searchEl.focus();
 }
 
 // Clear food selection
