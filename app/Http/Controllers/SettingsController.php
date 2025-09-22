@@ -520,8 +520,25 @@ class SettingsController extends Controller
             ->where('key', 'clinic_logo')
             ->value('value');
 
-        if ($logoPath && Storage::disk('public')->exists($logoPath)) {
-            return Storage::url($logoPath);
+        if (!$logoPath) {
+            return null;
+        }
+
+        // If a full URL is stored
+        if (preg_match('#^https?://#i', $logoPath)) {
+            return $logoPath;
+        }
+
+        // Normalize path (handle legacy values like "storage/clinic-logos/...")
+        $relative = ltrim(str_replace('storage/', '', $logoPath), '/');
+
+        if (Storage::disk('public')->exists($relative)) {
+            return Storage::url($relative); // /storage/...
+        }
+
+        // Fallback: serve directly from public/ if present
+        if (function_exists('public_path') && file_exists(public_path($logoPath))) {
+            return asset($logoPath);
         }
 
         return null;

@@ -21,8 +21,25 @@ class ClinicHelper
             ->where('key', 'clinic_logo')
             ->value('value');
 
-        if ($logoPath && Storage::disk('public')->exists($logoPath)) {
-            return Storage::url($logoPath);
+        if (!$logoPath) {
+            return null;
+        }
+
+        // If a full URL was stored
+        if (preg_match('#^https?://#i', $logoPath)) {
+            return $logoPath;
+        }
+
+        // Normalize legacy values like "storage/clinic-logos/..."
+        $relative = ltrim(str_replace('storage/', '', $logoPath), '/');
+
+        if (Storage::disk('public')->exists($relative)) {
+            return Storage::url($relative);
+        }
+
+        // Fallback: check if file is directly in public/
+        if (function_exists('public_path') && file_exists(public_path($logoPath))) {
+            return asset($logoPath);
         }
 
         return null;
@@ -42,8 +59,22 @@ class ClinicHelper
             ->where('key', 'clinic_logo')
             ->value('value');
 
-        if ($logoPath && Storage::disk('public')->exists($logoPath)) {
-            return public_path('storage/' . str_replace('storage/', '', $logoPath));
+        if (!$logoPath) {
+            return null;
+        }
+
+        $relative = ltrim(str_replace('storage/', '', $logoPath), '/');
+
+        if (Storage::disk('public')->exists($relative)) {
+            return public_path('storage/' . $relative);
+        }
+
+        // Fallback: if stored directly under public/
+        if (function_exists('public_path')) {
+            $publicCandidate = public_path($logoPath);
+            if (file_exists($publicCandidate)) {
+                return $publicCandidate;
+            }
         }
 
         return null;
