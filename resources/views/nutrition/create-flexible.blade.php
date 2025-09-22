@@ -337,7 +337,7 @@
                                     <div class="col-md-4">
                                         <label for="food-quantity" class="form-label">Quantity</label>
                                         <input type="number" class="form-control" id="food-quantity"
-                                               value="100" min="0.1" step="0.1">
+                                               value="100" min="0.01" step="any">
                                     </div>
                                     <div class="col-md-4">
                                         <label for="food-unit" class="form-label">Unit</label>
@@ -345,9 +345,11 @@
                                             <option value="g">grams (g)</option>
                                             <option value="kg">kilograms (kg)</option>
                                             <option value="mg">milligrams (mg)</option>
+
                                             <option value="cup">cup</option>
                                             <option value="tbsp">tablespoon</option>
                                             <option value="tsp">teaspoon</option>
+                                            <option value="piece">piece</option>
                                             <option value="serving">serving</option>
                                         </select>
                                     </div>
@@ -951,7 +953,8 @@ function updateNutritionPreview() {
             multiplier = (quantity * 5) / 100;
             break;
         case 'serving':
-            multiplier = quantity / 100; // Assume 100g serving
+        case 'piece':
+            multiplier = quantity / 100; // Treat one piece as one serving (100g default)
             break;
     }
 
@@ -990,7 +993,8 @@ function addFoodToOption() {
         case 'cup': multiplier = (quantity * 240) / 100; break;
         case 'tbsp': multiplier = (quantity * 15) / 100; break;
         case 'tsp': multiplier = (quantity * 5) / 100; break;
-        case 'serving': multiplier = quantity / 100; break;
+        case 'serving':
+        case 'piece': multiplier = quantity / 100; break;
     }
 
     selectedFoods.forEach(f => {
