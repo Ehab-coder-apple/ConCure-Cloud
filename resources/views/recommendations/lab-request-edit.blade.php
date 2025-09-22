@@ -67,10 +67,10 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <label for="due_date" class="form-label">{{ __('Due Date') }}</label>
-                                        <input type="date" class="form-control @error('due_date') is-invalid @enderror" 
-                                               id="due_date" name="due_date" 
+                                        <input type="date" class="form-control @error('due_date') is-invalid @enderror"
+                                               id="due_date" name="due_date"
                                                value="{{ old('due_date', $labRequest->due_date?->format('Y-m-d')) }}"
-                                               min="{{ date('Y-m-d', strtotime('+1 day')) }}">
+                                               min="{{ date('Y-m-d') }}">
                                         @error('due_date')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror

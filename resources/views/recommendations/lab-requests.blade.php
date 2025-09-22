@@ -310,7 +310,7 @@
                         <div class="col-md-6">
                             <label for="due_date" class="form-label">{{ __('Due Date') }}</label>
                             <input type="date" class="form-control" id="due_date" name="due_date"
-                                   min="{{ date('Y-m-d', strtotime('+1 day')) }}">
+                                   min="{{ date('Y-m-d') }}">
                         </div>
                     </div>
 

@@ -169,7 +169,7 @@ class RecommendationController extends Controller
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'clinical_notes' => 'nullable|string',
-            'due_date' => 'nullable|date|after:today',
+            'due_date' => 'nullable|date|after_or_equal:today',
             'priority' => 'required|in:normal,urgent,stat',
             'lab_name' => 'nullable|string|max:255',
             'lab_phone' => 'nullable|string|max:20',
@@ -415,7 +415,7 @@ class RecommendationController extends Controller
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'clinical_notes' => 'nullable|string',
-            'due_date' => 'nullable|date|after:today',
+            'due_date' => 'nullable|date|after_or_equal:today',
             'priority' => 'required|in:normal,urgent,stat',
             'lab_name' => 'nullable|string|max:255',
             'lab_phone' => 'nullable|string|max:20',
