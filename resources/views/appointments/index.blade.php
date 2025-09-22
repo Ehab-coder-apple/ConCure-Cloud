@@ -180,17 +180,18 @@
                             <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
                             <select class="form-select" id="patient_id" name="patient_id" required>
                                 <option value="">{{ __('Select Patient') }}</option>
-                                <option value="1">Demo Patient (P000001)</option>
-                                <option value="2">John Smith (P000002)</option>
-                                <option value="3">Sarah Ahmed (P000003)</option>
+                                @foreach(($patients ?? []) as $patient)
+                                    <option value="{{ $patient->id }}">{{ $patient->first_name }} {{ $patient->last_name }} ({{ $patient->patient_id }})</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label for="doctor_id" class="form-label">{{ __('Doctor') }} <span class="text-danger">*</span></label>
                             <select class="form-select" id="doctor_id" name="doctor_id" required>
                                 <option value="">{{ __('Select Doctor') }}</option>
-                                <option value="1">Dr. John Smith</option>
-                                <option value="2">Dr. Sarah Johnson</option>
+                                @foreach(($doctors ?? []) as $doctor)
+                                    <option value="{{ $doctor->id }}">Dr. {{ $doctor->first_name }} {{ $doctor->last_name }}{{ ($doctor->role ?? null) === 'admin' ? ' (Admin)' : '' }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-6">

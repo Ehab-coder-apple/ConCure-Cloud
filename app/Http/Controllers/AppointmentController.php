@@ -47,12 +47,20 @@ class AppointmentController extends Controller
         $appointments = $query->orderBy('appointments.appointment_datetime')
             ->paginate(20);
 
-        // Get doctors for filter
+        // Get doctors and patients for modal/filter
         $doctors = DB::table('users')
             ->where('clinic_id', Auth::user()->clinic_id)
             ->whereIn('role', ['doctor', 'admin'])
             ->where('is_active', true)
             ->select('id', 'first_name', 'last_name', 'role')
+            ->orderBy('first_name')
+            ->get();
+
+        $patients = DB::table('patients')
+            ->where('clinic_id', Auth::user()->clinic_id)
+            ->where('is_active', true)
+            ->select('id', 'first_name', 'last_name', 'patient_id')
+            ->orderBy('first_name')
             ->get();
 
         // Check if calendar view is requested
