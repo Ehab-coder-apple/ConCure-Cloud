@@ -373,7 +373,7 @@
                         <div class="mt-3">
                             <button type="button" class="btn btn-primary" id="add-food-to-option" disabled>
                                 <i class="fas fa-plus me-1"></i>
-                                Add Food to Option
+                                <span id="add-food-btn-label">Add Food to Option</span>
                             </button>
                             <button type="button" class="btn btn-secondary" id="clear-selection">
                                 Clear Selection
@@ -913,10 +913,14 @@ function selectFood(id, originalName, displayName, calories, protein, carbs, fat
         details.style.display = 'block';
         title.textContent = count === 1 ? (selectedFoods[0].displayName) : `${count} items selected`;
         addBtn.disabled = false;
+        const labelEl = document.getElementById('add-food-btn-label');
+        if (labelEl) labelEl.textContent = count === 1 ? 'Add 1 food' : `Add ${count} foods`;
         updateNutritionPreview();
     } else {
         details.style.display = 'none';
         addBtn.disabled = true;
+        const labelEl = document.getElementById('add-food-btn-label');
+        if (labelEl) labelEl.textContent = 'Add Food to Option';
     }
 }
 
@@ -1027,6 +1031,8 @@ function clearFoodSelection() {
 
     if (selectedDetails) selectedDetails.style.display = 'none';
     if (addButton) addButton.disabled = true;
+    const labelEl = document.getElementById('add-food-btn-label');
+    if (labelEl) labelEl.textContent = 'Add Food to Option';
     if (searchInput) searchInput.value = '';
     if (quantityInput) quantityInput.value = '100';
     if (unitSelect) unitSelect.value = 'g';
