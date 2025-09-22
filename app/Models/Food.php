@@ -33,6 +33,7 @@ class Food extends Model
         'vitamin_a',
         'serving_size',
         'serving_weight',
+        'grams_per_piece',
         'is_custom',
         'clinic_id',
         'created_by',
@@ -55,6 +56,7 @@ class Food extends Model
         'vitamin_c' => 'decimal:2',
         'vitamin_a' => 'decimal:2',
         'serving_weight' => 'decimal:2',
+        'grams_per_piece' => 'decimal:2',
         'is_custom' => 'boolean',
         'is_active' => 'boolean',
     ];
@@ -237,7 +239,8 @@ class Food extends Model
             'cup' => $quantity * 240, // Approximate
             'tbsp' => $quantity * 15,
             'tsp' => $quantity * 5,
-            'serving' => $this->serving_weight ? $quantity * $this->serving_weight : $quantity * 100,
+            'serving' => $this->serving_weight ? $quantity * (float)$this->serving_weight : $quantity * 100,
+            'piece' => $this->grams_per_piece ? $quantity * (float)$this->grams_per_piece : ($this->serving_weight ? $quantity * (float)$this->serving_weight : $quantity * 100),
             default => $quantity, // Assume grams
         };
     }

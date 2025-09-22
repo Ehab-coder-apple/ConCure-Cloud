@@ -868,7 +868,7 @@ function displayFoodResults(foods) {
         html += `
             <div class="col-md-6 col-lg-4 mb-3">
                 <div class="card food-card h-100" style="cursor: pointer;"
-                     onclick="selectFood(${food.id}, '${food.name}', '${displayName}', ${food.calories}, ${food.protein}, ${food.carbohydrates}, ${food.fat})">
+                     onclick="selectFood(${food.id}, '${food.name}', '${displayName}', ${food.calories}, ${food.protein}, ${food.carbohydrates}, ${food.fat}, ${food.grams_per_piece ?? 'null'}, ${food.serving_weight ?? 100})">
                     <div class="card-body p-3">
                         <h6 class="card-title mb-2">${displayName}</h6>
                         <small class="text-muted d-block mb-2">${food.group || 'No Group'}</small>
@@ -952,10 +952,17 @@ function updateNutritionPreview() {
         case 'tsp':
             multiplier = (quantity * 5) / 100;
             break;
-        case 'serving':
-        case 'piece':
-            multiplier = quantity / 100; // Treat one piece as one serving (100g default)
+        case 'serving': {
+            const grams = (lastSelectedFood.serving_weight ?? 100) * quantity;
+            multiplier = grams / 100;
             break;
+        }
+        case 'piece': {
+            const perPiece = lastSelectedFood.grams_per_piece ?? lastSelectedFood.serving_weight ?? 100;
+            const grams = perPiece * quantity;
+            multiplier = grams / 100;
+            break;
+        }
     }
 
     const calories = Math.round(lastSelectedFood.calories * multiplier);
@@ -985,19 +992,28 @@ function addFoodToOption() {
         return;
     }
 
-    // Calculate multiplier once (applies to all selected foods)
-    let multiplier = quantity / 100; // Default for grams
-    switch(unit) {
-        case 'kg': multiplier = (quantity * 1000) / 100; break;
-        case 'mg': multiplier = (quantity / 1000) / 100; break;
-        case 'cup': multiplier = (quantity * 240) / 100; break;
-        case 'tbsp': multiplier = (quantity * 15) / 100; break;
-        case 'tsp': multiplier = (quantity * 5) / 100; break;
-        case 'serving':
-        case 'piece': multiplier = quantity / 100; break;
-    }
+    const calcMultiplierForFood = (f) => {
+        switch(unit) {
+            case 'kg': return (quantity * 1000) / 100;
+            case 'mg': return (quantity / 1000) / 100;
+            case 'cup': return (quantity * 240) / 100;
+            case 'tbsp': return (quantity * 15) / 100;
+            case 'tsp': return (quantity * 5) / 100;
+            case 'serving': {
+                const grams = (f.serving_weight ?? 100) * quantity;
+                return grams / 100;
+            }
+            case 'piece': {
+                const perPiece = f.grams_per_piece ?? f.serving_weight ?? 100;
+                const grams = perPiece * quantity;
+                return grams / 100;
+            }
+            default: return quantity / 100; // grams
+        }
+    };
 
     selectedFoods.forEach(f => {
+        const multiplier = calcMultiplierForFood(f);
         const foodItem = {
             id: f.id,
             name: f.name,

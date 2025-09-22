@@ -136,6 +136,7 @@ class FoodController extends Controller
             'vitamin_a' => 'nullable|numeric|min:0|max:99999',
             'serving_size' => 'nullable|string|max:255',
             'serving_weight' => 'nullable|numeric|min:0|max:9999',
+            'grams_per_piece' => 'nullable|numeric|min:0|max:9999',
         ]);
 
         // Prepare translations
@@ -171,6 +172,7 @@ class FoodController extends Controller
             'vitamin_a' => $request->vitamin_a ?? 0,
             'serving_size' => $request->serving_size,
             'serving_weight' => $request->serving_weight,
+            'grams_per_piece' => $request->grams_per_piece,
             'is_custom' => true,
             'clinic_id' => $user->clinic_id,
             'created_by' => $user->id,
@@ -247,6 +249,7 @@ class FoodController extends Controller
             'vitamin_a' => 'nullable|numeric|min:0|max:99999',
             'serving_size' => 'nullable|string|max:255',
             'serving_weight' => 'nullable|numeric|min:0|max:9999',
+            'grams_per_piece' => 'nullable|numeric|min:0|max:9999',
             'is_active' => 'boolean',
         ]);
 
@@ -283,6 +286,7 @@ class FoodController extends Controller
             'vitamin_a' => $request->vitamin_a ?? 0,
             'serving_size' => $request->serving_size,
             'serving_weight' => $request->serving_weight,
+            'grams_per_piece' => $request->grams_per_piece,
             'is_active' => $request->boolean('is_active', true),
         ]);
 
@@ -388,8 +392,8 @@ class FoodController extends Controller
     public function calculateNutrition(Request $request, Food $food)
     {
         $request->validate([
-            'quantity' => 'required|numeric|min:0.1',
-            'unit' => 'required|string|in:g,kg,mg,cup,tbsp,tsp,serving',
+            'quantity' => 'required|numeric|min:0.01',
+            'unit' => 'required|string|in:g,kg,mg,cup,tbsp,tsp,serving,piece',
         ]);
 
         $nutrition = $food->calculateNutrition($request->quantity, $request->unit);
@@ -461,6 +465,7 @@ class FoodController extends Controller
                               'fat' => $food->fat,
                               'serving_size' => $food->serving_size ?? '100g',
                               'serving_weight' => $food->serving_weight ?? 100.0,
+                              'grams_per_piece' => $food->grams_per_piece,
                           ];
                       });
 
