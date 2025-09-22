@@ -33,6 +33,7 @@ class Patient extends Model
         'chronic_illnesses',
         'surgeries_history',
         'diet_history',
+        'medical_history',
         'notes',
         'emergency_contact_name',
         'emergency_contact_phone',
