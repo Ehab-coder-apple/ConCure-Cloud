@@ -928,52 +928,50 @@ function selectFood(id, originalName, displayName, calories, protein, carbs, fat
 
 // Update nutrition preview based on quantity and unit (uses last selected item)
 function updateNutritionPreview() {
-    if (!lastSelectedFood) return;
+    if (!selectedFoods || selectedFoods.length === 0) {
+        document.getElementById('preview-calories').textContent = 0;
+        document.getElementById('preview-protein').textContent = 0;
+        document.getElementById('preview-carbs').textContent = 0;
+        document.getElementById('preview-fat').textContent = 0;
+        return;
+    }
 
     const quantity = parseFloat(document.getElementById('food-quantity').value) || 0;
     const unit = document.getElementById('food-unit').value;
 
-    // Convert to grams for calculation
-    let multiplier = quantity / 100; // Default for grams
-
-    switch(unit) {
-        case 'kg':
-            multiplier = (quantity * 1000) / 100;
-            break;
-        case 'mg':
-            multiplier = (quantity / 1000) / 100;
-            break;
-        case 'cup':
-            multiplier = (quantity * 240) / 100; // Approximate
-            break;
-        case 'tbsp':
-            multiplier = (quantity * 15) / 100;
-            break;
-        case 'tsp':
-            multiplier = (quantity * 5) / 100;
-            break;
-        case 'serving': {
-            const grams = (lastSelectedFood.serving_weight ?? 100) * quantity;
-            multiplier = grams / 100;
-            break;
+    const calcMultiplierForFood = (f) => {
+        switch(unit) {
+            case 'kg': return (quantity * 1000) / 100;
+            case 'mg': return (quantity / 1000) / 100;
+            case 'cup': return (quantity * 240) / 100; // Approximate
+            case 'tbsp': return (quantity * 15) / 100;
+            case 'tsp': return (quantity * 5) / 100;
+            case 'serving': {
+                const grams = (f.serving_weight ?? 100) * quantity;
+                return grams / 100;
+            }
+            case 'piece': {
+                const perPiece = f.grams_per_piece ?? f.serving_weight ?? 100;
+                const grams = perPiece * quantity;
+                return grams / 100;
+            }
+            default: return quantity / 100; // grams
         }
-        case 'piece': {
-            const perPiece = lastSelectedFood.grams_per_piece ?? lastSelectedFood.serving_weight ?? 100;
-            const grams = perPiece * quantity;
-            multiplier = grams / 100;
-            break;
-        }
-    }
+    };
 
-    const calories = Math.round(lastSelectedFood.calories * multiplier);
-    const protein = Math.round(lastSelectedFood.protein * multiplier * 10) / 10;
-    const carbs = Math.round(lastSelectedFood.carbs * multiplier * 10) / 10;
-    const fat = Math.round(lastSelectedFood.fat * multiplier * 10) / 10;
+    let totalCal = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
+    selectedFoods.forEach(f => {
+        const m = calcMultiplierForFood(f);
+        totalCal += (f.calories || 0) * m;
+        totalProtein += (f.protein || 0) * m;
+        totalCarbs += (f.carbs || 0) * m;
+        totalFat += (f.fat || 0) * m;
+    });
 
-    document.getElementById('preview-calories').textContent = calories;
-    document.getElementById('preview-protein').textContent = protein;
-    document.getElementById('preview-carbs').textContent = carbs;
-    document.getElementById('preview-fat').textContent = fat;
+    document.getElementById('preview-calories').textContent = Math.round(totalCal);
+    document.getElementById('preview-protein').textContent = Math.round(totalProtein * 10) / 10;
+    document.getElementById('preview-carbs').textContent = Math.round(totalCarbs * 10) / 10;
+    document.getElementById('preview-fat').textContent = Math.round(totalFat * 10) / 10;
 }
 
 // Add selected food(s) to current option
