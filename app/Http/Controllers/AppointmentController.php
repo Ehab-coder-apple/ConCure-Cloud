@@ -51,14 +51,14 @@ class AppointmentController extends Controller
         $doctors = DB::table('users')
             ->where('clinic_id', Auth::user()->clinic_id)
             ->whereIn('role', ['doctor', 'admin'])
-            ->where('is_active', true)
+            ->where(function($q){ $q->where('is_active', true)->orWhereNull('is_active'); })
             ->select('id', 'first_name', 'last_name', 'role')
             ->orderBy('first_name')
             ->get();
 
         $patients = DB::table('patients')
             ->where('clinic_id', Auth::user()->clinic_id)
-            ->where('is_active', true)
+            ->where(function($q){ $q->where('is_active', true)->orWhereNull('is_active'); })
             ->select('id', 'first_name', 'last_name', 'patient_id')
             ->orderBy('first_name')
             ->get();
@@ -112,7 +112,7 @@ class AppointmentController extends Controller
             }
         }
 
-        return view('appointments.index', compact('appointments', 'doctors', 'viewType', 'calendarEvents'));
+        return view('appointments.index', compact('appointments', 'doctors', 'viewType', 'calendarEvents', 'patients'));
     }
 
     /**
@@ -122,14 +122,14 @@ class AppointmentController extends Controller
     {
         $patients = DB::table('patients')
             ->where('clinic_id', Auth::user()->clinic_id)
-            ->where('is_active', true)
+            ->where(function($q){ $q->where('is_active', true)->orWhereNull('is_active'); })
             ->select('id', 'first_name', 'last_name', 'patient_id')
             ->get();
 
         $doctors = DB::table('users')
             ->where('clinic_id', Auth::user()->clinic_id)
             ->whereIn('role', ['doctor', 'admin'])
-            ->where('is_active', true)
+            ->where(function($q){ $q->where('is_active', true)->orWhereNull('is_active'); })
             ->select('id', 'first_name', 'last_name', 'role')
             ->get();
 
@@ -255,14 +255,14 @@ class AppointmentController extends Controller
 
         $patients = DB::table('patients')
             ->where('clinic_id', Auth::user()->clinic_id)
-            ->where('is_active', true)
+            ->where(function($q){ $q->where('is_active', true)->orWhereNull('is_active'); })
             ->select('id', 'first_name', 'last_name', 'patient_id')
             ->get();
 
         $doctors = DB::table('users')
             ->where('clinic_id', Auth::user()->clinic_id)
             ->whereIn('role', ['doctor', 'admin'])
-            ->where('is_active', true)
+            ->where(function($q){ $q->where('is_active', true)->orWhereNull('is_active'); })
             ->select('id', 'first_name', 'last_name', 'role')
             ->get();
 
