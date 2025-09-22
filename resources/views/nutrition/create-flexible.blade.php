@@ -692,6 +692,9 @@ function openFoodSelectionModal(mealType, optionIndex) {
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('foodSelectionModal'));
     modal.show();
+
+    // Load initial foods (popular/recent) even if no search/group selected
+    try { searchFoods(); } catch (e) { console.warn('Initial food load failed:', e); }
 }
 
 // Search for foods
@@ -700,15 +703,6 @@ function searchFoods() {
     const groupId = document.getElementById('food-group-filter').value;
     const language = document.getElementById('food-language').value;
 
-    if (search.length < 2 && !groupId) {
-        document.getElementById('food-results').innerHTML = `
-            <div class="col-12 text-center text-muted py-4">
-                <i class="fas fa-search fa-2x mb-2"></i>
-                <p>Start typing to search for foods...</p>
-            </div>
-        `;
-        return;
-    }
 
     // Show loading
     document.getElementById('food-results').innerHTML = `
