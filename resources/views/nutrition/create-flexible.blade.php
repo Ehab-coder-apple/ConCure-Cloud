@@ -294,7 +294,16 @@
                             <label for="food-group-filter" class="form-label">Food Group</label>
                             <select class="form-select" id="food-group-filter">
                                 <option value="">All Groups</option>
-                                @foreach(\App\Models\FoodGroup::active()->forClinic(auth()->user()?->clinic_id)->ordered()->get() as $group)
+                                @php
+                                    $clinicId = auth()->user()?->clinic_id;
+                                    $groups = \App\Models\FoodGroup::active()
+                                        ->where(function($q) use ($clinicId) {
+                                            $q->whereNull('clinic_id')->orWhere('clinic_id', $clinicId);
+                                        })
+                                        ->ordered()
+                                        ->get();
+                                @endphp
+                                @foreach($groups as $group)
                                     <option value="{{ $group->id }}">{{ $group->translated_name }}</option>
                                 @endforeach
                             </select>
