@@ -810,7 +810,8 @@ function getMealTypeIcon(mealType) {
 }
 
 // Food selection functionality
-let selectedFood = null;
+let selectedFoods = [];
+let lastSelectedFood = null; // used for nutrition preview
 let searchTimeout = null;
 
 function initializeFoodSearch() {
@@ -888,34 +889,40 @@ function displayFoodResults(foods) {
 
 // Select a food item
 function selectFood(id, originalName, displayName, calories, protein, carbs, fat) {
-    selectedFood = {
-        id: id,
-        name: originalName,
-        displayName: displayName,
-        calories: calories,
-        protein: protein,
-        carbs: carbs,
-        fat: fat
-    };
-
-    // Update selected food details
-    document.getElementById('selected-food-name').textContent = displayName;
-    document.getElementById('selected-food-details').style.display = 'block';
-    document.getElementById('add-food-to-option').disabled = false;
-
-    // Highlight selected food
-    document.querySelectorAll('.food-card').forEach(card => {
+    // Toggle selection
+    const idx = selectedFoods.findIndex(f => f.id === id);
+    const card = event.currentTarget;
+    if (idx >= 0) {
+        // remove
+        selectedFoods.splice(idx, 1);
         card.classList.remove('border-primary');
-    });
-    event.currentTarget.classList.add('border-primary');
+    } else {
+        const foodObj = { id, name: originalName, displayName, calories, protein, carbs, fat };
+        selectedFoods.push(foodObj);
+        lastSelectedFood = foodObj; // for preview
+        card.classList.add('border-primary');
+    }
 
-    // Update nutrition preview
-    updateNutritionPreview();
+    // Update selected details panel
+    const count = selectedFoods.length;
+    const details = document.getElementById('selected-food-details');
+    const title = document.getElementById('selected-food-name');
+    const addBtn = document.getElementById('add-food-to-option');
+
+    if (count > 0) {
+        details.style.display = 'block';
+        title.textContent = count === 1 ? (selectedFoods[0].displayName) : `${count} items selected`;
+        addBtn.disabled = false;
+        updateNutritionPreview();
+    } else {
+        details.style.display = 'none';
+        addBtn.disabled = true;
+    }
 }
 
-// Update nutrition preview based on quantity and unit
+// Update nutrition preview based on quantity and unit (uses last selected item)
 function updateNutritionPreview() {
-    if (!selectedFood) return;
+    if (!lastSelectedFood) return;
 
     const quantity = parseFloat(document.getElementById('food-quantity').value) || 0;
     const unit = document.getElementById('food-unit').value;
@@ -944,10 +951,10 @@ function updateNutritionPreview() {
             break;
     }
 
-    const calories = Math.round(selectedFood.calories * multiplier);
-    const protein = Math.round(selectedFood.protein * multiplier * 10) / 10;
-    const carbs = Math.round(selectedFood.carbs * multiplier * 10) / 10;
-    const fat = Math.round(selectedFood.fat * multiplier * 10) / 10;
+    const calories = Math.round(lastSelectedFood.calories * multiplier);
+    const protein = Math.round(lastSelectedFood.protein * multiplier * 10) / 10;
+    const carbs = Math.round(lastSelectedFood.carbs * multiplier * 10) / 10;
+    const fat = Math.round(lastSelectedFood.fat * multiplier * 10) / 10;
 
     document.getElementById('preview-calories').textContent = calories;
     document.getElementById('preview-protein').textContent = protein;
@@ -955,10 +962,10 @@ function updateNutritionPreview() {
     document.getElementById('preview-fat').textContent = fat;
 }
 
-// Add selected food to current option
+// Add selected food(s) to current option
 function addFoodToOption() {
-    if (!selectedFood || !currentMealType || currentOptionIndex === null) {
-        alert('Please select a food and ensure an option is selected.');
+    if ((!selectedFoods || selectedFoods.length === 0) || !currentMealType || currentOptionIndex === null) {
+        alert('Please select at least one food and ensure an option is selected.');
         return;
     }
 
@@ -971,60 +978,46 @@ function addFoodToOption() {
         return;
     }
 
-    // Calculate nutrition values
+    // Calculate multiplier once (applies to all selected foods)
     let multiplier = quantity / 100; // Default for grams
-
     switch(unit) {
-        case 'kg':
-            multiplier = (quantity * 1000) / 100;
-            break;
-        case 'mg':
-            multiplier = (quantity / 1000) / 100;
-            break;
-        case 'cup':
-            multiplier = (quantity * 240) / 100;
-            break;
-        case 'tbsp':
-            multiplier = (quantity * 15) / 100;
-            break;
-        case 'tsp':
-            multiplier = (quantity * 5) / 100;
-            break;
-        case 'serving':
-            multiplier = quantity / 100;
-            break;
+        case 'kg': multiplier = (quantity * 1000) / 100; break;
+        case 'mg': multiplier = (quantity / 1000) / 100; break;
+        case 'cup': multiplier = (quantity * 240) / 100; break;
+        case 'tbsp': multiplier = (quantity * 15) / 100; break;
+        case 'tsp': multiplier = (quantity * 5) / 100; break;
+        case 'serving': multiplier = quantity / 100; break;
     }
 
-    const foodItem = {
-        id: selectedFood.id,
-        name: selectedFood.name,
-        displayName: selectedFood.displayName,
-        quantity: quantity,
-        unit: unit,
-        notes: notes,
-        calories: Math.round(selectedFood.calories * multiplier),
-        protein: Math.round(selectedFood.protein * multiplier * 10) / 10,
-        carbs: Math.round(selectedFood.carbs * multiplier * 10) / 10,
-        fat: Math.round(selectedFood.fat * multiplier * 10) / 10
-    };
-
-    // Add to meal option
-    mealOptions[currentMealType][currentOptionIndex].foods.push(foodItem);
+    selectedFoods.forEach(f => {
+        const foodItem = {
+            id: f.id,
+            name: f.name,
+            displayName: f.displayName,
+            quantity: quantity,
+            unit: unit,
+            notes: notes,
+            calories: Math.round(f.calories * multiplier),
+            protein: Math.round(f.protein * multiplier * 10) / 10,
+            carbs: Math.round(f.carbs * multiplier * 10) / 10,
+            fat: Math.round(f.fat * multiplier * 10) / 10
+        };
+        mealOptions[currentMealType][currentOptionIndex].foods.push(foodItem);
+    });
 
     // Update option display
     updateOptionDisplay(currentMealType, currentOptionIndex);
 
-    // Close modal
+    // Close modal and clear
     const modal = bootstrap.Modal.getInstance(document.getElementById('foodSelectionModal'));
     modal.hide();
-
-    // Clear selection
     clearFoodSelection();
 }
 
 // Clear food selection
 function clearFoodSelection() {
-    selectedFood = null;
+    selectedFoods = [];
+    lastSelectedFood = null;
     const selectedDetails = document.getElementById('selected-food-details');
     const addButton = document.getElementById('add-food-to-option');
     const searchInput = document.getElementById('food-search');
@@ -1039,21 +1032,10 @@ function clearFoodSelection() {
     if (unitSelect) unitSelect.value = 'g';
     if (notesInput) notesInput.value = '';
 
-    // Clear highlights
+    // Clear highlights but keep results
     document.querySelectorAll('.food-card').forEach(card => {
         card.classList.remove('border-primary');
     });
-
-    // Reset results
-    const resultsContainer = document.getElementById('food-results');
-    if (resultsContainer) {
-        resultsContainer.innerHTML = `
-            <div class="col-12 text-center text-muted py-4">
-                <i class="fas fa-search fa-2x mb-2"></i>
-                <p>Start typing to search for foods...</p>
-            </div>
-        `;
-    }
 }
 
 // Update option display after adding food
