@@ -52,7 +52,7 @@ class AppointmentController extends Controller
             ->where('clinic_id', Auth::user()->clinic_id)
             ->whereIn('role', ['doctor', 'admin'])
             ->where('is_active', true)
-            ->select('id', 'first_name', 'last_name')
+            ->select('id', 'first_name', 'last_name', 'role')
             ->get();
 
         // Check if calendar view is requested
@@ -122,7 +122,7 @@ class AppointmentController extends Controller
             ->where('clinic_id', Auth::user()->clinic_id)
             ->whereIn('role', ['doctor', 'admin'])
             ->where('is_active', true)
-            ->select('id', 'first_name', 'last_name')
+            ->select('id', 'first_name', 'last_name', 'role')
             ->get();
 
         return view('appointments.create', compact('patients', 'doctors'));
@@ -255,7 +255,7 @@ class AppointmentController extends Controller
             ->where('clinic_id', Auth::user()->clinic_id)
             ->whereIn('role', ['doctor', 'admin'])
             ->where('is_active', true)
-            ->select('id', 'first_name', 'last_name')
+            ->select('id', 'first_name', 'last_name', 'role')
             ->get();
 
         return view('appointments.edit', compact('appointment', 'patients', 'doctors'));

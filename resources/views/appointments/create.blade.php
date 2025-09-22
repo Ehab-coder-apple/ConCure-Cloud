@@ -64,7 +64,7 @@
                                             <option value="">{{ __('Select doctor...') }}</option>
                                             @foreach($doctors as $doctor)
                                                 <option value="{{ $doctor->id }}" {{ old('doctor_id') == $doctor->id ? 'selected' : '' }}>
-                                                    Dr. {{ $doctor->first_name }} {{ $doctor->last_name }}
+                                                    Dr. {{ $doctor->first_name }} {{ $doctor->last_name }}{{ ($doctor->role ?? null) === 'admin' ? ' (Admin)' : '' }}
                                                 </option>
                                             @endforeach
                                         </select>
