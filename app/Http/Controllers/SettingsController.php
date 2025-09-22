@@ -548,10 +548,10 @@ class SettingsController extends Controller
     /**
      * Stream/serve clinic logo without requiring public/storage symlink
      */
-    public function serveClinicLogo($clinicId)
+    public function serveClinicLogo($clinic)
     {
         $logoPath = DB::table('settings')
-            ->where('clinic_id', $clinicId)
+            ->where('clinic_id', $clinic)
             ->where('key', 'clinic_logo')
             ->value('value');
 
