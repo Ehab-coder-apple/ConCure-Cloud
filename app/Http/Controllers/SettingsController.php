@@ -532,16 +532,66 @@ class SettingsController extends Controller
         // Normalize path (handle legacy values like "storage/clinic-logos/...")
         $relative = ltrim(str_replace('storage/', '', $logoPath), '/');
 
-        if (Storage::disk('public')->exists($relative)) {
-            return Storage::url($relative); // /storage/...
-        }
+        $exists = Storage::disk('public')->exists($relative)
+            || file_exists(storage_path('app/public/' . $relative))
+            || (function_exists('public_path') && file_exists(public_path($logoPath)));
 
-        // Fallback: serve directly from public/ if present
-        if (function_exists('public_path') && file_exists(public_path($logoPath))) {
-            return asset($logoPath);
+        if ($exists) {
+            // Use streaming route to avoid dependency on /storage symlink
+            return route('clinic.logo', ['clinic' => $clinicId]);
         }
 
         return null;
+    }
+
+
+    /**
+     * Stream/serve clinic logo without requiring public/storage symlink
+     */
+    public function serveClinicLogo($clinicId)
+    {
+        $logoPath = DB::table('settings')
+            ->where('clinic_id', $clinicId)
+            ->where('key', 'clinic_logo')
+            ->value('value');
+
+        if (!$logoPath) {
+            abort(404);
+        }
+
+        // If a full URL is stored, redirect to it
+        if (preg_match('#^https?://#i', $logoPath)) {
+            return redirect()->away($logoPath);
+        }
+
+        $relative = ltrim(str_replace('storage/', '', $logoPath), '/');
+
+        // Prefer serving via the public disk
+        if (Storage::disk('public')->exists($relative)) {
+            return Storage::disk('public')->response($relative, null, [
+                'Cache-Control' => 'public, max-age=604800'
+            ]);
+        }
+
+        // Fallback: direct file response from storage path
+        $abs = storage_path('app/public/' . $relative);
+        if (file_exists($abs)) {
+            return response()->file($abs, [
+                'Cache-Control' => 'public, max-age=604800'
+            ]);
+        }
+
+        // Fallback: if placed directly in public/
+        if (function_exists('public_path')) {
+            $publicCandidate = public_path($logoPath);
+            if (file_exists($publicCandidate)) {
+                return response()->file($publicCandidate, [
+                    'Cache-Control' => 'public, max-age=604800'
+                ]);
+            }
+        }
+
+        abort(404);
     }
 
     /**

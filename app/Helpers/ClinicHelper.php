@@ -33,13 +33,12 @@ class ClinicHelper
         // Normalize legacy values like "storage/clinic-logos/..."
         $relative = ltrim(str_replace('storage/', '', $logoPath), '/');
 
-        if (Storage::disk('public')->exists($relative)) {
-            return Storage::url($relative);
-        }
+        $exists = Storage::disk('public')->exists($relative)
+            || file_exists(storage_path('app/public/' . $relative))
+            || (function_exists('public_path') && file_exists(public_path($logoPath)));
 
-        // Fallback: check if file is directly in public/
-        if (function_exists('public_path') && file_exists(public_path($logoPath))) {
-            return asset($logoPath);
+        if ($exists) {
+            return route('clinic.logo', ['clinic' => $clinicId]);
         }
 
         return null;

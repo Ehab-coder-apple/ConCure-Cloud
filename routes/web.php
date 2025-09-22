@@ -719,6 +719,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
         // User guide fullscreen view
         Route::get('/user-guide', [SettingsController::class, 'userGuide'])->name('user-guide');
     });
+
+    // Serve clinic logo (auth-protected) without requiring public/storage symlink
+    Route::get('/clinic-logo/{clinic}', [SettingsController::class, 'serveClinicLogo'])->name('clinic.logo');
+
 });
 
 // Development routes (remove in production)
