@@ -65,7 +65,8 @@ class ClinicHelper
         $relative = ltrim(str_replace(['storage/','public/'], '', $logoPath), '/');
 
         if (Storage::disk('public')->exists($relative)) {
-            return public_path('storage/' . $relative);
+            // Use absolute storage path to avoid relying on the public/storage symlink (better for PDF engines)
+            return storage_path('app/public/' . $relative);
         }
 
         // Fallback: if stored directly under public/
