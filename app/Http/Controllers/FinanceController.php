@@ -239,8 +239,8 @@ class FinanceController extends Controller
     {
         $user = auth()->user();
         
-        if (!$user->canAccessFinance() || $user->role !== 'admin') {
-            abort(403, 'Only admins can approve expenses.');
+        if (!$user->hasPermission('finance_approve')) {
+            abort(403, 'Insufficient permission to approve expenses.');
         }
 
         if (!$expense->canBeApproved()) {
@@ -259,8 +259,8 @@ class FinanceController extends Controller
     {
         $user = auth()->user();
         
-        if (!$user->canAccessFinance() || $user->role !== 'admin') {
-            abort(403, 'Only admins can reject expenses.');
+        if (!$user->hasPermission('finance_approve')) {
+            abort(403, 'Insufficient permission to reject expenses.');
         }
 
         if (!$expense->canBeApproved()) {

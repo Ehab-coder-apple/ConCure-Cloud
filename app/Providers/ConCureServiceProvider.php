@@ -226,11 +226,11 @@ class ConCureServiceProvider extends ServiceProvider
 
         // Clinic-specific gates
         Gate::define('manage-clinic-settings', function (User $user) {
-            return $user->role === 'admin';
+            return $user->hasPermission('settings_clinic');
         });
 
         Gate::define('view-clinic-reports', function (User $user) {
-            return in_array($user->role, ['admin', 'accountant']);
+            return $user->hasPermission('reports_view');
         });
 
         // Patient-specific gates
@@ -238,29 +238,29 @@ class ConCureServiceProvider extends ServiceProvider
             if ($user->role === 'patient') {
                 return $user->id === $patient->user_id; // If patient has user account
             }
-            return in_array($user->role, ['admin', 'doctor', 'nutritionist', 'assistant', 'nurse']);
+            return $user->hasPermission('patients_view') || $user->canManagePatients();
         });
 
         Gate::define('edit-patient', function (User $user, $patient) {
-            return in_array($user->role, ['admin', 'doctor', 'nutritionist', 'assistant', 'nurse']);
+            return $user->hasPermission('patients_edit') || $user->canManagePatients();
         });
 
         Gate::define('delete-patient', function (User $user, $patient) {
-            return in_array($user->role, ['admin', 'doctor']);
+            return $user->hasPermission('patients_delete') || $user->canManagePatients();
         });
 
         // Financial gates
         Gate::define('approve-discounts', function (User $user) {
-            return $user->role === 'admin';
+            return $user->hasPermission('finance_approve');
         });
 
         Gate::define('approve-expenses', function (User $user) {
-            return $user->role === 'admin';
+            return $user->hasPermission('finance_approve');
         });
 
         // Communication gates
         Gate::define('send-communications', function (User $user) {
-            return in_array($user->role, ['admin', 'doctor', 'assistant']);
+            return $user->canAccessSection('patients') || $user->canAccessSection('appointments') || $user->hasAnyPermission(['prescriptions_view','prescriptions_create']);
         });
     }
 

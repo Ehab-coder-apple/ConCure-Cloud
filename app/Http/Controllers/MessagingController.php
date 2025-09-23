@@ -393,7 +393,7 @@ class MessagingController extends Controller
         if ($conversation->clinic_id !== $user->clinic_id) abort(403);
         // Allow only conversation admins or clinic admins to delete
         $isConvAdmin = $conversation->participants()->where('user_id', $user->id)->where('role', 'admin')->exists();
-        if (!($isConvAdmin || $user->role === 'admin')) abort(403);
+        if (!($isConvAdmin || $user->isClinicAdmin() || $user->hasAnyPermission(['users_permissions']))) abort(403);
 
         DB::transaction(function() use ($request, $user, $conversation) {
             $conversation->delete(); // cascades via FKs

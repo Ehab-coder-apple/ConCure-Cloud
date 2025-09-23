@@ -184,7 +184,7 @@
                                                     </a>
                                                 @endif
                                                 
-                                                @if($expense->canBeApproved() && auth()->user()->role === 'admin')
+                                                @if($expense->canBeApproved() && auth()->user()->hasPermission('finance_approve'))
                                                     <form method="POST" action="{{ route('finance.expenses.approve', $expense) }}" class="d-inline">
                                                         @csrf
                                                         <button type="submit" class="btn btn-sm btn-success" 

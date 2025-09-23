@@ -212,10 +212,9 @@ class PatientReportController extends Controller
             abort(403, 'Unauthorized access to patient.');
         }
 
-        // Check permission-based access or role-based fallback
+        // Permission-based access only
         if (!$user->hasPermission('patients_view') &&
-            !$user->canManagePatients() &&
-            !in_array($user->role, ['doctor', 'admin', 'nurse'])) {
+            !$user->canManagePatients()) {
             abort(403, 'Insufficient permissions to view patients.');
         }
     }

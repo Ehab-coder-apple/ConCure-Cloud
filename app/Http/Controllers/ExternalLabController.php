@@ -14,12 +14,9 @@ class ExternalLabController extends Controller
     {
         $user = auth()->user();
 
-        // DEVELOPMENT MODE: Disable role checks
-        if (!config('app.debug') && !env('DISABLE_PERMISSIONS', true)) {
-            // Only admins can manage external labs
-            if ($user->role !== 'admin') {
-                abort(403, 'Only administrators can manage external laboratories.');
-            }
+        // Permission-based access: clinic admins/super admins or settings permissions
+        if (!($user->isSuperAdmin() || $user->isClinicAdmin() || $user->hasAnyPermission(['settings_clinic','settings_edit']))) {
+            abort(403, 'Only administrators can manage external laboratories.');
         }
 
         $query = ExternalLab::byClinic($user->clinic_id)->with('creator');
