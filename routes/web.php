@@ -694,6 +694,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
                 Route::post('/conversations/{conversation}/archive', [MessagingController::class, 'archiveConversation'])->name('conversations.archive');
 
+                Route::post('/conversations/{conversation}/delete', [MessagingController::class, 'deleteConversation'])->name('conversations.delete');
+
 	    });
 
 

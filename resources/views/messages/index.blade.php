@@ -11,7 +11,13 @@
     <div class="col-md-4 border-end overflow-auto" id="conversationsPane">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <strong>Conversations</strong>
-        <button class="btn btn-sm btn-outline-primary" id="newConvBtn">New</button>
+        <div class="d-flex align-items-center gap-2">
+          <div class="btn-group btn-group-sm" role="group" aria-label="Filter">
+            <button class="btn btn-outline-secondary active" id="filterInboxBtn">Inbox</button>
+            <button class="btn btn-outline-secondary" id="filterArchivedBtn">Archived</button>
+          </div>
+          <button class="btn btn-sm btn-outline-primary" id="newConvBtn">New</button>
+        </div>
       </div>
       <ul class="list-group" id="conversationsList"></ul>
     </div>
@@ -22,6 +28,7 @@
         </div>
         <div class="d-flex gap-2">
           <button class="btn btn-sm btn-outline-secondary d-none" id="markReadBtn">Mark as read</button>
+          <button class="btn btn-sm btn-outline-warning d-none" id="archiveConvBtn">Archive</button>
           <button class="btn btn-sm btn-outline-danger d-none" id="deleteConvBtn">Delete</button>
         </div>
       </div>
@@ -80,6 +87,7 @@
     conversations: [],
     selectedConversationId: null,
     participantsByConv: {},
+    showArchived: false,
   };
 
   const el = {
@@ -88,7 +96,10 @@
     messagesList: document.getElementById('messagesList'),
     threadTitle: document.getElementById('threadTitle'),
     markReadBtn: document.getElementById('markReadBtn'),
+    archiveConvBtn: document.getElementById('archiveConvBtn'),
     deleteConvBtn: document.getElementById('deleteConvBtn'),
+    filterInboxBtn: document.getElementById('filterInboxBtn'),
+    filterArchivedBtn: document.getElementById('filterArchivedBtn'),
     composerInput: document.getElementById('composerInput'),
     sendBtn: document.getElementById('sendBtn'),
     newConvBtn: document.getElementById('newConvBtn'),
@@ -230,7 +241,8 @@
 
   async function refreshConversations() {
     try {
-      const data = await getJSON('/messages/conversations');
+      const url = state.showArchived ? '/messages/conversations?archived=1' : '/messages/conversations';
+      const data = await getJSON(url);
       state.conversations = data.conversations || [];
       renderConversations();
     } catch (e) { /* noop */ }
@@ -247,6 +259,11 @@
     el.threadTitle.textContent = conv?.title || (conv?.participants?.map(p => p.name).join(', ') || 'Conversation');
     el.markReadBtn.classList.remove('d-none');
     el.deleteConvBtn.classList.remove('d-none');
+    if (conv && !conv.is_archived) {
+      el.archiveConvBtn.classList.remove('d-none');
+    } else {
+      el.archiveConvBtn.classList.add('d-none');
+    }
     await loadMessages(convId);
   }
 
@@ -275,16 +292,36 @@
     } catch (e) { /* noop */ }
   }
 
-  async function deleteConversation() {
+  async function archiveConversation() {
     const convId = state.selectedConversationId;
     if (!convId) return;
-    if (!confirm('Delete this conversation? This will archive it for everyone.')) return;
+    if (!confirm('Archive this conversation? You can find it later in Archived.')) return;
     try {
       await postJSON(`/messages/conversations/${convId}/archive`, {});
       state.selectedConversationId = null;
       el.threadTitle.textContent = 'Select a conversation';
       el.messagesList.innerHTML = '';
       el.markReadBtn.classList.add('d-none');
+      el.archiveConvBtn.classList.add('d-none');
+      el.deleteConvBtn.classList.add('d-none');
+      await refreshConversations();
+      await refreshUnread();
+    } catch (e) {
+      alert('Archive failed');
+    }
+  }
+
+  async function deleteConversation() {
+    const convId = state.selectedConversationId;
+    if (!convId) return;
+    if (!confirm('Permanently delete this conversation for everyone? This cannot be undone.')) return;
+    try {
+      await postJSON(`/messages/conversations/${convId}/delete`, {});
+      state.selectedConversationId = null;
+      el.threadTitle.textContent = 'Select a conversation';
+      el.messagesList.innerHTML = '';
+      el.markReadBtn.classList.add('d-none');
+      el.archiveConvBtn.classList.add('d-none');
       el.deleteConvBtn.classList.add('d-none');
       await refreshConversations();
       await refreshUnread();
@@ -406,6 +443,32 @@
   // Prefill flow from other pages (robust: localStorage, sessionStorage, ?prefill_transfer=)
   try {
     let prefill = localStorage.getItem('prefill_transfer') || sessionStorage.getItem('prefill_transfer');
+  el.archiveConvBtn.addEventListener('click', archiveConversation);
+  el.filterInboxBtn.addEventListener('click', () => {
+    state.showArchived = false;
+    el.filterInboxBtn.classList.add('active');
+    el.filterArchivedBtn.classList.remove('active');
+    state.selectedConversationId = null;
+    el.threadTitle.textContent = 'Select a conversation';
+    el.messagesList.innerHTML = '';
+    el.markReadBtn.classList.add('d-none');
+    el.archiveConvBtn.classList.add('d-none');
+    el.deleteConvBtn.classList.add('d-none');
+    refreshConversations();
+  });
+  el.filterArchivedBtn.addEventListener('click', () => {
+    state.showArchived = true;
+    el.filterArchivedBtn.classList.add('active');
+    el.filterInboxBtn.classList.remove('active');
+    state.selectedConversationId = null;
+    el.threadTitle.textContent = 'Select a conversation';
+    el.messagesList.innerHTML = '';
+    el.markReadBtn.classList.add('d-none');
+    el.archiveConvBtn.classList.add('d-none');
+    el.deleteConvBtn.classList.add('d-none');
+    refreshConversations();
+  });
+
     if (!prefill) {
       const qs = new URLSearchParams(location.search);
       const qp = qs.get('prefill_transfer');

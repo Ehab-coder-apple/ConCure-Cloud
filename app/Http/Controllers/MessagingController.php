@@ -23,10 +23,12 @@ class MessagingController extends Controller
     public function conversations(Request $request)
     {
         $user = $request->user();
+        $archived = $request->boolean('archived');
         $conversations = Conversation::with(['participants.user:id,first_name,last_name,role', 'messages' => function($q){ $q->latest()->limit(1); }])
             ->forClinic($user->clinic_id)
             ->forUser($user->id)
-            ->where('is_archived', false)
+            ->when(!$archived, fn($q) => $q->where('is_archived', false))
+            ->when($archived, fn($q) => $q->where('is_archived', true))
             ->orderByDesc('last_message_at')
             ->limit(50)
             ->get()
@@ -39,6 +41,7 @@ class MessagingController extends Controller
                     'id' => $c->id,
                     'title' => $c->title,
                     'type' => $c->type,
+                    'is_archived' => (bool) $c->is_archived,
                     'last_message_at' => $c->last_message_at,
                     'unread' => $unread,
                     'participants' => $c->participants->map(fn($p) => [
@@ -381,6 +384,38 @@ class MessagingController extends Controller
 
         return response()->json(['success' => true]);
     }
+    /**
+     * Permanently delete a conversation (admin/creator only)
+     */
+    public function deleteConversation(Request $request, Conversation $conversation)
+    {
+        $user = $request->user();
+        if ($conversation->clinic_id !== $user->clinic_id) abort(403);
+        // Allow only conversation admins or clinic admins to delete
+        $isConvAdmin = $conversation->participants()->where('user_id', $user->id)->where('role', 'admin')->exists();
+        if (!($isConvAdmin || $user->role === 'admin')) abort(403);
+
+        DB::transaction(function() use ($request, $user, $conversation) {
+            $conversation->delete(); // cascades via FKs
+
+            AuditLog::create([
+                'user_id' => $user->id,
+                'user_name' => $user->full_name ?? ($user->first_name.' '.$user->last_name),
+                'user_role' => $user->role,
+                'clinic_id' => $user->clinic_id,
+                'action' => 'delete_conversation',
+                'model_type' => Conversation::class,
+                'model_id' => $conversation->id,
+                'description' => 'Conversation deleted',
+                'performed_at' => now(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        });
+
+        return response()->json(['success' => true]);
+    }
+
 
 }
 
