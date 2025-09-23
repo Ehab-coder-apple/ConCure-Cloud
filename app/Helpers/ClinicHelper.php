@@ -30,12 +30,12 @@ class ClinicHelper
             return $logoPath;
         }
 
-        // Normalize legacy values like "storage/clinic-logos/..."
-        $relative = ltrim(str_replace('storage/', '', $logoPath), '/');
+        // Normalize legacy values like "storage/clinic-logos/..." or "public/clinic-logos/..."
+        $relative = ltrim(str_replace(['storage/','public/'], '', $logoPath), '/');
 
         $exists = Storage::disk('public')->exists($relative)
             || file_exists(storage_path('app/public/' . $relative))
-            || (function_exists('public_path') && file_exists(public_path($logoPath)));
+            || (function_exists('public_path') && file_exists(public_path($relative)));
 
         if ($exists) {
             return route('clinic.logo', ['clinic' => $clinicId]);
@@ -62,7 +62,7 @@ class ClinicHelper
             return null;
         }
 
-        $relative = ltrim(str_replace('storage/', '', $logoPath), '/');
+        $relative = ltrim(str_replace(['storage/','public/'], '', $logoPath), '/');
 
         if (Storage::disk('public')->exists($relative)) {
             return public_path('storage/' . $relative);
@@ -70,7 +70,7 @@ class ClinicHelper
 
         // Fallback: if stored directly under public/
         if (function_exists('public_path')) {
-            $publicCandidate = public_path($logoPath);
+            $publicCandidate = public_path($relative);
             if (file_exists($publicCandidate)) {
                 return $publicCandidate;
             }

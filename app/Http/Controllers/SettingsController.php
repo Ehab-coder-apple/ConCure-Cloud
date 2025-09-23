@@ -529,12 +529,12 @@ class SettingsController extends Controller
             return $logoPath;
         }
 
-        // Normalize path (handle legacy values like "storage/clinic-logos/...")
-        $relative = ltrim(str_replace('storage/', '', $logoPath), '/');
+        // Normalize path (handle legacy values like "storage/clinic-logos/..." or "public/clinic-logos/...")
+        $relative = ltrim(str_replace(['storage/','public/'], '', $logoPath), '/');
 
         $exists = Storage::disk('public')->exists($relative)
             || file_exists(storage_path('app/public/' . $relative))
-            || (function_exists('public_path') && file_exists(public_path($logoPath)));
+            || (function_exists('public_path') && file_exists(public_path($relative)));
 
         if ($exists) {
             // Use streaming route to avoid dependency on /storage symlink
@@ -564,7 +564,7 @@ class SettingsController extends Controller
             return redirect()->away($logoPath);
         }
 
-        $relative = ltrim(str_replace('storage/', '', $logoPath), '/');
+        $relative = ltrim(str_replace(['storage/','public/'], '', $logoPath), '/');
 
         // Prefer serving via the public disk
         if (Storage::disk('public')->exists($relative)) {
@@ -583,7 +583,7 @@ class SettingsController extends Controller
 
         // Fallback: if placed directly in public/
         if (function_exists('public_path')) {
-            $publicCandidate = public_path($logoPath);
+            $publicCandidate = public_path($relative);
             if (file_exists($publicCandidate)) {
                 return response()->file($publicCandidate, [
                     'Cache-Control' => 'public, max-age=604800'
