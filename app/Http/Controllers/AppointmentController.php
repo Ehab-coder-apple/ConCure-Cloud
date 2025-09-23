@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\QueryException;
 use Carbon\Carbon;
 
 class AppointmentController extends Controller
@@ -34,7 +35,7 @@ class AppointmentController extends Controller
             $query->where('appointments.status', $request->status);
         }
 
-        $legacy = !Schema::hasColumn('appointments', 'appointment_datetime');
+        $legacy = $this->isLegacyAppointments();
 
         if ($request->filled('date')) {
             if ($legacy) {
@@ -142,7 +143,7 @@ class AppointmentController extends Controller
                         'type' => $appointment->type,
                         'status' => $appointment->status,
                         'notes' => $appointment->notes,
-                        'duration' => $appointment->duration_minutes . ' min'
+                        'duration' => ($durationMinutes) . ' min'
                     ]
                 ];
             }
@@ -192,7 +193,7 @@ class AppointmentController extends Controller
         $duration = $request->duration ?? 30;
         $endTime = $appointmentDateTime->copy()->addMinutes($duration);
 
-        $legacy = !Schema::hasColumn('appointments', 'appointment_datetime');
+        $legacy = $this->isLegacyAppointments();
         if ($legacy) {
             $conflict = DB::table('appointments')
                 ->where('doctor_id', $request->doctor_id)
@@ -354,19 +355,28 @@ class AppointmentController extends Controller
         // Combine date and time into datetime
         $appointmentDateTime = Carbon::parse($request->appointment_date . ' ' . $request->appointment_time);
 
+        $legacy = $this->isLegacyAppointments();
+        $data = [
+            'patient_id' => $request->patient_id,
+            'doctor_id' => $request->doctor_id,
+            'type' => $request->appointment_type ?? 'consultation',
+            'status' => $request->status,
+            'notes' => $request->notes,
+            'updated_at' => now(),
+        ];
+        if ($legacy) {
+            $data['appointment_date'] = $appointmentDateTime->toDateString();
+            $data['appointment_time'] = $appointmentDateTime->format('H:i:s');
+            $data['duration'] = $request->duration ?? 30;
+        } else {
+            $data['appointment_datetime'] = $appointmentDateTime;
+            $data['duration_minutes'] = $request->duration ?? 30;
+        }
+
         $updated = DB::table('appointments')
             ->where('id', $id)
             ->where('clinic_id', Auth::user()->clinic_id)
-            ->update([
-                'patient_id' => $request->patient_id,
-                'doctor_id' => $request->doctor_id,
-                'appointment_datetime' => $appointmentDateTime,
-                'duration_minutes' => $request->duration ?? 30,
-                'type' => $request->appointment_type ?? 'consultation',
-                'status' => $request->status,
-                'notes' => $request->notes,
-                'updated_at' => now(),
-            ]);
+            ->update($data);
 
         if ($updated) {
             return redirect()->route('appointments.show', $id)
@@ -444,4 +454,32 @@ class AppointmentController extends Controller
                 return '#6f42c1'; // Purple
         }
     }
+
+    /**
+     * Determine if the server uses the legacy appointments schema
+     * (appointment_date + appointment_time + duration) instead of
+     * appointment_datetime + duration_minutes.
+     */
+    private function isLegacyAppointments(): bool
+    {
+        try {
+            if (Schema::hasColumn('appointments', 'appointment_datetime')) {
+                return false;
+            }
+            if (Schema::hasColumn('appointments', 'appointment_date')) {
+                return true;
+            }
+            // Probe column existence by selecting it; if it fails, assume legacy
+            try {
+                DB::table('appointments')->limit(1)->select('appointment_datetime')->first();
+                return false;
+            } catch (QueryException $qe) {
+                return true;
+            }
+        } catch (\Throwable $e) {
+            // If detection fails for any reason, default to new schema to be safer
+            return false;
+        }
+    }
+
 }
