@@ -110,7 +110,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <strong>{{ __('Priority') }}:</strong>
-                            <span class="{{ $radiologyRequest->priority_badge_class }}">{{ $radiologyRequest->priority_display }}</span>
+                            <span>{{ $radiologyRequest->priority_display }}</span>
                         </div>
                         <div class="col-md-6">
                             @if($radiologyRequest->due_date)

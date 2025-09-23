@@ -298,7 +298,7 @@
                         </div>
                         <div class="info-item">
                             <span class="info-label">{{ __('Priority') }}:</span>
-                            <span class="priority-badge priority-{{ $radiologyRequest->priority }}">{{ $radiologyRequest->priority_display }}</span>
+                            <span class="info-value">{{ $radiologyRequest->priority_display }}</span>
                         </div>
                     </div>
 
