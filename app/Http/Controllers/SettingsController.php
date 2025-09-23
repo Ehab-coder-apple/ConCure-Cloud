@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
 class SettingsController extends Controller
@@ -550,48 +551,62 @@ class SettingsController extends Controller
      */
     public function serveClinicLogo($clinic)
     {
-        $logoPath = DB::table('settings')
-            ->where('clinic_id', $clinic)
-            ->where('key', 'clinic_logo')
-            ->value('value');
+        try {
+            $logoPath = DB::table('settings')
+                ->where('clinic_id', $clinic)
+                ->where('key', 'clinic_logo')
+                ->value('value');
 
-        if (!$logoPath) {
-            abort(404);
-        }
+            if (!$logoPath) {
+                abort(404);
+            }
 
-        // If a full URL is stored, redirect to it
-        if (preg_match('#^https?://#i', $logoPath)) {
-            return redirect()->away($logoPath);
-        }
+            // If a full URL is stored, redirect to it
+            if (preg_match('#^https?://#i', $logoPath)) {
+                return redirect()->away($logoPath);
+            }
 
-        $relative = ltrim(str_replace(['storage/','public/'], '', $logoPath), '/');
+            $relative = ltrim(str_replace(['storage/','public/'], '', $logoPath), '/');
 
-        // Prefer serving via the public disk
-        if (Storage::disk('public')->exists($relative)) {
-            return Storage::disk('public')->response($relative, null, [
-                'Cache-Control' => 'public, max-age=604800'
-            ]);
-        }
-
-        // Fallback: direct file response from storage path
-        $abs = storage_path('app/public/' . $relative);
-        if (file_exists($abs)) {
-            return response()->file($abs, [
-                'Cache-Control' => 'public, max-age=604800'
-            ]);
-        }
-
-        // Fallback: if placed directly in public/
-        if (function_exists('public_path')) {
-            $publicCandidate = public_path($relative);
-            if (file_exists($publicCandidate)) {
-                return response()->file($publicCandidate, [
+            // Prefer serving via the public disk
+            if (Storage::disk('public')->exists($relative)) {
+                $mime = Storage::disk('public')->mimeType($relative) ?: 'image/*';
+                return response(Storage::disk('public')->get($relative), 200, [
+                    'Content-Type' => $mime,
                     'Cache-Control' => 'public, max-age=604800'
                 ]);
             }
-        }
 
-        abort(404);
+            // Fallback: direct file response from storage path
+            $abs = storage_path('app/public/' . $relative);
+            if (file_exists($abs)) {
+                $mime = File::mimeType($abs) ?: 'image/*';
+                return response()->file($abs, [
+                    'Content-Type' => $mime,
+                    'Cache-Control' => 'public, max-age=604800'
+                ]);
+            }
+
+            // Fallback: if placed directly in public/
+            if (function_exists('public_path')) {
+                $publicCandidate = public_path($relative);
+                if (file_exists($publicCandidate)) {
+                    $mime = File::mimeType($publicCandidate) ?: 'image/*';
+                    return response()->file($publicCandidate, [
+                        'Content-Type' => $mime,
+                        'Cache-Control' => 'public, max-age=604800'
+                    ]);
+                }
+            }
+
+            abort(404);
+        } catch (\Throwable $e) {
+            \Log::error('serveClinicLogo error', [
+                'clinic' => $clinic,
+                'message' => $e->getMessage(),
+            ]);
+            abort(404);
+        }
     }
 
     /**
