@@ -324,17 +324,14 @@ class User extends Authenticatable
      */
     public function canManagePatients(): bool
     {
-        // Admins and Super Admins have full access within their scope
+        // Clinic Admins and Super Admins allowed
         if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
             return true;
         }
-
-        // Local dev bypass (explicit only)
-        if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
-            return true;
-        }
-
-        return in_array($this->role, ['admin', 'doctor', 'nutritionist', 'assistant', 'nurse']);
+        // Permission-based for everyone else
+        return $this->hasAnyPermission([
+            'patients_view','patients_create','patients_edit','patients_delete','patients_files','patients_history'
+        ]);
     }
 
     /**
@@ -342,7 +339,11 @@ class User extends Authenticatable
      */
     public function canPrescribe(): bool
     {
-        return $this->role === 'doctor';
+        // Clinic Admins/Super Admins or explicit prescription permission
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+        return $this->hasAnyPermission(['prescriptions_create']);
     }
 
     /**
@@ -365,7 +366,10 @@ class User extends Authenticatable
      */
     public function canManageUsers(): bool
     {
-        return $this->role === 'admin';
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+        return $this->hasPermission('users_permissions');
     }
 
     /**

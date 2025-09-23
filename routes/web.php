@@ -661,15 +661,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/{user}/assistants', [UserController::class, 'attachAssistant'])->name('assistants.attach');
         Route::delete('/{user}/assistants/{assistant}', [UserController::class, 'detachAssistant'])->name('assistants.detach');
 
-        // Activation codes (Admin only)
-        Route::get('/activation-codes', [UserController::class, 'activationCodes'])->name('activation-codes')->middleware('role:admin');
-        Route::post('/activation-codes', [UserController::class, 'generateActivationCode'])->name('activation-codes.generate')->middleware('role:admin');
-        Route::delete('/activation-codes/{code}', [UserController::class, 'deleteActivationCode'])->name('activation-codes.delete')->middleware('role:admin');
-        Route::patch('/activation-codes/{code}/extend', [UserController::class, 'extendActivationCode'])->name('activation-codes.extend')->middleware('role:admin');
+        // Activation codes (permission-gated)
+        Route::get('/activation-codes', [UserController::class, 'activationCodes'])->name('activation-codes')->middleware('can:manage-activation-codes');
+        Route::post('/activation-codes', [UserController::class, 'generateActivationCode'])->name('activation-codes.generate')->middleware('can:manage-activation-codes');
+        Route::delete('/activation-codes/{code}', [UserController::class, 'deleteActivationCode'])->name('activation-codes.delete')->middleware('can:manage-activation-codes');
+        Route::patch('/activation-codes/{code}/extend', [UserController::class, 'extendActivationCode'])->name('activation-codes.extend')->middleware('can:manage-activation-codes');
     });
 
-    // WhatsApp Management (Admin only)
-    Route::prefix('whatsapp')->name('whatsapp.')->middleware('role:admin')->group(function () {
+    // WhatsApp Management (Settings section permissions)
+    Route::prefix('whatsapp')->name('whatsapp.')->middleware('can:access-section,settings')->group(function () {
         Route::get('/', [App\Http\Controllers\WhatsAppController::class, 'index'])->name('index');
         Route::post('/test', [App\Http\Controllers\WhatsAppController::class, 'test'])->name('test');
         Route::post('/setup', [App\Http\Controllers\WhatsAppController::class, 'setupWhatsAppWeb'])->name('setup');
@@ -708,14 +708,14 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/clinic-info', [SettingsController::class, 'updateClinicInfo'])->name('update-clinic-info');
         Route::delete('/logo', [SettingsController::class, 'deleteLogo'])->name('delete-logo');
 
-        // System maintenance (Admin only)
-        Route::post('/backup', [SettingsController::class, 'backup'])->name('backup')->middleware('role:admin');
-        Route::get('/backup/download/{file}', [SettingsController::class, 'downloadBackup'])->name('download-backup')->middleware('role:admin');
-        Route::post('/clear-cache', [SettingsController::class, 'clearCache'])->name('clear-cache')->middleware('role:admin');
-        Route::post('/update-system', [SettingsController::class, 'updateSystem'])->name('update-system')->middleware('role:admin');
+        // System maintenance (permission-gated via Settings section)
+        Route::post('/backup', [SettingsController::class, 'backup'])->name('backup')->middleware('can:access-section,settings');
+        Route::get('/backup/download/{file}', [SettingsController::class, 'downloadBackup'])->name('download-backup')->middleware('can:access-section,settings');
+        Route::post('/clear-cache', [SettingsController::class, 'clearCache'])->name('clear-cache')->middleware('can:access-section,settings');
+        Route::post('/update-system', [SettingsController::class, 'updateSystem'])->name('update-system')->middleware('can:access-section,settings');
 
-        // Audit logs (Admin only)
-        Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs')->middleware('role:admin');
+        // Audit logs (permission-gated)
+        Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs')->middleware('can:view-audit-logs');
 
         // User guide export
         Route::post('/export-user-guide', [SettingsController::class, 'exportUserGuide'])->name('export-user-guide');

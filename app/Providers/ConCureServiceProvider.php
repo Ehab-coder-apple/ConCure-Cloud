@@ -54,11 +54,11 @@ class ConCureServiceProvider extends ServiceProvider
     {
         // User management gates
         Gate::define('manage-users', function (User $user) {
-            return $user->role === 'admin';
+            return $user->canManageUsers();
         });
 
         Gate::define('manage-patients', function (User $user) {
-            return in_array($user->role, ['admin', 'doctor', 'nutritionist', 'assistant', 'nurse']);
+            return $user->canManagePatients();
         });
 
 
@@ -72,22 +72,26 @@ class ConCureServiceProvider extends ServiceProvider
         });
 
         Gate::define('manage-advertisements', function (User $user) {
-            return $user->role === 'admin';
+            return $user->hasPermission('settings_system');
         });
 
         Gate::define('view-audit-logs', function (User $user) {
-            return $user->role === 'admin';
+            return $user->hasAnyPermission(['reports_audit','settings_system']);
         });
 
         Gate::define('manage-activation-codes', function (User $user) {
-            return $user->role === 'admin';
+            return $user->hasAnyPermission(['users_permissions','settings_system']);
         });
 
         Gate::define('manage-food-composition', function (User $user) {
-            return in_array($user->role, ['admin', 'doctor']);
+            return $user->hasAnyPermission(['food_database_manage','food_database_edit','food_database_create']);
         });
 
         // System-wide permission gates
+        Gate::define('access-section', function (User $user, string $section) {
+            return $user->canAccessSection($section);
+        });
+
         Gate::define('view-dashboard', function (User $user) {
             return $user->hasPermission('dashboard_view');
         });
