@@ -35,9 +35,9 @@ class SettingsController extends Controller
                 'clinic_logo' => null,
             ], $settings);
 
-            // Add logo URL if logo exists
+            // Add logo URL if logo exists (use robust helper that can stream the file)
             if (isset($clinicSettings['clinic_logo']) && $clinicSettings['clinic_logo']) {
-                $clinicSettings['clinic_logo_url'] = Storage::url($clinicSettings['clinic_logo']);
+                $clinicSettings['clinic_logo_url'] = self::getClinicLogo($user->clinic_id);
             }
         }
 

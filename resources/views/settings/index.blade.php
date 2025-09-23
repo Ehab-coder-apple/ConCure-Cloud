@@ -187,7 +187,7 @@
                                                             <div class="current-logo">
                                                                 <label class="form-label">{{ __('Current Logo') }}</label>
                                                                 <div class="d-flex align-items-center gap-3">
-                                                                    <img src="{{ asset('storage/' . $clinicSettings['clinic_logo']) }}"
+                                                                    <img src="{{ route('clinic.logo', ['clinic' => auth()->user()->clinic_id]) }}"
                                                                          alt="{{ __('Clinic Logo') }}"
                                                                          class="img-thumbnail"
                                                                          style="max-width: 100px; max-height: 100px;">
