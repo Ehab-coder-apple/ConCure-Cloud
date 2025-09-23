@@ -61,8 +61,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/food-composition', [FoodCompositionController::class, 'index']);
         Route::get('/food-composition/search', [FoodCompositionController::class, 'search']);
 
-        // Finance API (restricted roles)
-        Route::middleware('role:admin,accountant')->prefix('finance')->group(function () {
+        // Finance API (permission-aware)
+        Route::middleware('can:manage-finance')->prefix('finance')->group(function () {
             Route::get('/invoices', [FinanceController::class, 'invoices']);
             Route::post('/invoices', [FinanceController::class, 'storeInvoice']);
             Route::get('/expenses', [FinanceController::class, 'expenses']);

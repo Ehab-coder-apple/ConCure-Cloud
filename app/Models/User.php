@@ -350,7 +350,13 @@ class User extends Authenticatable
      */
     public function canAccessFinance(): bool
     {
-        return in_array($this->role, ['admin', 'accountant']);
+        // Role-based access OR permission-based access to any finance capability
+        if (in_array($this->role, ['admin', 'accountant'])) {
+            return true;
+        }
+        return $this->hasAnyPermission([
+            'finance_view', 'finance_create', 'finance_edit', 'finance_delete', 'finance_reports', 'finance_approve'
+        ]);
     }
 
     /**

@@ -64,7 +64,10 @@ class ConCureServiceProvider extends ServiceProvider
 
 
         Gate::define('manage-finance', function (User $user) {
-            return in_array($user->role, ['admin', 'accountant']);
+            return in_array($user->role, ['admin', 'accountant']) ||
+                $user->hasAnyPermission([
+                    'finance_view', 'finance_create', 'finance_edit', 'finance_delete', 'finance_reports', 'finance_approve'
+                ]);
         });
 
         Gate::define('manage-advertisements', function (User $user) {
