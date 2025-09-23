@@ -26,6 +26,7 @@ class MessagingController extends Controller
         $conversations = Conversation::with(['participants.user:id,first_name,last_name,role', 'messages' => function($q){ $q->latest()->limit(1); }])
             ->forClinic($user->clinic_id)
             ->forUser($user->id)
+            ->where('is_archived', false)
             ->orderByDesc('last_message_at')
             ->limit(50)
             ->get()
@@ -350,6 +351,35 @@ class MessagingController extends Controller
             });
 
         return response()->json(['success' => true, 'messages' => $messages]);
+    }
+
+    /**
+     * Archive (delete) a conversation for the clinic
+     */
+    public function archiveConversation(Request $request, Conversation $conversation)
+    {
+        $user = $request->user();
+        if ($conversation->clinic_id !== $user->clinic_id) abort(403);
+        if (! $conversation->participants()->where('user_id', $user->id)->exists()) abort(403);
+
+        $conversation->is_archived = true;
+        $conversation->save();
+
+        AuditLog::create([
+            'user_id' => $user->id,
+            'user_name' => $user->full_name ?? ($user->first_name.' '.$user->last_name),
+            'user_role' => $user->role,
+            'clinic_id' => $user->clinic_id,
+            'action' => 'archive_conversation',
+            'model_type' => Conversation::class,
+            'model_id' => $conversation->id,
+            'description' => 'Conversation archived',
+            'performed_at' => now(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
 }

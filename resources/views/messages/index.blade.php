@@ -20,7 +20,10 @@
         <div>
           <strong id="threadTitle">Select a conversation</strong>
         </div>
-        <button class="btn btn-sm btn-outline-secondary d-none" id="markReadBtn">Mark as read</button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-secondary d-none" id="markReadBtn">Mark as read</button>
+          <button class="btn btn-sm btn-outline-danger d-none" id="deleteConvBtn">Delete</button>
+        </div>
       </div>
       <div class="flex-grow-1 overflow-auto" id="messagesList" style="background: #fafafa;"></div>
       <div class="mt-2 d-flex gap-2">
@@ -85,6 +88,7 @@
     messagesList: document.getElementById('messagesList'),
     threadTitle: document.getElementById('threadTitle'),
     markReadBtn: document.getElementById('markReadBtn'),
+    deleteConvBtn: document.getElementById('deleteConvBtn'),
     composerInput: document.getElementById('composerInput'),
     sendBtn: document.getElementById('sendBtn'),
     newConvBtn: document.getElementById('newConvBtn'),
@@ -242,6 +246,7 @@
     const conv = state.conversations.find(c => c.id === convId);
     el.threadTitle.textContent = conv?.title || (conv?.participants?.map(p => p.name).join(', ') || 'Conversation');
     el.markReadBtn.classList.remove('d-none');
+    el.deleteConvBtn.classList.remove('d-none');
     await loadMessages(convId);
   }
 
@@ -269,6 +274,25 @@
       await Promise.all([refreshConversations(), refreshUnread()]);
     } catch (e) { /* noop */ }
   }
+
+  async function deleteConversation() {
+    const convId = state.selectedConversationId;
+    if (!convId) return;
+    if (!confirm('Delete this conversation? This will archive it for everyone.')) return;
+    try {
+      await postJSON(`/messages/conversations/${convId}/archive`, {});
+      state.selectedConversationId = null;
+      el.threadTitle.textContent = 'Select a conversation';
+      el.messagesList.innerHTML = '';
+      el.markReadBtn.classList.add('d-none');
+      el.deleteConvBtn.classList.add('d-none');
+      await refreshConversations();
+      await refreshUnread();
+    } catch (e) {
+      alert('Delete failed');
+    }
+  }
+
 
   async function actOnTransfer(transferId, action) {
     try {
@@ -397,6 +421,7 @@
         // try base64
         try { preset = JSON.parse(atob(prefill)); } catch (_) { preset = null; }
       }
+
       if (preset) {
         openNewConvModal(preset);
         // Fallback: if modal didn’t become visible (race with focus/ARIA), force show shortly after
@@ -416,6 +441,8 @@
   el.composerInput.addEventListener('input', () => { el.sendBtn.disabled = !(el.composerInput.value || '').trim(); });
   el.composerInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') sendMessage(); });
   el.markReadBtn.addEventListener('click', markRead);
+  el.deleteConvBtn.addEventListener('click', deleteConversation);
+
   el.newConvBtn.addEventListener('click', () => openNewConvModal());
 
   // Initial load + polling

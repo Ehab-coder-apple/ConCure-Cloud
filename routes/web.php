@@ -692,6 +692,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
 	        Route::post('/transfers/{transfer}/action', [MessagingController::class, 'transferAction'])->name('transfers.action');
                 Route::get('/recipients', [MessagingController::class, 'recipients'])->name('recipients');
 
+                Route::post('/conversations/{conversation}/archive', [MessagingController::class, 'archiveConversation'])->name('conversations.archive');
+
 	    });
 
 
