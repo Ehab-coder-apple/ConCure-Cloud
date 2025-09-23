@@ -7,6 +7,7 @@ use App\Models\Clinic;
 use App\Models\ActivationCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -281,7 +282,20 @@ class UserController extends Controller
             $updateData['password'] = Hash::make($request->password);
         }
 
-        $user->update($updateData);
+        // Only include fields that exist on the current server's users table
+        $safeData = [];
+        foreach ($updateData as $key => $value) {
+            try {
+                if (Schema::hasColumn('users', $key)) {
+                    $safeData[$key] = $value;
+                }
+            } catch (\Throwable $e) {
+                // If schema check fails for any reason, skip the field to avoid breaking update
+            }
+        }
+
+        $user->fill($safeData);
+        $user->save();
 
         return redirect()->route('users.index')
                         ->with('success', 'User updated successfully.');
