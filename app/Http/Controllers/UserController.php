@@ -8,6 +8,7 @@ use App\Models\ActivationCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -116,6 +117,11 @@ class UserController extends Controller
             (int) $request->assign_to_user_id === (int) $user->id) {
             // Doctors creating subusers for themselves may only create assistants
             $availableRolesForRequest = ['assistant'];
+        }
+        // Intersect with DB enum roles if available to avoid invalid enum values on legacy DBs
+        $dbRoles = $this->getDbEnumValues('users', 'role');
+        if (!empty($dbRoles)) {
+            $availableRolesForRequest = array_values(array_intersect($availableRolesForRequest, $dbRoles));
         }
 
         $request->validate([
@@ -246,6 +252,11 @@ class UserController extends Controller
         if ($currentUser->role === 'doctor') {
             $availableRolesForRequest = ['assistant'];
         }
+        // Intersect with DB enum roles if available
+        $dbRoles = $this->getDbEnumValues('users', 'role');
+        if (!empty($dbRoles)) {
+            $availableRolesForRequest = array_values(array_intersect($availableRolesForRequest, $dbRoles));
+        }
 
         $request->validate([
             'first_name' => 'required|string|max:255',
@@ -291,6 +302,14 @@ class UserController extends Controller
                 }
             } catch (\Throwable $e) {
                 // If schema check fails for any reason, skip the field to avoid breaking update
+            }
+        }
+
+        // If role present but not allowed by DB enum, skip changing it
+        if (isset($safeData['role'])) {
+            $dbRoles = $this->getDbEnumValues('users', 'role');
+            if (!empty($dbRoles) && !in_array($safeData['role'], $dbRoles)) {
+                unset($safeData['role']);
             }
         }
 
@@ -384,21 +403,44 @@ class UserController extends Controller
      */
     private function getAvailableRoles(User $user): array
     {
-        // Super admin can manage all roles
+        // Base roles supported by the application
+        $roles = ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'assistant', 'nurse', 'accountant', 'patient'];
+
         if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
-            return ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'assistant', 'nurse', 'accountant', 'patient'];
+            return $roles;
         }
 
-        // Clinic admin can manage clinic roles (including creating other admins)
         if (method_exists($user, 'isClinicAdmin') && $user->isClinicAdmin()) {
-            return ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'assistant', 'nurse', 'accountant', 'patient'];
+            return $roles;
         }
 
-        // Doctors can only manage assistants
         if ($user->role === 'doctor') {
             return ['assistant'];
         }
 
+        return [];
+    }
+
+    // Get enum values for a given table.column (MySQL only). Returns [] if not detectable.
+    private function getDbEnumValues(string $table, string $column): array
+    {
+        try {
+            if (DB::getDriverName() !== 'mysql') {
+                return [];
+            }
+            $row = DB::selectOne("SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?", [$table, $column]);
+            if (!$row || !isset($row->COLUMN_TYPE)) {
+                return [];
+            }
+            if (preg_match("/^enum\\((.*)\\)$/i", $row->COLUMN_TYPE, $m)) {
+                $csv = $m[1];
+                // Parse quoted CSV like 'admin','doctor'
+                $values = str_getcsv($csv, ',', "'", '\\');
+                return array_map('strval', $values);
+            }
+        } catch (\Throwable $e) {
+            // Ignore and fall back
+        }
         return [];
     }
 
