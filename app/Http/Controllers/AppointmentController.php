@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class AppointmentController extends Controller
@@ -33,19 +34,34 @@ class AppointmentController extends Controller
             $query->where('appointments.status', $request->status);
         }
 
+        $legacy = !Schema::hasColumn('appointments', 'appointment_datetime');
+
         if ($request->filled('date')) {
-            $query->whereDate('appointments.appointment_datetime', $request->date);
+            if ($legacy) {
+                $query->whereDate('appointments.appointment_date', $request->date);
+            } else {
+                $query->whereDate('appointments.appointment_datetime', $request->date);
+            }
         } else {
             // Default to today's appointments
-            $query->whereDate('appointments.appointment_datetime', Carbon::today());
+            if ($legacy) {
+                $query->whereDate('appointments.appointment_date', Carbon::today());
+            } else {
+                $query->whereDate('appointments.appointment_datetime', Carbon::today());
+            }
         }
 
         if ($request->filled('doctor_id')) {
             $query->where('appointments.doctor_id', $request->doctor_id);
         }
 
-        $appointments = $query->orderBy('appointments.appointment_datetime')
-            ->paginate(20);
+        if ($legacy) {
+            $query->orderBy('appointments.appointment_date')
+                  ->orderBy('appointments.appointment_time');
+        } else {
+            $query->orderBy('appointments.appointment_datetime');
+        }
+        $appointments = $query->paginate(20);
 
         // Get doctors and patients for modal/filter
         $doctors = DB::table('users')
@@ -74,8 +90,13 @@ class AppointmentController extends Controller
                 ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
                 ->select(
                     'appointments.id',
+                    // For legacy DBs, appointment_datetime may not exist
+                    // We will compute start/end in PHP below
                     'appointments.appointment_datetime',
                     'appointments.duration_minutes',
+                    'appointments.appointment_date',
+                    'appointments.appointment_time',
+                    'appointments.duration',
                     'appointments.type',
                     'appointments.status',
                     'appointments.notes',
@@ -84,14 +105,29 @@ class AppointmentController extends Controller
                     'doctors.first_name as doctor_first_name',
                     'doctors.last_name as doctor_last_name'
                 )
-                ->where('appointments.clinic_id', Auth::user()->clinic_id)
-                ->whereDate('appointments.appointment_datetime', '>=', Carbon::now()->subDays(30))
-                ->whereDate('appointments.appointment_datetime', '<=', Carbon::now()->addDays(90))
-                ->get();
+                ->where('appointments.clinic_id', Auth::user()->clinic_id);
+
+            if ($legacy) {
+                $calendarQuery = $calendarQuery
+                    ->whereDate('appointments.appointment_date', '>=', Carbon::now()->subDays(30))
+                    ->whereDate('appointments.appointment_date', '<=', Carbon::now()->addDays(90))
+                    ->get();
+            } else {
+                $calendarQuery = $calendarQuery
+                    ->whereDate('appointments.appointment_datetime', '>=', Carbon::now()->subDays(30))
+                    ->whereDate('appointments.appointment_datetime', '<=', Carbon::now()->addDays(90))
+                    ->get();
+            }
 
             foreach ($calendarQuery as $appointment) {
-                $startDateTime = Carbon::parse($appointment->appointment_datetime);
-                $endDateTime = $startDateTime->copy()->addMinutes($appointment->duration_minutes ?? 30);
+                if ($legacy) {
+                    $startDateTime = Carbon::parse(($appointment->appointment_date ?? Carbon::today()->toDateString()) . ' ' . ($appointment->appointment_time ?? '00:00:00'));
+                    $durationMinutes = $appointment->duration ?? 30;
+                } else {
+                    $startDateTime = Carbon::parse($appointment->appointment_datetime);
+                    $durationMinutes = $appointment->duration_minutes ?? 30;
+                }
+                $endDateTime = $startDateTime->copy()->addMinutes($durationMinutes);
 
                 $calendarEvents[] = [
                     'id' => $appointment->id,
@@ -151,22 +187,34 @@ class AppointmentController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        // Check for conflicts
+        // Check for conflicts (support legacy schema)
         $appointmentDateTime = Carbon::parse($request->appointment_date . ' ' . $request->appointment_time);
         $duration = $request->duration ?? 30;
         $endTime = $appointmentDateTime->copy()->addMinutes($duration);
 
-        $conflict = DB::table('appointments')
-            ->where('doctor_id', $request->doctor_id)
-            ->where('appointment_date', $request->appointment_date)
-            ->where('status', '!=', 'cancelled')
-            ->where(function ($query) use ($appointmentDateTime, $endTime) {
-                $query->whereBetween('appointment_time', [
-                    $appointmentDateTime->format('H:i:s'),
-                    $endTime->format('H:i:s')
-                ]);
-            })
-            ->exists();
+        $legacy = !Schema::hasColumn('appointments', 'appointment_datetime');
+        if ($legacy) {
+            $conflict = DB::table('appointments')
+                ->where('doctor_id', $request->doctor_id)
+                ->where('appointment_date', $request->appointment_date)
+                ->where('status', '!=', 'cancelled')
+                ->where(function ($query) use ($appointmentDateTime, $endTime) {
+                    $query->whereBetween('appointment_time', [
+                        $appointmentDateTime->format('H:i:s'),
+                        $endTime->format('H:i:s')
+                    ]);
+                })
+                ->exists();
+        } else {
+            // Overlap if start < existing_end AND end > existing_start
+            $conflict = DB::table('appointments')
+                ->where('doctor_id', $request->doctor_id)
+                ->whereDate('appointment_datetime', $appointmentDateTime->toDateString())
+                ->where('status', '!=', 'cancelled')
+                ->where('appointment_datetime', '<', $endTime->toDateTimeString())
+                ->where(DB::raw("DATE_ADD(appointment_datetime, INTERVAL duration_minutes MINUTE)"), '>', $appointmentDateTime->toDateTimeString())
+                ->exists();
+        }
 
         if ($conflict) {
             return back()->withInput()
@@ -180,20 +228,38 @@ class AppointmentController extends Controller
         $appointmentNumber = 'APT-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
         try {
-            $appointmentId = DB::table('appointments')->insertGetId([
-                'appointment_number' => $appointmentNumber,
-                'patient_id' => $request->patient_id,
-                'doctor_id' => $request->doctor_id,
-                'clinic_id' => Auth::user()->clinic_id,
-                'appointment_datetime' => $appointmentDateTime,
-                'duration_minutes' => $duration,
-                'type' => $request->appointment_type ?? 'consultation',
-                'status' => 'scheduled',
-                'notes' => $request->notes,
-                'created_by' => Auth::id(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            if ($legacy) {
+                $appointmentId = DB::table('appointments')->insertGetId([
+                    'appointment_number' => $appointmentNumber,
+                    'patient_id' => $request->patient_id,
+                    'doctor_id' => $request->doctor_id,
+                    'clinic_id' => Auth::user()->clinic_id,
+                    'appointment_date' => $appointmentDateTime->toDateString(),
+                    'appointment_time' => $appointmentDateTime->format('H:i:s'),
+                    'duration' => $duration,
+                    'type' => $request->appointment_type ?? 'consultation',
+                    'status' => 'scheduled',
+                    'notes' => $request->notes,
+                    'created_by' => Auth::id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $appointmentId = DB::table('appointments')->insertGetId([
+                    'appointment_number' => $appointmentNumber,
+                    'patient_id' => $request->patient_id,
+                    'doctor_id' => $request->doctor_id,
+                    'clinic_id' => Auth::user()->clinic_id,
+                    'appointment_datetime' => $appointmentDateTime,
+                    'duration_minutes' => $duration,
+                    'type' => $request->appointment_type ?? 'consultation',
+                    'status' => 'scheduled',
+                    'notes' => $request->notes,
+                    'created_by' => Auth::id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
             return redirect()->route('appointments.show', $appointmentId)
                 ->with('success', __('Appointment scheduled successfully.'));
