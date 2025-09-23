@@ -40,10 +40,10 @@
                                     </h6>
                                 </div>
                                 <div class="col-md-6 text-md-end">
-                                    <span class="badge bg-{{ 
-                                        $appointment->status == 'completed' ? 'success' : 
-                                        ($appointment->status == 'cancelled' ? 'danger' : 
-                                        ($appointment->status == 'confirmed' ? 'primary' : 'secondary')) 
+                                    <span class="badge bg-{{
+                                        $appointment->status == 'completed' ? 'success' :
+                                        ($appointment->status == 'cancelled' ? 'danger' :
+                                        ($appointment->status == 'confirmed' ? 'primary' : 'secondary'))
                                     }} fs-6">
                                         {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
                                     </span>
@@ -56,7 +56,7 @@
                                     <small class="text-muted d-block">{{ __('Appointment Number') }}</small>
                                     <h5 class="mb-0">{{ $appointment->appointment_number }}</h5>
                                 </div>
-                                
+
                                 <div class="col-md-6 mb-3">
                                     <small class="text-muted d-block">{{ __('Date & Time') }}</small>
                                     <div class="fw-bold">
@@ -92,7 +92,7 @@
                                     <small class="text-muted d-block">{{ __('Patient Name') }}</small>
                                     <div class="fw-bold">{{ $appointment->patient_first_name }} {{ $appointment->patient_last_name }}</div>
                                 </div>
-                                
+
                                 <div class="col-md-6 mb-3">
                                     <small class="text-muted d-block">{{ __('Patient ID') }}</small>
                                     <div class="fw-bold">{{ $appointment->patient_id }}</div>
@@ -143,7 +143,7 @@
                                     <small class="text-muted d-block">{{ __('Doctor Name') }}</small>
                                     <div class="fw-bold">Dr. {{ $appointment->doctor_first_name }} {{ $appointment->doctor_last_name }}</div>
                                 </div>
-                                
+
                                 @if($appointment->doctor_phone)
                                 <div class="col-md-6 mb-3">
                                     <small class="text-muted d-block">{{ __('Phone') }}</small>
@@ -204,7 +204,7 @@
                                     <i class="fas fa-edit me-2"></i>
                                     {{ __('Edit Appointment') }}
                                 </a>
-                                
+
                                 @if($appointment->status == 'scheduled')
                                 <button type="button" class="btn btn-outline-success" onclick="updateStatus('confirmed')">
                                     <i class="fas fa-check me-2"></i>
@@ -232,7 +232,12 @@
                                     {{ __('Cancel Appointment') }}
                                 </button>
                                 @endif
-                                
+
+                                <button type="button" class="btn btn-success" onclick="shareAppointmentWhatsApp()">
+                                    <i class="fab fa-whatsapp me-2"></i>
+                                    {{ __('Send via WhatsApp') }}
+                                </button>
+
                                 <button type="button" class="btn btn-outline-danger" onclick="deleteAppointment()">
                                     <i class="fas fa-trash me-2"></i>
                                     {{ __('Delete Appointment') }}
@@ -254,7 +259,7 @@
                                 <small class="text-muted">{{ __('Created By') }}</small>
                                 <div>{{ $appointment->creator_first_name ?? 'System' }} {{ $appointment->creator_last_name ?? '' }}</div>
                             </div>
-                            
+
                             <div class="mb-0">
                                 <small class="text-muted">{{ __('Created Date') }}</small>
                                 <div>{{ \Carbon\Carbon::parse($appointment->created_at)->format('M d, Y \a\t g:i A') }}</div>
@@ -317,5 +322,27 @@ function deleteAppointment() {
     document.getElementById('deleteForm').action = `/appointments/{{ $appointment->id }}`;
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
+
+function shareAppointmentWhatsApp() {
+  const patientName = "{{ trim(($appointment->patient_first_name ?? '') . ' ' . ($appointment->patient_last_name ?? '')) }}";
+  const apptNumber = "{{ $appointment->appointment_number }}";
+  const dateStr = "{{ \Carbon\Carbon::parse($appointment->appointment_datetime)->format('F d, Y') }}";
+  const timeStr = "{{ \Carbon\Carbon::parse($appointment->appointment_datetime)->format('g:i A') }}";
+  const doctorName = "{{ trim('Dr. ' . ($appointment->doctor_first_name ?? '') . ' ' . ($appointment->doctor_last_name ?? '')) }}";
+
+  const message = `📅 {{ __('Appointment Reminder') }}\n\n` +
+                  `👤 {{ __('Patient') }}: ${patientName}\n` +
+                  `📄 {{ __('Appointment #') }}: ${apptNumber}\n` +
+                  `${doctorName ? '👨‍⚕️ {{ __('Doctor') }}: ' + doctorName + '\n' : ''}` +
+                  `🗓 {{ __('Date') }}: ${dateStr}\n` +
+                  `🕒 {{ __('Time') }}: ${timeStr}\n` +
+                  `\n📱 {{ __('Generated by ConCure Clinic Management System') }}`;
+
+  const encoded = encodeURIComponent(message);
+  const patientWhatsApp = "{{ $appointment->patient_phone ? preg_replace('/[^0-9]/', '', $appointment->patient_phone) : '' }}";
+  const url = patientWhatsApp ? `https://wa.me/${patientWhatsApp}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+  window.open(url, '_blank');
+}
+
 </script>
 @endsection
