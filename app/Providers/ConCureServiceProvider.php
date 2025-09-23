@@ -64,7 +64,8 @@ class ConCureServiceProvider extends ServiceProvider
 
 
         Gate::define('manage-finance', function (User $user) {
-            return in_array($user->role, ['admin', 'accountant']) ||
+            // Only Super Admins or Clinic Admins are auto-allowed; everyone else needs explicit finance_* permission
+            return ($user->isSuperAdmin() || $user->isClinicAdmin()) ||
                 $user->hasAnyPermission([
                     'finance_view', 'finance_create', 'finance_edit', 'finance_delete', 'finance_reports', 'finance_approve'
                 ]);

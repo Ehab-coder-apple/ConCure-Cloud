@@ -350,10 +350,11 @@ class User extends Authenticatable
      */
     public function canAccessFinance(): bool
     {
-        // Role-based access OR permission-based access to any finance capability
-        if (in_array($this->role, ['admin', 'accountant'])) {
+        // Clinic Admins and Super Admins always allowed within their scope
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
             return true;
         }
+        // Everyone else must have explicit finance_* permission(s)
         return $this->hasAnyPermission([
             'finance_view', 'finance_create', 'finance_edit', 'finance_delete', 'finance_reports', 'finance_approve'
         ]);
