@@ -440,17 +440,17 @@
     @php
         $clinicId = auth()->user()->clinic_id ?? $labRequest->doctor->clinic_id ?? 2;
         $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($clinicId);
-        $clinicLogo = \App\Http\Controllers\SettingsController::getClinicLogo($clinicId);
+        $clinicLogoPath = $clinicInfo['logo_pdf_path'] ?? null;
     @endphp
 
     <div style="border: 3px solid #2c5aa0; padding: 12px; margin-bottom: 15px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px;">
         <table style="width: 100%; border-collapse: collapse;">
             <tr>
                 <!-- Left Section: Logo -->
-                @if($clinicLogo)
+                @if($clinicLogoPath)
                     <td style="width: 25%; vertical-align: middle; text-align: left; padding-right: 15px;">
-                        <img src="{{ public_path('storage/' . str_replace('storage/', '', $clinicLogo)) }}"
-                             alt=""
+                        <img src="{{ $clinicLogoPath }}"
+                             alt="Clinic Logo"
                              style="max-height: 110px; max-width: 115px; object-fit: contain; border-radius: 6px; border: 1px solid #dee2e6; padding: 2px; background: white;">
                     </td>
                 @else
@@ -547,10 +547,10 @@
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr>
                                 <!-- Left Section: Logo -->
-                                @if($clinicLogo)
+                                @if($clinicLogoPath)
                                     <td style="width: 25%; vertical-align: middle; text-align: left; padding-right: 15px;">
-                                        <img src="{{ public_path('storage/' . str_replace('storage/', '', $clinicLogo)) }}"
-                                             alt=""
+                                        <img src="{{ $clinicLogoPath }}"
+                                             alt="Clinic Logo"
                                              style="max-height: 110px; max-width: 115px; object-fit: contain; border-radius: 6px; border: 1px solid #dee2e6; padding: 2px; background: white;">
                                     </td>
                                 @else
@@ -591,11 +591,11 @@
 
                 <table style="width: 100%; border-collapse: collapse; border: 2px solid #2c5aa0; border-radius: 6px; overflow: hidden; margin-bottom: {{ $pageIndex < $testChunks->count() - 1 ? '30px' : '15px' }};">
                     <thead>
-                        <tr style="background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%);">
-                            <th style="width: 8%; border: 1px solid #2c5aa0; text-align: center; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 5px;">#</th>
-                            <th style="width: 42%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Test Name</th>
-                            <th style="width: 30%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Instructions</th>
-                            <th style="width: 20%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Result</th>
+                        <tr style="background: #e9ecef;">
+                            <th style="width: 8%; border: 1px solid #2c5aa0; text-align: center; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 5px;">#</th>
+                            <th style="width: 42%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Test Name</th>
+                            <th style="width: 30%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Instructions</th>
+                            <th style="width: 20%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Result</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -628,11 +628,11 @@
         @elseif($labRequest->tests->count() > 0)
             <table style="width: 100%; border-collapse: collapse; border: 2px solid #2c5aa0; border-radius: 6px; overflow: hidden;">
                 <thead>
-                    <tr style="background: linear-gradient(135deg, #2c5aa0 0%, #1e3d72 100%);">
-                        <th style="width: 8%; border: 1px solid #2c5aa0; text-align: center; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 5px;">#</th>
-                        <th style="width: 42%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Test Name</th>
-                        <th style="width: 30%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Instructions</th>
-                        <th style="width: 20%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Result</th>
+                    <tr style="background: #e9ecef;">
+                        <th style="width: 8%; border: 1px solid #2c5aa0; text-align: center; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 5px;">#</th>
+                        <th style="width: 42%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Test Name</th>
+                        <th style="width: 30%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Instructions</th>
+                        <th style="width: 20%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Result</th>
                     </tr>
                 </thead>
                 <tbody>
