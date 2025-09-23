@@ -92,6 +92,11 @@ class UserController extends Controller
             // Doctors creating a subuser for themselves may only create assistants
             $availableRoles = ['assistant'];
         }
+        // Intersect with DB enum roles if available to avoid showing invalid options
+        $dbRoles = $this->getDbEnumValues('users', 'role');
+        if (!empty($dbRoles)) {
+            $availableRoles = array_values(array_intersect($availableRoles, $dbRoles));
+        }
 
         // Clinic users only see their own clinic
         $clinics = collect([$user->clinic]);
@@ -216,6 +221,11 @@ class UserController extends Controller
             abort(403, 'Unauthorized: editing users is restricted to admins.');
         }
         $availableRoles = $this->getAvailableRoles($currentUser);
+        // Intersect with DB enum roles if available to avoid showing invalid options
+        $dbRoles = $this->getDbEnumValues('users', 'role');
+        if (!empty($dbRoles)) {
+            $availableRoles = array_values(array_intersect($availableRoles, $dbRoles));
+        }
 
         $clinics = collect([$currentUser->clinic]);
 
