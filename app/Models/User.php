@@ -550,6 +550,11 @@ class User extends Authenticatable
      */
     public function canAccessSection(string $section): bool
     {
+        // Only Clinic Admins and Super Admins can access Settings regardless of permissions
+        if ($section === 'settings') {
+            return $this->isSuperAdmin() || $this->isClinicAdmin();
+        }
+
         // Admins and Super Admins have full access within their scope
         if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
             return true;

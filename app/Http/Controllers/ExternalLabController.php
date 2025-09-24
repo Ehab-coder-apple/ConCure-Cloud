@@ -14,8 +14,8 @@ class ExternalLabController extends Controller
     {
         $user = auth()->user();
 
-        // Permission-based access: clinic admins/super admins or settings permissions
-        if (!($user->isSuperAdmin() || $user->isClinicAdmin() || $user->hasAnyPermission(['settings_clinic','settings_edit']))) {
+        // Settings are admin-only: allow only Clinic Admins or Super Admins
+        if (!($user->isSuperAdmin() || $user->isClinicAdmin())) {
             abort(403, 'Only administrators can manage external laboratories.');
         }
 
