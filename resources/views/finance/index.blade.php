@@ -259,12 +259,14 @@
                                 <small>View Reports</small>
                             </a>
                         </div>
+                        @can('access-section', 'settings')
                         <div class="col-md-3 mb-3">
                             <a href="{{ route('settings.index') }}" class="btn btn-secondary btn-lg w-100">
                                 <i class="fas fa-cog d-block mb-1"></i>
                                 <small>Finance Settings</small>
                             </a>
                         </div>
+                        @endcan
                     </div>
                 </div>
             </div>
