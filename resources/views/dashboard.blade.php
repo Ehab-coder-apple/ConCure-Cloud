@@ -251,6 +251,12 @@
                                 <small>New Invoice</small>
                             </a>
                         </div>
+                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                            <a href="{{ route('finance.expenses') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-receipt d-block mb-1"></i>
+                                <small>Add Expense</small>
+                            </a>
+                        </div>
                         @endcan
 
                         @can('manage-users')
@@ -262,12 +268,14 @@
                         </div>
                         @endcan
 
+                        @can('access-section', 'settings')
                         <div class="col-lg-2 col-md-4 col-6 mb-3">
                             <a href="{{ route('settings.index') }}" class="btn btn-outline-dark w-100">
                                 <i class="fas fa-cog d-block mb-1"></i>
                                 <small>Settings</small>
                             </a>
                         </div>
+                        @endcan
                     </div>
                 </div>
             </div>
