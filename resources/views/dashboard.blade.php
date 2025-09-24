@@ -252,7 +252,7 @@
                             </a>
                         </div>
                         <div class="col-lg-2 col-md-4 col-6 mb-3">
-                            <a href="{{ route('finance.expenses') }}" class="btn btn-outline-danger w-100">
+                            <a href="{{ route('finance.expenses', ['new' => 1]) }}" class="btn btn-outline-danger w-100">
                                 <i class="fas fa-receipt d-block mb-1"></i>
                                 <small>Add Expense</small>
                             </a>

@@ -97,10 +97,10 @@
                         @if(request('date_to'))
                             <input type="hidden" name="date_to" value="{{ request('date_to') }}">
                         @endif
-                        
+
                         <div class="col-md-10">
-                            <input type="text" class="form-control" name="search" 
-                                   placeholder="{{ __('Search by expense number, description, or vendor name...') }}" 
+                            <input type="text" class="form-control" name="search"
+                                   placeholder="{{ __('Search by expense number, description, or vendor name...') }}"
                                    value="{{ request('search') }}">
                         </div>
                         <div class="col-md-2">
@@ -178,16 +178,16 @@
                                         <td>
                                             <div class="btn-group" role="group">
                                                 @if($expense->hasReceiptFile())
-                                                    <a href="{{ $expense->receipt_file_url }}" target="_blank" 
+                                                    <a href="{{ $expense->receipt_file_url }}" target="_blank"
                                                        class="btn btn-sm btn-outline-info" title="{{ __('View Receipt') }}">
                                                         <i class="fas fa-file-alt"></i>
                                                     </a>
                                                 @endif
-                                                
+
                                                 @if($expense->canBeApproved() && auth()->user()->hasPermission('finance_approve'))
                                                     <form method="POST" action="{{ route('finance.expenses.approve', $expense) }}" class="d-inline">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-sm btn-success" 
+                                                        <button type="submit" class="btn btn-sm btn-success"
                                                                 title="{{ __('Approve') }}"
                                                                 onclick="return confirm('{{ __('Are you sure you want to approve this expense?') }}')">
                                                             <i class="fas fa-check"></i>
@@ -195,7 +195,7 @@
                                                     </form>
                                                     <form method="POST" action="{{ route('finance.expenses.reject', $expense) }}" class="d-inline">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-sm btn-danger" 
+                                                        <button type="submit" class="btn btn-sm btn-danger"
                                                                 title="{{ __('Reject') }}"
                                                                 onclick="return confirm('{{ __('Are you sure you want to reject this expense?') }}')">
                                                             <i class="fas fa-times"></i>
@@ -209,7 +209,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         <!-- Pagination -->
                         <div class="card-footer">
                             {{ $expenses->appends(request()->query())->links() }}
@@ -248,26 +248,26 @@
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label for="description" class="form-label">{{ __('Description') }} <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('description') is-invalid @enderror" 
+                            <input type="text" class="form-control @error('description') is-invalid @enderror"
                                    id="description" name="description" value="{{ old('description') }}" required>
                             @error('description')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label for="amount" class="form-label">{{ __('Amount') }} <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control @error('amount') is-invalid @enderror" 
-                                       id="amount" name="amount" value="{{ old('amount') }}" 
+                                <input type="number" class="form-control @error('amount') is-invalid @enderror"
+                                       id="amount" name="amount" value="{{ old('amount') }}"
                                        step="0.01" min="0" required>
                                 @error('amount')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label for="category" class="form-label">{{ __('Category') }} <span class="text-danger">*</span></label>
                             <select class="form-select @error('category') is-invalid @enderror" id="category" name="category" required>
@@ -282,16 +282,16 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label for="expense_date" class="form-label">{{ __('Expense Date') }} <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control @error('expense_date') is-invalid @enderror" 
+                            <input type="date" class="form-control @error('expense_date') is-invalid @enderror"
                                    id="expense_date" name="expense_date" value="{{ old('expense_date', date('Y-m-d')) }}" required>
                             @error('expense_date')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label for="payment_method" class="form-label">{{ __('Payment Method') }} <span class="text-danger">*</span></label>
                             <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required>
@@ -306,47 +306,47 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label for="vendor_name" class="form-label">{{ __('Vendor Name') }}</label>
-                            <input type="text" class="form-control @error('vendor_name') is-invalid @enderror" 
+                            <input type="text" class="form-control @error('vendor_name') is-invalid @enderror"
                                    id="vendor_name" name="vendor_name" value="{{ old('vendor_name') }}">
                             @error('vendor_name')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label for="receipt_number" class="form-label">{{ __('Receipt Number') }}</label>
-                            <input type="text" class="form-control @error('receipt_number') is-invalid @enderror" 
+                            <input type="text" class="form-control @error('receipt_number') is-invalid @enderror"
                                    id="receipt_number" name="receipt_number" value="{{ old('receipt_number') }}">
                             @error('receipt_number')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="col-md-12">
                             <label for="receipt_file" class="form-label">{{ __('Receipt File') }}</label>
-                            <input type="file" class="form-control @error('receipt_file') is-invalid @enderror" 
+                            <input type="file" class="form-control @error('receipt_file') is-invalid @enderror"
                                    id="receipt_file" name="receipt_file" accept=".pdf,.jpg,.jpeg,.png">
                             <div class="form-text">{{ __('Accepted formats: PDF, JPG, PNG. Max size: 5MB') }}</div>
                             @error('receipt_file')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="col-md-12">
                             <label for="notes" class="form-label">{{ __('Notes') }}</label>
-                            <textarea class="form-control @error('notes') is-invalid @enderror" 
+                            <textarea class="form-control @error('notes') is-invalid @enderror"
                                       id="notes" name="notes" rows="3">{{ old('notes') }}</textarea>
                             @error('notes')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="col-md-12">
                             <div class="form-check">
-                                <input class="form-check-input @error('is_recurring') is-invalid @enderror" 
+                                <input class="form-check-input @error('is_recurring') is-invalid @enderror"
                                        type="checkbox" id="is_recurring" name="is_recurring" value="1"
                                        {{ old('is_recurring') ? 'checked' : '' }}>
                                 <label class="form-check-label" for="is_recurring">
@@ -357,10 +357,10 @@
                                 @enderror
                             </div>
                         </div>
-                        
+
                         <div class="col-md-12" id="recurring_frequency_group" style="display: none;">
                             <label for="recurring_frequency" class="form-label">{{ __('Recurring Frequency') }}</label>
-                            <select class="form-select @error('recurring_frequency') is-invalid @enderror" 
+                            <select class="form-select @error('recurring_frequency') is-invalid @enderror"
                                     id="recurring_frequency" name="recurring_frequency">
                                 <option value="">{{ __('Select Frequency') }}</option>
                                 @foreach(\App\Models\Expense::RECURRING_FREQUENCIES as $key => $label)
@@ -389,7 +389,17 @@
         </div>
     </div>
 </div>
-@endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    @if(request('new') || session('open_add_expense') || $errors->has('description') || $errors->has('amount') || $errors->has('category') || $errors->has('expense_date') || $errors->has('payment_method'))
+        var el = document.getElementById('addExpenseModal');
+        if (el) { var m = new bootstrap.Modal(el); m.show(); }
+    @endif
+});
+</script>
+@endpush
 
 @push('scripts')
 <script>
@@ -397,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show/hide recurring frequency field
     const isRecurringCheckbox = document.getElementById('is_recurring');
     const recurringFrequencyGroup = document.getElementById('recurring_frequency_group');
-    
+
     function toggleRecurringFrequency() {
         if (isRecurringCheckbox.checked) {
             recurringFrequencyGroup.style.display = 'block';
@@ -405,9 +415,9 @@ document.addEventListener('DOMContentLoaded', function() {
             recurringFrequencyGroup.style.display = 'none';
         }
     }
-    
+
     isRecurringCheckbox.addEventListener('change', toggleRecurringFrequency);
-    
+
     // Initialize on page load
     toggleRecurringFrequency();
 });

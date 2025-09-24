@@ -248,10 +248,10 @@
                             </button>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <button type="button" class="btn btn-danger btn-lg w-100" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+                            <a href="{{ route('finance.expenses', ['new' => 1]) }}" class="btn btn-danger btn-lg w-100">
                                 <i class="fas fa-receipt d-block mb-1"></i>
                                 <small>Add Expense</small>
-                            </button>
+                            </a>
                         </div>
                         @can('finance-reports')
                         <div class="col-md-3 mb-3">
