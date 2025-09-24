@@ -760,6 +760,26 @@ class NutritionController extends Controller
 
         $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
 
+        // Optional output language override for PDF export
+        $outputLang = request()->query('lang');
+        $supportedOutputLangs = array_keys(Food::getSupportedLanguages());
+        if ($outputLang && in_array($outputLang, $supportedOutputLangs, true)) {
+            // Set locale for any translatable strings and labels
+            try { app()->setLocale($outputLang); } catch (\Throwable $e) {}
+
+            // Translate food display names in-memory for rendering
+            foreach ($dietPlan->meals as $meal) {
+                foreach ($meal->foods as $mealFood) {
+                    if ($mealFood->food) {
+                        $translated = $mealFood->food->getNameInLanguage($outputLang);
+                        if (!empty($translated)) {
+                            $mealFood->food_name = $translated;
+                        }
+                    }
+                }
+            }
+        }
+
         // Debug: Log meal data for PDF generation
         \Log::info("PDF Generation - Diet Plan {$dietPlan->id}", [
             'meals_count' => $dietPlan->meals->count(),

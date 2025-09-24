@@ -50,7 +50,7 @@
                        data-patient-name="{{ $dietPlan->patient->full_name ?? '' }}" data-plan-title="{{ $dietPlan->title ?? '' }}" data-plan-number="{{ $dietPlan->plan_number ?? '' }}">
                         <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
-                    <button type="button" class="btn btn-success" onclick="shareOnWhatsApp()">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#whatsappLanguageModal">
                         <i class="fab fa-whatsapp me-1"></i>
                         {{ __('Send via WhatsApp') }}
                     </button>
@@ -61,6 +61,12 @@
                         </button>
                         <ul class="dropdown-menu">
                             <li><h6 class="dropdown-header">{{ __('Daily Format') }}</h6></li>
+                            <li>
+                                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#exportLanguageModal">
+                                    <i class="fas fa-globe me-2"></i>
+                                    {{ __('Daily PDF (choose language)') }}
+                                </a>
+                            </li>
                             <li><a class="dropdown-item" href="{{ route('nutrition.pdf', $dietPlan) }}">
                                 <i class="fas fa-file-pdf me-2"></i>
                                 {{ __('Daily PDF') }}
@@ -103,7 +109,7 @@
                             <span class="text-primary">Dr. {{ $dietPlan->doctor->first_name }} {{ $dietPlan->doctor->last_name }}</span>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <strong>{{ __('Goal:') }}</strong><br>
@@ -114,14 +120,14 @@
                             <span class="{{ $dietPlan->status_badge_class }}">{{ $dietPlan->status_display }}</span>
                         </div>
                     </div>
-                    
+
                     @if($dietPlan->description)
                     <div class="mb-3">
                         <strong>{{ __('Description:') }}</strong><br>
                         <p class="mb-0">{{ $dietPlan->description }}</p>
                     </div>
                     @endif
-                    
+
                     @if($dietPlan->goal_description)
                     <div class="mb-3">
                         <strong>{{ __('Goal Description:') }}</strong><br>
@@ -149,7 +155,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         @if($dietPlan->target_protein)
                         <div class="col-md-3 mb-3">
                             <div class="text-center p-3 bg-light rounded">
@@ -158,7 +164,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         @if($dietPlan->target_carbs)
                         <div class="col-md-3 mb-3">
                             <div class="text-center p-3 bg-light rounded">
@@ -167,7 +173,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         @if($dietPlan->target_fat)
                         <div class="col-md-3 mb-3">
                             <div class="text-center p-3 bg-light rounded">
@@ -490,26 +496,26 @@
                         <strong>{{ __('Start Date:') }}</strong><br>
                         <span class="text-primary">{{ \Carbon\Carbon::parse($dietPlan->start_date)->format('M d, Y') }}</span>
                     </div>
-                    
+
                     @if($dietPlan->end_date)
                     <div class="mb-3">
                         <strong>{{ __('End Date:') }}</strong><br>
                         <span class="text-primary">{{ \Carbon\Carbon::parse($dietPlan->end_date)->format('M d, Y') }}</span>
                     </div>
                     @endif
-                    
+
                     @if($dietPlan->duration_days)
                     <div class="mb-3">
                         <strong>{{ __('Duration:') }}</strong><br>
                         <span class="text-primary">{{ $dietPlan->duration_days }} {{ __('days') }}</span>
                     </div>
                     @endif
-                    
+
                     <div class="mb-3">
                         <strong>{{ __('Created:') }}</strong><br>
                         <span class="text-muted">{{ $dietPlan->created_at->format('M d, Y g:i A') }}</span>
                     </div>
-                    
+
                     @if($dietPlan->updated_at != $dietPlan->created_at)
                     <div class="mb-3">
                         <strong>{{ __('Last Updated:') }}</strong><br>
@@ -537,7 +543,7 @@
                             $daysPassed = $startDate->diffInDays($today);
                             $progress = $totalDays > 0 ? min(100, max(0, ($daysPassed / $totalDays) * 100)) : 0;
                         @endphp
-                        
+
                         <div class="mb-3">
                             <div class="d-flex justify-content-between mb-1">
                                 <small>{{ __('Plan Progress') }}</small>
@@ -547,7 +553,7 @@
                                 <div class="progress-bar bg-success" role="progressbar" style="width: {{ $progress }}%"></div>
                             </div>
                         </div>
-                        
+
                         <div class="row text-center">
                             <div class="col-6">
                                 <div class="bg-light p-2 rounded">
@@ -589,7 +595,7 @@
                             {{ __('Manage Meals') }}
                         </a>
                         @endif
-                        
+
                         <button type="button" class="btn btn-success w-100 mb-2" onclick="shareOnWhatsApp()">
                             <i class="fab fa-whatsapp me-1"></i>
                             {{ __('Send via WhatsApp') }}
@@ -599,16 +605,16 @@
                             <i class="fas fa-file-word me-1"></i>
                             {{ __('Download Word') }}
                         </a>
-                        
+
                         <a href="{{ route('nutrition.create') }}?patient_id={{ $dietPlan->patient_id }}" class="btn btn-success">
                             <i class="fas fa-plus me-1"></i>
                             {{ __('New Plan for Patient') }}
                         </a>
-                        
+
                         <hr>
-                        
+
                         @if($dietPlan->canBeModified())
-                        <form action="{{ route('nutrition.destroy', $dietPlan) }}" method="POST" 
+                        <form action="{{ route('nutrition.destroy', $dietPlan) }}" method="POST"
                               onsubmit="return confirm('{{ __('Are you sure you want to delete this nutrition plan?') }}')">
                             @csrf
                             @method('DELETE')
@@ -624,6 +630,67 @@
         </div>
     </div>
 </div>
+
+{{-- Output Language Modals --}}
+@php($nutritionOutputLangs = \App\Models\Food::getSupportedLanguages())
+
+<!-- WhatsApp Language Modal -->
+<div class="modal fade" id="whatsappLanguageModal" tabindex="-1" aria-labelledby="whatsappLanguageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="whatsappLanguageModalLabel">
+          <i class="fab fa-whatsapp me-2 text-success"></i>{{ __('Send via WhatsApp') }} — {{ __('Choose Language') }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <label for="whatsappLanguageSelect" class="form-label">{{ __('Output Language') }}</label>
+        <select id="whatsappLanguageSelect" class="form-select">
+          @foreach($nutritionOutputLangs as $code => $label)
+            <option value="{{ $code }}" {{ app()->getLocale() === $code ? 'selected' : '' }}>{{ $label }}</option>
+          @endforeach
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+
+        <button type="button" class="btn btn-success" onclick="shareOnWhatsAppWithLang()">
+          <i class="fab fa-whatsapp me-1"></i>{{ __('Send') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Export/Print Language Modal -->
+<div class="modal fade" id="exportLanguageModal" tabindex="-1" aria-labelledby="exportLanguageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exportLanguageModalLabel">
+          <i class="fas fa-file-pdf me-2 text-primary"></i>{{ __('Export PDF') }} — {{ __('Choose Language') }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <label for="exportLanguageSelect" class="form-label">{{ __('Output Language') }}</label>
+        <select id="exportLanguageSelect" class="form-select">
+          @foreach($nutritionOutputLangs as $code => $label)
+            <option value="{{ $code }}" {{ app()->getLocale() === $code ? 'selected' : '' }}>{{ $label }}</option>
+          @endforeach
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+        <button type="button" class="btn btn-primary" onclick="downloadPdfWithLang()">
+          <i class="fas fa-file-download me-1"></i>{{ __('Download PDF') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -673,7 +740,7 @@ function shareOnWhatsApp() {
 
     if (isFlexiblePlan) {
         // Flexible meal plan format
-        mealSummary += "\n🔄 *Flexible Meal Plan - Choose one option from each meal:*\n";
+        mealSummary += "\n🔄 *" + i18n.flexibleIntro + "*\n";
 
         @php
             // Group meals by type and option for flexible plans
@@ -683,6 +750,7 @@ function shareOnWhatsApp() {
                 'breakfast' => 'Breakfast',
                 'lunch' => 'Lunch',
                 'dinner' => 'Dinner',
+
                 'snack_1' => 'Snack'
             ];
 
@@ -700,48 +768,105 @@ function shareOnWhatsApp() {
 
         @foreach($mealTypes as $mealType)
             @if(count($mealsByType[$mealType]) > 0)
-                mealSummary += "\n*{{ $mealTypeNames[$mealType] }} Options:*\n";
+                mealSummary += "\n*" + i18n[mealTypeKey("{{ $mealType }}")] + " " + i18n.options + ":*\n";
                 @foreach($mealsByType[$mealType] as $index => $meal)
-                    mealSummary += "📋 *Option {{ $meal->option_number }}:*\n";
+                    mealSummary += "📋 *" + i18n.option + " {{ $meal->option_number }}:*\n";
                     @foreach($meal->foods as $mealFood)
-                        mealSummary += "  • {{ $mealFood->food_name }} - {{ $mealFood->quantity }}{{ $mealFood->unit }}\n";
+                        mealSummary += "  • " + (foodTranslations['{{ $mealFood->id }}'] && foodTranslations['{{ $mealFood->id }}'][selectedLang] ? foodTranslations['{{ $mealFood->id }}'][selectedLang] : "{{ $mealFood->food_name }}") + " - {{ $mealFood->quantity }}{{ $mealFood->unit }}\n";
                     @endforeach
                     mealSummary += "\n";
                 @endforeach
             @endif
         @endforeach
 
-        mealSummary += "💡 *Instructions:* Choose one option from each meal type for each day. You can mix and match different options throughout the week for variety!\n";
+        mealSummary += "💡 *" + i18n.instructions + ":* " + i18n.chooseOne + "\n";
     } else {
         // Regular meal plan format
         @foreach(['breakfast', 'lunch', 'dinner', 'snack'] as $mealType)
             @php $meals = $dietPlan->meals->where('meal_type', $mealType)->where('is_option_based', false); @endphp
             @if($meals->count() > 0)
-                mealSummary += "\n*{{ ucfirst($mealType) }}:*\n";
+                mealSummary += "\n*" + i18n[mealTypeKey("{{ $mealType }}")] + ":*\n";
                 @foreach($meals as $meal)
                     @foreach($meal->foods as $mealFood)
-                        mealSummary += "• {{ $mealFood->food_name }} - {{ $mealFood->quantity }}{{ $mealFood->unit }}\n";
+                        mealSummary += "• " + (foodTranslations['{{ $mealFood->id }}'] && foodTranslations['{{ $mealFood->id }}'][selectedLang] ? foodTranslations['{{ $mealFood->id }}'][selectedLang] : "{{ $mealFood->food_name }}") + " - {{ $mealFood->quantity }}{{ $mealFood->unit }}\n";
                     @endforeach
                 @endforeach
             @endif
         @endforeach
     }
 
+// Output language selection (default to current app locale)
+let selectedLang = "{{ app()->getLocale() }}";
+
+
+// i18n map for WhatsApp headings/labels per output language
+const whatsappI18n = {
+  en: {
+    patient: 'Patient', plan: 'Plan', planNo: 'Plan #', doctor: 'Doctor',
+    dailyTargets: 'Daily Targets', calories: 'Calories', protein: 'Protein', carbs: 'Carbs', fat: 'Fat',
+    mealPlan: 'Meal Plan', breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack',
+    options: 'Options', option: 'Option', instructions: 'Instructions',
+    chooseOne: 'Choose one option from each meal type for each day. You can mix and match different options throughout the week for variety!',
+    flexibleIntro: 'Flexible Meal Plan - Choose one option from each meal:'
+  },
+  ar: {
+    patient: 'المريض', plan: 'الخطة', planNo: 'رقم الخطة', doctor: 'الطبيب',
+    dailyTargets: 'الأهداف اليومية', calories: 'السعرات الحرارية', protein: 'البروتين', carbs: 'الكربوهيدرات', fat: 'الدهون',
+    mealPlan: 'خطة الوجبات', breakfast: 'الفطور', lunch: 'الغداء', dinner: 'العشاء', snack: 'وجبة خفيفة',
+    options: 'الخيارات', option: 'الخيار', instructions: 'التعليمات',
+    chooseOne: 'اختر خيارًا واحدًا من كل نوع وجبة لكل يوم. يمكنك التنويع بين الخيارات طوال الأسبوع!',
+    flexibleIntro: 'خطة وجبات مرنة - اختر خيارًا واحدًا من كل نوع وجبة:'
+  },
+  // TODO: Provide Kurdish translations; currently falling back to English
+  ku_bahdini: null,
+  ku_sorani: null,
+};
+function i18nFor(lang){ return whatsappI18n[lang] || whatsappI18n.en; }
+let i18n = i18nFor(selectedLang);
+function mealTypeKey(type){ return (type && type.startsWith('snack')) ? 'snack' : type; }
+
+// Build food name translations map (mealFoodId => { lang => name })
+const foodTranslations = {};
+@foreach($dietPlan->meals as $meal)
+  @foreach($meal->foods as $mealFood)
+    foodTranslations['{{ $mealFood->id }}'] = @json($mealFood->food ? $mealFood->food->getAllNameTranslations() : ['en' => $mealFood->food_name]);
+  @endforeach
+@endforeach
+
+function shareOnWhatsAppWithLang() {
+  const sel = document.getElementById('whatsappLanguageSelect');
+  if (sel && sel.value) { selectedLang = sel.value; i18n = i18nFor(selectedLang); }
+  const modalEl = document.getElementById('whatsappLanguageModal');
+  if (modalEl) {
+    const inst = bootstrap.Modal.getInstance(modalEl);
+    if (inst) inst.hide();
+  }
+  shareOnWhatsApp();
+}
+
+function downloadPdfWithLang() {
+  const sel = document.getElementById('exportLanguageSelect');
+  const lang = sel && sel.value ? sel.value : selectedLang;
+  const url = "{{ route('nutrition.pdf', $dietPlan) }}" + "?lang=" + encodeURIComponent(lang);
+  window.location.href = url;
+}
+
+
     // Create WhatsApp message
     const message = `🍎 *Nutrition Plan*
 
-👤 *Patient:* ${patientName}
-📋 *Plan:* ${planTitle}
-🔢 *Plan #:* ${planNumber}
-👨‍⚕️ *Doctor:* Dr. ${doctorName}
+👤 *${i18n.patient}:* ${patientName}
+📋 *${i18n.plan}:* ${planTitle}
+🔢 *${i18n.planNo}:* ${planNumber}
+👨‍⚕️ *${i18n.doctor}:* Dr. ${doctorName}
 
-📊 *Daily Targets:*
-🔥 Calories: ${targetCalories} kcal
-🥩 Protein: ${targetProtein}g
-🍞 Carbs: ${targetCarbs}g
-🥑 Fat: ${targetFat}g
+📊 *${i18n.dailyTargets}:*
+🔥 ${i18n.calories}: ${targetCalories} kcal
+🥩 ${i18n.protein}: ${targetProtein}g
+🍞 ${i18n.carbs}: ${targetCarbs}g
+🥑 ${i18n.fat}: ${targetFat}g
 
-🍽️ *Meal Plan:*${mealSummary}
+🍽️ *${i18n.mealPlan}:*${mealSummary}
 
 📱 Generated by ConCure Clinic Management System`;
 
