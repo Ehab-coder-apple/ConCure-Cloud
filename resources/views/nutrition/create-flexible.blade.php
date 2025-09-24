@@ -314,7 +314,8 @@
                                 <option value="default">Default</option>
                                 <option value="en">English</option>
                                 <option value="ar">Arabic</option>
-                                <option value="ku">Kurdish</option>
+                                <option value="ku_bahdini">Kurdish (Bahdini)</option>
+                                <option value="ku_sorani">Kurdish (Sorani)</option>
                             </select>
                         </div>
                     </div>
