@@ -424,6 +424,16 @@ class FoodController extends Controller
 
         $query = Food::with('foodGroup')->active();
 
+        // Apply requested language for translated fields in the response
+        $requestedLanguage = $request->input('language');
+        if ($requestedLanguage && $requestedLanguage !== 'default') {
+            try {
+                app()->setLocale($requestedLanguage);
+            } catch (\Throwable $e) {
+                // Silently ignore invalid locales; fall back to app default
+            }
+        }
+
         // Limit results to current clinic only (multi-clinic safety)
         $user = auth()->user();
         if ($user && $user->clinic_id) {
