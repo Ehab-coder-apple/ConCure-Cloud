@@ -192,6 +192,11 @@ class ConCureServiceProvider extends ServiceProvider
             return $user->hasPermission('finance_delete');
         });
 
+        Gate::define('finance-reports', function (User $user) {
+            return $user->hasPermission('finance_reports');
+        });
+
+
         Gate::define('view-users', function (User $user) {
             return $user->hasPermission('users_view');
         });

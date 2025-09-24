@@ -627,10 +627,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/expenses/{expense}/approve', [FinanceController::class, 'approveExpense'])->name('expenses.approve');
         Route::post('/expenses/{expense}/reject', [FinanceController::class, 'rejectExpense'])->name('expenses.reject');
 
-        // Reports
-        Route::get('/reports', [FinanceController::class, 'reports'])->name('reports');
-        Route::get('/reports/cash-flow', [FinanceController::class, 'cashFlowReport'])->name('reports.cash-flow');
-        Route::get('/reports/profit-loss', [FinanceController::class, 'profitLossReport'])->name('reports.profit-loss');
+        // Reports (strict: require finance_reports permission)
+        Route::get('/reports', [FinanceController::class, 'reports'])->name('reports')->middleware('can:finance-reports');
+        Route::get('/reports/cash-flow', [FinanceController::class, 'cashFlowReport'])->name('reports.cash-flow')->middleware('can:finance-reports');
+        Route::get('/reports/profit-loss', [FinanceController::class, 'profitLossReport'])->name('reports.profit-loss')->middleware('can:finance-reports');
     });
 
     // Advertisements

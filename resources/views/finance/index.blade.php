@@ -253,12 +253,14 @@
                                 <small>Add Expense</small>
                             </button>
                         </div>
+                        @can('finance-reports')
                         <div class="col-md-3 mb-3">
                             <a href="{{ route('finance.reports') }}" class="btn btn-info btn-lg w-100">
                                 <i class="fas fa-chart-bar d-block mb-1"></i>
                                 <small>View Reports</small>
                             </a>
                         </div>
+                        @endcan
                         @can('access-section', 'settings')
                         <div class="col-md-3 mb-3">
                             <a href="{{ route('settings.index') }}" class="btn btn-secondary btn-lg w-100">
