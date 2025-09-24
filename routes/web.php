@@ -699,8 +699,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
 	    });
 
 
-    // Settings
-    Route::prefix('settings')->name('settings.')->group(function () {
+    // Settings (admin-only via gate)
+    Route::prefix('settings')->name('settings.')->middleware('can:access-section,settings')->group(function () {
         Route::get('/', [SettingsController::class, 'index'])->name('index');
         Route::post('/', [SettingsController::class, 'update'])->name('update');
 
