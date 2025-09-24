@@ -215,6 +215,15 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-6">
+                                                <label for="dashboard_default_period" class="form-label">{{ __('Dashboard Default Period') }}</label>
+                                                <select class="form-select" id="dashboard_default_period" name="dashboard_default_period">
+                                                    <option value="day" {{ ($clinicSettings['dashboard_default_period'] ?? 'month') == 'day' ? 'selected' : '' }}>{{ __('Day') }}</option>
+                                                    <option value="month" {{ ($clinicSettings['dashboard_default_period'] ?? 'month') == 'month' ? 'selected' : '' }}>{{ __('Month') }}</option>
+                                                    <option value="year" {{ ($clinicSettings['dashboard_default_period'] ?? 'month') == 'year' ? 'selected' : '' }}>{{ __('Year') }}</option>
+                                                </select>
+                                                <div class="form-text">{{ __('Determines the default time period for dashboard statistics for all users in this clinic.') }}</div>
+                                            </div>
+                                            <div class="col-md-6">
                                                 <label for="timezone" class="form-label">{{ __('Timezone') }}</label>
                                                 <select class="form-select" id="timezone" name="timezone">
                                                     <option value="UTC" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'UTC' ? 'selected' : '' }}>UTC</option>
@@ -348,7 +357,7 @@
                                             {{ __('Add User') }}
                                         </button>
                                     </div>
-                                    
+
                                     <div class="table-responsive">
                                         <table class="table table-sm">
                                             <thead>
@@ -417,7 +426,7 @@
                                         <div class="col-md-6">
                                             <strong>{{ __('Database') }}:</strong> SQLite
                                         </div>
-                                        
+
                                         <div class="col-12 mt-4">
                                             <h6 class="text-primary">{{ __('Maintenance') }}</h6>
                                         </div>

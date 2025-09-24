@@ -26,6 +26,18 @@
                 </div>
                 <div class="text-end">
                     <small class="text-muted">{{ now()->format('l, F j, Y') }}</small>
+                    @if(auth()->user() && method_exists(auth()->user(), 'canManageUsers') && auth()->user()->canManageUsers())
+                    <div class="mt-2">
+                        <form method="GET" action="{{ route('dashboard') }}" class="d-inline-flex align-items-center gap-2">
+                            <label for="period" class="small text-muted mb-0">Stats period:</label>
+                            <select id="period" name="period" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                <option value="day" {{ ($selectedPeriod ?? 'month') === 'day' ? 'selected' : '' }}>Day</option>
+                                <option value="month" {{ ($selectedPeriod ?? 'month') === 'month' ? 'selected' : '' }}>Month</option>
+                                <option value="year" {{ ($selectedPeriod ?? 'month') === 'year' ? 'selected' : '' }}>Year</option>
+                            </select>
+                        </form>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -42,7 +54,7 @@
                             <h6 class="card-title">Total Patients</h6>
                             <h2 class="mb-0">{{ number_format($totalPatients) }}</h2>
                             @if(isset($newPatientsThisMonth) && $newPatientsThisMonth > 0)
-                            <small>+{{ $newPatientsThisMonth }} this month</small>
+                            <small>+{{ $newPatientsThisMonth }} {{ $periodPhrase ?? 'this month' }}</small>
                             @endif
                         </div>
                         <div class="align-self-center">
@@ -63,7 +75,7 @@
                             <h6 class="card-title">Active Prescriptions</h6>
                             <h2 class="mb-0">{{ number_format($activePrescriptions) }}</h2>
                             @if(isset($prescriptionsThisMonth) && $prescriptionsThisMonth > 0)
-                            <small>{{ $prescriptionsThisMonth }} this month</small>
+                            <small>{{ $prescriptionsThisMonth }} {{ $periodPhrase ?? 'this month' }}</small>
                             @endif
                         </div>
                         <div class="align-self-center">
@@ -126,7 +138,7 @@
                             <h6 class="card-title">Nutrition Plans</h6>
                             <h2 class="mb-0">{{ number_format($activeNutritionPlans ?? 0) }}</h2>
                             @if(isset($thisMonthNutritionPlans) && $thisMonthNutritionPlans > 0)
-                            <small>{{ $thisMonthNutritionPlans }} this month</small>
+                            <small>{{ $thisMonthNutritionPlans }} {{ $periodPhrase ?? 'this month' }}</small>
                             @endif
                         </div>
                         <div class="align-self-center">
@@ -144,7 +156,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h6 class="card-title">Monthly Revenue</h6>
+                            <h6 class="card-title">Revenue ({{ ucfirst($selectedPeriod ?? 'month') }})</h6>
                             <h2 class="mb-0">${{ number_format($totalRevenue, 2) }}</h2>
                             @if(isset($pendingInvoices) && $pendingInvoices > 0)
                             <small>{{ $pendingInvoices }} pending invoices</small>
@@ -447,7 +459,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-chart-line"></i>
-                        Monthly Trends
+                        {{ ucfirst($selectedPeriod ?? 'month') }} Trends
                     </h6>
                 </div>
                 <div class="card-body">
@@ -466,12 +478,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('monthlyChart').getContext('2d');
     const monthlyStats = @json($monthlyStats);
-    
+
     const labels = Object.keys(monthlyStats);
     const patientsData = Object.values(monthlyStats).map(stat => stat.patients);
     const prescriptionsData = Object.values(monthlyStats).map(stat => stat.prescriptions);
     const revenueData = Object.values(monthlyStats).map(stat => stat.revenue);
-    
+
     new Chart(ctx, {
         type: 'line',
         data: {

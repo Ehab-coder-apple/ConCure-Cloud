@@ -10,6 +10,7 @@ use App\Models\Appointment;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Models\AuditLog;
+use App\Models\Clinic;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -18,23 +19,69 @@ class DashboardController extends Controller
     /**
      * Display the dashboard.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
-        
-        // Get dashboard data based on user role
-        $dashboardData = $this->getDashboardData($user);
-        
+
+        // Determine selected period: precedence = explicit param (admin saves) -> clinic default -> 'month'
+        $requested = $request->get('period');
+        $isValid = in_array($requested, ['day','month','year'], true);
+
+        $clinicDefault = null;
+        $clinic = null;
+        if ($user && $user->clinic_id) {
+            $clinic = Clinic::find($user->clinic_id);
+            // Prefer settings table value if present
+            $clinicDefault = DB::table('settings')
+                ->where('clinic_id', $user->clinic_id)
+                ->where('key', 'dashboard_default_period')
+                ->value('value');
+            // Fallback to Clinic JSON settings column
+            if (!$clinicDefault && $clinic) {
+                $clinicDefault = $clinic->getSetting('dashboard_default_period', null);
+            }
+        }
+
+        $period = $isValid ? $requested : ($clinicDefault ?? 'month');
+
+        // If an admin explicitly chooses a period, persist it as the clinic default for everyone
+        if ($isValid && $clinic && method_exists($user, 'canManageUsers') && $user->canManageUsers()) {
+            // Save in the settings table (authoritative)
+            DB::table('settings')->updateOrInsert(
+                ['clinic_id' => $user->clinic_id, 'key' => 'dashboard_default_period'],
+                ['value' => $period, 'type' => 'string', 'updated_at' => now()]
+            );
+            // Keep Clinic JSON settings in sync as a fallback
+            $clinic->setSetting('dashboard_default_period', $period);
+        }
+
+        // Get dashboard data based on user role and selected period
+        $dashboardData = $this->getDashboardData($user, $period);
+        $dashboardData['selectedPeriod'] = $period;
+        $dashboardData['periodPhrase'] = $period === 'day' ? 'today' : ($period === 'year' ? 'this year' : 'this month');
+
         return view('dashboard', $dashboardData);
     }
 
     /**
      * Get dashboard data based on user role.
      */
-    private function getDashboardData($user): array
+    private function getDashboardData($user, string $period = 'month'): array
     {
         $data = [];
-        
+
+        // Helper to apply selected period to a given date column
+        $applyPeriod = function ($query, string $column) use ($period) {
+            if ($period === 'day') {
+                return $query->whereDate($column, now()->toDateString());
+            } elseif ($period === 'year') {
+                return $query->whereYear($column, now()->year);
+            }
+            // default month
+            return $query->whereMonth($column, now()->month)
+                         ->whereYear($column, now()->year);
+        };
+
         // Common filters for clinic-based data
         $clinicFilter = function ($query) use ($user) {
             if ($user->role === 'patient') {
@@ -54,10 +101,8 @@ class DashboardController extends Controller
             $patientsQuery->where('clinic_id', $user->clinic_id);
 
             $data['totalPatients'] = $patientsQuery->active()->count();
-            $data['newPatientsThisMonth'] = $patientsQuery->active()
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->count();
+            $data['newPatientsThisMonth'] = (clone $patientsQuery)->active();
+            $data['newPatientsThisMonth'] = $applyPeriod($data['newPatientsThisMonth'], 'created_at')->count();
         }
 
         // Prescription statistics
@@ -68,10 +113,7 @@ class DashboardController extends Controller
             });
             
             $data['activePrescriptions'] = $prescriptionsQuery->active()->count();
-            $data['prescriptionsThisMonth'] = $prescriptionsQuery
-                ->whereMonth('prescribed_date', now()->month)
-                ->whereYear('prescribed_date', now()->year)
-                ->count();
+            $data['prescriptionsThisMonth'] = $applyPeriod((clone $prescriptionsQuery), 'prescribed_date')->count();
         }
 
         // Lab request statistics
@@ -103,10 +145,7 @@ class DashboardController extends Controller
             $invoicesQuery = Invoice::query();
             $invoicesQuery->where('clinic_id', $user->clinic_id);
 
-            $data['totalRevenue'] = $invoicesQuery
-                ->whereMonth('invoice_date', now()->month)
-                ->whereYear('invoice_date', now()->year)
-                ->sum('total_amount');
+            $data['totalRevenue'] = $applyPeriod((clone $invoicesQuery), 'invoice_date')->sum('total_amount');
                 
             $data['pendingInvoices'] = $invoicesQuery
                 ->whereIn('status', ['draft', 'sent'])
@@ -124,10 +163,7 @@ class DashboardController extends Controller
             $usersQuery->where('clinic_id', $user->clinic_id);
 
             $data['totalUsers'] = $usersQuery->active()->count();
-            $data['newUsersThisMonth'] = $usersQuery->active()
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->count();
+            $data['newUsersThisMonth'] = $applyPeriod((clone $usersQuery)->active(), 'created_at')->count();
         }
 
         // Recent activity
@@ -163,10 +199,7 @@ class DashboardController extends Controller
 
             $data['totalNutritionPlans'] = $nutritionQuery->count();
             $data['activeNutritionPlans'] = $nutritionQuery->where('status', 'active')->count();
-            $data['thisMonthNutritionPlans'] = $nutritionQuery
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->count();
+            $data['thisMonthNutritionPlans'] = $applyPeriod((clone $nutritionQuery), 'created_at')->count();
         }
 
         // Upcoming appointments (detailed)
@@ -175,8 +208,8 @@ class DashboardController extends Controller
         // Appointments by date (for the next 7 days)
         $data['appointmentsByDate'] = $this->getAppointmentsByDate($user);
 
-        // Quick stats for charts
-        $data['monthlyStats'] = $this->getMonthlyStats($user);
+        // Quick stats for charts (period-aware)
+        $data['monthlyStats'] = $this->getMonthlyStats($user, $period);
 
         return $data;
     }
@@ -271,59 +304,92 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get monthly statistics for charts.
+     * Get period-aware statistics for charts.
      */
-    private function getMonthlyStats($user): array
+    private function getMonthlyStats($user, string $period = 'month'): array
     {
         $stats = [];
-        
-        // Get last 6 months data
-        for ($i = 5; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
-            $monthKey = $month->format('M Y');
-            
-            $stats[$monthKey] = [
-                'patients' => 0,
-                'prescriptions' => 0,
-                'revenue' => 0,
-            ];
-            
-            // Patient count
-            if ($user->canManagePatients() ) {
-                $patientsQuery = Patient::query();
-                $patientsQuery->where('clinic_id', $user->clinic_id);
 
-                $stats[$monthKey]['patients'] = $patientsQuery
-                    ->whereMonth('created_at', $month->month)
-                    ->whereYear('created_at', $month->year)
-                    ->count();
+        if ($period === 'day') {
+            // Last 7 days including today
+            for ($i = 6; $i >= 0; $i--) {
+                $day = now()->subDays($i);
+                $key = $day->format('M j');
+                $stats[$key] = ['patients' => 0, 'prescriptions' => 0, 'revenue' => 0];
+
+                if ($user->canManagePatients()) {
+                    $stats[$key]['patients'] = Patient::where('clinic_id', $user->clinic_id)
+                        ->whereDate('created_at', $day->toDateString())
+                        ->count();
+                }
+                if ($user->canPrescribe() || $user->canManagePatients()) {
+                    $stats[$key]['prescriptions'] = Prescription::whereHas('patient', function ($q) use ($user) {
+                            $q->where('clinic_id', $user->clinic_id);
+                        })
+                        ->whereDate('prescribed_date', $day->toDateString())
+                        ->count();
+                }
+                if ($user->canAccessFinance()) {
+                    $stats[$key]['revenue'] = Invoice::where('clinic_id', $user->clinic_id)
+                        ->whereDate('invoice_date', $day->toDateString())
+                        ->sum('total_amount');
+                }
             }
-            
-            // Prescription count
-            if ($user->canPrescribe() || $user->canManagePatients()) {
-                $prescriptionsQuery = Prescription::query();
-                $prescriptionsQuery->whereHas('patient', function ($q) use ($user) {
-                    $q->where('clinic_id', $user->clinic_id);
-                });
+        } elseif ($period === 'year') {
+            // Last 5 years including current year
+            for ($i = 4; $i >= 0; $i--) {
+                $year = now()->subYears($i)->year;
+                $key = (string) $year;
+                $stats[$key] = ['patients' => 0, 'prescriptions' => 0, 'revenue' => 0];
 
-                $stats[$monthKey]['prescriptions'] = $prescriptionsQuery
-                    ->whereMonth('prescribed_date', $month->month)
-                    ->whereYear('prescribed_date', $month->year)
-                    ->count();
+                if ($user->canManagePatients()) {
+                    $stats[$key]['patients'] = Patient::where('clinic_id', $user->clinic_id)
+                        ->whereYear('created_at', $year)
+                        ->count();
+                }
+                if ($user->canPrescribe() || $user->canManagePatients()) {
+                    $stats[$key]['prescriptions'] = Prescription::whereHas('patient', function ($q) use ($user) {
+                            $q->where('clinic_id', $user->clinic_id);
+                        })
+                        ->whereYear('prescribed_date', $year)
+                        ->count();
+                }
+                if ($user->canAccessFinance()) {
+                    $stats[$key]['revenue'] = Invoice::where('clinic_id', $user->clinic_id)
+                        ->whereYear('invoice_date', $year)
+                        ->sum('total_amount');
+                }
             }
-            
-            // Revenue
-            if ($user->canAccessFinance()) {
-                $invoicesQuery = Invoice::query();
-                $invoicesQuery->where('clinic_id', $user->clinic_id);
+        } else {
+            // Default: last 6 months
+            for ($i = 5; $i >= 0; $i--) {
+                $month = now()->subMonths($i);
+                $key = $month->format('M Y');
+                $stats[$key] = ['patients' => 0, 'prescriptions' => 0, 'revenue' => 0];
 
-                $stats[$monthKey]['revenue'] = $invoicesQuery
-                    ->whereMonth('invoice_date', $month->month)
-                    ->whereYear('invoice_date', $month->year)
-                    ->sum('total_amount');
+                if ($user->canManagePatients()) {
+                    $stats[$key]['patients'] = Patient::where('clinic_id', $user->clinic_id)
+                        ->whereMonth('created_at', $month->month)
+                        ->whereYear('created_at', $month->year)
+                        ->count();
+                }
+                if ($user->canPrescribe() || $user->canManagePatients()) {
+                    $stats[$key]['prescriptions'] = Prescription::whereHas('patient', function ($q) use ($user) {
+                            $q->where('clinic_id', $user->clinic_id);
+                        })
+                        ->whereMonth('prescribed_date', $month->month)
+                        ->whereYear('prescribed_date', $month->year)
+                        ->count();
+                }
+                if ($user->canAccessFinance()) {
+                    $stats[$key]['revenue'] = Invoice::where('clinic_id', $user->clinic_id)
+                        ->whereMonth('invoice_date', $month->month)
+                        ->whereYear('invoice_date', $month->year)
+                        ->sum('total_amount');
+                }
             }
         }
-        
+
         return $stats;
     }
 }
