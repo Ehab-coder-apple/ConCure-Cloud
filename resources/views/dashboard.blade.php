@@ -271,14 +271,6 @@
                         </div>
                         @endcan
 
-                        @can('manage-users')
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
-                            <a href="{{ route('users.create') }}" class="btn btn-outline-secondary w-100">
-                                <i class="fas fa-user-cog d-block mb-1"></i>
-                                <small>Add User</small>
-                            </a>
-                        </div>
-                        @endcan
 
                         @can('access-section', 'settings')
                         <div class="col-lg-2 col-md-4 col-6 mb-3">
