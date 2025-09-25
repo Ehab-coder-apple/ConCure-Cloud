@@ -138,6 +138,13 @@ Route::get('/clinic-activation-required', function () {
     return view('auth.clinic-activation-required');
 })->name('clinic.activation.required');
 
+
+// Fallback for legacy subscription status route referenced in old layouts
+// Safe no-op endpoint to avoid 500s if a view calls route('subscription.status')
+Route::get('/subscription/status', function () {
+    return response()->json(['status' => 'ok']);
+})->name('subscription.status');
+
 // Subscription system removed - no longer needed
 
 // Protected routes
