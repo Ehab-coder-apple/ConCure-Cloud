@@ -731,6 +731,7 @@
                             <a href="{{ route('appointments.index') }}" class="nav-link {{ request()->routeIs('appointments.*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-calendar-alt"></i>
                                 <span class="nav-text">{{ __('Appointments') }}</span>
+                                <span class="badge bg-danger ms-auto" id="sidebarAppointmentsPending" style="display: none;">0</span>
                             </a>
                         </li>
                         @endif
@@ -845,6 +846,22 @@
                     </div>
                 </div>
                 <div class="topbar-right">
+                    <div class="dropdown me-3" id="appointmentsBellWrap">
+                        <a href="#" class="text-secondary" id="appointmentsBell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge bg-danger" id="appointmentsBellBadge" style="display:none;">0</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="appointmentsBell" style="min-width: 320px;">
+                            <div class="p-2 border-bottom">
+                                <strong>Upcoming Appointments</strong>
+                                <small class="text-muted d-block">Auto-updates</small>
+                            </div>
+                            <div class="p-2" id="appointmentsBellContent">
+                                <div class="text-center text-muted small py-3">No upcoming appointments</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="topbar-user">
                         <span class="user-name d-none d-md-inline">{{ Auth::user()->full_name }}</span>
                         <div class="user-avatar">
@@ -1011,6 +1028,72 @@
 	            }
 	            refreshSidebarUnread();
 	            setInterval(refreshSidebarUnread, 20000);
+
+            // Sidebar pending appointments badge for doctor
+            async function refreshSidebarAppointmentsPending() {
+                try {
+                    const badge = document.getElementById('sidebarAppointmentsPending');
+                    if (!badge) return;
+                    const res = await fetch('/appointments/pending-count', { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    const count = data.count ?? 0;
+                    badge.textContent = count;
+                    // Show only for doctors with count>0, otherwise hide to avoid noise
+                    if (count > 0) { badge.style.display = 'inline-block'; } else { badge.style.display = 'none'; }
+                } catch (_) {}
+            }
+            refreshSidebarAppointmentsPending();
+            setInterval(refreshSidebarAppointmentsPending, 20000);
+            // Topbar bell: upcoming appointments dropdown
+            async function refreshAppointmentsBell() {
+                try {
+                    const badge = document.getElementById('appointmentsBellBadge');
+                    const wrap = document.getElementById('appointmentsBellWrap');
+                    const content = document.getElementById('appointmentsBellContent');
+                    if (!wrap || !content) return;
+                    const res = await fetch('/appointments/upcoming-summary', { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    const myCount = data.my_count ?? 0;
+                    if (badge) {
+                        badge.textContent = myCount;
+                        badge.style.display = myCount > 0 ? 'inline-block' : 'none';
+                    }
+
+                    const my = Array.isArray(data.my) ? data.my : [];
+                    const clinic = Array.isArray(data.clinic) ? data.clinic : [];
+                    let html = '';
+                    if (my.length === 0 && clinic.length === 0) {
+                        html = '<div class="text-center text-muted small py-3">No upcoming appointments</div>';
+                    } else {
+                        if (my.length > 0) {
+                            html += '<div class="mb-2"><div class="small text-muted">My upcoming</div><ul class="list-group list-group-flush">' +
+                                my.map(r => `<li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-semibold">#${r.appointment_number || r.id} - ${r.patient || ''}</div>
+                                        <div class="small text-muted">${r.when || ''}</div>
+                                    </div>
+                                    <a class="btn btn-sm btn-outline-primary" href="/appointments/${r.id}">Open</a>
+                                </li>`).join('') + '</ul></div>';
+                        }
+                        if (clinic.length > 0 && ({{ in_array(Auth::user()->role, ['admin', 'program_owner']) ? 'true' : 'false' }})) {
+                            html += '<div class="mt-2"><div class="small text-muted">Clinic upcoming</div><ul class="list-group list-group-flush">' +
+                                clinic.map(r => `<li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-semibold">#${r.appointment_number || r.id} - ${r.patient || ''}</div>
+                                        <div class="small text-muted">${r.when || ''} · ${r.doctor || ''}</div>
+                                    </div>
+                                    <a class="btn btn-sm btn-outline-secondary" href="/appointments/${r.id}">Open</a>
+                                </li>`).join('') + '</ul></div>';
+                        }
+                    }
+                    content.innerHTML = html;
+                } catch (_) {}
+            }
+            refreshAppointmentsBell();
+            setInterval(refreshAppointmentsBell, 30000);
+
 
             }
 

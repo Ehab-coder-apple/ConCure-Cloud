@@ -287,6 +287,12 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/{appointment}/edit', [AppointmentController::class, 'edit'])->name('edit');
         Route::put('/{appointment}', [AppointmentController::class, 'update'])->name('update');
         Route::delete('/{appointment}', [AppointmentController::class, 'destroy'])->name('destroy');
+        // Sidebar badge count for doctor's upcoming appointments (today)
+        Route::get('/pending-count', [AppointmentController::class, 'pendingCount'])->name('pending-count');
+
+        // Upcoming summary for bell dropdown
+        Route::get('/upcoming-summary', [AppointmentController::class, 'upcomingSummary'])->name('upcoming-summary');
+
         Route::patch('/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('update-status');
     });
 

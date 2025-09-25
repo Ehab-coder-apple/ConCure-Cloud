@@ -13,6 +13,8 @@ use App\Models\AuditLog;
 use App\Models\Clinic;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -111,7 +113,7 @@ class DashboardController extends Controller
             $prescriptionsQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
             });
-            
+
             $data['activePrescriptions'] = $prescriptionsQuery->active()->count();
             $data['prescriptionsThisMonth'] = $applyPeriod((clone $prescriptionsQuery), 'prescribed_date')->count();
         }
@@ -122,7 +124,7 @@ class DashboardController extends Controller
             $labRequestsQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
             });
-            
+
             $data['pendingLabRequests'] = $labRequestsQuery->pending()->count();
             $data['urgentLabRequests'] = $labRequestsQuery->pending()
                 ->where('priority', 'urgent')
@@ -135,7 +137,7 @@ class DashboardController extends Controller
             $dietPlansQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
             });
-            
+
             $data['activeDietPlans'] = $dietPlansQuery->active()->count();
             $data['expiredDietPlans'] = $dietPlansQuery->expired()->count();
         }
@@ -146,11 +148,11 @@ class DashboardController extends Controller
             $invoicesQuery->where('clinic_id', $user->clinic_id);
 
             $data['totalRevenue'] = $applyPeriod((clone $invoicesQuery), 'invoice_date')->sum('total_amount');
-                
+
             $data['pendingInvoices'] = $invoicesQuery
                 ->whereIn('status', ['draft', 'sent'])
                 ->count();
-                
+
             $data['overdueInvoices'] = $invoicesQuery
                 ->where('status', 'sent')
                 ->where('due_date', '<', now())
@@ -168,23 +170,39 @@ class DashboardController extends Controller
 
         // Recent activity
         $data['recentActivity'] = $this->getRecentActivity($user);
-        
-        // Appointment statistics
-        if (class_exists('App\Models\Appointment')) {
-            $appointmentsQuery = Appointment::query();
-            $appointmentsQuery->where('clinic_id', $user->clinic_id);
-            if ($user->role === 'doctor') {
-                $appointmentsQuery->where('doctor_id', $user->id);
-            }
 
-            $data['totalAppointments'] = $appointmentsQuery->count();
-            $data['todayAppointments'] = $appointmentsQuery
-                ->whereDate('appointment_datetime', now()->toDateString())
-                ->count();
-            $data['upcomingAppointments'] = $appointmentsQuery
-                ->where('appointment_datetime', '>', now())
-                ->where('status', 'scheduled')
-                ->count();
+        // Appointment statistics (schema-aware)
+        if (class_exists('App\\Models\\Appointment')) {
+            $legacy = $this->isLegacyAppointments();
+            if ($legacy) {
+                $base = DB::table('appointments')->where('clinic_id', $user->clinic_id);
+                if ($user->role === 'doctor') {
+                    $base->where('doctor_id', $user->id);
+                }
+                $now = Carbon::now();
+                $data['totalAppointments'] = (clone $base)->count();
+                $data['todayAppointments'] = (clone $base)
+                    ->whereDate('appointment_date', now()->toDateString())
+                    ->count();
+                $data['upcomingAppointments'] = (clone $base)
+                    ->whereIn('status', ['scheduled'])
+                    ->whereRaw("STR_TO_DATE(CONCAT(appointment_date,' ', appointment_time), '%Y-%m-%d %H:%i:%s') > ?", [$now->format('Y-m-d H:i:s')])
+                    ->count();
+            } else {
+                $appointmentsQuery = Appointment::query();
+                $appointmentsQuery->where('clinic_id', $user->clinic_id);
+                if ($user->role === 'doctor') {
+                    $appointmentsQuery->where('doctor_id', $user->id);
+                }
+                $data['totalAppointments'] = $appointmentsQuery->count();
+                $data['todayAppointments'] = (clone $appointmentsQuery)
+                    ->whereDate('appointment_datetime', now()->toDateString())
+                    ->count();
+                $data['upcomingAppointments'] = (clone $appointmentsQuery)
+                    ->where('appointment_datetime', '>', now())
+                    ->where('status', 'scheduled')
+                    ->count();
+            }
         }
 
         // Nutrition plan statistics
@@ -210,7 +228,6 @@ class DashboardController extends Controller
 
         // Quick stats for charts (period-aware)
         $data['monthlyStats'] = $this->getMonthlyStats($user, $period);
-
         return $data;
     }
 
@@ -227,6 +244,19 @@ class DashboardController extends Controller
                     ->get()
                     ->toArray();
     }
+    /**
+     * Detect legacy appointment schema (separate date/time columns) vs unified datetime.
+     */
+    private function isLegacyAppointments(): bool
+    {
+        // Legacy if no appointment_datetime or if appointment_date/time exist
+        $hasDatetime = Schema::hasColumn('appointments', 'appointment_datetime');
+        $hasDate = Schema::hasColumn('appointments', 'appointment_date');
+        $hasTime = Schema::hasColumn('appointments', 'appointment_time');
+        return !$hasDatetime && ($hasDate || $hasTime);
+    }
+
+
 
     /**
      * Get upcoming appointments.
@@ -237,8 +267,39 @@ class DashboardController extends Controller
             return [];
         }
 
-        $query = Appointment::with(['patient', 'doctor']);
+        $legacy = $this->isLegacyAppointments();
+        if ($legacy) {
+            $now = Carbon::now();
+            $q = DB::table('appointments')
+                ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
+                ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
+                ->where('appointments.clinic_id', $user->clinic_id)
+                ->where('appointments.status', 'scheduled');
+            if ($user->role === 'patient') {
+                $q->where('appointments.patient_id', $user->patient_id ?? 0);
+            } elseif ($user->role === 'doctor') {
+                $q->where('appointments.doctor_id', $user->id);
+            }
+            $rows = $q->whereRaw("STR_TO_DATE(CONCAT(appointment_date,' ', appointment_time), '%Y-%m-%d %H:%i:%s') >= ?", [$now->format('Y-m-d H:i:s')])
+                ->orderBy('appointment_date')->orderBy('appointment_time')
+                ->limit(5)
+                ->get([
+                    'appointments.id','appointments.status','appointments.appointment_date','appointments.appointment_time',
+                    'patients.first_name as patient_first_name','patients.last_name as patient_last_name',
+                    'doctors.first_name as doctor_first_name','doctors.last_name as doctor_last_name'
+                ]);
+            return $rows->map(function($r){
+                return [
+                    'id' => $r->id,
+                    'status' => $r->status,
+                    'appointment_datetime' => trim(($r->appointment_date ?? '').' '.($r->appointment_time ?? '')),
+                    'patient' => ['first_name' => $r->patient_first_name, 'last_name' => $r->patient_last_name],
+                    'doctor' => ['first_name' => $r->doctor_first_name, 'last_name' => $r->doctor_last_name],
+                ];
+            })->toArray();
+        }
 
+        $query = Appointment::with(['patient', 'doctor']);
         if ($user->role === 'patient') {
             $query->where('patient_id', $user->patient_id ?? 0);
         } else {
@@ -247,7 +308,6 @@ class DashboardController extends Controller
                 $query->where('doctor_id', $user->id);
             }
         }
-
         return $query->where('appointment_datetime', '>=', now())
                     ->where('status', 'scheduled')
                     ->orderBy('appointment_datetime')
@@ -266,30 +326,57 @@ class DashboardController extends Controller
         }
 
         $appointments = [];
+        $legacy = $this->isLegacyAppointments();
 
         // Get appointments for the next 7 days
         for ($i = 0; $i < 7; $i++) {
             $date = now()->addDays($i);
             $dateKey = $date->toDateString();
-            $dateLabel = $date->format('l, M j'); // e.g., "Monday, Jan 15"
+            $dateLabel = $date->format('l, M j');
 
-            $query = Appointment::with(['patient', 'doctor']);
-
-            if ($user->role === 'patient') {
-                $query->where('patient_id', $user->patient_id ?? 0);
-            } else {
-                $query->where('clinic_id', $user->clinic_id);
-                if ($user->role === 'doctor') {
-                    $query->where('doctor_id', $user->id);
+            if ($legacy) {
+                $q = DB::table('appointments')
+                    ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
+                    ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
+                    ->where('appointments.clinic_id', $user->clinic_id)
+                    ->whereDate('appointments.appointment_date', $dateKey);
+                if ($user->role === 'patient') {
+                    $q->where('appointments.patient_id', $user->patient_id ?? 0);
+                } elseif ($user->role === 'doctor') {
+                    $q->where('appointments.doctor_id', $user->id);
                 }
+                $rows = $q->orderBy('appointments.appointment_time')
+                    ->get([
+                        'appointments.id','appointments.status','appointments.appointment_date','appointments.appointment_time',
+                        'patients.first_name as patient_first_name','patients.last_name as patient_last_name',
+                        'doctors.first_name as doctor_first_name','doctors.last_name as doctor_last_name'
+                    ]);
+                $dayAppointments = $rows->map(function($r){
+                    return [
+                        'id' => $r->id,
+                        'status' => $r->status,
+                        'appointment_datetime' => trim(($r->appointment_date ?? '').' '.($r->appointment_time ?? '')),
+                        'patient' => ['first_name' => $r->patient_first_name, 'last_name' => $r->patient_last_name],
+                        'doctor' => ['first_name' => $r->doctor_first_name, 'last_name' => $r->doctor_last_name],
+                    ];
+                })->toArray();
+            } else {
+                $query = Appointment::with(['patient', 'doctor']);
+                if ($user->role === 'patient') {
+                    $query->where('patient_id', $user->patient_id ?? 0);
+                } else {
+                    $query->where('clinic_id', $user->clinic_id);
+                    if ($user->role === 'doctor') {
+                        $query->where('doctor_id', $user->id);
+                    }
+                }
+                $dayAppointments = $query->whereDate('appointment_datetime', $dateKey)
+                                       ->orderBy('appointment_datetime')
+                                       ->get()
+                                       ->toArray();
             }
 
-            $dayAppointments = $query->whereDate('appointment_datetime', $dateKey)
-                                   ->orderBy('appointment_datetime')
-                                   ->get()
-                                   ->toArray();
-
-            if (!empty($dayAppointments) || $i === 0) { // Always include today even if empty
+            if (!empty($dayAppointments) || $i === 0) {
                 $appointments[] = [
                     'date' => $dateKey,
                     'date_label' => $dateLabel,

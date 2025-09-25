@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\QueryException;
 use Carbon\Carbon;
+use App\Models\User;
+use App\Notifications\NewAppointmentNotification;
 
 class AppointmentController extends Controller
 {
@@ -262,6 +264,37 @@ class AppointmentController extends Controller
                 ]);
             }
 
+            // Notify the assigned doctor about the new appointment (includes appointment number)
+            try {
+                $doctor = User::where('id', $request->doctor_id)
+                    ->where('clinic_id', Auth::user()->clinic_id)
+                    ->first();
+
+                if ($doctor) {
+                    $patient = DB::table('patients')
+                        ->where('id', $request->patient_id)
+                        ->select('first_name', 'last_name', 'patient_id')
+                        ->first();
+
+                    $patientName = $patient ? trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? '')) : null;
+                    $patientCode = $patient->patient_id ?? null;
+                    $scheduledAt = $appointmentDateTime->format('Y-m-d H:i');
+
+                    $doctor->notify(new NewAppointmentNotification(
+                        (int) $appointmentId,
+                        (string) $appointmentNumber,
+                        $patientName ?: null,
+                        $patientCode ?: null,
+                        $scheduledAt,
+                        Auth::user()->clinic_id
+                    ));
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to notify doctor of new appointment', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return redirect()->route('appointments.show', $appointmentId)
                 ->with('success', __('Appointment scheduled successfully.'));
 
@@ -481,5 +514,126 @@ class AppointmentController extends Controller
             return false;
         }
     }
+
+    /**
+     * Pending appointments count for current doctor (today, upcoming from now).
+     * Returns JSON: { count: number }
+     */
+    public function pendingCount(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['count' => 0]);
+        }
+
+
+        $now = Carbon::now();
+        $legacy = $this->isLegacyAppointments();
+
+        $query = DB::table('appointments')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('doctor_id', $user->id)
+            ->whereIn('status', ['scheduled', 'confirmed']);
+
+        if ($legacy) {
+            $query->whereRaw("STR_TO_DATE(CONCAT(appointment_date,' ', appointment_time), '%Y-%m-%d %H:%i:%s') >= ?", [$now->format('Y-m-d H:i:s')]);
+        } else {
+            $query->where('appointment_datetime', '>=', $now);
+        }
+
+        $count = (int) $query->count();
+        return response()->json(['count' => $count]);
+    }
+    /**
+     * Upcoming summary for bell dropdown: personal (doctor) and clinic totals.
+     * Returns JSON with my_count, clinic_count, my (list of up to 10), clinic (list of up to 10).
+     */
+    public function upcomingSummary(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) return response()->json(['my_count' => 0, 'clinic_count' => 0, 'my' => [], 'clinic' => []]);
+
+        $now = Carbon::now();
+        $legacy = $this->isLegacyAppointments();
+        $statuses = ['scheduled', 'confirmed'];
+
+        $buildBase = function() use ($legacy, $now) {
+            $q = DB::table('appointments')
+                ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
+                ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
+                ->select(
+                    'appointments.id',
+                    'appointments.appointment_number',
+                    'appointments.status',
+                    'appointments.type',
+                    'appointments.appointment_datetime',
+                    'appointments.appointment_date',
+                    'appointments.appointment_time',
+                    'patients.first_name as patient_first_name',
+                    'patients.last_name as patient_last_name',
+                    'doctors.first_name as doctor_first_name',
+                    'doctors.last_name as doctor_last_name'
+                );
+            if ($legacy) {
+                $q->whereRaw("STR_TO_DATE(CONCAT(appointment_date,' ', appointment_time), '%Y-%m-%d %H:%i:%s') >= ?", [$now->format('Y-m-d H:i:s')])
+                  ->orderBy('appointment_date')->orderBy('appointment_time');
+            } else {
+                $q->where('appointment_datetime', '>=', $now)
+                  ->orderBy('appointment_datetime');
+            }
+            return $q;
+        };
+
+        // Personal (doctor) upcoming
+        $myQuery = $buildBase()
+            ->where('appointments.clinic_id', $user->clinic_id)
+            ->where('appointments.doctor_id', $user->id)
+            ->whereIn('appointments.status', $statuses);
+        $myCount = (int) $myQuery->count();
+        $myList = $myQuery->limit(10)->get()->map(function($r) use ($legacy) {
+            $patient = trim(($r->patient_first_name ?? '') . ' ' . ($r->patient_last_name ?? ''));
+            $doctor = trim(($r->doctor_first_name ?? '') . ' ' . ($r->doctor_last_name ?? ''));
+            $when = $legacy ? (trim(($r->appointment_date ?? '') . ' ' . ($r->appointment_time ?? ''))) : ($r->appointment_datetime);
+            return [
+                'id' => $r->id,
+                'appointment_number' => $r->appointment_number,
+                'patient' => $patient,
+                'doctor' => $doctor,
+                'status' => $r->status,
+                'when' => is_string($when) ? $when : optional($when)->format('Y-m-d H:i'),
+            ];
+        })->toArray();
+
+        // Clinic upcoming (admins)
+        $clinicCount = 0; $clinicList = [];
+        $isAdmin = in_array($user->role, ['admin', 'program_owner']);
+        if ($isAdmin) {
+            $clinicQuery = $buildBase()
+                ->where('appointments.clinic_id', $user->clinic_id)
+                ->whereIn('appointments.status', $statuses);
+            $clinicCount = (int) $clinicQuery->count();
+            $clinicList = $clinicQuery->limit(10)->get()->map(function($r) use ($legacy) {
+                $patient = trim(($r->patient_first_name ?? '') . ' ' . ($r->patient_last_name ?? ''));
+                $doctor = trim(($r->doctor_first_name ?? '') . ' ' . ($r->doctor_last_name ?? ''));
+                $when = $legacy ? (trim(($r->appointment_date ?? '') . ' ' . ($r->appointment_time ?? ''))) : ($r->appointment_datetime);
+                return [
+                    'id' => $r->id,
+                    'appointment_number' => $r->appointment_number,
+                    'patient' => $patient,
+                    'doctor' => $doctor,
+                    'status' => $r->status,
+                    'when' => is_string($when) ? $when : optional($when)->format('Y-m-d H:i'),
+                ];
+            })->toArray();
+        }
+
+        return response()->json([
+            'my_count' => $myCount,
+            'clinic_count' => $clinicCount,
+            'my' => $myList,
+            'clinic' => $clinicList,
+        ]);
+    }
+
 
 }
