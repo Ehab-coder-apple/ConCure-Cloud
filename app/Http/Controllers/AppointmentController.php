@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\QueryException;
 use Carbon\Carbon;
 use App\Models\User;
@@ -88,66 +89,75 @@ class AppointmentController extends Controller
         // Get calendar data if calendar view is requested
         $calendarEvents = [];
         if ($viewType === 'calendar') {
-            $calendarQuery = DB::table('appointments')
-                ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
-                ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
-                ->select(
-                    'appointments.id',
-                    // For legacy DBs, appointment_datetime may not exist
-                    // We will compute start/end in PHP below
-                    'appointments.appointment_datetime',
-                    'appointments.duration_minutes',
-                    'appointments.appointment_date',
-                    'appointments.appointment_time',
-                    'appointments.duration',
-                    'appointments.type',
-                    'appointments.status',
-                    'appointments.notes',
-                    'patients.first_name as patient_first_name',
-                    'patients.last_name as patient_last_name',
-                    'doctors.first_name as doctor_first_name',
-                    'doctors.last_name as doctor_last_name'
-                )
-                ->where('appointments.clinic_id', Auth::user()->clinic_id);
+            try {
+                $calendarQuery = DB::table('appointments')
+                    ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
+                    ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
+                    ->select(
+                        'appointments.id',
+                        'appointments.appointment_datetime',
+                        'appointments.duration_minutes',
+                        'appointments.appointment_date',
+                        'appointments.appointment_time',
+                        'appointments.duration',
+                        'appointments.type',
+                        'appointments.status',
+                        'appointments.notes',
+                        'patients.first_name as patient_first_name',
+                        'patients.last_name as patient_last_name',
+                        'doctors.first_name as doctor_first_name',
+                        'doctors.last_name as doctor_last_name'
+                    )
+                    ->where('appointments.clinic_id', Auth::user()->clinic_id);
 
-            if ($legacy) {
-                $calendarQuery = $calendarQuery
-                    ->whereDate('appointments.appointment_date', '>=', Carbon::now()->subDays(30))
-                    ->whereDate('appointments.appointment_date', '<=', Carbon::now()->addDays(90))
-                    ->get();
-            } else {
-                $calendarQuery = $calendarQuery
-                    ->whereDate('appointments.appointment_datetime', '>=', Carbon::now()->subDays(30))
-                    ->whereDate('appointments.appointment_datetime', '<=', Carbon::now()->addDays(90))
-                    ->get();
-            }
-
-            foreach ($calendarQuery as $appointment) {
                 if ($legacy) {
-                    $startDateTime = Carbon::parse(($appointment->appointment_date ?? Carbon::today()->toDateString()) . ' ' . ($appointment->appointment_time ?? '00:00:00'));
-                    $durationMinutes = $appointment->duration ?? 30;
+                    $calendarQuery = $calendarQuery
+                        ->whereDate('appointments.appointment_date', '>=', Carbon::now()->subDays(30))
+                        ->whereDate('appointments.appointment_date', '<=', Carbon::now()->addDays(90))
+                        ->get();
                 } else {
-                    $startDateTime = Carbon::parse($appointment->appointment_datetime);
-                    $durationMinutes = $appointment->duration_minutes ?? 30;
+                    $calendarQuery = $calendarQuery
+                        ->whereDate('appointments.appointment_datetime', '>=', Carbon::now()->subDays(30))
+                        ->whereDate('appointments.appointment_datetime', '<=', Carbon::now()->addDays(90))
+                        ->get();
                 }
-                $endDateTime = $startDateTime->copy()->addMinutes($durationMinutes);
 
-                $calendarEvents[] = [
-                    'id' => $appointment->id,
-                    'title' => ($appointment->patient_first_name ?? 'Unknown') . ' ' . ($appointment->patient_last_name ?? 'Patient'),
-                    'start' => $startDateTime->toIso8601String(),
-                    'end' => $endDateTime->toIso8601String(),
-                    'backgroundColor' => $this->getStatusColor($appointment->status),
-                    'borderColor' => $this->getStatusColor($appointment->status),
-                    'extendedProps' => [
-                        'patient' => $appointment->patient_first_name . ' ' . $appointment->patient_last_name,
-                        'doctor' => 'Dr. ' . $appointment->doctor_first_name . ' ' . $appointment->doctor_last_name,
-                        'type' => $appointment->type,
-                        'status' => $appointment->status,
-                        'notes' => $appointment->notes,
-                        'duration' => ($durationMinutes) . ' min'
-                    ]
-                ];
+                foreach ($calendarQuery as $appointment) {
+                    if ($legacy) {
+                        $dateStr = $appointment->appointment_date ?: Carbon::today()->toDateString();
+                        $timeStr = $appointment->appointment_time ?: '00:00:00';
+                        $startDateTime = Carbon::parse(trim($dateStr . ' ' . $timeStr));
+                        $durationMinutes = is_numeric($appointment->duration) ? intval($appointment->duration) : 30;
+                    } else {
+                        $startDateTime = Carbon::parse($appointment->appointment_datetime);
+                        $durationMinutes = is_numeric($appointment->duration_minutes) ? intval($appointment->duration_minutes) : 30;
+                    }
+                    $endDateTime = $startDateTime->copy()->addMinutes($durationMinutes);
+
+                    $calendarEvents[] = [
+                        'id' => $appointment->id,
+                        'title' => trim(($appointment->patient_first_name ?? 'Unknown') . ' ' . ($appointment->patient_last_name ?? 'Patient')),
+                        'start' => $startDateTime->toIso8601String(),
+                        'end' => $endDateTime->toIso8601String(),
+                        'backgroundColor' => $this->getStatusColor($appointment->status),
+                        'borderColor' => $this->getStatusColor($appointment->status),
+                        'extendedProps' => [
+                            'patient' => trim(($appointment->patient_first_name ?? '') . ' ' . ($appointment->patient_last_name ?? '')),
+                            'doctor' => 'Dr. ' . trim(($appointment->doctor_first_name ?? '') . ' ' . ($appointment->doctor_last_name ?? '')),
+                            'type' => $appointment->type,
+                            'status' => $appointment->status,
+                            'notes' => $appointment->notes,
+                            'duration' => ($durationMinutes) . ' min'
+                        ]
+                    ];
+                }
+            } catch (\Throwable $e) {
+                Log::error('Appointments calendar build failed', [
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]);
+                $calendarEvents = [];
             }
         }
 
