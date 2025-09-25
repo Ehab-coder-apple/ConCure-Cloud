@@ -494,13 +494,17 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <strong>{{ __('Start Date:') }}</strong><br>
-                        <span class="text-primary">{{ \Carbon\Carbon::parse($dietPlan->start_date)->format('M d, Y') }}</span>
+                        @if($dietPlan->start_date)
+                            <span class="text-primary">{{ ($dietPlan->start_date instanceof \Carbon\Carbon) ? $dietPlan->start_date->format('M d, Y') : \Carbon\Carbon::parse($dietPlan->start_date)->format('M d, Y') }}</span>
+                        @else
+                            <span class="text-muted">—</span>
+                        @endif
                     </div>
 
                     @if($dietPlan->end_date)
                     <div class="mb-3">
                         <strong>{{ __('End Date:') }}</strong><br>
-                        <span class="text-primary">{{ \Carbon\Carbon::parse($dietPlan->end_date)->format('M d, Y') }}</span>
+                        <span class="text-primary">{{ ($dietPlan->end_date instanceof \Carbon\Carbon) ? $dietPlan->end_date->format('M d, Y') : \Carbon\Carbon::parse($dietPlan->end_date)->format('M d, Y') }}</span>
                     </div>
                     @endif
 
