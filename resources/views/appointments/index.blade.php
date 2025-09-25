@@ -107,7 +107,7 @@
                                                 {{ ucfirst($appointment->status ?? 'Scheduled') }}
                                             </span>
                                         </td>
-                                        <td>{{ Str::limit($appointment->notes ?? 'Regular checkup', 30) }}</td>
+                                        <td>{{ \Illuminate\Support\Str::limit($appointment->notes ?? 'Regular checkup', 30) }}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
                                                 <button type="button" class="btn btn-outline-success" title="{{ __('Confirm') }}"

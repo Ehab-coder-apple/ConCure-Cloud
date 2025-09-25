@@ -135,8 +135,8 @@ class AppointmentController extends Controller
                 $calendarEvents[] = [
                     'id' => $appointment->id,
                     'title' => ($appointment->patient_first_name ?? 'Unknown') . ' ' . ($appointment->patient_last_name ?? 'Patient'),
-                    'start' => $startDateTime->toISOString(),
-                    'end' => $endDateTime->toISOString(),
+                    'start' => $startDateTime->toIso8601String(),
+                    'end' => $endDateTime->toIso8601String(),
                     'backgroundColor' => $this->getStatusColor($appointment->status),
                     'borderColor' => $this->getStatusColor($appointment->status),
                     'extendedProps' => [
