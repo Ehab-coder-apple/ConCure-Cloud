@@ -492,12 +492,15 @@ class NutritionController extends Controller
     {
         $user = Auth::user();
 
-        // Check access
+        // Ensure related patient exists and user has access
+        $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
+        if (!$dietPlan->patient) {
+            return redirect()->route('nutrition.index')
+                ->with('error', __('The patient record for this nutrition plan was not found.'));
+        }
         if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to nutrition plan.');
         }
-
-        $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
 
         // Calculate nutritional totals
         $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);

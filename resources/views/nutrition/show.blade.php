@@ -101,12 +101,12 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <strong>{{ __('Patient:') }}</strong><br>
-                            <span class="text-primary">{{ $dietPlan->patient->first_name }} {{ $dietPlan->patient->last_name }}</span><br>
-                            <small class="text-muted">{{ $dietPlan->patient->patient_id }}</small>
+                            <span class="text-primary">{{ $dietPlan->patient->first_name ?? '' }} {{ $dietPlan->patient->last_name ?? '' }}</span><br>
+                            <small class="text-muted">{{ $dietPlan->patient->patient_id ?? '' }}</small>
                         </div>
                         <div class="col-md-6 mb-3">
                             <strong>{{ __('Doctor:') }}</strong><br>
-                            <span class="text-primary">Dr. {{ $dietPlan->doctor->first_name }} {{ $dietPlan->doctor->last_name }}</span>
+                            <span class="text-primary">{{ $dietPlan->doctor ? ('Dr. ' . ($dietPlan->doctor->first_name ?? '') . ' ' . ($dietPlan->doctor->last_name ?? '')) : __('Doctor not assigned') }}</span>
                         </div>
                     </div>
 
