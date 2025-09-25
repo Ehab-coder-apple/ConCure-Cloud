@@ -727,7 +727,7 @@
 })();
 function shareOnWhatsApp() {
     // Get nutrition plan data
-    const patientName = "{{ $dietPlan->patient->full_name }}";
+    const patientName = "{{ $dietPlan->patient->full_name ?? '' }}";
     const planTitle = "{{ $dietPlan->title }}";
     const planNumber = "{{ $dietPlan->plan_number }}";
     const doctorName = "{{ $dietPlan->doctor ? $dietPlan->doctor->first_name . ' ' . $dietPlan->doctor->last_name : 'Unknown' }}";
@@ -878,7 +878,7 @@ function downloadPdfWithLang() {
     const encodedMessage = encodeURIComponent(message);
 
     // Get patient's WhatsApp number if available
-    const patientWhatsApp = "{{ $dietPlan->patient->whatsapp_phone ? preg_replace('/[^0-9]/', '', $dietPlan->patient->whatsapp_phone) : '' }}";
+    const patientWhatsApp = "{{ optional($dietPlan->patient)->whatsapp_phone ? preg_replace('/[^0-9]/', '', optional($dietPlan->patient)->whatsapp_phone) : '' }}";
 
     // Create WhatsApp URL
     let whatsappUrl;
