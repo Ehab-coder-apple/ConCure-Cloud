@@ -749,28 +749,29 @@ function shareOnWhatsApp() {
         @php
             // Group meals by type and option for flexible plans
             $mealsByType = [];
-            $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack_1'];
+            $allowedMealTypes = ['breakfast', 'lunch', 'dinner', 'snack_1'];
             $mealTypeNames = [
                 'breakfast' => 'Breakfast',
                 'lunch' => 'Lunch',
                 'dinner' => 'Dinner',
-
                 'snack_1' => 'Snack'
             ];
 
-            foreach ($mealTypes as $mealType) {
+            // Initialize structure for each allowed meal type
+            foreach ($allowedMealTypes as $mealType) {
                 $mealsByType[$mealType] = [];
             }
 
+            // Group existing meals by their type, but only keep allowed ones
             foreach ($dietPlan->meals->where('is_option_based', true) as $meal) {
-                $mealType = $meal->meal_type;
-                if (in_array($mealType, $mealTypes)) {
-                    $mealsByType[$mealType][] = $meal;
+                $type = $meal->meal_type;
+                if (in_array($type, $allowedMealTypes, true)) {
+                    $mealsByType[$type][] = $meal;
                 }
             }
         @endphp
 
-        @foreach($mealTypes as $mealType)
+        @foreach(['breakfast', 'lunch', 'dinner', 'snack_1'] as $mealType)
             @if(count($mealsByType[$mealType]) > 0)
                 mealSummary += "\n*" + i18n[mealTypeKey("{{ $mealType }}")] + " " + i18n.options + ":*\n";
                 @foreach($mealsByType[$mealType] as $index => $meal)
