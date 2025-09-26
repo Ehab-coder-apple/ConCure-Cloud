@@ -747,34 +747,18 @@ function shareOnWhatsApp() {
         mealSummary += "\n🔄 *" + i18n.flexibleIntro + "*\n";
 
         @php
-            // Group meals by type and option for flexible plans
-            $mealsByType = [];
+            // Allowed meal types for flexible plans
             $allowedMealTypes = ['breakfast', 'lunch', 'dinner', 'snack_1'];
-            $mealTypeNames = [
-                'breakfast' => 'Breakfast',
-                'lunch' => 'Lunch',
-                'dinner' => 'Dinner',
-                'snack_1' => 'Snack'
-            ];
-
-            // Initialize structure for each allowed meal type
-            foreach ($allowedMealTypes as $mealType) {
-                $mealsByType[$mealType] = [];
-            }
-
-            // Group existing meals by their type, but only keep allowed ones
-            foreach ($dietPlan->meals->where('is_option_based', true) as $meal) {
-                $type = $meal->meal_type;
-                if (in_array($type, $allowedMealTypes, true)) {
-                    $mealsByType[$type][] = $meal;
-                }
-            }
         @endphp
 
         @foreach(['breakfast', 'lunch', 'dinner', 'snack_1'] as $mealType)
-            @if(count($mealsByType[$mealType]) > 0)
+            @php
+                // Collect flexible meals for this type directly, avoiding intermediate variables
+                $flexMeals = $dietPlan->meals->where('is_option_based', true)->where('meal_type', $mealType);
+            @endphp
+            @if($flexMeals->count() > 0)
                 mealSummary += "\n*" + i18n[mealTypeKey("{{ $mealType }}")] + " " + i18n.options + ":*\n";
-                @foreach($mealsByType[$mealType] as $index => $meal)
+                @foreach($flexMeals->sortBy('option_number') as $index => $meal)
                     mealSummary += "📋 *" + i18n.option + " {{ $meal->option_number }}:*\n";
                     @foreach($meal->foods as $mealFood)
                         mealSummary += "  • " + (foodTranslations['{{ $mealFood->id }}'] && foodTranslations['{{ $mealFood->id }}'][selectedLang] ? foodTranslations['{{ $mealFood->id }}'][selectedLang] : "{{ $mealFood->food_name }}") + " - {{ $mealFood->quantity }}{{ $mealFood->unit }}\n";
