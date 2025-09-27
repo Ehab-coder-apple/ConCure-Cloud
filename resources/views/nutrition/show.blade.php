@@ -697,7 +697,6 @@
 
 @endsection
 
-@push('scripts')
 <script>
 // Safer Share Internally handler (prevents giant clickable area)
 (function(){
@@ -878,4 +877,3 @@ function downloadPdfWithLang() {
     window.open(whatsappUrl, '_blank');
 }
 </script>
-@endpush
