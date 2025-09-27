@@ -682,7 +682,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
     });
 
     // WhatsApp Management (Settings section permissions)
-    Route::prefix('whatsapp')->name('whatsapp.')->middleware('can:access-section,settings')->group(function () {
+    Route::prefix('whatsapp')->name('whatsapp.')->middleware('can:access-settings')->group(function () {
         Route::get('/', [App\Http\Controllers\WhatsAppController::class, 'index'])->name('index');
         Route::post('/test', [App\Http\Controllers\WhatsAppController::class, 'test'])->name('test');
         Route::post('/setup', [App\Http\Controllers\WhatsAppController::class, 'setupWhatsAppWeb'])->name('setup');
@@ -713,7 +713,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
 
     // Settings (admin-only via gate)
-    Route::prefix('settings')->name('settings.')->middleware('can:access-section,settings')->group(function () {
+    Route::prefix('settings')->name('settings.')->middleware('can:access-settings')->group(function () {
         Route::get('/', [SettingsController::class, 'index'])->name('index');
         Route::post('/', [SettingsController::class, 'update'])->name('update');
 
@@ -722,10 +722,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::delete('/logo', [SettingsController::class, 'deleteLogo'])->name('delete-logo');
 
         // System maintenance (permission-gated via Settings section)
-        Route::post('/backup', [SettingsController::class, 'backup'])->name('backup')->middleware('can:access-section,settings');
-        Route::get('/backup/download/{file}', [SettingsController::class, 'downloadBackup'])->name('download-backup')->middleware('can:access-section,settings');
-        Route::post('/clear-cache', [SettingsController::class, 'clearCache'])->name('clear-cache')->middleware('can:access-section,settings');
-        Route::post('/update-system', [SettingsController::class, 'updateSystem'])->name('update-system')->middleware('can:access-section,settings');
+        Route::post('/backup', [SettingsController::class, 'backup'])->name('backup')->middleware('can:access-settings');
+        Route::get('/backup/download/{file}', [SettingsController::class, 'downloadBackup'])->name('download-backup')->middleware('can:access-settings');
+        Route::post('/clear-cache', [SettingsController::class, 'clearCache'])->name('clear-cache')->middleware('can:access-settings');
+        Route::post('/update-system', [SettingsController::class, 'updateSystem'])->name('update-system')->middleware('can:access-settings');
 
         // Audit logs (permission-gated)
         Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs')->middleware('can:view-audit-logs');

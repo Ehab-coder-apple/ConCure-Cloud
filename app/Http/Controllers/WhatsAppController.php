@@ -22,10 +22,6 @@ class WhatsAppController extends Controller
     {
         $user = auth()->user();
 
-        // Only admins can access WhatsApp settings
-        if ($user->role !== 'admin') {
-            abort(403, 'Only administrators can access WhatsApp settings.');
-        }
 
         $status = $this->whatsappService->getProviderStatus();
         
@@ -55,9 +51,6 @@ class WhatsAppController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->role !== 'admin') {
-            abort(403, 'Only administrators can test WhatsApp.');
-        }
 
         $request->validate([
             'phone' => 'required|string',
@@ -111,9 +104,6 @@ class WhatsAppController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->role !== 'admin') {
-            abort(403, 'Only administrators can setup WhatsApp.');
-        }
 
         try {
             // Generate WhatsApp Web URL for automatic setup
@@ -149,9 +139,6 @@ class WhatsAppController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->role !== 'admin') {
-            abort(403, 'Only administrators can check WhatsApp status.');
-        }
 
         $setupInitiated = session('whatsapp_setup_initiated', false);
         $setupTime = session('whatsapp_setup_time');
@@ -179,9 +166,6 @@ class WhatsAppController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->role !== 'admin') {
-            abort(403, 'Only administrators can access WhatsApp QR code.');
-        }
 
         $apiUrl = env('WHATSAPP_API_URL');
         if (!$apiUrl) {

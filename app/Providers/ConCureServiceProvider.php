@@ -92,6 +92,12 @@ class ConCureServiceProvider extends ServiceProvider
             return $user->canAccessSection($section);
         });
 
+        // Convenience gate for Settings section without needing a route parameter
+        Gate::define('access-settings', function (User $user) {
+            return $user->canAccessSection('settings');
+        });
+
+
         Gate::define('view-dashboard', function (User $user) {
             return $user->hasPermission('dashboard_view');
         });
