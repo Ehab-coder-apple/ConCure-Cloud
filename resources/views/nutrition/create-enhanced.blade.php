@@ -2174,15 +2174,29 @@ function updateCalorieCalculation() {
             caloriesField.style.backgroundColor = '';
         }, 2000);
 
-        // Show appropriate error message
-        if (error.message.includes('log in')) {
+        // Show appropriate error message (suppress popup for incomplete patient data)
+        const em = (error && error.message) ? error.message : '';
+        if (em.includes('complete data') || em.includes('Unable to calculate calories')) {
+            console.warn('Calorie calculation skipped: patient profile incomplete (age, gender, height, weight). Save patient details first.');
+            // Optionally show a non-blocking hint near the calories field
+            let hint = document.getElementById('calorie-missing-profile-hint');
+            if (!hint) {
+              hint = document.createElement('div');
+              hint.id = 'calorie-missing-profile-hint';
+              hint.className = 'form-text text-muted';
+              hint.style.marginTop = '6px';
+              document.getElementById('target_calories').parentElement.appendChild(hint);
+            }
+            hint.innerHTML = '<i class="fas fa-info-circle me-1"></i>' +
+              'To auto-calculate, please complete and save the patient profile (age, gender, height, weight).';
+        } else if (em.includes('log in')) {
             alert('Please log in to calculate calories');
-        } else if (error.message.includes('Session expired')) {
+        } else if (em.includes('Session expired')) {
             alert('Session expired. Please refresh the page and try again.');
-        } else if (error.message.includes('Validation error')) {
-            alert('Please check your input data: ' + error.message);
-        } else if (!error.message.includes('Failed to fetch')) {
-            alert('Error calculating calories: ' + error.message);
+        } else if (em.includes('Validation error')) {
+            alert('Please check your input data: ' + em);
+        } else if (!em.includes('Failed to fetch')) {
+            alert('Error calculating calories: ' + em);
         }
     })
     .finally(() => {
