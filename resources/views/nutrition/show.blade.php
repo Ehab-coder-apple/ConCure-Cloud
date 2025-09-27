@@ -649,7 +649,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <label for="whatsappLanguageSelect" class="form-label">{{ __('Output Language') }}</label>
+        <label for="whatsappLanguageSelect" class="form-label">{{ __('Food Language') }}</label>
         <select id="whatsappLanguageSelect" class="form-select">
           @foreach($nutritionOutputLangs as $code => $label)
             <option value="{{ $code }}" {{ app()->getLocale() === $code ? 'selected' : '' }}>{{ $label }}</option>
@@ -678,7 +678,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <label for="exportLanguageSelect" class="form-label">{{ __('Output Language') }}</label>
+        <label for="exportLanguageSelect" class="form-label">{{ __('Food Language') }}</label>
         <select id="exportLanguageSelect" class="form-select">
           @foreach($nutritionOutputLangs as $code => $label)
             <option value="{{ $code }}" {{ app()->getLocale() === $code ? 'selected' : '' }}>{{ $label }}</option>
@@ -811,7 +811,8 @@ const whatsappI18n = {
   ku_sorani: null,
 };
 function i18nFor(lang){ return whatsappI18n[lang] || whatsappI18n.en; }
-let i18n = i18nFor(selectedLang);
+const appLocale = "{{ app()->getLocale() }}";
+let i18n = i18nFor(appLocale);
 function mealTypeKey(type){ return (type && type.startsWith('snack')) ? 'snack' : type; }
 
 // Build food name translations map (mealFoodId => { lang => name })
@@ -824,7 +825,7 @@ const foodTranslations = {};
 
 function shareOnWhatsAppWithLang() {
   const sel = document.getElementById('whatsappLanguageSelect');
-  if (sel && sel.value) { selectedLang = sel.value; i18n = i18nFor(selectedLang); }
+  if (sel && sel.value) { selectedLang = sel.value; }
   const modalEl = document.getElementById('whatsappLanguageModal');
   if (modalEl) {
     const inst = bootstrap.Modal.getInstance(modalEl);
