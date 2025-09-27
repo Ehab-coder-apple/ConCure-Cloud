@@ -644,7 +644,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="whatsappLanguageModalLabel">
-          <i class="fab fa-whatsapp me-2 text-success"></i>{{ __('Send via WhatsApp') }} — {{ __('Choose Language') }}
+          <i class="fab fa-whatsapp me-2 text-success"></i>{{ __('Send via WhatsApp') }} — {{ __('Choose Food Language') }}
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -673,7 +673,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exportLanguageModalLabel">
-          <i class="fas fa-file-pdf me-2 text-primary"></i>{{ __('Export PDF') }} — {{ __('Choose Language') }}
+          <i class="fas fa-file-pdf me-2 text-primary"></i>{{ __('Export PDF') }} — {{ __('Choose Food Language') }}
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
