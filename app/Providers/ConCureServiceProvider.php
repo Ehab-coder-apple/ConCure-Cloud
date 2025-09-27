@@ -93,8 +93,9 @@ class ConCureServiceProvider extends ServiceProvider
         });
 
         // Convenience gate for Settings section without needing a route parameter
+        // Allow any admin (with or without clinic) and super admin
         Gate::define('access-settings', function (User $user) {
-            return $user->canAccessSection('settings');
+            return $user->isSuperAdmin() || $user->role === 'admin';
         });
 
 
