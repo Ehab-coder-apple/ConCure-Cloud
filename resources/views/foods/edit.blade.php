@@ -323,32 +323,49 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="sodium" class="form-label">{{ __('Sodium (mg)') }}</label>
-                                    <input type="number" 
-                                           class="form-control @error('sodium') is-invalid @enderror" 
-                                           id="sodium" 
-                                           name="sodium" 
-                                           value="{{ old('sodium', $food->sodium) }}" 
-                                           step="0.1" 
-                                           min="0" 
+                                    <input type="number"
+                                           class="form-control @error('sodium') is-invalid @enderror"
+                                           id="sodium"
+                                           name="sodium"
+                                           value="{{ old('sodium', $food->sodium) }}"
+                                           step="0.1"
+                                           min="0"
                                            max="99999">
                                     @error('sodium')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="serving_size" class="form-label">{{ __('Serving Size') }}</label>
-                                    <input type="text" 
-                                           class="form-control @error('serving_size') is-invalid @enderror" 
-                                           id="serving_size" 
-                                           name="serving_size" 
-                                           value="{{ old('serving_size', $food->serving_size) }}" 
+                                    <input type="text"
+                                           class="form-control @error('serving_size') is-invalid @enderror"
+                                           id="serving_size"
+                                           name="serving_size"
+                                           value="{{ old('serving_size', $food->serving_size) }}"
                                            placeholder="e.g., 100g, 1 cup, 1 piece">
                                     @error('serving_size')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="serving_weight" class="form-label">{{ __('Serving Weight (g)') }}</label>
+                                    <input type="number"
+                                           class="form-control @error('serving_weight') is-invalid @enderror"
+                                           id="serving_weight"
+                                           name="serving_weight"
+                                           value="{{ old('serving_weight', $food->serving_weight) }}"
+                                           step="0.1"
+                                           min="0"
+                                           max="9999"
+                                           placeholder="Weight in grams">
+                                    @error('serving_weight')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
