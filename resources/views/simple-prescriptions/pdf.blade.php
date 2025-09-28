@@ -7,11 +7,11 @@
     <style>
         body {
             font-family: 'Times New Roman', 'DejaVu Serif', serif;
-            font-size: 12px;
-            line-height: 1.4;
+            font-size: 14px;
+            line-height: 1.5;
             color: #1a1a1a;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             background: white;
         }
 
@@ -31,12 +31,12 @@
         }
         
         .header {
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .clinic-header-table {
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .clinic-logo {
@@ -49,7 +49,7 @@
         }
 
         .clinic-name {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
             color: #2c3e50;
             margin: 0 0 8px 0;
@@ -58,15 +58,15 @@
         }
 
         .clinic-info {
-            font-size: 11px;
+            font-size: 12px;
             color: #555;
             margin: 0;
-            line-height: 1.3;
+            line-height: 1.4;
         }
 
         .header-divider {
             border-bottom: 3px double #2c3e50;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
 
@@ -74,7 +74,7 @@
         .info-grid {
             display: table;
             width: 100%;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .info-row {
@@ -83,7 +83,7 @@
 
         .info-cell {
             display: table-cell;
-            padding: 4px 10px 4px 0;
+            padding: 2px 8px 2px 0;
             vertical-align: top;
             width: 50%;
         }
@@ -91,8 +91,8 @@
         .info-label {
             font-weight: bold;
             color: #2c3e50;
-            margin-bottom: 3px;
-            font-size: 11px;
+            margin-bottom: 4px;
+            font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -103,59 +103,59 @@
             line-height: 1.4;
             font-weight: 600;
             text-align: center;
-            padding: 5px;
+            padding: 6px;
             background: #f8f9fa;
             border-radius: 4px;
             border: 1px solid #e9ecef;
         }
         
         .section {
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
 
         .section-title {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             color: #2c3e50;
             border-bottom: 2px solid #34495e;
             padding-bottom: 8px;
-            margin-bottom: 15px;
+            margin-bottom: 18px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        
+
         .medicines-list {
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
 
-        /* Dynamic sizing based on number of medicines */
+        /* Dynamic sizing based on number of medicines - increased spacing */
         .medicines-list[data-count="1"] .medicine-item,
         .medicines-list[data-count="2"] .medicine-item,
         .medicines-list[data-count="3"] .medicine-item {
-            padding: 12px 15px;
-            margin-bottom: 10px;
+            padding: 15px 18px;
+            margin-bottom: 12px;
         }
 
         .medicines-list[data-count="4"] .medicine-item,
         .medicines-list[data-count="5"] .medicine-item {
-            padding: 8px 12px;
-            margin-bottom: 6px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
         }
 
         .medicines-list[data-count="6"] .medicine-item,
         .medicines-list[data-count="7"] .medicine-item {
-            padding: 6px 10px;
-            margin-bottom: 4px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
         }
 
         .medicines-list[data-count="8"] .medicine-item,
         .medicines-list[data-count="9"] .medicine-item,
         .medicines-list[data-count="10"] .medicine-item {
-            padding: 4px 8px;
-            margin-bottom: 3px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
         }
 
-        /* For 11+ medicines - ultra compact */
+        /* For 11+ medicines - more compact but still readable */
         .medicines-list[data-count="11"] .medicine-item,
         .medicines-list[data-count="12"] .medicine-item,
         .medicines-list[data-count="13"] .medicine-item,
@@ -166,8 +166,8 @@
         .medicines-list[data-count="18"] .medicine-item,
         .medicines-list[data-count="19"] .medicine-item,
         .medicines-list[data-count="20"] .medicine-item {
-            padding: 3px 6px;
-            margin-bottom: 2px;
+            padding: 6px 8px;
+            margin-bottom: 4px;
         }
 
         .medicine-item {
@@ -179,35 +179,35 @@
 
 
 
-        /* Dynamic font sizing for medicine names */
+        /* Dynamic font sizing for medicine names - increased sizes */
         .medicines-list[data-count="1"] .medicine-name,
         .medicines-list[data-count="2"] .medicine-name,
         .medicines-list[data-count="3"] .medicine-name {
-            font-size: 13px;
-            margin-bottom: 8px;
-            padding-bottom: 4px;
+            font-size: 15px;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
         }
 
         .medicines-list[data-count="4"] .medicine-name,
         .medicines-list[data-count="5"] .medicine-name {
-            font-size: 11px;
-            margin-bottom: 5px;
-            padding-bottom: 3px;
+            font-size: 13px;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
         }
 
         .medicines-list[data-count="6"] .medicine-name,
         .medicines-list[data-count="7"] .medicine-name {
-            font-size: 10px;
-            margin-bottom: 4px;
-            padding-bottom: 2px;
+            font-size: 12px;
+            margin-bottom: 6px;
+            padding-bottom: 4px;
         }
 
         .medicines-list[data-count="8"] .medicine-name,
         .medicines-list[data-count="9"] .medicine-name,
         .medicines-list[data-count="10"] .medicine-name {
-            font-size: 9px;
-            margin-bottom: 3px;
-            padding-bottom: 2px;
+            font-size: 11px;
+            margin-bottom: 5px;
+            padding-bottom: 3px;
         }
 
         .medicines-list[data-count="11"] .medicine-name,
@@ -220,9 +220,9 @@
         .medicines-list[data-count="18"] .medicine-name,
         .medicines-list[data-count="19"] .medicine-name,
         .medicines-list[data-count="20"] .medicine-name {
-            font-size: 8px;
-            margin-bottom: 2px;
-            padding-bottom: 1px;
+            font-size: 10px;
+            margin-bottom: 4px;
+            padding-bottom: 2px;
         }
 
         .medicine-name {
@@ -252,37 +252,37 @@
         .detail-label {
             font-weight: bold;
             color: #7f8c8d;
-            font-size: 10px;
-            margin-bottom: 3px;
+            font-size: 11px;
+            margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        /* Dynamic sizing for detail values */
+        /* Dynamic sizing for detail values - increased sizes */
         .medicines-list[data-count="1"] .detail-value,
         .medicines-list[data-count="2"] .detail-value,
         .medicines-list[data-count="3"] .detail-value {
-            font-size: 11px;
-            padding: 4px 6px;
+            font-size: 13px;
+            padding: 6px 8px;
         }
 
         .medicines-list[data-count="4"] .detail-value,
         .medicines-list[data-count="5"] .detail-value {
-            font-size: 9px;
-            padding: 3px 4px;
+            font-size: 11px;
+            padding: 5px 6px;
         }
 
         .medicines-list[data-count="6"] .detail-value,
         .medicines-list[data-count="7"] .detail-value {
-            font-size: 8px;
-            padding: 2px 3px;
+            font-size: 10px;
+            padding: 4px 5px;
         }
 
         .medicines-list[data-count="8"] .detail-value,
         .medicines-list[data-count="9"] .detail-value,
         .medicines-list[data-count="10"] .detail-value {
-            font-size: 7px;
-            padding: 1px 2px;
+            font-size: 9px;
+            padding: 3px 4px;
         }
 
         .medicines-list[data-count="11"] .detail-value,
@@ -295,8 +295,8 @@
         .medicines-list[data-count="18"] .detail-value,
         .medicines-list[data-count="19"] .detail-value,
         .medicines-list[data-count="20"] .detail-value {
-            font-size: 6px;
-            padding: 1px;
+            font-size: 8px;
+            padding: 2px 3px;
         }
 
         .detail-value {
@@ -363,14 +363,14 @@
         <!-- Header -->
         <div class="header">
         @php
-            $clinicLogo = \App\Http\Controllers\SettingsController::getClinicLogo($prescription->clinic_id);
+            $clinicLogo = \App\Helpers\ClinicHelper::getClinicLogoPdfPath($prescription->clinic_id);
         @endphp
 
         <table class="clinic-header-table">
             <tr>
-                @if($clinicLogo)
+                @if($clinicLogo && file_exists($clinicLogo))
                     <td style="width: 80px; vertical-align: top; text-align: center;">
-                        <img src="{{ public_path('storage/' . str_replace('storage/', '', $clinicLogo)) }}"
+                        <img src="{{ $clinicLogo }}"
                              alt="Clinic Logo"
                              class="clinic-logo">
                     </td>
@@ -407,9 +407,6 @@
                 <div class="info-value">
                     <strong>{{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}</strong><br>
                     Patient ID: {{ $prescription->patient->patient_id }}<br>
-                    @if($prescription->patient->date_of_birth)
-                        DOB: {{ \Carbon\Carbon::parse($prescription->patient->date_of_birth)->format('M d, Y') }}<br>
-                    @endif
                     Gender: {{ ucfirst($prescription->patient->gender ?? 'Not specified') }}<br>
                     @if($prescription->patient->phone)
                         Phone: {{ $prescription->patient->phone }}

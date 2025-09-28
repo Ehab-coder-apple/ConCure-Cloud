@@ -435,9 +435,6 @@
                 <div class="info-value">
                     <strong>{{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}</strong><br>
                     Patient ID: {{ $prescription->patient->patient_id }}<br>
-                    @if($prescription->patient->date_of_birth)
-                        DOB: {{ \Carbon\Carbon::parse($prescription->patient->date_of_birth)->format('M d, Y') }}<br>
-                    @endif
                     Gender: {{ ucfirst($prescription->patient->gender ?? 'Not specified') }}<br>
                     @if($prescription->patient->phone)
                         Phone: {{ $prescription->patient->phone }}
