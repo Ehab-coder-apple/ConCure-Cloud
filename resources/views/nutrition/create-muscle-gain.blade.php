@@ -3,7 +3,7 @@
 @section('page-title', __('Create Muscle Gain Nutrition Plan'))
 
 @section('content')
-<div class="container">
+<div class="container" style="margin-top: 80px;">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">

@@ -3,7 +3,7 @@
 @section('title', __('Create Flexible Nutrition Plan'))
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid" style="margin-top: 80px;">
     <div class="row">
         <div class="col-12">
             <div class="card">
