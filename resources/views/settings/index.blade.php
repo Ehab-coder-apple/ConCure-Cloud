@@ -3,7 +3,7 @@
 @section('title', __('Settings'))
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid" style="margin-top: 80px;">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -47,6 +47,36 @@
                             </a>
                         </div>
                     </div>
+
+                    @if(auth()->user()->isSuperAdmin() || auth()->user()->role === 'admin')
+                    <!-- Quick Actions for Admins -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0 text-primary">
+                                <i class="fas fa-bolt me-2"></i>
+                                {{ __('Quick Actions') }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{{ route('users.create') }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-user-plus me-1"></i>
+                                    {{ __('Create User') }}
+                                </a>
+                                <a href="{{ route('users.index') }}" class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-users me-1"></i>
+                                    {{ __('Manage Users') }}
+                                </a>
+                                @can('view-audit-logs')
+                                <a href="{{ route('settings.audit-logs') }}" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-history me-1"></i>
+                                    {{ __('Audit Logs') }}
+                                </a>
+                                @endcan
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
 
                 <div class="col-lg-9">
@@ -350,52 +380,147 @@
                                     </h6>
                                 </div>
                                 <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h6 class="mb-0">{{ __('System Users') }}</h6>
-                                        <button type="button" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-plus me-1"></i>
-                                            {{ __('Add User') }}
-                                        </button>
-                                    </div>
+                                    @if(auth()->user()->isSuperAdmin() || auth()->user()->role === 'admin')
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <div class="alert alert-info">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    <strong>{{ __('User Management Access') }}</strong><br>
+                                                    {{ __('As a system administrator, you have full access to user management features including creating users with custom permissions.') }}
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                    <div class="table-responsive">
-                                        <table class="table table-sm">
-                                            <thead>
-                                                <tr>
-                                                    <th>{{ __('Name') }}</th>
-                                                    <th>{{ __('Email') }}</th>
-                                                    <th>{{ __('Role') }}</th>
-                                                    <th>{{ __('Status') }}</th>
-                                                    <th>{{ __('Actions') }}</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <!-- Program Owner managed in master system -->
-                                                <tr>
-                                                    <td>System Administrator</td>
-                                                    <td>admin@demo.clinic</td>
-                                                    <td><span class="badge bg-warning">Admin</span></td>
-                                                    <td><span class="badge bg-success">Active</span></td>
-                                                    <td>
-                                                        <button class="btn btn-sm btn-outline-primary">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Dr. Demo</td>
-                                                    <td>doctor@demo.clinic</td>
-                                                    <td><span class="badge bg-info">Doctor</span></td>
-                                                    <td><span class="badge bg-success">Active</span></td>
-                                                    <td>
-                                                        <button class="btn btn-sm btn-outline-primary">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                        <div class="row mb-4">
+                                            <div class="col-md-6">
+                                                <div class="card border-primary">
+                                                    <div class="card-body text-center">
+                                                        <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                                                        <h5 class="card-title">{{ __('Create New User') }}</h5>
+                                                        <p class="card-text text-muted">
+                                                            {{ __('Add new users to your system with custom roles and permissions') }}
+                                                        </p>
+                                                        <a href="{{ route('users.create') }}" class="btn btn-primary">
+                                                            <i class="fas fa-plus me-1"></i>
+                                                            {{ __('Create User') }}
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card border-success">
+                                                    <div class="card-body text-center">
+                                                        <i class="fas fa-users-cog fa-3x text-success mb-3"></i>
+                                                        <h5 class="card-title">{{ __('Manage Users') }}</h5>
+                                                        <p class="card-text text-muted">
+                                                            {{ __('View, edit, and manage all system users and their permissions') }}
+                                                        </p>
+                                                        <a href="{{ route('users.index') }}" class="btn btn-success">
+                                                            <i class="fas fa-users me-1"></i>
+                                                            {{ __('Manage Users') }}
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0">{{ __('Quick User Overview') }}</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        @php
+                                                            $users = \App\Models\User::where('clinic_id', auth()->user()->clinic_id)
+                                                                ->orWhere('role', 'super_admin')
+                                                                ->orderBy('created_at', 'desc')
+                                                                ->take(5)
+                                                                ->get();
+                                                        @endphp
+
+                                                        @if($users->count() > 0)
+                                                            <div class="table-responsive">
+                                                                <table class="table table-sm">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>{{ __('Name') }}</th>
+                                                                            <th>{{ __('Email') }}</th>
+                                                                            <th>{{ __('Role') }}</th>
+                                                                            <th>{{ __('Status') }}</th>
+                                                                            <th>{{ __('Actions') }}</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @foreach($users as $user)
+                                                                        <tr>
+                                                                            <td>{{ $user->first_name }} {{ $user->last_name }}</td>
+                                                                            <td>{{ $user->email }}</td>
+                                                                            <td>
+                                                                                @php
+                                                                                    $roleColors = [
+                                                                                        'super_admin' => 'danger',
+                                                                                        'admin' => 'warning',
+                                                                                        'doctor' => 'info',
+                                                                                        'nutritionist' => 'success',
+                                                                                        'pharmacist' => 'primary',
+                                                                                        'assistant' => 'secondary',
+                                                                                        'nurse' => 'light',
+                                                                                        'accountant' => 'dark'
+                                                                                    ];
+                                                                                    $color = $roleColors[$user->role] ?? 'secondary';
+                                                                                @endphp
+                                                                                <span class="badge bg-{{ $color }}">{{ __(ucfirst(str_replace('_', ' ', $user->role))) }}</span>
+                                                                            </td>
+                                                                            <td>
+                                                                                @if($user->is_active)
+                                                                                    <span class="badge bg-success">{{ __('Active') }}</span>
+                                                                                @else
+                                                                                    <span class="badge bg-danger">{{ __('Inactive') }}</span>
+                                                                                @endif
+                                                                            </td>
+                                                                            <td>
+                                                                                <a href="{{ route('users.show', $user) }}" class="btn btn-sm btn-outline-primary">
+                                                                                    <i class="fas fa-eye"></i>
+                                                                                </a>
+                                                                                <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-outline-warning">
+                                                                                    <i class="fas fa-edit"></i>
+                                                                                </a>
+                                                                            </td>
+                                                                        </tr>
+                                                                        @endforeach
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+
+                                                            <div class="text-center mt-3">
+                                                                <a href="{{ route('users.index') }}" class="btn btn-outline-primary">
+                                                                    <i class="fas fa-list me-1"></i>
+                                                                    {{ __('View All Users') }}
+                                                                </a>
+                                                            </div>
+                                                        @else
+                                                            <div class="text-center py-4">
+                                                                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                                                <h5 class="text-muted">{{ __('No Users Found') }}</h5>
+                                                                <p class="text-muted">{{ __('Start by creating your first user.') }}</p>
+                                                                <a href="{{ route('users.create') }}" class="btn btn-primary">
+                                                                    <i class="fas fa-plus me-1"></i>
+                                                                    {{ __('Create First User') }}
+                                                                </a>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="text-center py-5">
+                                            <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+                                            <h5 class="text-muted">{{ __('Access Restricted') }}</h5>
+                                            <p class="text-muted">{{ __('User management is available to administrators only.') }}</p>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -426,6 +551,40 @@
                                         <div class="col-md-6">
                                             <strong>{{ __('Database') }}:</strong> SQLite
                                         </div>
+
+                                        @if(auth()->user()->isSuperAdmin() || auth()->user()->role === 'admin')
+                                        <div class="col-12 mt-4">
+                                            <h6 class="text-primary">{{ __('User Management Statistics') }}</h6>
+                                        </div>
+                                        @php
+                                            $userStats = [
+                                                'total' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->count(),
+                                                'active' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->where('is_active', true)->count(),
+                                                'inactive' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->where('is_active', false)->count(),
+                                                'admins' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->where('role', 'admin')->count(),
+                                                'doctors' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->where('role', 'doctor')->count(),
+                                                'staff' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->whereIn('role', ['assistant', 'nurse', 'pharmacist', 'lab_dept', 'radiology_dept'])->count(),
+                                            ];
+                                        @endphp
+                                        <div class="col-md-4">
+                                            <div class="text-center p-3 bg-light rounded">
+                                                <h4 class="text-primary mb-1">{{ $userStats['total'] }}</h4>
+                                                <small class="text-muted">{{ __('Total Users') }}</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-center p-3 bg-light rounded">
+                                                <h4 class="text-success mb-1">{{ $userStats['active'] }}</h4>
+                                                <small class="text-muted">{{ __('Active Users') }}</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-center p-3 bg-light rounded">
+                                                <h4 class="text-warning mb-1">{{ $userStats['doctors'] }}</h4>
+                                                <small class="text-muted">{{ __('Doctors') }}</small>
+                                            </div>
+                                        </div>
+                                        @endif
 
                                         <div class="col-12 mt-4">
                                             <h6 class="text-primary">{{ __('Maintenance') }}</h6>
