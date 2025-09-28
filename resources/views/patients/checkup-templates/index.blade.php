@@ -79,7 +79,7 @@
                     <div class="row">
                         @foreach($recommendedTemplates->take(6) as $template)
                         <div class="col-md-4 mb-2">
-                            <button type="button" class="btn btn-outline-success btn-sm w-100" 
+                            <button type="button" class="btn btn-outline-success btn-sm w-100"
                                     onclick="assignRecommendedTemplate({{ $template->id }}, '{{ $template->name }}')">
                                 <i class="fas fa-plus me-1"></i>
                                 {{ $template->name }}
@@ -171,21 +171,21 @@
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button" class="btn btn-outline-info" 
+                                                <button type="button" class="btn btn-outline-info"
                                                         onclick="previewTemplate({{ $assignment->template->id }})" title="{{ __('Preview') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
-                                                <form action="{{ route('patients.checkup-templates.toggle', [$patient, $assignment]) }}" 
+                                                <form action="{{ route('patients.checkup-templates.toggle', [$patient, $assignment]) }}"
                                                       method="POST" class="d-inline">
                                                     @csrf
                                                     @method('PATCH')
-                                                    <button type="submit" class="btn btn-outline-{{ $assignment->is_active ? 'warning' : 'success' }}" 
+                                                    <button type="submit" class="btn btn-outline-{{ $assignment->is_active ? 'warning' : 'success' }}"
                                                             title="{{ $assignment->is_active ? __('Deactivate') : __('Activate') }}">
                                                         <i class="fas fa-{{ $assignment->is_active ? 'pause' : 'play' }}"></i>
                                                     </button>
                                                 </form>
-                                                <button type="button" class="btn btn-outline-danger" 
-                                                        onclick="confirmRemove({{ $assignment->id }}, '{{ $assignment->template->name }}')" 
+                                                <button type="button" class="btn btn-outline-danger"
+                                                        onclick="confirmRemove({{ $assignment->id }}, '{{ $assignment->template->name }}')"
                                                         title="{{ __('Remove') }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -229,11 +229,11 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="template_id" class="form-label">{{ __('Checkup Template') }} <span class="text-danger">*</span></label>
-                        <select class="form-select @error('template_id') is-invalid @enderror" 
+                        <select class="form-select @error('template_id') is-invalid @enderror"
                                 id="template_id" name="template_id" required onchange="updateTemplatePreview()">
                             <option value="">{{ __('Select template...') }}</option>
                             @foreach($availableTemplates as $template)
-                                <option value="{{ $template->id }}" 
+                                <option value="{{ $template->id }}"
                                         data-description="{{ $template->description }}"
                                         data-condition="{{ $template->medical_condition }}"
                                         data-specialty="{{ $template->specialty }}"
@@ -259,8 +259,8 @@
 
                     <div class="mb-3">
                         <label for="medical_condition" class="form-label">{{ __('Medical Condition') }}</label>
-                        <input type="text" class="form-control @error('medical_condition') is-invalid @enderror" 
-                               id="medical_condition" name="medical_condition" value="{{ old('medical_condition') }}" 
+                        <input type="text" class="form-control @error('medical_condition') is-invalid @enderror"
+                               id="medical_condition" name="medical_condition" value="{{ old('medical_condition') }}"
                                placeholder="{{ __('e.g., Type 2 Diabetes, Hypertension') }}">
                         @error('medical_condition')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -269,8 +269,8 @@
 
                     <div class="mb-3">
                         <label for="reason" class="form-label">{{ __('Reason for Assignment') }}</label>
-                        <textarea class="form-control @error('reason') is-invalid @enderror" 
-                                  id="reason" name="reason" rows="3" 
+                        <textarea class="form-control @error('reason') is-invalid @enderror"
+                                  id="reason" name="reason" rows="3"
                                   placeholder="{{ __('Why is this checkup template needed for this patient?') }}">{{ old('reason') }}</textarea>
                         @error('reason')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -296,7 +296,7 @@
 function assignRecommendedTemplate(templateId, templateName) {
     document.getElementById('template_id').value = templateId;
     updateTemplatePreview();
-    
+
     const modal = new bootstrap.Modal(document.getElementById('assignTemplateModal'));
     modal.show();
 }
@@ -306,7 +306,7 @@ function updateTemplatePreview() {
     const preview = document.getElementById('templatePreview');
     const content = document.getElementById('previewContent');
     const conditionInput = document.getElementById('medical_condition');
-    
+
     if (select.value) {
         const option = select.selectedOptions[0];
         const description = option.dataset.description;
@@ -314,20 +314,27 @@ function updateTemplatePreview() {
         const specialty = option.dataset.specialty;
         const fields = option.dataset.fields;
         const sections = option.dataset.sections;
-        
+
+        let metaHtml = '';
+        if (specialty) {
+            metaHtml += `<small class="text-muted">Specialty: ${specialty}</small>`;
+        }
+        // Only show counts if they are present (server-rendered options have them; AJAX-loaded may not)
+        if (fields !== undefined && sections !== undefined && fields !== '' && sections !== '') {
+            metaHtml += `${specialty ? '<br>' : ''}<small class=\"text-muted\">${fields} fields in ${sections} sections</small>`;
+        }
+
         content.innerHTML = `
             <strong>${option.text}</strong><br>
             ${description ? description + '<br>' : ''}
-            <small class="text-muted">
-                ${specialty ? 'Specialty: ' + specialty + '<br>' : ''}
-                ${fields} fields in ${sections} sections
-            </small>
+            ${metaHtml}
         `;
-        
+
         if (condition && !conditionInput.value) {
             conditionInput.value = condition;
+
         }
-        
+
         preview.style.display = 'block';
     } else {
         preview.style.display = 'none';
@@ -385,6 +392,7 @@ function showTemplatePreview(templateData) {
                 Object.keys(section.fields).forEach(fieldKey => {
                     const field = section.fields[fieldKey];
                     previewHtml += `
+
                         <div class="col-md-6 mb-3">
                             <label class="form-label">
                                 ${field.label || fieldKey}
@@ -451,24 +459,76 @@ function confirmRemove(assignmentId, templateName) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `{{ route('patients.checkup-templates.index', $patient) }}/${assignmentId}`;
-        
+
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';
         csrfToken.name = '_token';
         csrfToken.value = '{{ csrf_token() }}';
         form.appendChild(csrfToken);
-        
+
         const methodInput = document.createElement('input');
         methodInput.type = 'hidden';
         methodInput.name = '_method';
         methodInput.value = 'DELETE';
         form.appendChild(methodInput);
-        
+
         document.body.appendChild(form);
         form.submit();
     }
 }
 </script>
+<script>
+// Load templates dynamically when the Assign modal opens (ensures up-to-date list)
+(function(){
+  const modalEl = document.getElementById('assignTemplateModal');
+  if (!modalEl) return;
+  modalEl.addEventListener('shown.bs.modal', function(){
+    const select = document.getElementById('template_id');
+    if (!select) return;
+    // If options already loaded (beyond placeholder), skip
+    if (select.options.length > 1) return;
+
+    // Show loading option
+    select.innerHTML = `<option value="">Loading templates...</option>`;
+
+    fetch(`/patients/{{ $patient->id }}/checkup-templates/available`)
+      .then(r => {
+        if (!r.ok) throw new Error('Failed to load templates');
+        return r.json();
+      })
+      .then(list => {
+        // Rebuild options list
+        const frag = document.createDocumentFragment();
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = `{{ __('Select template...') }}`;
+        frag.appendChild(placeholder);
+
+        if (Array.isArray(list) && list.length > 0) {
+          list.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.name + (t.medical_condition ? ` - ${t.medical_condition}` : '');
+            opt.dataset.description = t.description || '';
+            opt.dataset.condition = t.medical_condition || '';
+            opt.dataset.specialty = t.specialty || '';
+            frag.appendChild(opt);
+          });
+        }
+
+        // Replace select contents
+        select.innerHTML = '';
+        select.appendChild(frag);
+      })
+      .catch(err => {
+        console.error('Error loading available templates:', err);
+        // Graceful fallback
+        select.innerHTML = `<option value=\"\">No templates found. Go to Settings > Checkup Templates to create one.</option>`;
+      });
+  });
+})();
+</script>
+
 <!-- Template Preview Modal -->
 <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
