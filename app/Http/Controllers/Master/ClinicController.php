@@ -222,20 +222,31 @@ class ClinicController extends Controller
      */
     public function destroy(Clinic $clinic)
     {
-        // Check if clinic has any data
-        $hasData = $clinic->patients()->exists() || 
-                   $clinic->prescriptions()->exists() || 
-                   $clinic->appointments()->exists();
+        // Check if clinic has any data that would prevent deletion
+        $hasData = $clinic->patients()->exists() ||
+                   $clinic->prescriptions()->exists() ||
+                   $clinic->appointments()->exists() ||
+                   $clinic->medicines()->exists() ||
+                   $clinic->labTests()->exists() ||
+                   $clinic->invoices()->exists() ||
+                   $clinic->expenses()->exists() ||
+                   $clinic->advertisements()->exists();
 
         if ($hasData) {
-            return back()->withErrors(['error' => 'Cannot delete clinic with existing data. Deactivate instead.']);
+            return back()->withErrors(['error' => 'Cannot delete clinic with existing data (patients, prescriptions, appointments, medicines, lab tests, invoices, expenses, or advertisements). Deactivate the clinic instead.']);
         }
 
         DB::beginTransaction();
         try {
-            // Delete all users first
+            // Delete related data that can be safely removed
+            $clinic->auditLogs()->delete();
+            $clinic->activationCodes()->delete();
+            $clinic->clinicSettings()->delete();
+            $clinic->communicationLogs()->delete();
+
+            // Delete all users
             $clinic->users()->delete();
-            
+
             // Delete the clinic
             $clinic->delete();
 
