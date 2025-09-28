@@ -236,26 +236,35 @@
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-calculator"></i> {{ __('Nutrition Calculator') }}
                     </h6>
+                    @if($food->serving_weight)
+                        <small class="text-muted">
+                            {{ __('1 serving') }} = {{ number_format($food->serving_weight, 1) }}g
+                            @if($food->serving_size)
+                                ({{ $food->serving_size }})
+                            @endif
+                        </small>
+                    @endif
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="quantity">{{ __('Quantity') }}</label>
-                                <input type="number" class="form-control" id="quantity" value="100" min="1" step="0.1">
+                                <input type="number" class="form-control" id="quantity" value="1" min="0.1" step="0.1">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="unit">{{ __('Unit') }}</label>
                                 <select class="form-control" id="unit">
+                                    <option value="serving" selected>{{ __('Serving') }}</option>
+                                    <option value="piece">{{ __('Piece') }}</option>
                                     <option value="g">{{ __('Grams (g)') }}</option>
                                     <option value="kg">{{ __('Kilograms (kg)') }}</option>
                                     <option value="mg">{{ __('Milligrams (mg)') }}</option>
                                     <option value="cup">{{ __('Cup') }}</option>
                                     <option value="tbsp">{{ __('Tablespoon') }}</option>
                                     <option value="tsp">{{ __('Teaspoon') }}</option>
-                                    <option value="serving">{{ __('Serving') }}</option>
                                 </select>
                             </div>
                         </div>
