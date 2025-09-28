@@ -57,7 +57,7 @@
                         <div class="form-group">
                             <label class="form-label">{{ __('Multilingual Names') }}</label>
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <label for="name_en" class="form-label small">{{ __('English') }}</label>
                                     <input type="text"
                                            class="form-control @error('name_en') is-invalid @enderror"
@@ -68,7 +68,7 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <label for="name_ar" class="form-label small">{{ __('Arabic') }}</label>
                                     <input type="text"
                                            class="form-control @error('name_ar') is-invalid @enderror"
@@ -80,7 +80,33 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-3">
+                            </div>
+                        </div>
+
+                        <!-- Food Group and Kurdish Names -->
+                        <div class="form-group">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label for="food_group_id" class="form-label">
+                                        {{ __('Food Group') }} <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-control @error('food_group_id') is-invalid @enderror"
+                                            id="food_group_id"
+                                            name="food_group_id"
+                                            required>
+                                        <option value="">{{ __('Select Food Group') }}</option>
+                                        @foreach($foodGroups as $group)
+                                            <option value="{{ $group->id }}"
+                                                    {{ old('food_group_id', $food->food_group_id) == $group->id ? 'selected' : '' }}>
+                                                {{ $group->translated_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('food_group_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-4">
                                     <label for="name_ku_bahdini" class="form-label small">{{ __('Kurdish Bahdini') }}</label>
                                     <input type="text"
                                            class="form-control @error('name_ku_bahdini') is-invalid @enderror"
@@ -91,7 +117,7 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <label for="name_ku_sorani" class="form-label small">{{ __('Kurdish Sorani') }}</label>
                                     <input type="text"
                                            class="form-control @error('name_ku_sorani') is-invalid @enderror"
@@ -103,27 +129,6 @@
                                     @enderror
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="food_group_id" class="form-label">
-                                {{ __('Food Group') }} <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-control @error('food_group_id') is-invalid @enderror" 
-                                    id="food_group_id" 
-                                    name="food_group_id" 
-                                    required>
-                                <option value="">{{ __('Select Food Group') }}</option>
-                                @foreach($foodGroups as $group)
-                                    <option value="{{ $group->id }}" 
-                                            {{ old('food_group_id', $food->food_group_id) == $group->id ? 'selected' : '' }}>
-                                        {{ $group->translated_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('food_group_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
                         </div>
 
                         <div class="form-group">
@@ -141,7 +146,7 @@
                         <div class="form-group">
                             <label class="form-label">{{ __('Multilingual Descriptions') }}</label>
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <label for="description_en" class="form-label small">{{ __('English') }}</label>
                                     <textarea class="form-control @error('description_en') is-invalid @enderror"
                                               id="description_en"
@@ -151,7 +156,7 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <label for="description_ar" class="form-label small">{{ __('Arabic') }}</label>
                                     <textarea class="form-control @error('description_ar') is-invalid @enderror"
                                               id="description_ar"
@@ -162,7 +167,9 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-3">
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-6">
                                     <label for="description_ku_bahdini" class="form-label small">{{ __('Kurdish Bahdini') }}</label>
                                     <textarea class="form-control @error('description_ku_bahdini') is-invalid @enderror"
                                               id="description_ku_bahdini"
@@ -172,7 +179,7 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <label for="description_ku_sorani" class="form-label small">{{ __('Kurdish Sorani') }}</label>
                                     <textarea class="form-control @error('description_ku_sorani') is-invalid @enderror"
                                               id="description_ku_sorani"
