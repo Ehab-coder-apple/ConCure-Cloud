@@ -116,12 +116,14 @@ class FoodController extends Controller
             'name' => 'required|string|max:255',
             'name_en' => 'nullable|string|max:255',
             'name_ar' => 'nullable|string|max:255',
-            'name_ku' => 'nullable|string|max:255',
+            'name_ku_bahdini' => 'nullable|string|max:255',
+            'name_ku_sorani' => 'nullable|string|max:255',
             'food_group_id' => 'required|exists:food_groups,id',
             'description' => 'nullable|string',
             'description_en' => 'nullable|string',
             'description_ar' => 'nullable|string',
-            'description_ku' => 'nullable|string',
+            'description_ku_bahdini' => 'nullable|string',
+            'description_ku_sorani' => 'nullable|string',
             'calories' => 'required|numeric|min:0|max:9999',
             'protein' => 'required|numeric|min:0|max:999',
             'carbohydrates' => 'required|numeric|min:0|max:999',
@@ -143,7 +145,7 @@ class FoodController extends Controller
         $nameTranslations = [];
         $descriptionTranslations = [];
 
-        foreach (['en', 'ar', 'ku'] as $locale) {
+        foreach (['en', 'ar', 'ku_bahdini', 'ku_sorani'] as $locale) {
             if ($request->filled("name_{$locale}")) {
                 $nameTranslations[$locale] = $request->input("name_{$locale}");
             }
@@ -229,12 +231,14 @@ class FoodController extends Controller
             'name' => 'required|string|max:255',
             'name_en' => 'nullable|string|max:255',
             'name_ar' => 'nullable|string|max:255',
-            'name_ku' => 'nullable|string|max:255',
+            'name_ku_bahdini' => 'nullable|string|max:255',
+            'name_ku_sorani' => 'nullable|string|max:255',
             'food_group_id' => 'required|exists:food_groups,id',
             'description' => 'nullable|string',
             'description_en' => 'nullable|string',
             'description_ar' => 'nullable|string',
-            'description_ku' => 'nullable|string',
+            'description_ku_bahdini' => 'nullable|string',
+            'description_ku_sorani' => 'nullable|string',
             'calories' => 'required|numeric|min:0|max:9999',
             'protein' => 'required|numeric|min:0|max:999',
             'carbohydrates' => 'required|numeric|min:0|max:999',
@@ -257,7 +261,7 @@ class FoodController extends Controller
         $nameTranslations = $food->name_translations ?? [];
         $descriptionTranslations = $food->description_translations ?? [];
 
-        foreach (['en', 'ar', 'ku'] as $locale) {
+        foreach (['en', 'ar', 'ku_bahdini', 'ku_sorani'] as $locale) {
             if ($request->filled("name_{$locale}")) {
                 $nameTranslations[$locale] = $request->input("name_{$locale}");
             }

@@ -56,37 +56,48 @@
                         <div class="form-group">
                             <label class="form-label">{{ __('Multilingual Names') }}</label>
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="name_en" class="form-label small">{{ __('English') }}</label>
-                                    <input type="text" 
-                                           class="form-control @error('name_en') is-invalid @enderror" 
-                                           id="name_en" 
-                                           name="name_en" 
+                                    <input type="text"
+                                           class="form-control @error('name_en') is-invalid @enderror"
+                                           id="name_en"
+                                           name="name_en"
                                            value="{{ old('name_en') }}">
                                     @error('name_en')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="name_ar" class="form-label small">{{ __('Arabic') }}</label>
-                                    <input type="text" 
-                                           class="form-control @error('name_ar') is-invalid @enderror" 
-                                           id="name_ar" 
-                                           name="name_ar" 
-                                           value="{{ old('name_ar') }}" 
+                                    <input type="text"
+                                           class="form-control @error('name_ar') is-invalid @enderror"
+                                           id="name_ar"
+                                           name="name_ar"
+                                           value="{{ old('name_ar') }}"
                                            dir="rtl">
                                     @error('name_ar')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-4">
-                                    <label for="name_ku" class="form-label small">{{ __('Kurdish') }}</label>
-                                    <input type="text" 
-                                           class="form-control @error('name_ku') is-invalid @enderror" 
-                                           id="name_ku" 
-                                           name="name_ku" 
-                                           value="{{ old('name_ku') }}">
-                                    @error('name_ku')
+                                <div class="col-md-3">
+                                    <label for="name_ku_bahdini" class="form-label small">{{ __('Kurdish Bahdini') }}</label>
+                                    <input type="text"
+                                           class="form-control @error('name_ku_bahdini') is-invalid @enderror"
+                                           id="name_ku_bahdini"
+                                           name="name_ku_bahdini"
+                                           value="{{ old('name_ku_bahdini') }}">
+                                    @error('name_ku_bahdini')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="name_ku_sorani" class="form-label small">{{ __('Kurdish Sorani') }}</label>
+                                    <input type="text"
+                                           class="form-control @error('name_ku_sorani') is-invalid @enderror"
+                                           id="name_ku_sorani"
+                                           name="name_ku_sorani"
+                                           value="{{ old('name_ku_sorani') }}">
+                                    @error('name_ku_sorani')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -128,34 +139,44 @@
                         <div class="form-group">
                             <label class="form-label">{{ __('Multilingual Descriptions') }}</label>
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="description_en" class="form-label small">{{ __('English') }}</label>
-                                    <textarea class="form-control @error('description_en') is-invalid @enderror" 
-                                              id="description_en" 
-                                              name="description_en" 
+                                    <textarea class="form-control @error('description_en') is-invalid @enderror"
+                                              id="description_en"
+                                              name="description_en"
                                               rows="2">{{ old('description_en') }}</textarea>
                                     @error('description_en')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="description_ar" class="form-label small">{{ __('Arabic') }}</label>
-                                    <textarea class="form-control @error('description_ar') is-invalid @enderror" 
-                                              id="description_ar" 
-                                              name="description_ar" 
-                                              rows="2" 
+                                    <textarea class="form-control @error('description_ar') is-invalid @enderror"
+                                              id="description_ar"
+                                              name="description_ar"
+                                              rows="2"
                                               dir="rtl">{{ old('description_ar') }}</textarea>
                                     @error('description_ar')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-4">
-                                    <label for="description_ku" class="form-label small">{{ __('Kurdish') }}</label>
-                                    <textarea class="form-control @error('description_ku') is-invalid @enderror" 
-                                              id="description_ku" 
-                                              name="description_ku" 
-                                              rows="2">{{ old('description_ku') }}</textarea>
-                                    @error('description_ku')
+                                <div class="col-md-3">
+                                    <label for="description_ku_bahdini" class="form-label small">{{ __('Kurdish Bahdini') }}</label>
+                                    <textarea class="form-control @error('description_ku_bahdini') is-invalid @enderror"
+                                              id="description_ku_bahdini"
+                                              name="description_ku_bahdini"
+                                              rows="2">{{ old('description_ku_bahdini') }}</textarea>
+                                    @error('description_ku_bahdini')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="description_ku_sorani" class="form-label small">{{ __('Kurdish Sorani') }}</label>
+                                    <textarea class="form-control @error('description_ku_sorani') is-invalid @enderror"
+                                              id="description_ku_sorani"
+                                              name="description_ku_sorani"
+                                              rows="2">{{ old('description_ku_sorani') }}</textarea>
+                                    @error('description_ku_sorani')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
