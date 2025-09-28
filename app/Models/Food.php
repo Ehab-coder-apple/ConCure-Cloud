@@ -230,7 +230,7 @@ class Food extends Model
     /**
      * Convert quantity to grams.
      */
-    private function convertToGrams(float $quantity, string $unit): float
+    public function convertToGrams(float $quantity, string $unit): float
     {
         return match($unit) {
             'kg' => $quantity * 1000,

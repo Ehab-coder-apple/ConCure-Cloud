@@ -247,16 +247,16 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="quantity">{{ __('Quantity') }}</label>
-                                <input type="number" class="form-control" id="quantity" value="1" min="0.1" step="0.1">
+                                <input type="number" class="form-control" id="quantity" value="1" min="0.1" step="0.1" onchange="updateWeightPreview()" oninput="updateWeightPreview()">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="unit">{{ __('Unit') }}</label>
-                                <select class="form-control" id="unit">
+                                <select class="form-control" id="unit" onchange="updateWeightPreview()">
                                     <option value="serving" selected>{{ __('Serving') }}</option>
                                     <option value="piece">{{ __('Piece') }}</option>
                                     <option value="g">{{ __('Grams (g)') }}</option>
@@ -266,6 +266,14 @@
                                     <option value="tbsp">{{ __('Tablespoon') }}</option>
                                     <option value="tsp">{{ __('Teaspoon') }}</option>
                                 </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>{{ __('Total Weight') }}</label>
+                                <div class="form-control-plaintext bg-light border rounded px-3 py-2">
+                                    <strong id="weightPreview">{{ number_format($food->serving_weight ?? 10, 1) }}g</strong>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -343,21 +351,67 @@ function calculateNutrition() {
     .then(data => {
         if (data.success) {
             const nutrition = data.nutrition;
+            const totalWeight = data.total_weight_grams;
+            const quantity = data.food.quantity;
+            const unit = data.food.unit;
+
             valuesDiv.innerHTML = `
-                <div class="row">
-                    <div class="col-md-3">
-                        <strong>{{ __('Calories') }}:</strong> ${nutrition.calories}
-                    </div>
-                    <div class="col-md-3">
-                        <strong>{{ __('Protein') }}:</strong> ${nutrition.protein}g
-                    </div>
-                    <div class="col-md-3">
-                        <strong>{{ __('Carbs') }}:</strong> ${nutrition.carbohydrates}g
-                    </div>
-                    <div class="col-md-3">
-                        <strong>{{ __('Fat') }}:</strong> ${nutrition.fat}g
+                <div class="mb-3">
+                    <div class="alert alert-light border">
+                        <strong>{{ __('Total Weight') }}:</strong> ${totalWeight}g
+                        <small class="text-muted">(${quantity} ${unit})</small>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center p-2 border rounded">
+                            <strong class="text-primary">${nutrition.calories}</strong><br>
+                            <small class="text-muted">{{ __('Calories') }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-2 border rounded">
+                            <strong class="text-success">${nutrition.protein}g</strong><br>
+                            <small class="text-muted">{{ __('Protein') }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-2 border rounded">
+                            <strong class="text-warning">${nutrition.carbohydrates}g</strong><br>
+                            <small class="text-muted">{{ __('Carbs') }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-2 border rounded">
+                            <strong class="text-info">${nutrition.fat}g</strong><br>
+                            <small class="text-muted">{{ __('Fat') }}</small>
+                        </div>
+                    </div>
+                </div>
+                ${nutrition.fiber || nutrition.sugar || nutrition.sodium ? `
+                <div class="row mt-3">
+                    ${nutrition.fiber ? `
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-between">
+                            <span>{{ __('Fiber') }}:</span>
+                            <strong>${nutrition.fiber}g</strong>
+                        </div>
+                    </div>` : ''}
+                    ${nutrition.sugar ? `
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-between">
+                            <span>{{ __('Sugar') }}:</span>
+                            <strong>${nutrition.sugar}g</strong>
+                        </div>
+                    </div>` : ''}
+                    ${nutrition.sodium ? `
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-between">
+                            <span>{{ __('Sodium') }}:</span>
+                            <strong>${nutrition.sodium}mg</strong>
+                        </div>
+                    </div>` : ''}
+                </div>` : ''}
             `;
         } else {
             valuesDiv.innerHTML = '<span class="text-danger">{{ __("Error calculating nutrition") }}</span>';
@@ -368,5 +422,52 @@ function calculateNutrition() {
         valuesDiv.innerHTML = '<span class="text-danger">{{ __("Error calculating nutrition") }}</span>';
     });
 }
+
+function updateWeightPreview() {
+    const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+    const unit = document.getElementById('unit').value;
+
+    // Food data from server
+    const servingWeight = {{ $food->serving_weight ?? 10 }};
+    const gramsPerPiece = {{ $food->grams_per_piece ?? ($food->serving_weight ?? 10) }};
+
+    let totalWeight = 0;
+
+    switch(unit) {
+        case 'kg':
+            totalWeight = quantity * 1000;
+            break;
+        case 'g':
+            totalWeight = quantity;
+            break;
+        case 'mg':
+            totalWeight = quantity / 1000;
+            break;
+        case 'cup':
+            totalWeight = quantity * 240; // Approximate
+            break;
+        case 'tbsp':
+            totalWeight = quantity * 15;
+            break;
+        case 'tsp':
+            totalWeight = quantity * 5;
+            break;
+        case 'serving':
+            totalWeight = quantity * servingWeight;
+            break;
+        case 'piece':
+            totalWeight = quantity * gramsPerPiece;
+            break;
+        default:
+            totalWeight = quantity; // Assume grams
+    }
+
+    document.getElementById('weightPreview').textContent = totalWeight.toFixed(1) + 'g';
+}
+
+// Initialize weight preview on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateWeightPreview();
+});
 </script>
 @endpush

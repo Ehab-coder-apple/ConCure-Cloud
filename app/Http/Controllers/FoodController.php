@@ -402,6 +402,9 @@ class FoodController extends Controller
 
         $nutrition = $food->calculateNutrition($request->quantity, $request->unit);
 
+        // Calculate total weight in grams
+        $totalWeightInGrams = $food->convertToGrams($request->quantity, $request->unit);
+
         return response()->json([
             'success' => true,
             'nutrition' => $nutrition,
@@ -409,6 +412,13 @@ class FoodController extends Controller
                 'name' => $food->translated_name,
                 'quantity' => $request->quantity,
                 'unit' => $request->unit,
+            ],
+            'total_weight_grams' => round($totalWeightInGrams, 1),
+            'calculation_info' => [
+                'serving_weight' => $food->serving_weight,
+                'grams_per_piece' => $food->grams_per_piece,
+                'unit_used' => $request->unit,
+                'quantity_used' => $request->quantity,
             ]
         ]);
     }
