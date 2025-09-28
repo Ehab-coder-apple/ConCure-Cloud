@@ -245,6 +245,13 @@
                                 </option>
                             @endforeach
                         </select>
+                        <div id="templateEmptyHint" class="form-text mt-1" style="display:none;">
+                            {{ __('No templates found.') }}
+                            <a href="{{ route('admin.checkup-templates.create') }}" target="_blank">
+                                {{ __('Create a new checkup template') }}
+                            </a>
+                        </div>
+
                         @error('template_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -504,6 +511,7 @@ function confirmRemove(assignmentId, templateName) {
         placeholder.textContent = `{{ __('Select template...') }}`;
         frag.appendChild(placeholder);
 
+        const emptyHint = document.getElementById('templateEmptyHint');
         if (Array.isArray(list) && list.length > 0) {
           list.forEach(t => {
             const opt = document.createElement('option');
@@ -512,8 +520,13 @@ function confirmRemove(assignmentId, templateName) {
             opt.dataset.description = t.description || '';
             opt.dataset.condition = t.medical_condition || '';
             opt.dataset.specialty = t.specialty || '';
+            if (typeof t.fields_count !== 'undefined') opt.dataset.fields = t.fields_count;
+            if (typeof t.sections_count !== 'undefined') opt.dataset.sections = t.sections_count;
             frag.appendChild(opt);
           });
+          if (emptyHint) emptyHint.style.display = 'none';
+        } else {
+          if (emptyHint) emptyHint.style.display = '';
         }
 
         // Replace select contents
@@ -523,7 +536,9 @@ function confirmRemove(assignmentId, templateName) {
       .catch(err => {
         console.error('Error loading available templates:', err);
         // Graceful fallback
-        select.innerHTML = `<option value=\"\">No templates found. Go to Settings > Checkup Templates to create one.</option>`;
+        select.innerHTML = `<option value=\"\">No templates found</option>`;
+        const emptyHint = document.getElementById('templateEmptyHint');
+        if (emptyHint) emptyHint.style.display = '';
       });
   });
 })();

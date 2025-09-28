@@ -202,9 +202,23 @@ class PatientCheckupTemplateController extends Controller
                                                   ->whereNotIn('id', $assignedIds)
                                                   ->orderBy('medical_condition')
                                                   ->orderBy('name')
-                                                  ->get(['id', 'name', 'description', 'medical_condition', 'specialty', 'checkup_type']);
+                                                  ->get();
 
-        return response()->json($availableTemplates);
+        // Include computed counts for preview convenience
+        $payload = $availableTemplates->map(function ($t) {
+            return [
+                'id' => $t->id,
+                'name' => $t->name,
+                'description' => $t->description,
+                'medical_condition' => $t->medical_condition,
+                'specialty' => $t->specialty,
+                'checkup_type' => $t->checkup_type,
+                'fields_count' => $t->fields_count,
+                'sections_count' => $t->sections_count,
+            ];
+        });
+
+        return response()->json($payload);
     }
 
     /**
