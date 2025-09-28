@@ -55,6 +55,59 @@ class UserController extends Controller
     }
 
     /**
+     * Show the form for creating a new user.
+     */
+    public function create()
+    {
+        $clinics = Clinic::where('is_active', true)->orderBy('name')->get();
+        $availableRoles = ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'assistant', 'nurse', 'accountant'];
+
+        return view('master.users.create', compact('clinics', 'availableRoles'));
+    }
+
+    /**
+     * Store a newly created user in storage.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users',
+            'email' => 'required|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:20',
+            'title_prefix' => 'nullable|string|max:100',
+            'role' => 'required|in:admin,doctor,nutritionist,pharmacist,lab_dept,radiology_dept,assistant,nurse,accountant',
+            'clinic_id' => 'required|exists:clinics,id',
+            'is_active' => 'boolean',
+            'language' => 'required|in:en,ar,ku',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string',
+        ]);
+
+        $user = User::create([
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'phone' => $request->phone,
+            'title_prefix' => $request->title_prefix,
+            'role' => $request->role,
+            'is_active' => $request->boolean('is_active', true),
+            'activated_at' => now(),
+            'language' => $request->language,
+            'permissions' => $request->input('permissions', []),
+            'clinic_id' => $request->clinic_id,
+            'created_by' => auth()->id(),
+        ]);
+
+        return redirect()->route('master.users.index')
+            ->with('success', 'User created successfully.');
+    }
+
+    /**
      * Display the specified user.
      */
     public function show(User $user)
@@ -76,6 +129,72 @@ class UserController extends Controller
         ];
 
         return view('master.users.show', compact('user', 'stats'));
+    }
+
+    /**
+     * Show the form for editing the specified user.
+     */
+    public function edit(User $user)
+    {
+        // Prevent editing super admin users
+        if ($user->isSuperAdmin()) {
+            abort(403, 'Access denied.');
+        }
+
+        $clinics = Clinic::where('is_active', true)->orderBy('name')->get();
+        $availableRoles = ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'assistant', 'nurse', 'accountant'];
+
+        return view('master.users.edit', compact('user', 'clinics', 'availableRoles'));
+    }
+
+    /**
+     * Update the specified user in storage.
+     */
+    public function update(Request $request, User $user)
+    {
+        // Prevent updating super admin users
+        if ($user->isSuperAdmin()) {
+            abort(403, 'Access denied.');
+        }
+
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:20',
+            'title_prefix' => 'nullable|string|max:100',
+            'role' => 'required|in:admin,doctor,nutritionist,pharmacist,lab_dept,radiology_dept,assistant,nurse,accountant',
+            'clinic_id' => 'required|exists:clinics,id',
+            'is_active' => 'boolean',
+            'language' => 'required|in:en,ar,ku',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string',
+        ]);
+
+        $updateData = [
+            'username' => $request->username,
+            'email' => $request->email,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'phone' => $request->phone,
+            'title_prefix' => $request->title_prefix,
+            'role' => $request->role,
+            'is_active' => $request->boolean('is_active', true),
+            'language' => $request->language,
+            'permissions' => $request->input('permissions', []),
+            'clinic_id' => $request->clinic_id,
+        ];
+
+        if ($request->filled('password')) {
+            $updateData['password'] = bcrypt($request->password);
+        }
+
+        $user->update($updateData);
+
+        return redirect()->route('master.users.show', $user)
+            ->with('success', 'User updated successfully.');
     }
 
     /**

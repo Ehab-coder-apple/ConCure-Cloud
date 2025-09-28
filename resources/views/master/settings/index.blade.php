@@ -32,6 +32,80 @@
         </div>
       </div>
 
+      <div class="card shadow-sm mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-users me-2"></i>User Management
+          </h6>
+        </div>
+        <div class="card-body">
+          <p class="text-muted mb-3">Create and manage users across all clinics with custom permissions.</p>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <div class="card border-primary">
+                <div class="card-body text-center">
+                  <i class="fas fa-user-plus fa-2x text-primary mb-2"></i>
+                  <h6 class="card-title">Create New User</h6>
+                  <p class="card-text text-muted small">Add new users with custom roles and permissions</p>
+                  <a href="{{ route('master.users.create') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Create User
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="card border-success">
+                <div class="card-body text-center">
+                  <i class="fas fa-users-cog fa-2x text-success mb-2"></i>
+                  <h6 class="card-title">Manage Users</h6>
+                  <p class="card-text text-muted small">View, edit, and manage all system users</p>
+                  <a href="{{ route('master.users.index') }}" class="btn btn-success btn-sm">
+                    <i class="fas fa-users me-1"></i>Manage Users
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          @php
+            $userStats = [
+              'total' => \App\Models\User::count(),
+              'active' => \App\Models\User::where('is_active', true)->count(),
+              'admins' => \App\Models\User::where('role', 'admin')->count(),
+              'doctors' => \App\Models\User::where('role', 'doctor')->count(),
+            ];
+          @endphp
+
+          <div class="row mt-3">
+            <div class="col-md-3">
+              <div class="text-center p-2 bg-light rounded">
+                <h5 class="text-primary mb-1">{{ $userStats['total'] }}</h5>
+                <small class="text-muted">Total Users</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center p-2 bg-light rounded">
+                <h5 class="text-success mb-1">{{ $userStats['active'] }}</h5>
+                <small class="text-muted">Active Users</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center p-2 bg-light rounded">
+                <h5 class="text-warning mb-1">{{ $userStats['admins'] }}</h5>
+                <small class="text-muted">Admins</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center p-2 bg-light rounded">
+                <h5 class="text-info mb-1">{{ $userStats['doctors'] }}</h5>
+                <small class="text-muted">Doctors</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="card shadow-sm">
         <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Subscriptions</h6></div>
         <div class="card-body">
