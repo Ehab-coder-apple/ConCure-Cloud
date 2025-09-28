@@ -21,11 +21,11 @@ class SuperAdminAuth
             return redirect()->route('master.login');
         }
 
-        // Check if user is super admin
-        if (!Auth::user()->isSuperAdmin()) {
+        // Check if user can access master dashboard (super admin or master admin)
+        if (!Auth::user()->canAccessMasterDashboard()) {
             Auth::logout();
             return redirect()->route('master.login')->withErrors([
-                'email' => 'Access denied. Super admin privileges required.'
+                'email' => 'Access denied. Master dashboard privileges required.'
             ]);
         }
 

@@ -70,6 +70,7 @@ class User extends Authenticatable
      */
     const ROLES = [
         'super_admin' => 'Super Admin',
+        'master_admin' => 'Master Admin',
         'admin' => 'Admin',
         'doctor' => 'Doctor',
         'nutritionist' => 'Nutritionist',
@@ -80,6 +81,22 @@ class User extends Authenticatable
         'nurse' => 'Nurse',
         'accountant' => 'Accountant',
         'patient' => 'Patient',
+    ];
+
+    /**
+     * Master-level permissions
+     */
+    const MASTER_PERMISSIONS = [
+        'manage_clinics' => 'Manage Clinics',
+        'create_clinic' => 'Create Clinics',
+        'activate_clinic' => 'Activate/Deactivate Clinics',
+        'manage_subscriptions' => 'Manage Subscriptions',
+        'create_invoice' => 'Create Invoices',
+        'manage_payments' => 'Manage Payments',
+        'view_reports' => 'View Reports',
+        'manage_plans' => 'Manage Subscription Plans',
+        'system_maintenance' => 'System Maintenance',
+        'view_audit_logs' => 'View Audit Logs',
     ];
 
     /**
@@ -193,6 +210,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is a master admin.
+     */
+    public function isMasterAdmin(): bool
+    {
+        return $this->role === 'master_admin';
+    }
+
+    /**
      * Check if user is a clinic admin.
      */
     public function isClinicAdmin(): bool
@@ -205,7 +230,7 @@ class User extends Authenticatable
      */
     public function canAccessMasterDashboard(): bool
     {
-        return $this->isSuperAdmin();
+        return $this->isSuperAdmin() || $this->isMasterAdmin();
     }
 
     /**
@@ -213,7 +238,15 @@ class User extends Authenticatable
      */
     public function canManageAllClinics(): bool
     {
-        return $this->isSuperAdmin();
+        return $this->isSuperAdmin() || ($this->isMasterAdmin() && $this->hasPermission('manage_clinics'));
+    }
+
+    /**
+     * Check if user is a master-level user (super admin or master admin).
+     */
+    public function isMasterUser(): bool
+    {
+        return $this->isSuperAdmin() || $this->isMasterAdmin();
     }
 
     /**
@@ -451,8 +484,13 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permission): bool
     {
-        // Admins and Super Admins have full access within their scope
-        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+        // Super Admins have full access to everything
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Clinic Admins have full access within their clinic scope
+        if ($this->isClinicAdmin()) {
             return true;
         }
 
@@ -461,6 +499,7 @@ class User extends Authenticatable
             return true;
         }
 
+        // Master Admins and other users check their specific permissions
         $permissions = $this->permissions ?? [];
         return in_array($permission, $permissions);
     }

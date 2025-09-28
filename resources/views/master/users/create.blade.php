@@ -1,13 +1,13 @@
 @extends('master.layouts.app')
 
-@section('title', 'Create New User')
+@section('title', 'Create Master User')
 
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">
             <i class="fas fa-user-plus text-primary me-2"></i>
-            Create New User
+            Create Master User
         </h1>
         <a href="{{ route('master.users.index') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-1"></i>
@@ -31,7 +31,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-user-circle me-2"></i>
-                        User Information
+                        Master User Information
                     </h6>
                 </div>
                 <div class="card-body">
@@ -162,30 +162,43 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="clinic_id" class="form-label">Clinic <span class="text-danger">*</span></label>
-                                    <select class="form-select @error('clinic_id') is-invalid @enderror" id="clinic_id" name="clinic_id" required>
-                                        <option value="">Select Clinic</option>
-                                        @foreach($clinics as $clinic)
-                                            <option value="{{ $clinic->id }}" {{ old('clinic_id') == $clinic->id ? 'selected' : '' }}>
-                                                {{ $clinic->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('clinic_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
                             <div class="col-12">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" 
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1"
                                            {{ old('is_active', true) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="is_active">
                                         Active User
                                     </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Master Permissions -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-shield-alt me-2"></i>
+                                    Master Permissions
+                                </h6>
+                                <p class="text-muted small mb-3">Select the permissions this master user should have. Super admins have all permissions by default.</p>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="row">
+                                    @foreach($masterPermissions as $permission => $label)
+                                        <div class="col-md-6 mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                       id="permission_{{ $permission }}"
+                                                       name="permissions[]"
+                                                       value="{{ $permission }}"
+                                                       {{ in_array($permission, old('permissions', [])) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="permission_{{ $permission }}">
+                                                    {{ $label }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
                         </div>
@@ -199,7 +212,7 @@
                                     </a>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save me-1"></i>
-                                        Create User
+                                        Create Master User
                                     </button>
                                 </div>
                             </div>

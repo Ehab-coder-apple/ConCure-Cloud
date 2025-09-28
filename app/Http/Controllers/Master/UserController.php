@@ -10,11 +10,11 @@ use App\Models\Clinic;
 class UserController extends Controller
 {
     /**
-     * Display a listing of users.
+     * Display a listing of master users.
      */
     public function index(Request $request)
     {
-        $query = User::with('clinic')->where('role', '!=', 'super_admin');
+        $query = User::where('role', 'master_admin');
 
         // Search functionality
         if ($request->filled('search')) {
@@ -27,16 +27,6 @@ class UserController extends Controller
             });
         }
 
-        // Role filter
-        if ($request->filled('role')) {
-            $query->where('role', $request->role);
-        }
-
-        // Clinic filter
-        if ($request->filled('clinic_id')) {
-            $query->where('clinic_id', $request->clinic_id);
-        }
-
         // Status filter
         if ($request->filled('status')) {
             if ($request->status === 'active') {
@@ -47,26 +37,23 @@ class UserController extends Controller
         }
 
         $users = $query->latest()->paginate(20);
-        $clinics = Clinic::orderBy('name')->get();
-        $roles = User::ROLES;
-        unset($roles['super_admin']); // Remove super_admin from filter options
 
-        return view('master.users.index', compact('users', 'clinics', 'roles'));
+        return view('master.users.index', compact('users'));
     }
 
     /**
-     * Show the form for creating a new user.
+     * Show the form for creating a new master user.
      */
     public function create()
     {
-        $clinics = Clinic::where('is_active', true)->orderBy('name')->get();
-        $availableRoles = ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'assistant', 'nurse', 'accountant'];
+        $availableRoles = ['master_admin'];
+        $masterPermissions = User::MASTER_PERMISSIONS;
 
-        return view('master.users.create', compact('clinics', 'availableRoles'));
+        return view('master.users.create', compact('availableRoles', 'masterPermissions'));
     }
 
     /**
-     * Store a newly created user in storage.
+     * Store a newly created master user in storage.
      */
     public function store(Request $request)
     {
@@ -78,12 +65,11 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'nullable|string|max:20',
             'title_prefix' => 'nullable|string|max:100',
-            'role' => 'required|in:admin,doctor,nutritionist,pharmacist,lab_dept,radiology_dept,assistant,nurse,accountant',
-            'clinic_id' => 'required|exists:clinics,id',
+            'role' => 'required|in:master_admin',
             'is_active' => 'boolean',
             'language' => 'required|in:en,ar,ku',
             'permissions' => 'nullable|array',
-            'permissions.*' => 'string',
+            'permissions.*' => 'string|in:' . implode(',', array_keys(User::MASTER_PERMISSIONS)),
         ]);
 
         $user = User::create([
@@ -99,12 +85,12 @@ class UserController extends Controller
             'activated_at' => now(),
             'language' => $request->language,
             'permissions' => $request->input('permissions', []),
-            'clinic_id' => $request->clinic_id,
+            'clinic_id' => null, // Master users don't belong to any clinic
             'created_by' => auth()->id(),
         ]);
 
         return redirect()->route('master.users.index')
-            ->with('success', 'User created successfully.');
+            ->with('success', 'Master user created successfully.');
     }
 
     /**
@@ -132,7 +118,7 @@ class UserController extends Controller
     }
 
     /**
-     * Show the form for editing the specified user.
+     * Show the form for editing the specified master user.
      */
     public function edit(User $user)
     {
@@ -141,20 +127,30 @@ class UserController extends Controller
             abort(403, 'Access denied.');
         }
 
-        $clinics = Clinic::where('is_active', true)->orderBy('name')->get();
-        $availableRoles = ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'assistant', 'nurse', 'accountant'];
+        // Only allow editing master users
+        if (!$user->isMasterAdmin()) {
+            abort(403, 'Access denied. Only master users can be edited here.');
+        }
 
-        return view('master.users.edit', compact('user', 'clinics', 'availableRoles'));
+        $availableRoles = ['master_admin'];
+        $masterPermissions = User::MASTER_PERMISSIONS;
+
+        return view('master.users.edit', compact('user', 'availableRoles', 'masterPermissions'));
     }
 
     /**
-     * Update the specified user in storage.
+     * Update the specified master user in storage.
      */
     public function update(Request $request, User $user)
     {
         // Prevent updating super admin users
         if ($user->isSuperAdmin()) {
             abort(403, 'Access denied.');
+        }
+
+        // Only allow updating master users
+        if (!$user->isMasterAdmin()) {
+            abort(403, 'Access denied. Only master users can be updated here.');
         }
 
         $request->validate([
@@ -165,12 +161,11 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'phone' => 'nullable|string|max:20',
             'title_prefix' => 'nullable|string|max:100',
-            'role' => 'required|in:admin,doctor,nutritionist,pharmacist,lab_dept,radiology_dept,assistant,nurse,accountant',
-            'clinic_id' => 'required|exists:clinics,id',
+            'role' => 'required|in:master_admin',
             'is_active' => 'boolean',
             'language' => 'required|in:en,ar,ku',
             'permissions' => 'nullable|array',
-            'permissions.*' => 'string',
+            'permissions.*' => 'string|in:' . implode(',', array_keys(User::MASTER_PERMISSIONS)),
         ]);
 
         $updateData = [
@@ -184,7 +179,7 @@ class UserController extends Controller
             'is_active' => $request->boolean('is_active', true),
             'language' => $request->language,
             'permissions' => $request->input('permissions', []),
-            'clinic_id' => $request->clinic_id,
+            'clinic_id' => null, // Master users don't belong to any clinic
         ];
 
         if ($request->filled('password')) {
@@ -194,7 +189,7 @@ class UserController extends Controller
         $user->update($updateData);
 
         return redirect()->route('master.users.show', $user)
-            ->with('success', 'User updated successfully.');
+            ->with('success', 'Master user updated successfully.');
     }
 
     /**

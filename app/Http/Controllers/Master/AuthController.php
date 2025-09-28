@@ -45,10 +45,10 @@ class AuthController extends Controller
             ]);
         }
 
-        // Check if user is super admin
-        if (!$user->isSuperAdmin()) {
+        // Check if user can access master dashboard
+        if (!$user->canAccessMasterDashboard()) {
             throw ValidationException::withMessages([
-                'email' => ['Access denied. Super admin privileges required.'],
+                'email' => ['Access denied. Master dashboard privileges required.'],
             ]);
         }
 
