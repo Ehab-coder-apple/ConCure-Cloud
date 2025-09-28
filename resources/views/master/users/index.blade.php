@@ -1,6 +1,6 @@
 @extends('master.layouts.app')
 
-@section('title', 'User Management')
+@section('title', 'Master User Management')
 
 @section('content')
 <div class="container-fluid">
@@ -11,10 +11,14 @@
                 <div>
                     <h1 class="h3 mb-0">
                         <i class="fas fa-users me-2"></i>
-                        User Management
+                        Master User Management
                     </h1>
-                    <p class="text-muted mb-0">Manage all users across all clinics</p>
+                    <p class="text-muted mb-0">Manage master-level users with system administration permissions</p>
                 </div>
+                <a href="{{ route('master.users.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>
+                    Create Master User
+                </a>
             </div>
         </div>
     </div>
@@ -24,38 +28,16 @@
         <div class="card-body">
             <form method="GET" action="{{ route('master.users.index') }}">
                 <div class="row g-3">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label for="search" class="form-label">Search</label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="search" 
-                               name="search" 
-                               value="{{ request('search') }}" 
+                        <input type="text"
+                               class="form-control"
+                               id="search"
+                               name="search"
+                               value="{{ request('search') }}"
                                placeholder="Search by name, email, or username">
                     </div>
-                    <div class="col-md-2">
-                        <label for="role" class="form-label">Role</label>
-                        <select class="form-select" id="role" name="role">
-                            <option value="">All Roles</option>
-                            @foreach($roles as $key => $label)
-                                <option value="{{ $key }}" {{ request('role') === $key ? 'selected' : '' }}>
-                                    {{ $label }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
                     <div class="col-md-3">
-                        <label for="clinic_id" class="form-label">Clinic</label>
-                        <select class="form-select" id="clinic_id" name="clinic_id">
-                            <option value="">All Clinics</option>
-                            @foreach($clinics as $clinic)
-                                <option value="{{ $clinic->id }}" {{ request('clinic_id') == $clinic->id ? 'selected' : '' }}>
-                                    {{ $clinic->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
                         <label for="status" class="form-label">Status</label>
                         <select class="form-select" id="status" name="status">
                             <option value="">All Statuses</option>
@@ -63,7 +45,7 @@
                             <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label class="form-label">&nbsp;</label>
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-outline-primary">
@@ -85,7 +67,7 @@
     <div class="card">
         <div class="card-header">
             <h6 class="m-0 font-weight-bold text-primary">
-                System Users ({{ $users->total() }})
+                Master Users ({{ $users->total() }})
             </h6>
         </div>
         <div class="card-body">
@@ -95,8 +77,8 @@
                         <thead>
                             <tr>
                                 <th>User</th>
-                                <th>Clinic</th>
                                 <th>Role</th>
+                                <th>Permissions</th>
                                 <th>Status</th>
                                 <th>Created</th>
                                 <th>Actions</th>
@@ -107,8 +89,8 @@
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="icon-circle bg-{{ $user->role === 'admin' ? 'primary' : 'info' }} me-3">
-                                                <i class="fas fa-user text-white"></i>
+                                            <div class="icon-circle bg-primary me-3">
+                                                <i class="fas fa-user-shield text-white"></i>
                                             </div>
                                             <div>
                                                 <div class="font-weight-bold">{{ $user->full_name }}</div>
@@ -118,17 +100,27 @@
                                         </div>
                                     </td>
                                     <td>
-                                        @if($user->clinic)
-                                            <div class="font-weight-bold">{{ $user->clinic->name }}</div>
-                                            <div class="text-muted small">ID: {{ $user->clinic->id }}</div>
-                                        @else
-                                            <span class="text-muted">No Clinic</span>
-                                        @endif
+                                        <span class="badge bg-primary">
+                                            {{ ucfirst(str_replace('_', ' ', $user->role)) }}
+                                        </span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-{{ $user->role === 'admin' ? 'primary' : ($user->role === 'doctor' ? 'success' : 'secondary') }}">
-                                            {{ ucfirst($user->role) }}
-                                        </span>
+                                        @if($user->permissions && count($user->permissions) > 0)
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @foreach(array_slice($user->permissions, 0, 3) as $permission)
+                                                    <span class="badge bg-secondary small">
+                                                        {{ ucfirst(str_replace('_', ' ', $permission)) }}
+                                                    </span>
+                                                @endforeach
+                                                @if(count($user->permissions) > 3)
+                                                    <span class="badge bg-light text-dark small">
+                                                        +{{ count($user->permissions) - 3 }} more
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="text-muted small">No permissions</span>
+                                        @endif
                                     </td>
                                     <td>
                                         @if($user->is_active)
@@ -195,15 +187,21 @@
                 </div>
             @else
                 <div class="text-center py-5">
-                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">No users found</h5>
+                    <i class="fas fa-user-shield fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No master users found</h5>
                     <p class="text-muted">
-                        @if(request()->hasAny(['search', 'role', 'clinic_id', 'status']))
-                            No users match your current filters.
+                        @if(request()->hasAny(['search', 'status']))
+                            No master users match your current filters.
                         @else
-                            No users have been created yet.
+                            No master users have been created yet. Create your first master user to get started.
                         @endif
                     </p>
+                    @if(!request()->hasAny(['search', 'status']))
+                        <a href="{{ route('master.users.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            Create First Master User
+                        </a>
+                    @endif
                 </div>
             @endif
         </div>
