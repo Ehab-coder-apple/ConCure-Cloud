@@ -249,21 +249,12 @@
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 @if($plan->canBeModified())
-                                                <div class="btn-group">
-                                                    <button type="button" class="btn btn-outline-warning dropdown-toggle" data-bs-toggle="dropdown" title="{{ __('Edit') }}">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <ul class="dropdown-menu">
-                                                        <li><a class="dropdown-item" href="{{ route('nutrition.edit.enhanced', $plan) }}">
-                                                            <i class="fas fa-utensils me-2"></i>
-                                                            {{ __('Enhanced Editor') }}
-                                                        </a></li>
-                                                        <li><a class="dropdown-item" href="{{ route('nutrition.edit', $plan) }}">
-                                                            <i class="fas fa-file-alt me-2"></i>
-                                                            {{ __('Basic Editor') }}
-                                                        </a></li>
-                                                    </ul>
-                                                </div>
+                                                <a href="{{ route('nutrition.edit.enhanced', $plan) }}" class="btn btn-outline-warning" title="{{ __('Enhanced Editor') }}">
+                                                    <i class="fas fa-utensils"></i>
+                                                </a>
+                                                <a href="{{ route('nutrition.edit', $plan) }}" class="btn btn-outline-secondary" title="{{ __('Basic Editor') }}">
+                                                    <i class="fas fa-file-alt"></i>
+                                                </a>
                                                 @endif
                                                 <a href="{{ route('nutrition.pdf', $plan) }}" class="btn btn-outline-danger" title="{{ __('PDF') }}">
                                                     <i class="fas fa-file-pdf"></i>
