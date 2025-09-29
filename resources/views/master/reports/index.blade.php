@@ -30,15 +30,26 @@
 {{-- Filters --}}
 <form method="GET" class="card mb-4">
     <div class="card-body row g-3 align-items-end">
-        <div class="col-sm-4 col-md-3">
+        <div class="col-sm-3 col-md-2">
             <label class="form-label">From</label>
             <input type="date" name="from" class="form-control" value="{{ $filters['from'] ?? '' }}">
         </div>
-        <div class="col-sm-4 col-md-3">
+        <div class="col-sm-3 col-md-2">
             <label class="form-label">To</label>
             <input type="date" name="to" class="form-control" value="{{ $filters['to'] ?? '' }}">
         </div>
-        <div class="col-sm-4 col-md-3">
+        <div class="col-sm-3 col-md-3">
+            <label class="form-label">Clinic</label>
+            <select name="clinic_id" class="form-select">
+                <option value="">All Clinics</option>
+                @foreach($clinics as $clinic)
+                    <option value="{{ $clinic->id }}" {{ ($filters['clinic_id'] ?? '') == $clinic->id ? 'selected' : '' }}>
+                        {{ $clinic->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-sm-3 col-md-3">
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-filter me-1"></i> Apply Filters
             </button>
@@ -127,6 +138,102 @@
   </div>
 </div>
 
+<!-- Patient Analytics -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card reports-card border-left-primary">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-primary mb-1">Total Patients</div>
+          <div class="h5 mb-0 text-gray-800">{{ number_format($patientStats['total']) }}</div>
+        </div>
+        <div class="icon-circle bg-primary text-white"><i class="fas fa-users"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card reports-card border-left-success">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-success mb-1">Active Patients</div>
+          <div class="h5 mb-0 text-gray-800">{{ number_format($patientStats['active']) }}</div>
+        </div>
+        <div class="icon-circle bg-success text-white"><i class="fas fa-user-check"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card reports-card border-left-info">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-info mb-1">New Patients (30d)</div>
+          <div class="h5 mb-0 text-gray-800">{{ number_format($patientStats['new']) }}</div>
+        </div>
+        <div class="icon-circle bg-info text-white"><i class="fas fa-user-plus"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card reports-card border-left-warning">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-warning mb-1">Total Prescriptions</div>
+          <div class="h5 mb-0 text-gray-800">{{ number_format($prescriptionStats['total']) }}</div>
+        </div>
+        <div class="icon-circle bg-warning text-white"><i class="fas fa-prescription-bottle-alt"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lab & Appointment Analytics -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card reports-card border-left-secondary">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-secondary mb-1">Lab Requests</div>
+          <div class="h5 mb-0 text-gray-800">{{ number_format($labStats['total']) }}</div>
+        </div>
+        <div class="icon-circle bg-secondary text-white"><i class="fas fa-flask"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card reports-card border-left-danger">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-danger mb-1">Pending Labs</div>
+          <div class="h5 mb-0 text-gray-800">{{ number_format($labStats['pending']) }}</div>
+        </div>
+        <div class="icon-circle bg-danger text-white"><i class="fas fa-clock"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card reports-card border-left-primary">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-primary mb-1">Total Appointments</div>
+          <div class="h5 mb-0 text-gray-800">{{ number_format($appointmentStats['total']) }}</div>
+        </div>
+        <div class="icon-circle bg-primary text-white"><i class="fas fa-calendar-alt"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card reports-card border-left-success">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-success mb-1">Revenue Generated</div>
+          <div class="h5 mb-0 text-gray-800">{{ $currencySymbol }}{{ number_format($financialStats['total_revenue'], 2) }}</div>
+        </div>
+        <div class="icon-circle bg-success text-white"><i class="fas fa-dollar-sign"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="row g-3">
     <div class="col-lg-6">
         <div class="card h-100 border-left-primary reports-card">
@@ -178,6 +285,113 @@
     </div>
 </div>
 
+<!-- Detailed Analytics Charts -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100 border-left-info reports-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase text-info mb-1">Patient Demographics</div>
+                        <div class="h5 mb-0 text-gray-800">Age Groups</div>
+                    </div>
+                    <div class="icon-circle bg-info text-white">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                </div>
+                <div class="chart-wrap mt-3">
+                    <canvas id="ageGroupsChart"></canvas>
+                </div>
+                <div class="text-muted mt-3">
+                    @forelse($patientStats['age_groups'] as $group => $count)
+                        <span class="me-3">{{ $group }}: <strong>{{ $count }}</strong></span>
+                    @empty
+                        <em>No age data available.</em>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100 border-left-warning reports-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase text-warning mb-1">Top Prescribed Medicines</div>
+                        <div class="h5 mb-0 text-gray-800">Most Frequent</div>
+                    </div>
+                    <div class="icon-circle bg-warning text-white">
+                        <i class="fas fa-pills"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    @forelse($prescriptionStats['top_medicines']->take(5) as $medicine)
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-sm">{{ $medicine->name }}</span>
+                            <span class="badge bg-warning">{{ $medicine->count }}</span>
+                        </div>
+                    @empty
+                        <em class="text-muted">No prescription data available.</em>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100 border-left-secondary reports-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase text-secondary mb-1">Most Requested Lab Tests</div>
+                        <div class="h5 mb-0 text-gray-800">Top 5</div>
+                    </div>
+                    <div class="icon-circle bg-secondary text-white">
+                        <i class="fas fa-microscope"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    @forelse($labStats['top_tests']->take(5) as $test)
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-sm">{{ $test->name }}</span>
+                            <span class="badge bg-secondary">{{ $test->count }}</span>
+                        </div>
+                    @empty
+                        <em class="text-muted">No lab test data available.</em>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100 border-left-primary reports-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase text-primary mb-1">Appointment Types</div>
+                        <div class="h5 mb-0 text-gray-800">Distribution</div>
+                    </div>
+                    <div class="icon-circle bg-primary text-white">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                </div>
+                <div class="chart-wrap mt-3">
+                    <canvas id="appointmentTypesChart"></canvas>
+                </div>
+                <div class="text-muted mt-3">
+                    @forelse($appointmentStats['types'] as $type => $count)
+                        <span class="me-3">{{ ucfirst(str_replace('_', ' ', $type)) }}: <strong>{{ $count }}</strong></span>
+                    @empty
+                        <em>No appointment data available.</em>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -219,6 +433,62 @@
                     borderWidth: 0,
                     barThickness: 22,
                     maxBarThickness: 26,
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 }, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // Age Groups Chart
+    const ageGroupsCtx = document.getElementById('ageGroupsChart');
+    if (ageGroupsCtx) {
+        const ageData = @json(array_values($patientStats['age_groups']));
+        const ageLabels = @json(array_keys($patientStats['age_groups']));
+
+        new Chart(ageGroupsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ageLabels,
+                datasets: [{
+                    data: ageData,
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } }
+                }
+            }
+        });
+    }
+
+    // Appointment Types Chart
+    const appointmentTypesCtx = document.getElementById('appointmentTypesChart');
+    if (appointmentTypesCtx) {
+        const appointmentData = @json(array_values($appointmentStats['types']));
+        const appointmentLabels = @json(array_map(function($type) { return ucfirst(str_replace('_', ' ', $type)); }, array_keys($appointmentStats['types'])));
+
+        new Chart(appointmentTypesCtx, {
+            type: 'bar',
+            data: {
+                labels: appointmentLabels,
+                datasets: [{
+                    label: 'Appointments',
+                    data: appointmentData,
+                    backgroundColor: '#4e73df',
+                    borderWidth: 0,
+                    barThickness: 20,
+                    maxBarThickness: 25,
                 }]
             },
             options: {

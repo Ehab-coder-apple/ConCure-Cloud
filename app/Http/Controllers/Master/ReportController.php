@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Clinic;
 use App\Models\User;
+use App\Models\Patient;
+use App\Models\Prescription;
+use App\Models\Medicine;
+use App\Models\LabTest;
+use App\Models\LabRequest;
+use App\Models\Appointment;
+use App\Models\Invoice;
+use App\Models\PatientCheckup;
 use App\Models\SubscriptionPayment;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
@@ -20,6 +28,7 @@ class ReportController extends Controller
     {
         $from = $this->parseDate($request->query('from'));
         $to   = $this->parseDate($request->query('to'));
+        $clinicId = $request->query('clinic_id');
 
         // Clinics summary
         $clinicsBase = Clinic::query();
@@ -30,10 +39,11 @@ class ReportController extends Controller
         $clinicsActive   = (clone $clinicsBase)->where('is_active', true)->count();
         $clinicsInactive = (clone $clinicsBase)->where('is_active', false)->count();
 
-        // Users by role (exclude super_admin)
-        $usersBase = User::where('role', '!=', 'super_admin');
+        // Users by role (exclude super_admin and master_admin)
+        $usersBase = User::whereNotIn('role', ['super_admin', 'master_admin']);
         if ($from) { $usersBase->whereDate('created_at', '>=', $from->toDateString()); }
         if ($to)   { $usersBase->whereDate('created_at', '<=', $to->toDateString()); }
+        if ($clinicId) { $usersBase->where('clinic_id', $clinicId); }
 
         $usersByRole = $usersBase
             ->select('role', DB::raw('COUNT(*) as count'))
@@ -41,6 +51,21 @@ class ReportController extends Controller
             ->orderBy('role')
             ->pluck('count', 'role')
             ->toArray();
+
+        // Patient Analytics
+        $patientStats = $this->getPatientStats($from, $to, $clinicId);
+
+        // Prescription Analytics
+        $prescriptionStats = $this->getPrescriptionStats($from, $to, $clinicId);
+
+        // Lab Test Analytics
+        $labStats = $this->getLabStats($from, $to, $clinicId);
+
+        // Appointment Analytics
+        $appointmentStats = $this->getAppointmentStats($from, $to, $clinicId);
+
+        // Financial Analytics
+        $financialStats = $this->getFinancialStats($from, $to, $clinicId);
 
         // Financials (master subscriptions)
         $currencySymbol = config('concure.currency_symbol', '$');
@@ -63,6 +88,7 @@ class ReportController extends Controller
         $filters = [
             'from' => $from?->toDateString(),
             'to'   => $to?->toDateString(),
+            'clinic_id' => $clinicId,
         ];
 
         $clinics = Clinic::orderBy('name')->get(['id','name']);
@@ -71,9 +97,203 @@ class ReportController extends Controller
             'filters',
             'clinicsTotal', 'clinicsActive', 'clinicsInactive',
             'usersByRole',
+            'patientStats', 'prescriptionStats', 'labStats', 'appointmentStats', 'financialStats',
             'currencySymbol', 'activeSubscribers', 'monthlyFee', 'expectedMonthlyFees', 'collectedAmount',
             'clinics'
         ));
+    }
+
+    /**
+     * Get patient statistics
+     */
+    private function getPatientStats($from, $to, $clinicId): array
+    {
+        $patientsBase = Patient::query();
+        if ($from) { $patientsBase->whereDate('created_at', '>=', $from->toDateString()); }
+        if ($to) { $patientsBase->whereDate('created_at', '<=', $to->toDateString()); }
+        if ($clinicId) { $patientsBase->where('clinic_id', $clinicId); }
+
+        $totalPatients = (clone $patientsBase)->count();
+        $activePatients = (clone $patientsBase)->where('is_active', true)->count();
+        $newPatients = (clone $patientsBase)->where('created_at', '>=', now()->subDays(30))->count();
+
+        // Gender distribution
+        $genderStats = (clone $patientsBase)
+            ->select('gender', DB::raw('COUNT(*) as count'))
+            ->groupBy('gender')
+            ->pluck('count', 'gender')
+            ->toArray();
+
+        // Age groups
+        $ageGroups = [
+            '0-18' => 0,
+            '19-35' => 0,
+            '36-50' => 0,
+            '51-65' => 0,
+            '65+' => 0,
+        ];
+
+        $patients = (clone $patientsBase)->whereNotNull('date_of_birth')->get(['date_of_birth']);
+        foreach ($patients as $patient) {
+            $age = $patient->date_of_birth ? $patient->date_of_birth->age : 0;
+            if ($age <= 18) $ageGroups['0-18']++;
+            elseif ($age <= 35) $ageGroups['19-35']++;
+            elseif ($age <= 50) $ageGroups['36-50']++;
+            elseif ($age <= 65) $ageGroups['51-65']++;
+            else $ageGroups['65+']++;
+        }
+
+        return [
+            'total' => $totalPatients,
+            'active' => $activePatients,
+            'new' => $newPatients,
+            'gender' => $genderStats,
+            'age_groups' => $ageGroups,
+        ];
+    }
+
+    /**
+     * Get prescription statistics
+     */
+    private function getPrescriptionStats($from, $to, $clinicId): array
+    {
+        $prescriptionsBase = Prescription::query();
+        if ($from) { $prescriptionsBase->whereDate('created_at', '>=', $from->toDateString()); }
+        if ($to) { $prescriptionsBase->whereDate('created_at', '<=', $to->toDateString()); }
+        if ($clinicId) { $prescriptionsBase->where('clinic_id', $clinicId); }
+
+        $totalPrescriptions = (clone $prescriptionsBase)->count();
+        $activePrescriptions = (clone $prescriptionsBase)->where('status', 'active')->count();
+        $completedPrescriptions = (clone $prescriptionsBase)->where('status', 'completed')->count();
+
+        // Most prescribed medicines
+        $topMedicines = DB::table('prescription_medicines')
+            ->join('prescriptions', 'prescription_medicines.prescription_id', '=', 'prescriptions.id')
+            ->join('medicines', 'prescription_medicines.medicine_id', '=', 'medicines.id')
+            ->when($from, function($q) use ($from) {
+                return $q->whereDate('prescriptions.created_at', '>=', $from->toDateString());
+            })
+            ->when($to, function($q) use ($to) {
+                return $q->whereDate('prescriptions.created_at', '<=', $to->toDateString());
+            })
+            ->when($clinicId, function($q) use ($clinicId) {
+                return $q->where('prescriptions.clinic_id', $clinicId);
+            })
+            ->select('medicines.name', DB::raw('COUNT(*) as count'))
+            ->groupBy('medicines.id', 'medicines.name')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->get();
+
+        return [
+            'total' => $totalPrescriptions,
+            'active' => $activePrescriptions,
+            'completed' => $completedPrescriptions,
+            'top_medicines' => $topMedicines,
+        ];
+    }
+
+    /**
+     * Get lab test statistics
+     */
+    private function getLabStats($from, $to, $clinicId): array
+    {
+        $labRequestsBase = LabRequest::query();
+        if ($from) { $labRequestsBase->whereDate('created_at', '>=', $from->toDateString()); }
+        if ($to) { $labRequestsBase->whereDate('created_at', '<=', $to->toDateString()); }
+        if ($clinicId) { $labRequestsBase->where('clinic_id', $clinicId); }
+
+        $totalRequests = (clone $labRequestsBase)->count();
+        $pendingRequests = (clone $labRequestsBase)->where('status', 'pending')->count();
+        $completedRequests = (clone $labRequestsBase)->where('status', 'completed')->count();
+
+        // Most requested tests
+        $topTests = DB::table('lab_request_tests')
+            ->join('lab_requests', 'lab_request_tests.lab_request_id', '=', 'lab_requests.id')
+            ->join('lab_tests', 'lab_request_tests.lab_test_id', '=', 'lab_tests.id')
+            ->when($from, function($q) use ($from) {
+                return $q->whereDate('lab_requests.created_at', '>=', $from->toDateString());
+            })
+            ->when($to, function($q) use ($to) {
+                return $q->whereDate('lab_requests.created_at', '<=', $to->toDateString());
+            })
+            ->when($clinicId, function($q) use ($clinicId) {
+                return $q->where('lab_requests.clinic_id', $clinicId);
+            })
+            ->select('lab_tests.name', DB::raw('COUNT(*) as count'))
+            ->groupBy('lab_tests.id', 'lab_tests.name')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->get();
+
+        return [
+            'total' => $totalRequests,
+            'pending' => $pendingRequests,
+            'completed' => $completedRequests,
+            'top_tests' => $topTests,
+        ];
+    }
+
+    /**
+     * Get appointment statistics
+     */
+    private function getAppointmentStats($from, $to, $clinicId): array
+    {
+        $appointmentsBase = Appointment::query();
+        if ($from) { $appointmentsBase->whereDate('created_at', '>=', $from->toDateString()); }
+        if ($to) { $appointmentsBase->whereDate('created_at', '<=', $to->toDateString()); }
+        if ($clinicId) { $appointmentsBase->where('clinic_id', $clinicId); }
+
+        $totalAppointments = (clone $appointmentsBase)->count();
+        $scheduledAppointments = (clone $appointmentsBase)->where('status', 'scheduled')->count();
+        $completedAppointments = (clone $appointmentsBase)->where('status', 'completed')->count();
+        $cancelledAppointments = (clone $appointmentsBase)->where('status', 'cancelled')->count();
+
+        // Appointment types
+        $typeStats = (clone $appointmentsBase)
+            ->select('type', DB::raw('COUNT(*) as count'))
+            ->groupBy('type')
+            ->pluck('count', 'type')
+            ->toArray();
+
+        return [
+            'total' => $totalAppointments,
+            'scheduled' => $scheduledAppointments,
+            'completed' => $completedAppointments,
+            'cancelled' => $cancelledAppointments,
+            'types' => $typeStats,
+        ];
+    }
+
+    /**
+     * Get financial statistics
+     */
+    private function getFinancialStats($from, $to, $clinicId): array
+    {
+        $invoicesBase = Invoice::query();
+        if ($from) { $invoicesBase->whereDate('created_at', '>=', $from->toDateString()); }
+        if ($to) { $invoicesBase->whereDate('created_at', '<=', $to->toDateString()); }
+        if ($clinicId) { $invoicesBase->where('clinic_id', $clinicId); }
+
+        $totalInvoices = (clone $invoicesBase)->count();
+        $totalRevenue = (clone $invoicesBase)->sum('total_amount');
+        $paidAmount = (clone $invoicesBase)->sum('paid_amount');
+        $outstandingAmount = (clone $invoicesBase)->sum('balance');
+
+        // Payment status
+        $statusStats = (clone $invoicesBase)
+            ->select('status', DB::raw('COUNT(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        return [
+            'total_invoices' => $totalInvoices,
+            'total_revenue' => $totalRevenue,
+            'paid_amount' => $paidAmount,
+            'outstanding' => $outstandingAmount,
+            'status' => $statusStats,
+        ];
     }
 
     private function parseDate($value): ?Carbon
@@ -86,4 +306,3 @@ class ReportController extends Controller
         }
     }
 }
-
