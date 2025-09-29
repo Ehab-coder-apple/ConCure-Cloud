@@ -226,6 +226,29 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::patch('checkup-templates/{template}/toggle-status', [App\Http\Controllers\CustomCheckupTemplateController::class, 'toggleStatus'])->name('checkup-templates.toggle-status');
         Route::post('checkup-templates/{template}/clone', [App\Http\Controllers\CustomCheckupTemplateController::class, 'clone'])->name('checkup-templates.clone');
         Route::get('checkup-templates/{template}/preview', [App\Http\Controllers\CustomCheckupTemplateController::class, 'preview'])->name('checkup-templates.preview');
+
+        // Test route for debugging
+        Route::get('checkup-templates-test', function() {
+            try {
+                $checkupTypes = App\Models\CustomCheckupTemplate::getCheckupTypes();
+                $fieldTypes = App\Models\CustomCheckupTemplate::getFieldTypes();
+                $defaultTemplates = App\Models\CustomCheckupTemplate::getDefaultTemplates();
+                return response()->json([
+                    'status' => 'success',
+                    'checkupTypes' => $checkupTypes,
+                    'fieldTypes' => $fieldTypes,
+                    'defaultTemplates' => count($defaultTemplates),
+                    'user' => auth()->user()->email ?? 'not authenticated'
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $e->getMessage(),
+                    'line' => $e->getLine(),
+                    'file' => $e->getFile()
+                ]);
+            }
+        })->name('checkup-templates.test');
     });
 
     // Prescription Management (Original - Complex)
