@@ -6,6 +6,7 @@ use App\Models\CustomCheckupTemplate;
 use App\Models\PatientCheckupTemplateAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class CustomCheckupTemplateController extends Controller
 {
@@ -40,11 +41,32 @@ class CustomCheckupTemplateController extends Controller
      */
     public function create()
     {
-        $checkupTypes = CustomCheckupTemplate::getCheckupTypes();
-        $fieldTypes = CustomCheckupTemplate::getFieldTypes();
-        $defaultTemplates = CustomCheckupTemplate::getDefaultTemplates();
+        try {
+            // Check if user is authenticated
+            if (!Auth::check()) {
+                return redirect()->route('login')->with('error', 'Please log in to access this page.');
+            }
 
-        return view('admin.checkup-templates.create', compact('checkupTypes', 'fieldTypes', 'defaultTemplates'));
+            $user = Auth::user();
+
+            // Check if user has clinic_id
+            if (!$user->clinic_id) {
+                return redirect()->route('dashboard')->with('error', 'You must be associated with a clinic to create checkup templates.');
+            }
+
+            $checkupTypes = CustomCheckupTemplate::getCheckupTypes();
+            $fieldTypes = CustomCheckupTemplate::getFieldTypes();
+            $defaultTemplates = CustomCheckupTemplate::getDefaultTemplates();
+
+            return view('admin.checkup-templates.create', compact('checkupTypes', 'fieldTypes', 'defaultTemplates'));
+        } catch (\Exception $e) {
+            \Log::error('Error in CustomCheckupTemplateController@create: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->route('dashboard')->with('error', 'An error occurred while loading the template creation page. Please try again.');
+        }
     }
 
     /**
