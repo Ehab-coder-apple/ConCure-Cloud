@@ -49,9 +49,14 @@ class CustomCheckupTemplateController extends Controller
 
             $user = Auth::user();
 
-            // Check if user has clinic_id
-            if (!$user->clinic_id) {
+            // Check if user has clinic_id (except for super_admin)
+            if (!$user->clinic_id && $user->role !== 'super_admin') {
                 return redirect()->route('dashboard')->with('error', 'You must be associated with a clinic to create checkup templates.');
+            }
+
+            // For super_admin without clinic_id, redirect to select a clinic or show error
+            if ($user->role === 'super_admin' && !$user->clinic_id) {
+                return redirect()->route('dashboard')->with('error', 'Super admin users need to be associated with a clinic to manage checkup templates. Please contact system administrator.');
             }
 
             $checkupTypes = CustomCheckupTemplate::getCheckupTypes();
