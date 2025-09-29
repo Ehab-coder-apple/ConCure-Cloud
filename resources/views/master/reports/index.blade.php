@@ -475,8 +475,8 @@
     // Appointment Types Chart
     const appointmentTypesCtx = document.getElementById('appointmentTypesChart');
     if (appointmentTypesCtx) {
-        const appointmentData = @json(array_values($appointmentStats['types']));
-        const appointmentLabels = @json(array_map(function($type) { return ucfirst(str_replace('_', ' ', $type)); }, array_keys($appointmentStats['types'])));
+        const appointmentData = @json($appointmentStats['type_values'] ?? []);
+        const appointmentLabels = @json($appointmentStats['type_labels'] ?? []);
 
         new Chart(appointmentTypesCtx, {
             type: 'bar',

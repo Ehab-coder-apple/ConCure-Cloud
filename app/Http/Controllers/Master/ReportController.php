@@ -53,19 +53,39 @@ class ReportController extends Controller
             ->toArray();
 
         // Patient Analytics
-        $patientStats = $this->getPatientStats($from, $to, $clinicId);
+        try {
+            $patientStats = $this->getPatientStats($from, $to, $clinicId);
+        } catch (\Exception $e) {
+            $patientStats = ['total' => 0, 'active' => 0, 'new' => 0, 'gender' => [], 'age_groups' => []];
+        }
 
         // Prescription Analytics
-        $prescriptionStats = $this->getPrescriptionStats($from, $to, $clinicId);
+        try {
+            $prescriptionStats = $this->getPrescriptionStats($from, $to, $clinicId);
+        } catch (\Exception $e) {
+            $prescriptionStats = ['total' => 0, 'active' => 0, 'completed' => 0, 'top_medicines' => collect()];
+        }
 
         // Lab Test Analytics
-        $labStats = $this->getLabStats($from, $to, $clinicId);
+        try {
+            $labStats = $this->getLabStats($from, $to, $clinicId);
+        } catch (\Exception $e) {
+            $labStats = ['total' => 0, 'pending' => 0, 'completed' => 0, 'top_tests' => collect()];
+        }
 
         // Appointment Analytics
-        $appointmentStats = $this->getAppointmentStats($from, $to, $clinicId);
+        try {
+            $appointmentStats = $this->getAppointmentStats($from, $to, $clinicId);
+        } catch (\Exception $e) {
+            $appointmentStats = ['total' => 0, 'scheduled' => 0, 'completed' => 0, 'cancelled' => 0, 'types' => [], 'type_labels' => [], 'type_values' => []];
+        }
 
         // Financial Analytics
-        $financialStats = $this->getFinancialStats($from, $to, $clinicId);
+        try {
+            $financialStats = $this->getFinancialStats($from, $to, $clinicId);
+        } catch (\Exception $e) {
+            $financialStats = ['total_invoices' => 0, 'total_revenue' => 0, 'paid_amount' => 0, 'outstanding' => 0, 'status' => []];
+        }
 
         // Financials (master subscriptions)
         $currencySymbol = config('concure.currency_symbol', '$');
@@ -199,32 +219,45 @@ class ReportController extends Controller
     private function getLabStats($from, $to, $clinicId): array
     {
         $labRequestsBase = LabRequest::query();
-        if ($from) { $labRequestsBase->whereDate('created_at', '>=', $from->toDateString()); }
-        if ($to) { $labRequestsBase->whereDate('created_at', '<=', $to->toDateString()); }
-        if ($clinicId) { $labRequestsBase->where('clinic_id', $clinicId); }
+        if ($from) { $labRequestsBase->whereDate('lab_requests.created_at', '>=', $from->toDateString()); }
+        if ($to) { $labRequestsBase->whereDate('lab_requests.created_at', '<=', $to->toDateString()); }
+        if ($clinicId) {
+            $labRequestsBase->whereHas('patient', function($q) use ($clinicId) {
+                $q->where('clinic_id', $clinicId);
+            });
+        }
 
         $totalRequests = (clone $labRequestsBase)->count();
         $pendingRequests = (clone $labRequestsBase)->where('status', 'pending')->count();
         $completedRequests = (clone $labRequestsBase)->where('status', 'completed')->count();
 
-        // Most requested tests
-        $topTests = DB::table('lab_request_tests')
-            ->join('lab_requests', 'lab_request_tests.lab_request_id', '=', 'lab_requests.id')
-            ->join('lab_tests', 'lab_request_tests.lab_test_id', '=', 'lab_tests.id')
-            ->when($from, function($q) use ($from) {
-                return $q->whereDate('lab_requests.created_at', '>=', $from->toDateString());
-            })
-            ->when($to, function($q) use ($to) {
-                return $q->whereDate('lab_requests.created_at', '<=', $to->toDateString());
-            })
-            ->when($clinicId, function($q) use ($clinicId) {
-                return $q->where('lab_requests.clinic_id', $clinicId);
-            })
-            ->select('lab_tests.name', DB::raw('COUNT(*) as count'))
-            ->groupBy('lab_tests.id', 'lab_tests.name')
-            ->orderByDesc('count')
-            ->limit(10)
-            ->get();
+        // Most requested tests - handle case where tables might not exist
+        $topTests = collect();
+        try {
+            if (Schema::hasTable('lab_request_tests') && Schema::hasTable('lab_tests')) {
+                $topTests = DB::table('lab_request_tests')
+                    ->join('lab_requests', 'lab_request_tests.lab_request_id', '=', 'lab_requests.id')
+                    ->join('lab_tests', 'lab_request_tests.lab_test_id', '=', 'lab_tests.id')
+                    ->when($from, function($q) use ($from) {
+                        return $q->whereDate('lab_requests.created_at', '>=', $from->toDateString());
+                    })
+                    ->when($to, function($q) use ($to) {
+                        return $q->whereDate('lab_requests.created_at', '<=', $to->toDateString());
+                    })
+                    ->when($clinicId, function($q) use ($clinicId) {
+                        return $q->join('patients', 'lab_requests.patient_id', '=', 'patients.id')
+                                 ->where('patients.clinic_id', $clinicId);
+                    })
+                    ->select('lab_tests.name', DB::raw('COUNT(*) as count'))
+                    ->groupBy('lab_tests.id', 'lab_tests.name')
+                    ->orderByDesc('count')
+                    ->limit(10)
+                    ->get();
+            }
+        } catch (\Exception $e) {
+            // If there's an error with the complex query, return empty collection
+            $topTests = collect();
+        }
 
         return [
             'total' => $totalRequests,
@@ -240,8 +273,8 @@ class ReportController extends Controller
     private function getAppointmentStats($from, $to, $clinicId): array
     {
         $appointmentsBase = Appointment::query();
-        if ($from) { $appointmentsBase->whereDate('created_at', '>=', $from->toDateString()); }
-        if ($to) { $appointmentsBase->whereDate('created_at', '<=', $to->toDateString()); }
+        if ($from) { $appointmentsBase->whereDate('appointments.created_at', '>=', $from->toDateString()); }
+        if ($to) { $appointmentsBase->whereDate('appointments.created_at', '<=', $to->toDateString()); }
         if ($clinicId) { $appointmentsBase->where('clinic_id', $clinicId); }
 
         $totalAppointments = (clone $appointmentsBase)->count();
@@ -249,12 +282,25 @@ class ReportController extends Controller
         $completedAppointments = (clone $appointmentsBase)->where('status', 'completed')->count();
         $cancelledAppointments = (clone $appointmentsBase)->where('status', 'cancelled')->count();
 
-        // Appointment types
-        $typeStats = (clone $appointmentsBase)
-            ->select('type', DB::raw('COUNT(*) as count'))
-            ->groupBy('type')
-            ->pluck('count', 'type')
-            ->toArray();
+        // Appointment types - handle gracefully if no data
+        $typeStats = [];
+        try {
+            $typeStats = (clone $appointmentsBase)
+                ->select('type', DB::raw('COUNT(*) as count'))
+                ->groupBy('type')
+                ->pluck('count', 'type')
+                ->toArray();
+        } catch (\Exception $e) {
+            $typeStats = [];
+        }
+
+        // Format type labels for display
+        $typeLabels = [];
+        $typeValues = [];
+        foreach ($typeStats as $type => $count) {
+            $typeLabels[] = ucfirst(str_replace('_', ' ', $type));
+            $typeValues[] = $count;
+        }
 
         return [
             'total' => $totalAppointments,
@@ -262,6 +308,8 @@ class ReportController extends Controller
             'completed' => $completedAppointments,
             'cancelled' => $cancelledAppointments,
             'types' => $typeStats,
+            'type_labels' => $typeLabels,
+            'type_values' => $typeValues,
         ];
     }
 
