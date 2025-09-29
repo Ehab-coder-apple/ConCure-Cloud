@@ -185,7 +185,7 @@
                         </div>
                         
                         <!-- Hidden input to store form configuration -->
-                        <input type="hidden" name="form_config" id="form_config" value="{{ old('form_config') }}">
+                        <input type="hidden" name="form_config" id="form_config" value="{{ old('form_config', '{"sections":{}}') }}">
                     </div>
                 </div>
             </div>
@@ -479,31 +479,31 @@ function updateFieldType(selectElement) {
 
 function updateFormConfig() {
     const sections = {};
-    
+
     document.querySelectorAll('#formBuilder .card').forEach(sectionCard => {
         const sectionTitle = sectionCard.querySelector('input[placeholder="Section Title"]').value;
         if (!sectionTitle) return;
-        
+
         const sectionKey = sectionTitle.toLowerCase().replace(/\s+/g, '_');
         sections[sectionKey] = {
             title: sectionTitle,
             fields: {}
         };
-        
+
         sectionCard.querySelectorAll('.section-fields .border').forEach(fieldDiv => {
             const label = fieldDiv.querySelector('input[placeholder="Field Label"]').value;
             if (!label) return;
-            
+
             const fieldKey = label.toLowerCase().replace(/\s+/g, '_');
             const type = fieldDiv.querySelector('select').value;
             const required = fieldDiv.querySelector('input[type="checkbox"]').checked;
-            
+
             const field = {
                 type: type,
                 label: label,
                 required: required
             };
-            
+
             // Add options for select/radio fields
             if (type === 'select' || type === 'radio') {
                 const optionsText = fieldDiv.querySelector('textarea').value;
@@ -511,12 +511,14 @@ function updateFormConfig() {
                     field.options = optionsText.split('\n').filter(opt => opt.trim());
                 }
             }
-            
+
             sections[sectionKey].fields[fieldKey] = field;
         });
     });
-    
-    document.getElementById('form_config').value = JSON.stringify({ sections: sections });
+
+    // Always ensure we have a valid structure
+    const formConfig = { sections: sections };
+    document.getElementById('form_config').value = JSON.stringify(formConfig);
 }
 
 function previewTemplate() {
@@ -583,6 +585,38 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error loading existing config:', e);
         }
     }
+
+    // Ensure form_config is updated before form submission
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            updateFormConfig();
+
+            // Validate that we have at least one section
+            const formConfig = document.getElementById('form_config').value;
+            if (!formConfig || formConfig === '{}' || formConfig === '') {
+                e.preventDefault();
+                alert('Please add at least one section to your template.');
+                return false;
+            }
+
+            try {
+                const config = JSON.parse(formConfig);
+                if (!config.sections || Object.keys(config.sections).length === 0) {
+                    e.preventDefault();
+                    alert('Please add at least one section to your template.');
+                    return false;
+                }
+            } catch (error) {
+                e.preventDefault();
+                alert('Invalid form configuration. Please check your sections and fields.');
+                return false;
+            }
+        });
+    }
+
+    // Update form config whenever sections change
+    updateFormConfig();
 });
 
 function loadExistingConfig(config) {
