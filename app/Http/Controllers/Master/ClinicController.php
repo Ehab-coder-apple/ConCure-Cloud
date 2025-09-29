@@ -142,7 +142,10 @@ class ClinicController extends Controller
      */
     public function edit(Clinic $clinic)
     {
-        return view('master.clinics.edit', compact('clinic'));
+        // Get the clinic admin user
+        $adminUser = $clinic->users()->where('role', 'admin')->first();
+
+        return view('master.clinics.edit', compact('clinic', 'adminUser'));
     }
 
     /**
@@ -150,24 +153,57 @@ class ClinicController extends Controller
      */
     public function update(Request $request, Clinic $clinic)
     {
+        // Get the admin user for validation
+        $adminUser = $clinic->users()->where('role', 'admin')->first();
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('clinics')->ignore($clinic->id)],
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'max_users' => 'required|integer|min:1|max:1000',
+            // Admin user validation
+            'admin_first_name' => 'required|string|max:255',
+            'admin_last_name' => 'required|string|max:255',
+            'admin_username' => [
+                'required',
+                'string',
+                'max:255',
+                'alpha_dash',
+                Rule::unique('users', 'username')->ignore($adminUser ? $adminUser->id : null)
+            ],
         ]);
 
-        $clinic->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'max_users' => $request->max_users,
-        ]);
+        DB::beginTransaction();
+        try {
+            // Update clinic information
+            $clinic->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'max_users' => $request->max_users,
+            ]);
 
-        return redirect()->route('master.clinics.show', $clinic)
-            ->with('success', 'Clinic updated successfully.');
+            // Update admin user information if admin exists
+            if ($adminUser) {
+                $adminUser->update([
+                    'first_name' => $request->admin_first_name,
+                    'last_name' => $request->admin_last_name,
+                    'username' => $request->admin_username,
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->route('master.clinics.show', $clinic)
+                ->with('success', 'Clinic and admin information updated successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to update clinic: ' . $e->getMessage()])
+                ->withInput();
+        }
     }
 
     /**

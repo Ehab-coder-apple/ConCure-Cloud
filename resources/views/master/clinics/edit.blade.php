@@ -101,7 +101,7 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label for="address" class="form-label">Address</label>
                             <textarea class="form-control @error('address') is-invalid @enderror"
                                       id="address"
@@ -112,6 +112,73 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <!-- Admin User Information -->
+                        @if($adminUser)
+                            <hr class="my-4">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-user-shield me-2"></i>
+                                Admin User Information
+                            </h6>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="admin_first_name" class="form-label">Admin First Name *</label>
+                                    <input type="text"
+                                           class="form-control @error('admin_first_name') is-invalid @enderror"
+                                           id="admin_first_name"
+                                           name="admin_first_name"
+                                           value="{{ old('admin_first_name', $adminUser->first_name) }}"
+                                           required
+                                           placeholder="Enter admin first name">
+                                    @error('admin_first_name')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="admin_last_name" class="form-label">Admin Last Name *</label>
+                                    <input type="text"
+                                           class="form-control @error('admin_last_name') is-invalid @enderror"
+                                           id="admin_last_name"
+                                           name="admin_last_name"
+                                           value="{{ old('admin_last_name', $adminUser->last_name) }}"
+                                           required
+                                           placeholder="Enter admin last name">
+                                    @error('admin_last_name')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="admin_username" class="form-label">Admin Username *</label>
+                                    <input type="text"
+                                           class="form-control @error('admin_username') is-invalid @enderror"
+                                           id="admin_username"
+                                           name="admin_username"
+                                           value="{{ old('admin_username', $adminUser->username) }}"
+                                           required
+                                           placeholder="Enter admin username">
+                                    @error('admin_username')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div class="form-text">Username must contain only letters, numbers, dashes, and underscores</div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="admin_email" class="form-label">Admin Email</label>
+                                    <input type="email"
+                                           class="form-control"
+                                           id="admin_email"
+                                           value="{{ $adminUser->email }}"
+                                           readonly
+                                           disabled>
+                                    <div class="form-text">Email cannot be changed from this form</div>
+                                </div>
+                            </div>
+                        @endif
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <button type="submit" class="btn btn-primary">
@@ -137,7 +204,7 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3 text-muted small">
-                        Reset the clinic admin's password.
+                        Reset the clinic admin's password. Admin user information (name, username) can be edited in the main form.
                     </div>
                     <form method="POST" action="{{ route('master.clinics.reset-admin-password', $clinic) }}">
                         @csrf
