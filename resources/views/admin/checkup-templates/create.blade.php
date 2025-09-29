@@ -444,7 +444,7 @@ function addField(sectionId, fieldData = {}) {
             </div>
             <div class="field-options" style="display: none;">
                 <label class="form-label">Options (one per line)</label>
-                <textarea class="form-control" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3" onchange="updateFormConfig()">${fieldData.options ? fieldData.options.join('\n') : ''}</textarea>
+                <textarea class="form-control" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3" onchange="updateFormConfig()">${fieldData.options ? fieldData.options.join('\\n') : ''}</textarea>
             </div>
         </div>
     `;
