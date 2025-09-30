@@ -62,7 +62,7 @@
                     </a>
                     <a href="{{ route('patients.checkup-templates.index', $patient) }}" class="btn btn-warning btn-sm me-1">
                         <i class="fas fa-clipboard-list me-1"></i>
-                        {{ __('Templates') }}
+                        {{ __('Checkup') }}
                     </a>
                     <button type="button" class="btn btn-primary btn-sm" onclick="newPrescription()">
                         <i class="fas fa-prescription-bottle-alt me-1"></i>
