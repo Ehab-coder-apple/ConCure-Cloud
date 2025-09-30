@@ -175,6 +175,11 @@
                                                         onclick="previewTemplate({{ $assignment->template->id }})" title="{{ __('Preview') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
+                                                <button type="button" class="btn btn-outline-primary"
+                                                        onclick="editAssignment({{ $assignment->id }}, '{{ $assignment->medical_condition }}', '{{ $assignment->reason }}')"
+                                                        title="{{ __('Edit') }}">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
                                                 <form action="{{ route('patients.checkup-templates.toggle', [$patient, $assignment]) }}"
                                                       method="POST" class="d-inline">
                                                     @csrf
@@ -186,7 +191,7 @@
                                                 </form>
                                                 <button type="button" class="btn btn-outline-danger"
                                                         onclick="confirmRemove({{ $assignment->id }}, '{{ $assignment->template->name }}')"
-                                                        title="{{ __('Remove') }}">
+                                                        title="{{ __('Delete') }}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -299,12 +304,68 @@
     </div>
 </div>
 
+<!-- Edit Assignment Modal -->
+<div class="modal fade" id="editAssignmentModal" tabindex="-1" aria-labelledby="editAssignmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editAssignmentModalLabel">
+                    <i class="fas fa-edit me-2"></i>
+                    {{ __('Edit Template Assignment') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editAssignmentForm" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_medical_condition" class="form-label">{{ __('Medical Condition') }}</label>
+                        <input type="text" class="form-control" id="edit_medical_condition" name="medical_condition"
+                               placeholder="{{ __('e.g., Type 2 Diabetes, Hypertension') }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_reason" class="form-label">{{ __('Reason for Assignment') }}</label>
+                        <textarea class="form-control" id="edit_reason" name="reason" rows="3"
+                                  placeholder="{{ __('Why is this checkup template needed for this patient?') }}"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        {{ __('Cancel') }}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        {{ __('Update Assignment') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 function assignRecommendedTemplate(templateId, templateName) {
     document.getElementById('template_id').value = templateId;
     updateTemplatePreview();
 
     const modal = new bootstrap.Modal(document.getElementById('assignTemplateModal'));
+    modal.show();
+}
+
+function editAssignment(assignmentId, medicalCondition, reason) {
+    // Set form action URL
+    const form = document.getElementById('editAssignmentForm');
+    form.action = `/patients/{{ $patient->id }}/checkup-templates/${assignmentId}`;
+
+    // Populate form fields
+    document.getElementById('edit_medical_condition').value = medicalCondition || '';
+    document.getElementById('edit_reason').value = reason || '';
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('editAssignmentModal'));
     modal.show();
 }
 
@@ -489,21 +550,30 @@ function confirmRemove(assignmentId, templateName) {
 (function(){
   const modalEl = document.getElementById('assignTemplateModal');
   if (!modalEl) return;
+
+  let templatesLoaded = false;
+
   modalEl.addEventListener('shown.bs.modal', function(){
     const select = document.getElementById('template_id');
     if (!select) return;
-    // If options already loaded (beyond placeholder), skip
-    if (select.options.length > 1) return;
+
+    // Only load once per page load, unless explicitly refreshed
+    if (templatesLoaded) return;
 
     // Show loading option
-    select.innerHTML = `<option value="">Loading templates...</option>`;
+    select.innerHTML = `<option value="">{{ __('Loading templates...') }}</option>`;
 
     fetch(`/patients/{{ $patient->id }}/checkup-templates/available`)
       .then(r => {
-        if (!r.ok) throw new Error('Failed to load templates');
+        if (!r.ok) {
+          console.error('HTTP error:', r.status, r.statusText);
+          throw new Error('Failed to load templates: ' + r.statusText);
+        }
         return r.json();
       })
       .then(list => {
+        console.log('Templates loaded:', list);
+
         // Rebuild options list
         const frag = document.createDocumentFragment();
         const placeholder = document.createElement('option');
@@ -525,7 +595,15 @@ function confirmRemove(assignmentId, templateName) {
             frag.appendChild(opt);
           });
           if (emptyHint) emptyHint.style.display = 'none';
+          templatesLoaded = true;
         } else {
+          // No templates available
+          const noTemplatesOpt = document.createElement('option');
+          noTemplatesOpt.value = '';
+          noTemplatesOpt.textContent = `{{ __('No templates found.') }} `;
+          noTemplatesOpt.disabled = true;
+          frag.appendChild(noTemplatesOpt);
+
           if (emptyHint) emptyHint.style.display = '';
         }
 
@@ -535,8 +613,11 @@ function confirmRemove(assignmentId, templateName) {
       })
       .catch(err => {
         console.error('Error loading available templates:', err);
-        // Graceful fallback
-        select.innerHTML = `<option value=\"\">No templates found</option>`;
+        // Graceful fallback - keep server-rendered options if they exist
+        const serverOptions = select.querySelectorAll('option[value!=""]');
+        if (serverOptions.length === 0) {
+          select.innerHTML = `<option value="">{{ __('No templates found.') }} <a href="{{ route('admin.checkup-templates.create') }}">{{ __('Create a new checkup template') }}</a></option>`;
+        }
         const emptyHint = document.getElementById('templateEmptyHint');
         if (emptyHint) emptyHint.style.display = '';
       });
