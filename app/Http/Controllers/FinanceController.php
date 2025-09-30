@@ -574,33 +574,33 @@ class FinanceController extends Controller
     private function getFinancialStats($user): array
     {
         $stats = [];
-        
-        // Base queries
-        $invoicesQuery = Invoice::query();
-        $expensesQuery = Expense::query();
-        
-        
+
+        // Base queries - FILTER BY CLINIC
+        $invoicesQuery = Invoice::where('clinic_id', $user->clinic_id);
+        $expensesQuery = Expense::where('clinic_id', $user->clinic_id);
+
+
 
         // Current month stats
         $currentMonth = now()->startOfMonth();
         $currentMonthEnd = now()->endOfMonth();
-        
+
         $stats['monthlyRevenue'] = $invoicesQuery->clone()
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('total_amount');
-            
+
         $stats['monthlyExpenses'] = $expensesQuery->clone()
             ->approved()
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('amount');
-            
+
         $stats['monthlyProfit'] = $stats['monthlyRevenue'] - $stats['monthlyExpenses'];
 
         // Outstanding amounts
         $stats['outstandingInvoices'] = $invoicesQuery->clone()
             ->whereIn('status', ['sent', 'overdue'])
             ->sum('balance');
-            
+
         $stats['pendingExpenses'] = $expensesQuery->clone()
             ->pending()
             ->sum('amount');
@@ -616,7 +616,7 @@ class FinanceController extends Controller
             ->latest()
             ->limit(5)
             ->get();
-            
+
         $stats['recentExpenses'] = $expensesQuery->clone()
             ->with(['creator'])
             ->latest()
