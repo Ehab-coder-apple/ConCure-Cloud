@@ -184,8 +184,11 @@
                             </button>
                         </div>
                         
-                        <!-- Hidden input to store form configuration -->
-                        <input type="hidden" name="form_config" id="form_config" value="{{ old('form_config', '{}') }}">
+                        <!-- Hidden input to store form configuration as JSON string -->
+                        <input type="hidden" name="form_config_json" id="form_config_json" value="{{ old('form_config', '{}') }}">
+
+                        <!-- Hidden container for form_config array fields (will be populated by JavaScript) -->
+                        <div id="form_config_fields"></div>
                     </div>
                 </div>
             </div>
@@ -518,12 +521,67 @@ function updateFormConfig() {
 
     // Always ensure we have a valid structure
     const formConfig = { sections: sections };
-    document.getElementById('form_config').value = JSON.stringify(formConfig);
+
+    // Store as JSON string for preview/debugging
+    document.getElementById('form_config_json').value = JSON.stringify(formConfig);
+
+    // Create hidden form fields for Laravel validation
+    const formConfigFieldsContainer = document.getElementById('form_config_fields');
+    formConfigFieldsContainer.innerHTML = '';
+
+    // Create nested form fields for form_config array
+    Object.keys(sections).forEach(sectionKey => {
+        const section = sections[sectionKey];
+
+        // Add section title
+        const titleInput = document.createElement('input');
+        titleInput.type = 'hidden';
+        titleInput.name = `form_config[sections][${sectionKey}][title]`;
+        titleInput.value = section.title;
+        formConfigFieldsContainer.appendChild(titleInput);
+
+        // Add section fields
+        Object.keys(section.fields).forEach(fieldKey => {
+            const field = section.fields[fieldKey];
+
+            // Add field type
+            const typeInput = document.createElement('input');
+            typeInput.type = 'hidden';
+            typeInput.name = `form_config[sections][${sectionKey}][fields][${fieldKey}][type]`;
+            typeInput.value = field.type;
+            formConfigFieldsContainer.appendChild(typeInput);
+
+            // Add field label
+            const labelInput = document.createElement('input');
+            labelInput.type = 'hidden';
+            labelInput.name = `form_config[sections][${sectionKey}][fields][${fieldKey}][label]`;
+            labelInput.value = field.label;
+            formConfigFieldsContainer.appendChild(labelInput);
+
+            // Add field required
+            const requiredInput = document.createElement('input');
+            requiredInput.type = 'hidden';
+            requiredInput.name = `form_config[sections][${sectionKey}][fields][${fieldKey}][required]`;
+            requiredInput.value = field.required ? '1' : '0';
+            formConfigFieldsContainer.appendChild(requiredInput);
+
+            // Add field options if present
+            if (field.options && field.options.length > 0) {
+                field.options.forEach((option, index) => {
+                    const optionInput = document.createElement('input');
+                    optionInput.type = 'hidden';
+                    optionInput.name = `form_config[sections][${sectionKey}][fields][${fieldKey}][options][${index}]`;
+                    optionInput.value = option;
+                    formConfigFieldsContainer.appendChild(optionInput);
+                });
+            }
+        });
+    });
 }
 
 function previewTemplate() {
     updateFormConfig();
-    const formConfig = JSON.parse(document.getElementById('form_config').value || '{}');
+    const formConfig = JSON.parse(document.getElementById('form_config_json').value || '{}');
     
     let previewHtml = '<div class="alert alert-info">This is how your template will look in checkup forms:</div>';
     
@@ -593,7 +651,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateFormConfig();
 
             // Validate that we have at least one section
-            const formConfig = document.getElementById('form_config').value;
+            const formConfig = document.getElementById('form_config_json').value;
             if (!formConfig || formConfig === '{}' || formConfig === '') {
                 e.preventDefault();
                 alert('Please add at least one section to your template.');
