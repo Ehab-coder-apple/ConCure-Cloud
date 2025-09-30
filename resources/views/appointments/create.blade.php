@@ -286,20 +286,55 @@
 </div>
 
 <script>
-// Auto-populate patient info when selected
-document.getElementById('patient_id').addEventListener('change', function() {
-    // You can add AJAX call here to get patient details if needed
-});
+// Initialize Select2 for patient and doctor dropdowns
+$(document).ready(function() {
+    // Initialize Select2 for patient dropdown with search
+    $('#patient_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select patient...") }}',
+        allowClear: true,
+        width: '100%',
+        language: {
+            noResults: function() {
+                return '{{ __("No patients found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
 
-// Auto-populate doctor info when selected
-document.getElementById('doctor_id').addEventListener('change', function() {
-    // You can add AJAX call here to check doctor availability if needed
-});
+    // Initialize Select2 for doctor dropdown with search
+    $('#doctor_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select doctor...") }}',
+        allowClear: true,
+        width: '100%',
+        language: {
+            noResults: function() {
+                return '{{ __("No doctors found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
 
-// Load today's appointment count
-document.addEventListener('DOMContentLoaded', function() {
+    // Auto-populate patient info when selected
+    $('#patient_id').on('change', function() {
+        // You can add AJAX call here to get patient details if needed
+    });
+
+    // Auto-populate doctor info when selected
+    $('#doctor_id').on('change', function() {
+        // You can add AJAX call here to check doctor availability if needed
+    });
+
+    // Load today's appointment count
     // You can add AJAX call here to get today's appointment count
-    document.getElementById('todayCount').textContent = '0';
+    if (document.getElementById('todayCount')) {
+        document.getElementById('todayCount').textContent = '0';
+    }
 });
 
 // Quick Add Patient functionality
@@ -339,13 +374,14 @@ document.getElementById('quickAddPatientForm').addEventListener('submit', functi
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Add new patient to dropdown
-            const patientSelect = document.getElementById('patient_id');
-            const newOption = document.createElement('option');
-            newOption.value = data.patient.id;
-            newOption.textContent = `${data.patient.first_name} ${data.patient.last_name} (${data.patient.patient_id})`;
-            newOption.selected = true;
-            patientSelect.appendChild(newOption);
+            // Add new patient to Select2 dropdown
+            const newOption = new Option(
+                `${data.patient.first_name} ${data.patient.last_name} (${data.patient.patient_id})`,
+                data.patient.id,
+                true,
+                true
+            );
+            $('#patient_id').append(newOption).trigger('change');
 
             // Show success message
             successDiv.textContent = '{{ __("Patient added successfully!") }}';

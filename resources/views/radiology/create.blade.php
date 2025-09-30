@@ -683,6 +683,22 @@ document.addEventListener('DOMContentLoaded', function() {
             loadTests(category, this.value);
         }, 300);
     });
+
+    // Initialize Select2 for patient dropdown
+    $('#patient_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select Patient") }}',
+        allowClear: true,
+        width: '100%',
+        language: {
+            noResults: function() {
+                return '{{ __("No patients found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
 });
 </script>
 @endpush

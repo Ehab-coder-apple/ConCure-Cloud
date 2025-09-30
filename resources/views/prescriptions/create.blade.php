@@ -424,5 +424,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Uncomment the line below if you want to start with one medication field
     // addMedication();
 });
+
+// Initialize Select2 for patient dropdown
+$(document).ready(function() {
+    $('#patient_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select a patient...") }}',
+        allowClear: true,
+        width: '100%',
+        language: {
+            noResults: function() {
+                return '{{ __("No patients found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
+});
 </script>
 @endsection

@@ -395,6 +395,78 @@ function showAppointmentDetails(event) {
   }, true);
 })();
 
+// Initialize Select2 for patient and doctor dropdowns in modal
+$(document).ready(function() {
+    // Initialize Select2 for patient dropdown with search
+    $('#patient_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select Patient") }}',
+        allowClear: true,
+        dropdownParent: $('#newAppointmentModal'),
+        width: '100%',
+        language: {
+            noResults: function() {
+                return '{{ __("No patients found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
+
+    // Initialize Select2 for doctor dropdown with search
+    $('#doctor_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select Doctor") }}',
+        allowClear: true,
+        dropdownParent: $('#newAppointmentModal'),
+        width: '100%',
+        language: {
+            noResults: function() {
+                return '{{ __("No doctors found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
+
+    // Reinitialize Select2 when modal is shown (to fix positioning issues)
+    $('#newAppointmentModal').on('shown.bs.modal', function () {
+        $('#patient_id').select2('destroy').select2({
+            theme: 'bootstrap-5',
+            placeholder: '{{ __("Select Patient") }}',
+            allowClear: true,
+            dropdownParent: $('#newAppointmentModal'),
+            width: '100%',
+            language: {
+                noResults: function() {
+                    return '{{ __("No patients found") }}';
+                },
+                searching: function() {
+                    return '{{ __("Searching...") }}';
+                }
+            }
+        });
+
+        $('#doctor_id').select2('destroy').select2({
+            theme: 'bootstrap-5',
+            placeholder: '{{ __("Select Doctor") }}',
+            allowClear: true,
+            dropdownParent: $('#newAppointmentModal'),
+            width: '100%',
+            language: {
+                noResults: function() {
+                    return '{{ __("No doctors found") }}';
+                },
+                searching: function() {
+                    return '{{ __("Searching...") }}';
+                }
+            }
+        });
+    });
+});
+
 </script>
 @endpush
 @endsection
