@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Medicine;
 use App\Imports\MedicinesImport;
 use App\Exports\MedicinesTemplateExport;
+use App\Exports\MedicinesExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
@@ -435,6 +436,118 @@ class MedicineController extends Controller
 
             return redirect()->route('medicines.import')
                 ->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export medicines to Excel
+     */
+    public function export()
+    {
+        $user = Auth::user();
+
+        try {
+            // Clear any output buffers
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            $filename = 'medicines_export_' . date('Y-m-d_His') . '.xlsx';
+            $clinicId = $user->clinic_id;
+
+            return Excel::download(
+                new MedicinesExport($clinicId),
+                $filename,
+                \Maatwebsite\Excel\Excel::XLSX,
+                [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                ]
+            );
+        } catch (\Exception $e) {
+            return redirect()->route('medicines.index')
+                ->with('error', 'Export failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk delete medicines
+     */
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'medicine_ids' => 'required|array',
+            'medicine_ids.*' => 'exists:medicines,id',
+        ]);
+
+        $user = Auth::user();
+
+        try {
+            DB::beginTransaction();
+
+            $query = Medicine::whereIn('id', $request->medicine_ids);
+
+            // Restrict to clinic
+            if ($user->clinic_id) {
+                $query->where('clinic_id', $user->clinic_id);
+            }
+
+            $count = $query->count();
+
+            // Delete medicines
+            $query->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully deleted {$count} medicine(s).",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Bulk delete failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Clear all medicines for the current clinic
+     */
+    public function clearAll(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->clinic_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You must be assigned to a clinic to perform this action.',
+            ], 403);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $query = Medicine::where('clinic_id', $user->clinic_id);
+            $count = $query->count();
+
+            // Delete all medicines
+            $query->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully cleared all {$count} medicine(s).",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Clear all failed: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }

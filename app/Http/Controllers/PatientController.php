@@ -6,10 +6,12 @@ use App\Models\Patient;
 use App\Models\PatientCheckup;
 use App\Models\PatientFile;
 use App\Imports\PatientsImport;
+use App\Exports\PatientsExport;
 use App\Models\Clinic;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -668,6 +670,166 @@ class PatientController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('patients.import')
                 ->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export patients to Excel
+     */
+    public function export()
+    {
+        $user = auth()->user();
+
+        try {
+            // Clear any output buffers
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            $filename = 'patients_export_' . date('Y-m-d_His') . '.xlsx';
+            $clinicId = $user->clinic_id;
+
+            return Excel::download(
+                new PatientsExport($clinicId),
+                $filename,
+                \Maatwebsite\Excel\Excel::XLSX,
+                [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                ]
+            );
+        } catch (\Exception $e) {
+            return redirect()->route('patients.index')
+                ->with('error', 'Export failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk delete patients
+     */
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'patient_ids' => 'required|array',
+            'patient_ids.*' => 'exists:patients,id',
+        ]);
+
+        $user = auth()->user();
+
+        try {
+            DB::beginTransaction();
+
+            $query = Patient::whereIn('id', $request->patient_ids);
+
+            // Restrict to clinic for non-super admin users
+            if ($user->clinic_id) {
+                $query->where('clinic_id', $user->clinic_id);
+            }
+
+            $count = $query->count();
+
+            // Delete related records first
+            foreach ($query->get() as $patient) {
+                // Delete patient files from storage
+                $files = PatientFile::where('patient_id', $patient->id)->get();
+                foreach ($files as $file) {
+                    if (Storage::exists($file->file_path)) {
+                        Storage::delete($file->file_path);
+                    }
+                }
+
+                // Delete related records
+                $patient->files()->delete();
+                $patient->checkups()->delete();
+                $patient->prescriptions()->delete();
+                $patient->labRequests()->delete();
+                $patient->dietPlans()->delete();
+                $patient->appointments()->delete();
+                $patient->invoices()->delete();
+                $patient->communicationLogs()->delete();
+            }
+
+            // Delete patients
+            $query->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully deleted {$count} patient(s).",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Bulk delete failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Clear all patients for the current clinic
+     */
+    public function clearAll(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->clinic_id && !$user->isSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You must be assigned to a clinic to perform this action.',
+            ], 403);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $query = Patient::query();
+
+            // Restrict to clinic for non-super admin users
+            if ($user->clinic_id) {
+                $query->where('clinic_id', $user->clinic_id);
+            }
+
+            $count = $query->count();
+
+            // Delete related records first
+            foreach ($query->get() as $patient) {
+                // Delete patient files from storage
+                $files = PatientFile::where('patient_id', $patient->id)->get();
+                foreach ($files as $file) {
+                    if (Storage::exists($file->file_path)) {
+                        Storage::delete($file->file_path);
+                    }
+                }
+
+                // Delete related records
+                $patient->files()->delete();
+                $patient->checkups()->delete();
+                $patient->prescriptions()->delete();
+                $patient->labRequests()->delete();
+                $patient->dietPlans()->delete();
+                $patient->appointments()->delete();
+                $patient->invoices()->delete();
+                $patient->communicationLogs()->delete();
+            }
+
+            // Delete all patients
+            $query->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully cleared all {$count} patient(s).",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Clear all failed: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }

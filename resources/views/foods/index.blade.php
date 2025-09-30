@@ -111,21 +111,41 @@
                     Food Composition Database
                 </h1>
                 @if(auth()->user()->hasPermission('food_database_view'))
-                <div>
+                <div class="d-flex gap-2">
                     @if(auth()->user()->hasPermission('food_database_groups'))
-                    <a href="{{ route('food-groups.index') }}" class="btn btn-outline-primary me-2">
+                    <a href="{{ route('food-groups.index') }}" class="btn btn-outline-primary">
                         <i class="fas fa-layer-group"></i> Food Groups
                     </a>
                     @endif
+
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-1"></i>
+                            {{ __('Actions') }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('foods.export') }}">
+                                    <i class="fas fa-file-excel text-success me-2"></i>
+                                    {{ __('Export to Excel') }}
+                                </a>
+                            </li>
+                            @if($foods->count() > 0 && auth()->user()->hasPermission('food_database_clear'))
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); confirmClearAll();">
+                                    <i class="fas fa-trash-alt me-2"></i>
+                                    {{ __('Clear All Foods') }}
+                                </a>
+                            </li>
+                            @endif
+                        </ul>
+                    </div>
+
                     @if(auth()->user()->hasPermission('food_database_import'))
-                    <a href="{{ route('foods.import') }}" class="btn btn-outline-success me-2">
-                        <i class="fas fa-upload"></i> Import Foods
+                    <a href="{{ route('foods.import') }}" class="btn btn-success">
+                        <i class="fas fa-upload"></i> Import
                     </a>
-                    @endif
-                    @if($foods->count() > 0 && auth()->user()->hasPermission('food_database_clear'))
-                    <button type="button" class="btn btn-outline-danger me-2" onclick="confirmClearAll()">
-                        <i class="fas fa-trash-alt"></i> Clear All Foods
-                    </button>
                     @endif
                     @if(auth()->user()->hasPermission('food_database_create'))
                     <a href="{{ route('foods.create') }}" class="btn btn-primary">

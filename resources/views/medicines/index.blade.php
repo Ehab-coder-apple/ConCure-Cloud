@@ -15,9 +15,30 @@
                     <p class="text-muted mb-0">{{ __('Manage your clinic\'s medicine inventory') }}</p>
                 </div>
                 <div class="d-flex gap-2">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-1"></i>
+                            {{ __('Actions') }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('medicines.export') }}">
+                                    <i class="fas fa-file-excel text-success me-2"></i>
+                                    {{ __('Export to Excel') }}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); confirmClearAllMedicines();">
+                                    <i class="fas fa-trash-alt me-2"></i>
+                                    {{ __('Clear All Medicines') }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <a href="{{ route('medicines.import') }}" class="btn btn-success">
                         <i class="fas fa-file-import me-1"></i>
-                        {{ __('Import from Excel') }}
+                        {{ __('Import') }}
                     </a>
                     <a href="{{ route('medicines.create') }}" class="btn btn-primary">
                         <i class="fas fa-plus me-1"></i>
@@ -219,4 +240,32 @@
         </div>
     </div>
 </div>
+
+<script>
+function confirmClearAllMedicines() {
+    if (confirm('{{ __("Are you sure you want to delete ALL medicines? This action cannot be undone!") }}')) {
+        if (confirm('{{ __("This will permanently delete all medicine records. Are you absolutely sure?") }}')) {
+            fetch('{{ route("medicines.clear-all") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        }
+    }
+}
+</script>
 @endsection

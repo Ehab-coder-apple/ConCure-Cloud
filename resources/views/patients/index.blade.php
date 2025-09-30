@@ -11,10 +11,31 @@
                     <i class="fas fa-users text-primary me-2"></i>
                     {{ __('Patient Management') }}
                 </h1>
-                <div class="btn-group">
+                <div class="d-flex gap-2">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-1"></i>
+                            {{ __('Actions') }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('patients.export') }}">
+                                    <i class="fas fa-file-excel text-success me-2"></i>
+                                    {{ __('Export to Excel') }}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); confirmClearAll();">
+                                    <i class="fas fa-trash-alt me-2"></i>
+                                    {{ __('Clear All Patients') }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <a href="{{ route('patients.import') }}" class="btn btn-success">
                         <i class="fas fa-file-import me-2"></i>
-                        {{ __('Import Patients') }}
+                        {{ __('Import') }}
                     </a>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPatientModal">
                         <i class="fas fa-plus me-2"></i>
@@ -249,6 +270,32 @@ function newPrescription(patientId) {
 
 function newAppointment(patientId) {
     window.location.href = `/appointments/create?patient_id=${patientId}`;
+}
+
+function confirmClearAll() {
+    if (confirm('{{ __("Are you sure you want to delete ALL patients? This action cannot be undone!") }}')) {
+        if (confirm('{{ __("This will permanently delete all patient records and their associated data. Are you absolutely sure?") }}')) {
+            fetch('{{ route("patients.clear-all") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        }
+    }
 }
 </script>
 @endsection

@@ -159,10 +159,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/create', [PatientController::class, 'create'])->name('create');
         Route::post('/', [PatientController::class, 'store'])->name('store');
 
-        // Import routes (must be before parameterized routes)
+        // Import/Export routes (must be before parameterized routes)
         Route::get('/import', [PatientController::class, 'showImport'])->name('import');
         Route::post('/import', [PatientController::class, 'import'])->name('import.process');
         Route::get('/import/template', [PatientController::class, 'downloadTemplate'])->name('import.template');
+        Route::get('/export', [PatientController::class, 'export'])->name('export');
+
+        // Bulk operations (must be before parameterized routes)
+        Route::post('/bulk-delete', [PatientController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/clear-all', [PatientController::class, 'clearAll'])->name('clear-all');
 
         // API route for dropdowns (must be before parameterized routes)
         Route::get('/api', [PatientController::class, 'apiList'])->name('api');
@@ -283,10 +288,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/', [App\Http\Controllers\MedicineController::class, 'store'])->name('store');
         Route::get('/search', [App\Http\Controllers\MedicineController::class, 'search'])->name('search');
 
-        // Import routes
+        // Import/Export routes
         Route::get('/import', [App\Http\Controllers\MedicineController::class, 'showImport'])->name('import');
         Route::post('/import', [App\Http\Controllers\MedicineController::class, 'import'])->name('import.process');
         Route::get('/import/template', [App\Http\Controllers\MedicineController::class, 'downloadTemplate'])->name('import.template');
+        Route::get('/export', [App\Http\Controllers\MedicineController::class, 'export'])->name('export');
+
+        // Bulk operations
+        Route::post('/bulk-delete', [App\Http\Controllers\MedicineController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/clear-all', [App\Http\Controllers\MedicineController::class, 'clearAll'])->name('clear-all');
 
         Route::get('/{medicine}', [App\Http\Controllers\MedicineController::class, 'show'])->name('show');
         Route::get('/{medicine}/edit', [App\Http\Controllers\MedicineController::class, 'edit'])->name('edit');
@@ -611,15 +621,17 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/create', [FoodController::class, 'create'])->name('create');
         Route::post('/', [FoodController::class, 'store'])->name('store');
 
-        // Import routes must be before parameterized routes
+        // Import/Export routes must be before parameterized routes
         Route::get('/import', [FoodController::class, 'showImport'])->name('import');
         Route::post('/import', [FoodController::class, 'import'])->name('import.process');
         Route::get('/import/template', [FoodController::class, 'downloadTemplate'])->name('import.template');
+        Route::get('/export', [FoodController::class, 'export'])->name('export');
 
         // Search route must be before parameterized routes
         Route::get('/search', [FoodController::class, 'search'])->name('search');
 
-        // Clear all foods route must be before parameterized routes
+        // Bulk operations must be before parameterized routes
+        Route::post('/bulk-delete', [FoodController::class, 'bulkDelete'])->name('bulk-delete');
         Route::delete('/clear-all', [FoodController::class, 'clearAll'])->name('clear-all');
 
         // Parameterized routes (must be after specific routes)

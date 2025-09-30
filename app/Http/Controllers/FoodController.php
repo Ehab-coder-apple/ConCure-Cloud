@@ -6,6 +6,7 @@ use App\Models\Food;
 use App\Models\FoodGroup;
 use App\Imports\FoodsImport;
 use App\Exports\FoodsTemplateExport;
+use App\Exports\FoodsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -661,4 +662,85 @@ class FoodController extends Controller
                 ->with('error', 'Import failed: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Export foods to Excel
+     */
+    public function export()
+    {
+        $this->checkFoodPermission('food_database_export');
+
+        $user = auth()->user();
+
+        try {
+            // Clear any output buffers
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            $filename = 'foods_export_' . date('Y-m-d_His') . '.xlsx';
+            $clinicId = $user->clinic_id;
+
+            return Excel::download(
+                new FoodsExport($clinicId),
+                $filename,
+                \Maatwebsite\Excel\Excel::XLSX,
+                [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                ]
+            );
+        } catch (\Exception $e) {
+            return redirect()->route('foods.index')
+                ->with('error', 'Export failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk delete foods
+     */
+    public function bulkDelete(Request $request)
+    {
+        $this->checkFoodPermission('food_database_delete');
+
+        $request->validate([
+            'food_ids' => 'required|array',
+            'food_ids.*' => 'exists:foods,id',
+        ]);
+
+        $user = auth()->user();
+
+        try {
+            DB::beginTransaction();
+
+            $query = Food::whereIn('id', $request->food_ids);
+
+            // Restrict to clinic's custom foods only
+            if ($user->clinic_id) {
+                $query->where(function($q) use ($user) {
+                    $q->where('clinic_id', $user->clinic_id)
+                      ->where('is_custom', true);
+                });
+            }
+
+            $count = $query->count();
+
+            // Delete foods
+            $query->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully deleted {$count} food(s).",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Bulk delete failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }
