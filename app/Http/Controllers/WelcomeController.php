@@ -145,6 +145,9 @@ class WelcomeController extends Controller
                 ]);
             }
 
+            // Update last login timestamp
+            $user->update(['last_login_at' => now()]);
+
             // Subscription checks removed - direct access
 
             return redirect()->intended(route('dashboard'));

@@ -32,6 +32,7 @@ class User extends Authenticatable
         'activation_code',
         'activated_at',
         'expires_at',
+        'last_login_at',
         'language',
         'permissions',
         'metadata',

@@ -141,6 +141,9 @@ class LoginController extends Controller
      */
     protected function authenticated(Request $request, $user)
     {
+        // Update last login timestamp
+        $user->update(['last_login_at' => now()]);
+
         // Log successful login
         AuditLog::create([
             'user_id' => $user->id,
