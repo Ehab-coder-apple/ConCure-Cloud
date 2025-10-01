@@ -1417,6 +1417,21 @@ function displayFoodResults(foods) {
         const escapedOriginalName = food.name.replace(/"/g, '&quot;');
         const escapedServingSize = (food.serving_size || '100g').replace(/"/g, '&quot;');
 
+        // Calculate nutrition per serving for display
+        // Database stores values per 100g, but we want to show per serving
+        const servingWeight = food.grams_per_piece || food.serving_weight || 100;
+        const servingMultiplier = servingWeight / 100;
+        const displayCalories = Math.round(food.calories * servingMultiplier);
+        const displayProtein = Math.round(food.protein * servingMultiplier * 10) / 10;
+
+        // Determine display text for serving
+        let servingText = food.serving_size || '100g';
+        if (food.grams_per_piece && (!food.serving_size || !food.serving_size.includes('piece'))) {
+            servingText = `1 piece`;
+        } else if (!food.serving_size || food.serving_size === '100g') {
+            servingText = `${servingWeight}g`;
+        }
+
         html += `
             <div class="col-md-6 mb-3">
                 <div class="card food-card h-100" style="cursor: pointer;"
@@ -1436,13 +1451,13 @@ function displayFoodResults(foods) {
                             `<small class="text-muted">${food.name}</small><br>` : ''}
                         <div class="row text-center">
                             <div class="col-6">
-                                <small class="text-primary">${food.calories} cal</small>
+                                <small class="text-primary">${displayCalories} cal</small>
                             </div>
                             <div class="col-6">
-                                <small class="text-success">${food.protein}g protein</small>
+                                <small class="text-success">${displayProtein}g protein</small>
                             </div>
                         </div>
-                        <small class="text-muted">Per ${food.serving_size || '100g'}</small>
+                        <small class="text-muted">Per ${servingText}</small>
                     </div>
                 </div>
             </div>
