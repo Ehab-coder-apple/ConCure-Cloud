@@ -881,11 +881,12 @@ function displayFoodResults(foods) {
             servingText = `${servingWeight}g`;
         }
 
-        // Build weight information
+        // Build weight information - ALWAYS show weight
         let weightInfo = '';
         if (food.grams_per_piece) {
             weightInfo = `<div class="text-center mt-1"><small class="text-info"><i class="fas fa-balance-scale me-1"></i>1 piece = ${food.grams_per_piece}g</small></div>`;
-        } else if (servingWeight !== 100) {
+        } else {
+            // Always show serving weight, even if it's 100g
             weightInfo = `<div class="text-center mt-1"><small class="text-info"><i class="fas fa-balance-scale me-1"></i>1 serving = ${servingWeight}g</small></div>`;
         }
 
