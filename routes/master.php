@@ -81,6 +81,9 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
         return view('master.settings.index');
     })->name('settings');
 
+    // Features Documentation
+    Route::get('/features', [DashboardController::class, 'features'])->name('features');
+
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
     Route::post('/reports/payments', [PaymentsController::class, 'store'])->name('reports.payments.store');

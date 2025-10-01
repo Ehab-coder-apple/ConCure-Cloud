@@ -179,15 +179,23 @@
             </div>
             
             <div class="nav-item">
-                <a class="nav-link {{ request()->routeIs('master.settings') ? 'active' : '' }}" 
+                <a class="nav-link {{ request()->routeIs('master.settings') ? 'active' : '' }}"
                    href="{{ route('master.settings') }}">
                     <i class="fas fa-cog me-2"></i>
                     Settings
                 </a>
             </div>
-            
+
+            <div class="nav-item">
+                <a class="nav-link {{ request()->routeIs('master.features') ? 'active' : '' }}"
+                   href="{{ route('master.features') }}">
+                    <i class="fas fa-list-check me-2"></i>
+                    Features List
+                </a>
+            </div>
+
             <hr style="border-color: rgba(255, 255, 255, 0.1); margin: 1rem;">
-            
+
             <div class="nav-item">
                 <a class="nav-link" href="{{ url('/') }}" target="_blank">
                     <i class="fas fa-external-link-alt me-2"></i>

@@ -21,15 +21,23 @@ class DashboardController extends Controller
     {
         // Get system statistics
         $stats = $this->getSystemStats();
-        
+
         // Get recent activities
         $recentClinics = $this->getRecentClinics();
         $recentUsers = $this->getRecentUsers();
-        
+
         // Get growth data for charts
         $growthData = $this->getGrowthData();
 
         return view('master.dashboard', compact('stats', 'recentClinics', 'recentUsers', 'growthData'));
+    }
+
+    /**
+     * Show comprehensive features documentation.
+     */
+    public function features()
+    {
+        return view('master.features');
     }
 
     /**
