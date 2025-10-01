@@ -16,6 +16,8 @@
             font-size: 10px;
             line-height: 1.4;
             color: #333;
+            padding: 15mm 20mm;
+            margin: 0;
         }
         
         .header {
@@ -37,13 +39,14 @@
         }
         
         .section {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             page-break-inside: avoid;
+            padding: 0 5px;
         }
         
         .section-header {
             background-color: #f8f9fa;
-            padding: 8px 10px;
+            padding: 8px 15px;
             border-left: 4px solid #0d6efd;
             margin-bottom: 10px;
             font-size: 14px;
@@ -102,13 +105,22 @@
         .feature-grid {
             display: table;
             width: 100%;
+            margin-bottom: 10px;
         }
-        
+
         .feature-column {
             display: table-cell;
             width: 50%;
-            padding: 5px;
+            padding: 0 10px;
             vertical-align: top;
+        }
+
+        .feature-column:first-child {
+            padding-left: 0;
+        }
+
+        .feature-column:last-child {
+            padding-right: 0;
         }
         
         .feature-module {
@@ -127,9 +139,10 @@
         }
         
         .feature-list li {
-            padding-left: 15px;
-            margin-bottom: 3px;
+            padding-left: 18px;
+            margin-bottom: 4px;
             position: relative;
+            line-height: 1.5;
         }
         
         .feature-list li:before {
@@ -141,13 +154,15 @@
         }
         
         .subsection {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            padding: 0 5px;
         }
-        
+
         .subsection h4 {
             font-size: 11px;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
             color: #495057;
+            font-weight: bold;
         }
         
         .role-list {
