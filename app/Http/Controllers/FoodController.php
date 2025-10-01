@@ -429,9 +429,14 @@ class FoodController extends Controller
      */
     public function search(Request $request)
     {
+        // Clean up empty string parameters
+        if ($request->food_group_id === '') {
+            $request->merge(['food_group_id' => null]);
+        }
+
         $request->validate([
-            'search' => 'nullable|string|min:2',
-            'q' => 'nullable|string|min:2', // Support both parameters
+            'search' => 'nullable|string|min:1',
+            'q' => 'nullable|string|min:1', // Support both parameters
             'food_group_id' => 'nullable|integer|exists:food_groups,id',
             'language' => 'nullable|string|in:default,en,ar,ku_bahdini,ku_sorani,ku',
             'limit' => 'nullable|integer|min:1|max:50',
@@ -464,7 +469,7 @@ class FoodController extends Controller
 
         // Handle search term (support both 'search' and 'q' parameters)
         $searchTerm = $request->search ?? $request->q;
-        if ($searchTerm && strlen($searchTerm) >= 2) {
+        if ($searchTerm && mb_strlen($searchTerm) >= 1) {
             $query->search($searchTerm);
         }
         // If no search term provided, we'll return the first foods (popular/recent foods)
