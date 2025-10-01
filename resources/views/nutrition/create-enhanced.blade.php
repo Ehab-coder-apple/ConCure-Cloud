@@ -1451,7 +1451,7 @@ function displayFoodResults(foods) {
 
     // Add click event listeners to all food cards
     resultsContainer.querySelectorAll('.food-card').forEach(card => {
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function(e) {
             const id = parseInt(this.dataset.foodId);
             const originalName = this.dataset.foodName;
             const displayName = this.dataset.foodDisplayName;
@@ -1462,13 +1462,13 @@ function displayFoodResults(foods) {
             const servingSize = this.dataset.foodServingSize;
             const servingWeight = parseFloat(this.dataset.foodServingWeight);
 
-            selectFood(id, originalName, displayName, calories, protein, carbs, fat, servingSize, servingWeight);
+            selectFood(id, originalName, displayName, calories, protein, carbs, fat, servingSize, servingWeight, this);
         });
     });
 }
 
 // Select a food item
-function selectFood(id, originalName, displayName, calories, protein, carbs, fat, servingSize, servingWeight) {
+function selectFood(id, originalName, displayName, calories, protein, carbs, fat, servingSize, servingWeight, cardElement) {
     // Handle backward compatibility - if displayName is actually calories (old function signature)
     if (typeof displayName === 'number') {
         // Old signature: selectFood(id, name, calories, protein, carbs, fat)
@@ -1502,7 +1502,8 @@ function selectFood(id, originalName, displayName, calories, protein, carbs, fat
     document.querySelectorAll('.food-card').forEach(card => {
         card.classList.remove('border-primary');
     });
-    event.currentTarget.classList.add('border-primary');
+    const card = cardElement || event.currentTarget; // Support both new and legacy calls
+    card.classList.add('border-primary');
 
     // Update nutrition preview
     updateNutritionPreview();

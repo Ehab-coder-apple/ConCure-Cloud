@@ -900,7 +900,7 @@ function displayFoodResults(foods) {
 
     // Add click event listeners to all food cards
     resultsContainer.querySelectorAll('.food-card').forEach(card => {
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function(e) {
             const id = parseInt(this.dataset.foodId);
             const name = this.dataset.foodName;
             const displayName = this.dataset.foodDisplayName;
@@ -911,16 +911,16 @@ function displayFoodResults(foods) {
             const gramsPerPiece = this.dataset.foodGramsPerPiece === 'null' ? null : parseFloat(this.dataset.foodGramsPerPiece);
             const servingWeight = parseFloat(this.dataset.foodServingWeight);
 
-            selectFood(id, name, displayName, calories, protein, carbs, fat, gramsPerPiece, servingWeight);
+            selectFood(id, name, displayName, calories, protein, carbs, fat, gramsPerPiece, servingWeight, this);
         });
     });
 }
 
 // Select a food item
-function selectFood(id, originalName, displayName, calories, protein, carbs, fat, gramsPerPiece, servingWeight) {
+function selectFood(id, originalName, displayName, calories, protein, carbs, fat, gramsPerPiece, servingWeight, cardElement) {
     // Toggle selection
     const idx = selectedFoods.findIndex(f => f.id === id);
-    const card = event.currentTarget;
+    const card = cardElement || event.currentTarget; // Support both new and legacy calls
     if (idx >= 0) {
         // remove
         selectedFoods.splice(idx, 1);
