@@ -163,6 +163,12 @@
             color: white;
         }
 
+        .logo-icon .logo-image {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+
         .brand-name {
             color: white;
             font-size: 1.8rem;

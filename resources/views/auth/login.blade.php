@@ -18,7 +18,7 @@
                     <div class="login-card-header">
                         <div class="brand-logo">
                             <div class="logo-icon">
-                                <i class="fas fa-hospital"></i>
+                                <img src="{{ asset('images/concure-logo.png') }}" alt="ConCure Logo" class="logo-image">
                             </div>
                             <h2 class="brand-name">{{ config('app.name') }}</h2>
                             <p class="brand-subtitle">Professional Clinic Management</p>
