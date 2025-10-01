@@ -1569,7 +1569,19 @@ function selectFood(id, originalName, displayName, calories, protein, carbs, fat
 
     if (count > 0) {
         detailsEl.style.display = 'block';
-        nameEl.textContent = count === 1 ? selectedFoods[0].displayName : `${count} items selected`;
+
+        // Show food names instead of just count
+        if (count === 1) {
+            nameEl.textContent = selectedFoods[0].displayName;
+        } else if (count === 2) {
+            nameEl.textContent = `${selectedFoods[0].displayName} + ${selectedFoods[1].displayName}`;
+        } else if (count === 3) {
+            nameEl.textContent = `${selectedFoods[0].displayName}, ${selectedFoods[1].displayName} + ${selectedFoods[2].displayName}`;
+        } else {
+            // For 4+ items, show first 2 and count
+            nameEl.textContent = `${selectedFoods[0].displayName}, ${selectedFoods[1].displayName} + ${count - 2} more`;
+        }
+
         addBtn.disabled = false;
     } else {
         detailsEl.style.display = 'none';
