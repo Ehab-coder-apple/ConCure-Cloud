@@ -662,6 +662,7 @@
                                         <label for="food-unit" class="form-label">{{ __('Unit') }}</label>
                                         <select class="form-select" id="food-unit">
                                             <option value="g">{{ __('grams') }}</option>
+                                            <option value="serving">{{ __('serving') }}</option>
                                             <option value="cup">{{ __('cup') }}</option>
                                             <option value="piece">{{ __('piece') }}</option>
                                             <option value="slice">{{ __('slice') }}</option>
