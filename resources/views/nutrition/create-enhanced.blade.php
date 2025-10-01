@@ -656,15 +656,15 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="food-quantity" class="form-label">{{ __('Quantity') }}</label>
-                                        <input type="number" class="form-control" id="food-quantity" value="100" min="1" step="0.1">
+                                        <input type="number" class="form-control" id="food-quantity" value="1" min="0.1" step="0.1">
                                     </div>
                                     <div class="mb-3">
                                         <label for="food-unit" class="form-label">{{ __('Unit') }}</label>
-                                        <select class="form-select" id="food-unit">
-                                            <option value="g">{{ __('grams') }}</option>
-                                            <option value="serving">{{ __('serving') }}</option>
-                                            <option value="cup">{{ __('cup') }}</option>
+                                        <select class="form-select" id="food-unit" onchange="updateNutritionPreview()">
+                                            <option value="serving" selected>{{ __('serving') }}</option>
                                             <option value="piece">{{ __('piece') }}</option>
+                                            <option value="g">{{ __('grams') }}</option>
+                                            <option value="cup">{{ __('cup') }}</option>
                                             <option value="slice">{{ __('slice') }}</option>
                                             <option value="tbsp">{{ __('tablespoon') }}</option>
                                             <option value="tsp">{{ __('teaspoon') }}</option>
@@ -1812,11 +1812,18 @@ function updateOptionDisplay(mealType, optionIndex) {
             totalCarbs += food.carbs;
             totalFat += food.fat;
 
+            // Format quantity display with proper spacing
+            let quantityDisplay = `${food.quantity}${food.unit}`;
+            // Add space before unit for better readability
+            if (food.unit && !['g', 'kg', 'mg', 'ml', 'l'].includes(food.unit)) {
+                quantityDisplay = `${food.quantity} ${food.unit}`;
+            }
+
             html += `
                 <div class="food-item d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                     <div>
                         <strong>${food.displayName}</strong>
-                        <div class="text-muted small">${food.quantity}${food.unit} | ${food.calories} cal</div>
+                        <div class="text-muted small">${quantityDisplay} | ${food.calories} cal</div>
                         ${food.preparation_notes ? `<div class="text-info small">${food.preparation_notes}</div>` : ''}
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-danger"
