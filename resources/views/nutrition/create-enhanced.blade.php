@@ -1428,7 +1428,8 @@ function displayFoodResults(foods) {
                      data-food-carbs="${food.carbohydrates}"
                      data-food-fat="${food.fat}"
                      data-food-serving-size="${escapedServingSize}"
-                     data-food-serving-weight="${food.serving_weight || 100}">
+                     data-food-serving-weight="${food.serving_weight || 100}"
+                     data-food-grams-per-piece="${food.grams_per_piece || ''}">
                     <div class="card-body">
                         <h6 class="card-title">${displayName}</h6>
                         ${selectedLanguage !== 'default' && displayName !== food.name ?
@@ -1462,14 +1463,21 @@ function displayFoodResults(foods) {
             const fat = parseFloat(this.dataset.foodFat);
             const servingSize = this.dataset.foodServingSize;
             const servingWeight = parseFloat(this.dataset.foodServingWeight);
+            const gramsPerPiece = this.dataset.foodGramsPerPiece ? parseFloat(this.dataset.foodGramsPerPiece) : null;
 
-            selectFood(id, originalName, displayName, calories, protein, carbs, fat, servingSize, servingWeight, this);
+            selectFood(id, originalName, displayName, calories, protein, carbs, fat, servingSize, servingWeight, gramsPerPiece, this);
         });
     });
 }
 
 // Select a food item - NOW SUPPORTS MULTIPLE SELECTION
-function selectFood(id, originalName, displayName, calories, protein, carbs, fat, servingSize, servingWeight, cardElement) {
+function selectFood(id, originalName, displayName, calories, protein, carbs, fat, servingSize, servingWeight, gramsPerPiece, cardElement) {
+    // Handle backward compatibility - if gramsPerPiece is actually the cardElement (old signature)
+    if (gramsPerPiece && typeof gramsPerPiece === 'object' && gramsPerPiece.classList) {
+        cardElement = gramsPerPiece;
+        gramsPerPiece = null;
+    }
+
     // Handle backward compatibility - if displayName is actually calories (old function signature)
     if (typeof displayName === 'number') {
         // Old signature: selectFood(id, name, calories, protein, carbs, fat)
@@ -1506,7 +1514,8 @@ function selectFood(id, originalName, displayName, calories, protein, carbs, fat
             carbs: parseFloat(carbs),
             fat: parseFloat(fat),
             servingSize: servingSize || '100g',
-            servingWeight: parseFloat(servingWeight) || 100
+            servingWeight: parseFloat(servingWeight) || 100,
+            gramsPerPiece: gramsPerPiece ? parseFloat(gramsPerPiece) : null
         };
         selectedFoods.push(foodObj);
         card.classList.add('border-primary');
@@ -1555,15 +1564,39 @@ function updateNutritionPreview() {
     let totalFat = 0;
 
     selectedFoods.forEach(food => {
-        // Calculate multiplier based on actual serving weight
-        const baseServingWeight = food.servingWeight || 100;
-        let multiplier = quantity / baseServingWeight;
+        // Calculate multiplier using proper unit conversion
+        let multiplier;
 
-        if (unit === 'cup') multiplier = quantity * 2.4;
-        else if (unit === 'piece') multiplier = quantity * 1.5;
-        else if (unit === 'slice') multiplier = quantity * 0.3;
-        else if (unit === 'tbsp') multiplier = quantity * 0.15;
-        else if (unit === 'tsp') multiplier = quantity * 0.05;
+        switch(unit) {
+            case 'kg':
+                multiplier = (quantity * 1000) / 100;
+                break;
+            case 'mg':
+                multiplier = (quantity / 1000) / 100;
+                break;
+            case 'cup':
+                multiplier = (quantity * 240) / 100;
+                break;
+            case 'tbsp':
+                multiplier = (quantity * 15) / 100;
+                break;
+            case 'tsp':
+                multiplier = (quantity * 5) / 100;
+                break;
+            case 'serving':
+                const servingGrams = (food.servingWeight ?? 100) * quantity;
+                multiplier = servingGrams / 100;
+                break;
+            case 'piece':
+                const perPiece = food.gramsPerPiece ?? food.servingWeight ?? 100;
+                const pieceGrams = perPiece * quantity;
+                multiplier = pieceGrams / 100;
+                break;
+            case 'g':
+            default:
+                multiplier = quantity / 100;
+                break;
+        }
 
         totalCalories += (food.calories || 0) * multiplier;
         totalProtein += (food.protein || 0) * multiplier;
@@ -1605,14 +1638,39 @@ function addFoodToMeal() {
             return;
         }
 
-        // Calculate nutrition values using actual serving weight
-        const baseServingWeight = food.servingWeight || 100;
-        let multiplier = quantity / baseServingWeight;
-        if (unit === 'cup') multiplier = quantity * 2.4;
-        else if (unit === 'piece') multiplier = quantity * 1.5;
-        else if (unit === 'slice') multiplier = quantity * 0.3;
-        else if (unit === 'tbsp') multiplier = quantity * 0.15;
-        else if (unit === 'tsp') multiplier = quantity * 0.05;
+        // Calculate nutrition values using proper unit conversion
+        let multiplier;
+
+        switch(unit) {
+            case 'kg':
+                multiplier = (quantity * 1000) / 100;
+                break;
+            case 'mg':
+                multiplier = (quantity / 1000) / 100;
+                break;
+            case 'cup':
+                multiplier = (quantity * 240) / 100;
+                break;
+            case 'tbsp':
+                multiplier = (quantity * 15) / 100;
+                break;
+            case 'tsp':
+                multiplier = (quantity * 5) / 100;
+                break;
+            case 'serving':
+                const servingGrams = (food.servingWeight ?? 100) * quantity;
+                multiplier = servingGrams / 100;
+                break;
+            case 'piece':
+                const perPiece = food.gramsPerPiece ?? food.servingWeight ?? 100;
+                const pieceGrams = perPiece * quantity;
+                multiplier = pieceGrams / 100;
+                break;
+            case 'g':
+            default:
+                multiplier = quantity / 100;
+                break;
+        }
 
         const foodItem = {
             food_id: food.id,
