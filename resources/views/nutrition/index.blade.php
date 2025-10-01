@@ -25,12 +25,6 @@
                             {{ __('New Plan') }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ route('nutrition.create.flexible') }}">
-                                <i class="fas fa-list-alt me-2 text-success"></i>
-                                {{ __('Flexible Meal Options') }}
-                                <small class="d-block text-muted">{{ __('Patients choose from meal options') }}</small>
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ route('nutrition.create.enhanced') }}">
                                 <i class="fas fa-utensils me-2"></i>
                                 {{ __('Detailed Plan with Foods') }}
