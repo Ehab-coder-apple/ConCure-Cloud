@@ -1432,6 +1432,18 @@ function displayFoodResults(foods) {
             servingText = `${servingWeight}g`;
         }
 
+        // Build weight information text
+        let weightInfo = '';
+        if (food.grams_per_piece) {
+            weightInfo = `<div class="text-center mt-1"><small class="text-info"><i class="fas fa-balance-scale me-1"></i>1 piece = ${food.grams_per_piece}g</small></div>`;
+        } else if (servingWeight !== 100) {
+            weightInfo = `<div class="text-center mt-1"><small class="text-info"><i class="fas fa-balance-scale me-1"></i>1 serving = ${servingWeight}g</small></div>`;
+        }
+
+        // Add per 100g reference for patient to calculate any weight
+        const cal100g = Math.round(food.calories);
+        const protein100g = Math.round(food.protein * 10) / 10;
+
         html += `
             <div class="col-md-6 mb-3">
                 <div class="card food-card h-100" style="cursor: pointer;"
@@ -1446,18 +1458,27 @@ function displayFoodResults(foods) {
                      data-food-serving-weight="${food.serving_weight || 100}"
                      data-food-grams-per-piece="${food.grams_per_piece || ''}">
                     <div class="card-body">
-                        <h6 class="card-title">${displayName}</h6>
+                        <h6 class="card-title mb-2">${displayName}</h6>
                         ${selectedLanguage !== 'default' && displayName !== food.name ?
-                            `<small class="text-muted">${food.name}</small><br>` : ''}
-                        <div class="row text-center">
+                            `<small class="text-muted d-block mb-2">${food.name}</small>` : ''}
+
+                        <div class="row text-center mb-2">
                             <div class="col-6">
-                                <small class="text-primary">${displayCalories} cal</small>
+                                <small class="text-primary"><strong>${displayCalories}</strong> cal</small>
                             </div>
                             <div class="col-6">
-                                <small class="text-success">${displayProtein}g protein</small>
+                                <small class="text-success"><strong>${displayProtein}g</strong> protein</small>
                             </div>
                         </div>
-                        <small class="text-muted">Per ${servingText}</small>
+                        <div class="text-center">
+                            <small class="text-muted d-block"><strong>Per ${servingText}</strong></small>
+                        </div>
+                        ${weightInfo}
+                        <div class="text-center mt-2 pt-2 border-top">
+                            <small class="text-secondary" style="font-size: 0.75rem;">
+                                <i class="fas fa-info-circle me-1"></i>100g = ${cal100g} cal | ${protein100g}g protein
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
