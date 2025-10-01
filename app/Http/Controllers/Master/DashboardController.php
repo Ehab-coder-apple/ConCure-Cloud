@@ -41,6 +41,26 @@ class DashboardController extends Controller
     }
 
     /**
+     * Generate PDF of features documentation.
+     */
+    public function featuresPdf()
+    {
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('master.features-pdf');
+
+        // Set paper size and orientation
+        $pdf->setPaper('a4', 'portrait');
+
+        // Set options for better rendering
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'sans-serif',
+        ]);
+
+        return $pdf->download('ConCure-Cloud-Features-' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
      * Get pending clinic registrations for approval.
      */
     public function getPendingRegistrations()

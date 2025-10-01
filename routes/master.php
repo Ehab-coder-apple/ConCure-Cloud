@@ -83,6 +83,7 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
 
     // Features Documentation
     Route::get('/features', [DashboardController::class, 'features'])->name('features');
+    Route::get('/features/pdf', [DashboardController::class, 'featuresPdf'])->name('features.pdf');
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
