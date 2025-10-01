@@ -1411,13 +1411,23 @@ function displayFoodResults(foods) {
             displayName = food.name_ku;
         }
 
-        // Escape quotes for onclick function
-        const escapedName = displayName.replace(/'/g, "\\'");
-        const escapedOriginalName = food.name.replace(/'/g, "\\'");
+        // Use data attributes to avoid issues with special characters (Arabic, Kurdish, etc.)
+        const escapedDisplayName = displayName.replace(/"/g, '&quot;');
+        const escapedOriginalName = food.name.replace(/"/g, '&quot;');
+        const escapedServingSize = (food.serving_size || '100g').replace(/"/g, '&quot;');
 
         html += `
             <div class="col-md-6 mb-3">
-                <div class="card food-card h-100" style="cursor: pointer;" onclick="selectFood(${food.id}, '${escapedOriginalName}', '${escapedName}', ${food.calories}, ${food.protein}, ${food.carbohydrates}, ${food.fat}, '${food.serving_size || '100g'}', ${food.serving_weight || 100})">
+                <div class="card food-card h-100" style="cursor: pointer;"
+                     data-food-id="${food.id}"
+                     data-food-name="${escapedOriginalName}"
+                     data-food-display-name="${escapedDisplayName}"
+                     data-food-calories="${food.calories}"
+                     data-food-protein="${food.protein}"
+                     data-food-carbs="${food.carbohydrates}"
+                     data-food-fat="${food.fat}"
+                     data-food-serving-size="${escapedServingSize}"
+                     data-food-serving-weight="${food.serving_weight || 100}">
                     <div class="card-body">
                         <h6 class="card-title">${displayName}</h6>
                         ${selectedLanguage !== 'default' && displayName !== food.name ?
@@ -1438,6 +1448,23 @@ function displayFoodResults(foods) {
     });
 
     resultsContainer.innerHTML = html;
+
+    // Add click event listeners to all food cards
+    resultsContainer.querySelectorAll('.food-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const id = parseInt(this.dataset.foodId);
+            const originalName = this.dataset.foodName;
+            const displayName = this.dataset.foodDisplayName;
+            const calories = parseFloat(this.dataset.foodCalories);
+            const protein = parseFloat(this.dataset.foodProtein);
+            const carbs = parseFloat(this.dataset.foodCarbs);
+            const fat = parseFloat(this.dataset.foodFat);
+            const servingSize = this.dataset.foodServingSize;
+            const servingWeight = parseFloat(this.dataset.foodServingWeight);
+
+            selectFood(id, originalName, displayName, calories, protein, carbs, fat, servingSize, servingWeight);
+        });
+    });
 }
 
 // Select a food item

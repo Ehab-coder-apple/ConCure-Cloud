@@ -866,10 +866,19 @@ function displayFoodResults(foods) {
     let html = '';
     foods.forEach(food => {
         const displayName = food.translated_name || food.name;
+        // Use data attributes to avoid issues with special characters in onclick
         html += `
             <div class="col-md-6 col-lg-4 mb-3">
                 <div class="card food-card h-100" style="cursor: pointer;"
-                     onclick="selectFood(${food.id}, '${food.name}', '${displayName}', ${food.calories}, ${food.protein}, ${food.carbohydrates}, ${food.fat}, ${food.grams_per_piece ?? 'null'}, ${food.serving_weight ?? 100})">
+                     data-food-id="${food.id}"
+                     data-food-name="${food.name.replace(/"/g, '&quot;')}"
+                     data-food-display-name="${displayName.replace(/"/g, '&quot;')}"
+                     data-food-calories="${food.calories}"
+                     data-food-protein="${food.protein}"
+                     data-food-carbs="${food.carbohydrates}"
+                     data-food-fat="${food.fat}"
+                     data-food-grams-per-piece="${food.grams_per_piece ?? 'null'}"
+                     data-food-serving-weight="${food.serving_weight ?? 100}">
                     <div class="card-body p-3">
                         <h6 class="card-title mb-2">${displayName}</h6>
                         <small class="text-muted d-block mb-2">${food.group || 'No Group'}</small>
@@ -888,6 +897,23 @@ function displayFoodResults(foods) {
     });
 
     resultsContainer.innerHTML = html;
+
+    // Add click event listeners to all food cards
+    resultsContainer.querySelectorAll('.food-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const id = parseInt(this.dataset.foodId);
+            const name = this.dataset.foodName;
+            const displayName = this.dataset.foodDisplayName;
+            const calories = parseFloat(this.dataset.foodCalories);
+            const protein = parseFloat(this.dataset.foodProtein);
+            const carbs = parseFloat(this.dataset.foodCarbs);
+            const fat = parseFloat(this.dataset.foodFat);
+            const gramsPerPiece = this.dataset.foodGramsPerPiece === 'null' ? null : parseFloat(this.dataset.foodGramsPerPiece);
+            const servingWeight = parseFloat(this.dataset.foodServingWeight);
+
+            selectFood(id, name, displayName, calories, protein, carbs, fat, gramsPerPiece, servingWeight);
+        });
+    });
 }
 
 // Select a food item
