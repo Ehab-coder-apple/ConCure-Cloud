@@ -1728,6 +1728,8 @@ function addFoodToMeal() {
             displayName: food.displayName || food.name || 'Unknown Food',
             quantity: quantity,
             unit: unit,
+            serving_weight: food.servingWeight || 100,
+            grams_per_piece: food.gramsPerPiece || null,
             preparation_notes: notes,
             calories: Math.round((food.calories || 0) * multiplier),
             protein: Math.round((food.protein || 0) * multiplier * 10) / 10,
@@ -1812,10 +1814,22 @@ function updateOptionDisplay(mealType, optionIndex) {
             totalCarbs += food.carbs;
             totalFat += food.fat;
 
-            // Format quantity display with proper spacing
-            let quantityDisplay = `${food.quantity}${food.unit}`;
-            // Add space before unit for better readability
-            if (food.unit && !['g', 'kg', 'mg', 'ml', 'l'].includes(food.unit)) {
+            // Format quantity display with proper spacing and weight information
+            let quantityDisplay = '';
+
+            if (food.unit === 'serving') {
+                // Show: "1 serving (150g) | 90 cal"
+                const servingWeight = food.serving_weight || 100;
+                quantityDisplay = `${food.quantity} ${food.unit} (${servingWeight}g)`;
+            } else if (food.unit === 'piece') {
+                // Show: "1 piece (25g) | 34 cal"
+                const pieceWeight = food.grams_per_piece || food.serving_weight || 100;
+                quantityDisplay = `${food.quantity} ${food.unit} (${pieceWeight}g)`;
+            } else if (['g', 'kg', 'mg', 'ml', 'l'].includes(food.unit)) {
+                // Show: "50g | 37 cal" (no space for weight units)
+                quantityDisplay = `${food.quantity}${food.unit}`;
+            } else {
+                // Show: "1 cup | 240 cal" (space for other units)
                 quantityDisplay = `${food.quantity} ${food.unit}`;
             }
 
