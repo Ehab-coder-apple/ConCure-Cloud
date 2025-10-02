@@ -642,57 +642,7 @@
 <div class="modal fade" id="whatsappLanguageModal" tabindex="-1" aria-labelledby="whatsappLanguageModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="whatsappLanguageModalLabel">
-          <i class="fab fa-whatsapp me-2 text-success"></i>
-          @if(app()->getLocale() === 'ar')
-            إرسال عبر واتساب — اختر لغة الطعام
-          @elseif(app()->getLocale() === 'ku')
-            ناردن لە ڕێگەی واتساپ — زمانی خواردن هەڵبژێرە
-          @else
-            Send via WhatsApp — Choose Food Language
-          @endif
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <label for="whatsappLanguageSelect" class="form-label">
-          @if(app()->getLocale() === 'ar')
-            لغة الطعام
-          @elseif(app()->getLocale() === 'ku')
-            زمانی خواردن
-          @else
-            Food Language
-          @endif
-        </label>
-        <select id="whatsappLanguageSelect" class="form-select">
-          <option value="en" {{ app()->getLocale() === 'en' ? 'selected' : '' }}>English</option>
-          <option value="ar" {{ app()->getLocale() === 'ar' ? 'selected' : '' }}>العربية</option>
-          <option value="ku" {{ app()->getLocale() === 'ku' ? 'selected' : '' }}>کوردی</option>
-        </select>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          @if(app()->getLocale() === 'ar')
-            إلغاء
-          @elseif(app()->getLocale() === 'ku')
-            پاشگەزبوونەوە
-          @else
-            Cancel
-          @endif
-        </button>
-
-        <button type="button" class="btn btn-success" onclick="shareOnWhatsAppWithLang()">
-          <i class="fab fa-whatsapp me-1"></i>
-          @if(app()->getLocale() === 'ar')
-            إرسال
-          @elseif(app()->getLocale() === 'ku')
-            ناردن
-          @else
-            Send
-          @endif
-        </button>
-      </div>
+      <!-- Content will be populated by JavaScript -->
     </div>
   </div>
 </div>
@@ -701,26 +651,7 @@
 <div class="modal fade" id="exportLanguageModal" tabindex="-1" aria-labelledby="exportLanguageModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exportLanguageModalLabel">
-          <i class="fas fa-file-pdf me-2 text-primary"></i>{{ __('Export PDF') }} — {{ __('Choose Food Language') }}
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <label for="exportLanguageSelect" class="form-label">{{ __('Food Language') }}</label>
-        <select id="exportLanguageSelect" class="form-select">
-          <option value="en" {{ app()->getLocale() === 'en' ? 'selected' : '' }}>English</option>
-          <option value="ar" {{ app()->getLocale() === 'ar' ? 'selected' : '' }}>العربية</option>
-          <option value="ku" {{ app()->getLocale() === 'ku' ? 'selected' : '' }}>کوردی</option>
-        </select>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
-        <button type="button" class="btn btn-primary" onclick="downloadPdfWithLang()">
-          <i class="fas fa-file-download me-1"></i>{{ __('Download PDF') }}
-        </button>
-      </div>
+      <!-- Content will be populated by JavaScript -->
     </div>
   </div>
 </div>
@@ -851,6 +782,128 @@ const foodTranslations = {};
     foodTranslations['{{ $mealFood->id }}'] = @json($mealFood->food ? $mealFood->food->getAllNameTranslations() : ['en' => $mealFood->food_name]);
   @endforeach
 @endforeach
+
+// Populate WhatsApp modal dynamically
+function populateWhatsAppModal() {
+  const currentLocale = '{{ app()->getLocale() }}';
+
+  const translations = {
+    'en': {
+      title: 'Send via WhatsApp — Choose Food Language',
+      label: 'Food Language',
+      cancel: 'Cancel',
+      send: 'Send'
+    },
+    'ar': {
+      title: 'إرسال عبر واتساب — اختر لغة الطعام',
+      label: 'لغة الطعام',
+      cancel: 'إلغاء',
+      send: 'إرسال'
+    },
+    'ku': {
+      title: 'ناردن لە ڕێگەی واتساپ — زمانی خواردن هەڵبژێرە',
+      label: 'زمانی خواردن',
+      cancel: 'پاشگەزبوونەوە',
+      send: 'ناردن'
+    }
+  };
+
+  const t = translations[currentLocale] || translations['en'];
+
+  const modalContent = `
+    <div class="modal-header">
+      <h5 class="modal-title" id="whatsappLanguageModalLabel">
+        <i class="fab fa-whatsapp me-2 text-success"></i>
+        ${t.title}
+      </h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+      <label for="whatsappLanguageSelect" class="form-label">${t.label}</label>
+      <select id="whatsappLanguageSelect" class="form-select">
+        <option value="en" ${currentLocale === 'en' ? 'selected' : ''}>English</option>
+        <option value="ar" ${currentLocale === 'ar' ? 'selected' : ''}>العربية</option>
+        <option value="ku" ${currentLocale === 'ku' ? 'selected' : ''}>کوردی</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${t.cancel}</button>
+      <button type="button" class="btn btn-success" onclick="shareOnWhatsAppWithLang()">
+        <i class="fab fa-whatsapp me-1"></i>
+        ${t.send}
+      </button>
+    </div>
+  `;
+
+  const modalContentDiv = document.querySelector('#whatsappLanguageModal .modal-content');
+  if (modalContentDiv) {
+    modalContentDiv.innerHTML = modalContent;
+  }
+}
+
+// Populate Export modal dynamically
+function populateExportModal() {
+  const currentLocale = '{{ app()->getLocale() }}';
+
+  const translations = {
+    'en': {
+      title: 'Export PDF — Choose Food Language',
+      label: 'Food Language',
+      cancel: 'Cancel',
+      download: 'Download PDF'
+    },
+    'ar': {
+      title: 'تصدير PDF — اختر لغة الطعام',
+      label: 'لغة الطعام',
+      cancel: 'إلغاء',
+      download: 'تحميل PDF'
+    },
+    'ku': {
+      title: 'دەرهێنانی PDF — زمانی خواردن هەڵبژێرە',
+      label: 'زمانی خواردن',
+      cancel: 'پاشگەزبوونەوە',
+      download: 'داگرتنی PDF'
+    }
+  };
+
+  const t = translations[currentLocale] || translations['en'];
+
+  const modalContent = `
+    <div class="modal-header">
+      <h5 class="modal-title" id="exportLanguageModalLabel">
+        <i class="fas fa-file-pdf me-2 text-primary"></i>
+        ${t.title}
+      </h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+      <label for="exportLanguageSelect" class="form-label">${t.label}</label>
+      <select id="exportLanguageSelect" class="form-select">
+        <option value="en" ${currentLocale === 'en' ? 'selected' : ''}>English</option>
+        <option value="ar" ${currentLocale === 'ar' ? 'selected' : ''}>العربية</option>
+        <option value="ku" ${currentLocale === 'ku' ? 'selected' : ''}>کوردی</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${t.cancel}</button>
+      <button type="button" class="btn btn-primary" onclick="downloadPdfWithLang()">
+        <i class="fas fa-file-download me-1"></i>
+        ${t.download}
+      </button>
+    </div>
+  `;
+
+  const modalContentDiv = document.querySelector('#exportLanguageModal .modal-content');
+  if (modalContentDiv) {
+    modalContentDiv.innerHTML = modalContent;
+  }
+}
+
+// Initialize modals when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  populateWhatsAppModal();
+  populateExportModal();
+});
 
 function shareOnWhatsAppWithLang() {
   const sel = document.getElementById('whatsappLanguageSelect');
