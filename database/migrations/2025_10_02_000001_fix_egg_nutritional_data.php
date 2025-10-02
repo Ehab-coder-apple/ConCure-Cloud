@@ -15,10 +15,12 @@ return new class extends Migration
         // Update egg nutritional data to correct values
         // 73 cal per 55g egg = 133 cal per 100g
         DB::table('foods')
-            ->where('name', 'Eggs')
-            ->orWhere('name', 'LIKE', '%egg%')
-            ->orWhere('name', 'LIKE', '%بيض%')
-            ->orWhere('name', 'LIKE', '%هێلکە%')
+            ->where(function($query) {
+                $query->where('name', 'Egg')
+                      ->orWhere('name', 'Eggs')
+                      ->orWhere('name', 'LIKE', '%بيض%')
+                      ->orWhere('name', 'LIKE', '%هێلکە%');
+            })
             ->update([
                 'calories' => 133,          // Per 100g (73 cal per 55g egg)
                 'protein' => 13,            // Per 100g (7.2g per 55g egg)
@@ -36,10 +38,12 @@ return new class extends Migration
     {
         // Revert to old values
         DB::table('foods')
-            ->where('name', 'Eggs')
-            ->orWhere('name', 'LIKE', '%egg%')
-            ->orWhere('name', 'LIKE', '%بيض%')
-            ->orWhere('name', 'LIKE', '%هێلکە%')
+            ->where(function($query) {
+                $query->where('name', 'Egg')
+                      ->orWhere('name', 'Eggs')
+                      ->orWhere('name', 'LIKE', '%بيض%')
+                      ->orWhere('name', 'LIKE', '%هێلکە%');
+            })
             ->update([
                 'calories' => 155,
                 'protein' => 13,
