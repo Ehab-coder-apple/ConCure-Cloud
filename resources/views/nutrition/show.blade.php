@@ -644,12 +644,27 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="whatsappLanguageModalLabel">
-          <i class="fab fa-whatsapp me-2 text-success"></i>{{ __('Send via WhatsApp') }} — {{ __('Choose Food Language') }}
+          <i class="fab fa-whatsapp me-2 text-success"></i>
+          @if(app()->getLocale() === 'ar')
+            إرسال عبر واتساب — اختر لغة الطعام
+          @elseif(app()->getLocale() === 'ku')
+            ناردن لە ڕێگەی واتساپ — زمانی خواردن هەڵبژێرە
+          @else
+            Send via WhatsApp — Choose Food Language
+          @endif
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <label for="whatsappLanguageSelect" class="form-label">{{ __('Food Language') }}</label>
+        <label for="whatsappLanguageSelect" class="form-label">
+          @if(app()->getLocale() === 'ar')
+            لغة الطعام
+          @elseif(app()->getLocale() === 'ku')
+            زمانی خواردن
+          @else
+            Food Language
+          @endif
+        </label>
         <select id="whatsappLanguageSelect" class="form-select">
           @foreach($nutritionOutputLangs as $code => $label)
             <option value="{{ $code }}" {{ app()->getLocale() === $code ? 'selected' : '' }}>{{ $label }}</option>
@@ -657,10 +672,25 @@
         </select>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          @if(app()->getLocale() === 'ar')
+            إلغاء
+          @elseif(app()->getLocale() === 'ku')
+            پاشگەزبوونەوە
+          @else
+            Cancel
+          @endif
+        </button>
 
         <button type="button" class="btn btn-success" onclick="shareOnWhatsAppWithLang()">
-          <i class="fab fa-whatsapp me-1"></i>{{ __('Send') }}
+          <i class="fab fa-whatsapp me-1"></i>
+          @if(app()->getLocale() === 'ar')
+            إرسال
+          @elseif(app()->getLocale() === 'ku')
+            ناردن
+          @else
+            Send
+          @endif
         </button>
       </div>
     </div>
