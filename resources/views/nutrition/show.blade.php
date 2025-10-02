@@ -666,9 +666,9 @@
           @endif
         </label>
         <select id="whatsappLanguageSelect" class="form-select">
-          @foreach($nutritionOutputLangs as $code => $label)
-            <option value="{{ $code }}" {{ app()->getLocale() === $code ? 'selected' : '' }}>{{ $label }}</option>
-          @endforeach
+          <option value="en" {{ app()->getLocale() === 'en' ? 'selected' : '' }}>English</option>
+          <option value="ar" {{ app()->getLocale() === 'ar' ? 'selected' : '' }}>العربية</option>
+          <option value="ku" {{ app()->getLocale() === 'ku' ? 'selected' : '' }}>کوردی</option>
         </select>
       </div>
       <div class="modal-footer">
@@ -710,9 +710,9 @@
       <div class="modal-body">
         <label for="exportLanguageSelect" class="form-label">{{ __('Food Language') }}</label>
         <select id="exportLanguageSelect" class="form-select">
-          @foreach($nutritionOutputLangs as $code => $label)
-            <option value="{{ $code }}" {{ app()->getLocale() === $code ? 'selected' : '' }}>{{ $label }}</option>
-          @endforeach
+          <option value="en" {{ app()->getLocale() === 'en' ? 'selected' : '' }}>English</option>
+          <option value="ar" {{ app()->getLocale() === 'ar' ? 'selected' : '' }}>العربية</option>
+          <option value="ku" {{ app()->getLocale() === 'ku' ? 'selected' : '' }}>کوردی</option>
         </select>
       </div>
       <div class="modal-footer">
