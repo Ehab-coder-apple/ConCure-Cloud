@@ -196,8 +196,8 @@ class FoodSeeder extends Seeder
                     'ku_sorani' => 'هێلکە'
                 ]),
                 'food_group_id' => 4,
-                'calories' => 155,
-                'protein' => 13,
+                'calories' => 133,  // Per 100g (73 cal per 55g egg)
+                'protein' => 13,    // Per 100g (7.2g per 55g egg)
                 'carbohydrates' => 1.1,
                 'fat' => 11,
                 'fiber' => 0,
@@ -209,8 +209,8 @@ class FoodSeeder extends Seeder
                 'vitamin_c' => 0,
                 'vitamin_a' => 520,
                 'serving_size' => '1 large egg',
-                'serving_weight' => 50,
-                'grams_per_piece' => 50,
+                'serving_weight' => 55,  // Changed from 50 to 55
+                'grams_per_piece' => 55, // Changed from 50 to 55
                 'is_custom' => false,
                 'is_active' => true,
                 'created_at' => now(),
