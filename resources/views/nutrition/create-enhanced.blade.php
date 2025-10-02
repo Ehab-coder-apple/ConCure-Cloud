@@ -1348,15 +1348,21 @@ function searchFoods(query, groupId = '', language = 'default') {
     `;
 
     // Make AJAX request to search foods with proper authentication
-    fetch(`{{ route('foods.search') }}?search=${encodeURIComponent(query)}&food_group_id=${groupId}&language=${language}`, {
+    // Add cache-busting parameter to prevent browser caching
+    const cacheBuster = Date.now();
+    fetch(`{{ route('foods.search') }}?search=${encodeURIComponent(query)}&food_group_id=${groupId}&language=${language}&_=${cacheBuster}`, {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
         },
-        credentials: 'same-origin'
+        credentials: 'same-origin',
+        cache: 'no-store'
     })
         .then(response => {
             if (!response.ok) {
