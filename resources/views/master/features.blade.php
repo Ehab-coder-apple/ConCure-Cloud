@@ -479,6 +479,149 @@
         </div>
     </div>
 
+    <!-- Summary of Key Features -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-primary">
+                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h5 class="mb-0"><i class="fas fa-star me-2"></i>Summary of Key Features</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Core Modules -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-hospital me-2"></i>Core Clinical Modules</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-2"><i class="fas fa-user-injured text-primary me-2"></i><strong>Patient Management:</strong> Complete profiles, medical history, vital signs, chronic conditions</li>
+                                        <li class="mb-2"><i class="fas fa-prescription text-primary me-2"></i><strong>Prescription System:</strong> Digital prescriptions with drug database, PDF generation, multi-language support</li>
+                                        <li class="mb-2"><i class="fas fa-flask text-primary me-2"></i><strong>Laboratory:</strong> Lab requests, test results, reference ranges, PDF reports</li>
+                                        <li class="mb-2"><i class="fas fa-x-ray text-primary me-2"></i><strong>Radiology:</strong> Imaging requests, DICOM integration, report generation</li>
+                                        <li class="mb-2"><i class="fas fa-calendar-check text-primary me-2"></i><strong>Appointments:</strong> Calendar scheduling, conflict detection, status tracking</li>
+                                        <li class="mb-2"><i class="fas fa-apple-alt text-primary me-2"></i><strong>Nutrition Planning:</strong> Food database, meal planning, calorie tracking, diet plans</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Business Features -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Business & Operations</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-2"><i class="fas fa-file-invoice-dollar text-success me-2"></i><strong>Financial Management:</strong> Invoicing, payment tracking, expense management, profit/loss reports</li>
+                                        <li class="mb-2"><i class="fas fa-bullhorn text-success me-2"></i><strong>Marketing:</strong> Advertisement management, campaign tracking, analytics</li>
+                                        <li class="mb-2"><i class="fas fa-chart-bar text-success me-2"></i><strong>Reports & Analytics:</strong> Patient statistics, revenue reports, activity tracking</li>
+                                        <li class="mb-2"><i class="fas fa-users-cog text-success me-2"></i><strong>User Management:</strong> Role-based access, permissions, activity logs</li>
+                                        <li class="mb-2"><i class="fas fa-cog text-success me-2"></i><strong>System Settings:</strong> Clinic configuration, branding, customization</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Capabilities -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="fas fa-laptop-code me-2"></i>Technical Capabilities</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-2"><i class="fas fa-language text-info me-2"></i><strong>Multi-language:</strong> English, Arabic, Kurdish (Bahdini & Sorani)</li>
+                                        <li class="mb-2"><i class="fas fa-file-pdf text-info me-2"></i><strong>PDF Generation:</strong> Prescriptions, lab reports, invoices, diet plans</li>
+                                        <li class="mb-2"><i class="fas fa-file-excel text-info me-2"></i><strong>Import/Export:</strong> Excel support for patients, medicines, food database</li>
+                                        <li class="mb-2"><i class="fas fa-search text-info me-2"></i><strong>Smart Search:</strong> Real-time search, advanced filtering, Select2 integration</li>
+                                        <li class="mb-2"><i class="fas fa-mobile-alt text-info me-2"></i><strong>Responsive Design:</strong> Works on desktop, tablet, and mobile devices</li>
+                                        <li class="mb-2"><i class="fas fa-shield-alt text-info me-2"></i><strong>Security:</strong> Role-based access, audit logging, data encryption</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Key Statistics -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="fas fa-trophy me-2"></i>System Highlights</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-6 mb-3">
+                                            <div class="p-3 bg-light rounded">
+                                                <h3 class="text-primary mb-0">150+</h3>
+                                                <small class="text-muted">Total Features</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="p-3 bg-light rounded">
+                                                <h3 class="text-success mb-0">8</h3>
+                                                <small class="text-muted">Core Modules</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="p-3 bg-light rounded">
+                                                <h3 class="text-info mb-0">4</h3>
+                                                <small class="text-muted">Languages</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="p-3 bg-light rounded">
+                                                <h3 class="text-warning mb-0">100%</h3>
+                                                <small class="text-muted">Cloud-Based</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>HIPAA Compliant Ready</li>
+                                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Real-time Data Sync</li>
+                                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Automated Backups</li>
+                                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>24/7 Availability</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Benefits Section -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-primary mb-0">
+                                <h6 class="alert-heading"><i class="fas fa-lightbulb me-2"></i>Why Choose ConCure Cloud?</h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <p class="mb-2"><strong><i class="fas fa-bolt text-warning me-2"></i>Efficiency:</strong> Streamline clinic operations and reduce paperwork</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-2"><strong><i class="fas fa-heart text-danger me-2"></i>Patient Care:</strong> Better patient management and treatment tracking</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-2"><strong><i class="fas fa-dollar-sign text-success me-2"></i>Cost-Effective:</strong> Reduce operational costs and increase revenue</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-2"><strong><i class="fas fa-lock text-info me-2"></i>Secure:</strong> Enterprise-grade security and data protection</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-2"><strong><i class="fas fa-expand-arrows-alt text-primary me-2"></i>Scalable:</strong> Grows with your clinic from small to large practices</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-0"><strong><i class="fas fa-headset text-secondary me-2"></i>Support:</strong> Dedicated customer support and training</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <div class="row">
         <div class="col-12">

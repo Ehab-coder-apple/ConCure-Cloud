@@ -648,6 +648,125 @@
         </div>
     </div>
 
+    <div class="page-break"></div>
+
+    <!-- Summary of Key Features -->
+    <div class="section">
+        <div class="section-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <i class="fas fa-star"></i> Summary of Key Features
+        </div>
+
+        <div class="feature-grid">
+            <!-- Core Modules -->
+            <div class="feature-column">
+                <div class="feature-module" style="border: 2px solid #007bff; border-radius: 8px; padding: 15px;">
+                    <h3 style="color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 8px;">
+                        <i class="fas fa-hospital"></i> Core Clinical Modules
+                    </h3>
+                    <ul class="feature-list">
+                        <li><strong>Patient Management:</strong> Complete profiles, medical history, vital signs, chronic conditions</li>
+                        <li><strong>Prescription System:</strong> Digital prescriptions with drug database, PDF generation, multi-language support</li>
+                        <li><strong>Laboratory:</strong> Lab requests, test results, reference ranges, PDF reports</li>
+                        <li><strong>Radiology:</strong> Imaging requests, DICOM integration, report generation</li>
+                        <li><strong>Appointments:</strong> Calendar scheduling, conflict detection, status tracking</li>
+                        <li><strong>Nutrition Planning:</strong> Food database, meal planning, calorie tracking, diet plans</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Business Features -->
+            <div class="feature-column">
+                <div class="feature-module" style="border: 2px solid #28a745; border-radius: 8px; padding: 15px;">
+                    <h3 style="color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 8px;">
+                        <i class="fas fa-chart-line"></i> Business & Operations
+                    </h3>
+                    <ul class="feature-list">
+                        <li><strong>Financial Management:</strong> Invoicing, payment tracking, expense management, profit/loss reports</li>
+                        <li><strong>Marketing:</strong> Advertisement management, campaign tracking, analytics</li>
+                        <li><strong>Reports & Analytics:</strong> Patient statistics, revenue reports, activity tracking</li>
+                        <li><strong>User Management:</strong> Role-based access, permissions, activity logs</li>
+                        <li><strong>System Settings:</strong> Clinic configuration, branding, customization</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-grid" style="margin-top: 15px;">
+            <!-- Technical Capabilities -->
+            <div class="feature-column">
+                <div class="feature-module" style="border: 2px solid #17a2b8; border-radius: 8px; padding: 15px;">
+                    <h3 style="color: #17a2b8; border-bottom: 2px solid #17a2b8; padding-bottom: 8px;">
+                        <i class="fas fa-laptop-code"></i> Technical Capabilities
+                    </h3>
+                    <ul class="feature-list">
+                        <li><strong>Multi-language:</strong> English, Arabic, Kurdish (Bahdini & Sorani)</li>
+                        <li><strong>PDF Generation:</strong> Prescriptions, lab reports, invoices, diet plans</li>
+                        <li><strong>Import/Export:</strong> Excel support for patients, medicines, food database</li>
+                        <li><strong>Smart Search:</strong> Real-time search, advanced filtering, Select2 integration</li>
+                        <li><strong>Responsive Design:</strong> Works on desktop, tablet, and mobile devices</li>
+                        <li><strong>Security:</strong> Role-based access, audit logging, data encryption</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Key Statistics -->
+            <div class="feature-column">
+                <div class="feature-module" style="border: 2px solid #ffc107; border-radius: 8px; padding: 15px;">
+                    <h3 style="color: #856404; border-bottom: 2px solid #ffc107; padding-bottom: 8px;">
+                        <i class="fas fa-trophy"></i> System Highlights
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div style="background: #f8f9fa; padding: 10px; text-align: center; border-radius: 5px;">
+                            <h2 style="color: #007bff; margin: 0;">150+</h2>
+                            <small>Total Features</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 10px; text-align: center; border-radius: 5px;">
+                            <h2 style="color: #28a745; margin: 0;">8</h2>
+                            <small>Core Modules</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 10px; text-align: center; border-radius: 5px;">
+                            <h2 style="color: #17a2b8; margin: 0;">4</h2>
+                            <small>Languages</small>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 10px; text-align: center; border-radius: 5px;">
+                            <h2 style="color: #ffc107; margin: 0;">100%</h2>
+                            <small>Cloud-Based</small>
+                        </div>
+                    </div>
+                    <ul class="feature-list" style="margin-top: 10px;">
+                        <li>✓ HIPAA Compliant Ready</li>
+                        <li>✓ Real-time Data Sync</li>
+                        <li>✓ Automated Backups</li>
+                        <li>✓ 24/7 Availability</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Benefits Section -->
+        <div style="background: #e7f3ff; border: 2px solid #007bff; border-radius: 8px; padding: 15px; margin-top: 15px;">
+            <h3 style="color: #007bff; margin-top: 0;">
+                <i class="fas fa-lightbulb"></i> Why Choose ConCure Cloud?
+            </h3>
+            <div class="feature-grid">
+                <div class="feature-column">
+                    <ul class="feature-list">
+                        <li><strong>⚡ Efficiency:</strong> Streamline clinic operations and reduce paperwork</li>
+                        <li><strong>❤️ Patient Care:</strong> Better patient management and treatment tracking</li>
+                        <li><strong>💰 Cost-Effective:</strong> Reduce operational costs and increase revenue</li>
+                    </ul>
+                </div>
+                <div class="feature-column">
+                    <ul class="feature-list">
+                        <li><strong>🔒 Secure:</strong> Enterprise-grade security and data protection</li>
+                        <li><strong>📈 Scalable:</strong> Grows with your clinic from small to large practices</li>
+                        <li><strong>🎧 Support:</strong> Dedicated customer support and training</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <div class="footer">
         <p><strong>ConCure Cloud</strong> - Comprehensive Clinic Management System</p>
