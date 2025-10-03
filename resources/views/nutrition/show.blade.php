@@ -50,7 +50,7 @@
                        data-patient-name="{{ $dietPlan->patient->full_name ?? '' }}" data-plan-title="{{ $dietPlan->title ?? '' }}" data-plan-number="{{ $dietPlan->plan_number ?? '' }}">
                         <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
-                    <button type="button" class="btn btn-success" onclick="showWhatsAppModal()">
+                    <button type="button" class="btn btn-success" id="whatsappModalBtn">
                         <i class="fab fa-whatsapp me-1"></i>
                         {{ __('Send via WhatsApp') }}
                     </button>
@@ -62,7 +62,7 @@
                         <ul class="dropdown-menu">
                             <li><h6 class="dropdown-header">{{ __('Daily Format') }}</h6></li>
                             <li>
-                                <a class="dropdown-item" href="#" onclick="showExportModal(); return false;">
+                                <a class="dropdown-item" href="#" id="exportModalBtn">
                                     <i class="fas fa-globe me-2"></i>
                                     {{ __('Daily PDF (choose language)') }}
                                 </a>
@@ -968,6 +968,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Debug: Check if Bootstrap is available
   console.log('Bootstrap available:', typeof bootstrap !== 'undefined');
+
+  // Add event listeners for modal buttons
+  const whatsappBtn = document.getElementById('whatsappModalBtn');
+  const exportBtn = document.getElementById('exportModalBtn');
+
+  if (whatsappBtn) {
+    console.log('Adding WhatsApp button event listener');
+    whatsappBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      alert('WhatsApp button clicked!'); // Debug alert
+      showWhatsAppModal();
+    });
+  } else {
+    console.error('WhatsApp button not found!');
+  }
+
+  if (exportBtn) {
+    console.log('Adding Export button event listener');
+    exportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      showExportModal();
+    });
+  } else {
+    console.error('Export button not found!');
+  }
 });
 
 function shareOnWhatsAppWithLang() {
