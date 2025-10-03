@@ -659,6 +659,9 @@
 @endsection
 
 <script>
+// Basic test to see if JavaScript is working
+console.log('JavaScript is loading...');
+alert('JavaScript test - this should appear immediately when page loads');
 // Safer Share Internally handler (prevents giant clickable area)
 (function(){
   document.addEventListener('DOMContentLoaded', function(){
