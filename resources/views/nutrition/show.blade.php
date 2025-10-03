@@ -50,7 +50,7 @@
                        data-patient-name="{{ $dietPlan->patient->full_name ?? '' }}" data-plan-title="{{ $dietPlan->title ?? '' }}" data-plan-number="{{ $dietPlan->plan_number ?? '' }}">
                         <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
-                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#whatsappLanguageModal">
+                    <button type="button" class="btn btn-success" onclick="showWhatsAppModal()">
                         <i class="fab fa-whatsapp me-1"></i>
                         {{ __('Send via WhatsApp') }}
                     </button>
@@ -62,7 +62,7 @@
                         <ul class="dropdown-menu">
                             <li><h6 class="dropdown-header">{{ __('Daily Format') }}</h6></li>
                             <li>
-                                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#exportLanguageModal">
+                                <a class="dropdown-item" href="#" onclick="showExportModal(); return false;">
                                     <i class="fas fa-globe me-2"></i>
                                     {{ __('Daily PDF (choose language)') }}
                                 </a>
@@ -902,6 +902,54 @@ function populateExportModal() {
   const modalContentDiv = document.querySelector('#exportLanguageModal .modal-content');
   if (modalContentDiv) {
     modalContentDiv.innerHTML = modalContent;
+  }
+}
+
+// Function to show WhatsApp modal
+function showWhatsAppModal() {
+  console.log('showWhatsAppModal called');
+
+  // Ensure modal content is populated
+  populateWhatsAppModal();
+
+  // Get modal element
+  const modalEl = document.getElementById('whatsappLanguageModal');
+  if (!modalEl) {
+    console.error('WhatsApp modal element not found!');
+    return;
+  }
+
+  // Create and show modal
+  try {
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    console.log('WhatsApp modal shown successfully');
+  } catch (error) {
+    console.error('Error showing WhatsApp modal:', error);
+  }
+}
+
+// Function to show Export modal
+function showExportModal() {
+  console.log('showExportModal called');
+
+  // Ensure modal content is populated
+  populateExportModal();
+
+  // Get modal element
+  const modalEl = document.getElementById('exportLanguageModal');
+  if (!modalEl) {
+    console.error('Export modal element not found!');
+    return;
+  }
+
+  // Create and show modal
+  try {
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    console.log('Export modal shown successfully');
+  } catch (error) {
+    console.error('Error showing Export modal:', error);
   }
 }
 
