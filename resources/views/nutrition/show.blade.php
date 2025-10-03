@@ -785,7 +785,9 @@ const foodTranslations = {};
 
 // Populate WhatsApp modal dynamically
 function populateWhatsAppModal() {
+  console.log('Populating WhatsApp modal...');
   const currentLocale = '{{ app()->getLocale() }}';
+  console.log('Current locale:', currentLocale);
 
   const translations = {
     'en': {
@@ -836,8 +838,12 @@ function populateWhatsAppModal() {
   `;
 
   const modalContentDiv = document.querySelector('#whatsappLanguageModal .modal-content');
+  console.log('Modal content div found:', !!modalContentDiv);
   if (modalContentDiv) {
     modalContentDiv.innerHTML = modalContent;
+    console.log('WhatsApp modal content populated successfully');
+  } else {
+    console.error('WhatsApp modal content div not found!');
   }
 }
 
@@ -901,8 +907,18 @@ function populateExportModal() {
 
 // Initialize modals when page loads
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded, initializing modals...');
   populateWhatsAppModal();
   populateExportModal();
+
+  // Debug: Check if modal elements exist
+  const whatsappModal = document.getElementById('whatsappLanguageModal');
+  const exportModal = document.getElementById('exportLanguageModal');
+  console.log('WhatsApp modal found:', !!whatsappModal);
+  console.log('Export modal found:', !!exportModal);
+
+  // Debug: Check if Bootstrap is available
+  console.log('Bootstrap available:', typeof bootstrap !== 'undefined');
 });
 
 function shareOnWhatsAppWithLang() {
