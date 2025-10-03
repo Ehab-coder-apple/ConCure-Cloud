@@ -989,6 +989,44 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('WhatsApp modal found:', !!whatsappModal);
   console.log('Export modal found:', !!exportModal);
 
+  // Define sendWhatsAppSimple function globally to ensure it's available
+  window.sendWhatsAppSimple = function() {
+    console.log('sendWhatsAppSimple called');
+
+    try {
+        const select = document.getElementById('simpleLanguageSelect');
+        const selectedLang = select ? select.value : 'en';
+        console.log('Selected language:', selectedLang);
+
+        // Create a simple WhatsApp message
+        const patientName = "{{ $dietPlan->patient->full_name ?? 'Patient' }}";
+        const planTitle = "{{ $dietPlan->title ?? 'Nutrition Plan' }}";
+        const planNumber = "{{ $dietPlan->plan_number ?? '' }}";
+
+        const message = `🍎 Nutrition Plan\n\nPatient: ${patientName}\nPlan: ${planTitle}\nPlan Number: ${planNumber}\n\nThis is your personalized nutrition plan. Please follow the guidelines provided.`;
+
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+
+        console.log('Opening WhatsApp with URL:', whatsappUrl);
+
+        // Open WhatsApp
+        window.open(whatsappUrl, '_blank');
+
+        // Close the modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('simpleWhatsAppModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+    } catch (error) {
+        console.error('Error in sendWhatsAppSimple:', error);
+        alert('Error sending WhatsApp message. Please try again.');
+    }
+  };
+
+  console.log('sendWhatsAppSimple function defined:', typeof window.sendWhatsAppSimple);
+
   // Debug: Check if Bootstrap is available
   console.log('Bootstrap available:', typeof bootstrap !== 'undefined');
 
@@ -1079,39 +1117,5 @@ function downloadPdfWithLang() {
     window.open(whatsappUrl, '_blank');
 }
 
-// Simple WhatsApp function that works with the static modal
-function sendWhatsAppSimple() {
-    console.log('sendWhatsAppSimple called');
 
-    try {
-        const select = document.getElementById('simpleLanguageSelect');
-        const selectedLang = select ? select.value : 'en';
-        console.log('Selected language:', selectedLang);
-
-        // Create a simple WhatsApp message
-        const patientName = "{{ $dietPlan->patient->full_name ?? 'Patient' }}";
-        const planTitle = "{{ $dietPlan->title ?? 'Nutrition Plan' }}";
-        const planNumber = "{{ $dietPlan->plan_number ?? '' }}";
-
-        const message = `🍎 Nutrition Plan\n\nPatient: ${patientName}\nPlan: ${planTitle}\nPlan Number: ${planNumber}\n\nThis is your personalized nutrition plan. Please follow the guidelines provided.`;
-
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
-
-        console.log('Opening WhatsApp with URL:', whatsappUrl);
-
-        // Open WhatsApp
-        window.open(whatsappUrl, '_blank');
-
-        // Close the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('simpleWhatsAppModal'));
-        if (modal) {
-            modal.hide();
-        }
-
-    } catch (error) {
-        console.error('Error in sendWhatsAppSimple:', error);
-        alert('Error sending WhatsApp message. Please try again.');
-    }
-}
 </script>
