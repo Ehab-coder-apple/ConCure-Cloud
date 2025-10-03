@@ -661,7 +661,6 @@
 <script>
 // Basic test to see if JavaScript is working
 console.log('JavaScript is loading...');
-alert('JavaScript test - this should appear immediately when page loads');
 // Safer Share Internally handler (prevents giant clickable area)
 (function(){
   document.addEventListener('DOMContentLoaded', function(){
@@ -1039,7 +1038,13 @@ function downloadPdfWithLang() {
     const encodedMessage = encodeURIComponent(message);
 
     // Get patient's WhatsApp number if available
-    const patientWhatsApp = "{{ optional($dietPlan->patient)->whatsapp_phone ? preg_replace('/[^0-9]/', '', optional($dietPlan->patient)->whatsapp_phone) : '' }}";
+    @php
+        $patientWhatsApp = '';
+        if ($dietPlan->patient && $dietPlan->patient->whatsapp_phone) {
+            $patientWhatsApp = preg_replace('/[^0-9]/', '', $dietPlan->patient->whatsapp_phone);
+        }
+    @endphp
+    const patientWhatsApp = "{{ $patientWhatsApp }}";
 
     // Create WhatsApp URL
     let whatsappUrl;
