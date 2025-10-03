@@ -906,7 +906,8 @@ function populateExportModal() {
 }
 
 // Function to show WhatsApp modal
-function showWhatsAppModal() {
+window.showWhatsAppModal = function() {
+  alert('WhatsApp modal function called!'); // Debug alert
   console.log('showWhatsAppModal called');
 
   // Ensure modal content is populated
@@ -930,7 +931,7 @@ function showWhatsAppModal() {
 }
 
 // Function to show Export modal
-function showExportModal() {
+window.showExportModal = function() {
   console.log('showExportModal called');
 
   // Ensure modal content is populated
