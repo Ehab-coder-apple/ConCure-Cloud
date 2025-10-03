@@ -50,7 +50,7 @@
                        data-patient-name="{{ $dietPlan->patient->full_name ?? '' }}" data-plan-title="{{ $dietPlan->title ?? '' }}" data-plan-number="{{ $dietPlan->plan_number ?? '' }}">
                         <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
-                    <button type="button" class="btn btn-success" id="whatsappModalBtn">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#simpleWhatsAppModal">
                         <i class="fab fa-whatsapp me-1"></i>
                         {{ __('Send via WhatsApp') }}
                     </button>
@@ -638,11 +638,60 @@
 {{-- Output Language Modals --}}
 @php($nutritionOutputLangs = \App\Models\Food::getSupportedLanguages())
 
-<!-- WhatsApp Language Modal -->
-<div class="modal fade" id="whatsappLanguageModal" tabindex="-1" aria-labelledby="whatsappLanguageModalLabel" aria-hidden="true">
+<!-- Simple WhatsApp Modal -->
+<div class="modal fade" id="simpleWhatsAppModal" tabindex="-1" aria-labelledby="simpleWhatsAppModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <!-- Content will be populated by JavaScript -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="simpleWhatsAppModalLabel">
+          <i class="fab fa-whatsapp me-2 text-success"></i>
+          @if(app()->getLocale() === 'ar')
+            إرسال عبر واتساب — اختر لغة الطعام
+          @elseif(app()->getLocale() === 'ku')
+            ناردن لە ڕێگەی واتساپ — زمانی خواردن هەڵبژێرە
+          @else
+            Send via WhatsApp — Choose Food Language
+          @endif
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <label for="simpleLanguageSelect" class="form-label">
+          @if(app()->getLocale() === 'ar')
+            لغة الطعام
+          @elseif(app()->getLocale() === 'ku')
+            زمانی خواردن
+          @else
+            Food Language
+          @endif
+        </label>
+        <select id="simpleLanguageSelect" class="form-select">
+          <option value="en" {{ app()->getLocale() === 'en' ? 'selected' : '' }}>English</option>
+          <option value="ar" {{ app()->getLocale() === 'ar' ? 'selected' : '' }}>العربية</option>
+          <option value="ku" {{ app()->getLocale() === 'ku' ? 'selected' : '' }}>کوردی</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          @if(app()->getLocale() === 'ar')
+            إلغاء
+          @elseif(app()->getLocale() === 'ku')
+            پاشگەزبوونەوە
+          @else
+            Cancel
+          @endif
+        </button>
+        <button type="button" class="btn btn-success" onclick="sendWhatsAppSimple()">
+          <i class="fab fa-whatsapp me-1"></i>
+          @if(app()->getLocale() === 'ar')
+            إرسال
+          @elseif(app()->getLocale() === 'ku')
+            ناردن
+          @else
+            Send
+          @endif
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -1056,5 +1105,20 @@ function downloadPdfWithLang() {
 
     // Open WhatsApp
     window.open(whatsappUrl, '_blank');
+}
+
+// Simple WhatsApp function that works with the static modal
+function sendWhatsAppSimple() {
+    const select = document.getElementById('simpleLanguageSelect');
+    const selectedLang = select ? select.value : 'en';
+
+    // Simple message - just use the existing shareOnWhatsApp function
+    shareOnWhatsApp();
+
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('simpleWhatsAppModal'));
+    if (modal) {
+        modal.hide();
+    }
 }
 </script>
