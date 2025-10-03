@@ -638,19 +638,6 @@
 {{-- Output Language Modals --}}
 @php($nutritionOutputLangs = \App\Models\Food::getSupportedLanguages())
 
-@php
-    $currentLocale = app()->getLocale();
-    $modalTitle = $currentLocale === 'ar' ? 'إرسال عبر واتساب — اختر لغة الطعام' :
-                  ($currentLocale === 'ku' ? 'ناردن لە ڕێگەی واتساپ — زمانی خواردن هەڵبژێرە' :
-                  'Send via WhatsApp — Choose Food Language');
-    $foodLanguageLabel = $currentLocale === 'ar' ? 'لغة الطعام' :
-                         ($currentLocale === 'ku' ? 'زمانی خواردن' : 'Food Language');
-    $cancelText = $currentLocale === 'ar' ? 'إلغاء' :
-                  ($currentLocale === 'ku' ? 'پاشگەزبوونەوە' : 'Cancel');
-    $sendText = $currentLocale === 'ar' ? 'إرسال' :
-                ($currentLocale === 'ku' ? 'ناردن' : 'Send');
-@endphp
-
 <!-- Simple WhatsApp Modal -->
 <div class="modal fade" id="simpleWhatsAppModal" tabindex="-1" aria-labelledby="simpleWhatsAppModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -658,23 +645,23 @@
       <div class="modal-header">
         <h5 class="modal-title" id="simpleWhatsAppModalLabel">
           <i class="fab fa-whatsapp me-2 text-success"></i>
-          {{ $modalTitle }}
+          {{ __('Send via WhatsApp') }} — {{ __('Choose Food Language') }}
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <label for="simpleLanguageSelect" class="form-label">{{ $foodLanguageLabel }}</label>
+        <label for="simpleLanguageSelect" class="form-label">{{ __('Food Language') }}</label>
         <select id="simpleLanguageSelect" class="form-select">
-          <option value="en" {{ $currentLocale === 'en' ? 'selected' : '' }}>English</option>
-          <option value="ar" {{ $currentLocale === 'ar' ? 'selected' : '' }}>العربية</option>
-          <option value="ku" {{ $currentLocale === 'ku' ? 'selected' : '' }}>کوردی</option>
+          <option value="en" {{ app()->getLocale() === 'en' ? 'selected' : '' }}>English</option>
+          <option value="ar" {{ app()->getLocale() === 'ar' ? 'selected' : '' }}>العربية</option>
+          <option value="ku" {{ app()->getLocale() === 'ku' ? 'selected' : '' }}>کوردی</option>
         </select>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ $cancelText }}</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
         <button type="button" class="btn btn-success" onclick="sendWhatsAppSimple()">
           <i class="fab fa-whatsapp me-1"></i>
-          {{ $sendText }}
+          {{ __('Send') }}
         </button>
       </div>
     </div>
