@@ -645,23 +645,23 @@
       <div class="modal-header">
         <h5 class="modal-title" id="simpleWhatsAppModalLabel">
           <i class="fab fa-whatsapp me-2 text-success"></i>
-          {{ __('Send via WhatsApp') }} — {{ __('Choose Food Language') }}
+          Send via WhatsApp — Choose Food Language
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <label for="simpleLanguageSelect" class="form-label">{{ __('Food Language') }}</label>
+        <label for="simpleLanguageSelect" class="form-label">Food Language</label>
         <select id="simpleLanguageSelect" class="form-select">
-          <option value="en" {{ app()->getLocale() === 'en' ? 'selected' : '' }}>English</option>
-          <option value="ar" {{ app()->getLocale() === 'ar' ? 'selected' : '' }}>العربية</option>
-          <option value="ku" {{ app()->getLocale() === 'ku' ? 'selected' : '' }}>کوردی</option>
+          <option value="en" selected>English</option>
+          <option value="ar">العربية</option>
+          <option value="ku">کوردی</option>
         </select>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         <button type="button" class="btn btn-success" onclick="sendWhatsAppSimple()">
           <i class="fab fa-whatsapp me-1"></i>
-          {{ __('Send') }}
+          Send
         </button>
       </div>
     </div>
