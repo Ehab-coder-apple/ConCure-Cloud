@@ -1119,5 +1119,4 @@ function downloadPdfWithLang() {
     window.open(whatsappUrl, '_blank');
 }
 
-
 </script>
