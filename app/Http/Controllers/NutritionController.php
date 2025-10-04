@@ -864,11 +864,29 @@ class NutritionController extends Controller
 
 
         if ($outputLang && in_array($outputLang, $supportedOutputLangs, true)) {
+            // Debug logging
+            \Log::info('Word Export Language Processing', [
+                'output_lang' => $outputLang,
+                'supported_langs' => $supportedOutputLangs,
+                'meal_count' => $dietPlan->meals->count()
+            ]);
+
             // Translate food display names in-memory for rendering (do not change app locale)
             foreach ($dietPlan->meals as $meal) {
                 foreach ($meal->foods as $mealFood) {
                     if ($mealFood->food) {
+                        $originalName = $mealFood->food_name;
                         $translated = $mealFood->food->getNameInLanguage($outputLang);
+
+                        // Debug each food translation
+                        \Log::info('Food Translation Debug', [
+                            'food_id' => $mealFood->food->id,
+                            'original_name' => $originalName,
+                            'translated_name' => $translated,
+                            'name_translations' => $mealFood->food->name_translations,
+                            'requested_lang' => $outputLang
+                        ]);
+
                         if (!empty($translated)) {
                             $mealFood->food_name = $translated;
                         }
