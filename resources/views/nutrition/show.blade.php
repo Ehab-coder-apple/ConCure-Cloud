@@ -1163,6 +1163,11 @@ function downloadPdfWithLang() {
   const sel = document.getElementById('exportPdfLanguageSelect');
   const lang = sel && sel.value ? sel.value : 'en';
   const url = "{{ route('nutrition.pdf', $dietPlan) }}" + "?lang=" + encodeURIComponent(lang);
+
+  console.log('downloadPdfWithLang called');
+  console.log('Selected language:', lang);
+  console.log('Download URL:', url);
+
   window.location.href = url;
 }
 
@@ -1170,6 +1175,11 @@ function downloadWordWithLang() {
   const sel = document.getElementById('exportWordLanguageSelect');
   const lang = sel && sel.value ? sel.value : 'en';
   const url = "{{ route('nutrition.word', $dietPlan) }}" + "?lang=" + encodeURIComponent(lang);
+
+  console.log('downloadWordWithLang called');
+  console.log('Selected language:', lang);
+  console.log('Download URL:', url);
+
   window.location.href = url;
 }
 
