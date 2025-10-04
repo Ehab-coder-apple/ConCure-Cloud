@@ -125,7 +125,7 @@ class SettingsController extends Controller
             'timezone' => 'nullable|string|max:50',
             'date_format' => 'nullable|string|max:20',
             'time_format' => 'nullable|string|max:20',
-            'currency' => 'nullable|string|max:10',
+            'currency' => 'nullable|in:USD,EUR,GBP,IQD,JOD,EGP',
             'dashboard_default_period' => 'nullable|in:day,month,year',
             'notifications_enabled' => 'boolean',
             'email_notifications' => 'boolean',

@@ -275,6 +275,8 @@
                                                     <option value="EUR" {{ ($clinicSettings['currency'] ?? 'USD') == 'EUR' ? 'selected' : '' }}>EUR (€)</option>
                                                     <option value="GBP" {{ ($clinicSettings['currency'] ?? 'USD') == 'GBP' ? 'selected' : '' }}>GBP (£)</option>
                                                     <option value="IQD" {{ ($clinicSettings['currency'] ?? 'USD') == 'IQD' ? 'selected' : '' }}>IQD (د.ع)</option>
+                                                    <option value="JOD" {{ ($clinicSettings['currency'] ?? 'USD') == 'JOD' ? 'selected' : '' }}>JOD (د.أ)</option>
+                                                    <option value="EGP" {{ ($clinicSettings['currency'] ?? 'USD') == 'EGP' ? 'selected' : '' }}>EGP (ج.م)</option>
                                                 </select>
                                                 <div class="form-text">{{ __('Currency used for invoices, expenses, and financial reports.') }}</div>
                                             </div>
