@@ -1045,12 +1045,13 @@ function shareOnWhatsAppWithLang() {
 
 function downloadPdfWithLang() {
   const sel = document.getElementById('exportLanguageSelect');
-  const lang = sel && sel.value ? sel.value : selectedLang;
+  const lang = sel && sel.value ? sel.value : 'en'; // Fixed: use 'en' instead of undefined selectedLang
   const url = "{{ route('nutrition.pdf', $dietPlan) }}" + "?lang=" + encodeURIComponent(lang);
   window.location.href = url;
 }
 
 // Simple WhatsApp functionality - moved to end to ensure it loads
+console.log('=== STARTING SIMPLE WHATSAPP FUNCTION LOADING ===');
 console.log('Loading simple WhatsApp function...');
 
 // WhatsApp data from PHP - using simple approach
@@ -1105,5 +1106,6 @@ window.sendWhatsAppSimple = function() {
 };
 
 console.log('sendWhatsAppSimple function defined at end:', typeof window.sendWhatsAppSimple);
+console.log('=== SIMPLE WHATSAPP FUNCTION LOADING COMPLETE ===');
 
 </script>
