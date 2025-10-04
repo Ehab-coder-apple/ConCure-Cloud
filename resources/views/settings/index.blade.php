@@ -841,6 +841,32 @@ function updateSystem() {
 console.log('=== JAVASCRIPT LOADED ===');
 console.log('Form element found:', document.getElementById('clinicSettingsForm'));
 
+// Handle URL anchors for tabs
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if there's a hash in the URL
+    const hash = window.location.hash;
+    if (hash) {
+        // Find the tab link that matches the hash
+        const tabLink = document.querySelector(`a[href="${hash}"][data-bs-toggle="pill"]`);
+        if (tabLink) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.list-group-item-action').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active', 'show');
+            });
+
+            // Activate the target tab
+            tabLink.classList.add('active');
+            const targetPane = document.querySelector(hash);
+            if (targetPane) {
+                targetPane.classList.add('active', 'show');
+            }
+        }
+    }
+});
+
 // Add click listener to submit button as backup
 const submitButton = document.querySelector('#clinicSettingsForm button[type="submit"]');
 console.log('Submit button found:', submitButton);
