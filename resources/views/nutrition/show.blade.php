@@ -682,65 +682,6 @@
 <script>
 // Basic test to see if JavaScript is working
 console.log('JavaScript is loading...');
-
-// WhatsApp data from PHP - using simple approach
-var patientName = 'Patient';
-var planTitle = 'Nutrition Plan';
-var planNumber = '';
-
-try {
-    patientName = '{{ addslashes($dietPlan->patient->full_name ?? "Patient") }}';
-    planTitle = '{{ addslashes($dietPlan->title ?? "Nutrition Plan") }}';
-    planNumber = '{{ addslashes($dietPlan->plan_number ?? "") }}';
-} catch(e) {
-    console.log('Using default values due to error:', e);
-}
-
-console.log('WhatsApp data loaded - Patient:', patientName, 'Plan:', planTitle, 'Number:', planNumber);
-
-// Define sendWhatsAppSimple function immediately to ensure it's available
-window.sendWhatsAppSimple = function() {
-    console.log('sendWhatsAppSimple called');
-
-    try {
-        var select = document.getElementById('simpleLanguageSelect');
-        var selectedLang = select ? select.value : 'en';
-        console.log('Selected language:', selectedLang);
-
-        // Create a simple WhatsApp message
-        var message = '🍎 Nutrition Plan\n\n' +
-                     'Patient: ' + patientName + '\n' +
-                     'Plan: ' + planTitle + '\n' +
-                     'Plan Number: ' + planNumber + '\n\n' +
-                     'This is your personalized nutrition plan. Please follow the guidelines provided.';
-
-        var encodedMessage = encodeURIComponent(message);
-        var whatsappUrl = 'https://wa.me/?text=' + encodedMessage;
-
-        console.log('Opening WhatsApp with URL:', whatsappUrl);
-
-        // Open WhatsApp
-        window.open(whatsappUrl, '_blank');
-
-        // Close the modal
-        var modal = bootstrap.Modal.getInstance(document.getElementById('simpleWhatsAppModal'));
-        if (modal) {
-            modal.hide();
-        }
-
-    } catch (error) {
-        console.error('Error in sendWhatsAppSimple:', error);
-        alert('Error sending WhatsApp message. Please try again.');
-    }
-};
-
-// Ensure function is available immediately
-console.log('sendWhatsAppSimple function defined:', typeof window.sendWhatsAppSimple);
-
-// Also ensure it's available after DOM loads
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, sendWhatsAppSimple available:', typeof window.sendWhatsAppSimple);
-});
 // Safer Share Internally handler (prevents giant clickable area)
 (function(){
   document.addEventListener('DOMContentLoaded', function(){
@@ -1096,5 +1037,61 @@ function downloadPdfWithLang() {
   const url = "{{ route('nutrition.pdf', $dietPlan) }}" + "?lang=" + encodeURIComponent(lang);
   window.location.href = url;
 }
+
+// Simple WhatsApp functionality - moved to end to ensure it loads
+console.log('Loading simple WhatsApp function...');
+
+// WhatsApp data from PHP - using simple approach
+var patientName = 'Patient';
+var planTitle = 'Nutrition Plan';
+var planNumber = '';
+
+try {
+    patientName = '{{ addslashes($dietPlan->patient->full_name ?? "Patient") }}';
+    planTitle = '{{ addslashes($dietPlan->title ?? "Nutrition Plan") }}';
+    planNumber = '{{ addslashes($dietPlan->plan_number ?? "") }}';
+} catch(e) {
+    console.log('Using default values due to error:', e);
+}
+
+console.log('WhatsApp data loaded - Patient:', patientName, 'Plan:', planTitle, 'Number:', planNumber);
+
+// Define sendWhatsAppSimple function
+window.sendWhatsAppSimple = function() {
+    console.log('sendWhatsAppSimple called');
+
+    try {
+        var select = document.getElementById('simpleLanguageSelect');
+        var selectedLang = select ? select.value : 'en';
+        console.log('Selected language:', selectedLang);
+
+        // Create a simple WhatsApp message
+        var message = '🍎 Nutrition Plan\n\n' +
+                     'Patient: ' + patientName + '\n' +
+                     'Plan: ' + planTitle + '\n' +
+                     'Plan Number: ' + planNumber + '\n\n' +
+                     'This is your personalized nutrition plan. Please follow the guidelines provided.';
+
+        var encodedMessage = encodeURIComponent(message);
+        var whatsappUrl = 'https://wa.me/?text=' + encodedMessage;
+
+        console.log('Opening WhatsApp with URL:', whatsappUrl);
+
+        // Open WhatsApp
+        window.open(whatsappUrl, '_blank');
+
+        // Close the modal
+        var modal = bootstrap.Modal.getInstance(document.getElementById('simpleWhatsAppModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+    } catch (error) {
+        console.error('Error in sendWhatsAppSimple:', error);
+        alert('Error sending WhatsApp message. Please try again.');
+    }
+};
+
+console.log('sendWhatsAppSimple function defined at end:', typeof window.sendWhatsAppSimple);
 
 </script>
