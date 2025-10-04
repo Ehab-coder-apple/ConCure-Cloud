@@ -1196,7 +1196,7 @@ window.sendWhatsAppSimple = function() {
 
         @foreach(['breakfast', 'lunch', 'dinner', 'snack_1', 'snack_2', 'snack_3', 'snack'] as $mealType)
             @if(isset($mealsByType[$mealType]) && $mealsByType[$mealType]->count() > 0)
-                message += currentLabels.{{ $mealTypeLabels[$mealType] ?? 'snack' }} + ':\n';
+                message += currentLabels['{{ $mealTypeLabels[$mealType] ?? 'snack' }}'] + ':\n';
                 @foreach($mealsByType[$mealType] as $meal)
                     @if($meal->foods->count() > 0)
                         @foreach($meal->foods as $food)
