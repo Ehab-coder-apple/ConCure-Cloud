@@ -679,21 +679,24 @@
 
 @endsection
 
-@php
-    $whatsappData = [
-        'patientName' => $dietPlan->patient->full_name ?? 'Patient',
-        'planTitle' => $dietPlan->title ?? 'Nutrition Plan',
-        'planNumber' => $dietPlan->plan_number ?? ''
-    ];
-@endphp
-
 <script>
 // Basic test to see if JavaScript is working
 console.log('JavaScript is loading...');
 
-// WhatsApp data from PHP
-var whatsappData = @json($whatsappData);
-console.log('WhatsApp data loaded:', whatsappData);
+// WhatsApp data from PHP - using simple approach
+var patientName = 'Patient';
+var planTitle = 'Nutrition Plan';
+var planNumber = '';
+
+try {
+    patientName = '{{ addslashes($dietPlan->patient->full_name ?? "Patient") }}';
+    planTitle = '{{ addslashes($dietPlan->title ?? "Nutrition Plan") }}';
+    planNumber = '{{ addslashes($dietPlan->plan_number ?? "") }}';
+} catch(e) {
+    console.log('Using default values due to error:', e);
+}
+
+console.log('WhatsApp data loaded - Patient:', patientName, 'Plan:', planTitle, 'Number:', planNumber);
 
 // Define sendWhatsAppSimple function immediately to ensure it's available
 window.sendWhatsAppSimple = function() {
@@ -706,9 +709,9 @@ window.sendWhatsAppSimple = function() {
 
         // Create a simple WhatsApp message
         var message = '🍎 Nutrition Plan\n\n' +
-                     'Patient: ' + whatsappData.patientName + '\n' +
-                     'Plan: ' + whatsappData.planTitle + '\n' +
-                     'Plan Number: ' + whatsappData.planNumber + '\n\n' +
+                     'Patient: ' + patientName + '\n' +
+                     'Plan: ' + planTitle + '\n' +
+                     'Plan Number: ' + planNumber + '\n\n' +
                      'This is your personalized nutrition plan. Please follow the guidelines provided.';
 
         var encodedMessage = encodeURIComponent(message);
