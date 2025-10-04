@@ -4,12 +4,6 @@
 
 @push('styles')
 <style>
-    /* Ensure proper spacing and prevent sidebar overlap */
-    .main-content {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-
     /* Responsive table */
     .table-responsive {
         overflow-x: auto;
@@ -61,9 +55,8 @@
 @endpush
 
 @section('content')
-<div class="container-fluid px-4">
-    <div class="row">
-        <div class="col-12">
+<div class="row">
+    <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="h3 mb-0">
