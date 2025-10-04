@@ -255,8 +255,8 @@ class WordDocumentService
                                 $mealCalories += $calories;
                                 $dayTotalCalories += $calories;
 
-                                // Use translated food name if available, otherwise fallback to stored names
-                                $foodName = $food ? $food->name : ($mealFood->food_name_display ?? $mealFood->food_name ?? 'Unknown Food');
+                                // Use translated food name from mealFood (set by controller), fallback to display name or original name
+                                $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
 
                                 $html .= '<div class="food-item">
                                     <div class="food-name kurdish">' . htmlspecialchars($foodName) . '</div>
@@ -319,8 +319,8 @@ class WordDocumentService
 
                             $mealCalories += $calories;
 
-                            // Use translated food name if available, otherwise fallback to stored names
-                            $foodName = $food ? $food->name : ($mealFood->food_name_display ?? $mealFood->food_name ?? 'Unknown Food');
+                            // Use translated food name from mealFood (set by controller), fallback to display name or original name
+                            $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
 
                             $html .= '<div class="food-item">
                                 <div class="food-name kurdish">' . htmlspecialchars($foodName) . '</div>
