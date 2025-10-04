@@ -693,14 +693,14 @@ window.sendWhatsAppSimple = function() {
         console.log('Selected language:', selectedLang);
 
         // Create a simple WhatsApp message
-        const patientName = "{{ $dietPlan->patient->full_name ?? 'Patient' }}";
-        const planTitle = "{{ $dietPlan->title ?? 'Nutrition Plan' }}";
-        const planNumber = "{{ $dietPlan->plan_number ?? '' }}";
+        const patientName = {!! json_encode($dietPlan->patient->full_name ?? 'Patient') !!};
+        const planTitle = {!! json_encode($dietPlan->title ?? 'Nutrition Plan') !!};
+        const planNumber = {!! json_encode($dietPlan->plan_number ?? '') !!};
 
-        const message = `🍎 Nutrition Plan\n\nPatient: ${patientName}\nPlan: ${planTitle}\nPlan Number: ${planNumber}\n\nThis is your personalized nutrition plan. Please follow the guidelines provided.`;
+        const message = '🍎 Nutrition Plan\n\nPatient: ' + patientName + '\nPlan: ' + planTitle + '\nPlan Number: ' + planNumber + '\n\nThis is your personalized nutrition plan. Please follow the guidelines provided.';
 
         const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+        const whatsappUrl = 'https://wa.me/?text=' + encodedMessage;
 
         console.log('Opening WhatsApp with URL:', whatsappUrl);
 
