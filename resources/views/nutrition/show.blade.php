@@ -1078,6 +1078,15 @@ window.sendWhatsAppSimple = function() {
         var selectedLang = select ? select.value : 'en';
         console.log('Selected language:', selectedLang);
 
+        // Debug: Check if language selection is working
+        if (selectedLang === 'ar') {
+            console.log('Arabic language selected');
+        } else if (selectedLang === 'ku') {
+            console.log('Kurdish language selected');
+        } else {
+            console.log('English language selected (default)');
+        }
+
         // Create language-specific labels
         var labels = {
             'en': {
@@ -1138,7 +1147,7 @@ window.sendWhatsAppSimple = function() {
                 instructions: '💡 *ڕێنمایی:*',
                 instructionText: 'ئەم پلانی خواردنە تایبەتە بەپێی ڕاسپاردەی پزیشکەکەت پەیڕەو بکە. بۆ هەر پرسیار یان نیگەرانییەک، تکایە پەیوەندی بە دابینکەری چاودێری تەندروستیت بکە.',
                 footer: '🏥 *دروستکراوە لەلایەن سیستەمی بەڕێوەبردنی کلینیکی ConCure*',
-                breakfast: '🌅 تایبەت',
+                breakfast: '🌅 بەیانی',
                 lunch: '🌞 نانی نیوەڕۆ',
                 dinner: '🌙 شێوان',
                 morningSnack: '🍎 خواردنی بەیانی',
@@ -1149,12 +1158,15 @@ window.sendWhatsAppSimple = function() {
         };
 
         var currentLabels = labels[selectedLang] || labels['en'];
+        console.log('Current labels:', currentLabels);
 
         // Create detailed WhatsApp message with meal information
         var message = currentLabels.title + '\n\n' +
                      currentLabels.patient + ' ' + patientName + '\n' +
                      currentLabels.plan + ' ' + planTitle + '\n' +
                      currentLabels.planNumber + ' ' + planNumber + '\n\n';
+
+        console.log('Message so far:', message);
 
         // Add meal details
         @php
@@ -1175,35 +1187,29 @@ window.sendWhatsAppSimple = function() {
         message += currentLabels.dailyPlan + '\n\n';
 
         // Create food translations object
-        var foodTranslations = {};
-        @foreach($dietPlan->meals as $meal)
-            @foreach($meal->foods as $food)
-                @if($food->food)
-                    foodTranslations['{{ $food->id }}'] = {
-                        'en': '{{ addslashes($food->food->name ?? $food->food_name) }}',
-                        'ar': '{{ addslashes($food->food->getNameInLanguage("ar") ?? $food->food_name) }}',
-                        'ku': '{{ addslashes($food->food->getNameInLanguage("ku") ?? $food->food_name) }}'
-                    };
-                @else
-                    foodTranslations['{{ $food->id }}'] = {
-                        'en': '{{ addslashes($food->food_name) }}',
-                        'ar': '{{ addslashes($food->food_name) }}',
-                        'ku': '{{ addslashes($food->food_name) }}'
-                    };
-                @endif
+        var foodTranslations = {
+            @foreach($dietPlan->meals as $meal)
+                @foreach($meal->foods as $food)
+                    '{{ $food->id }}': {
+                        'en': {!! json_encode($food->food->name ?? $food->food_name) !!},
+                        'ar': {!! json_encode($food->food->getNameInLanguage("ar") ?? $food->food_name) !!},
+                        'ku': {!! json_encode($food->food->getNameInLanguage("ku") ?? $food->food_name) !!}
+                    }{{ !$loop->parent->last || !$loop->last ? ',' : '' }}
+                @endforeach
             @endforeach
-        @endforeach
+        };
 
+        // Add meals by type
         @foreach(['breakfast', 'lunch', 'dinner', 'snack_1', 'snack_2', 'snack_3', 'snack'] as $mealType)
             @if(isset($mealsByType[$mealType]) && $mealsByType[$mealType]->count() > 0)
-                message += currentLabels['{{ $mealTypeLabels[$mealType] ?? 'snack' }}'] + ':\n';
+                var mealTypeKey = '{{ $mealTypeLabels[$mealType] ?? 'snack' }}';
+                message += currentLabels[mealTypeKey] + ':\n';
                 @foreach($mealsByType[$mealType] as $meal)
                     @if($meal->foods->count() > 0)
                         @foreach($meal->foods as $food)
-                            // Get translated food name
                             var foodName = foodTranslations['{{ $food->id }}'] && foodTranslations['{{ $food->id }}'][selectedLang]
                                 ? foodTranslations['{{ $food->id }}'][selectedLang]
-                                : '{{ addslashes($food->food_name_display) }}';
+                                : {!! json_encode($food->food_name_display) !!};
                             message += '• ' + foodName + ' - {{ $food->quantity }}{{ $food->unit }}\n';
                         @endforeach
                     @endif
