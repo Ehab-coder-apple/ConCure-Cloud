@@ -330,6 +330,66 @@ class FinanceController extends Controller
     }
 
     /**
+     * Update an expense.
+     */
+    public function updateExpense(Request $request, Expense $expense)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to update expenses.');
+        }
+
+        // Check if user can edit this expense (admin or creator)
+        if (!$user->hasPermission('finance_edit') && $expense->created_by !== $user->id) {
+            abort(403, 'You can only edit your own expenses.');
+        }
+
+        // Don't allow editing of approved expenses
+        if ($expense->status === 'approved') {
+            return redirect()->route('finance.expenses')->with('error', 'Cannot edit approved expenses.');
+        }
+
+        $request->validate([
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'category' => 'required|in:salary,rent,utilities,equipment,supplies,marketing,insurance,taxes,maintenance,other',
+            'expense_date' => 'required|date',
+            'payment_method' => 'required|in:cash,card,bank_transfer,check,other',
+            'vendor_name' => 'nullable|string|max:255',
+            'receipt_number' => 'nullable|string|max:255',
+            'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Handle file upload
+        if ($request->hasFile('receipt_file')) {
+            // Delete old file if exists
+            if ($expense->receipt_file && Storage::disk('public')->exists($expense->receipt_file)) {
+                Storage::disk('public')->delete($expense->receipt_file);
+            }
+
+            // Store new file
+            $receiptPath = $request->file('receipt_file')->store('expense-receipts', 'public');
+            $expense->receipt_file = $receiptPath;
+        }
+
+        // Update expense data
+        $expense->update([
+            'description' => $request->description,
+            'amount' => $request->amount,
+            'category' => $request->category,
+            'expense_date' => $request->expense_date,
+            'payment_method' => $request->payment_method,
+            'vendor_name' => $request->vendor_name,
+            'receipt_number' => $request->receipt_number,
+            'notes' => $request->notes,
+        ]);
+
+        return redirect()->route('finance.expenses')->with('success', 'Expense updated successfully.');
+    }
+
+    /**
      * Generate invoice PDF.
      */
     public function generateInvoicePDF(Invoice $invoice)

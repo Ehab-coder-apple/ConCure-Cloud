@@ -15,13 +15,47 @@
         overflow-x: auto;
     }
 
+    /* Extra small buttons */
+    .btn-xs {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.75rem;
+        line-height: 1.2;
+        border-radius: 0.2rem;
+        min-width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     /* Action buttons styling */
     .btn-group .btn {
-        margin-right: 2px;
+        margin-right: 1px;
     }
 
     .btn-group .btn:last-child {
         margin-right: 0;
+    }
+
+    /* Compact button group */
+    .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1px;
+    }
+
+    /* Print specific styling */
+    .print-only {
+        display: none;
+    }
+
+    @media print {
+        .print-only {
+            display: block;
+        }
+        .no-print {
+            display: none;
+        }
     }
 </style>
 @endpush
@@ -202,16 +236,35 @@
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <!-- View Button -->
-                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                <button type="button" class="btn btn-xs btn-outline-primary"
                                                         title="{{ __('View Details') }}"
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#viewExpenseModal{{ $expense->id }}">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
 
+                                                <!-- Edit Button -->
+                                                @if(auth()->user()->hasPermission('finance_edit') || $expense->created_by === auth()->id())
+                                                    @if($expense->status !== 'approved')
+                                                        <button type="button" class="btn btn-xs btn-outline-secondary"
+                                                                title="{{ __('Edit') }}"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#editExpenseModal{{ $expense->id }}">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    @endif
+                                                @endif
+
+                                                <!-- Print Button -->
+                                                <button type="button" class="btn btn-xs btn-outline-info"
+                                                        title="{{ __('Print') }}"
+                                                        onclick="printExpense({{ $expense->id }})">
+                                                    <i class="fas fa-print"></i>
+                                                </button>
+
                                                 @if($expense->hasReceiptFile())
                                                     <a href="{{ $expense->receipt_file_url }}" target="_blank"
-                                                       class="btn btn-sm btn-outline-info" title="{{ __('View Receipt') }}">
+                                                       class="btn btn-xs btn-outline-info" title="{{ __('View Receipt') }}">
                                                         <i class="fas fa-file-alt"></i>
                                                     </a>
                                                 @endif
@@ -219,7 +272,7 @@
                                                 @if($expense->canBeApproved() && auth()->user()->hasPermission('finance_approve'))
                                                     <form method="POST" action="{{ route('finance.expenses.approve', $expense) }}" class="d-inline">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-sm btn-success"
+                                                        <button type="submit" class="btn btn-xs btn-success"
                                                                 title="{{ __('Approve') }}"
                                                                 onclick="return confirm('{{ __('Are you sure you want to approve this expense?') }}')">
                                                             <i class="fas fa-check"></i>
@@ -227,7 +280,7 @@
                                                     </form>
                                                     <form method="POST" action="{{ route('finance.expenses.reject', $expense) }}" class="d-inline">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-sm btn-danger"
+                                                        <button type="submit" class="btn btn-xs btn-danger"
                                                                 title="{{ __('Reject') }}"
                                                                 onclick="return confirm('{{ __('Are you sure you want to reject this expense?') }}')">
                                                             <i class="fas fa-times"></i>
@@ -240,7 +293,7 @@
                                                     <form method="POST" action="{{ route('finance.expenses.destroy', $expense) }}" class="d-inline">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        <button type="submit" class="btn btn-xs btn-outline-danger"
                                                                 title="{{ __('Delete') }}"
                                                                 onclick="return confirm('{{ __('Are you sure you want to delete this expense? This action cannot be undone.') }}')">
                                                             <i class="fas fa-trash"></i>
@@ -534,6 +587,117 @@
 </div>
 @endforeach
 
+<!-- Edit Expense Modals -->
+@foreach($expenses as $expense)
+@if((auth()->user()->hasPermission('finance_edit') || $expense->created_by === auth()->id()) && $expense->status !== 'approved')
+<div class="modal fade" id="editExpenseModal{{ $expense->id }}" tabindex="-1" aria-labelledby="editExpenseModalLabel{{ $expense->id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editExpenseModalLabel{{ $expense->id }}">
+                    <i class="fas fa-edit me-2"></i>
+                    {{ __('Edit Expense') }} - {{ $expense->expense_number }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('finance.expenses.update', $expense) }}" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label for="edit_description_{{ $expense->id }}" class="form-label">{{ __('Description') }} <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_description_{{ $expense->id }}"
+                                   name="description" value="{{ $expense->description }}" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="edit_amount_{{ $expense->id }}" class="form-label">{{ __('Amount') }} <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">{{ $currencySymbol ?? '$' }}</span>
+                                <input type="number" class="form-control" id="edit_amount_{{ $expense->id }}"
+                                       name="amount" value="{{ $expense->amount }}" step="0.01" min="0" required>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="edit_category_{{ $expense->id }}" class="form-label">{{ __('Category') }} <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_category_{{ $expense->id }}" name="category" required>
+                                @foreach(\App\Models\Expense::CATEGORIES as $key => $label)
+                                    <option value="{{ $key }}" {{ $expense->category == $key ? 'selected' : '' }}>
+                                        {{ __($label) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="edit_expense_date_{{ $expense->id }}" class="form-label">{{ __('Expense Date') }} <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="edit_expense_date_{{ $expense->id }}"
+                                   name="expense_date" value="{{ $expense->expense_date->format('Y-m-d') }}" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="edit_payment_method_{{ $expense->id }}" class="form-label">{{ __('Payment Method') }} <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_payment_method_{{ $expense->id }}" name="payment_method" required>
+                                @foreach(\App\Models\Expense::PAYMENT_METHODS as $key => $label)
+                                    <option value="{{ $key }}" {{ $expense->payment_method == $key ? 'selected' : '' }}>
+                                        {{ __($label) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="edit_vendor_name_{{ $expense->id }}" class="form-label">{{ __('Vendor Name') }}</label>
+                            <input type="text" class="form-control" id="edit_vendor_name_{{ $expense->id }}"
+                                   name="vendor_name" value="{{ $expense->vendor_name }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="edit_receipt_number_{{ $expense->id }}" class="form-label">{{ __('Receipt Number') }}</label>
+                            <input type="text" class="form-control" id="edit_receipt_number_{{ $expense->id }}"
+                                   name="receipt_number" value="{{ $expense->receipt_number }}">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label for="edit_receipt_file_{{ $expense->id }}" class="form-label">{{ __('Receipt File') }}</label>
+                            @if($expense->hasReceiptFile())
+                                <div class="mb-2">
+                                    <small class="text-muted">{{ __('Current file') }}:
+                                        <a href="{{ $expense->receipt_file_url }}" target="_blank">{{ __('View Current Receipt') }}</a>
+                                    </small>
+                                </div>
+                            @endif
+                            <input type="file" class="form-control" id="edit_receipt_file_{{ $expense->id }}"
+                                   name="receipt_file" accept=".pdf,.jpg,.jpeg,.png">
+                            <div class="form-text">{{ __('Leave empty to keep current file. Accepted formats: PDF, JPG, PNG. Max size: 5MB') }}</div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label for="edit_notes_{{ $expense->id }}" class="form-label">{{ __('Notes') }}</label>
+                            <textarea class="form-control" id="edit_notes_{{ $expense->id }}"
+                                      name="notes" rows="3">{{ $expense->notes }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        {{ __('Cancel') }}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        {{ __('Update Expense') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+@endforeach
+
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -542,6 +706,65 @@ document.addEventListener('DOMContentLoaded', function() {
         if (el) { var m = new bootstrap.Modal(el); m.show(); }
     @endif
 });
+
+// Print expense function
+function printExpense(expenseId) {
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+
+    // Get expense data from the view modal
+    const modal = document.getElementById('viewExpenseModal' + expenseId);
+    if (!modal) return;
+
+    const modalBody = modal.querySelector('.modal-body');
+    const expenseTitle = modal.querySelector('.modal-title').textContent;
+
+    // Create print content
+    const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${expenseTitle}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                .row { display: flex; flex-wrap: wrap; margin-bottom: 15px; }
+                .col { flex: 1; min-width: 200px; margin-right: 20px; }
+                .label { font-weight: bold; color: #333; }
+                .value { margin-top: 5px; }
+                .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+                .bg-success { background-color: #28a745; color: white; }
+                .bg-warning { background-color: #ffc107; color: black; }
+                .bg-danger { background-color: #dc3545; color: white; }
+                .bg-info { background-color: #17a2b8; color: white; }
+                .bg-secondary { background-color: #6c757d; color: white; }
+                @media print {
+                    body { margin: 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h2>${expenseTitle}</h2>
+                <p>Printed on: ${new Date().toLocaleDateString()}</p>
+            </div>
+            <div class="content">
+                ${modalBody.innerHTML}
+            </div>
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+
+    // Wait for content to load then print
+    printWindow.onload = function() {
+        printWindow.print();
+        printWindow.close();
+    };
+}
 </script>
 @endpush
 

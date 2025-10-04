@@ -676,6 +676,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         // Expenses
         Route::get('/expenses', [FinanceController::class, 'expenses'])->name('expenses');
         Route::post('/expenses', [FinanceController::class, 'storeExpense'])->name('expenses.store');
+        Route::put('/expenses/{expense}', [FinanceController::class, 'updateExpense'])->name('expenses.update');
         Route::post('/expenses/{expense}/approve', [FinanceController::class, 'approveExpense'])->name('expenses.approve');
         Route::post('/expenses/{expense}/reject', [FinanceController::class, 'rejectExpense'])->name('expenses.reject');
         Route::delete('/expenses/{expense}', [FinanceController::class, 'destroyExpense'])->name('expenses.destroy');
