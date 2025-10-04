@@ -897,6 +897,7 @@ function populateWhatsAppModal() {
 
 // Populate Export modal dynamically
 function populateExportModal() {
+  console.log('Populating Export modals...');
   const currentLocale = '{{ app()->getLocale() }}';
 
   const translations = {
@@ -984,14 +985,22 @@ function populateExportModal() {
 
   // Populate PDF modal
   const pdfModalContentDiv = document.querySelector('#exportPdfLanguageModal .modal-content');
+  console.log('PDF modal content div found:', !!pdfModalContentDiv);
   if (pdfModalContentDiv) {
     pdfModalContentDiv.innerHTML = pdfModalContent;
+    console.log('PDF modal content populated successfully');
+  } else {
+    console.error('PDF modal content div not found!');
   }
 
   // Populate Word modal
   const wordModalContentDiv = document.querySelector('#exportWordLanguageModal .modal-content');
+  console.log('Word modal content div found:', !!wordModalContentDiv);
   if (wordModalContentDiv) {
     wordModalContentDiv.innerHTML = wordModalContent;
+    console.log('Word modal content populated successfully');
+  } else {
+    console.error('Word modal content div not found!');
   }
 }
 
