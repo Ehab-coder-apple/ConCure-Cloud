@@ -659,7 +659,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-success" onclick="sendWhatsAppSimple()">
+        <button type="button" class="btn btn-success" onclick="console.log('Button clicked!'); sendWhatsAppSimple();">
           <i class="fab fa-whatsapp me-1"></i>
           Send
         </button>
@@ -719,7 +719,13 @@ window.sendWhatsAppSimple = function() {
     }
 };
 
-console.log('sendWhatsAppSimple function defined immediately:', typeof window.sendWhatsAppSimple);
+// Ensure function is available immediately
+console.log('sendWhatsAppSimple function defined:', typeof window.sendWhatsAppSimple);
+
+// Also ensure it's available after DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, sendWhatsAppSimple available:', typeof window.sendWhatsAppSimple);
+});
 // Safer Share Internally handler (prevents giant clickable area)
 (function(){
   document.addEventListener('DOMContentLoaded', function(){
