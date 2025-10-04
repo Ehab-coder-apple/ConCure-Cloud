@@ -766,6 +766,15 @@ class NutritionController extends Controller
         // Optional food-only language override for PDF export (headings stay in UI language)
         $outputLang = request()->query('lang');
         $supportedOutputLangs = array_keys(Food::getSupportedLanguages());
+
+        // Debug logging
+        \Log::info('PDF Export Debug', [
+            'requested_lang' => $outputLang,
+            'supported_langs' => $supportedOutputLangs,
+            'is_supported' => $outputLang && in_array($outputLang, $supportedOutputLangs, true),
+            'all_query_params' => request()->query()
+        ]);
+
         if ($outputLang && in_array($outputLang, $supportedOutputLangs, true)) {
             // Translate food display names in-memory for rendering (do not change app locale)
             foreach ($dietPlan->meals as $meal) {
@@ -849,6 +858,15 @@ class NutritionController extends Controller
         // Optional food-only language override for Word export (headings stay in UI language)
         $outputLang = request()->query('lang');
         $supportedOutputLangs = array_keys(Food::getSupportedLanguages());
+
+        // Debug logging
+        \Log::info('Word Export Debug', [
+            'requested_lang' => $outputLang,
+            'supported_langs' => $supportedOutputLangs,
+            'is_supported' => $outputLang && in_array($outputLang, $supportedOutputLangs, true),
+            'all_query_params' => request()->query()
+        ]);
+
         if ($outputLang && in_array($outputLang, $supportedOutputLangs, true)) {
             // Translate food display names in-memory for rendering (do not change app locale)
             foreach ($dietPlan->meals as $meal) {
