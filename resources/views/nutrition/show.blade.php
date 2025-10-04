@@ -679,6 +679,7 @@
 
 @endsection
 
+@push('scripts')
 <script>
 // Basic test to see if JavaScript is working
 console.log('JavaScript is loading...');
@@ -1077,3 +1078,4 @@ function downloadPdfWithLang() {
 }
 
 </script>
+@endpush
