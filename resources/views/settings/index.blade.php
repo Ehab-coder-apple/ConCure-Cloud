@@ -263,6 +263,11 @@
                                                     <option value="America/Los_Angeles" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'America/Los_Angeles' ? 'selected' : '' }}>Pacific Time</option>
                                                 </select>
                                             </div>
+
+                                            <!-- Finance Settings -->
+                                            <div class="col-12 mt-4">
+                                                <h6 class="text-primary">{{ __('Finance Settings') }}</h6>
+                                            </div>
                                             <div class="col-md-6">
                                                 <label for="currency" class="form-label">{{ __('Currency') }}</label>
                                                 <select class="form-select" id="currency" name="currency">
@@ -271,6 +276,7 @@
                                                     <option value="GBP" {{ ($clinicSettings['currency'] ?? 'USD') == 'GBP' ? 'selected' : '' }}>GBP (£)</option>
                                                     <option value="IQD" {{ ($clinicSettings['currency'] ?? 'USD') == 'IQD' ? 'selected' : '' }}>IQD (د.ع)</option>
                                                 </select>
+                                                <div class="form-text">{{ __('Currency used for invoices, expenses, and financial reports.') }}</div>
                                             </div>
 
                                             <!-- Communication Settings -->
