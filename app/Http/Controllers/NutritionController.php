@@ -846,6 +846,8 @@ class NutritionController extends Controller
      */
     public function downloadWord(DietPlan $dietPlan)
     {
+
+
         $user = Auth::user();
 
         // Check access and permissions
@@ -859,13 +861,7 @@ class NutritionController extends Controller
         $outputLang = request()->query('lang');
         $supportedOutputLangs = array_keys(Food::getSupportedLanguages());
 
-        // Debug logging
-        \Log::info('Word Export Debug', [
-            'requested_lang' => $outputLang,
-            'supported_langs' => $supportedOutputLangs,
-            'is_supported' => $outputLang && in_array($outputLang, $supportedOutputLangs, true),
-            'all_query_params' => request()->query()
-        ]);
+
 
         if ($outputLang && in_array($outputLang, $supportedOutputLangs, true)) {
             // Translate food display names in-memory for rendering (do not change app locale)

@@ -997,8 +997,16 @@ function populateExportModal() {
   const wordModalContentDiv = document.querySelector('#exportWordLanguageModal .modal-content');
   console.log('Word modal content div found:', !!wordModalContentDiv);
   if (wordModalContentDiv) {
+    console.log('Word modal content HTML:', wordModalContent);
     wordModalContentDiv.innerHTML = wordModalContent;
     console.log('Word modal content populated successfully');
+
+    // Debug: Check if the download button was created correctly
+    const downloadBtn = wordModalContentDiv.querySelector('button[onclick*="downloadWordWithLang"]');
+    console.log('Download Word button found after creation:', !!downloadBtn);
+    if (downloadBtn) {
+      console.log('Download button onclick attribute:', downloadBtn.getAttribute('onclick'));
+    }
   } else {
     console.error('Word modal content div not found!');
   }
@@ -1184,6 +1192,10 @@ window.downloadWordWithLang = function() {
 
   window.location.href = url;
 };
+
+// Debug: Test if functions are accessible
+console.log('downloadWordWithLang function defined:', typeof window.downloadWordWithLang);
+console.log('downloadPdfWithLang function defined:', typeof window.downloadPdfWithLang);
 
 // Simple WhatsApp functionality - moved to end to ensure it loads
 console.log('=== STARTING SIMPLE WHATSAPP FUNCTION LOADING ===');

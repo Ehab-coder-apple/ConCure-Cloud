@@ -40,6 +40,8 @@ Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 })->name('csrf-token');
 
+
+
 // Single entry point: redirect root to unified login
 Route::get('/', function () { return redirect()->route('login'); })->name('main.welcome');
 
