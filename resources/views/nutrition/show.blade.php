@@ -679,28 +679,40 @@
 
 @endsection
 
+@php
+    $whatsappData = [
+        'patientName' => $dietPlan->patient->full_name ?? 'Patient',
+        'planTitle' => $dietPlan->title ?? 'Nutrition Plan',
+        'planNumber' => $dietPlan->plan_number ?? ''
+    ];
+@endphp
+
 <script>
 // Basic test to see if JavaScript is working
 console.log('JavaScript is loading...');
+
+// WhatsApp data from PHP
+var whatsappData = @json($whatsappData);
+console.log('WhatsApp data loaded:', whatsappData);
 
 // Define sendWhatsAppSimple function immediately to ensure it's available
 window.sendWhatsAppSimple = function() {
     console.log('sendWhatsAppSimple called');
 
     try {
-        const select = document.getElementById('simpleLanguageSelect');
-        const selectedLang = select ? select.value : 'en';
+        var select = document.getElementById('simpleLanguageSelect');
+        var selectedLang = select ? select.value : 'en';
         console.log('Selected language:', selectedLang);
 
         // Create a simple WhatsApp message
-        const patientName = {!! json_encode($dietPlan->patient->full_name ?? 'Patient') !!};
-        const planTitle = {!! json_encode($dietPlan->title ?? 'Nutrition Plan') !!};
-        const planNumber = {!! json_encode($dietPlan->plan_number ?? '') !!};
+        var message = '🍎 Nutrition Plan\n\n' +
+                     'Patient: ' + whatsappData.patientName + '\n' +
+                     'Plan: ' + whatsappData.planTitle + '\n' +
+                     'Plan Number: ' + whatsappData.planNumber + '\n\n' +
+                     'This is your personalized nutrition plan. Please follow the guidelines provided.';
 
-        const message = '🍎 Nutrition Plan\n\nPatient: ' + patientName + '\nPlan: ' + planTitle + '\nPlan Number: ' + planNumber + '\n\nThis is your personalized nutrition plan. Please follow the guidelines provided.';
-
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = 'https://wa.me/?text=' + encodedMessage;
+        var encodedMessage = encodeURIComponent(message);
+        var whatsappUrl = 'https://wa.me/?text=' + encodedMessage;
 
         console.log('Opening WhatsApp with URL:', whatsappUrl);
 
@@ -708,7 +720,7 @@ window.sendWhatsAppSimple = function() {
         window.open(whatsappUrl, '_blank');
 
         // Close the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('simpleWhatsAppModal'));
+        var modal = bootstrap.Modal.getInstance(document.getElementById('simpleWhatsAppModal'));
         if (modal) {
             modal.hide();
         }
