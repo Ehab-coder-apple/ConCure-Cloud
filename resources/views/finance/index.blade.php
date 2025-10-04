@@ -29,7 +29,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title">Monthly Revenue</h6>
-                            <h2 class="mb-0">${{ number_format($monthlyRevenue, 2) }}</h2>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($monthlyRevenue, 2) }}</h2>
                             <small>{{ now()->format('F Y') }}</small>
                         </div>
                         <div class="align-self-center">
@@ -46,7 +46,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title">Monthly Expenses</h6>
-                            <h2 class="mb-0">${{ number_format($monthlyExpenses, 2) }}</h2>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($monthlyExpenses, 2) }}</h2>
                             <small>{{ now()->format('F Y') }}</small>
                         </div>
                         <div class="align-self-center">
@@ -63,7 +63,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title">Monthly Profit</h6>
-                            <h2 class="mb-0">${{ number_format($monthlyProfit, 2) }}</h2>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($monthlyProfit, 2) }}</h2>
                             <small>Revenue - Expenses</small>
                         </div>
                         <div class="align-self-center">
@@ -80,7 +80,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title">Outstanding</h6>
-                            <h2 class="mb-0">${{ number_format($outstandingInvoices, 2) }}</h2>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($outstandingInvoices, 2) }}</h2>
                             <small>Unpaid invoices</small>
                         </div>
                         <div class="align-self-center">
@@ -115,7 +115,7 @@
                     <h5 class="card-title">Pending Expenses</h5>
                     <h2 class="text-warning">{{ number_format($pendingExpenseCount) }}</h2>
                     <p class="text-muted mb-0">
-                        ${{ number_format($pendingExpenses, 2) }} total
+                        {{ $currencySymbol ?? '$' }}{{ number_format($pendingExpenses, 2) }} total
                     </p>
                 </div>
             </div>
@@ -165,7 +165,7 @@
                                 </span>
                             </div>
                             <div class="text-end">
-                                <div class="fw-bold">${{ number_format($invoice->total_amount, 2) }}</div>
+                                <div class="fw-bold">{{ $currencySymbol ?? '$' }}{{ number_format($invoice->total_amount, 2) }}</div>
                                 <small class="text-muted">
                                     {{ $invoice->invoice_date->format('M d') }}
                                 </small>
@@ -211,7 +211,7 @@
                                 </span>
                             </div>
                             <div class="text-end">
-                                <div class="fw-bold text-danger">${{ number_format($expense->amount, 2) }}</div>
+                                <div class="fw-bold text-danger">{{ $currencySymbol ?? '$' }}{{ number_format($expense->amount, 2) }}</div>
                                 <small class="text-muted">
                                     {{ $expense->expense_date->format('M d') }}
                                 </small>
@@ -314,7 +314,7 @@
                                    min="0" max="100" step="0.01" value="0">
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="discount_amount" class="form-label">Discount Amount ($)</label>
+                            <label for="discount_amount" class="form-label">Discount Amount ({{ $currencySymbol ?? '$' }})</label>
                             <input type="number" class="form-control" id="discount_amount" name="discount_amount" 
                                    min="0" step="0.01" value="0">
                         </div>

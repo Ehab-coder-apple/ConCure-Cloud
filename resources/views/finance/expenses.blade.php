@@ -157,7 +157,7 @@
                                             <span class="badge bg-secondary">{{ $expense->category_display }}</span>
                                         </td>
                                         <td>
-                                            <strong class="text-danger">${{ number_format($expense->amount, 2) }}</strong>
+                                            <strong class="text-danger">{{ $currencySymbol ?? '$' }}{{ number_format($expense->amount, 2) }}</strong>
                                             @if($expense->payment_method)
                                                 <br><small class="text-muted">{{ $expense->payment_method_display }}</small>
                                             @endif
@@ -258,7 +258,7 @@
                         <div class="col-md-6">
                             <label for="amount" class="form-label">{{ __('Amount') }} <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <span class="input-group-text">$</span>
+                                <span class="input-group-text">{{ $currencySymbol ?? '$' }}</span>
                                 <input type="number" class="form-control @error('amount') is-invalid @enderror"
                                        id="amount" name="amount" value="{{ old('amount') }}"
                                        step="0.01" min="0" required>

@@ -28,7 +28,17 @@ class FinanceController extends Controller
 
         // Get financial statistics
         $stats = $this->getFinancialStats($user);
-        
+
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+        $stats['currency'] = $currency;
+        $stats['currencySymbol'] = $currencySymbol;
+
         return view('finance.index', $stats);
     }
 
@@ -78,7 +88,15 @@ class FinanceController extends Controller
                           ->orderBy('last_name')
                           ->get();
 
-        return view('finance.invoices', compact('invoices', 'patients'));
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.invoices', compact('invoices', 'patients', 'currency', 'currencySymbol'));
     }
 
     /**
@@ -175,7 +193,15 @@ class FinanceController extends Controller
 
         $expenses = $query->latest()->paginate(15);
 
-        return view('finance.expenses', compact('expenses'));
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.expenses', compact('expenses', 'currency', 'currencySymbol'));
     }
 
     /**
@@ -624,6 +650,23 @@ class FinanceController extends Controller
             ->get();
 
         return $stats;
+    }
+
+    /**
+     * Get currency symbol for a given currency code
+     */
+    private function getCurrencySymbol($currencyCode): string
+    {
+        $symbols = [
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            'IQD' => 'د.ع',
+            'JOD' => 'د.أ',
+            'EGP' => 'ج.م',
+        ];
+
+        return $symbols[$currencyCode] ?? '$';
     }
 
     /**
