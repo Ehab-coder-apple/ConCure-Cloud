@@ -1,5 +1,31 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+    /* Extra small buttons */
+    .btn-xs {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.75rem;
+        line-height: 1.2;
+        border-radius: 0.2rem;
+        min-width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Action buttons styling */
+    .btn-group .btn {
+        margin-right: 1px;
+    }
+
+    .btn-group .btn:last-child {
+        margin-right: 0;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="row">
@@ -91,7 +117,7 @@
                                         <td>{{ $invoice->invoice_date ? $invoice->invoice_date->format('M d, Y') : '-' }}</td>
                                         <td>{{ $invoice->due_date ? $invoice->due_date->format('M d, Y') : '-' }}</td>
                                         <td>
-                                            <strong>${{ number_format($invoice->total_amount ?? 0, 2) }}</strong>
+                                            <strong>{{ $currencySymbol ?? '$' }}{{ number_format($invoice->total_amount ?? 0, 2) }}</strong>
                                         </td>
                                         <td>
                                             @php
@@ -110,20 +136,35 @@
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <button type="button" class="btn btn-outline-primary btn-sm" title="{{ __('View Invoice') }}"
+                                                <button type="button" class="btn btn-xs btn-outline-primary" title="{{ __('View Invoice') }}"
                                                         onclick="viewInvoice({{ $invoice->id }})">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-outline-secondary btn-sm" title="{{ __('Edit Invoice') }}"
+                                                <button type="button" class="btn btn-xs btn-outline-secondary" title="{{ __('Edit Invoice') }}"
                                                         onclick="editInvoice({{ $invoice->id }})">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <a href="{{ route('finance.invoices.print', $invoice->id) }}" class="btn btn-outline-success btn-sm" title="{{ __('Print Invoice') }}" target="_blank">
+                                                <a href="{{ route('finance.invoices.print', $invoice->id) }}" class="btn btn-xs btn-outline-success" title="{{ __('Print Invoice') }}" target="_blank">
                                                     <i class="fas fa-print"></i>
                                                 </a>
-                                                <a href="{{ route('finance.invoices.pdf', $invoice->id) }}" class="btn btn-primary btn-sm" title="{{ __('Download PDF') }}">
-                                                    <i class="fas fa-file-pdf"></i> {{ __('PDF') }}
+                                                <a href="{{ route('finance.invoices.pdf', $invoice->id) }}" class="btn btn-xs btn-primary" title="{{ __('Download PDF') }}">
+                                                    <i class="fas fa-file-pdf"></i>
                                                 </a>
+
+                                                <!-- Delete Button -->
+                                                @if(auth()->user()->hasPermission('finance_delete') || $invoice->created_by === auth()->id())
+                                                    @if($invoice->status !== 'paid')
+                                                        <form method="POST" action="{{ route('finance.invoices.destroy', $invoice) }}" class="d-inline">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-xs btn-outline-danger"
+                                                                    title="{{ __('Delete') }}"
+                                                                    onclick="return confirm('{{ __('Are you sure you want to delete this invoice? This action cannot be undone.') }}')">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -316,16 +357,16 @@
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between">
                                         <span>{{ __('Subtotal') }}:</span>
-                                        <span id="edit-subtotal">$0.00</span>
+                                        <span id="edit-subtotal">{{ $currencySymbol ?? '$' }}0.00</span>
                                     </div>
                                     <div class="d-flex justify-content-between">
                                         <span>{{ __('Tax') }} (<span id="edit-tax-rate">0</span>%):</span>
-                                        <span id="edit-tax-amount">$0.00</span>
+                                        <span id="edit-tax-amount">{{ $currencySymbol ?? '$' }}0.00</span>
                                     </div>
                                     <hr>
                                     <div class="d-flex justify-content-between fw-bold">
                                         <span>{{ __('Total') }}:</span>
-                                        <span id="edit-total">$0.00</span>
+                                        <span id="edit-total">{{ $currencySymbol ?? '$' }}0.00</span>
                                     </div>
                                 </div>
                             </div>
@@ -430,6 +471,9 @@
 
 @push('scripts')
 <script>
+// Currency symbol for JavaScript
+const currencySymbol = '{{ $currencySymbol ?? "$" }}';
+
 document.addEventListener('DOMContentLoaded', function() {
     let itemIndex = 1;
     
@@ -659,7 +703,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById('email-invoice-details').innerHTML = `
                             <div><strong>{{ __('Invoice:') }}</strong> ${data.invoice.invoice_number}</div>
                             <div><strong>{{ __('Patient:') }}</strong> ${data.invoice.patient_name}</div>
-                            <div><strong>{{ __('Amount:') }}</strong> $${parseFloat(data.invoice.total_amount).toFixed(2)}</div>
+                            <div><strong>{{ __('Amount:') }}</strong> ${currencySymbol}${parseFloat(data.invoice.total_amount).toFixed(2)}</div>
                             <div><strong>{{ __('Status:') }}</strong> <span class="badge bg-${data.invoice.status === 'paid' ? 'success' : (data.invoice.status === 'overdue' ? 'danger' : 'warning')}">${data.invoice.status.charAt(0).toUpperCase() + data.invoice.status.slice(1)}</span></div>
                         `;
 
@@ -779,10 +823,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const taxAmountElement = document.getElementById('edit-tax-amount');
         const totalElement = document.getElementById('edit-total');
 
-        if (subtotalElement) subtotalElement.textContent = '$' + subtotal.toFixed(2);
+        if (subtotalElement) subtotalElement.textContent = currencySymbol + subtotal.toFixed(2);
         if (taxRateElement) taxRateElement.textContent = taxRate;
-        if (taxAmountElement) taxAmountElement.textContent = '$' + taxAmount.toFixed(2);
-        if (totalElement) totalElement.textContent = '$' + finalTotal.toFixed(2);
+        if (taxAmountElement) taxAmountElement.textContent = currencySymbol + taxAmount.toFixed(2);
+        if (totalElement) totalElement.textContent = currencySymbol + finalTotal.toFixed(2);
     }
 
     // Handle edit form submission

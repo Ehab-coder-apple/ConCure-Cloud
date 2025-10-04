@@ -390,6 +390,36 @@ class FinanceController extends Controller
     }
 
     /**
+     * Delete an invoice.
+     */
+    public function destroyInvoice(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to delete invoices.');
+        }
+
+        // Check if user can delete this invoice (admin or creator)
+        if (!$user->hasPermission('finance_delete') && $invoice->created_by !== $user->id) {
+            abort(403, 'You can only delete your own invoices.');
+        }
+
+        // Don't allow deletion of paid invoices
+        if ($invoice->status === 'paid') {
+            return redirect()->route('finance.invoices')->with('error', 'Cannot delete paid invoices.');
+        }
+
+        // Delete related invoice items first
+        $invoice->items()->delete();
+
+        // Delete the invoice
+        $invoice->delete();
+
+        return redirect()->route('finance.invoices')->with('success', 'Invoice deleted successfully.');
+    }
+
+    /**
      * Generate invoice PDF.
      */
     public function generateInvoicePDF(Invoice $invoice)

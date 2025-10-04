@@ -667,6 +667,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/invoices', [FinanceController::class, 'storeInvoice'])->name('invoices.store');
         Route::get('/invoices/{invoice}/edit', [FinanceController::class, 'getInvoiceForEdit'])->name('invoices.edit');
         Route::put('/invoices/{invoice}', [FinanceController::class, 'updateInvoice'])->name('invoices.update');
+        Route::delete('/invoices/{invoice}', [FinanceController::class, 'destroyInvoice'])->name('invoices.destroy');
         Route::get('/invoices/{invoice}/pdf', [FinanceController::class, 'generateInvoicePDF'])->name('invoices.pdf');
         Route::get('/invoices/{invoice}/print', [FinanceController::class, 'printInvoice'])->name('invoices.print');
         Route::get('/invoices/{invoice}/public-pdf-url', [FinanceController::class, 'getPublicPdfUrl'])->name('invoices.public-pdf-url');
