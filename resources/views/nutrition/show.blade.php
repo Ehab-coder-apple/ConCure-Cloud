@@ -654,7 +654,8 @@
         <select id="simpleLanguageSelect" class="form-select">
           <option value="en" selected>English</option>
           <option value="ar">العربية</option>
-          <option value="ku">کوردی</option>
+          <option value="ku_bahdini">کوردی بادینی (Kurdish Bahdini)</option>
+          <option value="ku_sorani">کوردی سۆرانی (Kurdish Sorani)</option>
         </select>
       </div>
       <div class="modal-footer">
@@ -1081,8 +1082,10 @@ window.sendWhatsAppSimple = function() {
         // Debug: Check if language selection is working
         if (selectedLang === 'ar') {
             console.log('Arabic language selected');
-        } else if (selectedLang === 'ku') {
-            console.log('Kurdish language selected');
+        } else if (selectedLang === 'ku_bahdini') {
+            console.log('Kurdish Bahdini language selected');
+        } else if (selectedLang === 'ku_sorani') {
+            console.log('Kurdish Sorani language selected');
         } else {
             console.log('English language selected (default)');
         }
@@ -1133,7 +1136,29 @@ window.sendWhatsAppSimple = function() {
                 eveningSnack: '🍪 وجبة خفيفة مسائية',
                 snack: '🍎 وجبة خفيفة'
             },
-            'ku': {
+            'ku_bahdini': {
+                title: '🍎 *پلانا خواردنێ*',
+                patient: '👤 *نەخۆش:*',
+                plan: '📋 *پلان:*',
+                planNumber: '🔢 *ژمارا پلانێ:*',
+                dailyPlan: '*📅 پلانا ژەمێن ڕۆژانە:*',
+                targets: '🎯 *ئامانجێن ڕۆژانە:*',
+                calories: '🔥 کالۆری:',
+                protein: '🥩 پرۆتین:',
+                carbs: '🍞 کاربۆهایدرات:',
+                fat: '🥑 چەوری:',
+                instructions: '💡 *ڕێنمایی:*',
+                instructionText: 'ئەڤ پلانا خواردنا تایبەت بەپێی ڕاسپاردەیا دکتۆرێ خۆ پەیڕەو بکە. بۆ هەر پرسیارەک یان نیگەرانییەک، تکایە پەیوەندی بە دابینکەرێ چاودێریا تەندروستیا خۆ بکە.',
+                footer: '🏥 *دروستکراوە لەلایەن سیستەمێ بەڕێوەبردنا کلینیکا ConCure*',
+                breakfast: '🌅 تشتێ بەیانێ',
+                lunch: '🌞 نانێ نیڤرۆ',
+                dinner: '🌙 شێڤان',
+                morningSnack: '🍎 خواردنا بەیانێ',
+                afternoonSnack: '🥨 خواردنا دوای نیڤرۆ',
+                eveningSnack: '🍪 خواردنا ئێڤارێ',
+                snack: '🍎 خواردنا سووک'
+            },
+            'ku_sorani': {
                 title: '🍎 *پلانی خواردن*',
                 patient: '👤 *نەخۆش:*',
                 plan: '📋 *پلان:*',
@@ -1156,6 +1181,8 @@ window.sendWhatsAppSimple = function() {
                 snack: '🍎 خواردنی سووک'
             }
         };
+
+        console.log('Food translations:', foodTranslations);
 
         var currentLabels = labels[selectedLang] || labels['en'];
         console.log('Current labels:', currentLabels);
@@ -1193,7 +1220,8 @@ window.sendWhatsAppSimple = function() {
                     '{{ $food->id }}': {
                         'en': {!! json_encode($food->food->name ?? $food->food_name) !!},
                         'ar': {!! json_encode($food->food->getNameInLanguage("ar") ?? $food->food_name) !!},
-                        'ku': {!! json_encode($food->food->getNameInLanguage("ku") ?? $food->food_name) !!}
+                        'ku_bahdini': {!! json_encode($food->food->getNameInLanguage("ku_bahdini") ?? $food->food_name) !!},
+                        'ku_sorani': {!! json_encode($food->food->getNameInLanguage("ku_sorani") ?? $food->food_name) !!}
                     }{{ !$loop->parent->last || !$loop->last ? ',' : '' }}
                 @endforeach
             @endforeach
