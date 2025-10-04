@@ -708,6 +708,8 @@ console.log('JavaScript is loading...');
     }, { once: true });
   });
 })();
+// COMMENTED OUT COMPLEX WHATSAPP FUNCTION TO FIX SYNTAX ERROR - USING SIMPLE VERSION INSTEAD
+/*
 function shareOnWhatsApp() {
     // Get nutrition plan data
     const patientName = "{{ $dietPlan->patient->full_name ?? '' }}";
@@ -766,7 +768,10 @@ function shareOnWhatsApp() {
             @endif
         @endforeach
     }
+*/
 
+// COMMENTED OUT COMPLEX WHATSAPP I18N CODE TO FIX SYNTAX ERROR - USING SIMPLE VERSION INSTEAD
+/*
 // Output language selection (default to current app locale)
 let selectedLang = "{{ app()->getLocale() }}";
 
@@ -797,14 +802,18 @@ function i18nFor(lang){ return whatsappI18n[lang] || whatsappI18n.en; }
 const appLocale = "{{ app()->getLocale() }}";
 let i18n = i18nFor(appLocale);
 function mealTypeKey(type){ return (type && type.startsWith('snack')) ? 'snack' : type; }
+*/
 
 // Build food name translations map (mealFoodId => { lang => name })
+// COMMENTED OUT TO FIX SYNTAX ERROR - USING SIMPLE WHATSAPP INSTEAD
+/*
 const foodTranslations = {};
 @foreach($dietPlan->meals as $meal)
   @foreach($meal->foods as $mealFood)
     foodTranslations['{{ $mealFood->id }}'] = @json($mealFood->food ? $mealFood->food->getAllNameTranslations() : ['en' => $mealFood->food_name]);
   @endforeach
 @endforeach
+*/
 
 // Populate WhatsApp modal dynamically
 function populateWhatsAppModal() {
@@ -1020,6 +1029,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+// COMMENTED OUT TO FIX SYNTAX ERROR - USING SIMPLE VERSION INSTEAD
+/*
 function shareOnWhatsAppWithLang() {
   const sel = document.getElementById('whatsappLanguageSelect');
   if (sel && sel.value) { selectedLang = sel.value; }
@@ -1030,6 +1041,7 @@ function shareOnWhatsAppWithLang() {
   }
   shareOnWhatsApp();
 }
+*/
 
 function downloadPdfWithLang() {
   const sel = document.getElementById('exportLanguageSelect');
