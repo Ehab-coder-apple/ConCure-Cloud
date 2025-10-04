@@ -949,7 +949,7 @@ function populateExportModal() {
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${t.cancel}</button>
-      <button type="button" class="btn btn-primary" onclick="downloadPdfWithLang()">
+      <button type="button" class="btn btn-primary" onclick="console.log('PDF button onclick triggered'); downloadPdfWithLang();">
         <i class="fas fa-file-download me-1"></i>
         ${t.downloadPdf}
       </button>
@@ -976,7 +976,7 @@ function populateExportModal() {
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${t.cancel}</button>
-      <button type="button" class="btn btn-primary" onclick="downloadWordWithLang()">
+      <button type="button" class="btn btn-primary" onclick="console.log('Word button onclick triggered'); downloadWordWithLang();">
         <i class="fas fa-file-download me-1"></i>
         ${t.downloadWord}
       </button>
@@ -1159,29 +1159,31 @@ function shareOnWhatsAppWithLang() {
 }
 */
 
-function downloadPdfWithLang() {
+// Make sure functions are in global scope
+window.downloadPdfWithLang = function() {
+  console.log('downloadPdfWithLang called');
   const sel = document.getElementById('exportPdfLanguageSelect');
   const lang = sel && sel.value ? sel.value : 'en';
   const url = "{{ route('nutrition.pdf', $dietPlan) }}" + "?lang=" + encodeURIComponent(lang);
 
-  console.log('downloadPdfWithLang called');
   console.log('Selected language:', lang);
   console.log('Download URL:', url);
 
   window.location.href = url;
-}
+};
 
-function downloadWordWithLang() {
+// Make sure functions are in global scope
+window.downloadWordWithLang = function() {
+  console.log('downloadWordWithLang called');
   const sel = document.getElementById('exportWordLanguageSelect');
   const lang = sel && sel.value ? sel.value : 'en';
   const url = "{{ route('nutrition.word', $dietPlan) }}" + "?lang=" + encodeURIComponent(lang);
 
-  console.log('downloadWordWithLang called');
   console.log('Selected language:', lang);
   console.log('Download URL:', url);
 
   window.location.href = url;
-}
+};
 
 // Simple WhatsApp functionality - moved to end to ensure it loads
 console.log('=== STARTING SIMPLE WHATSAPP FUNCTION LOADING ===');
