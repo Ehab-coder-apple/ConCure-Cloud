@@ -21,27 +21,27 @@
                             <h6 class="mb-0">{{ __('Settings Categories') }}</h6>
                         </div>
                         <div class="list-group list-group-flush">
-                            <a href="#profile" class="list-group-item list-group-item-action active" data-bs-toggle="pill">
+                            <a href="#profile" class="list-group-item list-group-item-action {{ $activeTab === 'profile' ? 'active' : '' }}" data-bs-toggle="pill">
                                 <i class="fas fa-user me-2"></i>
                                 {{ __('My Profile') }}
                             </a>
-                            <a href="#general" class="list-group-item list-group-item-action" data-bs-toggle="pill">
+                            <a href="#general" class="list-group-item list-group-item-action {{ $activeTab === 'general' ? 'active' : '' }}" data-bs-toggle="pill">
                                 <i class="fas fa-cog me-2"></i>
                                 {{ __('General Settings') }}
                             </a>
-                            <a href="#clinic" class="list-group-item list-group-item-action" data-bs-toggle="pill">
+                            <a href="#clinic" class="list-group-item list-group-item-action {{ $activeTab === 'clinic' ? 'active' : '' }}" data-bs-toggle="pill">
                                 <i class="fas fa-hospital me-2"></i>
                                 {{ __('Clinic Information') }}
                             </a>
-                            <a href="#users" class="list-group-item list-group-item-action" data-bs-toggle="pill">
+                            <a href="#users" class="list-group-item list-group-item-action {{ $activeTab === 'users' ? 'active' : '' }}" data-bs-toggle="pill">
                                 <i class="fas fa-users me-2"></i>
                                 {{ __('User Management') }}
                             </a>
-                            <a href="#system" class="list-group-item list-group-item-action" data-bs-toggle="pill">
+                            <a href="#system" class="list-group-item list-group-item-action {{ $activeTab === 'system' ? 'active' : '' }}" data-bs-toggle="pill">
                                 <i class="fas fa-server me-2"></i>
                                 {{ __('System Settings') }}
                             </a>
-                            <a href="#user-guide" class="list-group-item list-group-item-action" data-bs-toggle="pill">
+                            <a href="#user-guide" class="list-group-item list-group-item-action {{ $activeTab === 'user-guide' ? 'active' : '' }}" data-bs-toggle="pill">
                                 <i class="fas fa-book me-2"></i>
                                 {{ __('User Guide') }}
                             </a>
@@ -82,7 +82,7 @@
                 <div class="col-lg-9">
                     <div class="tab-content">
                         <!-- My Profile -->
-                        <div class="tab-pane fade show active" id="profile">
+                        <div class="tab-pane fade {{ $activeTab === 'profile' ? 'show active' : '' }}" id="profile">
                             <div class="card">
                                 <div class="card-header">
                                     <h6 class="mb-0">
@@ -166,7 +166,7 @@
                         </div>
 
                         <!-- General Settings -->
-                        <div class="tab-pane fade" id="general">
+                        <div class="tab-pane fade {{ $activeTab === 'general' ? 'show active' : '' }}" id="general">
                             <div class="card">
                                 <div class="card-header">
                                     <h6 class="mb-0">
@@ -328,7 +328,7 @@
                         </div>
 
                         <!-- Clinic Information -->
-                        <div class="tab-pane fade" id="clinic">
+                        <div class="tab-pane fade {{ $activeTab === 'clinic' ? 'show active' : '' }}" id="clinic">
                             <div class="card">
                                 <div class="card-header">
                                     <h6 class="mb-0">
@@ -377,7 +377,7 @@
                         </div>
 
                         <!-- User Management -->
-                        <div class="tab-pane fade" id="users">
+                        <div class="tab-pane fade {{ $activeTab === 'users' ? 'show active' : '' }}" id="users">
                             <div class="card">
                                 <div class="card-header">
                                     <h6 class="mb-0">
@@ -532,7 +532,7 @@
                         </div>
 
                         <!-- System Settings -->
-                        <div class="tab-pane fade" id="system">
+                        <div class="tab-pane fade {{ $activeTab === 'system' ? 'show active' : '' }}" id="system">
                             <div class="card">
                                 <div class="card-header">
                                     <h6 class="mb-0">
@@ -624,7 +624,7 @@
                         </div>
 
                         <!-- User Guide -->
-                        <div class="tab-pane fade" id="user-guide">
+                        <div class="tab-pane fade {{ $activeTab === 'user-guide' ? 'show active' : '' }}" id="user-guide">
                             <div class="card">
                                 <div class="card-header">
                                     <h6 class="mb-0">

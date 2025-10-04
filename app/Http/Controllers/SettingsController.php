@@ -11,9 +11,12 @@ use Illuminate\Support\Str;
 
 class SettingsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
+
+        // Get the active tab from request parameter
+        $activeTab = $request->get('tab', 'profile');
 
         // Get clinic-specific settings
         $clinicSettings = [];
@@ -65,7 +68,7 @@ class SettingsController extends Controller
             }
         }
 
-        return view('settings.index', compact('clinicSettings', 'clinicInfo'));
+        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab'));
     }
 
     public function update(Request $request)

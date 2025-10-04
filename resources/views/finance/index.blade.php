@@ -263,7 +263,7 @@
                         @endcan
                         @can('access-section', 'settings')
                         <div class="col-md-3 mb-3">
-                            <a href="{{ route('settings.index') }}#general" class="btn btn-secondary btn-lg w-100">
+                            <a href="{{ route('settings.index', ['tab' => 'general']) }}" class="btn btn-secondary btn-lg w-100">
                                 <i class="fas fa-cog d-block mb-1"></i>
                                 <small>Settings</small>
                             </a>
