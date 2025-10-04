@@ -201,7 +201,10 @@ class WordDocumentService
         // Group meals by day and organize properly
         $mealsByDay = $dietPlan->meals->groupBy('day_number')->sortKeys();
 
-        if ($mealsByDay->count() > 0) {
+        // Check if we have valid day numbers (greater than 0)
+        $hasValidDays = $mealsByDay->keys()->filter(function($day) { return $day > 0; })->count() > 0;
+
+        if ($hasValidDays && $mealsByDay->count() > 0) {
             foreach ($mealsByDay as $dayNumber => $dayMeals) {
                 // Skip day 0 or invalid days
                 if ($dayNumber < 1) {
@@ -252,8 +255,11 @@ class WordDocumentService
                                 $mealCalories += $calories;
                                 $dayTotalCalories += $calories;
 
+                                // Use food_name_display if available, otherwise fallback to food_name
+                                $foodName = $mealFood->food_name_display ?? $mealFood->food_name ?? 'Unknown Food';
+
                                 $html .= '<div class="food-item">
-                                    <div class="food-name kurdish">' . htmlspecialchars($mealFood->food_name) . '</div>
+                                    <div class="food-name kurdish">' . htmlspecialchars($foodName) . '</div>
                                     <div class="food-details">
                                         ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . ' |
                                         ' . number_format($calories, 0) . ' cal |
@@ -313,8 +319,11 @@ class WordDocumentService
 
                             $mealCalories += $calories;
 
+                            // Use food_name_display if available, otherwise fallback to food_name
+                            $foodName = $mealFood->food_name_display ?? $mealFood->food_name ?? 'Unknown Food';
+
                             $html .= '<div class="food-item">
-                                <div class="food-name kurdish">' . htmlspecialchars($mealFood->food_name) . '</div>
+                                <div class="food-name kurdish">' . htmlspecialchars($foodName) . '</div>
                                 <div class="food-details">
                                     ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . ' |
                                     ' . number_format($calories, 0) . ' cal |
