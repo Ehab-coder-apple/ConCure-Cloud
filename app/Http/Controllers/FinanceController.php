@@ -299,6 +299,37 @@ class FinanceController extends Controller
     }
 
     /**
+     * Delete an expense.
+     */
+    public function destroyExpense(Expense $expense)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to delete expenses.');
+        }
+
+        // Check if user can delete this expense (admin or creator)
+        if (!$user->hasPermission('finance_delete') && $expense->created_by !== $user->id) {
+            abort(403, 'You can only delete your own expenses.');
+        }
+
+        // Don't allow deletion of approved expenses
+        if ($expense->status === 'approved') {
+            return redirect()->route('finance.expenses')->with('error', 'Cannot delete approved expenses.');
+        }
+
+        // Delete the receipt file if it exists
+        if ($expense->receipt_file && Storage::disk('public')->exists($expense->receipt_file)) {
+            Storage::disk('public')->delete($expense->receipt_file);
+        }
+
+        $expense->delete();
+
+        return redirect()->route('finance.expenses')->with('success', 'Expense deleted successfully.');
+    }
+
+    /**
      * Generate invoice PDF.
      */
     public function generateInvoicePDF(Invoice $invoice)

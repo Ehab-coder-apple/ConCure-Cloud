@@ -678,6 +678,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/expenses', [FinanceController::class, 'storeExpense'])->name('expenses.store');
         Route::post('/expenses/{expense}/approve', [FinanceController::class, 'approveExpense'])->name('expenses.approve');
         Route::post('/expenses/{expense}/reject', [FinanceController::class, 'rejectExpense'])->name('expenses.reject');
+        Route::delete('/expenses/{expense}', [FinanceController::class, 'destroyExpense'])->name('expenses.destroy');
 
         // Reports (strict: require finance_reports permission)
         Route::get('/reports', [FinanceController::class, 'reports'])->name('reports')->middleware('can:finance-reports');

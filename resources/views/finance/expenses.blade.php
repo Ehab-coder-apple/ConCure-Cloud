@@ -2,8 +2,32 @@
 
 @section('title', __('Expenses'))
 
+@push('styles')
+<style>
+    /* Ensure proper spacing and prevent sidebar overlap */
+    .main-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* Responsive table */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    /* Action buttons styling */
+    .btn-group .btn {
+        margin-right: 2px;
+    }
+
+    .btn-group .btn:last-child {
+        margin-right: 0;
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid px-4">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -177,6 +201,14 @@
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
+                                                <!-- View Button -->
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        title="{{ __('View Details') }}"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#viewExpenseModal{{ $expense->id }}">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+
                                                 @if($expense->hasReceiptFile())
                                                     <a href="{{ $expense->receipt_file_url }}" target="_blank"
                                                        class="btn btn-sm btn-outline-info" title="{{ __('View Receipt') }}">
@@ -199,6 +231,19 @@
                                                                 title="{{ __('Reject') }}"
                                                                 onclick="return confirm('{{ __('Are you sure you want to reject this expense?') }}')">
                                                             <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
+
+                                                <!-- Delete Button (for admins or creators) -->
+                                                @if(auth()->user()->hasPermission('finance_delete') || $expense->created_by === auth()->id())
+                                                    <form method="POST" action="{{ route('finance.expenses.destroy', $expense) }}" class="d-inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                                title="{{ __('Delete') }}"
+                                                                onclick="return confirm('{{ __('Are you sure you want to delete this expense? This action cannot be undone.') }}')">
+                                                            <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
                                                 @endif
@@ -389,6 +434,105 @@
         </div>
     </div>
 </div>
+
+<!-- View Expense Modals -->
+@foreach($expenses as $expense)
+<div class="modal fade" id="viewExpenseModal{{ $expense->id }}" tabindex="-1" aria-labelledby="viewExpenseModalLabel{{ $expense->id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewExpenseModalLabel{{ $expense->id }}">
+                    <i class="fas fa-eye me-2"></i>
+                    {{ __('Expense Details') }} - {{ $expense->expense_number }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">{{ __('Description') }}</label>
+                        <p class="form-control-plaintext">{{ $expense->description }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">{{ __('Amount') }}</label>
+                        <p class="form-control-plaintext">{{ $currencySymbol ?? '$' }}{{ number_format($expense->amount, 2) }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">{{ __('Category') }}</label>
+                        <p class="form-control-plaintext">{{ $expense->category_display }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">{{ __('Expense Date') }}</label>
+                        <p class="form-control-plaintext">{{ $expense->expense_date->format('M d, Y') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">{{ __('Payment Method') }}</label>
+                        <p class="form-control-plaintext">{{ $expense->payment_method_display }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">{{ __('Status') }}</label>
+                        <p class="form-control-plaintext">
+                            <span class="{{ $expense->status_badge_class }}">{{ $expense->status_display }}</span>
+                        </p>
+                    </div>
+                    @if($expense->vendor_name)
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">{{ __('Vendor Name') }}</label>
+                        <p class="form-control-plaintext">{{ $expense->vendor_name }}</p>
+                    </div>
+                    @endif
+                    @if($expense->receipt_number)
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">{{ __('Receipt Number') }}</label>
+                        <p class="form-control-plaintext">{{ $expense->receipt_number }}</p>
+                    </div>
+                    @endif
+                    @if($expense->notes)
+                    <div class="col-12">
+                        <label class="form-label fw-bold">{{ __('Notes') }}</label>
+                        <p class="form-control-plaintext">{{ $expense->notes }}</p>
+                    </div>
+                    @endif
+                    @if($expense->is_recurring)
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">{{ __('Recurring') }}</label>
+                        <p class="form-control-plaintext">
+                            <span class="badge bg-info">{{ __('Yes') }} - {{ $expense->recurring_frequency_display }}</span>
+                        </p>
+                    </div>
+                    @endif
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">{{ __('Created By') }}</label>
+                        <p class="form-control-plaintext">
+                            @if($expense->creator)
+                                {{ $expense->creator->first_name }} {{ $expense->creator->last_name }}
+                            @else
+                                <span class="text-muted">{{ __('Unknown') }}</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">{{ __('Created At') }}</label>
+                        <p class="form-control-plaintext">{{ $expense->created_at->format('M d, Y H:i') }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    {{ __('Close') }}
+                </button>
+                @if($expense->hasReceiptFile())
+                    <a href="{{ $expense->receipt_file_url }}" target="_blank" class="btn btn-info">
+                        <i class="fas fa-file-alt me-1"></i>
+                        {{ __('View Receipt') }}
+                    </a>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+@endforeach
 
 @push('scripts')
 <script>
