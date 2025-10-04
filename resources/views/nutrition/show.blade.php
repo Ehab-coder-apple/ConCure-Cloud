@@ -84,10 +84,6 @@
 
                         </ul>
                     </div>
-                    <a href="{{ route('nutrition.word', $dietPlan) }}" class="btn btn-primary">
-                        <i class="fas fa-file-word me-1"></i>
-                        {{ __('Download Word') }}
-                    </a>
                 </div>
             </div>
         </div>
@@ -610,11 +606,6 @@
                             <i class="fab fa-whatsapp me-1"></i>
                             {{ __('Send via WhatsApp') }}
                         </button>
-
-                        <a href="{{ route('nutrition.word', $dietPlan) }}" class="btn btn-primary w-100">
-                            <i class="fas fa-file-word me-1"></i>
-                            {{ __('Download Word') }}
-                        </a>
 
                         <a href="{{ route('nutrition.create') }}?patient_id={{ $dietPlan->patient_id }}" class="btn btn-success">
                             <i class="fas fa-plus me-1"></i>
