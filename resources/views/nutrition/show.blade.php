@@ -1081,8 +1081,17 @@ window.showWordExportModal = function() {
 // Initialize modals when page loads
 document.addEventListener('DOMContentLoaded', function() {
   console.log('DOM loaded, initializing modals...');
+  console.log('populateWhatsAppModal function exists:', typeof populateWhatsAppModal);
+  console.log('populateExportModal function exists:', typeof populateExportModal);
+
   populateWhatsAppModal();
-  populateExportModal();
+
+  // Try calling populateExportModal with error handling
+  try {
+    populateExportModal();
+  } catch (error) {
+    console.error('Error calling populateExportModal:', error);
+  }
 
   // Debug: Check if modal elements exist
   const whatsappModal = document.getElementById('whatsappLanguageModal');
