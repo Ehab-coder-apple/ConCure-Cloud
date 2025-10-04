@@ -1053,6 +1053,7 @@ window.showWordExportModal = function() {
 
   // Get modal element
   const modalEl = document.getElementById('exportWordLanguageModal');
+  console.log('Word modal element found:', !!modalEl);
   if (!modalEl) {
     console.error('Word Export modal element not found!');
     return;
@@ -1107,20 +1108,22 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Adding PDF Export button event listener');
     exportPdfBtn.addEventListener('click', function(e) {
       e.preventDefault();
+      console.log('PDF Export button clicked!');
       showPdfExportModal();
     });
   } else {
-    console.error('PDF Export button not found!');
+    console.error('PDF Export button not found! Looking for ID: exportPdfModalBtn');
   }
 
   if (exportWordBtn) {
     console.log('Adding Word Export button event listener');
     exportWordBtn.addEventListener('click', function(e) {
       e.preventDefault();
+      console.log('Word Export button clicked!');
       showWordExportModal();
     });
   } else {
-    console.error('Word Export button not found!');
+    console.error('Word Export button not found! Looking for ID: exportWordModalBtn');
   }
 });
 
