@@ -62,9 +62,15 @@
                         <ul class="dropdown-menu">
                             <li><h6 class="dropdown-header">{{ __('Daily Format') }}</h6></li>
                             <li>
-                                <a class="dropdown-item" href="#" id="exportModalBtn">
+                                <a class="dropdown-item" href="#" id="exportPdfModalBtn">
                                     <i class="fas fa-globe me-2"></i>
                                     {{ __('Daily PDF (choose language)') }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" id="exportWordModalBtn">
+                                    <i class="fas fa-globe me-2"></i>
+                                    {{ __('Daily Word (choose language)') }}
                                 </a>
                             </li>
                             <li><a class="dropdown-item" href="{{ route('nutrition.pdf', $dietPlan) }}">
@@ -669,8 +675,17 @@
   </div>
 </div>
 
-<!-- Export/Print Language Modal -->
-<div class="modal fade" id="exportLanguageModal" tabindex="-1" aria-labelledby="exportLanguageModalLabel" aria-hidden="true">
+<!-- Export PDF Language Modal -->
+<div class="modal fade" id="exportPdfLanguageModal" tabindex="-1" aria-labelledby="exportPdfLanguageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <!-- Content will be populated by JavaScript -->
+    </div>
+  </div>
+</div>
+
+<!-- Export Word Language Modal -->
+<div class="modal fade" id="exportWordLanguageModal" tabindex="-1" aria-labelledby="exportWordLanguageModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <!-- Content will be populated by JavaScript -->
@@ -886,55 +901,97 @@ function populateExportModal() {
 
   const translations = {
     'en': {
-      title: 'Export PDF — Choose Food Language',
+      pdfTitle: 'Export PDF — Choose Food Language',
+      wordTitle: 'Export Word — Choose Food Language',
       label: 'Food Language',
       cancel: 'Cancel',
-      download: 'Download PDF'
+      downloadPdf: 'Download PDF',
+      downloadWord: 'Download Word'
     },
     'ar': {
-      title: 'تصدير PDF — اختر لغة الطعام',
+      pdfTitle: 'تصدير PDF — اختر لغة الطعام',
+      wordTitle: 'تصدير Word — اختر لغة الطعام',
       label: 'لغة الطعام',
       cancel: 'إلغاء',
-      download: 'تحميل PDF'
+      downloadPdf: 'تحميل PDF',
+      downloadWord: 'تحميل Word'
     },
     'ku': {
-      title: 'دەرهێنانی PDF — زمانی خواردن هەڵبژێرە',
+      pdfTitle: 'دەرهێنانی PDF — زمانی خواردن هەڵبژێرە',
+      wordTitle: 'دەرهێنانی Word — زمانی خواردن هەڵبژێرە',
       label: 'زمانی خواردن',
       cancel: 'پاشگەزبوونەوە',
-      download: 'داگرتنی PDF'
+      downloadPdf: 'داگرتنی PDF',
+      downloadWord: 'داگرتنی Word'
     }
   };
 
   const t = translations[currentLocale] || translations['en'];
 
-  const modalContent = `
+  // PDF Modal Content
+  const pdfModalContent = `
     <div class="modal-header">
-      <h5 class="modal-title" id="exportLanguageModalLabel">
+      <h5 class="modal-title" id="exportPdfLanguageModalLabel">
         <i class="fas fa-file-pdf me-2 text-primary"></i>
-        ${t.title}
+        ${t.pdfTitle}
       </h5>
       <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
     <div class="modal-body">
-      <label for="exportLanguageSelect" class="form-label">${t.label}</label>
-      <select id="exportLanguageSelect" class="form-select">
+      <label for="exportPdfLanguageSelect" class="form-label">${t.label}</label>
+      <select id="exportPdfLanguageSelect" class="form-select">
         <option value="en" ${currentLocale === 'en' ? 'selected' : ''}>English</option>
         <option value="ar" ${currentLocale === 'ar' ? 'selected' : ''}>العربية</option>
-        <option value="ku" ${currentLocale === 'ku' ? 'selected' : ''}>کوردی</option>
+        <option value="ku_bahdini" ${currentLocale === 'ku_bahdini' ? 'selected' : ''}>کوردی بادینی (Kurdish Bahdini)</option>
+        <option value="ku_sorani" ${currentLocale === 'ku_sorani' ? 'selected' : ''}>کوردی سۆرانی (Kurdish Sorani)</option>
       </select>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${t.cancel}</button>
       <button type="button" class="btn btn-primary" onclick="downloadPdfWithLang()">
         <i class="fas fa-file-download me-1"></i>
-        ${t.download}
+        ${t.downloadPdf}
       </button>
     </div>
   `;
 
-  const modalContentDiv = document.querySelector('#exportLanguageModal .modal-content');
-  if (modalContentDiv) {
-    modalContentDiv.innerHTML = modalContent;
+  // Word Modal Content
+  const wordModalContent = `
+    <div class="modal-header">
+      <h5 class="modal-title" id="exportWordLanguageModalLabel">
+        <i class="fas fa-file-word me-2 text-primary"></i>
+        ${t.wordTitle}
+      </h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+      <label for="exportWordLanguageSelect" class="form-label">${t.label}</label>
+      <select id="exportWordLanguageSelect" class="form-select">
+        <option value="en" ${currentLocale === 'en' ? 'selected' : ''}>English</option>
+        <option value="ar" ${currentLocale === 'ar' ? 'selected' : ''}>العربية</option>
+        <option value="ku_bahdini" ${currentLocale === 'ku_bahdini' ? 'selected' : ''}>کوردی بادینی (Kurdish Bahdini)</option>
+        <option value="ku_sorani" ${currentLocale === 'ku_sorani' ? 'selected' : ''}>کوردی سۆرانی (Kurdish Sorani)</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${t.cancel}</button>
+      <button type="button" class="btn btn-primary" onclick="downloadWordWithLang()">
+        <i class="fas fa-file-download me-1"></i>
+        ${t.downloadWord}
+      </button>
+    </div>
+  `;
+
+  // Populate PDF modal
+  const pdfModalContentDiv = document.querySelector('#exportPdfLanguageModal .modal-content');
+  if (pdfModalContentDiv) {
+    pdfModalContentDiv.innerHTML = pdfModalContent;
+  }
+
+  // Populate Word modal
+  const wordModalContentDiv = document.querySelector('#exportWordLanguageModal .modal-content');
+  if (wordModalContentDiv) {
+    wordModalContentDiv.innerHTML = wordModalContent;
   }
 }
 
@@ -963,17 +1020,17 @@ window.showWhatsAppModal = function() {
   }
 }
 
-// Function to show Export modal
-window.showExportModal = function() {
-  console.log('showExportModal called');
+// Function to show PDF Export modal
+window.showPdfExportModal = function() {
+  console.log('showPdfExportModal called');
 
   // Ensure modal content is populated
   populateExportModal();
 
   // Get modal element
-  const modalEl = document.getElementById('exportLanguageModal');
+  const modalEl = document.getElementById('exportPdfLanguageModal');
   if (!modalEl) {
-    console.error('Export modal element not found!');
+    console.error('PDF Export modal element not found!');
     return;
   }
 
@@ -981,9 +1038,33 @@ window.showExportModal = function() {
   try {
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
-    console.log('Export modal shown successfully');
+    console.log('PDF Export modal shown successfully');
   } catch (error) {
-    console.error('Error showing Export modal:', error);
+    console.error('Error showing PDF Export modal:', error);
+  }
+}
+
+// Function to show Word Export modal
+window.showWordExportModal = function() {
+  console.log('showWordExportModal called');
+
+  // Ensure modal content is populated
+  populateExportModal();
+
+  // Get modal element
+  const modalEl = document.getElementById('exportWordLanguageModal');
+  if (!modalEl) {
+    console.error('Word Export modal element not found!');
+    return;
+  }
+
+  // Create and show modal
+  try {
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    console.log('Word Export modal shown successfully');
+  } catch (error) {
+    console.error('Error showing Word Export modal:', error);
   }
 }
 
@@ -995,9 +1076,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Debug: Check if modal elements exist
   const whatsappModal = document.getElementById('whatsappLanguageModal');
-  const exportModal = document.getElementById('exportLanguageModal');
+  const exportPdfModal = document.getElementById('exportPdfLanguageModal');
+  const exportWordModal = document.getElementById('exportWordLanguageModal');
   console.log('WhatsApp modal found:', !!whatsappModal);
-  console.log('Export modal found:', !!exportModal);
+  console.log('Export PDF modal found:', !!exportPdfModal);
+  console.log('Export Word modal found:', !!exportWordModal);
 
   // Function is already defined at the top of the script
 
@@ -1006,7 +1089,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Add event listeners for modal buttons
   const whatsappBtn = document.getElementById('whatsappModalBtn');
-  const exportBtn = document.getElementById('exportModalBtn');
+  const exportPdfBtn = document.getElementById('exportPdfModalBtn');
+  const exportWordBtn = document.getElementById('exportWordModalBtn');
 
   if (whatsappBtn) {
     console.log('Adding WhatsApp button event listener');
@@ -1019,14 +1103,24 @@ document.addEventListener('DOMContentLoaded', function() {
     console.error('WhatsApp button not found!');
   }
 
-  if (exportBtn) {
-    console.log('Adding Export button event listener');
-    exportBtn.addEventListener('click', function(e) {
+  if (exportPdfBtn) {
+    console.log('Adding PDF Export button event listener');
+    exportPdfBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      showExportModal();
+      showPdfExportModal();
     });
   } else {
-    console.error('Export button not found!');
+    console.error('PDF Export button not found!');
+  }
+
+  if (exportWordBtn) {
+    console.log('Adding Word Export button event listener');
+    exportWordBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      showWordExportModal();
+    });
+  } else {
+    console.error('Word Export button not found!');
   }
 });
 
@@ -1045,9 +1139,16 @@ function shareOnWhatsAppWithLang() {
 */
 
 function downloadPdfWithLang() {
-  const sel = document.getElementById('exportLanguageSelect');
-  const lang = sel && sel.value ? sel.value : 'en'; // Fixed: use 'en' instead of undefined selectedLang
+  const sel = document.getElementById('exportPdfLanguageSelect');
+  const lang = sel && sel.value ? sel.value : 'en';
   const url = "{{ route('nutrition.pdf', $dietPlan) }}" + "?lang=" + encodeURIComponent(lang);
+  window.location.href = url;
+}
+
+function downloadWordWithLang() {
+  const sel = document.getElementById('exportWordLanguageSelect');
+  const lang = sel && sel.value ? sel.value : 'en';
+  const url = "{{ route('nutrition.word', $dietPlan) }}" + "?lang=" + encodeURIComponent(lang);
   window.location.href = url;
 }
 

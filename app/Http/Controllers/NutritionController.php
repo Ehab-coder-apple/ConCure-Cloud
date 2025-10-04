@@ -845,6 +845,24 @@ class NutritionController extends Controller
         }
 
         $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
+
+        // Optional food-only language override for Word export (headings stay in UI language)
+        $outputLang = request()->query('lang');
+        $supportedOutputLangs = array_keys(Food::getSupportedLanguages());
+        if ($outputLang && in_array($outputLang, $supportedOutputLangs, true)) {
+            // Translate food display names in-memory for rendering (do not change app locale)
+            foreach ($dietPlan->meals as $meal) {
+                foreach ($meal->foods as $mealFood) {
+                    if ($mealFood->food) {
+                        $translated = $mealFood->food->getNameInLanguage($outputLang);
+                        if (!empty($translated)) {
+                            $mealFood->food_name = $translated;
+                        }
+                    }
+                }
+            }
+        }
+
         $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
 
         // Use Word document service
