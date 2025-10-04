@@ -42,30 +42,37 @@ Route::get('/csrf-token', function () {
 
 // Debug route to check food translations
 Route::get('/debug-food-translations/{dietPlanId}', function ($dietPlanId) {
-    $dietPlan = \App\Models\DietPlan::with(['meals.foods.food'])->findOrFail($dietPlanId);
+    try {
+        $dietPlan = \App\Models\DietPlan::with(['meals.foods.food'])->findOrFail($dietPlanId);
 
-    $translationData = [];
-    foreach ($dietPlan->meals as $meal) {
-        foreach ($meal->foods as $mealFood) {
-            if ($mealFood->food) {
-                $translationData[] = [
-                    'food_id' => $mealFood->food->id,
-                    'original_name' => $mealFood->food->name,
-                    'name_translations' => $mealFood->food->name_translations,
-                    'ku_bahdini_translation' => $mealFood->food->getNameInLanguage('ku_bahdini'),
-                    'ku_sorani_translation' => $mealFood->food->getNameInLanguage('ku_sorani'),
-                    'ar_translation' => $mealFood->food->getNameInLanguage('ar'),
-                ];
+        $translationData = [];
+        foreach ($dietPlan->meals as $meal) {
+            foreach ($meal->foods as $mealFood) {
+                if ($mealFood->food) {
+                    $translationData[] = [
+                        'food_id' => $mealFood->food->id,
+                        'original_name' => $mealFood->food->name,
+                        'name_translations' => $mealFood->food->name_translations,
+                        'ku_bahdini_translation' => $mealFood->food->getNameInLanguage('ku_bahdini'),
+                        'ku_sorani_translation' => $mealFood->food->getNameInLanguage('ku_sorani'),
+                        'ar_translation' => $mealFood->food->getNameInLanguage('ar'),
+                    ];
+                }
             }
         }
-    }
 
-    return response()->json([
-        'diet_plan_id' => $dietPlanId,
-        'total_foods' => count($translationData),
-        'foods' => $translationData
-    ]);
-})->name('debug-food-translations');
+        return response()->json([
+            'diet_plan_id' => $dietPlanId,
+            'total_foods' => count($translationData),
+            'foods' => $translationData
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+})->name('debug-food-translations')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
 
 
 
