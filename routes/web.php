@@ -659,7 +659,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
     });
 
     // Finance Module
-    Route::prefix('finance')->name('finance.')->middleware('can:manage-finance')->group(function () {
+    Route::prefix('finance')->name('finance.')->middleware(['auth', 'can:manage-finance'])->group(function () {
         Route::get('/', [FinanceController::class, 'index'])->name('index');
 
         // Invoices
