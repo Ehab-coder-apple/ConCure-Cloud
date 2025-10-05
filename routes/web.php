@@ -673,6 +673,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/invoices/{invoice}/public-pdf-url', [FinanceController::class, 'getPublicPdfUrl'])->name('invoices.public-pdf-url');
         Route::get('/invoices/{invoice}/email-form', [FinanceController::class, 'showEmailForm'])->name('invoices.email-form');
         Route::post('/invoices/{invoice}/email', [FinanceController::class, 'emailInvoice'])->name('invoices.email');
+        Route::post('/invoices/{invoice}/mark-paid', [FinanceController::class, 'markInvoiceAsPaid'])->name('invoices.mark-paid');
+        Route::post('/invoices/{invoice}/mark-sent', [FinanceController::class, 'markInvoiceAsSent'])->name('invoices.mark-sent');
+        Route::post('/invoices/{invoice}/mark-cancelled', [FinanceController::class, 'markInvoiceAsCancelled'])->name('invoices.mark-cancelled');
 
         // Expenses
         Route::get('/expenses', [FinanceController::class, 'expenses'])->name('expenses');

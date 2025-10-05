@@ -203,6 +203,37 @@
                                                     <i class="fas fa-file-pdf"></i>
                                                 </a>
 
+                                                <!-- Status Change Buttons -->
+                                                @if($invoice->status === 'draft')
+                                                    <form method="POST" action="{{ route('finance.invoices.mark-sent', $invoice) }}" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-xs btn-outline-info"
+                                                                title="{{ __('Mark as Sent') }}"
+                                                                onclick="return confirm('{{ __('Mark this invoice as sent?') }}')">
+                                                            <i class="fas fa-paper-plane"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
+
+                                                @if(in_array($invoice->status, ['draft', 'sent', 'overdue']))
+                                                    <button type="button" class="btn btn-xs btn-outline-success"
+                                                            title="{{ __('Mark as Paid') }}"
+                                                            onclick="showMarkAsPaidModal({{ $invoice->id }}, '{{ $invoice->invoice_number }}', {{ $invoice->balance }})">
+                                                        <i class="fas fa-check-circle"></i>
+                                                    </button>
+                                                @endif
+
+                                                @if(in_array($invoice->status, ['draft', 'sent', 'overdue']))
+                                                    <form method="POST" action="{{ route('finance.invoices.mark-cancelled', $invoice) }}" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-xs btn-outline-warning"
+                                                                title="{{ __('Cancel Invoice') }}"
+                                                                onclick="return confirm('{{ __('Are you sure you want to cancel this invoice?') }}')">
+                                                            <i class="fas fa-ban"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
+
                                                 <!-- Delete Button -->
                                                 @if(auth()->user()->hasPermission('finance_delete') || $invoice->created_by === auth()->id())
                                                     @if($invoice->status !== 'paid')
@@ -915,6 +946,80 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Show Mark as Paid Modal
+    window.showMarkAsPaidModal = function(invoiceId, invoiceNumber, balance) {
+        document.getElementById('mark-paid-invoice-id').value = invoiceId;
+        document.getElementById('mark-paid-invoice-number').textContent = invoiceNumber;
+        document.getElementById('mark-paid-balance').textContent = currencySymbol + parseFloat(balance).toFixed(2);
+        document.getElementById('paid_amount').value = parseFloat(balance).toFixed(2);
+        document.getElementById('paid_amount').max = parseFloat(balance).toFixed(2);
+
+        const modal = new bootstrap.Modal(document.getElementById('markAsPaidModal'));
+        modal.show();
+    };
+
 });
 </script>
 @endpush
+
+<!-- Mark as Paid Modal -->
+<div class="modal fade" id="markAsPaidModal" tabindex="-1" aria-labelledby="markAsPaidModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="markAsPaidModalLabel">{{ __('Mark Invoice as Paid') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="markAsPaidForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <input type="hidden" id="mark-paid-invoice-id" name="invoice_id">
+
+                    <div class="mb-3">
+                        <strong>{{ __('Invoice:') }}</strong> <span id="mark-paid-invoice-number"></span><br>
+                        <strong>{{ __('Balance Due:') }}</strong> <span id="mark-paid-balance"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="paid_amount" class="form-label">{{ __('Payment Amount') }}</label>
+                        <input type="number" class="form-control" id="paid_amount" name="paid_amount"
+                               step="0.01" min="0" required>
+                        <div class="form-text">{{ __('Enter the amount received for this invoice.') }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">{{ __('Payment Method') }}</label>
+                        <select class="form-select" id="payment_method" name="payment_method" required>
+                            <option value="">{{ __('Select Payment Method') }}</option>
+                            <option value="cash">{{ __('Cash') }}</option>
+                            <option value="card">{{ __('Card') }}</option>
+                            <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
+                            <option value="check">{{ __('Check') }}</option>
+                            <option value="other">{{ __('Other') }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="submit" class="btn btn-success">{{ __('Mark as Paid') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle Mark as Paid form submission
+document.getElementById('markAsPaidForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const invoiceId = document.getElementById('mark-paid-invoice-id').value;
+    const formData = new FormData(this);
+
+    // Set the form action dynamically
+    this.action = `/finance/invoices/${invoiceId}/mark-paid`;
+
+    // Submit the form normally (not AJAX since we want to redirect)
+    this.submit();
+});
+</script>

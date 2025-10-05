@@ -296,8 +296,8 @@
                         @endif
                     </td>
                     <td class="text-center">{{ number_format($item->quantity, 0) }}</td>
-                    <td class="text-right">${{ number_format($item->unit_price, 2) }}</td>
-                    <td class="text-right">${{ number_format($item->total_price, 2) }}</td>
+                    <td class="text-right">{{ $currencySymbol ?? '$' }}{{ number_format($item->unit_price, 2) }}</td>
+                    <td class="text-right">{{ $currencySymbol ?? '$' }}{{ number_format($item->total_price, 2) }}</td>
                 </tr>
                 @endforeach
             @else
@@ -316,37 +316,37 @@
             <table class="totals-table">
                 <tr>
                     <td class="label">Subtotal:</td>
-                    <td class="amount">${{ number_format($invoice->subtotal, 2) }}</td>
+                    <td class="amount">{{ $currencySymbol ?? '$' }}{{ number_format($invoice->subtotal, 2) }}</td>
                 </tr>
-                
+
                 @if($invoice->discount_amount > 0)
                 <tr>
                     <td class="label">Discount:</td>
-                    <td class="amount" style="color: #28a745;">-${{ number_format($invoice->discount_amount, 2) }}</td>
+                    <td class="amount" style="color: #28a745;">-{{ $currencySymbol ?? '$' }}{{ number_format($invoice->discount_amount, 2) }}</td>
                 </tr>
                 @endif
-                
+
                 @if($invoice->tax_amount > 0)
                 <tr>
                     <td class="label">Tax ({{ number_format($invoice->tax_rate, 1) }}%):</td>
-                    <td class="amount">${{ number_format($invoice->tax_amount, 2) }}</td>
+                    <td class="amount">{{ $currencySymbol ?? '$' }}{{ number_format($invoice->tax_amount, 2) }}</td>
                 </tr>
                 @endif
-                
+
                 <tr class="total-row">
                     <td class="label">Total Amount:</td>
-                    <td class="amount">${{ number_format($invoice->total_amount, 2) }}</td>
+                    <td class="amount">{{ $currencySymbol ?? '$' }}{{ number_format($invoice->total_amount, 2) }}</td>
                 </tr>
-                
+
                 @if($invoice->paid_amount > 0)
                 <tr>
                     <td class="label">Paid Amount:</td>
-                    <td class="amount" style="color: #28a745;">${{ number_format($invoice->paid_amount, 2) }}</td>
+                    <td class="amount" style="color: #28a745;">{{ $currencySymbol ?? '$' }}{{ number_format($invoice->paid_amount, 2) }}</td>
                 </tr>
                 <tr>
                     <td class="label">Balance Due:</td>
                     <td class="amount" style="color: {{ $invoice->balance > 0 ? '#dc3545' : '#28a745' }};">
-                        ${{ number_format($invoice->balance, 2) }}
+                        {{ $currencySymbol ?? '$' }}{{ number_format($invoice->balance, 2) }}
                     </td>
                 </tr>
                 @endif

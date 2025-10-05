@@ -431,22 +431,91 @@ class FinanceController extends Controller
     }
 
     /**
+     * Mark invoice as paid.
+     */
+    public function markInvoiceAsPaid(Request $request, Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance() || ($invoice->clinic_id !== $user->clinic_id)) {
+            abort(403, 'Unauthorized access to invoice.');
+        }
+
+        $request->validate([
+            'paid_amount' => 'required|numeric|min:0|max:' . $invoice->balance,
+            'payment_method' => 'required|in:cash,card,bank_transfer,check,other',
+        ]);
+
+        $invoice->markAsPaid($request->paid_amount, $request->payment_method);
+
+        return redirect()->route('finance.invoices')->with('success', 'Invoice marked as paid successfully.');
+    }
+
+    /**
+     * Mark invoice as sent.
+     */
+    public function markInvoiceAsSent(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance() || ($invoice->clinic_id !== $user->clinic_id)) {
+            abort(403, 'Unauthorized access to invoice.');
+        }
+
+        if ($invoice->status !== 'draft') {
+            return redirect()->route('finance.invoices')->with('error', 'Only draft invoices can be marked as sent.');
+        }
+
+        $invoice->markAsSent();
+
+        return redirect()->route('finance.invoices')->with('success', 'Invoice marked as sent successfully.');
+    }
+
+    /**
+     * Mark invoice as cancelled.
+     */
+    public function markInvoiceAsCancelled(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance() || ($invoice->clinic_id !== $user->clinic_id)) {
+            abort(403, 'Unauthorized access to invoice.');
+        }
+
+        if ($invoice->status === 'paid') {
+            return redirect()->route('finance.invoices')->with('error', 'Cannot cancel paid invoices.');
+        }
+
+        $invoice->markAsCancelled();
+
+        return redirect()->route('finance.invoices')->with('success', 'Invoice cancelled successfully.');
+    }
+
+    /**
      * Generate invoice PDF.
      */
     public function generateInvoicePDF(Invoice $invoice)
     {
         $user = auth()->user();
-        
+
         // Check access
-        if (!$user->canAccessFinance() || 
+        if (!$user->canAccessFinance() ||
             ($invoice->clinic_id !== $user->clinic_id)) {
             abort(403, 'Unauthorized access to invoice.');
         }
 
         $invoice->load(['patient', 'clinic', 'items']);
 
-        $pdf = Pdf::loadView('finance.invoice-pdf', compact('invoice'));
-        
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $invoice->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        $pdf = Pdf::loadView('finance.invoice-pdf', compact('invoice', 'currency', 'currencySymbol'));
+
         return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
     }
 
@@ -465,7 +534,15 @@ class FinanceController extends Controller
 
         $invoice->load(['patient', 'clinic', 'items']);
 
-        return view('finance.invoice-print', compact('invoice'));
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $invoice->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.invoice-print', compact('invoice', 'currency', 'currencySymbol'));
     }
 
     /**
@@ -481,7 +558,15 @@ class FinanceController extends Controller
 
         $invoice->load(['patient', 'clinic', 'items']);
 
-        $pdf = Pdf::loadView('finance.invoice-pdf', compact('invoice'));
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $invoice->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        $pdf = Pdf::loadView('finance.invoice-pdf', compact('invoice', 'currency', 'currencySymbol'));
 
         return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
     }
@@ -1049,7 +1134,15 @@ class FinanceController extends Controller
 
         $invoice->load(['patient', 'clinic', 'items']);
 
-        return view('finance.invoice-print', compact('invoice'));
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $invoice->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.invoice-print', compact('invoice', 'currency', 'currencySymbol'));
     }
 
     /**
