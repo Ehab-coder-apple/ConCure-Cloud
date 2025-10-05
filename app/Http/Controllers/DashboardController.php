@@ -62,6 +62,15 @@ class DashboardController extends Controller
         $dashboardData['selectedPeriod'] = $period;
         $dashboardData['periodPhrase'] = $period === 'day' ? 'today' : ($period === 'year' ? 'this year' : 'this month');
 
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $dashboardData['currencySymbol'] = $this->getCurrencySymbol($currency);
+        $dashboardData['currency'] = $currency;
+
         return view('dashboard', $dashboardData);
     }
 
@@ -478,5 +487,22 @@ class DashboardController extends Controller
         }
 
         return $stats;
+    }
+
+    /**
+     * Get currency symbol for a given currency code
+     */
+    private function getCurrencySymbol($currencyCode): string
+    {
+        $symbols = [
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            'IQD' => 'د.ع',
+            'JOD' => 'د.أ',
+            'EGP' => 'ج.م',
+        ];
+
+        return $symbols[$currencyCode] ?? '$';
     }
 }
