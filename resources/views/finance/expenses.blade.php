@@ -4,6 +4,12 @@
 
 @push('styles')
 <style>
+    /* Force proper layout to prevent sidebar overlap */
+    .main-content {
+        margin-left: var(--sidebar-width, 290px) !important;
+        margin-top: var(--topbar-height, 60px) !important;
+    }
+
     /* Responsive table */
     .table-responsive {
         overflow-x: auto;
@@ -51,11 +57,18 @@
             display: none;
         }
     }
+
+    /* Mobile responsive fixes */
+    @media (max-width: 991.98px) {
+        .main-content {
+            margin-left: 0 !important;
+        }
+    }
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid px-4">
+<div style="padding: 0 1.5rem;">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
