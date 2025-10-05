@@ -669,14 +669,155 @@
             margin-bottom: 15px !important;
         }
 
-        /* Professional Button Spacing */
+        /* Professional Button Styling and Alignment */
         .container[style*="margin-top: 80px"] .btn,
         .container:has(.fas.fa-apple-alt) .btn {
-            margin-right: 10px !important;
-            margin-bottom: 10px !important;
-            border-radius: 8px !important;
-            padding: 10px 20px !important;
+            margin-right: 8px !important;
+            margin-bottom: 8px !important;
+            border-radius: 6px !important;
+            padding: 8px 16px !important;
             font-weight: 500 !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-height: 38px !important;
+            white-space: nowrap !important;
+        }
+
+        /* Button group containers */
+        .container[style*="margin-top: 80px"] .btn-group,
+        .container[style*="margin-top: 80px"] .d-flex,
+        .container:has(.fas.fa-apple-alt) .btn-group,
+        .container:has(.fas.fa-apple-alt) .d-flex {
+            gap: 8px !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+        }
+
+        /* Specific button adjustments for nutrition pages */
+        .container[style*="margin-top: 80px"] .btn-sm,
+        .container:has(.fas.fa-apple-alt) .btn-sm {
+            padding: 6px 12px !important;
+            font-size: 13px !important;
+            min-height: 32px !important;
+        }
+
+        .container[style*="margin-top: 80px"] .btn-lg,
+        .container:has(.fas.fa-apple-alt) .btn-lg {
+            padding: 12px 24px !important;
+            font-size: 16px !important;
+            min-height: 44px !important;
+        }
+
+        /* Button icons spacing */
+        .container[style*="margin-top: 80px"] .btn i,
+        .container:has(.fas.fa-apple-alt) .btn i {
+            margin-right: 6px !important;
+        }
+
+        .container[style*="margin-top: 80px"] .btn i:last-child,
+        .container:has(.fas.fa-apple-alt) .btn i:last-child {
+            margin-right: 0 !important;
+            margin-left: 6px !important;
+        }
+
+        /* Action button row styling */
+        .container[style*="margin-top: 80px"] .row .col-auto,
+        .container:has(.fas.fa-apple-alt) .row .col-auto {
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+        }
+
+        /* Top action buttons container */
+        .container[style*="margin-top: 80px"] .d-flex.justify-content-between,
+        .container[style*="margin-top: 80px"] .d-flex.justify-content-end,
+        .container:has(.fas.fa-apple-alt) .d-flex.justify-content-between,
+        .container:has(.fas.fa-apple-alt) .d-flex.justify-content-end {
+            margin-bottom: 20px !important;
+            padding: 15px 0 !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+
+        /* Enhanced button color schemes */
+        .container[style*="margin-top: 80px"] .btn-primary,
+        .container:has(.fas.fa-apple-alt) .btn-primary {
+            background-color: #3b82f6 !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2) !important;
+        }
+
+        .container[style*="margin-top: 80px"] .btn-primary:hover,
+        .container:has(.fas.fa-apple-alt) .btn-primary:hover {
+            background-color: #2563eb !important;
+            border-color: #2563eb !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3) !important;
+        }
+
+        .container[style*="margin-top: 80px"] .btn-success,
+        .container:has(.fas.fa-apple-alt) .btn-success {
+            background-color: #10b981 !important;
+            border-color: #10b981 !important;
+            box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2) !important;
+        }
+
+        .container[style*="margin-top: 80px"] .btn-success:hover,
+        .container:has(.fas.fa-apple-alt) .btn-success:hover {
+            background-color: #059669 !important;
+            border-color: #059669 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3) !important;
+        }
+
+        .container[style*="margin-top: 80px"] .btn-warning,
+        .container:has(.fas.fa-apple-alt) .btn-warning {
+            background-color: #f59e0b !important;
+            border-color: #f59e0b !important;
+            color: white !important;
+            box-shadow: 0 1px 3px rgba(245, 158, 11, 0.2) !important;
+        }
+
+        .container[style*="margin-top: 80px"] .btn-warning:hover,
+        .container:has(.fas.fa-apple-alt) .btn-warning:hover {
+            background-color: #d97706 !important;
+            border-color: #d97706 !important;
+            color: white !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3) !important;
+        }
+
+        .container[style*="margin-top: 80px"] .btn-info,
+        .container:has(.fas.fa-apple-alt) .btn-info {
+            background-color: #06b6d4 !important;
+            border-color: #06b6d4 !important;
+            box-shadow: 0 1px 3px rgba(6, 182, 212, 0.2) !important;
+        }
+
+        .container[style*="margin-top: 80px"] .btn-info:hover,
+        .container:has(.fas.fa-apple-alt) .btn-info:hover {
+            background-color: #0891b2 !important;
+            border-color: #0891b2 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(6, 182, 212, 0.3) !important;
+        }
+
+        .container[style*="margin-top: 80px"] .btn-outline-secondary,
+        .container:has(.fas.fa-apple-alt) .btn-outline-secondary {
+            border-color: #6b7280 !important;
+            color: #6b7280 !important;
+            background-color: white !important;
+            box-shadow: 0 1px 3px rgba(107, 114, 128, 0.1) !important;
+        }
+
+        .container[style*="margin-top: 80px"] .btn-outline-secondary:hover,
+        .container:has(.fas.fa-apple-alt) .btn-outline-secondary:hover {
+            background-color: #6b7280 !important;
+            border-color: #6b7280 !important;
+            color: white !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(107, 114, 128, 0.2) !important;
         }
 
         /* Professional Page Header */
@@ -752,6 +893,41 @@
             .container[style*="margin-top: 80px"] .card-body,
             .container:has(.fas.fa-apple-alt) .card-body {
                 padding: 20px !important;
+            }
+
+            /* Mobile button adjustments */
+            .container[style*="margin-top: 80px"] .btn,
+            .container:has(.fas.fa-apple-alt) .btn {
+                margin-right: 6px !important;
+                margin-bottom: 6px !important;
+                padding: 8px 12px !important;
+                font-size: 13px !important;
+                min-height: 36px !important;
+            }
+
+            .container[style*="margin-top: 80px"] .d-flex,
+            .container:has(.fas.fa-apple-alt) .d-flex {
+                flex-wrap: wrap !important;
+                gap: 6px !important;
+            }
+
+            /* Stack buttons vertically on very small screens */
+            @media (max-width: 480px) {
+                .container[style*="margin-top: 80px"] .btn,
+                .container:has(.fas.fa-apple-alt) .btn {
+                    width: 100% !important;
+                    margin-right: 0 !important;
+                    margin-bottom: 8px !important;
+                    justify-content: center !important;
+                }
+
+                .container[style*="margin-top: 80px"] .d-flex.justify-content-between,
+                .container[style*="margin-top: 80px"] .d-flex.justify-content-end,
+                .container:has(.fas.fa-apple-alt) .d-flex.justify-content-between,
+                .container:has(.fas.fa-apple-alt) .d-flex.justify-content-end {
+                    flex-direction: column !important;
+                    align-items: stretch !important;
+                }
             }
         }
     </style>
