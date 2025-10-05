@@ -445,10 +445,25 @@
             margin-top: var(--topbar-height);
             min-height: calc(100vh - var(--topbar-height));
             transition: margin-left 0.3s ease;
+            position: relative;
+            z-index: 1;
         }
 
         .content-wrapper {
             padding: 1rem 0;
+        }
+
+        /* Force proper spacing for main content */
+        @media (min-width: 992px) {
+            .main-content {
+                margin-left: 290px !important;
+            }
+            .main-footer {
+                margin-left: 290px !important;
+            }
+            .topbar {
+                left: 290px !important;
+            }
         }
 
         /* Footer Styles */
