@@ -79,6 +79,29 @@ Route::post('/validate-activation-code', [ClinicActivationController::class, 'va
 Route::get('/invoice/{invoice}/pdf/{token}', [FinanceController::class, 'publicInvoicePDF'])->name('finance.invoices.public.pdf');
 Route::get('/invoice/{invoice}/view/{token}', [FinanceController::class, 'publicInvoiceView'])->name('finance.invoices.public.view');
 
+// Diagnostic route for production debugging
+Route::get('/finance-debug', function () {
+    try {
+        return response()->json([
+            'status' => 'ok',
+            'timestamp' => now()->toISOString(),
+            'auth_check' => auth()->check(),
+            'user_id' => auth()->id(),
+            'environment' => app()->environment(),
+            'app_debug' => config('app.debug'),
+            'middleware_applied' => 'auth and can:manage-finance should be applied to finance routes',
+            'git_commit' => trim(shell_exec('git rev-parse HEAD 2>/dev/null') ?: 'unknown'),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ], 500);
+    }
+});
+
 // Clinic activation instructions
 Route::get('/clinic-activation-guide', function () {
     return view('public.clinic-activation-instructions');
