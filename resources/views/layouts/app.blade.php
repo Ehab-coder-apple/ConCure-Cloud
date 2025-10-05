@@ -573,39 +573,126 @@
             }
         }
 
-        /* Working Nutrition Page Fix - Gentle Optimization */
+        /* Professional Nutrition Page Layout */
         .container[style*="margin-top: 80px"] {
-            margin-left: 265px !important;
-            margin-right: 20px !important;
-            max-width: calc(100vw - 285px) !important;
-            padding-left: 20px !important;
-            padding-right: 20px !important;
+            margin-left: 310px !important;
+            margin-right: 30px !important;
+            max-width: calc(100vw - 350px) !important;
+            padding-left: 30px !important;
+            padding-right: 30px !important;
+            padding-top: 30px !important;
+            padding-bottom: 30px !important;
         }
 
         /* Target nutrition page body content */
         body:has(.container[style*="margin-top: 80px"]) .container {
-            margin-left: 265px !important;
-            margin-right: 20px !important;
-            max-width: calc(100vw - 285px) !important;
+            margin-left: 310px !important;
+            margin-right: 30px !important;
+            max-width: calc(100vw - 350px) !important;
         }
 
         /* Alternative targeting for nutrition pages */
         .container:has(.fas.fa-apple-alt) {
-            margin-left: 265px !important;
-            margin-right: 20px !important;
-            max-width: calc(100vw - 285px) !important;
+            margin-left: 310px !important;
+            margin-right: 30px !important;
+            max-width: calc(100vw - 350px) !important;
         }
 
-        /* Mobile responsive for nutrition containers */
+        /* Professional Card Spacing for Nutrition Pages */
+        .container[style*="margin-top: 80px"] .card,
+        .container:has(.fas.fa-apple-alt) .card {
+            margin-bottom: 25px !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+            border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        }
+
+        /* Professional Card Headers */
+        .container[style*="margin-top: 80px"] .card-header,
+        .container:has(.fas.fa-apple-alt) .card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+            padding: 20px 25px !important;
+            border-radius: 12px 12px 0 0 !important;
+        }
+
+        /* Professional Card Bodies */
+        .container[style*="margin-top: 80px"] .card-body,
+        .container:has(.fas.fa-apple-alt) .card-body {
+            padding: 25px !important;
+        }
+
+        /* Professional Row Spacing */
+        .container[style*="margin-top: 80px"] .row,
+        .container:has(.fas.fa-apple-alt) .row {
+            margin-left: -15px !important;
+            margin-right: -15px !important;
+            margin-bottom: 20px !important;
+        }
+
+        .container[style*="margin-top: 80px"] .row > [class*="col"],
+        .container:has(.fas.fa-apple-alt) .row > [class*="col"] {
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+            margin-bottom: 15px !important;
+        }
+
+        /* Professional Button Spacing */
+        .container[style*="margin-top: 80px"] .btn,
+        .container:has(.fas.fa-apple-alt) .btn {
+            margin-right: 10px !important;
+            margin-bottom: 10px !important;
+            border-radius: 8px !important;
+            padding: 10px 20px !important;
+            font-weight: 500 !important;
+        }
+
+        /* Professional Page Header */
+        .container[style*="margin-top: 80px"] h1,
+        .container[style*="margin-top: 80px"] h2,
+        .container:has(.fas.fa-apple-alt) h1,
+        .container:has(.fas.fa-apple-alt) h2 {
+            margin-bottom: 25px !important;
+            padding-bottom: 15px !important;
+            border-bottom: 2px solid #e2e8f0 !important;
+        }
+
+        /* Professional Form Spacing */
+        .container[style*="margin-top: 80px"] .form-group,
+        .container[style*="margin-top: 80px"] .mb-3,
+        .container:has(.fas.fa-apple-alt) .form-group,
+        .container:has(.fas.fa-apple-alt) .mb-3 {
+            margin-bottom: 20px !important;
+        }
+
+        /* Professional Table Spacing */
+        .container[style*="margin-top: 80px"] .table,
+        .container:has(.fas.fa-apple-alt) .table {
+            margin-bottom: 25px !important;
+        }
+
+        /* Mobile responsive with professional spacing */
         @media (max-width: 768px) {
             .container[style*="margin-top: 80px"],
             .container:has(.fas.fa-apple-alt),
             body:has(.container[style*="margin-top: 80px"]) .container {
-                margin-left: 15px !important;
-                margin-right: 15px !important;
-                max-width: calc(100vw - 30px) !important;
-                padding-left: 15px !important;
-                padding-right: 15px !important;
+                margin-left: 20px !important;
+                margin-right: 20px !important;
+                max-width: calc(100vw - 40px) !important;
+                padding-left: 20px !important;
+                padding-right: 20px !important;
+                padding-top: 20px !important;
+                padding-bottom: 20px !important;
+            }
+
+            .container[style*="margin-top: 80px"] .card,
+            .container:has(.fas.fa-apple-alt) .card {
+                margin-bottom: 20px !important;
+            }
+
+            .container[style*="margin-top: 80px"] .card-body,
+            .container:has(.fas.fa-apple-alt) .card-body {
+                padding: 20px !important;
             }
         }
     </style>
