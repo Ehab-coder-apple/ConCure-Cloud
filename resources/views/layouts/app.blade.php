@@ -572,6 +572,42 @@
                 padding: 0.25rem 0.5rem;
             }
         }
+
+        /* Working Nutrition Page Fix - Gentle Optimization */
+        .container[style*="margin-top: 80px"] {
+            margin-left: 265px !important;
+            margin-right: 20px !important;
+            max-width: calc(100vw - 285px) !important;
+            padding-left: 20px !important;
+            padding-right: 20px !important;
+        }
+
+        /* Target nutrition page body content */
+        body:has(.container[style*="margin-top: 80px"]) .container {
+            margin-left: 265px !important;
+            margin-right: 20px !important;
+            max-width: calc(100vw - 285px) !important;
+        }
+
+        /* Alternative targeting for nutrition pages */
+        .container:has(.fas.fa-apple-alt) {
+            margin-left: 265px !important;
+            margin-right: 20px !important;
+            max-width: calc(100vw - 285px) !important;
+        }
+
+        /* Mobile responsive for nutrition containers */
+        @media (max-width: 768px) {
+            .container[style*="margin-top: 80px"],
+            .container:has(.fas.fa-apple-alt),
+            body:has(.container[style*="margin-top: 80px"]) .container {
+                margin-left: 15px !important;
+                margin-right: 15px !important;
+                max-width: calc(100vw - 30px) !important;
+                padding-left: 15px !important;
+                padding-right: 15px !important;
+            }
+        }
     </style>
 
     <!-- Bootstrap CSS -->
