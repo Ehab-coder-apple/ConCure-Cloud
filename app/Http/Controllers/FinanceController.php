@@ -6,8 +6,11 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Expense;
 use App\Models\Patient;
+use App\Models\User;
 use App\Mail\InvoiceMail;
+use App\Notifications\ExpenseNeedsApprovalNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -253,9 +256,12 @@ class FinanceController extends Controller
             $expenseData['receipt_file'] = $path;
         }
 
-        Expense::create($expenseData);
+        $expense = Expense::create($expenseData);
 
-        return back()->with('success', 'Expense created successfully.');
+        // Notify admins about the new expense that needs approval
+        $this->notifyAdminsForExpenseApproval($expense, $user, false);
+
+        return back()->with('success', 'Expense created successfully and sent for approval.');
     }
 
     /**
@@ -331,6 +337,7 @@ class FinanceController extends Controller
 
     /**
      * Update an expense.
+     * Note: Status is reset to 'pending' for admin re-approval when edited.
      */
     public function updateExpense(Request $request, Expense $expense)
     {
@@ -374,7 +381,7 @@ class FinanceController extends Controller
             $expense->receipt_file = $receiptPath;
         }
 
-        // Update expense data
+        // Update expense data and reset status to pending for re-approval
         $expense->update([
             'description' => $request->description,
             'amount' => $request->amount,
@@ -384,9 +391,13 @@ class FinanceController extends Controller
             'vendor_name' => $request->vendor_name,
             'receipt_number' => $request->receipt_number,
             'notes' => $request->notes,
+            'status' => 'pending', // Reset status to pending for admin re-approval
         ]);
 
-        return redirect()->route('finance.expenses')->with('success', 'Expense updated successfully.');
+        // Notify admins about the updated expense that needs approval
+        $this->notifyAdminsForExpenseApproval($expense, $user, true);
+
+        return redirect()->route('finance.expenses')->with('success', 'Expense updated successfully and sent for re-approval.');
     }
 
     /**
@@ -1041,5 +1052,22 @@ class FinanceController extends Controller
         return view('finance.invoice-print', compact('invoice'));
     }
 
+    /**
+     * Notify admins about expenses that need approval.
+     */
+    private function notifyAdminsForExpenseApproval(Expense $expense, User $submittedBy, bool $isUpdate = false)
+    {
+        // Get all users with finance approval permissions in the same clinic
+        $admins = User::where('clinic_id', $expense->clinic_id)
+            ->where('id', '!=', $submittedBy->id) // Don't notify the person who submitted/updated
+            ->get()
+            ->filter(function ($user) {
+                return $user->hasPermission('finance_approve');
+            });
 
+        // Send notification to each admin
+        foreach ($admins as $admin) {
+            $admin->notify(new ExpenseNeedsApprovalNotification($expense, $submittedBy, $isUpdate));
+        }
+    }
 }
