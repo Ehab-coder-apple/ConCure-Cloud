@@ -17,26 +17,35 @@
         overflow-x: auto;
     }
 
-    /* Extra small buttons */
+    /* Extra small buttons - unified sizing */
     .btn-xs {
-        padding: 0.25rem 0.4rem;
-        font-size: 0.75rem;
-        line-height: 1.2;
-        border-radius: 0.2rem;
-        min-width: 28px;
-        height: 28px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        padding: 0.25rem 0.4rem !important;
+        font-size: 0.75rem !important;
+        line-height: 1.2 !important;
+        border-radius: 0.2rem !important;
+        min-width: 32px !important;
+        width: 32px !important;
+        height: 32px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
     }
 
     /* Action buttons styling */
     .btn-group .btn {
-        margin-right: 1px;
+        margin-right: 2px;
     }
 
     .btn-group .btn:last-child {
         margin-right: 0;
+    }
+
+    /* Ensure consistent button group spacing */
+    .btn-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
     }
 
     /* Compact button group */
