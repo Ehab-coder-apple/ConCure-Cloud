@@ -573,7 +573,7 @@
             }
         }
 
-        /* Professional Nutrition Page Layout */
+        /* Professional Nutrition Page Layout - Fixed Overlay Issue */
         .container[style*="margin-top: 80px"] {
             margin-left: 310px !important;
             margin-right: 30px !important;
@@ -582,6 +582,9 @@
             padding-right: 30px !important;
             padding-top: 30px !important;
             padding-bottom: 30px !important;
+            position: relative !important;
+            z-index: 1 !important;
+            background: white !important;
         }
 
         /* Target nutrition page body content */
@@ -589,6 +592,9 @@
             margin-left: 310px !important;
             margin-right: 30px !important;
             max-width: calc(100vw - 350px) !important;
+            position: relative !important;
+            z-index: 1 !important;
+            background: white !important;
         }
 
         /* Alternative targeting for nutrition pages */
@@ -596,6 +602,32 @@
             margin-left: 310px !important;
             margin-right: 30px !important;
             max-width: calc(100vw - 350px) !important;
+            position: relative !important;
+            z-index: 1 !important;
+            background: white !important;
+        }
+
+        /* Fix any overlay issues */
+        .container[style*="margin-top: 80px"] *,
+        .container:has(.fas.fa-apple-alt) * {
+            position: relative !important;
+            z-index: auto !important;
+        }
+
+        /* Ensure clickable elements are interactive */
+        .container[style*="margin-top: 80px"] button,
+        .container[style*="margin-top: 80px"] .btn,
+        .container[style*="margin-top: 80px"] a,
+        .container[style*="margin-top: 80px"] input,
+        .container[style*="margin-top: 80px"] select,
+        .container:has(.fas.fa-apple-alt) button,
+        .container:has(.fas.fa-apple-alt) .btn,
+        .container:has(.fas.fa-apple-alt) a,
+        .container:has(.fas.fa-apple-alt) input,
+        .container:has(.fas.fa-apple-alt) select {
+            pointer-events: auto !important;
+            z-index: 10 !important;
+            position: relative !important;
         }
 
         /* Professional Card Spacing for Nutrition Pages */
@@ -669,6 +701,33 @@
         .container[style*="margin-top: 80px"] .table,
         .container:has(.fas.fa-apple-alt) .table {
             margin-bottom: 25px !important;
+        }
+
+        /* Remove any problematic overlays or backdrops */
+        .modal-backdrop,
+        .overlay,
+        .backdrop {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+
+        /* Ensure body doesn't have modal-open class stuck */
+        body.modal-open {
+            overflow: auto !important;
+            padding-right: 0 !important;
+        }
+
+        /* Fix any stuck modal states */
+        .modal.show {
+            display: none !important;
+        }
+
+        /* Ensure nutrition page content is fully interactive */
+        .container[style*="margin-top: 80px"],
+        .container:has(.fas.fa-apple-alt) {
+            pointer-events: auto !important;
+            user-select: auto !important;
         }
 
         /* Mobile responsive with professional spacing */
@@ -1096,6 +1155,22 @@
     <!-- Sidebar JS -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Fix any stuck modal/overlay states
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = 'auto';
+            document.body.style.paddingRight = '0';
+
+            // Remove any stuck modal backdrops
+            const backdrops = document.querySelectorAll('.modal-backdrop, .overlay, .backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+
+            // Hide any stuck modals
+            const modals = document.querySelectorAll('.modal.show');
+            modals.forEach(modal => {
+                modal.classList.remove('show');
+                modal.style.display = 'none';
+            });
+
             const sidebar = document.getElementById('sidebar');
             const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
             const sidebarToggle = document.getElementById('sidebarToggle');
