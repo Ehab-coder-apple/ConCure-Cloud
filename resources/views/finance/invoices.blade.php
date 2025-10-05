@@ -3,11 +3,21 @@
 @push('styles')
 <style>
     /* Extra small buttons - unified sizing */
-    .btn-xs {
-        padding: 0.25rem 0.4rem !important;
+    .btn-xs,
+    .btn-xs.btn-outline-primary,
+    .btn-xs.btn-outline-secondary,
+    .btn-xs.btn-outline-info,
+    .btn-xs.btn-outline-success,
+    .btn-xs.btn-outline-danger,
+    .btn-xs.btn-primary,
+    .btn-xs.btn-secondary,
+    .btn-xs.btn-info,
+    .btn-xs.btn-success,
+    .btn-xs.btn-danger {
+        padding: 0 !important;
         font-size: 0.75rem !important;
-        line-height: 1.2 !important;
-        border-radius: 0.2rem !important;
+        line-height: 1 !important;
+        border-radius: 0.25rem !important;
         min-width: 32px !important;
         width: 32px !important;
         height: 32px !important;
@@ -15,22 +25,46 @@
         align-items: center !important;
         justify-content: center !important;
         box-sizing: border-box !important;
+        border-width: 1px !important;
+        margin: 0 !important;
+        flex-shrink: 0 !important;
     }
 
     /* Action buttons styling */
-    .btn-group .btn {
-        margin-right: 2px;
-    }
-
-    .btn-group .btn:last-child {
-        margin-right: 0;
-    }
-
-    /* Ensure consistent button group spacing */
     .btn-group {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 2px !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .btn-group .btn,
+    .btn-group .btn-xs {
+        margin: 0 !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Override any Bootstrap button group styles */
+    .btn-group > .btn:not(:first-child),
+    .btn-group > .btn-group:not(:first-child) {
+        margin-left: 0 !important;
+    }
+
+    .btn-group > .btn:not(:last-child):not(.dropdown-toggle),
+    .btn-group > .btn-group:not(:last-child) > .btn {
+        border-top-right-radius: 0.25rem !important;
+        border-bottom-right-radius: 0.25rem !important;
+    }
+
+    /* Handle inline forms within button groups */
+    .btn-group form.d-inline {
+        display: inline-flex !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .btn-group form.d-inline .btn {
+        margin: 0 !important;
     }
 
     /* Action buttons styling */
