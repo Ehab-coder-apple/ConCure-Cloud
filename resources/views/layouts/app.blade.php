@@ -965,6 +965,86 @@
                 }
             }
         }
+
+        /* Dashboard Statistics Cards Styling */
+        .card.bg-primary, .card.bg-secondary, .card.bg-success, .card.bg-info, .card.bg-warning, .card.bg-danger {
+            border-radius: 12px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+
+        .card.bg-primary:hover, .card.bg-secondary:hover, .card.bg-success:hover,
+        .card.bg-info:hover, .card.bg-warning:hover, .card.bg-danger:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        /* Adjust statistical icon sizes */
+        .card .fa-2x {
+            font-size: 1.5em !important; /* Reduced from default 2em */
+        }
+
+        /* Specific adjustments for revenue card dollar sign */
+        .card.bg-secondary .fa-dollar-sign.fa-2x {
+            font-size: 1.3em !important;
+        }
+
+        /* Statistical card typography improvements */
+        .card .card-title {
+            font-size: 0.9rem !important;
+            font-weight: 600 !important;
+            margin-bottom: 0.5rem !important;
+            opacity: 0.9 !important;
+        }
+
+        .card h2 {
+            font-size: 1.8rem !important;
+            font-weight: 700 !important;
+            margin-bottom: 0.25rem !important;
+        }
+
+        .card small {
+            font-size: 0.8rem !important;
+            opacity: 0.8 !important;
+        }
+
+        /* Icon container improvements */
+        .card .align-self-center {
+            opacity: 0.7 !important;
+        }
+
+        /* Responsive adjustments for statistics cards */
+        @media (max-width: 768px) {
+            .card .fa-2x {
+                font-size: 1.3em !important;
+            }
+
+            .card.bg-secondary .fa-dollar-sign.fa-2x {
+                font-size: 1.1em !important;
+            }
+
+            .card h2 {
+                font-size: 1.6rem !important;
+            }
+
+            .card .card-title {
+                font-size: 0.85rem !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .card .fa-2x {
+                font-size: 1.2em !important;
+            }
+
+            .card.bg-secondary .fa-dollar-sign.fa-2x {
+                font-size: 1.0em !important;
+            }
+
+            .card h2 {
+                font-size: 1.4rem !important;
+            }
+        }
     </style>
 
     <!-- Bootstrap CSS -->
