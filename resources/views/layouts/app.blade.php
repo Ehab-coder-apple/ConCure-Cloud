@@ -614,7 +614,7 @@
             z-index: auto !important;
         }
 
-        /* Ensure clickable elements are interactive */
+        /* Ensure clickable elements are interactive - Fixed for modals */
         .container[style*="margin-top: 80px"] button,
         .container[style*="margin-top: 80px"] .btn,
         .container[style*="margin-top: 80px"] a,
@@ -628,6 +628,26 @@
             pointer-events: auto !important;
             z-index: 10 !important;
             position: relative !important;
+        }
+
+        /* Ensure modal buttons work properly */
+        .modal button,
+        .modal .btn,
+        .modal a,
+        .modal input,
+        .modal select {
+            pointer-events: auto !important;
+            z-index: auto !important;
+            position: relative !important;
+        }
+
+        /* Specific fix for food selection modal */
+        #foodSelectionModal button,
+        #foodSelectionModal .btn,
+        #foodSelectionModal .food-card {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            z-index: auto !important;
         }
 
         /* Professional Card Spacing for Nutrition Pages */
@@ -859,9 +879,24 @@
             padding-right: 0 !important;
         }
 
-        /* Fix any stuck modal states */
-        .modal.show {
+        /* Fix any stuck modal states - but allow new modals to show */
+        .modal.show.stuck {
             display: none !important;
+        }
+
+        /* Ensure modals can show properly */
+        .modal {
+            z-index: 1055 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
+
+        /* Ensure modal content is clickable */
+        .modal-content {
+            position: relative !important;
+            z-index: 1056 !important;
         }
 
         /* Ensure nutrition page content is fully interactive */
@@ -1346,6 +1381,44 @@
                 modal.classList.remove('show');
                 modal.style.display = 'none';
             });
+
+            // Debug: Add click event debugging for Add Food buttons
+            setTimeout(() => {
+                const addFoodButtons = document.querySelectorAll('.add-food-to-option-btn, #add-food-to-meal');
+                console.log('Found Add Food buttons:', addFoodButtons.length);
+
+                addFoodButtons.forEach((btn, index) => {
+                    console.log(`Button ${index}:`, btn.id || btn.className, 'Disabled:', btn.disabled);
+
+                    // Add debug click listener
+                    btn.addEventListener('click', function(e) {
+                        console.log('Add Food button clicked:', this.id || this.className);
+                        console.log('Event:', e);
+                        console.log('Button disabled:', this.disabled);
+                        console.log('Pointer events:', window.getComputedStyle(this).pointerEvents);
+                    }, true); // Use capture phase to catch early
+                });
+            }, 1000);
+
+            // Debug: Check for JavaScript errors
+            window.addEventListener('error', function(e) {
+                console.error('JavaScript Error:', e.error, 'at', e.filename + ':' + e.lineno);
+            });
+
+            // Debug: Check Bootstrap availability
+            setTimeout(() => {
+                console.log('Bootstrap available:', typeof bootstrap !== 'undefined');
+                console.log('jQuery available:', typeof $ !== 'undefined');
+
+                // Check if food selection modal exists
+                const foodModal = document.getElementById('foodSelectionModal');
+                console.log('Food selection modal found:', !!foodModal);
+
+                if (foodModal) {
+                    console.log('Modal classes:', foodModal.className);
+                    console.log('Modal display:', window.getComputedStyle(foodModal).display);
+                }
+            }, 500);
 
             const sidebar = document.getElementById('sidebar');
             const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
