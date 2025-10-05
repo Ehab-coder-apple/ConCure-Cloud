@@ -13,8 +13,11 @@
                     <a href="{{ route('finance.invoices') }}" class="btn btn-outline-primary me-2">
                         <i class="fas fa-file-invoice"></i> Invoices
                     </a>
+                    <a href="{{ route('finance.receipts') }}" class="btn btn-outline-success me-2">
+                        <i class="fas fa-receipt"></i> Receipts
+                    </a>
                     <a href="{{ route('finance.expenses') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-receipt"></i> Expenses
+                        <i class="fas fa-money-bill"></i> Expenses
                     </a>
                 </div>
             </div>
@@ -39,7 +42,24 @@
                 </div>
             </div>
         </div>
-        
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Monthly Receipts</h6>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($monthlyReceipts, 2) }}</h2>
+                            <small>{{ now()->format('F Y') }}</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-receipt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-danger text-white h-100">
                 <div class="card-body">
@@ -248,8 +268,14 @@
                             </button>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <a href="{{ route('finance.expenses', ['new' => 1]) }}" class="btn btn-danger btn-lg w-100">
+                            <a href="{{ route('finance.receipts') }}" class="btn btn-success btn-lg w-100">
                                 <i class="fas fa-receipt d-block mb-1"></i>
+                                <small>Add Receipt</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ route('finance.expenses', ['new' => 1]) }}" class="btn btn-danger btn-lg w-100">
+                                <i class="fas fa-money-bill d-block mb-1"></i>
                                 <small>Add Expense</small>
                             </a>
                         </div>

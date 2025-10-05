@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Expense;
+use App\Models\Receipt;
 use App\Models\Patient;
 use App\Models\User;
 use App\Mail\InvoiceMail;
@@ -492,6 +493,203 @@ class FinanceController extends Controller
     }
 
     /**
+     * Display receipts.
+     */
+    public function receipts(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to receipts.');
+        }
+
+        $query = Receipt::with(['clinic', 'creator', 'approver']);
+
+        // Filter by clinic for all users
+        $query->where('clinic_id', $user->clinic_id);
+
+        // Apply filters
+        if ($request->filled('status')) {
+            $query->byStatus($request->status);
+        }
+
+        if ($request->filled('category')) {
+            $query->byCategory($request->category);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('receipt_number', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('payer_name', 'like', "%{$search}%")
+                  ->orWhere('reference_number', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->byDateRange($request->date_from, $request->date_to);
+        }
+
+        $receipts = $query->latest()->paginate(15);
+
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.receipts', compact('receipts', 'currency', 'currencySymbol'));
+    }
+
+    /**
+     * Store a new receipt.
+     */
+    public function storeReceipt(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to create receipts.');
+        }
+
+        $request->validate([
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'category' => 'required|in:consultation_fee,procedure_fee,medication_sale,lab_test_fee,equipment_rental,insurance_reimbursement,donation,refund,other',
+            'receipt_date' => 'required|date',
+            'payment_method' => 'required|in:cash,card,bank_transfer,check,other',
+            'payer_name' => 'nullable|string|max:255',
+            'reference_number' => 'nullable|string|max:255',
+            'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'notes' => 'nullable|string',
+        ]);
+
+        $receiptData = [
+            'clinic_id' => $user->clinic_id,
+            'description' => $request->description,
+            'amount' => $request->amount,
+            'category' => $request->category,
+            'receipt_date' => $request->receipt_date,
+            'payment_method' => $request->payment_method,
+            'payer_name' => $request->payer_name,
+            'reference_number' => $request->reference_number,
+            'notes' => $request->notes,
+            'created_by' => $user->id,
+            'status' => 'pending', // All receipts start as pending for approval
+        ];
+
+        // Handle receipt file upload
+        if ($request->hasFile('receipt_file')) {
+            $file = $request->file('receipt_file');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs("receipts/{$user->clinic_id}/files", $filename, 'public');
+            $receiptData['receipt_file'] = $path;
+        }
+
+        $receipt = Receipt::create($receiptData);
+
+        // Notify admins about the new receipt that needs approval
+        $this->notifyAdminsForReceiptApproval($receipt, $user, false);
+
+        return back()->with('success', 'Receipt created successfully and sent for approval.');
+    }
+
+    /**
+     * Update an existing receipt.
+     * Note: Status is reset to 'pending' for admin re-approval when edited.
+     */
+    public function updateReceipt(Request $request, Receipt $receipt)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to update receipts.');
+        }
+
+        // Check if user can edit this receipt (admin or creator)
+        if (!$user->hasPermission('finance_edit') && $receipt->created_by !== $user->id) {
+            abort(403, 'You can only edit your own receipts.');
+        }
+
+        // Don't allow editing of approved receipts
+        if ($receipt->status === 'approved') {
+            return redirect()->route('finance.receipts')->with('error', 'Cannot edit approved receipts.');
+        }
+
+        $request->validate([
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'category' => 'required|in:consultation_fee,procedure_fee,medication_sale,lab_test_fee,equipment_rental,insurance_reimbursement,donation,refund,other',
+            'receipt_date' => 'required|date',
+            'payment_method' => 'required|in:cash,card,bank_transfer,check,other',
+            'payer_name' => 'nullable|string|max:255',
+            'reference_number' => 'nullable|string|max:255',
+            'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Handle receipt file upload
+        if ($request->hasFile('receipt_file')) {
+            // Delete old file if exists
+            if ($receipt->receipt_file && Storage::exists($receipt->receipt_file)) {
+                Storage::delete($receipt->receipt_file);
+            }
+
+            $file = $request->file('receipt_file');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs("receipts/{$user->clinic_id}/files", $filename, 'public');
+            $receipt->receipt_file = $path;
+        }
+
+        // Update receipt data and reset status to pending for re-approval
+        $receipt->update([
+            'description' => $request->description,
+            'amount' => $request->amount,
+            'category' => $request->category,
+            'receipt_date' => $request->receipt_date,
+            'payment_method' => $request->payment_method,
+            'payer_name' => $request->payer_name,
+            'reference_number' => $request->reference_number,
+            'notes' => $request->notes,
+            'status' => 'pending', // Reset status to pending for admin re-approval
+        ]);
+
+        // Notify admins about the updated receipt that needs approval
+        $this->notifyAdminsForReceiptApproval($receipt, $user, true);
+
+        return redirect()->route('finance.receipts')->with('success', 'Receipt updated successfully and sent for re-approval.');
+    }
+
+    /**
+     * Delete a receipt.
+     */
+    public function destroyReceipt(Receipt $receipt)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to delete receipts.');
+        }
+
+        // Check if user can delete this receipt (admin or creator)
+        if (!$user->hasPermission('finance_delete') && $receipt->created_by !== $user->id) {
+            abort(403, 'You can only delete your own receipts.');
+        }
+
+        // Don't allow deletion of approved receipts
+        if ($receipt->status === 'approved') {
+            return redirect()->route('finance.receipts')->with('error', 'Cannot delete approved receipts.');
+        }
+
+        $receipt->delete();
+
+        return redirect()->route('finance.receipts')->with('success', 'Receipt deleted successfully.');
+    }
+
+    /**
      * Generate invoice PDF.
      */
     public function generateInvoicePDF(Invoice $invoice)
@@ -821,6 +1019,7 @@ class FinanceController extends Controller
         // Base queries - FILTER BY CLINIC
         $invoicesQuery = Invoice::where('clinic_id', $user->clinic_id);
         $expensesQuery = Expense::where('clinic_id', $user->clinic_id);
+        $receiptsQuery = Receipt::where('clinic_id', $user->clinic_id);
 
 
 
@@ -832,17 +1031,26 @@ class FinanceController extends Controller
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('total_amount');
 
+        $stats['monthlyReceipts'] = $receiptsQuery->clone()
+            ->approved()
+            ->byDateRange($currentMonth, $currentMonthEnd)
+            ->sum('amount');
+
         $stats['monthlyExpenses'] = $expensesQuery->clone()
             ->approved()
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('amount');
 
-        $stats['monthlyProfit'] = $stats['monthlyRevenue'] - $stats['monthlyExpenses'];
+        $stats['monthlyProfit'] = ($stats['monthlyRevenue'] + $stats['monthlyReceipts']) - $stats['monthlyExpenses'];
 
         // Outstanding amounts
         $stats['outstandingInvoices'] = $invoicesQuery->clone()
             ->whereIn('status', ['sent', 'overdue'])
             ->sum('balance');
+
+        $stats['pendingReceipts'] = $receiptsQuery->clone()
+            ->pending()
+            ->sum('amount');
 
         $stats['pendingExpenses'] = $expensesQuery->clone()
             ->pending()
@@ -851,11 +1059,19 @@ class FinanceController extends Controller
         // Counts
         $stats['totalInvoices'] = $invoicesQuery->clone()->count();
         $stats['overdueInvoices'] = $invoicesQuery->clone()->overdue()->count();
+        $stats['totalReceipts'] = $receiptsQuery->clone()->count();
+        $stats['pendingReceiptCount'] = $receiptsQuery->clone()->pending()->count();
         $stats['pendingExpenseCount'] = $expensesQuery->clone()->pending()->count();
 
         // Recent activity
         $stats['recentInvoices'] = $invoicesQuery->clone()
             ->with(['patient'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $stats['recentReceipts'] = $receiptsQuery->clone()
+            ->with(['creator'])
             ->latest()
             ->limit(5)
             ->get();
@@ -1161,6 +1377,25 @@ class FinanceController extends Controller
         // Send notification to each admin
         foreach ($admins as $admin) {
             $admin->notify(new ExpenseNeedsApprovalNotification($expense, $submittedBy, $isUpdate));
+        }
+    }
+
+    /**
+     * Notify admins about receipts that need approval.
+     */
+    private function notifyAdminsForReceiptApproval(Receipt $receipt, User $submittedBy, bool $isUpdate = false)
+    {
+        // Get all users with finance approval permissions in the same clinic
+        $admins = User::where('clinic_id', $receipt->clinic_id)
+            ->where('id', '!=', $submittedBy->id) // Don't notify the person who submitted/updated
+            ->get()
+            ->filter(function ($user) {
+                return $user->hasPermission('finance_approve');
+            });
+
+        // Send notification to each admin
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\ReceiptNeedsApprovalNotification($receipt, $submittedBy, $isUpdate));
         }
     }
 }
