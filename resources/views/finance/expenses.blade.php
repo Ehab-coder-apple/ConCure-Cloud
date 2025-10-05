@@ -5,9 +5,11 @@
 @push('styles')
 <style>
     /* Force proper layout to prevent sidebar overlap */
-    .main-content {
-        margin-left: var(--sidebar-width, 290px) !important;
-        margin-top: var(--topbar-height, 60px) !important;
+    body .main-content {
+        margin-left: 290px !important;
+        margin-top: 60px !important;
+        min-height: calc(100vh - 60px) !important;
+        transition: margin-left 0.3s ease !important;
     }
 
     /* Responsive table */
@@ -58,17 +60,34 @@
         }
     }
 
+    /* Additional content wrapper fix */
+    body .content-wrapper {
+        padding: 1rem 0 !important;
+    }
+
+    /* Ensure proper positioning */
+    #app .main-content {
+        margin-left: 290px !important;
+        margin-top: 60px !important;
+    }
+
     /* Mobile responsive fixes */
     @media (max-width: 991.98px) {
-        .main-content {
+        body .main-content,
+        #app .main-content {
             margin-left: 0 !important;
+        }
+
+        .expenses-page-wrapper {
+            margin-left: 0 !important;
+            margin-top: 0 !important;
         }
     }
 </style>
 @endpush
 
 @section('content')
-<div style="padding: 0 1.5rem;">
+<div class="expenses-page-wrapper" style="margin-left: 290px; margin-top: 60px; padding: 1rem 1.5rem; min-height: calc(100vh - 60px);">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
