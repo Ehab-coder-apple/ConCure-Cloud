@@ -10,6 +10,7 @@ use App\Models\Patient;
 use App\Models\User;
 use App\Mail\InvoiceMail;
 use App\Notifications\ExpenseNeedsApprovalNotification;
+use App\Notifications\ReceiptNeedsApprovalNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
