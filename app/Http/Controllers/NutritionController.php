@@ -953,14 +953,6 @@ class NutritionController extends Controller
         $tempFile = tempnam(sys_get_temp_dir(), 'nutrition_plan_');
         file_put_contents($tempFile, $htmlContent);
 
-        // Log successful generation before return
-        \Log::info('Word Export: About to return download response', [
-            'diet_plan_id' => $dietPlan->id,
-            'temp_file' => $tempFile,
-            'file_size' => filesize($tempFile),
-            'filename' => $filename
-        ]);
-
         return response()->download($tempFile, $filename, [
             'Content-Type' => 'application/msword',
         ])->deleteFileAfterSend(true);
