@@ -872,28 +872,12 @@ class NutritionController extends Controller
 
 
         if ($outputLang && in_array($outputLang, $supportedOutputLangs, true)) {
-            // Debug logging
-            \Log::info('Word Export Language Processing', [
-                'output_lang' => $outputLang,
-                'supported_langs' => $supportedOutputLangs,
-                'meal_count' => $dietPlan->meals->count()
-            ]);
-
             // Translate food display names in-memory for rendering (do not change app locale)
             foreach ($dietPlan->meals as $meal) {
                 foreach ($meal->foods as $mealFood) {
                     if ($mealFood->food) {
                         $originalName = $mealFood->food_name;
                         $translated = $mealFood->food->getNameInLanguage($outputLang);
-
-                        // Debug each food translation
-                        \Log::info('Food Translation Debug', [
-                            'food_id' => $mealFood->food->id,
-                            'original_name' => $originalName,
-                            'translated_name' => $translated,
-                            'name_translations' => $mealFood->food->name_translations,
-                            'requested_lang' => $outputLang
-                        ]);
 
                         if (!empty($translated)) {
                             $mealFood->food_name = $translated;
@@ -909,13 +893,25 @@ class NutritionController extends Controller
         $wordService = new WordDocumentService();
         $htmlContent = $wordService->generateNutritionPlan($dietPlan, $nutritionalTotals);
 
+        // Ensure content was generated successfully
+        if (empty($htmlContent)) {
+            throw new \Exception('Generated Word content is empty');
+        }
+
         $filename = "nutrition-plan-{$dietPlan->plan_number}.doc";
 
-        return response($htmlContent, 200, [
+        // Create response with proper headers
+        $response = response($htmlContent, 200, [
             'Content-Type' => 'application/msword',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            'Cache-Control' => 'max-age=0',
+            'Content-Length' => strlen($htmlContent),
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
+
+        return $response;
 
         } catch (\Exception $e) {
             // Log the error with full context
