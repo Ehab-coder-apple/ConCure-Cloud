@@ -900,18 +900,13 @@ class NutritionController extends Controller
 
         $filename = "nutrition-plan-{$dietPlan->plan_number}.doc";
 
-        // Create response with proper headers
-        $response = response($htmlContent, 200, [
-            'Content-Type' => 'application/msword',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            'Content-Length' => strlen($htmlContent),
-            'Cache-Control' => 'no-cache, no-store, must-revalidate',
-            'Pragma' => 'no-cache',
-            'Expires' => '0',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        // Create a temporary file and use Laravel's download response
+        $tempFile = tempnam(sys_get_temp_dir(), 'nutrition_plan_');
+        file_put_contents($tempFile, $htmlContent);
 
-        return $response;
+        return response()->download($tempFile, $filename, [
+            'Content-Type' => 'application/msword',
+        ])->deleteFileAfterSend(true);
 
         } catch (\Exception $e) {
             // Log the error with full context
