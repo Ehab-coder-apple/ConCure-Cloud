@@ -1375,7 +1375,22 @@ window.sendWhatsAppSimple = function() {
                             var foodName = foodTranslations['{{ $food->id }}'] && foodTranslations['{{ $food->id }}'][selectedLang]
                                 ? foodTranslations['{{ $food->id }}'][selectedLang]
                                 : {!! json_encode($food->food_name_display) !!};
-                            message += '• ' + foodName + ' - {{ $food->quantity }}{{ $food->unit }}\n';
+
+                            @php
+                                $foodItem = $food->food;
+                                $quantity = $food->quantity;
+                                $calories = $foodItem && $quantity ? ($foodItem->calories * $quantity) / 100 : 0;
+                                $protein = $foodItem && $quantity ? ($foodItem->protein * $quantity) / 100 : 0;
+                                $carbs = $foodItem && $quantity ? ($foodItem->carbohydrates * $quantity) / 100 : 0;
+                                $fat = $foodItem && $quantity ? ($foodItem->fat * $quantity) / 100 : 0;
+                            @endphp
+
+                            message += '🍽️ ' + foodName + '\n';
+                            message += '   📏 {{ $food->quantity }}{{ $food->unit }}\n';
+                            @if($calories > 0)
+                            message += '   📊 {{ number_format($calories, 0) }} cal | {{ number_format($protein, 1) }}g protein | {{ number_format($carbs, 1) }}g carbs | {{ number_format($fat, 1) }}g fat\n';
+                            @endif
+                            message += '\n';
                         @endforeach
                     @endif
                 @endforeach

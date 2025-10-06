@@ -109,12 +109,13 @@
         }
 
         .option-box {
-            border: 1.5px solid #20B2AA;
-            min-height: 80px;
-            padding: 10px;
+            border: 2px solid #20B2AA;
+            min-height: 100px;
+            padding: 12px;
             background-color: #fff;
-            border-radius: 3px;
-            margin-bottom: 5px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(32, 178, 170, 0.1);
         }
 
         .option-header {
@@ -129,38 +130,47 @@
         }
 
         .food-item {
-            margin-bottom: 4px;
-            font-size: 10px;
-            line-height: 1.3;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 6px;
+            font-size: 11px;
+            line-height: 1.4;
+            padding: 6px 8px;
+            background-color: #fafafa;
+            border-left: 3px solid #20B2AA;
+            border-radius: 3px;
         }
 
         .food-name {
-            font-weight: 500;
-            color: #333;
-            flex: 1;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 2px;
+            display: block;
         }
 
         .food-details {
-            color: #666;
+            color: #7f8c8d;
             font-size: 9px;
             font-weight: normal;
-            white-space: nowrap;
+            display: block;
+        }
+
+        .nutritional-info {
+            color: #27ae60;
+            font-size: 8px;
+            font-weight: 500;
+            margin-top: 2px;
+            display: block;
         }
 
         .option-summary {
-            margin-top: 8px;
-            padding: 4px 6px;
-            font-size: 9px;
-            color: #20B2AA;
+            margin-top: 10px;
+            padding: 6px 8px;
+            font-size: 10px;
+            color: #fff;
             text-align: center;
-            border-top: 1px solid #e0e0e0;
-            padding-top: 6px;
+            background: linear-gradient(135deg, #20B2AA, #17a2b8);
+            border-radius: 4px;
             font-weight: 600;
-            background-color: #f8f9fa;
-            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(32, 178, 170, 0.3);
         }
 
         /* Instructions Section */
@@ -322,8 +332,13 @@
                                     <div class="food-item">
                                         <span class="food-name kurdish">{!! $mealFood->food_name !!}</span>
                                         <span class="food-details">
-                                            ({{ $mealFood->quantity }}{{ $mealFood->unit }})
+                                            {{ $mealFood->quantity }}{{ $mealFood->unit }}
                                         </span>
+                                        @if($food && $quantity > 0)
+                                        <span class="nutritional-info">
+                                            {{ number_format($calories, 0) }} cal | {{ number_format($protein, 1) }}g protein | {{ number_format($carbs, 1) }}g carbs | {{ number_format($fat, 1) }}g fat
+                                        </span>
+                                        @endif
                                     </div>
                                 @endforeach
 

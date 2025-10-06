@@ -113,22 +113,35 @@ class WordDocumentService
         }
         
         .food-item {
-            padding: 8pt 12pt;
+            padding: 10pt 12pt;
             border-bottom: 1pt solid #eee;
+            background-color: #fafafa;
+            margin-bottom: 6pt;
+            border-left: 3pt solid #20B2AA;
+            border-radius: 3pt;
         }
-        
+
         .food-item:last-child {
             border-bottom: none;
         }
-        
+
         .food-name {
             font-weight: bold;
             margin-bottom: 4pt;
+            color: #2c3e50;
+            font-size: 12pt;
         }
-        
+
         .food-details {
-            color: #666;
+            color: #7f8c8d;
             font-size: 10pt;
+            margin-bottom: 2pt;
+        }
+
+        .nutritional-info {
+            color: #27ae60;
+            font-size: 9pt;
+            font-weight: 500;
         }
         
         .meal-total {
@@ -261,11 +274,10 @@ class WordDocumentService
                                 $html .= '<div class="food-item">
                                     <div class="food-name kurdish">' . htmlspecialchars($foodName) . '</div>
                                     <div class="food-details">
-                                        ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . ' |
-                                        ' . number_format($calories, 0) . ' cal |
-                                        ' . number_format($protein, 1) . 'g protein |
-                                        ' . number_format($carbs, 1) . 'g carbs |
-                                        ' . number_format($fat, 1) . 'g fat
+                                        ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . '
+                                    </div>
+                                    <div class="nutritional-info">
+                                        ' . number_format($calories, 0) . ' cal | ' . number_format($protein, 1) . 'g protein | ' . number_format($carbs, 1) . 'g carbs | ' . number_format($fat, 1) . 'g fat
                                     </div>
                                 </div>';
                             }
@@ -325,11 +337,10 @@ class WordDocumentService
                             $html .= '<div class="food-item">
                                 <div class="food-name kurdish">' . htmlspecialchars($foodName) . '</div>
                                 <div class="food-details">
-                                    ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . ' |
-                                    ' . number_format($calories, 0) . ' cal |
-                                    ' . number_format($protein, 1) . 'g protein |
-                                    ' . number_format($carbs, 1) . 'g carbs |
-                                    ' . number_format($fat, 1) . 'g fat
+                                    ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . '
+                                </div>
+                                <div class="nutritional-info">
+                                    ' . number_format($calories, 0) . ' cal | ' . number_format($protein, 1) . 'g protein | ' . number_format($carbs, 1) . 'g carbs | ' . number_format($fat, 1) . 'g fat
                                 </div>
                             </div>';
                         }
