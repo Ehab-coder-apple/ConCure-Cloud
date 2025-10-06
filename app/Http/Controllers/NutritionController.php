@@ -846,20 +846,28 @@ class NutritionController extends Controller
      */
     public function downloadWord(DietPlan $dietPlan)
     {
+        try {
+            $user = Auth::user();
 
+            // Check if diet plan exists and has required relationships
+            if (!$dietPlan) {
+                abort(404, 'Nutrition plan not found.');
+            }
 
-        $user = Auth::user();
+            if (!$dietPlan->patient) {
+                abort(404, 'Patient not found for this nutrition plan.');
+            }
 
-        // Check access and permissions
-        if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to nutrition plan.');
-        }
+            // Check access and permissions
+            if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to nutrition plan.');
+            }
 
-        $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
+            $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
 
-        // Optional food-only language override for Word export (headings stay in UI language)
-        $outputLang = request()->query('lang');
-        $supportedOutputLangs = array_keys(Food::getSupportedLanguages());
+            // Optional food-only language override for Word export (headings stay in UI language)
+            $outputLang = request()->query('lang');
+            $supportedOutputLangs = array_keys(Food::getSupportedLanguages());
 
 
 
@@ -908,6 +916,26 @@ class NutritionController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
             'Cache-Control' => 'max-age=0',
         ]);
+
+        } catch (\Exception $e) {
+            // Log the error with full context
+            \Log::error('Word Export Error', [
+                'diet_plan_id' => $dietPlan->id ?? 'unknown',
+                'plan_number' => $dietPlan->plan_number ?? 'unknown',
+                'user_id' => Auth::id(),
+                'language' => request()->query('lang'),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+
+            // Return a user-friendly error response
+            return response()->view('errors.word-export', [
+                'error' => $e->getMessage(),
+                'dietPlan' => $dietPlan ?? null
+            ], 500);
+        }
     }
 
 
