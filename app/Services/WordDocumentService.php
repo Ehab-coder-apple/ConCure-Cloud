@@ -205,10 +205,10 @@ class WordDocumentService
 
         // Patient Info
         $html .= '<div class="patient-info">
-            <strong>Patient:</strong> ' . htmlspecialchars($dietPlan->patient->name) . '<br>
-            <strong>Plan Number:</strong> ' . htmlspecialchars($dietPlan->plan_number) . '<br>
+            <strong>Patient:</strong> ' . htmlspecialchars($dietPlan->patient->name ?? 'Unknown Patient') . '<br>
+            <strong>Plan Number:</strong> ' . htmlspecialchars($dietPlan->plan_number ?? 'N/A') . '<br>
             <strong>Date:</strong> ' . $dietPlan->created_at->format('Y-m-d') . '<br>
-            <strong>Doctor:</strong> ' . htmlspecialchars($dietPlan->doctor->name) . '
+            <strong>Doctor:</strong> ' . htmlspecialchars($dietPlan->doctor->name ?? 'Not Assigned') . '
         </div>';
 
         // Check if this is a flexible meal plan (option-based)
@@ -348,33 +348,34 @@ class WordDocumentService
      */
     private function generateFlexibleMealPlanHtml($dietPlan)
     {
-        $html = '<div class="flexible-plan">
-            <h3 style="color: #2c3e50; border-bottom: 2px solid #20B2AA; padding-bottom: 5pt; margin-top: 20pt;">Flexible Meal Plan - Choose One Option from Each Meal</h3>';
+        try {
+            $html = '<div class="flexible-plan">
+                <h3 style="color: #2c3e50; border-bottom: 2px solid #20B2AA; padding-bottom: 5pt; margin-top: 20pt;">Flexible Meal Plan - Choose One Option from Each Meal</h3>';
 
-        // Group meals by meal type and option
-        $mealsByType = [];
-        $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack_1'];
-        $mealTypeNames = [
-            'breakfast' => 'Breakfast',
-            'lunch' => 'Lunch',
-            'dinner' => 'Dinner',
-            'snack_1' => 'Snacks'
-        ];
+            // Group meals by meal type and option
+            $mealsByType = [];
+            $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack_1'];
+            $mealTypeNames = [
+                'breakfast' => 'Breakfast',
+                'lunch' => 'Lunch',
+                'dinner' => 'Dinner',
+                'snack_1' => 'Snacks'
+            ];
 
-        // Initialize structure
-        foreach ($mealTypes as $mealType) {
-            $mealsByType[$mealType] = [];
-        }
+            // Initialize structure
+            foreach ($mealTypes as $mealType) {
+                $mealsByType[$mealType] = [];
+            }
 
-        // Group existing meals by type and option
-        if ($dietPlan->meals) {
-            foreach ($dietPlan->meals->where('is_option_based', true) as $meal) {
-                $mealType = $meal->meal_type ?? '';
-                if (in_array($mealType, $mealTypes)) {
-                    $mealsByType[$mealType][] = $meal;
+            // Group existing meals by type and option
+            if ($dietPlan && $dietPlan->meals) {
+                foreach ($dietPlan->meals->where('is_option_based', true) as $meal) {
+                    $mealType = $meal->meal_type ?? '';
+                    if (in_array($mealType, $mealTypes)) {
+                        $mealsByType[$mealType][] = $meal;
+                    }
                 }
             }
-        }
 
         // Render each meal type with its options
         foreach ($mealTypes as $mealType) {
@@ -455,5 +456,19 @@ class WordDocumentService
         $html .= '</div>'; // Close flexible-plan
 
         return $html;
+
+        } catch (\Exception $e) {
+            // Log the error and return a fallback message
+            \Log::error('Error generating flexible meal plan HTML: ' . $e->getMessage(), [
+                'diet_plan_id' => $dietPlan->id ?? 'unknown',
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return '<div class="error-message" style="padding: 20pt; border: 2pt solid #e74c3c; background-color: #fdf2f2; color: #e74c3c; text-align: center;">
+                <h3>Error Generating Flexible Meal Plan</h3>
+                <p>There was an issue generating the flexible meal plan. Please contact support if this issue persists.</p>
+                <p><small>Error: ' . htmlspecialchars($e->getMessage()) . '</small></p>
+            </div>';
+        }
     }
 }
