@@ -3,12 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Flexible Meal Plan Options</title>
+    @php $amiriFontPath = storage_path('fonts/amiri-regular.ttf'); @endphp
+
     <style>
         @page {
             margin: 15mm 10mm;
             size: A4;
+        @if(file_exists($amiriFontPath))
+        @font-face {
+            font-family: 'AmiriWeb';
+            src: url('{{ $amiriFontPath }}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
         }
-        
+        @endif
+
+        }
+
         body {
             font-family: "dejavu sans", sans-serif;
             font-size: 10px;
@@ -28,7 +39,7 @@
 
         /* Kurdish/Arabic text styling */
         .kurdish {
-            font-family: "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "Arabic Typesetting", "Traditional Arabic", "dejavu sans", serif;
+            font-family: "AmiriWeb", "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "dejavu sans", serif;
             direction: rtl;
             text-align: right;
             unicode-bidi: embed;
@@ -267,7 +278,7 @@
 
     <!-- Choice Instructions -->
     <div class="choice-note">
-        <strong>How to Use This Plan:</strong> Choose one option from each meal type for each day. 
+        <strong>How to Use This Plan:</strong> Choose one option from each meal type for each day.
         You can mix and match different options throughout the week for variety!
     </div>
 
@@ -277,16 +288,16 @@
         $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack_1'];
         $mealTypeNames = [
             'breakfast' => 'Breakfast Options',
-            'lunch' => 'Lunch Options', 
+            'lunch' => 'Lunch Options',
             'dinner' => 'Dinner Options',
             'snack_1' => 'Snack Options'
         ];
-        
+
         // Initialize structure
         foreach ($mealTypes as $mealType) {
             $mealsByType[$mealType] = [];
         }
-        
+
         // Group existing meals by type and option
         foreach ($dietPlan->meals->where('is_option_based', true) as $meal) {
             $mealType = $meal->meal_type;

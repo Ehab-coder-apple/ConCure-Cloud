@@ -3,9 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Daily Meal Plan</title>
+    @php $amiriFontPath = storage_path('fonts/amiri-regular.ttf'); @endphp
+
     <style>
         @page {
             margin: 15mm 10mm;
+        @if(file_exists($amiriFontPath))
+        @font-face {
+            font-family: 'AmiriWeb';
+            src: url('{{ $amiriFontPath }}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @endif
+
             size: A4;
         }
 
@@ -22,7 +33,7 @@
             direction: rtl;
             text-align: right;
             unicode-bidi: embed;
-            font-family: "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "dejavu sans", serif;
+            font-family: "AmiriWeb", "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "dejavu sans", serif;
         }
 
         /* Kurdish/Arabic text styling - optimized for letter connection */
@@ -219,17 +230,17 @@
                 $meals = $dietPlan->meals->where('meal_type', $mealType);
             }
         @endphp
-        
+
         @if($meals->count() > 0)
             <div class="meal-section">
                 <div class="meal-header">
                     {{ $mealTypeMapping[$mealType] ?? ucfirst($mealType) }}
                 </div>
-                
+
                 @php
                     $mealCalories = 0;
                 @endphp
-                
+
                 @foreach($meals as $meal)
                     @foreach($meal->foods as $mealFood)
                         @php
@@ -239,25 +250,25 @@
                             $protein = ($food->protein * $quantity) / 100;
                             $carbs = ($food->carbohydrates * $quantity) / 100;
                             $fat = ($food->fat * $quantity) / 100;
-                            
+
                             $mealCalories += $calories;
                         @endphp
-                        
+
                         <div class="food-item">
                             <div class="food-name kurdish">
                                 {!! $mealFood->food_name !!}
                             </div>
                             <div class="food-details">
-                                {{ $mealFood->quantity }} {{ $mealFood->unit }} | 
-                                {{ number_format($calories, 0) }} cal | 
-                                {{ number_format($protein, 1) }}g protein | 
-                                {{ number_format($carbs, 1) }}g carbs | 
+                                {{ $mealFood->quantity }} {{ $mealFood->unit }} |
+                                {{ number_format($calories, 0) }} cal |
+                                {{ number_format($protein, 1) }}g protein |
+                                {{ number_format($carbs, 1) }}g carbs |
                                 {{ number_format($fat, 1) }}g fat
                             </div>
                         </div>
                     @endforeach
                 @endforeach
-                
+
                 <div class="meal-total">
                     Total: {{ number_format($mealCalories, 0) }} calories
                 </div>
@@ -267,22 +278,22 @@
 
     <div class="summary">
         <h3>Daily Nutritional Summary</h3>
-        
+
         <div class="summary-item">
             <span class="summary-label">Total Calories:</span>
             <span class="summary-value">{{ number_format($nutritionalTotals['calories'], 0) }} cal</span>
         </div>
-        
+
         <div class="summary-item">
             <span class="summary-label">Total Protein:</span>
             <span class="summary-value">{{ number_format($nutritionalTotals['protein'], 1) }}g</span>
         </div>
-        
+
         <div class="summary-item">
             <span class="summary-label">Total Carbohydrates:</span>
             <span class="summary-value">{{ number_format($nutritionalTotals['carbs'], 1) }}g</span>
         </div>
-        
+
         <div class="summary-item">
             <span class="summary-label">Total Fat:</span>
             <span class="summary-value">{{ number_format($nutritionalTotals['fat'], 1) }}g</span>
