@@ -826,12 +826,15 @@ class NutritionController extends Controller
 
         $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
 
-        // Use font loader for proper Kurdish font support
+        // Use font loader for proper Arabic/Kurdish font support
         $fontLoader = new DomPdfFontLoader();
         $fontLoader->loadFonts();
 
-        // Process Kurdish text with Arabic shaping
-        $this->processKurdishTextWithShaping($dietPlan);
+        // Determine if Arabic output language is requested
+        $isArabicOutput = ($outputLang === 'ar');
+
+        // Process Arabic/Kurdish text with glyph shaping so letters connect in DomPDF
+        $this->processArabicLikeTextWithShaping($dietPlan, $isArabicOutput);
 
         // Create configured DomPDF instance
         $dompdf = $fontLoader->createConfiguredDomPdf();
@@ -843,7 +846,11 @@ class NutritionController extends Controller
         $template = $isFlexiblePlan ? 'nutrition.pdf-flexible-options' : 'nutrition.pdf-simple';
 
         // Generate HTML content with appropriate template
-        $html = view($template, compact('dietPlan', 'nutritionalTotals'))->render();
+        $html = view($template, [
+            'dietPlan' => $dietPlan,
+            'nutritionalTotals' => $nutritionalTotals,
+            'isArabicOutput' => $isArabicOutput,
+        ])->render();
 
         // Load and render PDF
         $dompdf->loadHtml($html, 'UTF-8');
@@ -1197,13 +1204,77 @@ class NutritionController extends Controller
                     // For non-Kurdish text, keep as is
                     $mealFood->food_name = $foodName;
                 }
+                }
             }
-        }
+
         } catch (\Exception $e) {
             // Log error but don't fail the export
             \Log::warning('Arabic text processing failed: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Process Arabic/Kurdish strings to ensure proper glyph shaping and joining for DomPDF
+     * This pre-shapes text for scripts that DomPDF can't shape natively (Arabic family)
+     */
+    private function processArabicLikeTextWithShaping($dietPlan, bool $isArabicOutput)
+    {
+        // Use Ar-PHP if available; otherwise, gracefully skip
+        if (!class_exists('\\ArPHP\\I18N\\Arabic')) {
+            return;
+        }
+
+        try {
+            $arabic = new \ArPHP\I18N\Arabic();
+            $shapeIfArabic = function ($text) use ($arabic) {
+                if (!is_string($text) || $text === '') { return $text; }
+                // Contains Arabic block characters?
+                if (!preg_match('/[\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u', $text)) {
+                    return $text;
+                }
+                try {
+                    $arabic->setInputCharset('UTF-8');
+                    $arabic->setOutputCharset('UTF-8');
+                    $processed = $arabic->utf8Glyphs($text);
+                    if (!$processed || $processed === $text) {
+                        $processed = $arabic->utf8Glyphs(\Normalizer::normalize($text, \Normalizer::FORM_C));
+                    }
+                    return $processed ?: $text;
+                } catch (\Throwable $t) {
+                    return $text; // Fail open
+                }
+            };
+
+            // Patient and doctor names
+            if ($dietPlan->patient) {
+                $dietPlan->patient->first_name = $shapeIfArabic($dietPlan->patient->first_name ?? '');
+                $dietPlan->patient->last_name  = $shapeIfArabic($dietPlan->patient->last_name ?? '');
+                $dietPlan->patient->name       = $shapeIfArabic($dietPlan->patient->name ?? ($dietPlan->patient->first_name . ' ' . $dietPlan->patient->last_name));
+            }
+            if ($dietPlan->doctor) {
+                $dietPlan->doctor->name = $shapeIfArabic($dietPlan->doctor->name ?? '');
+                if (property_exists($dietPlan->doctor, 'full_name_with_title')) {
+                    $dietPlan->doctor->full_name_with_title = $shapeIfArabic($dietPlan->doctor->full_name_with_title);
+                }
+            }
+
+            // Plan free-text fields
+            $dietPlan->instructions = $shapeIfArabic($dietPlan->instructions ?? '');
+            $dietPlan->restrictions = $shapeIfArabic($dietPlan->restrictions ?? '');
+
+            // Meals: names and food names
+            foreach ($dietPlan->meals as $meal) {
+                $meal->meal_name = $shapeIfArabic($meal->meal_name ?? '');
+                foreach ($meal->foods as $mealFood) {
+                    $mealFood->food_name = $shapeIfArabic($mealFood->food_name ?? '');
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Arabic glyph shaping failed: ' . $e->getMessage());
+        }
+    }
+
+
 
     /**
      * Create specialized nutrition plan templates.

@@ -18,6 +18,13 @@
             padding: 0;
         }
 
+        .rtl {
+            direction: rtl;
+            text-align: right;
+            unicode-bidi: embed;
+            font-family: "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "dejavu sans", serif;
+        }
+
         /* Kurdish/Arabic text styling - optimized for letter connection */
         .kurdish {
             font-family: "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "Arabic Typesetting", "Traditional Arabic", "dejavu sans", serif;
@@ -159,7 +166,7 @@
         }
     </style>
 </head>
-<body>
+<body class="{{ !empty($isArabicOutput) && $isArabicOutput ? 'rtl' : '' }}">
     <div class="header">
         @php
             $clinicLogo = \App\Http\Controllers\SettingsController::getClinicLogo($dietPlan->patient->clinic_id);
@@ -185,10 +192,10 @@
     </div>
 
     <div class="patient-info">
-        <strong>Patient:</strong> {{ $dietPlan->patient->name }}<br>
+        <strong>Patient:</strong> <span class="kurdish">{{ $dietPlan->patient->name }}</span><br>
         <strong>Plan Number:</strong> {{ $dietPlan->plan_number }}<br>
         <strong>Date:</strong> {{ $dietPlan->created_at->format('Y-m-d') }}<br>
-        <strong>Doctor:</strong> {{ $dietPlan->doctor->name }}
+        <strong>Doctor:</strong> <span class="kurdish">{{ $dietPlan->doctor->name }}</span>
     </div>
 
     @php

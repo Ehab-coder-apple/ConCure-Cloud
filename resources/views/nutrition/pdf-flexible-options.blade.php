@@ -18,6 +18,14 @@
             padding: 0;
         }
 
+        /* RTL helper when Arabic is selected */
+        .rtl {
+            direction: rtl;
+            text-align: right;
+            unicode-bidi: embed;
+            font-family: "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "dejavu sans", serif;
+        }
+
         /* Kurdish/Arabic text styling */
         .kurdish {
             font-family: "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "Arabic Typesetting", "Traditional Arabic", "dejavu sans", serif;
@@ -225,7 +233,7 @@
         }
     </style>
 </head>
-<body>
+<body class="{{ !empty($isArabicOutput) && $isArabicOutput ? 'rtl' : '' }}">
     <!-- Header -->
     <div class="header">
         @php
@@ -251,10 +259,10 @@
 
     <!-- Patient Info -->
     <div class="patient-info">
-        <strong>Patient:</strong> {{ $dietPlan->patient->first_name }} {{ $dietPlan->patient->last_name }} &nbsp;&nbsp;&nbsp;
+        <strong>Patient:</strong> <span class="kurdish">{{ $dietPlan->patient->first_name }} {{ $dietPlan->patient->last_name }}</span> &nbsp;&nbsp;&nbsp;
         <strong>Plan #:</strong> {{ $dietPlan->plan_number }} &nbsp;&nbsp;&nbsp;
         <strong>Date:</strong> {{ $dietPlan->created_at->format('M d, Y') }} &nbsp;&nbsp;&nbsp;
-        <strong>Created by:</strong> {{ $dietPlan->doctor->full_name_with_title }}
+        <strong>Created by:</strong> <span class="kurdish">{{ $dietPlan->doctor->full_name_with_title }}</span>
     </div>
 
     <!-- Choice Instructions -->
@@ -363,12 +371,12 @@
             <div class="instructions-content">
                 @if ($dietPlan->instructions)
                     <strong>General Instructions:</strong><br>
-                    {{ $dietPlan->instructions }}<br><br>
+                    <span class="kurdish">{{ $dietPlan->instructions }}</span><br><br>
                 @endif
-                
+
                 @if ($dietPlan->restrictions)
                     <strong>Dietary Restrictions:</strong><br>
-                    {{ $dietPlan->restrictions }}
+                    <span class="kurdish">{{ $dietPlan->restrictions }}</span>
                 @endif
             </div>
         </div>
