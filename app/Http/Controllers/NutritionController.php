@@ -904,6 +904,14 @@ class NutritionController extends Controller
         $tempFile = tempnam(sys_get_temp_dir(), 'nutrition_plan_');
         file_put_contents($tempFile, $htmlContent);
 
+        // Log successful generation before return
+        \Log::info('Word Export: About to return download response', [
+            'diet_plan_id' => $dietPlan->id,
+            'temp_file' => $tempFile,
+            'file_size' => filesize($tempFile),
+            'filename' => $filename
+        ]);
+
         return response()->download($tempFile, $filename, [
             'Content-Type' => 'application/msword',
         ])->deleteFileAfterSend(true);
@@ -921,7 +929,19 @@ class NutritionController extends Controller
                 'stack_trace' => $e->getTraceAsString()
             ]);
 
-            // Return a user-friendly error response
+            // For debugging, return JSON error in development
+            if (config('app.debug')) {
+                return response()->json([
+                    'error' => 'Word Export Error',
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'diet_plan_id' => $dietPlan->id ?? 'unknown',
+                    'trace' => explode("\n", $e->getTraceAsString())
+                ], 500);
+            }
+
+            // Return a user-friendly error response for production
             return response()->view('errors.word-export', [
                 'error' => $e->getMessage(),
                 'dietPlan' => $dietPlan ?? null

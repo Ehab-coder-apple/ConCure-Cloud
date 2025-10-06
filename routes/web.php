@@ -822,6 +822,29 @@ if (config('app.debug')) {
     // Debug dashboard access (bypass middleware)
     Route::get('/dev/dashboard', [DashboardController::class, 'index'])->name('dev.dashboard');
 
+    // Test Word export without middleware
+    Route::get('/test-word-export/{dietPlan}', function(\App\Models\DietPlan $dietPlan) {
+        try {
+            $wordService = new \App\Services\WordDocumentService();
+            $nutritionalTotals = ['calories' => 2000, 'protein' => 100, 'carbs' => 250, 'fat' => 70];
+            $htmlContent = $wordService->generateNutritionPlan($dietPlan, $nutritionalTotals);
+
+            $filename = "test-nutrition-plan-{$dietPlan->plan_number}.doc";
+
+            return response($htmlContent, 200, [
+                'Content-Type' => 'application/msword',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    })->name('test.word.export');
+
     // Create demo users if they don't exist
     Route::get('/dev/create-demo-users', function () {
         try {
