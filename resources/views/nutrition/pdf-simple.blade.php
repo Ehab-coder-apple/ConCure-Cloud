@@ -8,6 +8,9 @@
     <style>
         @page {
             margin: 15mm 10mm;
+            size: A4;
+        }
+
         @if(file_exists($amiriFontPath))
         @font-face {
             font-family: 'AmiriWeb';
@@ -17,12 +20,9 @@
         }
         @endif
 
-            size: A4;
         /* Ensure Arabic-capable font everywhere when RTL */
         .rtl, .rtl * { font-family: "AmiriWeb", "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "dejavu sans", serif !important; }
         .rtl .food-details { direction: rtl; unicode-bidi: embed; }
-
-        }
 
         body {
             font-family: "dejavu sans", sans-serif;
