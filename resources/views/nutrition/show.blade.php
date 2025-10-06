@@ -1327,7 +1327,36 @@ window.sendWhatsAppSimple = function() {
         console.log('Food translations:', foodTranslations);
 
         var currentLabels = labels[selectedLang] || labels['en'];
-        console.log('Current labels:', currentLabels);
+
+        // Add fallback values for any missing labels
+        var defaultLabels = {
+            title: 'Nutrition Plan',
+            patient: 'Patient:',
+            plan: 'Plan:',
+            planNumber: 'Plan #:',
+            dailyPlan: 'Daily Plan',
+            breakfast: 'Breakfast',
+            lunch: 'Lunch',
+            dinner: 'Dinner',
+            snack: 'Snack',
+            morningSnack: 'Morning Snack',
+            afternoonSnack: 'Afternoon Snack',
+            eveningSnack: 'Evening Snack',
+            options: 'Options',
+            option: 'Option',
+            instructions: 'Instructions',
+            chooseOne: 'Choose one option from each meal type',
+            flexibleIntro: 'Flexible Meal Plan - Choose One Option from Each Meal'
+        };
+
+        // Merge with defaults to prevent undefined values
+        for (var key in defaultLabels) {
+            if (!currentLabels[key]) {
+                currentLabels[key] = defaultLabels[key];
+            }
+        }
+
+        console.log('Current labels with fallbacks:', currentLabels);
 
         // Create detailed WhatsApp message with meal information
         var message = currentLabels.title + '\n\n' +
@@ -1360,10 +1389,10 @@ window.sendWhatsAppSimple = function() {
             @foreach($dietPlan->meals as $meal)
                 @foreach($meal->foods as $food)
                     '{{ $food->id }}': {
-                        'en': {!! json_encode($food->food->name ?? $food->food_name) !!},
-                        'ar': {!! json_encode($food->food->getNameInLanguage("ar") ?? $food->food_name) !!},
-                        'ku_bahdini': {!! json_encode($food->food->getNameInLanguage("ku_bahdini") ?? $food->food_name) !!},
-                        'ku_sorani': {!! json_encode($food->food->getNameInLanguage("ku_sorani") ?? $food->food_name) !!}
+                        'en': {!! json_encode($food->food->name ?? $food->food_name ?? 'Unknown Food') !!},
+                        'ar': {!! json_encode($food->food ? $food->food->getNameInLanguage("ar") : ($food->food_name ?? 'Unknown Food')) !!},
+                        'ku_bahdini': {!! json_encode($food->food ? $food->food->getNameInLanguage("ku_bahdini") : ($food->food_name ?? 'Unknown Food')) !!},
+                        'ku_sorani': {!! json_encode($food->food ? $food->food->getNameInLanguage("ku_sorani") : ($food->food_name ?? 'Unknown Food')) !!}
                     }{{ !$loop->parent->last || !$loop->last ? ',' : '' }}
                 @endforeach
             @endforeach
@@ -1382,13 +1411,14 @@ window.sendWhatsAppSimple = function() {
                 @endphp
                 @if($flexMeals->count() > 0)
                     var mealTypeKey = '{{ $mealType === "snack_1" ? "snack" : $mealType }}';
-                    message += '🍽️ *' + currentLabels[mealTypeKey] + ' ' + currentLabels.options + ':*\n';
+                    var mealTypeName = currentLabels[mealTypeKey] || mealTypeKey.charAt(0).toUpperCase() + mealTypeKey.slice(1);
+                    message += '🍽️ *' + mealTypeName + ' ' + (currentLabels.options || 'Options') + ':*\n';
                     @foreach($flexMeals->sortBy('option_number') as $meal)
-                        message += '\n📋 *' + currentLabels.option + ' {{ $meal->option_number }}:*\n';
+                        message += '\n📋 *' + currentLabels.option + ' {{ $meal->option_number }}:* {{ $meal->meal_name ? addslashes($meal->meal_name) : "" }}\n';
                         @foreach($meal->foods as $mealFood)
                             var foodName = foodTranslations['{{ $mealFood->id }}'] && foodTranslations['{{ $mealFood->id }}'][selectedLang]
                                 ? foodTranslations['{{ $mealFood->id }}'][selectedLang]
-                                : {!! json_encode($mealFood->food_name_display) !!};
+                                : {!! json_encode($mealFood->food_name_display ?? $mealFood->food_name ?? 'Unknown Food') !!};
 
                             @php
                                 $foodItem = $mealFood->food;
@@ -1416,14 +1446,15 @@ window.sendWhatsAppSimple = function() {
             // Regular meal plan format
             @foreach(['breakfast', 'lunch', 'dinner', 'snack_1', 'snack_2', 'snack_3', 'snack'] as $mealType)
                 @if(isset($mealsByType[$mealType]) && $mealsByType[$mealType]->count() > 0)
-                    var mealTypeKey = '{{ $mealTypeLabels[$mealType] ?? 'snack' }}';
-                    message += currentLabels[mealTypeKey] + ':\n';
+                    var mealTypeKey = '{{ $mealTypeLabels[$mealType] ?? $mealType }}';
+                    var mealTypeName = currentLabels[mealTypeKey] || mealTypeKey.charAt(0).toUpperCase() + mealTypeKey.slice(1);
+                    message += mealTypeName + ':\n';
                     @foreach($mealsByType[$mealType] as $meal)
                         @if($meal->foods->count() > 0)
                             @foreach($meal->foods as $food)
                                 var foodName = foodTranslations['{{ $food->id }}'] && foodTranslations['{{ $food->id }}'][selectedLang]
                                     ? foodTranslations['{{ $food->id }}'][selectedLang]
-                                    : {!! json_encode($food->food_name_display) !!};
+                                    : {!! json_encode($food->food_name_display ?? $food->food_name ?? 'Unknown Food') !!};
 
                                 @php
                                     $foodItem = $food->food;
