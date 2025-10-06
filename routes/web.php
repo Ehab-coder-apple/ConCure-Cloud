@@ -845,6 +845,80 @@ if (config('app.debug')) {
         }
     })->name('test.word.export');
 
+}
+
+// Diagnostic routes (always available for debugging)
+Route::get('/debug-word-export/{id}', function($id) {
+    try {
+        // Check if diet plan exists
+        $dietPlan = \App\Models\DietPlan::find($id);
+        if (!$dietPlan) {
+            return response()->json([
+                'error' => 'DietPlan not found',
+                'id' => $id,
+                'available_ids' => \App\Models\DietPlan::pluck('id')->take(10)->toArray()
+            ], 404);
+        }
+
+        // Load relationships
+        $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
+
+        // Test Word service
+        $wordService = new \App\Services\WordDocumentService();
+        $nutritionalTotals = ['calories' => 2000, 'protein' => 100, 'carbs' => 250, 'fat' => 70];
+        $htmlContent = $wordService->generateNutritionPlan($dietPlan, $nutritionalTotals);
+
+        return response()->json([
+            'success' => true,
+            'diet_plan_id' => $dietPlan->id,
+            'plan_number' => $dietPlan->plan_number,
+            'patient_name' => $dietPlan->patient->name ?? 'Unknown',
+            'meals_count' => $dietPlan->meals->count(),
+            'content_length' => strlen($htmlContent),
+            'content_preview' => substr($htmlContent, 0, 200) . '...'
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => explode("\n", $e->getTraceAsString())
+        ], 500);
+    }
+})->name('debug.word.export');
+
+// Check available diet plans
+Route::get('/debug-diet-plans', function() {
+    try {
+        $plans = \App\Models\DietPlan::with(['patient', 'meals'])
+            ->take(20)
+            ->get(['id', 'plan_number', 'patient_id', 'created_at'])
+            ->map(function($plan) {
+                return [
+                    'id' => $plan->id,
+                    'plan_number' => $plan->plan_number,
+                    'patient_name' => $plan->patient->name ?? 'Unknown',
+                    'meals_count' => $plan->meals->count(),
+                    'created_at' => $plan->created_at->format('Y-m-d H:i:s')
+                ];
+            });
+
+        return response()->json([
+            'total_plans' => \App\Models\DietPlan::count(),
+            'sample_plans' => $plans,
+            'app_debug' => config('app.debug'),
+            'app_env' => config('app.env')
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+})->name('debug.diet.plans');
+
+if (config('app.debug')) {
     // Create demo users if they don't exist
     Route::get('/dev/create-demo-users', function () {
         try {
