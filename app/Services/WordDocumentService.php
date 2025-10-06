@@ -302,6 +302,7 @@ class WordDocumentService
                 </div></div>';
             }
         }
+        }
 
         // Add message if no meals found
         $totalMeals = $dietPlan->meals->count();
@@ -354,10 +355,10 @@ class WordDocumentService
         $mealsByType = [];
         $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack_1'];
         $mealTypeNames = [
-            'breakfast' => 'Breakfast Options',
-            'lunch' => 'Lunch Options',
-            'dinner' => 'Dinner Options',
-            'snack_1' => 'Snack Options'
+            'breakfast' => 'Breakfast',
+            'lunch' => 'Lunch',
+            'dinner' => 'Dinner',
+            'snack_1' => 'Snacks'
         ];
 
         // Initialize structure
@@ -366,10 +367,12 @@ class WordDocumentService
         }
 
         // Group existing meals by type and option
-        foreach ($dietPlan->meals->where('is_option_based', true) as $meal) {
-            $mealType = $meal->meal_type;
-            if (in_array($mealType, $mealTypes)) {
-                $mealsByType[$mealType][] = $meal;
+        if ($dietPlan->meals) {
+            foreach ($dietPlan->meals->where('is_option_based', true) as $meal) {
+                $mealType = $meal->meal_type ?? '';
+                if (in_array($mealType, $mealTypes)) {
+                    $mealsByType[$mealType][] = $meal;
+                }
             }
         }
 
@@ -378,11 +381,9 @@ class WordDocumentService
             if (count($mealsByType[$mealType]) > 0) {
                 $html .= '<div class="meal-type-section" style="margin-bottom: 20pt; page-break-inside: avoid;">
                     <h4 style="color: #20B2AA; font-size: 14pt; margin-bottom: 10pt; border-bottom: 1pt solid #20B2AA; padding-bottom: 3pt;">' .
-                    str_replace(' Options', '', $mealTypeNames[$mealType]) . '</h4>';
+                    $mealTypeNames[$mealType] . ' Options</h4>';
 
-                $html .= '<div class="options-container" style="display: table; width: 100%; border-collapse: collapse;">';
-
-                foreach ($mealsByType[$mealType] as $index => $meal) {
+                foreach ($mealsByType[$mealType] as $meal) {
                     $optionCalories = 0;
                     $optionProtein = 0;
                     $optionCarbs = 0;
@@ -390,37 +391,43 @@ class WordDocumentService
 
                     $html .= '<div class="option-box" style="border: 2pt solid #20B2AA; margin-bottom: 10pt; padding: 12pt; background-color: #fff; border-radius: 6pt;">
                         <div class="option-header" style="font-weight: bold; font-size: 12pt; margin-bottom: 8pt; text-align: center; color: #20B2AA; background-color: #f8f9fa; padding: 4pt; border-radius: 2pt;">
-                            Option ' . $meal->option_number . '
+                            Option ' . ($meal->option_number ?? 1) . '
                         </div>';
 
-                    foreach ($meal->foods as $mealFood) {
-                        $food = $mealFood->food;
-                        $quantity = $mealFood->quantity;
+                    if ($meal->foods) {
+                        foreach ($meal->foods as $mealFood) {
+                            $food = $mealFood->food;
+                            $quantity = $mealFood->quantity ?? 0;
 
-                        if ($food) {
-                            $calories = ($food->calories * $quantity) / 100;
-                            $protein = ($food->protein * $quantity) / 100;
-                            $carbs = ($food->carbohydrates * $quantity) / 100;
-                            $fat = ($food->fat * $quantity) / 100;
+                            if ($food && $quantity > 0) {
+                                $calories = ($food->calories * $quantity) / 100;
+                                $protein = ($food->protein * $quantity) / 100;
+                                $carbs = ($food->carbohydrates * $quantity) / 100;
+                                $fat = ($food->fat * $quantity) / 100;
 
-                            $optionCalories += $calories;
-                            $optionProtein += $protein;
-                            $optionCarbs += $carbs;
-                            $optionFat += $fat;
+                                $optionCalories += $calories;
+                                $optionProtein += $protein;
+                                $optionCarbs += $carbs;
+                                $optionFat += $fat;
+                            }
+
+                            // Use translated food name
+                            $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
+
+                            $html .= '<div class="food-item" style="margin-bottom: 6px; font-size: 11px; line-height: 1.4; padding: 6px 8px; background-color: #fafafa; border-left: 3px solid #20B2AA; border-radius: 3px;">
+                                <div class="food-name kurdish" style="font-weight: bold; color: #2c3e50;">' . htmlspecialchars($foodName) . '</div>
+                                <div class="food-details" style="color: #666; font-size: 10px;">
+                                    ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit ?? 'g') . '
+                                </div>';
+
+                            if ($food && $quantity > 0) {
+                                $html .= '<div class="nutritional-info" style="color: #20B2AA; font-size: 9px; margin-top: 2px;">
+                                    ' . number_format($calories, 0) . ' cal | ' . number_format($protein, 1) . 'g protein | ' . number_format($carbs, 1) . 'g carbs | ' . number_format($fat, 1) . 'g fat
+                                </div>';
+                            }
+
+                            $html .= '</div>';
                         }
-
-                        // Use translated food name from mealFood (set by controller), fallback to display name or original name
-                        $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
-
-                        $html .= '<div class="food-item">
-                            <div class="food-name kurdish">' . htmlspecialchars($foodName) . '</div>
-                            <div class="food-details">
-                                ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . '
-                            </div>
-                            <div class="nutritional-info">
-                                ' . number_format($calories, 0) . ' cal | ' . number_format($protein, 1) . 'g protein | ' . number_format($carbs, 1) . 'g carbs | ' . number_format($fat, 1) . 'g fat
-                            </div>
-                        </div>';
                     }
 
                     if ($optionCalories > 0) {
@@ -432,7 +439,6 @@ class WordDocumentService
                     $html .= '</div>'; // Close option-box
                 }
 
-                $html .= '</div>'; // Close options-container
                 $html .= '</div>'; // Close meal-type-section
             }
         }
