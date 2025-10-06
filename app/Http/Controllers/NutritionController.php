@@ -782,6 +782,26 @@ class NutritionController extends Controller
         $outputLang = request()->query('lang');
         $supportedOutputLangs = array_keys(Food::getSupportedLanguages());
 
+        // Diagnostics: quick environment check if requested
+        if (request()->query('diag') === 'true') {
+            $amiriPath = storage_path('fonts/amiri-regular.ttf');
+            $vendorAmiri = base_path('vendor/khaled.alshamaa/ar-php/examples/fonts/Amiri-Regular.ttf');
+            return response()->json([
+                'diag' => true,
+                'arphp_installed' => class_exists('\\ArPHP\\I18N\\Arabic'),
+                'intl_extension' => function_exists('normalizer_normalize'),
+                'amiri_in_storage' => file_exists($amiriPath),
+                'amiri_in_vendor' => file_exists($vendorAmiri),
+                'amiri_storage_path' => $amiriPath,
+                'vendor_amiri_path' => $vendorAmiri,
+                'requested_lang' => $outputLang,
+                'server' => [
+                    'php_version' => PHP_VERSION,
+                    'app_env' => config('app.env'),
+                ],
+            ]);
+        }
+
         // Debug logging
         \Log::info('PDF Export Debug', [
             'requested_lang' => $outputLang,
