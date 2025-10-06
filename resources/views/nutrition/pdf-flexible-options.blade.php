@@ -37,7 +37,7 @@
         .rtl {
             direction: rtl;
             text-align: right;
-            unicode-bidi: embed;
+            unicode-bidi: bidi-override;
             font-family: "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "dejavu sans", serif;
         }
 
@@ -46,12 +46,12 @@
             font-family: "AmiriWeb", "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "dejavu sans", serif;
             direction: rtl;
             text-align: right;
-            unicode-bidi: embed;
+            unicode-bidi: bidi-override;
             font-size: 12px;
             line-height: 1.4;
             font-weight: normal;
-            letter-spacing: -0.3px;
-            word-spacing: 1px;
+            letter-spacing: 0;
+            word-spacing: 0.5px;
         }
 
         /* Header */

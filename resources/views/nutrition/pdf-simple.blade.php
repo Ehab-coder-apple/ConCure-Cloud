@@ -36,7 +36,7 @@
         .rtl {
             direction: rtl;
             text-align: right;
-            unicode-bidi: embed;
+            unicode-bidi: bidi-override;
             font-family: "AmiriWeb", "Amiri-Regular", "amiri-regular", "Amiri", "Noto Sans Arabic", "dejavu sans", serif;
         }
 
