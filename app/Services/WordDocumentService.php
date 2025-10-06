@@ -211,13 +211,20 @@ class WordDocumentService
             <strong>Doctor:</strong> ' . htmlspecialchars($dietPlan->doctor->name) . '
         </div>';
 
-        // Group meals by day and organize properly
-        $mealsByDay = $dietPlan->meals->groupBy('day_number')->sortKeys();
+        // Check if this is a flexible meal plan (option-based)
+        $isFlexiblePlan = $dietPlan->meals()->where('is_option_based', true)->exists();
 
-        // Check if we have valid day numbers (greater than 0)
-        $hasValidDays = $mealsByDay->keys()->filter(function($day) { return $day > 0; })->count() > 0;
+        if ($isFlexiblePlan) {
+            // Handle flexible meal plan with options
+            $html .= $this->generateFlexibleMealPlanHtml($dietPlan);
+        } else {
+            // Group meals by day and organize properly
+            $mealsByDay = $dietPlan->meals->groupBy('day_number')->sortKeys();
 
-        if ($hasValidDays && $mealsByDay->count() > 0) {
+            // Check if we have valid day numbers (greater than 0)
+            $hasValidDays = $mealsByDay->keys()->filter(function($day) { return $day > 0; })->count() > 0;
+
+            if ($hasValidDays && $mealsByDay->count() > 0) {
             foreach ($mealsByDay as $dayNumber => $dayMeals) {
                 // Skip day 0 or invalid days
                 if ($dayNumber < 1) {
@@ -294,63 +301,6 @@ class WordDocumentService
                     Day ' . $dayNumber . ' Total: ' . number_format($dayTotalCalories, 0) . ' calories
                 </div></div>';
             }
-        } else {
-            // Fallback: try to organize meals without day grouping
-            $mealTypeGroups = [
-                'breakfast' => ['breakfast'],
-                'lunch' => ['lunch'],
-                'dinner' => ['dinner'],
-                'snacks' => ['snack', 'snack_1', 'snack_2', 'snack_3']
-            ];
-
-            foreach ($mealTypeGroups as $displayName => $mealTypes) {
-                $meals = $dietPlan->meals->whereIn('meal_type', $mealTypes);
-
-                if ($meals->count() > 0) {
-                    $html .= '<div class="meal-section">
-                        <div class="meal-header">' . ucfirst($displayName) . '</div>';
-
-                    $mealCalories = 0;
-
-                    foreach ($meals as $meal) {
-                        foreach ($meal->foods as $mealFood) {
-                            $food = $mealFood->food;
-                            $quantity = $mealFood->quantity;
-
-                            if ($food) {
-                                $calories = ($food->calories * $quantity) / 100;
-                                $protein = ($food->protein * $quantity) / 100;
-                                $carbs = ($food->carbohydrates * $quantity) / 100;
-                                $fat = ($food->fat * $quantity) / 100;
-                            } else {
-                                $calories = 0;
-                                $protein = 0;
-                                $carbs = 0;
-                                $fat = 0;
-                            }
-
-                            $mealCalories += $calories;
-
-                            // Use translated food name from mealFood (set by controller), fallback to display name or original name
-                            $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
-
-                            $html .= '<div class="food-item">
-                                <div class="food-name kurdish">' . htmlspecialchars($foodName) . '</div>
-                                <div class="food-details">
-                                    ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . '
-                                </div>
-                                <div class="nutritional-info">
-                                    ' . number_format($calories, 0) . ' cal | ' . number_format($protein, 1) . 'g protein | ' . number_format($carbs, 1) . 'g carbs | ' . number_format($fat, 1) . 'g fat
-                                </div>
-                            </div>';
-                        }
-                    }
-
-                    $html .= '<div class="meal-total">
-                        Total: ' . number_format($mealCalories, 0) . ' calories
-                    </div></div>';
-                }
-            }
         }
 
         // Add message if no meals found
@@ -388,6 +338,115 @@ class WordDocumentService
         </div>';
 
         $html .= '</body></html>';
+
+        return $html;
+    }
+
+    /**
+     * Generate HTML for flexible meal plan with options
+     */
+    private function generateFlexibleMealPlanHtml($dietPlan)
+    {
+        $html = '<div class="flexible-plan">
+            <h3 style="color: #2c3e50; border-bottom: 2px solid #20B2AA; padding-bottom: 5pt; margin-top: 20pt;">Flexible Meal Plan - Choose One Option from Each Meal</h3>';
+
+        // Group meals by meal type and option
+        $mealsByType = [];
+        $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack_1'];
+        $mealTypeNames = [
+            'breakfast' => 'Breakfast Options',
+            'lunch' => 'Lunch Options',
+            'dinner' => 'Dinner Options',
+            'snack_1' => 'Snack Options'
+        ];
+
+        // Initialize structure
+        foreach ($mealTypes as $mealType) {
+            $mealsByType[$mealType] = [];
+        }
+
+        // Group existing meals by type and option
+        foreach ($dietPlan->meals->where('is_option_based', true) as $meal) {
+            $mealType = $meal->meal_type;
+            if (in_array($mealType, $mealTypes)) {
+                $mealsByType[$mealType][] = $meal;
+            }
+        }
+
+        // Render each meal type with its options
+        foreach ($mealTypes as $mealType) {
+            if (count($mealsByType[$mealType]) > 0) {
+                $html .= '<div class="meal-type-section" style="margin-bottom: 20pt; page-break-inside: avoid;">
+                    <h4 style="color: #20B2AA; font-size: 14pt; margin-bottom: 10pt; border-bottom: 1pt solid #20B2AA; padding-bottom: 3pt;">' .
+                    str_replace(' Options', '', $mealTypeNames[$mealType]) . '</h4>';
+
+                $html .= '<div class="options-container" style="display: table; width: 100%; border-collapse: collapse;">';
+
+                foreach ($mealsByType[$mealType] as $index => $meal) {
+                    $optionCalories = 0;
+                    $optionProtein = 0;
+                    $optionCarbs = 0;
+                    $optionFat = 0;
+
+                    $html .= '<div class="option-box" style="border: 2pt solid #20B2AA; margin-bottom: 10pt; padding: 12pt; background-color: #fff; border-radius: 6pt;">
+                        <div class="option-header" style="font-weight: bold; font-size: 12pt; margin-bottom: 8pt; text-align: center; color: #20B2AA; background-color: #f8f9fa; padding: 4pt; border-radius: 2pt;">
+                            Option ' . $meal->option_number . '
+                        </div>';
+
+                    foreach ($meal->foods as $mealFood) {
+                        $food = $mealFood->food;
+                        $quantity = $mealFood->quantity;
+
+                        if ($food) {
+                            $calories = ($food->calories * $quantity) / 100;
+                            $protein = ($food->protein * $quantity) / 100;
+                            $carbs = ($food->carbohydrates * $quantity) / 100;
+                            $fat = ($food->fat * $quantity) / 100;
+
+                            $optionCalories += $calories;
+                            $optionProtein += $protein;
+                            $optionCarbs += $carbs;
+                            $optionFat += $fat;
+                        }
+
+                        // Use translated food name from mealFood (set by controller), fallback to display name or original name
+                        $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
+
+                        $html .= '<div class="food-item">
+                            <div class="food-name kurdish">' . htmlspecialchars($foodName) . '</div>
+                            <div class="food-details">
+                                ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . '
+                            </div>
+                            <div class="nutritional-info">
+                                ' . number_format($calories, 0) . ' cal | ' . number_format($protein, 1) . 'g protein | ' . number_format($carbs, 1) . 'g carbs | ' . number_format($fat, 1) . 'g fat
+                            </div>
+                        </div>';
+                    }
+
+                    if ($optionCalories > 0) {
+                        $html .= '<div class="option-summary" style="margin-top: 10pt; padding: 6pt 8pt; font-size: 10pt; color: #fff; text-align: center; background: linear-gradient(135deg, #20B2AA, #17a2b8); border-radius: 4pt; font-weight: 600;">
+                            Total: ' . number_format($optionCalories, 0) . ' cal | ' . number_format($optionProtein, 1) . 'g protein | ' . number_format($optionCarbs, 1) . 'g carbs | ' . number_format($optionFat, 1) . 'g fat
+                        </div>';
+                    }
+
+                    $html .= '</div>'; // Close option-box
+                }
+
+                $html .= '</div>'; // Close options-container
+                $html .= '</div>'; // Close meal-type-section
+            }
+        }
+
+        $html .= '<div class="instructions-section" style="margin-top: 15pt; padding: 10pt; border: 1pt solid #20B2AA; background-color: #f0f8ff; border-radius: 6pt;">
+            <div class="instructions-title" style="color: #20B2AA; font-weight: bold; font-size: 11pt; margin-bottom: 6pt; text-align: center;">
+                Instructions
+            </div>
+            <div class="instructions-content" style="font-size: 9pt; line-height: 1.4;">
+                Choose one option from each meal type for each day. You can mix and match different options throughout the week for variety!
+            </div>
+        </div>';
+
+        $html .= '</div>'; // Close flexible-plan
 
         return $html;
     }

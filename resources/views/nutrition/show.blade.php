@@ -1239,6 +1239,11 @@ window.sendWhatsAppSimple = function() {
                 calories: '🔥 Calories:',
                 protein: '🥩 Protein:',
                 carbs: '🍞 Carbs:',
+                options: 'Options',
+                option: 'Option',
+                instructions: 'Instructions',
+                chooseOne: 'Choose one option from each meal type for each day. You can mix and match different options throughout the week for variety!',
+                flexibleIntro: 'Flexible Meal Plan - Choose one option from each meal:',
                 fat: '🥑 Fat:',
                 instructions: '💡 *Instructions:*',
                 instructionText: 'Follow this personalized nutrition plan as prescribed by your doctor. For any questions or concerns, please contact your healthcare provider.',
@@ -1364,39 +1369,84 @@ window.sendWhatsAppSimple = function() {
             @endforeach
         };
 
-        // Add meals by type
-        @foreach(['breakfast', 'lunch', 'dinner', 'snack_1', 'snack_2', 'snack_3', 'snack'] as $mealType)
-            @if(isset($mealsByType[$mealType]) && $mealsByType[$mealType]->count() > 0)
-                var mealTypeKey = '{{ $mealTypeLabels[$mealType] ?? 'snack' }}';
-                message += currentLabels[mealTypeKey] + ':\n';
-                @foreach($mealsByType[$mealType] as $meal)
-                    @if($meal->foods->count() > 0)
-                        @foreach($meal->foods as $food)
-                            var foodName = foodTranslations['{{ $food->id }}'] && foodTranslations['{{ $food->id }}'][selectedLang]
-                                ? foodTranslations['{{ $food->id }}'][selectedLang]
-                                : {!! json_encode($food->food_name_display) !!};
+        // Check if this is a flexible meal plan
+        var isFlexiblePlan = {{ $dietPlan->meals()->where('is_option_based', true)->exists() ? 'true' : 'false' }};
+
+        if (isFlexiblePlan) {
+            // Flexible meal plan format with options
+            message += '\n🔄 ' + currentLabels.flexibleIntro + '\n\n';
+
+            @foreach(['breakfast', 'lunch', 'dinner', 'snack_1'] as $mealType)
+                @php
+                    $flexMeals = $dietPlan->meals->where('is_option_based', true)->where('meal_type', $mealType);
+                @endphp
+                @if($flexMeals->count() > 0)
+                    var mealTypeKey = '{{ $mealType === "snack_1" ? "snack" : $mealType }}';
+                    message += '🍽️ *' + currentLabels[mealTypeKey] + ' ' + currentLabels.options + ':*\n';
+                    @foreach($flexMeals->sortBy('option_number') as $meal)
+                        message += '\n📋 *' + currentLabels.option + ' {{ $meal->option_number }}:*\n';
+                        @foreach($meal->foods as $mealFood)
+                            var foodName = foodTranslations['{{ $mealFood->id }}'] && foodTranslations['{{ $mealFood->id }}'][selectedLang]
+                                ? foodTranslations['{{ $mealFood->id }}'][selectedLang]
+                                : {!! json_encode($mealFood->food_name_display) !!};
 
                             @php
-                                $foodItem = $food->food;
-                                $quantity = $food->quantity;
+                                $foodItem = $mealFood->food;
+                                $quantity = $mealFood->quantity;
                                 $calories = $foodItem && $quantity ? ($foodItem->calories * $quantity) / 100 : 0;
                                 $protein = $foodItem && $quantity ? ($foodItem->protein * $quantity) / 100 : 0;
                                 $carbs = $foodItem && $quantity ? ($foodItem->carbohydrates * $quantity) / 100 : 0;
                                 $fat = $foodItem && $quantity ? ($foodItem->fat * $quantity) / 100 : 0;
                             @endphp
 
-                            message += '🍽️ ' + foodName + '\n';
-                            message += '   📏 {{ $food->quantity }}{{ $food->unit }}\n';
+                            message += '  🍽️ ' + foodName + '\n';
+                            message += '     📏 {{ $mealFood->quantity }}{{ $mealFood->unit }}\n';
                             @if($calories > 0)
-                            message += '   📊 {{ number_format($calories, 0) }} cal | {{ number_format($protein, 1) }}g protein | {{ number_format($carbs, 1) }}g carbs | {{ number_format($fat, 1) }}g fat\n';
+                            message += '     📊 {{ number_format($calories, 0) }} cal | {{ number_format($protein, 1) }}g protein | {{ number_format($carbs, 1) }}g carbs | {{ number_format($fat, 1) }}g fat\n';
                             @endif
-                            message += '\n';
                         @endforeach
-                    @endif
-                @endforeach
-                message += '\n';
-            @endif
-        @endforeach
+                        message += '\n';
+                    @endforeach
+                    message += '\n';
+                @endif
+            @endforeach
+
+            message += '💡 *' + currentLabels.instructions + ':* ' + currentLabels.chooseOne + '\n\n';
+        } else {
+            // Regular meal plan format
+            @foreach(['breakfast', 'lunch', 'dinner', 'snack_1', 'snack_2', 'snack_3', 'snack'] as $mealType)
+                @if(isset($mealsByType[$mealType]) && $mealsByType[$mealType]->count() > 0)
+                    var mealTypeKey = '{{ $mealTypeLabels[$mealType] ?? 'snack' }}';
+                    message += currentLabels[mealTypeKey] + ':\n';
+                    @foreach($mealsByType[$mealType] as $meal)
+                        @if($meal->foods->count() > 0)
+                            @foreach($meal->foods as $food)
+                                var foodName = foodTranslations['{{ $food->id }}'] && foodTranslations['{{ $food->id }}'][selectedLang]
+                                    ? foodTranslations['{{ $food->id }}'][selectedLang]
+                                    : {!! json_encode($food->food_name_display) !!};
+
+                                @php
+                                    $foodItem = $food->food;
+                                    $quantity = $food->quantity;
+                                    $calories = $foodItem && $quantity ? ($foodItem->calories * $quantity) / 100 : 0;
+                                    $protein = $foodItem && $quantity ? ($foodItem->protein * $quantity) / 100 : 0;
+                                    $carbs = $foodItem && $quantity ? ($foodItem->carbohydrates * $quantity) / 100 : 0;
+                                    $fat = $foodItem && $quantity ? ($foodItem->fat * $quantity) / 100 : 0;
+                                @endphp
+
+                                message += '🍽️ ' + foodName + '\n';
+                                message += '   📏 {{ $food->quantity }}{{ $food->unit }}\n';
+                                @if($calories > 0)
+                                message += '   📊 {{ number_format($calories, 0) }} cal | {{ number_format($protein, 1) }}g protein | {{ number_format($carbs, 1) }}g carbs | {{ number_format($fat, 1) }}g fat\n';
+                                @endif
+                                message += '\n';
+                            @endforeach
+                        @endif
+                    @endforeach
+                    message += '\n';
+                @endif
+            @endforeach
+        }
 
         // Add nutritional targets if available
         @if($dietPlan->target_calories)
