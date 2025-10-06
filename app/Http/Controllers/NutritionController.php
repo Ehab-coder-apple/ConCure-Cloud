@@ -846,18 +846,11 @@ class NutritionController extends Controller
 
         $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
 
-        // Use font loader for proper Arabic/Kurdish font support
-        $fontLoader = new DomPdfFontLoader();
-        $fontLoader->loadFonts();
-
         // Determine if Arabic output language is requested
         $isArabicOutput = ($outputLang === 'ar');
 
-        // Process Arabic/Kurdish text with glyph shaping so letters connect in DomPDF
-        $this->processArabicLikeTextWithShaping($dietPlan, $isArabicOutput);
-
-        // Create configured DomPDF instance
-        $dompdf = $fontLoader->createConfiguredDomPdf();
+        // IMPORTANT: With mPDF we do NOT pre-shape Arabic; mPDF handles shaping/RTL internally
+        // $this->processArabicLikeTextWithShaping($dietPlan, $isArabicOutput);
 
         // Check if this is a flexible meal plan (option-based)
         $isFlexiblePlan = $dietPlan->meals()->where('is_option_based', true)->exists();
@@ -872,12 +865,38 @@ class NutritionController extends Controller
             'isArabicOutput' => $isArabicOutput,
         ])->render();
 
-        // Load and render PDF
-        $dompdf->loadHtml($html, 'UTF-8');
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
+        // Create mPDF instance with Arabic/RTL support
+        $tempDir = storage_path('mpdf/temp');
+        if (!is_dir($tempDir)) { @mkdir($tempDir, 0755, true); }
 
-        return response($dompdf->output(), 200, [
+        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        $fontDirs = $defaultConfig['fontDir'];
+        $fontDirs[] = storage_path('fonts');
+
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
+        $fontData['amiri'] = [ 'R' => 'amiri-regular.ttf' ];
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'tempDir' => $tempDir,
+            'fontDir' => $fontDirs,
+            'fontdata' => $fontData,
+            'default_font' => file_exists(storage_path('fonts/amiri-regular.ttf')) ? 'amiri' : 'dejavusans',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
+        ]);
+
+        if ($isArabicOutput) {
+            $mpdf->SetDirectionality('rtl');
+        }
+
+        // Write HTML and output
+        $mpdf->WriteHTML($html);
+        $pdfContent = $mpdf->Output('', 'S');
+
+        return response($pdfContent, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="nutrition-plan-' . $dietPlan->plan_number . '.pdf"'
         ]);
