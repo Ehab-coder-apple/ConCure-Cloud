@@ -847,6 +847,17 @@ if (config('app.debug')) {
 
 }
 
+// Simple connectivity test
+Route::get('/test-connection', function() {
+    return response()->json([
+        'status' => 'connected',
+        'timestamp' => now()->toDateTimeString(),
+        'app_env' => config('app.env'),
+        'app_debug' => config('app.debug'),
+        'database_connection' => 'testing...'
+    ]);
+});
+
 // Diagnostic routes (always available for debugging)
 Route::get('/debug-word-export/{id}', function($id) {
     try {

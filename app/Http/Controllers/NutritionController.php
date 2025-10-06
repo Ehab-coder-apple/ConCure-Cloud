@@ -846,6 +846,40 @@ class NutritionController extends Controller
      */
     public function downloadWord(DietPlan $dietPlan)
     {
+        // Debug mode - return diagnostic info instead of download
+        if (request()->query('debug') === 'true') {
+            try {
+                $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
+
+                $wordService = new WordDocumentService();
+                $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
+                $htmlContent = $wordService->generateNutritionPlan($dietPlan, $nutritionalTotals);
+
+                return response()->json([
+                    'success' => true,
+                    'diet_plan_id' => $dietPlan->id,
+                    'plan_number' => $dietPlan->plan_number,
+                    'patient_name' => $dietPlan->patient->name ?? 'Unknown',
+                    'doctor_name' => $dietPlan->doctor->name ?? 'Unknown',
+                    'meals_count' => $dietPlan->meals->count(),
+                    'content_length' => strlen($htmlContent),
+                    'content_preview' => substr($htmlContent, 0, 300) . '...',
+                    'is_flexible_plan' => $dietPlan->meals()->where('is_option_based', true)->exists(),
+                    'language_requested' => request()->query('lang'),
+                    'user_id' => Auth::id(),
+                    'clinic_id' => Auth::user()->clinic_id ?? 'unknown'
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'diet_plan_id' => $dietPlan->id,
+                    'trace' => explode("\n", $e->getTraceAsString())
+                ], 500);
+            }
+        }
+
         try {
             $user = Auth::user();
 
