@@ -490,6 +490,21 @@ class NutritionController extends Controller
      */
     public function show(DietPlan $dietPlan)
     {
+        // Debug mode for troubleshooting
+        if (request()->query('debug') === 'connection') {
+            return response()->json([
+                'status' => 'connected',
+                'timestamp' => now()->toDateTimeString(),
+                'app_env' => config('app.env'),
+                'app_debug' => config('app.debug'),
+                'diet_plan_id' => $dietPlan->id,
+                'plan_number' => $dietPlan->plan_number,
+                'route_working' => true,
+                'user_authenticated' => Auth::check(),
+                'user_id' => Auth::id()
+            ]);
+        }
+
         $user = Auth::user();
 
         // Ensure related patient exists and user has access
