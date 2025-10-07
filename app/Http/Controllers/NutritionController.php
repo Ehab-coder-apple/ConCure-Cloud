@@ -965,6 +965,10 @@ class NutritionController extends Controller
 
         // Choose mPDF-friendly template (simple tables, safe CSS)
         $template = $isFlexiblePlan ? 'nutrition.pdf-mpdf-flexible' : 'nutrition.pdf-mpdf-simple';
+        // Arabic output: force the simplest template to avoid any viewer blanking issues
+        if ($isArabicOutput) {
+            $template = 'nutrition.pdf-mpdf-simple';
+        }
 
         // Generate HTML content with appropriate template
         $html = view($template, [
