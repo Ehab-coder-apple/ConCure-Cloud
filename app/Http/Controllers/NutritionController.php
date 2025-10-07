@@ -825,6 +825,31 @@ class NutritionController extends Controller
                 'Content-Disposition' => 'inline; filename="mpdf-test.pdf"'
             ]);
         }
+        // Save-to-file test to check temp/fonts/permissions
+        if (request()->query('mpdf_save') === '1') {
+            $tempDir = storage_path('mpdf/temp');
+            if (!is_dir($tempDir)) { @mkdir($tempDir, 0755, true); }
+            $outPath = storage_path('app/public/mpdf-test.pdf');
+            @mkdir(dirname($outPath), 0755, true);
+            $mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'tempDir' => $tempDir,
+                'default_font' => 'dejavusans',
+                'autoScriptToLang' => true,
+                'autoLangToFont' => true,
+            ]);
+            $mpdf->WriteHTML('<div style="font-family: DejaVu Sans; font-size: 18pt;">Hello mPDF save test</div>');
+            $mpdf->Output($outPath, 'F');
+            $info = [
+                'temp_writable' => is_writable($tempDir),
+                'out_exists' => file_exists($outPath),
+                'out_size' => file_exists($outPath) ? filesize($outPath) : 0,
+                'out_path' => $outPath,
+            ];
+            return response()->json($info);
+        }
+
 
 
         // Debug logging
