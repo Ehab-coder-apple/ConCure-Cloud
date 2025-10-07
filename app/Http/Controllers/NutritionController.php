@@ -878,6 +878,50 @@ class NutritionController extends Controller
                     if ($mealFood->food) {
                         $translated = $mealFood->food->getNameInLanguage($outputLang);
                         if (!empty($translated)) {
+        // Render a minimal/simple HTML version to rule out template/CSS issues
+        if (request()->query('mpdf_simple') === '1') {
+            $isArabicOutput = (request()->query('lang') === 'ar');
+            $dir = $isArabicOutput ? 'rtl' : 'ltr';
+            $simple = '<!doctype html><html><head><meta charset="utf-8"><style>body{font-family: DejaVu Sans, Amiri; font-size:12pt;}</style></head><body dir="' . $dir . '">';
+            $simple .= '<h2 style="margin:0 0 10px">Nutrition Plan #' . e($dietPlan->plan_number) . '</h2>';
+            if ($dietPlan->patient && $dietPlan->patient->name) {
+                $simple .= '<div style="margin:0 0 10px">' . e($dietPlan->patient->name) . '</div>';
+            }
+            foreach ($dietPlan->meals as $meal) {
+                $simple .= '<div style="margin:12px 0; page-break-inside: avoid;">';
+                $simple .= '<div style="font-weight:bold; font-size:14pt; margin-bottom:6px;">' . e($meal->meal_name ?? ucfirst($meal->meal_type)) . '</div>';
+                $simple .= '<ul style="margin:0; padding-' . ($dir==='rtl'?'right':'left') . ':16px;">';
+                foreach ($meal->foods as $mf) {
+                    $line = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity ?? '') . ' ' . ($mf->unit ?? ''));
+                    if ($line === '') { continue; }
+                    $simple .= '<li style="margin:2px 0">' . e($line) . '</li>';
+                }
+                $simple .= '</ul></div>';
+            }
+            $simple .= '</body></html>';
+
+            $tempDir = storage_path('mpdf/temp');
+            if (!is_dir($tempDir)) { @mkdir($tempDir, 0755, true); }
+            $mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'tempDir' => $tempDir,
+                'default_font' => file_exists(storage_path('fonts/amiri-regular.ttf')) ? 'amiri' : 'dejavusans',
+                'autoScriptToLang' => true,
+                'autoLangToFont' => true,
+            ]);
+            if ($isArabicOutput) { $mpdf->SetDirectionality('rtl'); }
+            $mpdf->WriteHTML($simple);
+            $outDir = storage_path('app/tmp'); if (!is_dir($outDir)) { @mkdir($outDir, 0755, true); }
+            $outPath = $outDir . '/nutrition-simple-' . ($dietPlan->plan_number) . '-' . time() . '.pdf';
+            $mpdf->Output($outPath, 'F');
+            return response()->file($outPath, [
+                'Content-Type' => 'application/pdf',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+            ]);
+        }
+
                             $mealFood->food_name = $translated;
                         }
                     }
