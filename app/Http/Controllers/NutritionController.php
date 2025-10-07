@@ -845,6 +845,13 @@ class NutritionController extends Controller
             ]);
             $mpdf->WriteHTML('<div style="font-family: DejaVu Sans; font-size: 18pt;">Hello mPDF save test</div>');
             $mpdf->Output($outPath, 'F');
+            if (request()->query('stream') === '1') {
+                return response()->file($outPath, [
+                    'Content-Type' => 'application/pdf',
+                    'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                    'Pragma' => 'no-cache',
+                ]);
+            }
             $info = [
                 'temp_writable' => is_writable($tempDir),
                 'out_exists' => file_exists($outPath),
