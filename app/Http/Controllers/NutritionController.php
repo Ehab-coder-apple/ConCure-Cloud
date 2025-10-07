@@ -968,8 +968,8 @@ class NutritionController extends Controller
         // Check if this is a flexible meal plan (option-based)
         $isFlexiblePlan = $dietPlan->meals()->where('is_option_based', true)->exists();
 
-        // Choose appropriate template
-        $template = $isFlexiblePlan ? 'nutrition.pdf-flexible-options' : 'nutrition.pdf-simple';
+        // Choose mPDF-friendly template (simple tables, safe CSS)
+        $template = $isFlexiblePlan ? 'nutrition.pdf-mpdf-flexible' : 'nutrition.pdf-mpdf-simple';
 
         // Generate HTML content with appropriate template
         $html = view($template, [
@@ -1005,14 +1005,14 @@ class NutritionController extends Controller
             $mpdf->SetDirectionality('rtl');
         }
 
-        // Write HTML and save to file, then stream file (avoids host output buffering issues)
+        // Write HTML and save to file, then stream inline (consistent with working diagnostics)
         $mpdf->WriteHTML($html);
         $outDir = storage_path('app/tmp');
         if (!is_dir($outDir)) { @mkdir($outDir, 0755, true); }
         $outPath = $outDir . '/nutrition-plan-' . $dietPlan->plan_number . '-' . time() . '.pdf';
         $mpdf->Output($outPath, 'F');
 
-        return response()->download($outPath, 'nutrition-plan-' . $dietPlan->plan_number . '.pdf', [
+        return response()->file($outPath, [
             'Content-Type' => 'application/pdf',
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
             'Pragma' => 'no-cache',
