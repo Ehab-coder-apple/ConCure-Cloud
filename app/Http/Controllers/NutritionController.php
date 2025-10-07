@@ -969,8 +969,8 @@ class NutritionController extends Controller
             $html = '<!doctype html><html><head><meta charset="utf-8">'
                   . '<style>body{font-family: DejaVu Sans, Amiri; font-size:12pt; direction:rtl;}'
                   . 'h2{margin:0 0 10px; text-align:center} ul{margin:0; padding-right:16px;} li{margin:2px 0}'
-                  . '.meal{margin:14px 0; page-break-inside: avoid;} .title{font-weight:bold; font-size:14pt; margin-bottom:6px;}'
-                  . '.opt{color:#20B2AA; font-weight:bold; margin:4px 0 6px 0;}'
+                  . '.meal{margin:14px 0; page-break-inside: avoid;} .title{font-weight:bold; font-size:14pt; margin-bottom:6px; display:inline-block;}'
+                  . '.opt{color:#20B2AA; font-weight:bold; display:inline-block; margin:0 8px 0 0;}'
                   . '</style></head><body dir="' . $dir . '">';
             $html .= '<h2>Nutrition Plan #' . e($dietPlan->plan_number) . '</h2>';
             if ($dietPlan->patient && $dietPlan->patient->name) {
@@ -1013,8 +1013,9 @@ class NutritionController extends Controller
                 } else { $label = ucfirst($type); }
 
                 $html .= '<div class="meal">';
-                $html .= '<div class="title">' . e($label) . '</div>';
-                if (!empty($g['option'])) { $html .= '<div class="opt">الخيار ' . e($g['option']) . '</div>'; }
+                $titleText = $label;
+                if (!empty($g['option'])) { $titleText .= ' — ' . 'الخيار ' . e($g['option']); }
+                $html .= '<div class="title">' . e($titleText) . '</div>';
                 $html .= '<ul>';
                 foreach ($g['meals'] as $meal) {
                     foreach ($meal->foods as $mf) {
