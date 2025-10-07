@@ -963,29 +963,55 @@ class NutritionController extends Controller
         // Check if this is a flexible meal plan (option-based)
         $isFlexiblePlan = $dietPlan->meals()->where('is_option_based', true)->exists();
 
-        // For Arabic output, build the same ultra-simple HTML used in mpdf_simple (bypasses Blade entirely)
+        // For Arabic output, build grouped simple HTML with meal type headers and options (bypasses Blade)
         if ($isArabicOutput) {
             $dir = 'rtl';
             $html = '<!doctype html><html><head><meta charset="utf-8">'
                   . '<style>body{font-family: DejaVu Sans, Amiri; font-size:12pt; direction:rtl;}'
-                  . 'h2{margin:0 0 10px} ul{margin:0; padding-right:16px;} li{margin:2px 0}'
-                  . '.meal{margin:12px 0; page-break-inside: avoid;} .title{font-weight:bold; font-size:14pt; margin-bottom:6px;}'
+                  . 'h2{margin:0 0 10px; text-align:center} ul{margin:0; padding-right:16px;} li{margin:2px 0}'
+                  . '.meal{margin:14px 0; page-break-inside: avoid;} .title{font-weight:bold; font-size:14pt; margin-bottom:6px;}'
+                  . '.opt{color:#20B2AA; font-weight:bold; margin:4px 0 6px 0;}'
                   . '</style></head><body dir="' . $dir . '">';
             $html .= '<h2>Nutrition Plan #' . e($dietPlan->plan_number) . '</h2>';
             if ($dietPlan->patient && $dietPlan->patient->name) {
-                $html .= '<div style="margin:0 0 10px">' . e($dietPlan->patient->name) . '</div>';
+                $html .= '<div style="margin:0 0 10px; text-align:center">' . e($dietPlan->patient->name) . '</div>';
             }
-            foreach ($dietPlan->meals as $meal) {
+
+            // Group meals by type and option number (if provided)
+            $groups = [];
+            foreach ($dietPlan->meals as $m) {
+                $type = $m->meal_type ?? 'meal';
+                $opt  = (property_exists($m, 'option_number') && $m->option_number) ? $m->option_number : ($m->option ?? null);
+                $key  = $type . '|' . ($opt ?? '1');
+                if (!isset($groups[$key])) { $groups[$key] = ['type' => $type, 'option' => $opt, 'meals' => []]; }
+                $groups[$key]['meals'][] = $m;
+            }
+
+            foreach ($groups as $g) {
+                $type = $g['type'] ?? 'meal';
+                $label = $type;
+                if ($type === 'breakfast') { $label = 'الفطور'; }
+                elseif ($type === 'lunch') { $label = 'الغداء'; }
+                elseif ($type === 'dinner') { $label = 'العشاء'; }
+                elseif (strpos($type, 'snack') === 0) {
+                    $suffix = trim(str_replace(['snack', '_'], ['', ' '], $type));
+                    $label = 'وجبة خفيفة' . ($suffix !== '' ? ' ' . $suffix : '');
+                } else { $label = ucfirst($type); }
+
                 $html .= '<div class="meal">';
-                $html .= '<div class="title">' . e($meal->meal_name ?? ucfirst($meal->meal_type)) . '</div>';
+                $html .= '<div class="title">' . e($label) . '</div>';
+                if (!empty($g['option'])) { $html .= '<div class="opt">الخيار ' . e($g['option']) . '</div>'; }
                 $html .= '<ul>';
-                foreach ($meal->foods as $mf) {
-                    $line = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity ?? '') . ' ' . ($mf->unit ?? ''));
-                    if ($line === '') { continue; }
-                    $html .= '<li>' . e($line) . '</li>';
+                foreach ($g['meals'] as $meal) {
+                    foreach ($meal->foods as $mf) {
+                        $line = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity ?? '') . ' ' . ($mf->unit ?? ''));
+                        if ($line === '') { continue; }
+                        $html .= '<li>' . e($line) . '</li>';
+                    }
                 }
                 $html .= '</ul></div>';
             }
+
             $html .= '</body></html>';
         } else {
             // Non-Arabic: use mPDF-friendly Blade templates
