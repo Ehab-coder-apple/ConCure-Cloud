@@ -1008,18 +1008,28 @@ class NutritionController extends Controller
             $mpdf->SetDirectionality('rtl');
         }
 
-        // Write HTML and save to file, then stream inline (consistent with working diagnostics)
+        // Write HTML and save to file, then stream (inline by default). Add alternate download mode.
         $mpdf->WriteHTML($html);
         $outDir = storage_path('app/tmp');
         if (!is_dir($outDir)) { @mkdir($outDir, 0755, true); }
         $outPath = $outDir . '/nutrition-plan-' . $dietPlan->plan_number . '-' . time() . '.pdf';
         $mpdf->Output($outPath, 'F');
 
-        return response()->file($outPath, [
+        $headers = [
             'Content-Type' => 'application/pdf',
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
             'Pragma' => 'no-cache',
-        ]);
+            'X-Accel-Buffering' => 'no',
+            'Content-Length' => @filesize($outPath) ?: null,
+        ];
+
+        if (request()->boolean('download')) {
+            return response()->download($outPath, 'nutrition-plan-' . $dietPlan->plan_number . '.pdf', $headers);
+        }
+
+        // Force inline preview
+        $headers['Content-Disposition'] = 'inline; filename="nutrition-plan-' . $dietPlan->plan_number . '.pdf"';
+        return response()->file($outPath, $headers);
     }
 
     /**
