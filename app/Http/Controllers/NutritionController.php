@@ -819,10 +819,14 @@ class NutritionController extends Controller
                         '<div>Hello mPDF</div>' .
                         '</body></html>';
             $mpdf->WriteHTML($htmlTest);
-            $pdfContent = $mpdf->Output('', 'S');
-            return response($pdfContent, 200, [
+            $outDir = storage_path('app/tmp');
+            if (!is_dir($outDir)) { @mkdir($outDir, 0755, true); }
+            $outPath = $outDir . '/mpdf-test-' . time() . '.pdf';
+            $mpdf->Output($outPath, 'F');
+            return response()->file($outPath, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="mpdf-test.pdf"'
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
             ]);
         }
         // Save-to-file test to check temp/fonts/permissions
@@ -950,13 +954,17 @@ class NutritionController extends Controller
             $mpdf->SetDirectionality('rtl');
         }
 
-        // Write HTML and output
+        // Write HTML and save to file, then stream file (avoids host output buffering issues)
         $mpdf->WriteHTML($html);
-        $pdfContent = $mpdf->Output('', 'S');
+        $outDir = storage_path('app/tmp');
+        if (!is_dir($outDir)) { @mkdir($outDir, 0755, true); }
+        $outPath = $outDir . '/nutrition-plan-' . $dietPlan->plan_number . '-' . time() . '.pdf';
+        $mpdf->Output($outPath, 'F');
 
-        return response($pdfContent, 200, [
+        return response()->download($outPath, 'nutrition-plan-' . $dietPlan->plan_number . '.pdf', [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="nutrition-plan-' . $dietPlan->plan_number . '.pdf"'
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
         ]);
     }
 
