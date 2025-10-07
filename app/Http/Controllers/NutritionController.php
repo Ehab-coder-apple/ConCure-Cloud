@@ -977,12 +977,26 @@ class NutritionController extends Controller
                 $html .= '<div style="margin:0 0 10px; text-align:center">' . e($dietPlan->patient->name) . '</div>';
             }
 
-            // Group meals by type and option number (if provided)
+            // Group meals by normalized meal_type and detected option number (robust to Eloquent/dynamic props)
             $groups = [];
             foreach ($dietPlan->meals as $m) {
-                $type = $m->meal_type ?? 'meal';
-                $opt  = (property_exists($m, 'option_number') && $m->option_number) ? $m->option_number : ($m->option ?? null);
-                $key  = $type . '|' . ($opt ?? '1');
+                $typeRaw = $m->meal_type ?? 'meal';
+                // Normalize: snack_1 -> snack, lunch_2 -> lunch
+                $type = preg_replace('/_(\d+)$/', '', (string) $typeRaw);
+
+                // Detect option number from multiple possible fields or meal_name text
+                $opt = null;
+                if (isset($m->option_number) && $m->option_number) {
+                    $opt = $m->option_number;
+                } elseif (isset($m->option) && $m->option) {
+                    $opt = $m->option;
+                } elseif (!empty($m->meal_name)) {
+                    if (preg_match('/(?:Option|الخيار)\s*(\d+)/iu', (string) $m->meal_name, $mm)) {
+                        $opt = $mm[1];
+                    }
+                }
+
+                $key = $type . '|' . ($opt ?? '1');
                 if (!isset($groups[$key])) { $groups[$key] = ['type' => $type, 'option' => $opt, 'meals' => []]; }
                 $groups[$key]['meals'][] = $m;
             }
