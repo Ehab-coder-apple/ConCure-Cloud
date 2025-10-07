@@ -963,19 +963,39 @@ class NutritionController extends Controller
         // Check if this is a flexible meal plan (option-based)
         $isFlexiblePlan = $dietPlan->meals()->where('is_option_based', true)->exists();
 
-        // Choose mPDF-friendly template (simple tables, safe CSS)
-        $template = $isFlexiblePlan ? 'nutrition.pdf-mpdf-flexible' : 'nutrition.pdf-mpdf-simple';
-        // Arabic output: force the simplest template to avoid any viewer blanking issues
+        // For Arabic output, build the same ultra-simple HTML used in mpdf_simple (bypasses Blade entirely)
         if ($isArabicOutput) {
-            $template = 'nutrition.pdf-mpdf-simple';
+            $dir = 'rtl';
+            $html = '<!doctype html><html><head><meta charset="utf-8">'
+                  . '<style>body{font-family: DejaVu Sans, Amiri; font-size:12pt; direction:rtl;}'
+                  . 'h2{margin:0 0 10px} ul{margin:0; padding-right:16px;} li{margin:2px 0}'
+                  . '.meal{margin:12px 0; page-break-inside: avoid;} .title{font-weight:bold; font-size:14pt; margin-bottom:6px;}'
+                  . '</style></head><body dir="' . $dir . '">';
+            $html .= '<h2>Nutrition Plan #' . e($dietPlan->plan_number) . '</h2>';
+            if ($dietPlan->patient && $dietPlan->patient->name) {
+                $html .= '<div style="margin:0 0 10px">' . e($dietPlan->patient->name) . '</div>';
+            }
+            foreach ($dietPlan->meals as $meal) {
+                $html .= '<div class="meal">';
+                $html .= '<div class="title">' . e($meal->meal_name ?? ucfirst($meal->meal_type)) . '</div>';
+                $html .= '<ul>';
+                foreach ($meal->foods as $mf) {
+                    $line = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity ?? '') . ' ' . ($mf->unit ?? ''));
+                    if ($line === '') { continue; }
+                    $html .= '<li>' . e($line) . '</li>';
+                }
+                $html .= '</ul></div>';
+            }
+            $html .= '</body></html>';
+        } else {
+            // Non-Arabic: use mPDF-friendly Blade templates
+            $template = $isFlexiblePlan ? 'nutrition.pdf-mpdf-flexible' : 'nutrition.pdf-mpdf-simple';
+            $html = view($template, [
+                'dietPlan' => $dietPlan,
+                'nutritionalTotals' => $nutritionalTotals,
+                'isArabicOutput' => $isArabicOutput,
+            ])->render();
         }
-
-        // Generate HTML content with appropriate template
-        $html = view($template, [
-            'dietPlan' => $dietPlan,
-            'nutritionalTotals' => $nutritionalTotals,
-            'isArabicOutput' => $isArabicOutput,
-        ])->render();
 
         // Create mPDF instance with Arabic/RTL support
         $tempDir = storage_path('mpdf/temp');
