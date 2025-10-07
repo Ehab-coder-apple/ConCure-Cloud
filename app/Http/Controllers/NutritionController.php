@@ -801,6 +801,31 @@ class NutritionController extends Controller
                 ],
             ]);
         }
+        // Minimal mPDF smoke test (isolates environment vs. template issues)
+        if (request()->query('mpdf_test') === '1') {
+            $tempDir = storage_path('mpdf/temp');
+            if (!is_dir($tempDir)) { @mkdir($tempDir, 0755, true); }
+            $mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'tempDir' => $tempDir,
+                'default_font' => 'dejavusans',
+                'autoScriptToLang' => true,
+                'autoLangToFont' => true,
+            ]);
+            $htmlTest = '<!doctype html><html><head><meta charset="utf-8"></head><body>' .
+                        '<div dir="rtl" style="font-family: DejaVu Sans, Amiri; font-size:18pt;">مرحبا – اختبار mPDF</div>' .
+                        '<div style="font-size:12pt;">English line below</div>' .
+                        '<div>Hello mPDF</div>' .
+                        '</body></html>';
+            $mpdf->WriteHTML($htmlTest);
+            $pdfContent = $mpdf->Output('', 'S');
+            return response($pdfContent, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="mpdf-test.pdf"'
+            ]);
+        }
+
 
         // Debug logging
         \Log::info('PDF Export Debug', [
@@ -845,6 +870,14 @@ class NutritionController extends Controller
         ]);
 
         $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
+
+        // If requested, dump a preview of the generated HTML for debugging (no PDF render)
+        if (request()->query('mpdf_dump') === '1') {
+            return response()->json([
+                'length' => strlen($html),
+                'preview' => substr($html, 0, 1200),
+            ]);
+        }
 
         // Determine if Arabic output language is requested
         $isArabicOutput = ($outputLang === 'ar');
