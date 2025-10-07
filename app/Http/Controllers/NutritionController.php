@@ -952,12 +952,7 @@ class NutritionController extends Controller
         $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
 
         // If requested, dump a preview of the generated HTML for debugging (no PDF render)
-        if (request()->query('mpdf_dump') === '1') {
-            return response()->json([
-                'length' => strlen($html),
-                'preview' => substr($html, 0, 1200),
-            ]);
-        }
+
 
         // Determine if Arabic output language is requested
         $isArabicOutput = ($outputLang === 'ar');
@@ -983,6 +978,14 @@ class NutritionController extends Controller
         if (!is_dir($tempDir)) { @mkdir($tempDir, 0755, true); }
 
         $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        // If requested, dump a preview of the generated HTML for debugging (no PDF render)
+        if (request()->query('mpdf_dump') === '1') {
+            return response()->json([
+                'length' => strlen($html),
+                'preview' => substr($html, 0, 1200),
+            ]);
+        }
+
         $fontDirs = $defaultConfig['fontDir'];
         $fontDirs[] = storage_path('fonts');
 
