@@ -3,13 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Nutrition Plan (mPDF Simple)</title>
-    @php $amiriFontPath = storage_path('fonts/amiri-regular.ttf'); @endphp
     <style>
         @page { margin: 15mm 12mm; size: A4; }
-        @if(file_exists($amiriFontPath))
-        @font-face { font-family: 'AmiriWeb'; src: url('{{ $amiriFontPath }}') format('truetype'); font-weight: normal; font-style: normal; }
-        @endif
-        body { font-family: "AmiriWeb", "DejaVu Sans", dejavu, sans-serif; font-size: 11px; color: #222; }
+        body { font-family: "DejaVu Sans", "Amiri", dejavu, sans-serif; font-size: 11px; color: #222; }
         .header { border-bottom: 2px solid #20B2AA; padding-bottom: 6px; margin-bottom: 10px; }
         .title { font-size: 16px; color: #20B2AA; margin: 0 0 6px 0; text-align: center; }
         .info { font-size: 10px; margin: 0 0 8px 0; }
