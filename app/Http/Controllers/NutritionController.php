@@ -1037,9 +1037,9 @@ class NutritionController extends Controller
                 $html .= '<ul>';
                 foreach ($g['meals'] as $meal) {
                     foreach ($meal->foods as $mf) {
-                        $line = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity ?? '') . ' ' . ($mf->unit ?? ''));
-                        if ($line === '') { continue; }
-                        $html .= '<li>' . e($line) . '</li>';
+                        $display = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity_with_equivalent ?? ''));
+                        if ($display === '') { continue; }
+                        $html .= '<li>' . e($display) . '</li>';
                     }
                 }
                 $html .= '</ul></div>';
@@ -1124,9 +1124,9 @@ class NutritionController extends Controller
                 $html .= '<ul>';
                 foreach ($g['meals'] as $meal) {
                     foreach ($meal->foods as $mf) {
-                        $line = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity ?? '') . ' ' . ($mf->unit ?? ''));
-                        if ($line === '') { continue; }
-                        $html .= '<li>' . e($line) . '</li>';
+                        $display = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity_with_equivalent ?? ''));
+                        if ($display === '') { continue; }
+                        $html .= '<li>' . e($display) . '</li>';
                     }
                 }
                 $html .= '</ul></div>';

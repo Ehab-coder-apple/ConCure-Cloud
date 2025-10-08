@@ -281,7 +281,7 @@ class WordDocumentService
                                 $html .= '<div class="food-item">
                                     <div class="food-name kurdish">' . htmlspecialchars($foodName) . '</div>
                                     <div class="food-details">
-                                        ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit) . '
+                                        ' . htmlspecialchars($mealFood->quantity_with_equivalent) . '
                                     </div>
                                     <div class="nutritional-info">
                                         ' . number_format($calories, 0) . ' cal | ' . number_format($protein, 1) . 'g protein | ' . number_format($carbs, 1) . 'g carbs | ' . number_format($fat, 1) . 'g fat
@@ -418,7 +418,7 @@ class WordDocumentService
                             $html .= '<div class="food-item" style="margin-bottom: 6px; font-size: 11px; line-height: 1.4; padding: 6px 8px; background-color: #fafafa; border-left: 3px solid #20B2AA; border-radius: 3px;">
                                 <div class="food-name kurdish" style="font-weight: bold; color: #2c3e50;">' . htmlspecialchars($foodName) . '</div>
                                 <div class="food-details" style="color: #666; font-size: 10px;">
-                                    ' . $mealFood->quantity . ' ' . htmlspecialchars($mealFood->unit ?? 'g') . '
+                                    ' . htmlspecialchars($mealFood->quantity_with_equivalent) . '
                                 </div>';
 
                             if ($food && $quantity > 0) {

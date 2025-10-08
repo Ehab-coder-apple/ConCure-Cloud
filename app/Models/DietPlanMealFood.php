@@ -138,6 +138,98 @@ class DietPlanMealFood extends Model
             'fat' => round($this->fat, 1),
         ];
     }
+    /**
+     * Format a number: drop trailing .00, keep up to 2 decimals when needed.
+     */
+    protected static function formatNumber($value): string
+    {
+        if ($value === null || $value === '') { return ''; }
+        $n = (float) $value;
+        if (abs($n - round($n)) < 0.00001) {
+            return (string) (int) round($n);
+        }
+        $s = number_format($n, 2, '.', '');
+        $s = rtrim(rtrim($s, '0'), '.');
+        return $s;
+    }
+
+    /**
+     * Calculate approximate milliliters for current quantity/unit (for volume units).
+     */
+    protected function calcMlForCurrent(): ?float
+    {
+        $unit = strtolower(trim((string) ($this->unit ?? '')));
+        $qty = (float) ($this->quantity ?? 0);
+        if ($qty <= 0) { return null; }
+        return match ($unit) {
+            'l' => $qty * 1000.0,
+            'ml' => $qty,
+            'cup' => $qty * 240.0,
+            'tbsp' => $qty * 15.0,
+            'tsp' => $qty * 5.0,
+            default => null,
+        };
+    }
+
+    /**
+     * Calculate approximate grams for current quantity/unit (leverages Food::convertToGrams when possible).
+     */
+    protected function calcGramsForCurrent(): ?float
+    {
+        $qty = (float) ($this->quantity ?? 0);
+        if ($qty <= 0) { return null; }
+        $food = $this->food;
+        if (!$food) { return null; }
+        $unit = strtolower(trim((string) ($this->unit ?? 'g')));
+        try {
+            return (float) $food->convertToGrams($qty, $unit);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Clean quantity without unnecessary trailing decimals.
+     */
+    public function getQuantityCleanAttribute(): string
+    {
+        return self::formatNumber($this->quantity);
+    }
+
+    /**
+     * Equivalent text like (~ 150 g) or (~ 240 ml), when applicable.
+     * Skips when the unit already expresses mass/volume directly (g, kg, mg, ml, l).
+     */
+    public function getEquivalentTextAttribute(): string
+    {
+        // Always display both grams and milliliters together; assume 1 g == 1 ml when only one is known
+        $grams = $this->calcGramsForCurrent();
+        $ml = $this->calcMlForCurrent();
+
+        $hasG = ($grams !== null && $grams > 0);
+        $hasMl = ($ml !== null && $ml > 0);
+
+        if (!$hasG && $hasMl) { $grams = $ml; $hasG = true; }
+        if (!$hasMl && $hasG) { $ml = $grams; $hasMl = true; }
+
+        $gStr = $hasG ? self::formatNumber($grams) : '';
+        $mlStr = $hasMl ? self::formatNumber($ml) : '';
+
+        return '(~ ' . $gStr . ' g / ' . $mlStr . ' ml)';
+    }
+
+    /**
+     * Quantity + unit + optional equivalent text.
+     */
+    public function getQuantityWithEquivalentAttribute(): string
+    {
+        $qty = $this->quantity_clean;
+        $u = trim((string) ($this->unit ?? ''));
+        $base = trim($qty . ($u !== '' ? (' ' . $u) : ''));
+        $eq = $this->equivalent_text;
+        return $base . ($eq ? (' ' . $eq) : '');
+    }
+
 
     /**
      * Scope to filter by diet plan meal.

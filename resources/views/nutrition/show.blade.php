@@ -414,7 +414,7 @@
                                                     @endif
                                                 </div>
                                                 <span class="badge bg-light text-dark">
-                                                    {{ $food->quantity }} {{ $food->unit }}
+                                                    {{ $food->quantity_with_equivalent }}
                                                 </span>
                                             </div>
                                         </div>
@@ -466,7 +466,7 @@
                                                     @endif
                                                 </div>
                                                 <span class="badge bg-light text-dark">
-                                                    {{ $food->quantity }} {{ $food->unit }}
+                                                    {{ $food->quantity_with_equivalent }}
                                                 </span>
                                             </div>
                                         </div>
@@ -1430,7 +1430,7 @@ window.sendWhatsAppSimple = function() {
                             @endphp
 
                             message += '  🍽️ ' + foodName + '\n';
-                            message += '     📏 {{ $mealFood->quantity }}{{ $mealFood->unit }}\n';
+                            message += '     📏 {{ $mealFood->quantity_with_equivalent }}\n';
                             @if($calories > 0)
                             message += '     📊 {{ number_format($calories, 0) }} cal | {{ number_format($protein, 1) }}g protein | {{ number_format($carbs, 1) }}g carbs | {{ number_format($fat, 1) }}g fat\n';
                             @endif
@@ -1466,7 +1466,7 @@ window.sendWhatsAppSimple = function() {
                                 @endphp
 
                                 message += '🍽️ ' + foodName + '\n';
-                                message += '   📏 {{ $food->quantity }}{{ $food->unit }}\n';
+                                message += '   📏 {{ $food->quantity_with_equivalent }}\n';
                                 @if($calories > 0)
                                 message += '   📊 {{ number_format($calories, 0) }} cal | {{ number_format($protein, 1) }}g protein | {{ number_format($carbs, 1) }}g carbs | {{ number_format($fat, 1) }}g fat\n';
                                 @endif
