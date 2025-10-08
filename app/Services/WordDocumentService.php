@@ -387,6 +387,12 @@ class WordDocumentService
                 ];
             }
 
+            // Localize singular "Option" label per language
+            $optionWord = 'Option';
+            if ($outputLang === 'ar') { $optionWord = 'الخيار'; }
+            elseif ($outputLang === 'ku_bahdini') { $optionWord = 'هەڵبژێرە'; }
+            elseif ($isKurdish) { $optionWord = 'هەلبژاردە'; }
+
             // Initialize structure
             foreach ($mealTypes as $mealType) {
                 $mealsByType[$mealType] = [];
@@ -415,8 +421,10 @@ class WordDocumentService
 
                 foreach ($mealsByType[$mealType] as $meal) {
                     $html .= '<div class="option-box" style="border:1pt solid #e4f3f2; margin-bottom: 8pt; padding: 8pt; background-color: #fff; border-radius: 6pt;">'
-                        . '<div class="option-header" style="font-weight:600; font-size:11pt; margin-bottom:6pt; text-align:center; color:#20B2AA; background-color:#f8f9fa; padding:3pt; border-radius:2pt;">'
-                        . 'Option ' . ($meal->option_number ?? 1) . '</div>'
+                        . '<div class="option-header" style="font-weight:600; font-size:0; margin-bottom:6pt; text-align:center; color:#20B2AA; background-color:#f8f9fa; padding:3pt; border-radius:2pt;">'
+                        . '<span style="font-size:11pt;">' . $optionWord . ' ' . ($meal->option_number ?? 1) . '</span>'
+                        . ((($dietPlan->language ?? (request()->get('lang') ?? app()->getLocale())) === 'ar') ? '22322 21' : ((($dietPlan->language ?? (request()->get('lang') ?? app()->getLocale())) === 'ku_bahdini') ? '' : '')) . ''
+                        . '</div>'
                         . '<ul class="food-list" style="margin:4pt 0 0 0; padding:0 0 0 14pt;">';
 
                     if ($meal->foods) {
