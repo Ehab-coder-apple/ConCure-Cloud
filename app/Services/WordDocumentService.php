@@ -272,6 +272,11 @@ class WordDocumentService
                             elseif ($displayName === 'lunch') { $label = 'الغداء'; }
                             elseif ($displayName === 'dinner') { $label = 'العشاء'; }
                             elseif ($displayName === 'snacks') { $label = 'وجبة خفيفة'; }
+                        } elseif ($outputLang === 'ku_bahdini') {
+                            if ($displayName === 'breakfast') { $label = 'تێشت'; }
+                            elseif ($displayName === 'lunch') { $label = 'فراڤین'; }
+                            elseif ($displayName === 'dinner') { $label = 'شیڤ'; }
+                            elseif ($displayName === 'snacks') { $label = 'ژەمەکا ب لەز'; }
                         } elseif ($isKurdish) {
                             if ($displayName === 'breakfast') { $label = 'بەیانی'; }
                             elseif ($displayName === 'lunch') { $label = 'نانی نیوەڕۆ'; }
@@ -358,6 +363,13 @@ class WordDocumentService
                     'lunch' => 'الغداء',
                     'dinner' => 'العشاء',
                     'snack_1' => 'وجبة خفيفة',
+                ];
+            } elseif ($outputLang === 'ku_bahdini') {
+                $mealTypeNames = [
+                    'breakfast' => 'تێشت',
+                    'lunch' => 'فراڤین',
+                    'dinner' => 'شیڤ',
+                    'snack_1' => 'ژەمەکا ب لەز',
                 ];
             } elseif ($isKurdish) {
                 $mealTypeNames = [
