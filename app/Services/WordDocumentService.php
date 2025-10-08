@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Helpers\ClinicHelper;
+
 class WordDocumentService
 {
     /**
@@ -57,9 +59,9 @@ class WordDocumentService
     <style>
         @page {
             size: A4;
-            margin: 1in;
+            margin: 0.7in;
         }
-        
+
         body {
             font-family: "Segoe UI", Calibri, Arial, "DejaVu Sans", "Amiri", "Arabic Typesetting", "Traditional Arabic", sans-serif;
             font-size: 11pt;
@@ -67,7 +69,7 @@ class WordDocumentService
             color: #000;
             direction: ltr;
         }
-        
+
         .kurdish {
             font-family: "Amiri", "Segoe UI", Calibri, Arial, "Arabic Typesetting", "Traditional Arabic", sans-serif;
             direction: rtl;
@@ -76,21 +78,21 @@ class WordDocumentService
             line-height: 1.5;
             unicode-bidi: plaintext;
         }
-        
+
         .header {
             text-align: center;
             margin-bottom: 20pt;
             border-bottom: 2pt solid #20B2AA;
             padding-bottom: 10pt;
         }
-        
+
         .header h1 {
             color: #20B2AA;
             font-size: 16pt;
             font-weight: bold;
             margin: 0;
         }
-        
+
         .patient-info {
             margin-bottom: 15pt;
             padding: 10pt;
@@ -98,13 +100,13 @@ class WordDocumentService
             background-color: #f7fbfb;
             border-radius: 6pt;
         }
-        
+
         .meal-section {
-            margin-bottom: 15pt;
-            border: 1pt solid #ddd;
+            margin-bottom: 12pt;
+            border: 1pt solid #e4f3f2;
             page-break-inside: avoid;
         }
-        
+
         .meal-header {
             background-color: #20B2AA;
             color: white;
@@ -112,13 +114,13 @@ class WordDocumentService
             font-size: 12pt;
             font-weight: bold;
         }
-        
+
         .food-item {
-            padding: 10pt 12pt;
-            border-bottom: 1pt solid #eee;
-            background-color: #fafafa;
-            margin-bottom: 6pt;
-            border-left: 3pt solid #20B2AA;
+            padding: 8pt 10pt;
+            border-bottom: 1pt dotted #e2e8f0;
+            background-color: #fcfcfc;
+            margin-bottom: 5pt;
+            border-left: 3pt solid #79d0c9;
             border-radius: 3pt;
         }
 
@@ -144,7 +146,7 @@ class WordDocumentService
             font-size: 10pt;
             font-weight: 500;
         }
-        
+
         .meal-total {
             background-color: #f0f8ff;
             padding: 8pt 12pt;
@@ -152,45 +154,45 @@ class WordDocumentService
             color: #20B2AA;
             border-top: 1pt solid #20B2AA;
         }
-        
+
         .summary {
             margin-top: 20pt;
             padding: 15pt;
             border: 2pt solid #20B2AA;
             background-color: #f0f8ff;
         }
-        
+
         .summary h3 {
             color: #20B2AA;
             margin-top: 0;
             text-align: center;
             font-size: 14pt;
         }
-        
+
         .summary-item {
             margin: 8pt 0;
             padding: 4pt 0;
             border-bottom: 1pt dotted #ccc;
         }
-        
+
         .summary-label {
             font-weight: bold;
             display: inline-block;
             width: 60%;
         }
-        
+
         .summary-value {
             display: inline-block;
             width: 35%;
             text-align: right;
             font-weight: bold;
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
         }
-        
+
         td {
             padding: 4pt;
             vertical-align: top;
@@ -199,10 +201,21 @@ class WordDocumentService
 </head>
 <body>';
 
-        // Header
-        $html .= '<div class="header">
-            <h1>Daily Meal Plan</h1>
-        </div>';
+        // Brand header with clinic logo and title
+        $clinicId = $dietPlan->patient->clinic_id ?? null;
+        $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($clinicId);
+        $clinicName = htmlspecialchars($clinicInfo['name'] ?? 'ConCure Clinic');
+        $logoUrl = $clinicInfo['logo'] ?? null;
+        $html .= '<table class="brand-header" role="presentation" cellspacing="0" cellpadding="0" style="width:100%; border-bottom:2pt solid #20B2AA; margin-bottom:15pt;">'
+            . '<tr>'
+            . '<td style="width:22%; vertical-align:middle; text-align:left;">' . ($logoUrl ? '<img src="' . htmlspecialchars($logoUrl) . '" style="height:36pt;">' : '') . '</td>'
+            . '<td style="width:56%; text-align:center; color:#20B2AA;">'
+                . '<div style="font-weight:700; font-size:16pt;">' . $clinicName . '</div>'
+                . '<div style="font-size:12pt; color:#2c3e50; margin-top:2pt;">Daily Meal Plan</div>'
+              . '</td>'
+            . '<td style="width:22%;"></td>'
+            . '</tr>'
+          . '</table>';
 
         // Patient Info
         $html .= '<div class="patient-info">
