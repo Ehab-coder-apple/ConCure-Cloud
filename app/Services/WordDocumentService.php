@@ -406,9 +406,12 @@ class WordDocumentService
         foreach ($mealTypes as $mealType) {
             if (count($mealsByType[$mealType]) > 0) {
                 $align = ($outputLang === 'ar' || $isKurdish) ? 'right' : 'left';
+                $optionsWord = 'Options';
+                if ($outputLang === 'ku_bahdini') { $optionsWord = '\u0647\u06d5\u0644\u0628\u0698\u0627\u0631\u062a\u0646'; }
+                elseif ($isKurdish) { $optionsWord = '\u0647\u06d5\u0644\u0628\u0698\u0627\u0631\u062f\u06d5\u06a9\u0627\u0646'; }
                 $html .= '<div class="meal-type-section" style="margin-bottom: 16pt; page-break-inside: avoid;">
                     <h4 style="color: #20B2AA; font-size: 12pt; margin: 0 0 8pt; border-bottom: 1pt solid #20B2AA; padding: 0 0 3pt; text-align:' . $align . ';">' .
-                    $mealTypeNames[$mealType] . ' Options</h4>';
+                    $mealTypeNames[$mealType] . ' ' . $optionsWord . '</h4>';
 
                 foreach ($mealsByType[$mealType] as $meal) {
                     $html .= '<div class="option-box" style="border:1pt solid #e4f3f2; margin-bottom: 8pt; padding: 8pt; background-color: #fff; border-radius: 6pt;">'
