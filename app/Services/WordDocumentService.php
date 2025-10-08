@@ -295,10 +295,7 @@ class WordDocumentService
                                 $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
 
                                 $html .= '<div class="food-item">
-                                    <div class="food-name kurdish">' . htmlspecialchars($foodName) . '</div>
-                                    <div class="food-details">
-                                        ' . htmlspecialchars($mealFood->quantity_with_equivalent) . '
-                                    </div>
+                                    <div class="food-name kurdish">' . htmlspecialchars($foodName) . ' — <span style="color:#7f8c8d; font-weight:normal; font-size:10pt;">' . htmlspecialchars($mealFood->quantity_with_equivalent) . '</span></div>
                                 </div>';
                             }
                         }
@@ -429,10 +426,7 @@ class WordDocumentService
                             $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
 
                             $html .= '<div class="food-item" style="margin-bottom: 6pt; line-height: 1.4; padding: 6pt 8pt; background-color: #fafafa; border-left: 3pt solid #20B2AA; border-radius: 3pt;">
-                                <div class="food-name kurdish" style="font-weight: bold; color: #2c3e50; font-size: 11pt;">' . htmlspecialchars($foodName) . '</div>
-                                <div class="food-details" style="color: #666; font-size: 10pt;">
-                                    ' . htmlspecialchars($mealFood->quantity_with_equivalent) . '
-                                </div>';
+                                <div class="food-name kurdish" style="font-weight: bold; color: #2c3e50; font-size: 11pt;">' . htmlspecialchars($foodName) . ' — <span style="color:#666; font-weight:normal; font-size:10pt;">' . htmlspecialchars($mealFood->quantity_with_equivalent) . '</span></div>';
 
                             $html .= '</div>';
                         }
