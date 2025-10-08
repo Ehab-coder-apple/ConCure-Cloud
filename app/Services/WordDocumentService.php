@@ -278,7 +278,8 @@ class WordDocumentService
                             elseif ($displayName === 'dinner') { $label = 'شێوان'; }
                             elseif ($displayName === 'snacks') { $label = 'خواردنی سووک'; }
                         }
-                        $html .= '<div class="meal-section"><div class="meal-header">' . $label . '</div><ul class="food-list" style="margin:4pt 10pt; padding:0 0 0 12pt;">';
+                        $align = ($outputLang === 'ar' || $isKurdish) ? 'right' : 'left';
+                        $html .= '<div class="meal-section"><div class="meal-header" style="text-align:' . $align . ';">' . $label . '</div><ul class="food-list" style="margin:4pt 10pt; padding:0 0 0 12pt;">';
 
                         foreach ($meals as $meal) {
                             foreach ($meal->foods as $mealFood) {
@@ -392,8 +393,9 @@ class WordDocumentService
         // Render each meal type with its options
         foreach ($mealTypes as $mealType) {
             if (count($mealsByType[$mealType]) > 0) {
-                $html .= '<div class="meal-type-section" style="margin-bottom: 20pt; page-break-inside: avoid;">
-                    <h4 style="color: #20B2AA; font-size: 14pt; margin-bottom: 10pt; border-bottom: 1pt solid #20B2AA; padding-bottom: 3pt;">' .
+                $align = ($outputLang === 'ar' || $isKurdish) ? 'right' : 'left';
+                $html .= '<div class="meal-type-section" style="margin-bottom: 16pt; page-break-inside: avoid;">
+                    <h4 style="color: #20B2AA; font-size: 12pt; margin: 0 0 8pt; border-bottom: 1pt solid #20B2AA; padding: 0 0 3pt; text-align:' . $align . ';">' .
                     $mealTypeNames[$mealType] . ' Options</h4>';
 
                 foreach ($mealsByType[$mealType] as $meal) {
