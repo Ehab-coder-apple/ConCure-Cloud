@@ -1241,7 +1241,7 @@ window.sendWhatsAppSimple = function() {
         var labels = {
             'en': {
                 title: '🍎 *Nutrition Plan*',
-                patient: '👤 *Patient:*',
+                patient: '👤 *Name:*',
                 plan: '📋 *Plan:*',
                 planNumber: '🔢 *Plan Number:*',
                 dailyPlan: '*📅 Daily Meal Plan:*',
@@ -1268,7 +1268,7 @@ window.sendWhatsAppSimple = function() {
             },
             'ar': {
                 title: '🍎 *خطة التغذية*',
-                patient: '👤 *المريض:*',
+                patient: '👤 *الاسم:*',
                 plan: '📋 *الخطة:*',
                 planNumber: '🔢 *رقم الخطة:*',
                 dailyPlan: '*📅 خطة الوجبات اليومية:*',
@@ -1290,7 +1290,7 @@ window.sendWhatsAppSimple = function() {
             },
             'ku_bahdini': {
                 title: '🍎 *پلانا خواردنێ*',
-                patient: '👤 *نەخۆش:*',
+                patient: '👤 *ناڤ:*',
                 plan: '📋 *پلان:*',
                 planNumber: '🔢 *ژمارا پلانێ:*',
                 dailyPlan: '*📅 پلانا ژەمێن ڕۆژانە:*',
@@ -1312,7 +1312,7 @@ window.sendWhatsAppSimple = function() {
             },
             'ku_sorani': {
                 title: '🍎 *پلانی خواردن*',
-                patient: '👤 *نەخۆش:*',
+                patient: '👤 *ناو:*',
                 plan: '📋 *پلان:*',
                 planNumber: '🔢 *ژمارەی پلان:*',
                 dailyPlan: '*📅 پلانی ژەمی ڕۆژانە:*',
@@ -1341,7 +1341,7 @@ window.sendWhatsAppSimple = function() {
         // Add fallback values for any missing labels
         var defaultLabels = {
             title: 'Nutrition Plan',
-            patient: 'Patient:',
+            patient: 'Name:',
             plan: 'Plan:',
             planNumber: 'Plan #:',
             date: 'Date:',

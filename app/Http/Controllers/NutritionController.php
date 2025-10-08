@@ -987,7 +987,7 @@ class NutritionController extends Controller
             $age = $patient->age ?? null;
             $dateStr = $dietPlan->created_at ? $dietPlan->created_at->format('Y-m-d') : date('Y-m-d');
             $infoParts = [];
-            if (!empty($patientName)) { $infoParts[] = 'Patient: ' . e($patientName); }
+            if (!empty($patientName)) { $infoParts[] = 'Name: ' . e($patientName); }
             if (!empty($gender)) { $infoParts[] = 'Gender: ' . e($gender); }
             if ($age !== null) { $infoParts[] = 'Age: ' . e((string)$age); }
             if (!empty($dateStr)) { $infoParts[] = 'Date: ' . e($dateStr); }
@@ -1101,7 +1101,7 @@ class NutritionController extends Controller
             $age = $patient->age ?? null;
             $dateStr = $dietPlan->created_at ? $dietPlan->created_at->format('Y-m-d') : date('Y-m-d');
             $infoParts = [];
-            if (!empty($patientName)) { $infoParts[] = 'Patient: ' . e($patientName); }
+            if (!empty($patientName)) { $infoParts[] = 'Name: ' . e($patientName); }
             if (!empty($gender)) { $infoParts[] = 'Gender: ' . e($gender); }
             if ($age !== null) { $infoParts[] = 'Age: ' . e((string)$age); }
             if (!empty($dateStr)) { $infoParts[] = 'Date: ' . e($dateStr); }
