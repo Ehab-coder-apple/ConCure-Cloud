@@ -964,7 +964,7 @@ class NutritionController extends Controller
         $isFlexiblePlan = $dietPlan->meals()->where('is_option_based', true)->exists();
 
         // For Arabic output, build grouped simple HTML with meal type headers and options (bypasses Blade)
-        if ($isArabicOutput) {
+        if ($isArabicOutput) { // PDF styling: professional theme + clinic branding
             $dir = 'rtl';
             $html = '<!doctype html><html><head><meta charset="utf-8">'
                   . '<style>body{font-family: DejaVu Sans, Amiri; font-size:12pt; direction:rtl;}'
@@ -1029,7 +1029,7 @@ class NutritionController extends Controller
 
             $html .= '</body></html>';
         } else {
-            // Non-Arabic: build the same ultra-simple, mPDF-safe HTML to avoid blank pages
+            // Non-Arabic: build the same ultra-simple, mPDF-safe HTML to avoid blank pages (with professional styling + branding)
             $isKurdish = in_array($outputLang, ['ku_bahdini', 'ku_sorani'], true);
             $dir = $isKurdish ? 'rtl' : 'ltr';
             $html = '<!doctype html><html><head><meta charset="utf-8">'
