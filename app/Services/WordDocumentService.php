@@ -61,20 +61,20 @@ class WordDocumentService
         }
         
         body {
-            font-family: "Navshke", "Amiri", "Arabic Typesetting", "Traditional Arabic", Arial, sans-serif;
-            font-size: 12pt;
+            font-family: "Segoe UI", Calibri, Arial, "DejaVu Sans", "Amiri", "Arabic Typesetting", "Traditional Arabic", sans-serif;
+            font-size: 11pt;
             line-height: 1.5;
             color: #000;
             direction: ltr;
         }
         
         .kurdish {
-            font-family: "Navshke", "Amiri", "Arabic Typesetting", "Traditional Arabic", Arial, sans-serif;
+            font-family: "Amiri", "Segoe UI", Calibri, Arial, "Arabic Typesetting", "Traditional Arabic", sans-serif;
             direction: rtl;
             text-align: right;
-            font-size: 14pt;
-            line-height: 1.8;
-            unicode-bidi: embed;
+            font-size: 11pt;
+            line-height: 1.5;
+            unicode-bidi: plaintext;
         }
         
         .header {
@@ -86,7 +86,7 @@ class WordDocumentService
         
         .header h1 {
             color: #20B2AA;
-            font-size: 20pt;
+            font-size: 16pt;
             font-weight: bold;
             margin: 0;
         }
@@ -94,8 +94,9 @@ class WordDocumentService
         .patient-info {
             margin-bottom: 15pt;
             padding: 10pt;
-            border: 1pt solid #ccc;
-            background-color: #f9f9f9;
+            border: 1pt solid #20B2AA;
+            background-color: #f7fbfb;
+            border-radius: 6pt;
         }
         
         .meal-section {
@@ -108,7 +109,7 @@ class WordDocumentService
             background-color: #20B2AA;
             color: white;
             padding: 8pt 12pt;
-            font-size: 14pt;
+            font-size: 12pt;
             font-weight: bold;
         }
         
@@ -129,7 +130,7 @@ class WordDocumentService
             font-weight: bold;
             margin-bottom: 4pt;
             color: #2c3e50;
-            font-size: 12pt;
+            font-size: 11pt;
         }
 
         .food-details {
@@ -140,7 +141,7 @@ class WordDocumentService
 
         .nutritional-info {
             color: #27ae60;
-            font-size: 9pt;
+            font-size: 10pt;
             font-weight: 500;
         }
         
@@ -163,7 +164,7 @@ class WordDocumentService
             color: #20B2AA;
             margin-top: 0;
             text-align: center;
-            font-size: 16pt;
+            font-size: 14pt;
         }
         
         .summary-item {
@@ -393,7 +394,7 @@ class WordDocumentService
                     $optionFat = 0;
 
                     $html .= '<div class="option-box" style="border: 2pt solid #20B2AA; margin-bottom: 10pt; padding: 12pt; background-color: #fff; border-radius: 6pt;">
-                        <div class="option-header" style="font-weight: bold; font-size: 12pt; margin-bottom: 8pt; text-align: center; color: #20B2AA; background-color: #f8f9fa; padding: 4pt; border-radius: 2pt;">
+                        <div class="option-header" style="font-weight: 600; font-size: 11pt; margin-bottom: 8pt; text-align: center; color: #20B2AA; background-color: #f8f9fa; padding: 4pt; border-radius: 2pt;">
                             Option ' . ($meal->option_number ?? 1) . '
                         </div>';
 
@@ -417,14 +418,14 @@ class WordDocumentService
                             // Use translated food name
                             $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
 
-                            $html .= '<div class="food-item" style="margin-bottom: 6px; font-size: 11px; line-height: 1.4; padding: 6px 8px; background-color: #fafafa; border-left: 3px solid #20B2AA; border-radius: 3px;">
-                                <div class="food-name kurdish" style="font-weight: bold; color: #2c3e50;">' . htmlspecialchars($foodName) . '</div>
-                                <div class="food-details" style="color: #666; font-size: 10px;">
+                            $html .= '<div class="food-item" style="margin-bottom: 6pt; line-height: 1.4; padding: 6pt 8pt; background-color: #fafafa; border-left: 3pt solid #20B2AA; border-radius: 3pt;">
+                                <div class="food-name kurdish" style="font-weight: bold; color: #2c3e50; font-size: 11pt;">' . htmlspecialchars($foodName) . '</div>
+                                <div class="food-details" style="color: #666; font-size: 10pt;">
                                     ' . htmlspecialchars($mealFood->quantity_with_equivalent) . '
                                 </div>';
 
                             if ($food && $quantity > 0) {
-                                $html .= '<div class="nutritional-info" style="color: #20B2AA; font-size: 9px; margin-top: 2px;">
+                                $html .= '<div class="nutritional-info" style="color: #20B2AA; font-size: 10pt; margin-top: 2pt;">
                                     ' . number_format($calories, 0) . ' cal | ' . number_format($protein, 1) . 'g protein | ' . number_format($carbs, 1) . 'g carbs | ' . number_format($fat, 1) . 'g fat
                                 </div>';
                             }
