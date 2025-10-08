@@ -1029,13 +1029,74 @@ class NutritionController extends Controller
 
             $html .= '</body></html>';
         } else {
-            // Non-Arabic: use mPDF-friendly Blade templates
-            $template = $isFlexiblePlan ? 'nutrition.pdf-mpdf-flexible' : 'nutrition.pdf-mpdf-simple';
-            $html = view($template, [
-                'dietPlan' => $dietPlan,
-                'nutritionalTotals' => $nutritionalTotals,
-                'isArabicOutput' => $isArabicOutput,
-            ])->render();
+            // Non-Arabic: build the same ultra-simple, mPDF-safe HTML to avoid blank pages
+            $isKurdish = in_array($outputLang, ['ku_bahdini', 'ku_sorani'], true);
+            $dir = $isKurdish ? 'rtl' : 'ltr';
+            $html = '<!doctype html><html><head><meta charset="utf-8">'
+                  . '<style>body{font-family: DejaVu Sans, Amiri; font-size:12pt; direction:' . $dir . ';}'
+                  . 'h2{margin:0 0 10px; text-align:center} ul{margin:0; padding-' . ($dir==='rtl'?'right':'left') . ':16px;} li{margin:2px 0}'
+                  . '.meal{margin:14px 0; page-break-inside: avoid;} .title{font-weight:bold; font-size:14pt; margin-bottom:6px; display:inline-block;}'
+                  . '.opt{color:#20B2AA; font-weight:bold; display:inline-block; margin:0 8px 0 0;}'
+                  . '</style></head><body dir="' . $dir . '">';
+            $html .= '<h2>Nutrition Plan #' . e($dietPlan->plan_number) . '</h2>';
+            if ($dietPlan->patient && $dietPlan->patient->name) {
+                $html .= '<div style="margin:0 0 10px; text-align:center">' . e($dietPlan->patient->name) . '</div>';
+            }
+
+            // Group meals by normalized meal_type and detected option number (robust)
+            $groups = [];
+            foreach ($dietPlan->meals as $m) {
+                $typeRaw = $m->meal_type ?? 'meal';
+                $type = preg_replace('/_(\d+)$/', '', (string) $typeRaw);
+                $opt = null;
+                if (isset($m->option_number) && $m->option_number) { $opt = $m->option_number; }
+                elseif (isset($m->option) && $m->option) { $opt = $m->option; }
+                elseif (!empty($m->meal_name)) {
+                    if (preg_match('/(?:Option|الخيار)\s*(\d+)/iu', (string) $m->meal_name, $mm)) { $opt = $mm[1]; }
+                }
+                $key = $type . '|' . ($opt ?? '1');
+                if (!isset($groups[$key])) { $groups[$key] = ['type' => $type, 'option' => $opt, 'meals' => []]; }
+                $groups[$key]['meals'][] = $m;
+            }
+
+            foreach ($groups as $g) {
+                $type = $g['type'] ?? 'meal';
+                // Meal type labels per language (basic set)
+                if ($isKurdish) {
+                    // Default to Sorani/Bahdini generic words
+                    if ($type === 'breakfast') { $label = 'بەیانی'; /* Sorani */ }
+                    elseif ($type === 'lunch') { $label = 'نانی نیوەڕۆ'; }
+                    elseif ($type === 'dinner') { $label = 'شێوان'; }
+                    elseif (strpos($type, 'snack') === 0) {
+                        $suffix = trim(str_replace(['snack', '_'], ['', ' '], $type));
+                        $label = 'خواردنی سووک' . ($suffix !== '' ? ' ' . $suffix : '');
+                    } else { $label = ucfirst($type); }
+                } else {
+                    if ($type === 'breakfast') { $label = 'Breakfast'; }
+                    elseif ($type === 'lunch') { $label = 'Lunch'; }
+                    elseif ($type === 'dinner') { $label = 'Dinner'; }
+                    elseif (strpos($type, 'snack') === 0) {
+                        $suffix = trim(str_replace(['snack', '_'], ['', ' '], $type));
+                        $label = 'Snack' . ($suffix !== '' ? ' ' . $suffix : '');
+                    } else { $label = ucfirst($type); }
+                }
+
+                $html .= '<div class="meal">';
+                $titleText = $label;
+                if (!empty($g['option'])) { $titleText .= ' — ' . 'Option ' . e($g['option']); }
+                $html .= '<div class="title">' . e($titleText) . '</div>';
+                $html .= '<ul>';
+                foreach ($g['meals'] as $meal) {
+                    foreach ($meal->foods as $mf) {
+                        $line = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity ?? '') . ' ' . ($mf->unit ?? ''));
+                        if ($line === '') { continue; }
+                        $html .= '<li>' . e($line) . '</li>';
+                    }
+                }
+                $html .= '</ul></div>';
+            }
+
+            $html .= '</body></html>';
         }
 
         // Create mPDF instance with Arabic/RTL support
