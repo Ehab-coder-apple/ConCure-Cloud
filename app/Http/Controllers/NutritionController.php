@@ -1059,6 +1059,22 @@ class NutritionController extends Controller
                 $html .= '</ul></div>';
             }
 
+            // Append Instructions & Dietary Restrictions if provided
+            $instructions = trim((string)($dietPlan->instructions ?? ''));
+            $restrictions = trim((string)($dietPlan->restrictions ?? ''));
+            if ($instructions !== '' || $restrictions !== '') {
+                $html .= '<div style="margin:12px 0; padding:8px 10px; border:1px solid #e9ecef; border-radius:6px; background:#fff;">';
+                if ($instructions !== '') {
+                    $html .= '<div style="color:#20B2AA; font-weight:bold; margin:0 0 6px;">Instructions</div>';
+                    $html .= '<div style="white-space:pre-line; line-height:1.5; unicode-bidi:plaintext;">' . e($instructions) . '</div>';
+                }
+                if ($restrictions !== '') {
+                    $html .= '<div style="color:#20B2AA; font-weight:bold; margin:10px 0 6px;">Dietary Restrictions</div>';
+                    $html .= '<div style="white-space:pre-line; line-height:1.5; unicode-bidi:plaintext;">' . e($restrictions) . '</div>';
+                }
+                $html .= '</div>';
+            }
+
             $html .= '</body></html>';
         } else {
             // Non-Arabic: build the same ultra-simple, mPDF-safe HTML to avoid blank pages (with professional styling + branding)
@@ -1158,6 +1174,22 @@ class NutritionController extends Controller
                     }
                 }
                 $html .= '</ul></div>';
+            }
+
+            // Append Instructions & Dietary Restrictions if provided
+            $instructions = trim((string)($dietPlan->instructions ?? ''));
+            $restrictions = trim((string)($dietPlan->restrictions ?? ''));
+            if ($instructions !== '' || $restrictions !== '') {
+                $html .= '<div style="margin:12px 0; padding:8px 10px; border:1px solid #e9ecef; border-radius:6px; background:#fff;">';
+                if ($instructions !== '') {
+                    $html .= '<div style="color:#20B2AA; font-weight:bold; margin:0 0 6px;">Instructions</div>';
+                    $html .= '<div style="white-space:pre-line; line-height:1.5; unicode-bidi:plaintext;">' . e($instructions) . '</div>';
+                }
+                if ($restrictions !== '') {
+                    $html .= '<div style="color:#20B2AA; font-weight:bold; margin:10px 0 6px;">Dietary Restrictions</div>';
+                    $html .= '<div style="white-space:pre-line; line-height:1.5; unicode-bidi:plaintext;">' . e($restrictions) . '</div>';
+                }
+                $html .= '</div>';
             }
 
             $html .= '</body></html>';

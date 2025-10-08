@@ -1209,6 +1209,10 @@ try {
 var patientGender = '{{ addslashes($dietPlan->patient->gender ?? "") }}';
 var patientAge = '{{ (int)($dietPlan->patient->age ?? 0) }}';
 var planDate = '{{ optional($dietPlan->created_at)->format("Y-m-d") }}';
+// Typed instructions/restrictions from plan (preserve new lines)
+var planInstructions = {!! json_encode($dietPlan->instructions ?? '') !!};
+var planRestrictions = {!! json_encode($dietPlan->restrictions ?? '') !!};
+
 
 
 console.log('WhatsApp data loaded - Patient:', patientName, 'Plan:', planTitle, 'Number:', planNumber);
@@ -1343,6 +1347,7 @@ window.sendWhatsAppSimple = function() {
             date: 'Date:',
             gender: 'Gender:',
             age: 'Age:',
+            restrictions: 'Dietary Restrictions:',
             dailyPlan: 'Daily Plan',
             breakfast: 'Breakfast',
             lunch: 'Lunch',
@@ -1508,7 +1513,10 @@ window.sendWhatsAppSimple = function() {
         @endif
 
         message += currentLabels.instructions + '\n';
-        message += currentLabels.instructionText + '\n\n';
+        message += ((planInstructions && planInstructions.trim() !== '') ? planInstructions : currentLabels.instructionText) + '\n\n';
+        if (planRestrictions && planRestrictions.trim() !== '') {
+            message += (currentLabels.restrictions || 'Dietary Restrictions:') + '\n' + planRestrictions + '\n\n';
+        }
         message += currentLabels.footer;
 
         var encodedMessage = encodeURIComponent(message);

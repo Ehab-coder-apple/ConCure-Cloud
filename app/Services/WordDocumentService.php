@@ -446,14 +446,27 @@ class WordDocumentService
             }
         }
 
-        $html .= '<div class="instructions-section" style="margin-top: 15pt; padding: 10pt; border: 1pt solid #20B2AA; background-color: #f0f8ff; border-radius: 6pt;">
-            <div class="instructions-title" style="color: #20B2AA; font-weight: bold; font-size: 11pt; margin-bottom: 6pt; text-align: center;">
-                Instructions
-            </div>
-            <div class="instructions-content" style="font-size: 9pt; line-height: 1.4;">
-                Choose one option from each meal type for each day. You can mix and match different options throughout the week for variety!
-            </div>
-        </div>';
+        // Instructions & Restrictions (typed by user)
+        $inst = trim((string)($dietPlan->instructions ?? ''));
+        $rest = trim((string)($dietPlan->restrictions ?? ''));
+        if ($inst !== '' || $rest !== '') {
+            $html .= '<div class="instructions-section" style="margin-top: 15pt; padding: 10pt; border: 1pt solid #20B2AA; background-color: #f0f8ff; border-radius: 6pt;">';
+            if ($inst !== '') {
+                $html .= '<div class="instructions-title" style="color: #20B2AA; font-weight: bold; font-size: 11pt; margin-bottom: 6pt; text-align: center;">Instructions</div>';
+                $html .= '<div class="instructions-content" style="font-size: 9pt; line-height: 1.4; white-space: pre-line;">' . htmlspecialchars($inst) . '</div>';
+            }
+            if ($rest !== '') {
+                $html .= '<div class="instructions-title" style="color: #20B2AA; font-weight: bold; font-size: 11pt; margin: 10pt 0 6pt; text-align: center;">Dietary Restrictions</div>';
+                $html .= '<div class="instructions-content" style="font-size: 9pt; line-height: 1.4; white-space: pre-line;">' . htmlspecialchars($rest) . '</div>';
+            }
+            $html .= '</div>';
+        } else {
+            // Fallback generic instructions when nothing provided
+            $html .= '<div class="instructions-section" style="margin-top: 15pt; padding: 10pt; border: 1pt solid #20B2AA; background-color: #f0f8ff; border-radius: 6pt;">'
+                . '<div class="instructions-title" style="color: #20B2AA; font-weight: bold; font-size: 11pt; margin-bottom: 6pt; text-align: center;">Instructions</div>'
+                . '<div class="instructions-content" style="font-size: 9pt; line-height: 1.4;">Choose one option from each meal type for each day. You can mix and match different options throughout the week for variety!</div>'
+                . '</div>';
+        }
 
         $html .= '</div>'; // Close flexible-plan
 
