@@ -59,13 +59,13 @@ class WordDocumentService
     <style>
         @page {
             size: A4;
-            margin: 0.7in;
+            margin: 0.65in;
         }
 
         body {
             font-family: "Segoe UI", Calibri, Arial, "DejaVu Sans", "Amiri", "Arabic Typesetting", "Traditional Arabic", sans-serif;
             font-size: 11pt;
-            line-height: 1.5;
+            line-height: 1.4;
             color: #000;
             direction: ltr;
         }
@@ -74,8 +74,8 @@ class WordDocumentService
             font-family: "Amiri", "Segoe UI", Calibri, Arial, "Arabic Typesetting", "Traditional Arabic", sans-serif;
             direction: rtl;
             text-align: right;
-            font-size: 11pt;
-            line-height: 1.5;
+            font-size: 10.5pt;
+            line-height: 1.4;
             unicode-bidi: plaintext;
         }
 
@@ -94,8 +94,8 @@ class WordDocumentService
         }
 
         .patient-info {
-            margin-bottom: 15pt;
-            padding: 10pt;
+            margin-bottom: 12pt;
+            padding: 8pt;
             border: 1pt solid #20B2AA;
             background-color: #f7fbfb;
             border-radius: 6pt;
@@ -110,8 +110,8 @@ class WordDocumentService
         .meal-header {
             background-color: #20B2AA;
             color: white;
-            padding: 8pt 12pt;
-            font-size: 12pt;
+            padding: 6pt 10pt;
+            font-size: 11pt;
             font-weight: bold;
         }
 
@@ -194,7 +194,7 @@ class WordDocumentService
         }
 
         td {
-            padding: 4pt;
+            padding: 3pt;
             vertical-align: top;
         }
     </style>
@@ -206,7 +206,7 @@ class WordDocumentService
         $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($clinicId);
         $clinicName = htmlspecialchars($clinicInfo['name'] ?? 'ConCure Clinic');
         $logoUrl = $clinicInfo['logo'] ?? null;
-        $html .= '<table class="brand-header" role="presentation" cellspacing="0" cellpadding="0" style="width:100%; border-bottom:2pt solid #20B2AA; margin-bottom:15pt;">'
+        $html .= '<table class="brand-header" role="presentation" cellspacing="0" cellpadding="0" style="width:100%; border-bottom:2pt solid #20B2AA; margin-bottom:10pt;">'
             . '<tr>'
             . '<td style="width:22%; vertical-align:middle; text-align:left;">' . ($logoUrl ? '<img src="' . htmlspecialchars($logoUrl) . '" style="height:36pt;">' : '') . '</td>'
             . '<td style="width:56%; text-align:center; color:#20B2AA;">'
@@ -264,13 +264,27 @@ class WordDocumentService
                     $meals = $dayMeals->whereIn('meal_type', $mealTypes);
 
                     if ($meals->count() > 0) {
-                        $html .= '<div class="meal-section"><div class="meal-header">' . ucfirst($displayName) . '</div><ul class="food-list" style="margin:6pt 12pt; padding:0 0 0 14pt;">';
+                        $label = ucfirst($displayName);
+                        $outputLang = $dietPlan->language ?? (request()->get('lang') ?? app()->getLocale());
+                        $isKurdish = in_array($outputLang, ['ku_bahdini','ku_sorani','ku'], true);
+                        if ($outputLang === 'ar') {
+                            if ($displayName === 'breakfast') { $label = 'الفطور'; }
+                            elseif ($displayName === 'lunch') { $label = 'الغداء'; }
+                            elseif ($displayName === 'dinner') { $label = 'العشاء'; }
+                            elseif ($displayName === 'snacks') { $label = 'وجبة خفيفة'; }
+                        } elseif ($isKurdish) {
+                            if ($displayName === 'breakfast') { $label = 'بەیانی'; }
+                            elseif ($displayName === 'lunch') { $label = 'نانی نیوەڕۆ'; }
+                            elseif ($displayName === 'dinner') { $label = 'شێوان'; }
+                            elseif ($displayName === 'snacks') { $label = 'خواردنی سووک'; }
+                        }
+                        $html .= '<div class="meal-section"><div class="meal-header">' . $label . '</div><ul class="food-list" style="margin:4pt 10pt; padding:0 0 0 12pt;">';
 
                         foreach ($meals as $meal) {
                             foreach ($meal->foods as $mealFood) {
                                 $food = $mealFood->food;
                                 $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
-                                $html .= '<li class="kurdish" style="margin:2pt 0; font-size:11pt;">' . htmlspecialchars($foodName) . ' — <span style="color:#666; font-weight:normal; font-size:10pt;">' . htmlspecialchars($mealFood->quantity_with_equivalent) . '</span></li>';
+                                $html .= '<li class="kurdish" style="margin:1.5pt 0; font-size:10.5pt;">' . htmlspecialchars($foodName) . ' — <span style="color:#666; font-weight:normal; font-size:9.8pt;">' . htmlspecialchars($mealFood->quantity_with_equivalent) . '</span></li>';
                             }
                         }
 
@@ -279,9 +293,7 @@ class WordDocumentService
                 }
 
                 // Add day total
-                $html .= '<div style="text-align: right; font-weight: bold; color: #2c3e50; margin-top: 10pt; padding-top: 10pt; border-top: 1pt solid #bdc3c7;">
-                    Day ' . $dayNumber . ' Total: ' . number_format($dayTotalCalories, 0) . ' calories
-                </div></div>';
+                $html .= '</div>';
             }
         }
         }
@@ -337,12 +349,30 @@ class WordDocumentService
             // Group meals by meal type and option
             $mealsByType = [];
             $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack_1'];
-            $mealTypeNames = [
-                'breakfast' => 'Breakfast',
-                'lunch' => 'Lunch',
-                'dinner' => 'Dinner',
-                'snack_1' => 'Snacks'
-            ];
+            $outputLang = $dietPlan->language ?? (request()->get('lang') ?? app()->getLocale());
+            $isKurdish = in_array($outputLang, ['ku_bahdini','ku_sorani','ku'], true);
+            if ($outputLang === 'ar') {
+                $mealTypeNames = [
+                    'breakfast' => 'الفطور',
+                    'lunch' => 'الغداء',
+                    'dinner' => 'العشاء',
+                    'snack_1' => 'وجبة خفيفة',
+                ];
+            } elseif ($isKurdish) {
+                $mealTypeNames = [
+                    'breakfast' => 'بەیانی',
+                    'lunch' => 'نانی نیوەڕۆ',
+                    'dinner' => 'شێوان',
+                    'snack_1' => 'خواردنی سووک',
+                ];
+            } else {
+                $mealTypeNames = [
+                    'breakfast' => 'Breakfast',
+                    'lunch' => 'Lunch',
+                    'dinner' => 'Dinner',
+                    'snack_1' => 'Snacks',
+                ];
+            }
 
             // Initialize structure
             foreach ($mealTypes as $mealType) {
