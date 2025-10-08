@@ -44,10 +44,11 @@
 
     @foreach($groups as $group)
         <div class="meal">
-            <div class="meal-title">{{ ucfirst($group['type']) }}</div>
-            @if(!empty($group['option']))
-                <div class="option-label">{{ __('Option') }} {{ $group['option'] }}</div>
-            @endif
+            @php
+                $title = ucfirst($group['type'] ?? '');
+                if (!empty($group['option'])) { $title .= ' — ' . __('Option') . ' ' . $group['option']; }
+            @endphp
+            <div class="meal-title">{{ $title }}</div>
             <table>
                 <thead>
                     <tr>
