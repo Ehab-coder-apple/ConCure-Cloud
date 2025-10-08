@@ -1205,6 +1205,12 @@ try {
     console.log('Using default values due to error:', e);
 }
 
+// Patient demographics for WhatsApp header
+var patientGender = '{{ addslashes($dietPlan->patient->gender ?? "") }}';
+var patientAge = '{{ (int)($dietPlan->patient->age ?? 0) }}';
+var planDate = '{{ optional($dietPlan->created_at)->format("Y-m-d") }}';
+
+
 console.log('WhatsApp data loaded - Patient:', patientName, 'Plan:', planTitle, 'Number:', planNumber);
 
 // Define sendWhatsAppSimple function with detailed meal information
@@ -1334,6 +1340,9 @@ window.sendWhatsAppSimple = function() {
             patient: 'Patient:',
             plan: 'Plan:',
             planNumber: 'Plan #:',
+            date: 'Date:',
+            gender: 'Gender:',
+            age: 'Age:',
             dailyPlan: 'Daily Plan',
             breakfast: 'Breakfast',
             lunch: 'Lunch',
@@ -1362,7 +1371,10 @@ window.sendWhatsAppSimple = function() {
         var message = currentLabels.title + '\n\n' +
                      currentLabels.patient + ' ' + patientName + '\n' +
                      currentLabels.plan + ' ' + planTitle + '\n' +
-                     currentLabels.planNumber + ' ' + planNumber + '\n\n';
+                     currentLabels.planNumber + ' ' + planNumber + '\n' +
+                     currentLabels.date + ' ' + planDate + '\n' +
+                     currentLabels.gender + ' ' + patientGender + '\n' +
+                     currentLabels.age + ' ' + patientAge + '\n\n';
 
         console.log('Message so far:', message);
 

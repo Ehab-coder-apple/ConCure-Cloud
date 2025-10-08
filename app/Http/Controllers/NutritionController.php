@@ -978,6 +978,20 @@ class NutritionController extends Controller
             if ($dietPlan->patient && $dietPlan->patient->name) { $metaParts[] = e($dietPlan->patient->name); }
             if ($dietPlan->doctor && $dietPlan->doctor->name) { $metaParts[] = e($dietPlan->doctor->name); }
             if (!empty($metaParts)) { $html .= '<div class="meta">' . implode(' • ', $metaParts) . '</div>'; }
+            // Additional patient info line: Patient, Gender, Age, Date
+            $patient = $dietPlan->patient;
+            $patientName = $patient ? ($patient->full_name ?? ($patient->name ?? '')) : '';
+            $genderRaw = $patient->gender ?? '';
+            $genderMap = ['male' => 'Male', 'm' => 'Male', 'female' => 'Female', 'f' => 'Female'];
+            $gender = $genderMap[strtolower((string)$genderRaw)] ?? ucfirst((string)$genderRaw);
+            $age = $patient->age ?? null;
+            $dateStr = $dietPlan->created_at ? $dietPlan->created_at->format('Y-m-d') : date('Y-m-d');
+            $infoParts = [];
+            if (!empty($patientName)) { $infoParts[] = 'Patient: ' . e($patientName); }
+            if (!empty($gender)) { $infoParts[] = 'Gender: ' . e($gender); }
+            if ($age !== null) { $infoParts[] = 'Age: ' . e((string)$age); }
+            if (!empty($dateStr)) { $infoParts[] = 'Date: ' . e($dateStr); }
+            if (!empty($infoParts)) { $html .= '<div class="meta">' . implode(' • ', $infoParts) . '</div>'; }
             $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($user->clinic_id);
             if (!empty($clinicInfo['logo_pdf_path']) || !empty($clinicInfo['name'])) {
                 $html .= '<table style="width:100%; margin:0 0 12px 0;"><tr>';
@@ -1062,6 +1076,20 @@ class NutritionController extends Controller
             if ($dietPlan->patient && $dietPlan->patient->name) { $metaParts[] = e($dietPlan->patient->name); }
             if ($dietPlan->doctor && $dietPlan->doctor->name) { $metaParts[] = e($dietPlan->doctor->name); }
             if (!empty($metaParts)) { $html .= '<div class="meta">' . implode(' • ', $metaParts) . '</div>'; }
+            // Additional patient info line: Patient, Gender, Age, Date
+            $patient = $dietPlan->patient;
+            $patientName = $patient ? ($patient->full_name ?? ($patient->name ?? '')) : '';
+            $genderRaw = $patient->gender ?? '';
+            $genderMap = ['male' => 'Male', 'm' => 'Male', 'female' => 'Female', 'f' => 'Female'];
+            $gender = $genderMap[strtolower((string)$genderRaw)] ?? ucfirst((string)$genderRaw);
+            $age = $patient->age ?? null;
+            $dateStr = $dietPlan->created_at ? $dietPlan->created_at->format('Y-m-d') : date('Y-m-d');
+            $infoParts = [];
+            if (!empty($patientName)) { $infoParts[] = 'Patient: ' . e($patientName); }
+            if (!empty($gender)) { $infoParts[] = 'Gender: ' . e($gender); }
+            if ($age !== null) { $infoParts[] = 'Age: ' . e((string)$age); }
+            if (!empty($dateStr)) { $infoParts[] = 'Date: ' . e($dateStr); }
+            if (!empty($infoParts)) { $html .= '<div class="meta">' . implode(' • ', $infoParts) . '</div>'; }
             $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($user->clinic_id);
             if (!empty($clinicInfo['logo_pdf_path']) || !empty($clinicInfo['name'])) {
                 $html .= '<table style="width:100%; margin:0 0 12px 0;"><tr>';

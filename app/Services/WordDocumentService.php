@@ -205,9 +205,11 @@ class WordDocumentService
 
         // Patient Info
         $html .= '<div class="patient-info">
-            <strong>Patient:</strong> ' . htmlspecialchars($dietPlan->patient->name ?? 'Unknown Patient') . '<br>
+            <strong>Patient:</strong> ' . htmlspecialchars(($dietPlan->patient->full_name ?? ($dietPlan->patient->name ?? 'Unknown Patient'))) . '<br>
             <strong>Plan Number:</strong> ' . htmlspecialchars($dietPlan->plan_number ?? 'N/A') . '<br>
-            <strong>Date:</strong> ' . $dietPlan->created_at->format('Y-m-d') . '<br>
+            <strong>Gender:</strong> ' . htmlspecialchars(ucfirst(strtolower($dietPlan->patient->gender ?? ''))) . '<br>
+            <strong>Age:</strong> ' . (int)($dietPlan->patient->age ?? 0) . '<br>
+            <strong>Date:</strong> ' . ($dietPlan->created_at ? $dietPlan->created_at->format('Y-m-d') : date('Y-m-d')) . '<br>
             <strong>Doctor:</strong> ' . htmlspecialchars($dietPlan->doctor->name ?? 'Not Assigned') . '
         </div>';
 
