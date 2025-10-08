@@ -968,13 +968,27 @@ class NutritionController extends Controller
             $dir = 'rtl';
             $html = '<!doctype html><html><head><meta charset="utf-8">'
                   . '<style>body{font-family: DejaVu Sans, Amiri; font-size:12pt; direction:rtl;}'
-                  . 'h2{margin:0 0 10px; text-align:center} ul{margin:0; padding-right:16px;} li{margin:2px 0}'
-                  . '.meal{margin:14px 0; page-break-inside: avoid;} .title{font-weight:bold; font-size:14pt; margin-bottom:6px; display:inline-block;}'
-                  . '.opt{color:#20B2AA; font-weight:bold; display:inline-block; margin:0 8px 0 0;}'
+                  . 'h2{margin:0 0 6px; text-align:center; color:#20B2AA} .meta{font-size:10pt; text-align:center; color:#666; margin:0 0 12px}'
+                  . 'ul{margin:0; padding-right:16px;} li{margin:2px 0}'
+                  . '.meal{margin:12px 0; page-break-inside: avoid; border:1px solid #eee; background:#fafafa; border-radius:6px; padding:8px 10px;}'
+                  . '.title{font-weight:bold; font-size:14pt; margin:0 0 6px 0; display:inline-block;} .badge{background:#20B2AA; color:#fff; padding:2px 8px; border-radius:10px; font-size:11pt; display:inline-block; margin:0 0 0 6px;}'
                   . '</style></head><body dir="' . $dir . '">';
             $html .= '<h2>Nutrition Plan #' . e($dietPlan->plan_number) . '</h2>';
-            if ($dietPlan->patient && $dietPlan->patient->name) {
-                $html .= '<div style="margin:0 0 10px; text-align:center">' . e($dietPlan->patient->name) . '</div>';
+            $metaParts = [];
+            if ($dietPlan->patient && $dietPlan->patient->name) { $metaParts[] = e($dietPlan->patient->name); }
+            if ($dietPlan->doctor && $dietPlan->doctor->name) { $metaParts[] = e($dietPlan->doctor->name); }
+            if (!empty($metaParts)) { $html .= '<div class="meta">' . implode(' • ', $metaParts) . '</div>'; }
+            $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($user->clinic_id);
+            if (!empty($clinicInfo['logo_pdf_path']) || !empty($clinicInfo['name'])) {
+                $html .= '<table style="width:100%; margin:0 0 12px 0;"><tr>';
+                if (!empty($clinicInfo['logo_pdf_path'])) {
+                    $html .= '<td style="width:72px; vertical-align:top; text-align:center;"><img src="' . e($clinicInfo['logo_pdf_path']) . '" style="max-height:64px; max-width:64px; border:1px solid #e9ecef; border-radius:6px; padding:2px;"></td>';
+                }
+                $align = !empty($clinicInfo['logo_pdf_path']) ? 'left' : 'center';
+                $pad = !empty($clinicInfo['logo_pdf_path']) ? 'padding-left:12px;' : '';
+                $html .= '<td style="vertical-align:top; text-align:' . $align . '; ' . $pad . '">';
+                if (!empty($clinicInfo['name'])) { $html .= '<div style="color:#20B2AA; font-weight:bold; font-size:12pt; margin:0 0 2px 0;">' . e($clinicInfo['name']) . '</div>'; }
+                $html .= '</td></tr></table>';
             }
 
             // Group meals by normalized meal_type and detected option number (robust to Eloquent/dynamic props)
@@ -1013,9 +1027,13 @@ class NutritionController extends Controller
                 } else { $label = ucfirst($type); }
 
                 $html .= '<div class="meal">';
-                $titleText = $label;
-                if (!empty($g['option'])) { $titleText .= ' — ' . 'الخيار ' . e($g['option']); }
-                $html .= '<div class="title">' . e($titleText) . '</div>';
+                $labelText = e($label);
+                if (!empty($g['option'])) {
+                    $optHtml = '<span class="badge">' . 'الخيار ' . e($g['option']) . '</span>';
+                    $html .= '<div class="title">' . $labelText . ' — ' . $optHtml . '</div>';
+                } else {
+                    $html .= '<div class="title">' . $labelText . '</div>';
+                }
                 $html .= '<ul>';
                 foreach ($g['meals'] as $meal) {
                     foreach ($meal->foods as $mf) {
@@ -1034,13 +1052,27 @@ class NutritionController extends Controller
             $dir = $isKurdish ? 'rtl' : 'ltr';
             $html = '<!doctype html><html><head><meta charset="utf-8">'
                   . '<style>body{font-family: DejaVu Sans, Amiri; font-size:12pt; direction:' . $dir . ';}'
-                  . 'h2{margin:0 0 10px; text-align:center} ul{margin:0; padding-' . ($dir==='rtl'?'right':'left') . ':16px;} li{margin:2px 0}'
-                  . '.meal{margin:14px 0; page-break-inside: avoid;} .title{font-weight:bold; font-size:14pt; margin-bottom:6px; display:inline-block;}'
-                  . '.opt{color:#20B2AA; font-weight:bold; display:inline-block; margin:0 8px 0 0;}'
+                  . 'h2{margin:0 0 6px; text-align:center; color:#20B2AA} .meta{font-size:10pt; text-align:center; color:#666; margin:0 0 12px}'
+                  . 'ul{margin:0; padding-' . ($dir==='rtl'?'right':'left') . ':16px;} li{margin:2px 0}'
+                  . '.meal{margin:12px 0; page-break-inside: avoid; border:1px solid #eee; background:#fafafa; border-radius:6px; padding:8px 10px;}'
+                  . '.title{font-weight:bold; font-size:14pt; margin:0 0 6px 0; display:inline-block;} .badge{background:#20B2AA; color:#fff; padding:2px 8px; border-radius:10px; font-size:11pt; display:inline-block; margin:0 0 0 6px;}'
                   . '</style></head><body dir="' . $dir . '">';
             $html .= '<h2>Nutrition Plan #' . e($dietPlan->plan_number) . '</h2>';
-            if ($dietPlan->patient && $dietPlan->patient->name) {
-                $html .= '<div style="margin:0 0 10px; text-align:center">' . e($dietPlan->patient->name) . '</div>';
+            $metaParts = [];
+            if ($dietPlan->patient && $dietPlan->patient->name) { $metaParts[] = e($dietPlan->patient->name); }
+            if ($dietPlan->doctor && $dietPlan->doctor->name) { $metaParts[] = e($dietPlan->doctor->name); }
+            if (!empty($metaParts)) { $html .= '<div class="meta">' . implode(' • ', $metaParts) . '</div>'; }
+            $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($user->clinic_id);
+            if (!empty($clinicInfo['logo_pdf_path']) || !empty($clinicInfo['name'])) {
+                $html .= '<table style="width:100%; margin:0 0 12px 0;"><tr>';
+                if (!empty($clinicInfo['logo_pdf_path'])) {
+                    $html .= '<td style="width:72px; vertical-align:top; text-align:center;"><img src="' . e($clinicInfo['logo_pdf_path']) . '" style="max-height:64px; max-width:64px; border:1px solid #e9ecef; border-radius:6px; padding:2px;"></td>';
+                }
+                $align = !empty($clinicInfo['logo_pdf_path']) ? 'left' : 'center';
+                $pad = !empty($clinicInfo['logo_pdf_path']) ? 'padding-left:12px;' : '';
+                $html .= '<td style="vertical-align:top; text-align:' . $align . '; ' . $pad . '">';
+                if (!empty($clinicInfo['name'])) { $html .= '<div style="color:#20B2AA; font-weight:bold; font-size:12pt; margin:0 0 2px 0;">' . e($clinicInfo['name']) . '</div>'; }
+                $html .= '</td></tr></table>';
             }
 
             // Group meals by normalized meal_type and detected option number (robust)
@@ -1082,9 +1114,13 @@ class NutritionController extends Controller
                 }
 
                 $html .= '<div class="meal">';
-                $titleText = $label;
-                if (!empty($g['option'])) { $titleText .= ' — ' . 'Option ' . e($g['option']); }
-                $html .= '<div class="title">' . e($titleText) . '</div>';
+                $labelText = e($label);
+                if (!empty($g['option'])) {
+                    $optHtml = '<span class="badge">' . 'Option ' . e($g['option']) . '</span>';
+                    $html .= '<div class="title">' . $labelText . ' — ' . $optHtml . '</div>';
+                } else {
+                    $html .= '<div class="title">' . $labelText . '</div>';
+                }
                 $html .= '<ul>';
                 foreach ($g['meals'] as $meal) {
                     foreach ($meal->foods as $mf) {
