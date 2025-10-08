@@ -299,9 +299,6 @@ class WordDocumentService
                                     <div class="food-details">
                                         ' . htmlspecialchars($mealFood->quantity_with_equivalent) . '
                                     </div>
-                                    <div class="nutritional-info">
-                                        ' . number_format($calories, 0) . ' cal | ' . number_format($protein, 1) . 'g protein | ' . number_format($carbs, 1) . 'g carbs | ' . number_format($fat, 1) . 'g fat
-                                    </div>
                                 </div>';
                             }
                         }
@@ -436,12 +433,6 @@ class WordDocumentService
                                 <div class="food-details" style="color: #666; font-size: 10pt;">
                                     ' . htmlspecialchars($mealFood->quantity_with_equivalent) . '
                                 </div>';
-
-                            if ($food && $quantity > 0) {
-                                $html .= '<div class="nutritional-info" style="color: #20B2AA; font-size: 10pt; margin-top: 2pt;">
-                                    ' . number_format($calories, 0) . ' cal | ' . number_format($protein, 1) . 'g protein | ' . number_format($carbs, 1) . 'g carbs | ' . number_format($fat, 1) . 'g fat
-                                </div>';
-                            }
 
                             $html .= '</div>';
                         }
