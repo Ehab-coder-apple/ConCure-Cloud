@@ -1245,11 +1245,12 @@ class NutritionController extends Controller
             'Content-Length' => @filesize($outPath) ?: null,
         ];
 
-        if (request()->boolean('download')) {
+        // Default: force download. Allow inline preview only when explicitly requested.
+        if (!request()->boolean('inline') && !request()->boolean('preview')) {
             return response()->download($outPath, 'nutrition-plan-' . $dietPlan->plan_number . '.pdf', $headers);
         }
 
-        // Force inline preview
+        // Inline preview (opt-in)
         $headers['Content-Disposition'] = 'inline; filename="nutrition-plan-' . $dietPlan->plan_number . '.pdf"';
         return response()->file($outPath, $headers);
     }
