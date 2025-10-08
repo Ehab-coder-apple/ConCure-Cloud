@@ -102,7 +102,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <strong>{{ __('Patient:') }}</strong><br>
+                            <strong>{{ __('Name:') }}</strong><br>
                             <span class="text-primary">{{ $dietPlan->patient->first_name ?? '' }} {{ $dietPlan->patient->last_name ?? '' }}</span><br>
                             <small class="text-muted">{{ $dietPlan->patient->patient_id ?? '' }}</small>
                         </div>
@@ -609,7 +609,7 @@
 
                         <a href="{{ route('nutrition.create') }}?patient_id={{ $dietPlan->patient_id }}" class="btn btn-success">
                             <i class="fas fa-plus me-1"></i>
-                            {{ __('New Plan for Patient') }}
+                            {{ __('New Plan for Name') }}
                         </a>
 
                         <hr>

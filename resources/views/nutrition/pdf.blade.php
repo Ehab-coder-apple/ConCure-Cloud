@@ -331,7 +331,7 @@
     <div class="plan-info">
         <table>
             <tr>
-                <td class="label">Patient:</td>
+                <td class="label">Name:</td>
                 @php
                     $patientName = $dietPlan->patient->first_name . ' ' . $dietPlan->patient->last_name;
                     $planTitle = $dietPlan->title;
