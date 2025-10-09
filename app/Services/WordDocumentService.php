@@ -416,13 +416,15 @@ class WordDocumentService
                 if ($outputLang === 'ar') { $optionsWord = 'الخيارات'; }
                 elseif ($outputLang === 'ku_bahdini') { $optionsWord = 'هەلبژارتن'; }
                 elseif ($isKurdish) { $optionsWord = 'هەلبژاردەکان'; }
+                $showOptionsWord = !($outputLang === 'ar' || $isKurdish || $outputLang === 'ku_bahdini');
+                $headerText = $mealTypeNames[$mealType] . ($showOptionsWord ? (' ' . $optionsWord) : '');
                 $html .= '<div class="meal-type-section" style="margin-bottom: 16pt; page-break-inside: avoid;">
                     <h4 style="color: #20B2AA; font-size: 12pt; margin: 0 0 8pt; border-bottom: 1pt solid #20B2AA; padding: 0 0 3pt; text-align:' . $align . ';">' .
-                    $mealTypeNames[$mealType] . ' ' . $optionsWord . '</h4>';
+                    $headerText . '</h4>';
 
                 foreach ($mealsByType[$mealType] as $meal) {
                     $html .= '<div class="option-box" style="border:1pt solid #e4f3f2; margin-bottom: 8pt; padding: 8pt; background-color: #fff; border-radius: 6pt;">'
-                        . '<div class="option-header" style="font-weight:600; font-size:11pt; margin-bottom:6pt; text-align:center; color:#20B2AA; background-color:#f8f9fa; padding:3pt; border-radius:2pt;">'
+                        . '<div class="option-header" style="font-weight:600; font-size:0; margin-bottom:6pt; text-align:center; color:#20B2AA; background-color:#f8f9fa; padding:3pt; border-radius:2pt;">'
                         . '<span style="font-size:11pt;">' . $optionWord . ' ' . ($meal->option_number ?? 1) . '</span>'
                         . ((($dietPlan->language ?? (request()->get('lang') ?? app()->getLocale())) === 'ar') ? '22322 21' : ((($dietPlan->language ?? (request()->get('lang') ?? app()->getLocale())) === 'ku_bahdini') ? '' : '')) . ''
                         . '</div>'
