@@ -567,8 +567,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /* Compact & extra-embossed, extra-short statistics cards */
 .dashboard-stats .card{
-  position: relative;
-  overflow: hidden;
+  position: relative; overflow: hidden;
+  width: 90%; /* 10% narrower */
+  margin-inline: auto;
   border-radius:14px; border:1px solid rgba(255,255,255,.28);
   background-image: linear-gradient(145deg, rgba(255,255,255,.20), rgba(0,0,0,.03));
   box-shadow:
@@ -592,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function() {
   filter: blur(10px);
   opacity:.45;
 }
-.dashboard-stats .card-body{padding:3px 8px 5px;}
+.dashboard-stats .card-body{padding:2px 8px 4px;}
 .dashboard-stats h2{font-size:1.4rem; margin:0;}
 .dashboard-stats .card-title{font-size:1.18rem; font-weight:800; letter-spacing:.2px; margin-bottom:1px;}
 .dashboard-stats small{font-size:0.68rem;}
