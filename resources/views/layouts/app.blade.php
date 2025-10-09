@@ -1334,7 +1334,9 @@
                         <i class="fas fa-bars"></i>
                     </button>
                     <div class="page-title">
-                        @yield('page-title', 'Dashboard')
+                        @hasSection('page-title')
+                            @yield('page-title')
+                        @endif
                     </div>
                 </div>
                 <div class="topbar-right">
