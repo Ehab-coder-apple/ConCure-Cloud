@@ -215,10 +215,13 @@ class WhatsAppController extends Controller
             $sinceDate = now()->subDays(30)->startOfDay();
         }
 
-        $query = Patient::query()
-            ->where('clinic_id', $user->clinic_id)
-            ->whereNotNull('whatsapp_phone')
-            ->where('whatsapp_phone', '!=', '');
+        $query = Patient::query();
+        // Restrict to clinic for clinic users; super admin (no clinic) sees all
+        if (!empty($user->clinic_id)) {
+            $query->where('clinic_id', $user->clinic_id);
+        }
+        $query->whereNotNull('whatsapp_phone')
+              ->where('whatsapp_phone', '!=', '');
 
         if ($status === 'active') {
             $query->where('is_active', true);
@@ -269,7 +272,11 @@ class WhatsAppController extends Controller
             'message' => 'required|string|max:2000',
         ]);
 
-        $patients = Patient::where('clinic_id', $user->clinic_id)
+        $patientsQuery = Patient::query();
+        if (!empty($user->clinic_id)) {
+            $patientsQuery->where('clinic_id', $user->clinic_id);
+        }
+        $patients = $patientsQuery
             ->whereIn('id', $data['patient_ids'])
             ->whereNotNull('whatsapp_phone')
             ->where('whatsapp_phone','!=','')
