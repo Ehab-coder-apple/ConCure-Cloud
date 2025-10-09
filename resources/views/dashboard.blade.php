@@ -569,26 +569,28 @@ document.addEventListener('DOMContentLoaded', function() {
 .dashboard-stats .card{
   position: relative;
   overflow: hidden;
-  border-radius:14px; border:1px solid rgba(255,255,255,.35);
-  background-image: linear-gradient(145deg, rgba(255,255,255,.25), rgba(0,0,0,.04));
+  border-radius:14px; border:1px solid rgba(255,255,255,.28);
+  background-image: linear-gradient(145deg, rgba(255,255,255,.20), rgba(0,0,0,.03));
   box-shadow:
-    0 16px 36px rgba(0,0,0,.26),
-    0 6px 14px rgba(0,0,0,.16),
-    inset 4px 4px 0 rgba(255,255,255,.38),
-    inset -4px -4px 0 rgba(0,0,0,.20);
+    0 18px 40px rgba(0,0,0,.22),
+    0 8px 18px rgba(0,0,0,.14),
+    inset 0 4px 12px rgba(255,255,255,.32),
+    inset 0 -4px 12px rgba(0,0,0,.18);
 }
-/* layered highlights for stronger 3D */
+/* layered highlights for softer 3D */
 .dashboard-stats .card::before,
 .dashboard-stats .card::after{
   content:''; position:absolute; inset:0; border-radius:14px; pointer-events:none;
 }
-.dashboard-stats .card::before{ /* top-left glow */
-  background: linear-gradient(215deg, rgba(255,255,255,.45), rgba(255,255,255,0) 45%);
-  opacity:.7;
+.dashboard-stats .card::before{
+  background: radial-gradient(120% 60% at 0% 0%, rgba(255,255,255,.48), rgba(255,255,255,0) 60%);
+  filter: blur(8px);
+  opacity:.55;
 }
-.dashboard-stats .card::after{ /* bottom-right shadow tint */
-  background: linear-gradient(35deg, rgba(0,0,0,.22), rgba(0,0,0,0) 45%);
-  opacity:.5;
+.dashboard-stats .card::after{
+  background: radial-gradient(120% 60% at 100% 100%, rgba(0,0,0,.20), rgba(0,0,0,0) 60%);
+  filter: blur(10px);
+  opacity:.45;
 }
 .dashboard-stats .card-body{padding:3px 8px 5px;}
 .dashboard-stats h2{font-size:1.4rem; margin:0;}
