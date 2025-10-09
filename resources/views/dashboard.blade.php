@@ -563,6 +563,8 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </style>
 
+<style>
+
 /* Compact & embossed statistics cards */
 .dashboard-stats .card{border-radius:14px;box-shadow:0 2px 6px rgba(0,0,0,.06),0 10px 20px rgba(0,0,0,.06),inset 1px 1px 0 rgba(255,255,255,.18),inset -1px -1px 0 rgba(0,0,0,.08);}
 .dashboard-stats .card-body{padding:8px 12px;}
@@ -575,5 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
 .quick-actions .btn{padding:12px 10px; border-radius:10px;}
 .quick-actions i{font-size:1.1rem;}
 .quick-actions small{font-size:0.9rem;}
+</style>
+
 
 @endpush
