@@ -315,6 +315,8 @@
 	                                                    <input type="text" id="patientsFilter" class="form-control" placeholder="{{ __('Search name or phone') }}">
 	                                                </div>
 	                                                <select id="patientsSelect" class="form-select" multiple size="10"></select>
+                                                <div class="form-text text-muted mb-2">{{ __('Tip: Click items to toggle selection. Use Select All/Clear. Hold Ctrl (Windows) or ⌘ Command (Mac) to select multiple.') }}</div>
+
 	                                                <div id="noPatientsHint" class="text-muted small mt-2" style="display:none;">{{ __('No patients matched your filter') }}</div>
 	                                                <div class="mt-2 d-flex gap-2">
 	                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllBtn">{{ __('Select All') }}</button>
@@ -570,6 +572,19 @@ patientsFilter?.addEventListener('input', applyFilter);
 Array.from(document.querySelectorAll('input[name="status"]')).forEach(r=> r.addEventListener('change', loadPatients));
 Array.from(document.querySelectorAll('input[name="whType"]')).forEach(r=> r.addEventListener('change', loadPatients));
 sinceDateInput?.addEventListener('change', loadPatients);
+
+// Toggle selection on click (no need for Ctrl/Cmd)
+patientsSelect?.addEventListener('mousedown', (e)=>{
+  const target = e.target;
+  if(target && target.tagName && target.tagName.toLowerCase()==='option'){
+    e.preventDefault();
+    const opt = target; const was = opt.selected;
+    opt.selected = !was; // toggle
+    patientsSelect.focus();
+    const ev = new Event('change', {bubbles:true});
+    patientsSelect.dispatchEvent(ev);
+  }
+});
 
 document.getElementById('selectAllBtn')?.addEventListener('click', ()=>{
   Array.from(patientsSelect.options).forEach(o=>o.selected=true);
