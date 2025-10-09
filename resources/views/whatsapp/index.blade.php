@@ -529,7 +529,30 @@ function loadPatients(){
   const qs = new URLSearchParams({ status: getSelectedStatus(), type: getSelectedType(), since: getSinceDate() }).toString();
   fetch(`/whatsapp/patients?${qs}`)
     .then(r=>r.json())
-    .then(data=>{ if(data.success){ renderPatients(data.patients); } else { patientsCount.textContent = '{{ __('Failed to load') }}'; } })
+    .then(data=>{
+      if(data.success){
+        renderPatients(data.patients);
+        if((data.patients?.length||0)===0){
+          // Show diagnostic counts and offer quick "Show all"
+          const c = data.meta?.counts || {}; const f = data.meta?.filters || {};
+          const msg = `0 {{ __('matched') }} • ${c.after_status??0} {{ __('after status') }} • ${c.with_whatsapp??0} {{ __('with WhatsApp') }}`;
+          patientsCount.textContent = msg;
+          // Add quick button once
+          if(!document.getElementById('showAllBtn')){
+            const btn = document.createElement('button');
+            btn.id = 'showAllBtn'; btn.type='button';
+            btn.className = 'btn btn-sm btn-outline-secondary ms-2';
+            btn.textContent = '{{ __('Show all (ignore dates)') }}';
+            btn.addEventListener('click', ()=>{
+              const both = document.getElementById('typeBoth'); if(both){ both.checked = true; }
+              if(sinceDateInput){ sinceDateInput.value = '1970-01-01'; }
+              loadPatients();
+            });
+            patientsCount.parentElement?.appendChild(btn);
+          }
+        }
+      } else { patientsCount.textContent = '{{ __('Failed to load') }}'; }
+    })
     .catch(()=>{ patientsCount.textContent = '{{ __('Failed to load') }}'; });
 }
 loadPatientsBtn?.addEventListener('click', loadPatients);

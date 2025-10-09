@@ -215,33 +215,39 @@ class WhatsAppController extends Controller
             $sinceDate = now()->subDays(30)->startOfDay();
         }
 
-        $query = Patient::query();
-        // Restrict to clinic for clinic users; super admin (no clinic) sees all
+        // Build base query: clinic scope (if any) + has WhatsApp
+        $base = Patient::query();
         if (!empty($user->clinic_id)) {
-            $query->where('clinic_id', $user->clinic_id);
+            $base->where('clinic_id', $user->clinic_id);
         }
-        $query->whereNotNull('whatsapp_phone')
-              ->where('whatsapp_phone', '!=', '');
+        $base->whereNotNull('whatsapp_phone')->where('whatsapp_phone', '!=', '');
 
+        // Count with WhatsApp only (no status/date filters)
+        $countWhatsApp = (clone $base)->count();
+
+        // Apply status filter
+        $statusQuery = clone $base;
         if ($status === 'active') {
-            $query->where('is_active', true);
+            $statusQuery->where('is_active', true);
         } elseif ($status === 'inactive') {
-            $query->where('is_active', false);
+            $statusQuery->where('is_active', false);
         }
+        $countAfterStatus = (clone $statusQuery)->count();
 
-        // date filters (registration/updates)
+        // Apply date filters (registration/updates)
+        $finalQuery = clone $statusQuery;
         if ($type === 'new') {
-            $query->where('created_at', '>=', $sinceDate);
+            $finalQuery->where('created_at', '>=', $sinceDate);
         } elseif ($type === 'updated') {
-            $query->where('updated_at', '>=', $sinceDate);
+            $finalQuery->where('updated_at', '>=', $sinceDate);
         } else { // both
-            $query->where(function($q) use ($sinceDate){
+            $finalQuery->where(function($q) use ($sinceDate){
                 $q->where('created_at', '>=', $sinceDate)
                   ->orWhere('updated_at', '>=', $sinceDate);
             });
         }
 
-        $patients = $query->orderBy('first_name')
+        $patients = $finalQuery->orderBy('first_name')
             ->orderBy('last_name')
             ->limit(1000)
             ->get(['id','first_name','last_name','whatsapp_phone','is_active']);
@@ -256,7 +262,23 @@ class WhatsAppController extends Controller
             ];
         })->values();
 
-        return response()->json(['success' => true, 'patients' => $out]);
+        return response()->json([
+            'success' => true,
+            'patients' => $out,
+            'meta' => [
+                'counts' => [
+                    'with_whatsapp' => $countWhatsApp,
+                    'after_status' => $countAfterStatus,
+                    'final' => $out->count(),
+                ],
+                'filters' => [
+                    'status' => $status,
+                    'type' => $type,
+                    'since' => $sinceDate->toDateString(),
+                    'clinic_id' => $user->clinic_id,
+                ],
+            ],
+        ]);
     }
 
     /**
