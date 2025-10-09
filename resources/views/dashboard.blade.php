@@ -578,6 +578,11 @@ document.addEventListener('DOMContentLoaded', function() {
     inset 0 4px 12px rgba(255,255,255,.32),
     inset 0 -4px 12px rgba(0,0,0,.18);
 }
+/* remove divider lines and pseudo rules inside stat cards */
+.dashboard-stats .card-body hr{display:none!important;}
+.dashboard-stats .card-body, .dashboard-stats .card-body > *, .dashboard-stats h2, .dashboard-stats h6{border:0!important;}
+.dashboard-stats .card-body::before, .dashboard-stats .card-body::after, .dashboard-stats h2::before, .dashboard-stats h2::after{display:none!important; content:none!important;}
+
 /* layered highlights for softer 3D */
 .dashboard-stats .card::before,
 .dashboard-stats .card::after{
@@ -593,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
   filter: blur(10px);
   opacity:.45;
 }
-.dashboard-stats .card-body{padding:2px 8px 4px;}
+.dashboard-stats .card-body{padding:0 8px 2px;}
 .dashboard-stats h2{font-size:1.4rem; margin:0;}
 .dashboard-stats .card-title{font-size:1.18rem; font-weight:800; letter-spacing:.2px; margin-bottom:1px;}
 .dashboard-stats small{font-size:0.68rem;}
