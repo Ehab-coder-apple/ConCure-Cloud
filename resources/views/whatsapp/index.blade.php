@@ -475,6 +475,8 @@ function showQRCode() {
             document.getElementById('qrContent').innerHTML =
                 '<div class="alert alert-danger">Failed to load QR code: ' + error.message + '</div>';
         });
+}
+
 
 const patientsFilter = document.getElementById('patientsFilter');
 const noPatientsHint = document.getElementById('noPatientsHint');
@@ -612,8 +614,6 @@ document.getElementById('bulkForm')?.addEventListener('submit', function(e){
   }).catch(()=>{ bulkFeedback.textContent='{{ __('Failed to send') }}'; });
 });
 
-
-}
 
 function checkStatus() {
     location.reload();
