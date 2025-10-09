@@ -468,13 +468,18 @@ function renderPatients(list){
   patientsCount.textContent = `${list.length} ${list.length===1?'patient':'patients'} loaded`;
 }
 
-loadPatientsBtn?.addEventListener('click', () => {
+function loadPatients(){
   patientsCount.textContent = '{{ __('Loading...') }}';
   fetch(`/whatsapp/patients?status=${getSelectedStatus()}`)
     .then(r=>r.json())
     .then(data=>{ if(data.success){ renderPatients(data.patients); } else { patientsCount.textContent = '{{ __('Failed to load') }}'; } })
     .catch(()=>{ patientsCount.textContent = '{{ __('Failed to load') }}'; });
-});
+}
+loadPatientsBtn?.addEventListener('click', loadPatients);
+// auto-load on page open
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(loadPatients, 0));
+}else{ setTimeout(loadPatients, 0); }
 
 document.getElementById('selectAllBtn')?.addEventListener('click', ()=>{
   Array.from(patientsSelect.options).forEach(o=>o.selected=true);
