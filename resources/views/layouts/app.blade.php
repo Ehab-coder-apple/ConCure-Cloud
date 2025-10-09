@@ -989,6 +989,19 @@
             }
         }
 
+        /* Neutralize legacy nutrition container hacks inside app layout */
+        body:has(.main-content) .container[style*="margin-top: 80px"],
+        body:has(.main-content) .container:has(.fas.fa-apple-alt) {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            max-width: 100% !important;
+        }
+        body:has(.main-content) .container[style*="margin-top: 80px"] .row,
+        body:has(.main-content) .container:has(.fas.fa-apple-alt) .row {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
         /* Dashboard Statistics Cards Styling */
         .card.bg-primary, .card.bg-secondary, .card.bg-success, .card.bg-info, .card.bg-warning, .card.bg-danger {
             border-radius: 12px !important;
