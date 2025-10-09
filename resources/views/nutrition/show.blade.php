@@ -1426,7 +1426,7 @@ window.sendWhatsAppSimple = function() {
 
         if (isFlexiblePlan) {
             // Flexible meal plan format with options
-            message += '\n🔄 ' + currentLabels.flexibleIntro + '\n\n';
+            message += (selectedLang === 'en' && currentLabels.flexibleIntro ? ('\n🔄 ' + currentLabels.flexibleIntro + '\n\n') : '\n');
 
             @foreach(['breakfast', 'lunch', 'dinner', 'snack_1'] as $mealType)
                 @php
@@ -1437,7 +1437,7 @@ window.sendWhatsAppSimple = function() {
                     var mealTypeName = currentLabels[mealTypeKey] || mealTypeKey.charAt(0).toUpperCase() + mealTypeKey.slice(1);
                     message += '🍽️ *' + mealTypeName + ' ' + (currentLabels.options || 'Options') + ':*\n';
                     @foreach($flexMeals->sortBy('option_number') as $meal)
-                        message += '\n📋 *' + currentLabels.option + ' {{ $meal->option_number }}:* {{ $meal->meal_name ? addslashes($meal->meal_name) : "" }}\n';
+                        message += '\n📋 *' + currentLabels.option + ' {{ $meal->option_number }}:*\n';
                         @foreach($meal->foods as $mealFood)
                             var foodName = foodTranslations['{{ $mealFood->id }}'] && foodTranslations['{{ $mealFood->id }}'][selectedLang]
                                 ? foodTranslations['{{ $mealFood->id }}'][selectedLang]
