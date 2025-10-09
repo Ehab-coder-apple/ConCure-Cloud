@@ -459,9 +459,9 @@
             transition: margin-inline-start 0.3s ease;
             position: relative;
             z-index: 1;
-            width: calc(100vw - var(--sidebar-width));
             box-sizing: border-box;
             padding: 1rem 1.25rem; /* consistent interior spacing */
+            max-width: 100%;
         }
 
         .content-wrapper {
@@ -476,7 +476,7 @@
         @media (min-width: 992px) {
             .main-content {
                 margin-inline-start: 290px !important;
-                width: calc(100vw - 290px) !important;
+                max-width: 100% !important;
             }
             .main-footer {
                 margin-inline-start: 290px !important;
@@ -486,7 +486,6 @@
             }
             [dir='rtl'] .topbar {
                 right: 290px !important; left: auto !important;
-            }
             }
         }
 
