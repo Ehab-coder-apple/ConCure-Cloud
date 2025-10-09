@@ -44,7 +44,7 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
+    <div class="row mb-4 dashboard-stats g-3">
         @if(isset($totalPatients))
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-primary text-white h-100">
@@ -183,9 +183,9 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row quick-actions">
                         @if(Auth::user()->hasPermission('patients_create'))
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('patients.create') }}" class="btn btn-outline-primary w-100">
                                 <i class="fas fa-user-plus d-block mb-1"></i>
                                 <small>Add Patient</small>
@@ -194,7 +194,7 @@
                         @endif
 
                         @if(Auth::user()->hasPermission('prescriptions_create'))
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('simple-prescriptions.create') }}" class="btn btn-outline-success w-100">
                                 <i class="fas fa-prescription d-block mb-1"></i>
                                 <small>New Prescription</small>
@@ -203,7 +203,7 @@
                         @endif
 
                         @if(Auth::user()->hasPermission('appointments_create'))
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('appointments.create') }}" class="btn btn-outline-info w-100">
                                 <i class="fas fa-calendar-plus d-block mb-1"></i>
                                 <small>New Appointment</small>
@@ -212,7 +212,7 @@
                         @endif
 
                         @if(Auth::user()->hasPermission('nutrition_create'))
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('nutrition.create') }}" class="btn btn-outline-success w-100">
                                 <i class="fas fa-apple-alt d-block mb-1"></i>
                                 <small>Nutrition Plan</small>
@@ -221,7 +221,7 @@
                         @endif
 
                         @if(Auth::user()->hasPermission('medicines_create'))
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('medicines.create') }}" class="btn btn-outline-danger w-100">
                                 <i class="fas fa-pills d-block mb-1"></i>
                                 <small>New Medicine</small>
@@ -230,7 +230,7 @@
                         @endif
 
                         @if(Auth::user()->hasPermission('users_create'))
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('users.create') }}" class="btn btn-outline-secondary w-100">
                                 <i class="fas fa-user-plus d-block mb-1"></i>
                                 <small>New User</small>
@@ -239,7 +239,7 @@
                         @endif
 
                         @can('create-prescriptions')
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('recommendations.lab-requests') }}" class="btn btn-outline-warning w-100">
                                 <i class="fas fa-vial d-block mb-1"></i>
                                 <small>Lab Request</small>
@@ -248,7 +248,7 @@
                         @endcan
 
                         @can('create-prescriptions')
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('recommendations.radiology.index') }}" class="btn btn-outline-primary w-100">
                                 <i class="fas fa-x-ray d-block mb-1"></i>
                                 <small>Radiology Request</small>
@@ -257,13 +257,13 @@
                         @endcan
 
                         @can('manage-finance')
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('finance.invoices') }}" class="btn btn-outline-info w-100">
                                 <i class="fas fa-file-invoice d-block mb-1"></i>
                                 <small>New Invoice</small>
                             </a>
                         </div>
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('finance.expenses', ['new' => 1]) }}" class="btn btn-outline-danger w-100">
                                 <i class="fas fa-receipt d-block mb-1"></i>
                                 <small>Add Expense</small>
@@ -273,7 +273,7 @@
 
 
                         @can('access-section', 'settings')
-                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('settings.index') }}" class="btn btn-outline-dark w-100">
                                 <i class="fas fa-cog d-block mb-1"></i>
                                 <small>Settings</small>
@@ -562,4 +562,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 </style>
+
+/* Compact statistics cards */
+.dashboard-stats .card-body{padding:12px 14px;}
+.dashboard-stats h2{font-size:1.4rem; margin:0;}
+.dashboard-stats h6{font-size:0.95rem; margin-bottom:4px;}
+.dashboard-stats small{font-size:0.75rem;}
+.dashboard-stats .fa-2x{font-size:1.35rem!important;}
+
+/* Wider, balanced quick actions */
+.quick-actions .btn{padding:12px 10px; border-radius:10px;}
+.quick-actions i{font-size:1.1rem;}
+.quick-actions small{font-size:0.9rem;}
+
 @endpush
