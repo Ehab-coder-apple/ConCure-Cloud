@@ -207,6 +207,13 @@ class WhatsAppController extends Controller
     {
         $user = auth()->user();
         $status = $request->input('status', 'active'); // active|inactive|all
+        $type = $request->input('type', 'both'); // new|updated|both
+        $since = $request->input('since');
+        try {
+            $sinceDate = $since ? \Carbon\Carbon::parse($since)->startOfDay() : now()->subDays(30)->startOfDay();
+        } catch (\Throwable $e) {
+            $sinceDate = now()->subDays(30)->startOfDay();
+        }
 
         $query = Patient::query()
             ->where('clinic_id', $user->clinic_id)
@@ -217,6 +224,18 @@ class WhatsAppController extends Controller
             $query->where('is_active', true);
         } elseif ($status === 'inactive') {
             $query->where('is_active', false);
+        }
+
+        // date filters (registration/updates)
+        if ($type === 'new') {
+            $query->where('created_at', '>=', $sinceDate);
+        } elseif ($type === 'updated') {
+            $query->where('updated_at', '>=', $sinceDate);
+        } else { // both
+            $query->where(function($q) use ($sinceDate){
+                $q->where('created_at', '>=', $sinceDate)
+                  ->orWhere('updated_at', '>=', $sinceDate);
+            });
         }
 
         $patients = $query->orderBy('first_name')

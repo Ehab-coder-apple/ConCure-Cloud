@@ -273,12 +273,36 @@
 	                                                </div>
 	                                                <small class="text-muted">{{ __('Only patients with a WhatsApp number are listed') }}</small>
 	                                            </div>
-	                                            <div class="col-md-3">
+	                                            <div class="col-md-4">
+	                                                <label class="form-label d-block">{{ __('Type') }}</label>
+	                                                <div class="d-flex gap-3">
+	                                                    <div class="form-check">
+	                                                        <input class="form-check-input" type="radio" name="whType" id="typeBoth" value="both" checked>
+	                                                        <label class="form-check-label" for="typeBoth">{{ __('New or Updated') }}</label>
+	                                                    </div>
+	                                                    <div class="form-check">
+	                                                        <input class="form-check-input" type="radio" name="whType" id="typeNew" value="new">
+	                                                        <label class="form-check-label" for="typeNew">{{ __('New Registrations') }}</label>
+	                                                    </div>
+	                                                    <div class="form-check">
+	                                                        <input class="form-check-input" type="radio" name="whType" id="typeUpdated" value="updated">
+	                                                        <label class="form-check-label" for="typeUpdated">{{ __('Recently Updated') }}</label>
+	                                                    </div>
+	                                                </div>
+	                                            </div>
+	                                            <div class="col-md-4">
+	                                                <label class="form-label" for="sinceDate">{{ __('Since') }}</label>
+	                                                <input type="date" class="form-control" id="sinceDate" value="{{ now()->subDays(30)->toDateString() }}">
+	                                                <small class="text-muted">{{ __('Default is last 30 days') }}</small>
+	                                            </div>
+	                                        </div>
+	                                        <div class="row g-3 align-items-end mt-2">
+	                                            <div class="col-md-4">
 	                                                <button type="button" class="btn btn-outline-primary" id="loadPatientsBtn">
 	                                                    <i class="fas fa-users"></i> {{ __('Load Patients') }}
 	                                                </button>
 	                                            </div>
-	                                            <div class="col-md-5 text-end">
+	                                            <div class="col-md-8 text-end">
 	                                                <small id="patientsCount" class="text-muted"></small>
 	                                            </div>
 	                                        </div>
@@ -454,6 +478,8 @@ function showQRCode() {
 
 const patientsFilter = document.getElementById('patientsFilter');
 const noPatientsHint = document.getElementById('noPatientsHint');
+const sinceDateInput = document.getElementById('sinceDate');
+
 let patientsCache = [];
 
 // ---- Bulk messaging helpers ----
@@ -464,6 +490,15 @@ const bulkFeedback = document.getElementById('bulkFeedback');
 
 function getSelectedStatus(){
   return document.querySelector('input[name="status"]:checked')?.value || 'active';
+}
+function getSelectedType(){
+  return document.querySelector('input[name="whType"]:checked')?.value || 'both';
+}
+function getSinceDate(){
+  const v = sinceDateInput?.value;
+  if(v) return v;
+  const d = new Date(); d.setDate(d.getDate()-30);
+  return d.toISOString().slice(0,10);
 }
 
 function renderPatients(list){
@@ -491,7 +526,8 @@ function applyFilter(){
 
 function loadPatients(){
   patientsCount.textContent = '{{ __('Loading...') }}';
-  fetch(`/whatsapp/patients?status=${getSelectedStatus()}`)
+  const qs = new URLSearchParams({ status: getSelectedStatus(), type: getSelectedType(), since: getSinceDate() }).toString();
+  fetch(`/whatsapp/patients?${qs}`)
     .then(r=>r.json())
     .then(data=>{ if(data.success){ renderPatients(data.patients); } else { patientsCount.textContent = '{{ __('Failed to load') }}'; } })
     .catch(()=>{ patientsCount.textContent = '{{ __('Failed to load') }}'; });
@@ -505,10 +541,10 @@ if(document.readyState==='loading'){
 // filter as you type
 patientsFilter?.addEventListener('input', applyFilter);
 
-// reload list when status filter changes
-Array.from(document.querySelectorAll('input[name="status"]')).forEach(r=>{
-  r.addEventListener('change', loadPatients);
-});
+// reload list when status/type/date filter changes
+Array.from(document.querySelectorAll('input[name="status"]')).forEach(r=> r.addEventListener('change', loadPatients));
+Array.from(document.querySelectorAll('input[name="whType"]')).forEach(r=> r.addEventListener('change', loadPatients));
+sinceDateInput?.addEventListener('change', loadPatients);
 
 document.getElementById('selectAllBtn')?.addEventListener('click', ()=>{
   Array.from(patientsSelect.options).forEach(o=>o.selected=true);
