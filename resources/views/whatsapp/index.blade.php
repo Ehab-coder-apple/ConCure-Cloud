@@ -286,7 +286,12 @@
 	                                        <div class="row mt-3">
 	                                            <div class="col-12">
 	                                                <label for="patientsSelect" class="form-label">{{ __('Select Patients') }}</label>
+	                                                <div class="input-group mb-2">
+	                                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+	                                                    <input type="text" id="patientsFilter" class="form-control" placeholder="{{ __('Search name or phone') }}">
+	                                                </div>
 	                                                <select id="patientsSelect" class="form-select" multiple size="10"></select>
+	                                                <div id="noPatientsHint" class="text-muted small mt-2" style="display:none;">{{ __('No patients matched your filter') }}</div>
 	                                                <div class="mt-2 d-flex gap-2">
 	                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllBtn">{{ __('Select All') }}</button>
 	                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="clearAllBtn">{{ __('Clear') }}</button>
@@ -447,6 +452,10 @@ function showQRCode() {
                 '<div class="alert alert-danger">Failed to load QR code: ' + error.message + '</div>';
         });
 
+const patientsFilter = document.getElementById('patientsFilter');
+const noPatientsHint = document.getElementById('noPatientsHint');
+let patientsCache = [];
+
 // ---- Bulk messaging helpers ----
 const patientsSelect = document.getElementById('patientsSelect');
 const loadPatientsBtn = document.getElementById('loadPatientsBtn');
@@ -458,14 +467,26 @@ function getSelectedStatus(){
 }
 
 function renderPatients(list){
+  patientsCache = Array.isArray(list) ? list : [];
+  applyFilter();
+}
+
+function applyFilter(){
+  const term = (patientsFilter?.value || '').trim().toLowerCase();
+  const selectedIds = new Set(Array.from(patientsSelect.selectedOptions).map(o=>parseInt(o.value)));
+  const filtered = term
+    ? patientsCache.filter(p => (p.name||'').toLowerCase().includes(term) || (String(p.phone||'')).toLowerCase().includes(term))
+    : patientsCache;
   patientsSelect.innerHTML = '';
-  list.forEach(p => {
+  filtered.forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.id;
     opt.textContent = `${p.name} — ${p.phone}`;
+    if(selectedIds.has(p.id)) opt.selected = true;
     patientsSelect.appendChild(opt);
   });
-  patientsCount.textContent = `${list.length} ${list.length===1?'patient':'patients'} loaded`;
+  patientsCount.textContent = `${patientsCache.length} ${patientsCache.length===1?'patient':'patients'} {{ __('loaded') }}${term?` • ${filtered.length} {{ __('shown') }}`:''}`;
+  if(noPatientsHint){ noPatientsHint.style.display = filtered.length===0 ? 'block' : 'none'; }
 }
 
 function loadPatients(){
@@ -480,6 +501,14 @@ loadPatientsBtn?.addEventListener('click', loadPatients);
 if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded', ()=> setTimeout(loadPatients, 0));
 }else{ setTimeout(loadPatients, 0); }
+
+// filter as you type
+patientsFilter?.addEventListener('input', applyFilter);
+
+// reload list when status filter changes
+Array.from(document.querySelectorAll('input[name="status"]')).forEach(r=>{
+  r.addEventListener('change', loadPatients);
+});
 
 document.getElementById('selectAllBtn')?.addEventListener('click', ()=>{
   Array.from(patientsSelect.options).forEach(o=>o.selected=true);
