@@ -210,13 +210,8 @@ class WhatsAppController extends Controller
 
         $query = Patient::query()
             ->where('clinic_id', $user->clinic_id)
-            ->where(function($q){
-                $q->where(function($q1){
-                    $q1->whereNotNull('whatsapp_phone')->where('whatsapp_phone','!=','');
-                })->orWhere(function($q2){
-                    $q2->whereNotNull('phone')->where('phone','!=','');
-                });
-            });
+            ->whereNotNull('whatsapp_phone')
+            ->where('whatsapp_phone', '!=', '');
 
         if ($status === 'active') {
             $query->where('is_active', true);
@@ -227,12 +222,10 @@ class WhatsAppController extends Controller
         $patients = $query->orderBy('first_name')
             ->orderBy('last_name')
             ->limit(1000)
-            ->get(['id','first_name','last_name','whatsapp_phone','phone','is_active']);
+            ->get(['id','first_name','last_name','whatsapp_phone','is_active']);
 
         $out = $patients->map(function($p){
-            $phone = $p->whatsapp_phone ?: $p->phone;
-            // sanitize here to avoid spaces or non-digits; UI shows raw value, service will format later
-            $display = preg_replace('/\s+/', ' ', trim((string)$phone));
+            $display = preg_replace('/\s+/', ' ', trim((string)$p->whatsapp_phone));
             return [
                 'id' => $p->id,
                 'name' => trim(($p->first_name.' '.$p->last_name)) ?: ('#'.$p->id),
