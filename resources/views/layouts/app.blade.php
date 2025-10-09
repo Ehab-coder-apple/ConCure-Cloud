@@ -25,6 +25,7 @@
             overflow-x: hidden;           /* prevent horizontal scroll */
             scrollbar-gutter: stable;      /* avoid layout shift from scrollbar */
         }
+        *, *::before, *::after { box-sizing: border-box; }
         body {
             font-family: 'Figtree', sans-serif;
             background-color: #f8fafc;
@@ -452,28 +453,40 @@
 
         /* Main Content Styles */
         .main-content {
-            margin-left: var(--sidebar-width);
+            margin-inline-start: var(--sidebar-width);
             margin-top: var(--topbar-height);
             min-height: calc(100vh - var(--topbar-height));
-            transition: margin-left 0.3s ease;
+            transition: margin-inline-start 0.3s ease;
             position: relative;
             z-index: 1;
+            width: calc(100vw - var(--sidebar-width));
+            box-sizing: border-box;
+            padding: 1rem 1.25rem; /* consistent interior spacing */
         }
 
         .content-wrapper {
-            padding: 1rem 0;
+            padding: 1rem 0;               /* vertical rhythm */
+            max-width: 1280px;              /* center content area */
+            margin: 0 auto;                 /* center in viewport */
+            width: 100%;
+            box-sizing: border-box;
         }
 
         /* Force proper spacing for main content */
         @media (min-width: 992px) {
             .main-content {
-                margin-left: 290px !important;
+                margin-inline-start: 290px !important;
+                width: calc(100vw - 290px) !important;
             }
             .main-footer {
-                margin-left: 290px !important;
+                margin-inline-start: 290px !important;
             }
             .topbar {
                 left: 290px !important;
+            }
+            [dir='rtl'] .topbar {
+                right: 290px !important; left: auto !important;
+            }
             }
         }
 
