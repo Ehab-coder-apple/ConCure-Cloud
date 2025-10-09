@@ -1069,6 +1069,13 @@
             }
         }
     </style>
+    @if(request()->boolean('layout-debug'))
+    <style>
+      html, body, .main-content, .content-wrapper { overflow-x: visible !important; scrollbar-gutter: auto !important; }
+      .layout-debug-badge { position: fixed; bottom: 12px; inset-inline-end: 12px; z-index: 2000; background: #f59e0b; color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.18); }
+    </style>
+    @endif
+
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -1385,6 +1392,13 @@
                             <i class="fas fa-user-circle"></i>
                         </div>
                     </div>
+                        @php($__layoutDebug = request()->boolean('layout-debug'))
+                        @if(config('app.debug') || $__layoutDebug)
+                            <button id="layoutDebugToggle" class="btn btn-sm {{ $__layoutDebug ? 'btn-warning' : 'btn-outline-secondary' }} ms-3" title="Toggle layout debug">
+                                <i class="fas fa-ruler-combined me-1"></i>{{ $__layoutDebug ? 'Debug ON' : 'Debug OFF' }}
+                            </button>
+                        @endif
+
                 </div>
             </div>
         @endauth
@@ -1684,6 +1698,32 @@
             });
         });
     </script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        var btn = document.getElementById('layoutDebugToggle');
+        if(btn){
+          btn.addEventListener('click', function(e){
+            e.preventDefault();
+            var url = new URL(window.location.href);
+            if(url.searchParams.has('layout-debug')){
+              url.searchParams.delete('layout-debug');
+            }else{
+              url.searchParams.set('layout-debug','1');
+            }
+            window.location.href = url.toString();
+          });
+        }
+        // Show a small badge when debug is active
+        var params = new URLSearchParams(window.location.search);
+        if(params.get('layout-debug') === '1'){
+          var b = document.createElement('div');
+          b.className = 'layout-debug-badge';
+          b.textContent = 'Layout Debug ON';
+          document.body.appendChild(b);
+        }
+      });
+    </script>
+
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
