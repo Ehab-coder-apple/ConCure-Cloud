@@ -19,6 +19,12 @@
             --primary-light: {{ $primaryColor ? 'color-mix(in srgb, ' . $primaryColor . ' 20%, white)' : '#e6f7f7' }};
         }
 
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;           /* prevent horizontal scroll */
+            scrollbar-gutter: stable;      /* avoid layout shift from scrollbar */
+        }
         body {
             font-family: 'Figtree', sans-serif;
             background-color: #f8fafc;
@@ -78,6 +84,11 @@
             margin: 0;
             font-family: 'Figtree', sans-serif;
             background-color: #f8fafc;
+            overflow-x: hidden;            /* redundant safeguard */
+        }
+        .main-content, .content-wrapper {
+            max-width: 100%;
+            overflow-x: hidden;            /* ensure children cannot overflow horizontally */
         }
 
         /* Sidebar Styles */
