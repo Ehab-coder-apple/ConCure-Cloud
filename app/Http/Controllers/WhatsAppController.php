@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use App\Models\Patient;
 
 class WhatsAppController extends Controller
 {
@@ -24,7 +25,7 @@ class WhatsAppController extends Controller
 
 
         $status = $this->whatsappService->getProviderStatus();
-        
+
         // Try to get server status if web provider is configured
         $serverStatus = null;
         if ($status['provider'] === 'web' && $status['configured']) {
@@ -193,5 +194,102 @@ class WhatsAppController extends Controller
                 'message' => 'WhatsApp server is not running: ' . $e->getMessage(),
             ], 500);
         }
+
+    /**
+     * Return patients (JSON) filtered by WhatsApp availability and status
+     */
+    public function patientsList(Request $request)
+    {
+        $user = auth()->user();
+        $status = $request->input('status', 'active'); // active|inactive|all
+
+        $query = Patient::query()
+            ->where('clinic_id', $user->clinic_id)
+            ->whereNotNull('whatsapp_phone')
+            ->where('whatsapp_phone', '!=', '');
+
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        $patients = $query->orderBy('first_name')
+            ->orderBy('last_name')
+            ->limit(1000)
+            ->get(['id','first_name','last_name','whatsapp_phone','is_active']);
+
+        $out = $patients->map(function($p){
+            return [
+                'id' => $p->id,
+                'name' => trim(($p->first_name.' '.$p->last_name)) ?: ('#'.$p->id),
+                'phone' => $p->whatsapp_phone,
+                'is_active' => (bool)$p->is_active,
+            ];
+        })->values();
+
+        return response()->json(['success' => true, 'patients' => $out]);
     }
+
+    /**
+     * Broadcast a WhatsApp message to selected patients
+     */
+    public function broadcast(Request $request)
+    {
+        $user = auth()->user();
+
+        $data = $request->validate([
+            'patient_ids' => 'required|array|min:1',
+            'patient_ids.*' => 'integer',
+            'message' => 'required|string|max:2000',
+        ]);
+
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+            ->whereIn('id', $data['patient_ids'])
+            ->whereNotNull('whatsapp_phone')
+            ->where('whatsapp_phone','!=','')
+            ->get();
+
+        $results = [ 'sent' => [], 'pending' => [], 'failed' => [] ];
+
+        foreach ($patients as $p) {
+            $res = $this->whatsappService->sendMessage($p->whatsapp_phone, $data['message']);
+
+            // Log each attempt
+            try {
+                $status = $res['success'] ? ($res['status'] ?? 'sent') : 'failed';
+                $this->whatsappService->logCommunication(
+                    $p->id,
+                    $user->clinic_id,
+                    $p->whatsapp_phone,
+                    $data['message'],
+                    null,
+                    null,
+                    $status,
+                    $res['error'] ?? null,
+                    $res['message_id'] ?? null,
+                    $res,
+                    $user->id
+                );
+            } catch (\Throwable $e) { /* ignore logging errors */ }
+
+            if (!empty($res['success'])) {
+                if (!empty($res['whatsapp_url'])) {
+                    $results['pending'][] = [
+                        'patient_id' => $p->id,
+                        'name' => trim(($p->first_name.' '.$p->last_name)),
+                        'phone' => $p->whatsapp_phone,
+                        'url' => $res['whatsapp_url'],
+                    ];
+                } else {
+                    $results['sent'][] = [ 'patient_id' => $p->id, 'name' => trim(($p->first_name.' '.$p->last_name)), 'phone' => $p->whatsapp_phone ];
+                }
+            } else {
+                $results['failed'][] = [ 'patient_id' => $p->id, 'name' => trim(($p->first_name.' '.$p->last_name)), 'phone' => $p->whatsapp_phone, 'error' => $res['error'] ?? 'unknown' ];
+            }
+        }
+
+        return response()->json(['success' => true] + $results);
+    }
+
 }

@@ -12,7 +12,7 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    
+
                     <!-- Provider Status -->
                     <div class="row mb-4">
                         <div class="col-md-6">
@@ -33,7 +33,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         @if($serverStatus)
                         <div class="col-md-6">
                             <div class="info-box">
@@ -54,7 +54,7 @@
                                         @endif
                                     </span>
                                     <div class="progress">
-                                        <div class="progress-bar bg-{{ isset($serverStatus['ready']) && $serverStatus['ready'] ? 'success' : 'warning' }}" 
+                                        <div class="progress-bar bg-{{ isset($serverStatus['ready']) && $serverStatus['ready'] ? 'success' : 'warning' }}"
                                              style="width: {{ isset($serverStatus['ready']) && $serverStatus['ready'] ? '100' : '70' }}%"></div>
                                     </div>
                                     <span class="progress-description">
@@ -246,6 +246,75 @@
                             </form>
                         </div>
                     </div>
+
+	                    <!-- Bulk Message to Patients -->
+	                    <div class="row mt-5">
+	                        <div class="col-md-10 offset-md-1">
+	                            <h5 class="mb-3"><i class="fab fa-whatsapp text-success me-1"></i>{{ __('Send WhatsApp to Patients (Multi‑select)') }}</h5>
+	                            <div class="card">
+	                                <div class="card-body">
+	                                    <form id="bulkForm">
+	                                        <div class="row g-3 align-items-end">
+	                                            <div class="col-md-4">
+	                                                <label class="form-label d-block">{{ __('Patient status') }}</label>
+	                                                <div class="d-flex gap-3">
+	                                                    <div class="form-check">
+	                                                        <input class="form-check-input" type="radio" name="status" id="statusActive" value="active" checked>
+	                                                        <label class="form-check-label" for="statusActive">{{ __('Active') }}</label>
+	                                                    </div>
+	                                                    <div class="form-check">
+	                                                        <input class="form-check-input" type="radio" name="status" id="statusInactive" value="inactive">
+	                                                        <label class="form-check-label" for="statusInactive">{{ __('Inactive') }}</label>
+	                                                    </div>
+	                                                    <div class="form-check">
+	                                                        <input class="form-check-input" type="radio" name="status" id="statusAll" value="all">
+	                                                        <label class="form-check-label" for="statusAll">{{ __('All') }}</label>
+	                                                    </div>
+	                                                </div>
+	                                                <small class="text-muted">{{ __('Only patients with a WhatsApp number are listed') }}</small>
+	                                            </div>
+	                                            <div class="col-md-3">
+	                                                <button type="button" class="btn btn-outline-primary" id="loadPatientsBtn">
+	                                                    <i class="fas fa-users"></i> {{ __('Load Patients') }}
+	                                                </button>
+	                                            </div>
+	                                            <div class="col-md-5 text-end">
+	                                                <small id="patientsCount" class="text-muted"></small>
+	                                            </div>
+	                                        </div>
+
+	                                        <div class="row mt-3">
+	                                            <div class="col-12">
+	                                                <label for="patientsSelect" class="form-label">{{ __('Select Patients') }}</label>
+	                                                <select id="patientsSelect" class="form-select" multiple size="10"></select>
+	                                                <div class="mt-2 d-flex gap-2">
+	                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllBtn">{{ __('Select All') }}</button>
+	                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="clearAllBtn">{{ __('Clear') }}</button>
+	                                                </div>
+	                                            </div>
+	                                        </div>
+
+	                                        <div class="row mt-3">
+	                                            <div class="col-12">
+	                                                <label for="bulk_message" class="form-label">{{ __('Message') }}</label>
+	                                                <textarea id="bulk_message" class="form-control" rows="4" placeholder="{{ __('Type your message once…') }}" required></textarea>
+	                                            </div>
+	                                        </div>
+
+	                                        <div class="mt-3 d-flex align-items-center gap-3">
+	                                            <button type="submit" class="btn btn-success" id="bulkSendBtn">
+	                                                <i class="fab fa-whatsapp"></i> {{ __('Send to Selected') }}
+	                                            </button>
+	                                            <small class="text-muted" id="bulkFeedback"></small>
+	                                        </div>
+	                                    </form>
+
+	                                    <div id="bulkResults" class="mt-3" style="display:none;"></div>
+	                                </div>
+	                            </div>
+	                        </div>
+	                    </div>
+
                 </div>
             </div>
         </div>
@@ -377,6 +446,80 @@ function showQRCode() {
             document.getElementById('qrContent').innerHTML =
                 '<div class="alert alert-danger">Failed to load QR code: ' + error.message + '</div>';
         });
+
+// ---- Bulk messaging helpers ----
+const patientsSelect = document.getElementById('patientsSelect');
+const loadPatientsBtn = document.getElementById('loadPatientsBtn');
+const patientsCount = document.getElementById('patientsCount');
+const bulkFeedback = document.getElementById('bulkFeedback');
+
+function getSelectedStatus(){
+  return document.querySelector('input[name="status"]:checked')?.value || 'active';
+}
+
+function renderPatients(list){
+  patientsSelect.innerHTML = '';
+  list.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.name} — ${p.phone}`;
+    patientsSelect.appendChild(opt);
+  });
+  patientsCount.textContent = `${list.length} ${list.length===1?'patient':'patients'} loaded`;
+}
+
+loadPatientsBtn?.addEventListener('click', () => {
+  patientsCount.textContent = '{{ __('Loading...') }}';
+  fetch(`/whatsapp/patients?status=${getSelectedStatus()}`)
+    .then(r=>r.json())
+    .then(data=>{ if(data.success){ renderPatients(data.patients); } else { patientsCount.textContent = '{{ __('Failed to load') }}'; } })
+    .catch(()=>{ patientsCount.textContent = '{{ __('Failed to load') }}'; });
+});
+
+document.getElementById('selectAllBtn')?.addEventListener('click', ()=>{
+  Array.from(patientsSelect.options).forEach(o=>o.selected=true);
+});
+
+document.getElementById('clearAllBtn')?.addEventListener('click', ()=>{
+  Array.from(patientsSelect.options).forEach(o=>o.selected=false);
+});
+
+document.getElementById('bulkForm')?.addEventListener('submit', function(e){
+  e.preventDefault();
+  const ids = Array.from(patientsSelect.selectedOptions).map(o=>parseInt(o.value));
+  const message = document.getElementById('bulk_message').value.trim();
+  if(ids.length===0){ alert('{{ __('Please select at least one patient') }}'); return; }
+  if(!message){ alert('{{ __('Please enter a message') }}'); return; }
+  bulkFeedback.textContent = '{{ __('Sending...') }}';
+  fetch('/whatsapp/broadcast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
+    body: JSON.stringify({ patient_ids: ids, message })
+  }).then(r=>r.json()).then(data=>{
+    if(!data.success){ bulkFeedback.textContent = '{{ __('Failed to send') }}'; return; }
+    const sent = data.sent?.length||0; const pending = data.pending?.length||0; const failed = data.failed?.length||0;
+    bulkFeedback.textContent = `{{ __('Done') }}: ${sent} {{ __('sent') }}, ${pending} {{ __('need manual WhatsApp open') }}, ${failed} {{ __('failed') }}`;
+    const resultsDiv = document.getElementById('bulkResults');
+    resultsDiv.style.display = 'block';
+    let html = '';
+    if(pending>0){
+      html += '<div class="alert alert-warning"><strong>{{ __('Manual action required') }}:</strong> {{ __('Open WhatsApp for these patients') }}:</div>';
+      html += '<ul class="list-group mb-3">';
+      data.pending.forEach(p=>{
+        html += `<li class="list-group-item d-flex justify-content-between align-items-center">${p.name} — ${p.phone}<a class="btn btn-sm btn-outline-success" target="_blank" href="${p.url}"><i class="fab fa-whatsapp"></i> {{ __('Open') }}</a></li>`;
+      });
+      html += '</ul>';
+    }
+    if(failed>0){
+      html += '<div class="alert alert-danger"><strong>{{ __('Failed') }}:</strong></div><ul class="list-group">';
+      data.failed.forEach(p=>{ html += `<li class="list-group-item">${p.name} — ${p.phone} <span class="text-danger">${p.error||''}</span></li>`; });
+      html += '</ul>';
+    }
+    resultsDiv.innerHTML = html || '<div class="alert alert-success">{{ __('All messages sent successfully') }}</div>';
+  }).catch(()=>{ bulkFeedback.textContent='{{ __('Failed to send') }}'; });
+});
+
+
 }
 
 function checkStatus() {

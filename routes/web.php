@@ -762,6 +762,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/setup', [App\Http\Controllers\WhatsAppController::class, 'setupWhatsAppWeb'])->name('setup');
         Route::get('/setup-status', [App\Http\Controllers\WhatsAppController::class, 'checkSetupStatus'])->name('setup-status');
         Route::get('/qr', [App\Http\Controllers\WhatsAppController::class, 'qrCode'])->name('qr');
+        Route::get('/patients', [App\Http\Controllers\WhatsAppController::class, 'patientsList'])->name('patients');
+        Route::post('/broadcast', [App\Http\Controllers\WhatsAppController::class, 'broadcast'])->name('broadcast');
+
     });
 
 	    // Internal Messaging & Transfers
