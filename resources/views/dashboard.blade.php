@@ -44,7 +44,7 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4 dashboard-stats g-2">
+    <div class="row mb-4 dashboard-stats g-1">
         @if(isset($totalPatients))
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-primary text-white h-100">
@@ -565,23 +565,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <style>
 
-/* Compact & stronger embossed statistics cards */
+/* Compact & extra-embossed, extra-short statistics cards */
 .dashboard-stats .card{
-  border-radius:14px;
-  border:0;
-  /* subtle gradient to enhance emboss on colored backgrounds */
-  background-image: linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.02));
+  border-radius:14px; border:0;
+  background-image: linear-gradient(145deg, rgba(255,255,255,.22), rgba(0,0,0,.03));
   box-shadow:
-    0 8px 24px rgba(0,0,0,.18),
-    0 3px 8px rgba(0,0,0,.12),
-    inset 2px 2px 0 rgba(255,255,255,.28),
-    inset -2px -2px 0 rgba(0,0,0,.15);
+    0 12px 30px rgba(0,0,0,.22),     /* deeper outer shadow */
+    0 4px 10px rgba(0,0,0,.14),
+    inset 3px 3px 0 rgba(255,255,255,.34),  /* stronger top-left highlight */
+    inset -3px -3px 0 rgba(0,0,0,.18);      /* stronger bottom-right shadow */
 }
-.dashboard-stats .card-body{padding:6px 10px;}
-.dashboard-stats h2{font-size:1.45rem; margin:0;}
-.dashboard-stats .card-title{font-size:1.15rem; font-weight:700; letter-spacing:.2px; margin-bottom:2px;}
-.dashboard-stats small{font-size:0.7rem;}
-.dashboard-stats .fa-2x{font-size:1.05rem!important;}
+.dashboard-stats .card-body{padding:4px 8px 6px;}
+.dashboard-stats h2{font-size:1.4rem; margin:0;}
+.dashboard-stats .card-title{font-size:1.18rem; font-weight:800; letter-spacing:.2px; margin-bottom:1px;}
+.dashboard-stats small{font-size:0.68rem;}
+.dashboard-stats .fa-2x{font-size:0.95rem!important;}
 
 /* Wider, balanced quick actions */
 .quick-actions .btn{padding:12px 10px; border-radius:10px;}
