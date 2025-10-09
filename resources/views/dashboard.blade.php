@@ -44,7 +44,7 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4 dashboard-stats g-3">
+    <div class="row mb-4 dashboard-stats g-2">
         @if(isset($totalPatients))
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-primary text-white h-100">
@@ -563,12 +563,13 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </style>
 
-/* Compact statistics cards */
-.dashboard-stats .card-body{padding:12px 14px;}
-.dashboard-stats h2{font-size:1.4rem; margin:0;}
-.dashboard-stats h6{font-size:0.95rem; margin-bottom:4px;}
-.dashboard-stats small{font-size:0.75rem;}
-.dashboard-stats .fa-2x{font-size:1.35rem!important;}
+/* Compact & embossed statistics cards */
+.dashboard-stats .card{border-radius:14px;box-shadow:0 2px 6px rgba(0,0,0,.06),0 10px 20px rgba(0,0,0,.06),inset 1px 1px 0 rgba(255,255,255,.18),inset -1px -1px 0 rgba(0,0,0,.08);}
+.dashboard-stats .card-body{padding:8px 12px;}
+.dashboard-stats h2{font-size:1.5rem; margin:0;}
+.dashboard-stats .card-title{font-size:1.1rem; font-weight:600; letter-spacing:.2px; margin-bottom:4px;}
+.dashboard-stats small{font-size:0.72rem;}
+.dashboard-stats .fa-2x{font-size:1.2rem!important;}
 
 /* Wider, balanced quick actions */
 .quick-actions .btn{padding:12px 10px; border-radius:10px;}
