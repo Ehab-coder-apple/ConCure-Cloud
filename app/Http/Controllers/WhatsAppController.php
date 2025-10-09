@@ -28,14 +28,17 @@ class WhatsAppController extends Controller
 
         // Try to get server status if web provider is configured
         $serverStatus = null;
-        if ($status['provider'] === 'web' && $status['configured']) {
-            try {
-                $response = Http::timeout(5)->get(env('WHATSAPP_API_URL') . '/status');
-                if ($response->successful()) {
-                    $serverStatus = $response->json();
+        if (($status['provider'] ?? null) === 'web' && ($status['configured'] ?? false)) {
+            $apiUrl = env('WHATSAPP_API_URL');
+            if (!empty($apiUrl)) {
+                try {
+                    $response = Http::timeout(5)->get(rtrim($apiUrl, '/') . '/status');
+                    if ($response->successful()) {
+                        $serverStatus = $response->json();
+                    }
+                } catch (\Exception $e) {
+                    $serverStatus = ['error' => $e->getMessage()];
                 }
-            } catch (\Exception $e) {
-                $serverStatus = ['error' => $e->getMessage()];
             }
         }
 
