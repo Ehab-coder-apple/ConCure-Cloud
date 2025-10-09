@@ -1277,6 +1277,8 @@ window.sendWhatsAppSimple = function() {
                 protein: '🥩 البروتين:',
                 carbs: '🍞 الكربوهيدرات:',
                 fat: '🥑 الدهون:',
+                options: 'الخيارات',
+                option: 'الخيار',
                 instructions: '💡 *التعليمات:*',
                 instructionText: 'اتبع خطة التغذية الشخصية هذه كما وصفها طبيبك. لأي أسئلة أو استفسارات، يرجى الاتصال بمقدم الرعاية الصحية الخاص بك.',
                 footer: '🏥 *تم إنشاؤها بواسطة نظام إدارة عيادة ConCure*',
@@ -1299,6 +1301,8 @@ window.sendWhatsAppSimple = function() {
                 protein: '🥩 پرۆتین:',
                 carbs: '🍞 کاربۆهایدرات:',
                 fat: '🥑 چەوری:',
+                options: 'هەلبژارتن',
+                option: 'هەڵبژێرە',
                 instructions: '💡 *ڕێنمایی:*',
                 instructionText: 'ئەڤ پلانا خواردنا تایبەت بەپێی ڕاسپاردەیا دکتۆرێ خۆ پەیڕەو بکە. بۆ هەر پرسیارەک یان نیگەرانییەک، تکایە پەیوەندی بە دابینکەرێ چاودێریا تەندروستیا خۆ بکە.',
                 footer: '🏥 *دروستکراوە لەلایەن سیستەمێ بەڕێوەبردنا کلینیکا ConCure*',
@@ -1321,6 +1325,8 @@ window.sendWhatsAppSimple = function() {
                 protein: '🥩 پرۆتین:',
                 carbs: '🍞 کاربۆهایدرات:',
                 fat: '🥑 چەوری:',
+                options: 'هەلبژاردەکان',
+                option: 'هەلبژاردە',
                 instructions: '💡 *ڕێنمایی:*',
                 instructionText: 'ئەم پلانی خواردنە تایبەتە بەپێی ڕاسپاردەی پزیشکەکەت پەیڕەو بکە. بۆ هەر پرسیار یان نیگەرانییەک، تکایە پەیوەندی بە دابینکەری چاودێری تەندروستیت بکە.',
                 footer: '🏥 *دروستکراوە لەلایەن سیستەمی بەڕێوەبردنی کلینیکی ConCure*',
@@ -1448,9 +1454,7 @@ window.sendWhatsAppSimple = function() {
 
                             message += '  🍽️ ' + foodName + '\n';
                             message += '     📏 {{ $mealFood->quantity_with_equivalent }}\n';
-                            @if($calories > 0)
-                            message += '     📊 {{ number_format($calories, 0) }} cal | {{ number_format($protein, 1) }}g protein | {{ number_format($carbs, 1) }}g carbs | {{ number_format($fat, 1) }}g fat\n';
-                            @endif
+
                         @endforeach
                         message += '\n';
                     @endforeach
@@ -1484,9 +1488,7 @@ window.sendWhatsAppSimple = function() {
 
                                 message += '🍽️ ' + foodName + '\n';
                                 message += '   📏 {{ $food->quantity_with_equivalent }}\n';
-                                @if($calories > 0)
-                                message += '   📊 {{ number_format($calories, 0) }} cal | {{ number_format($protein, 1) }}g protein | {{ number_format($carbs, 1) }}g carbs | {{ number_format($fat, 1) }}g fat\n';
-                                @endif
+
                                 message += '\n';
                             @endforeach
                         @endif
