@@ -198,6 +198,8 @@ class WhatsAppController extends Controller
             ], 500);
         }
 
+    }
+
     /**
      * Return patients (JSON) filtered by WhatsApp availability and status
      */
