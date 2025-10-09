@@ -565,13 +565,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <style>
 
-/* Compact & embossed statistics cards */
-.dashboard-stats .card{border-radius:14px;box-shadow:0 2px 6px rgba(0,0,0,.06),0 10px 20px rgba(0,0,0,.06),inset 1px 1px 0 rgba(255,255,255,.18),inset -1px -1px 0 rgba(0,0,0,.08);}
-.dashboard-stats .card-body{padding:8px 12px;}
-.dashboard-stats h2{font-size:1.5rem; margin:0;}
-.dashboard-stats .card-title{font-size:1.1rem; font-weight:600; letter-spacing:.2px; margin-bottom:4px;}
-.dashboard-stats small{font-size:0.72rem;}
-.dashboard-stats .fa-2x{font-size:1.2rem!important;}
+/* Compact & stronger embossed statistics cards */
+.dashboard-stats .card{
+  border-radius:14px;
+  border:0;
+  /* subtle gradient to enhance emboss on colored backgrounds */
+  background-image: linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.02));
+  box-shadow:
+    0 8px 24px rgba(0,0,0,.18),
+    0 3px 8px rgba(0,0,0,.12),
+    inset 2px 2px 0 rgba(255,255,255,.28),
+    inset -2px -2px 0 rgba(0,0,0,.15);
+}
+.dashboard-stats .card-body{padding:6px 10px;}
+.dashboard-stats h2{font-size:1.45rem; margin:0;}
+.dashboard-stats .card-title{font-size:1.15rem; font-weight:700; letter-spacing:.2px; margin-bottom:2px;}
+.dashboard-stats small{font-size:0.7rem;}
+.dashboard-stats .fa-2x{font-size:1.05rem!important;}
 
 /* Wider, balanced quick actions */
 .quick-actions .btn{padding:12px 10px; border-radius:10px;}
