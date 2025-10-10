@@ -326,7 +326,8 @@ class Patient extends Model
                 break;
 
             case 'weight_gain':
-                // For weight gain, create calorie surplus
+            case 'muscle_gain':
+                // For weight gain (and muscle gain), create calorie surplus
                 $targetCalories = $tdee + abs($dailyCalorieAdjustment);
 
                 // Safety limit: maximum reasonable surplus
@@ -338,7 +339,8 @@ class Patient extends Model
                 break;
 
             case 'maintenance':
-                // For maintenance, use TDEE
+            default:
+                // For maintenance and other goals, use TDEE
                 $targetCalories = $tdee;
                 $recommendedWeeklyGoal = 0;
                 break;

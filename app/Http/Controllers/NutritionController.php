@@ -1689,8 +1689,10 @@ class NutritionController extends Controller
     {
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
-            'goal' => 'required|in:weight_loss,weight_gain,maintenance,muscle_gain',
-            'weekly_weight_goal' => 'nullable|numeric|min:0.1|max:2.0',
+            // Allow additional goals; unknown goals will be treated as maintenance in the model
+            'goal' => 'required|in:weight_loss,weight_gain,maintenance,muscle_gain,diabetic,health_improvement,other',
+            // Accept negatives/zero from UI (e.g., -0.5 for loss, 0 for maintain) and clamp in logic
+            'weekly_weight_goal' => 'nullable|numeric|between:-2.0,2.0',
             'activity_level' => 'required|in:sedentary,light,moderate,active,very_active',
             // Align with other weight validations in the app (e.g., store(), weight tracking)
             'target_weight' => 'nullable|numeric|min:20|max:500'
@@ -1699,9 +1701,12 @@ class NutritionController extends Controller
         $user = Auth::user();
         $patient = Patient::where('clinic_id', $user->clinic_id)->findOrFail($request->patient_id);
 
-        // Default weekly weight goals based on goal type
-        $weeklyWeightGoal = $request->weekly_weight_goal;
-        if (!$weeklyWeightGoal) {
+        // Determine weekly weight goal: use provided value (abs), else sensible defaults per goal
+        $weeklyWeightGoal = null;
+        if ($request->filled('weekly_weight_goal') && is_numeric($request->weekly_weight_goal)) {
+            $weeklyWeightGoal = abs((float) $request->weekly_weight_goal);
+        }
+        if ($weeklyWeightGoal === null) {
             switch ($request->goal) {
                 case 'weight_loss':
                     $weeklyWeightGoal = 0.5; // 0.5kg per week (safe rate)
@@ -1710,7 +1715,7 @@ class NutritionController extends Controller
                 case 'muscle_gain':
                     $weeklyWeightGoal = 0.3; // 0.3kg per week
                     break;
-                case 'maintenance':
+                default: // maintenance, diabetic, health_improvement, other
                     $weeklyWeightGoal = 0;
                     break;
             }
