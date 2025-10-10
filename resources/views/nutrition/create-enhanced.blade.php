@@ -2293,12 +2293,20 @@ function updateCalorieCalculation() {
         activity_level: activityLevel
     };
 
-    if (weeklyWeightGoal) {
-        requestData.weekly_weight_goal = Math.abs(parseFloat(weeklyWeightGoal));
+    // Always include weekly_weight_goal when a value is selected, including 0
+    if (weeklyWeightGoal !== null && weeklyWeightGoal !== undefined && weeklyWeightGoal !== '') {
+        const w = Math.abs(parseFloat(weeklyWeightGoal));
+        if (!Number.isNaN(w)) {
+            requestData.weekly_weight_goal = w;
+        }
     }
 
-    if (targetWeight) {
-        requestData.target_weight = parseFloat(targetWeight);
+    // Include target weight when provided
+    if (targetWeight !== null && targetWeight !== undefined && targetWeight !== '') {
+        const tw = parseFloat(targetWeight);
+        if (!Number.isNaN(tw)) {
+            requestData.target_weight = tw;
+        }
     }
 
     // Make API call to calculate calories
