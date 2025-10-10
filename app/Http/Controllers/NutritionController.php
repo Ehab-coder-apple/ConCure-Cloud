@@ -1695,7 +1695,7 @@ class NutritionController extends Controller
             'weekly_weight_goal' => 'nullable|numeric|between:-2.0,2.0',
             'activity_level' => 'required|in:sedentary,light,moderate,active,very_active',
             // Align with other weight validations in the app (e.g., store(), weight tracking)
-            'target_weight' => 'nullable|numeric|min:20|max:500'
+            'target_weight' => 'nullable|numeric|min:0|max:1000'
         ]);
 
         $user = Auth::user();
