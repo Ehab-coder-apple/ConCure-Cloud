@@ -739,6 +739,12 @@ document.addEventListener('DOMContentLoaded', function() {
     calculateTotalCalories(); // Calculate calories on page load
     updateNutritionTargets();
 
+    // Safety: if calories field remains empty, derive from macros
+    const tcInit = document.getElementById('target_calories');
+    if (!tcInit.value || isNaN(parseFloat(tcInit.value))) {
+        calculateTotalCalories();
+    }
+
     // Remove step validation from macronutrient fields
     ['target_protein', 'target_carbs', 'target_fat'].forEach(id => {
         const field = document.getElementById(id);
@@ -2354,6 +2360,12 @@ function updateCalorieCalculation() {
             // Update nutrition targets display
             updateNutritionTargets();
 
+            // Ensure calories field is populated even if API value missing
+            const tc = document.getElementById('target_calories');
+            if (!tc.value || isNaN(parseFloat(tc.value))) {
+                calculateTotalCalories();
+            }
+
             // Show calculation details
             showCalorieCalculationDetails(data);
 
@@ -2371,6 +2383,12 @@ function updateCalorieCalculation() {
             document.getElementById('target_protein').value = originalValues.protein;
             document.getElementById('target_carbs').value = originalValues.carbs;
             document.getElementById('target_fat').value = originalValues.fat;
+
+            // Fallback: compute from macros if value is empty
+            const tc = document.getElementById('target_calories');
+            if (!tc.value || isNaN(parseFloat(tc.value))) {
+                calculateTotalCalories();
+            }
 
             // Show error feedback
             caloriesField.style.backgroundColor = '#f8d7da'; // Light red
@@ -2396,6 +2414,12 @@ function updateCalorieCalculation() {
         document.getElementById('target_protein').value = originalValues.protein;
         document.getElementById('target_carbs').value = originalValues.carbs;
         document.getElementById('target_fat').value = originalValues.fat;
+
+        // Fallback: compute from macros if value is empty
+        const tc = document.getElementById('target_calories');
+        if (!tc.value || isNaN(parseFloat(tc.value))) {
+            calculateTotalCalories();
+        }
 
         // Show error feedback
         caloriesField.style.backgroundColor = '#f8d7da'; // Light red
