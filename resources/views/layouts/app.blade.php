@@ -453,7 +453,9 @@
 
         /* Main Content Styles */
         .main-content {
+            /* Keep content offset from the fixed sidebar */
             margin-inline-start: var(--sidebar-width);
+            margin-left: var(--sidebar-width); /* LTR fallback to avoid underlay in some browsers */
             margin-top: var(--topbar-height);
             min-height: calc(100vh - var(--topbar-height));
             transition: margin-inline-start 0.3s ease;
@@ -476,10 +478,12 @@
         @media (min-width: 992px) {
             .main-content {
                 margin-inline-start: 290px !important;
+                margin-left: 290px !important; /* explicit LTR fallback */
                 max-width: 100% !important;
             }
             .main-footer {
                 margin-inline-start: 290px !important;
+                margin-left: 290px !important; /* explicit LTR fallback */
             }
             .topbar {
                 left: 290px !important;
@@ -487,6 +491,8 @@
             [dir='rtl'] .topbar {
                 right: 290px !important; left: auto !important;
             }
+            [dir='rtl'] .main-content { margin-right: 290px !important; }
+            [dir='rtl'] .main-footer { margin-right: 290px !important; }
         }
 
         /* Footer Styles */
