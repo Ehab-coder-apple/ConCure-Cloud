@@ -468,7 +468,7 @@
 
         .content-wrapper {
             padding: 1rem 0;               /* vertical rhythm */
-            max-width: 1280px;              /* center content area */
+            max-width: 1300px;              /* center content area */
             margin: 0 auto;                 /* center in viewport */
             width: 100%;
             box-sizing: border-box;
@@ -627,11 +627,7 @@
 
         /* Professional Nutrition Page Layout - Fixed Overlay Issue */
         .container[style*="margin-top: 80px"] {
-            /* Center within remaining viewport while respecting sidebar */
-            margin-left: calc(310px + max(0px, (100vw - 350px - 1300px)/2)) !important;
-            margin-right: 30px !important;
-            max-width: 1300px !important;
-            width: min(1300px, calc(100vw - 350px)) !important;
+            /* Nutrition pages container: rely on global centering; just provide interior padding and visual style */
             padding-left: 30px !important;
             padding-right: 30px !important;
             padding-top: 30px !important;
@@ -643,11 +639,7 @@
 
         /* Target nutrition page body content */
         body:has(.container[style*="margin-top: 80px"]) .container {
-            /* Center within remaining viewport while respecting sidebar */
-            margin-left: calc(310px + max(0px, (100vw - 350px - 1300px)/2)) !important;
-            margin-right: 30px !important;
-            max-width: 1300px !important;
-            width: min(1300px, calc(100vw - 350px)) !important;
+            /* Use global centering via .content-wrapper; keep only visual/background */
             position: relative !important;
             z-index: 1 !important;
             background: white !important;
@@ -655,11 +647,7 @@
 
         /* Alternative targeting for nutrition pages */
         .container:has(.fas.fa-apple-alt) {
-            /* Center within remaining viewport while respecting sidebar */
-            margin-left: calc(310px + max(0px, (100vw - 350px - 1300px)/2)) !important;
-            margin-right: 30px !important;
-            max-width: 1300px !important;
-            width: min(1300px, calc(100vw - 350px)) !important;
+            /* Use global centering via .content-wrapper; keep only visual/background */
             position: relative !important;
             z-index: 1 !important;
             background: white !important;
