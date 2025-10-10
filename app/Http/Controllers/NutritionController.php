@@ -1692,7 +1692,8 @@ class NutritionController extends Controller
             'goal' => 'required|in:weight_loss,weight_gain,maintenance,muscle_gain',
             'weekly_weight_goal' => 'nullable|numeric|min:0.1|max:2.0',
             'activity_level' => 'required|in:sedentary,light,moderate,active,very_active',
-            'target_weight' => 'nullable|numeric|min:30|max:300'
+            // Align with other weight validations in the app (e.g., store(), weight tracking)
+            'target_weight' => 'nullable|numeric|min:20|max:500'
         ]);
 
         $user = Auth::user();
