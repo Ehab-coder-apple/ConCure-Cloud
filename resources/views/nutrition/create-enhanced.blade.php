@@ -2299,9 +2299,9 @@ function updateCalorieCalculation() {
         activity_level: activityLevel
     };
 
-    // Always include weekly_weight_goal when a value is selected, including 0
+    // Always include weekly_weight_goal when a value is selected, including 0 (keep sign: negative = loss, positive = gain)
     if (weeklyWeightGoal !== null && weeklyWeightGoal !== undefined && weeklyWeightGoal !== '') {
-        const w = Math.abs(parseFloat(weeklyWeightGoal));
+        const w = parseFloat(weeklyWeightGoal);
         if (!Number.isNaN(w)) {
             requestData.weekly_weight_goal = w;
         }

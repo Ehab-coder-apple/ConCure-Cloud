@@ -1701,19 +1701,19 @@ class NutritionController extends Controller
         $user = Auth::user();
         $patient = Patient::where('clinic_id', $user->clinic_id)->findOrFail($request->patient_id);
 
-        // Determine weekly weight goal: use provided value (abs), else sensible defaults per goal
+        // Determine weekly weight goal (signed): negative = loss, positive = gain
         $weeklyWeightGoal = null;
         if ($request->filled('weekly_weight_goal') && is_numeric($request->weekly_weight_goal)) {
-            $weeklyWeightGoal = abs((float) $request->weekly_weight_goal);
+            $weeklyWeightGoal = (float) $request->weekly_weight_goal; // keep sign from UI
         }
         if ($weeklyWeightGoal === null) {
             switch ($request->goal) {
                 case 'weight_loss':
-                    $weeklyWeightGoal = 0.5; // 0.5kg per week (safe rate)
+                    $weeklyWeightGoal = -0.5; // -0.5 kg/week (safe loss)
                     break;
                 case 'weight_gain':
                 case 'muscle_gain':
-                    $weeklyWeightGoal = 0.3; // 0.3kg per week
+                    $weeklyWeightGoal = 0.3; // +0.3 kg/week
                     break;
                 default: // maintenance, diabetic, health_improvement, other
                     $weeklyWeightGoal = 0;

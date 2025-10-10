@@ -308,42 +308,23 @@ class Patient extends Model
         $caloriesPerKg = 7700;
         $dailyCalorieAdjustment = ($weeklyWeightGoal * $caloriesPerKg) / 7;
 
-        $targetCalories = $tdee;
+        $targetCalories = $tdee + $dailyCalorieAdjustment; // signed: negative(loss), positive(gain)
         $recommendedWeeklyGoal = $weeklyWeightGoal;
 
-        switch ($goal) {
-            case 'weight_loss':
-                // For weight loss, create calorie deficit
-                $targetCalories = $tdee - abs($dailyCalorieAdjustment);
+        // Safety limits
+        $minCalories = $this->gender === 'male' ? 1500 : 1200;
+        if ($targetCalories < $minCalories) {
+            $targetCalories = $minCalories;
+            // Recalculate safe weekly loss (negative sign)
+            $safeWeekly = (($tdee - $minCalories) * 7) / $caloriesPerKg;
+            $recommendedWeeklyGoal = -round($safeWeekly, 2);
+        }
 
-                // Safety limits: minimum 1200 calories for women, 1500 for men
-                $minCalories = $this->gender === 'male' ? 1500 : 1200;
-                if ($targetCalories < $minCalories) {
-                    $targetCalories = $minCalories;
-                    // Recalculate safe weekly weight loss
-                    $recommendedWeeklyGoal = (($tdee - $minCalories) * 7) / $caloriesPerKg;
-                }
-                break;
-
-            case 'weight_gain':
-            case 'muscle_gain':
-                // For weight gain (and muscle gain), create calorie surplus
-                $targetCalories = $tdee + abs($dailyCalorieAdjustment);
-
-                // Safety limit: maximum reasonable surplus
-                $maxSurplus = 500; // 500 calories surplus per day
-                if (($targetCalories - $tdee) > $maxSurplus) {
-                    $targetCalories = $tdee + $maxSurplus;
-                    $recommendedWeeklyGoal = ($maxSurplus * 7) / $caloriesPerKg;
-                }
-                break;
-
-            case 'maintenance':
-            default:
-                // For maintenance and other goals, use TDEE
-                $targetCalories = $tdee;
-                $recommendedWeeklyGoal = 0;
-                break;
+        // Cap excessive surplus
+        $maxSurplus = 500; // 500 kcal/day surplus
+        if (($targetCalories - $tdee) > $maxSurplus) {
+            $targetCalories = $tdee + $maxSurplus;
+            $recommendedWeeklyGoal = round((($maxSurplus * 7) / $caloriesPerKg), 2);
         }
 
         return [
