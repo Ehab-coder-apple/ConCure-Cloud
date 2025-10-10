@@ -627,10 +627,11 @@
 
         /* Professional Nutrition Page Layout - Fixed Overlay Issue */
         .container[style*="margin-top: 80px"] {
-            margin-left: 310px !important;
+            /* Center within remaining viewport while respecting sidebar */
+            margin-left: calc(310px + max(0px, (100vw - 350px - 1300px)/2)) !important;
             margin-right: 30px !important;
-            max-width: 1200px !important;
-            width: calc(100vw - 350px) !important;
+            max-width: 1300px !important;
+            width: min(1300px, calc(100vw - 350px)) !important;
             padding-left: 30px !important;
             padding-right: 30px !important;
             padding-top: 30px !important;
@@ -642,10 +643,11 @@
 
         /* Target nutrition page body content */
         body:has(.container[style*="margin-top: 80px"]) .container {
-            margin-left: 310px !important;
+            /* Center within remaining viewport while respecting sidebar */
+            margin-left: calc(310px + max(0px, (100vw - 350px - 1300px)/2)) !important;
             margin-right: 30px !important;
-            max-width: 1200px !important;
-            width: calc(100vw - 350px) !important;
+            max-width: 1300px !important;
+            width: min(1300px, calc(100vw - 350px)) !important;
             position: relative !important;
             z-index: 1 !important;
             background: white !important;
@@ -653,10 +655,11 @@
 
         /* Alternative targeting for nutrition pages */
         .container:has(.fas.fa-apple-alt) {
-            margin-left: 310px !important;
+            /* Center within remaining viewport while respecting sidebar */
+            margin-left: calc(310px + max(0px, (100vw - 350px - 1300px)/2)) !important;
             margin-right: 30px !important;
-            max-width: 1200px !important;
-            width: calc(100vw - 350px) !important;
+            max-width: 1300px !important;
+            width: min(1300px, calc(100vw - 350px)) !important;
             position: relative !important;
             z-index: 1 !important;
             background: white !important;
