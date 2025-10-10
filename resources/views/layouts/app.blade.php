@@ -467,7 +467,7 @@
         }
 
         .content-wrapper {
-            padding: 1rem 0;               /* vertical rhythm */
+            padding: 1rem 16px;             /* vertical + safe horizontal padding */
             max-width: 1300px;              /* center content area */
             margin: 0 auto;                 /* center in viewport */
             width: 100%;
@@ -1102,6 +1102,17 @@
                 font-size: 1.4rem !important;
             }
         }
+        /* Cross-browser fallback (no :has): make nutrition/foods pages responsive and centered */
+        @media (min-width: 992px) {
+            .page-nutrition .main-content, .page-foods .main-content { margin-left: 290px !important; }
+            [dir='rtl'].page-nutrition .main-content, [dir='rtl'].page-foods .main-content { margin-left: 0 !important; margin-right: 290px !important; }
+        }
+        @media (max-width: 991.98px) {
+            .page-nutrition .main-content, .page-foods .main-content { margin-left: 0 !important; margin-right: 0 !important; }
+        }
+        /* Ensure inner content stays centered with safe side padding */
+        .page-nutrition .content-wrapper, .page-foods .content-wrapper { max-width: 1300px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
+
     </style>
     @if(request()->boolean('layout-debug'))
     <style>
@@ -1123,7 +1134,15 @@
 
     @stack('styles')
 </head>
-<body>
+@php
+    $bodyClasses = [];
+    if (request()->routeIs('dashboard')) $bodyClasses[] = 'page-dashboard';
+    if (request()->routeIs('messages.*')) $bodyClasses[] = 'page-messages';
+    if (request()->routeIs('nutrition.*')) $bodyClasses[] = 'page-nutrition';
+    if (request()->routeIs('foods.*') || request()->routeIs('food-groups.*')) $bodyClasses[] = 'page-foods';
+    $bodyClassAttr = implode(' ', $bodyClasses);
+@endphp
+<body class="{{ $bodyClassAttr }}">
     <!-- Language Switcher -->
     <div class="language-switcher">
         <div class="dropdown">
