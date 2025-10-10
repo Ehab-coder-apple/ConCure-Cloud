@@ -552,6 +552,29 @@
                 margin-left: 0;
             }
 
+            /* When sidebar is open on small screens, push content/topbar/footer so they are not under it */
+            body.sidebar-open .main-content {
+                margin-left: var(--sidebar-width);
+            }
+            [dir='rtl'] body.sidebar-open .main-content {
+                margin-left: 0;
+                margin-right: var(--sidebar-width);
+            }
+            body.sidebar-open .topbar {
+                left: var(--sidebar-width);
+            }
+            [dir='rtl'] body.sidebar-open .topbar {
+                left: auto;
+                right: var(--sidebar-width);
+            }
+            body.sidebar-open .main-footer {
+                margin-left: var(--sidebar-width);
+            }
+            [dir='rtl'] body.sidebar-open .main-footer {
+                margin-left: 0;
+                margin-right: var(--sidebar-width);
+            }
+
             .sidebar-toggle-btn {
                 display: block;
             }
@@ -606,7 +629,8 @@
         .container[style*="margin-top: 80px"] {
             margin-left: 310px !important;
             margin-right: 30px !important;
-            max-width: calc(100vw - 350px) !important;
+            max-width: 1200px !important;
+            width: calc(100vw - 350px) !important;
             padding-left: 30px !important;
             padding-right: 30px !important;
             padding-top: 30px !important;
@@ -620,7 +644,8 @@
         body:has(.container[style*="margin-top: 80px"]) .container {
             margin-left: 310px !important;
             margin-right: 30px !important;
-            max-width: calc(100vw - 350px) !important;
+            max-width: 1200px !important;
+            width: calc(100vw - 350px) !important;
             position: relative !important;
             z-index: 1 !important;
             background: white !important;
@@ -630,7 +655,8 @@
         .container:has(.fas.fa-apple-alt) {
             margin-left: 310px !important;
             margin-right: 30px !important;
-            max-width: calc(100vw - 350px) !important;
+            max-width: 1200px !important;
+            width: calc(100vw - 350px) !important;
             position: relative !important;
             z-index: 1 !important;
             background: white !important;
@@ -990,22 +1016,20 @@
                 .container:has(.fas.fa-apple-alt) .d-flex.justify-content-between,
                 .container:has(.fas.fa-apple-alt) .d-flex.justify-content-end {
                     flex-direction: column !important;
+
+
                     align-items: stretch !important;
                 }
             }
         }
 
-        /* Neutralize legacy nutrition container hacks inside app layout */
-        body:has(.main-content) .container[style*="margin-top: 80px"],
-        body:has(.main-content) .container:has(.fas.fa-apple-alt) {
-            margin-left: auto !important;
-            margin-right: auto !important;
-            max-width: 100% !important;
+        /* Nutrition pages: ensure offset so content never sits under sidebar */
+        body:has(.container:has(.fas.fa-apple-alt)) .main-content {
+            margin-inline-start: 290px !important;
+            margin-left: 290px !important; /* LTR fallback */
         }
-        body:has(.main-content) .container[style*="margin-top: 80px"] .row,
-        body:has(.main-content) .container:has(.fas.fa-apple-alt) .row {
-            margin-left: 0 !important;
-            margin-right: 0 !important;
+        [dir='rtl'] body:has(.container:has(.fas.fa-apple-alt)) .main-content {
+            margin-right: 290px !important;
         }
 
         /* Dashboard Statistics Cards Styling */
