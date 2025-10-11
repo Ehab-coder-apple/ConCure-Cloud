@@ -5,29 +5,34 @@
 
 @push('styles')
 <style>
-/* Nutrition Show page only: shrink and center content to create equal side whitespace */
+/* Nutrition Show page only: align content closer to the sidebar and reduce right gap */
 @media (min-width: 992px){
-  /* Keep only the sidebar offset on desktop */
+  /* Keep content offset from the fixed sidebar; adjust inner padding to favor the right side */
   .page-nutrition .main-content{
     margin-left: var(--sidebar-width) !important;
+    padding-left: 24px !important;  /* small left spacing */
+    padding-right: 12px !important; /* reduced right gap */
+    box-sizing: border-box;
   }
   [dir='rtl'] .page-nutrition .main-content{
     margin-left: 0 !important; margin-right: var(--sidebar-width) !important;
+    padding-left: 12px !important; padding-right: 24px !important;
   }
 
-  /* Make the inner container narrower and centered */
+  /* Make the inner container full-width within main-content (no centering cap) */
   .page-nutrition #nutrition-show{
-    margin-left: auto !important; margin-right: auto !important;
-    width: min(1000px, calc(100% - 80px)) !important; /* max 1000px, else keep 40px gap on both sides */
-    max-width: none !important;
-    padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box;
+    margin-left: 0 !important; margin-right: 0 !important;
+    width: 100% !important; max-width: none !important;
+    padding-left: 0 !important; padding-right: 0 !important; box-sizing: border-box;
   }
 }
 
 @media (max-width: 991.98px){
+  /* Mobile: content is full-width with comfortable side padding */
+  .page-nutrition .main-content{ padding-left: 20px !important; padding-right: 20px !important; }
   .page-nutrition #nutrition-show{
     margin-left: 0 !important; margin-right: 0 !important; width: 100% !important;
-    padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box;
+    padding-left: 0 !important; padding-right: 0 !important; box-sizing: border-box;
   }
 }
 </style>
