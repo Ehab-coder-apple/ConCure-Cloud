@@ -1102,6 +1102,16 @@
                 font-size: 1.4rem !important;
             }
         }
+        /* Unified stat-cards (Total Requests, Pending, Completed, Urgent) */
+        .stat-cards .card { border: 0; border-radius: 12px; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+        .stat-cards .card-body{ padding: 16px 18px; }
+        .stat-cards .card .card-title{ margin-bottom: 6px; font-weight: 700; }
+        .stat-cards .card h2{ font-weight: 800; }
+        .stat-cards .card .align-self-center{ opacity: .85; }
+        .stat-cards .card.bg-warning{ color: #fff; }
+        .stat-cards .card.bg-secondary{ color: #fff; }
+        @media (max-width: 576px){ .stat-cards .card { border-radius: 10px; } }
+
         /* Shared compact embossed stat cards (used on Dashboard and Nutrition index) */
         .dashboard-stats .card { position: relative; overflow: hidden; width: 90%; margin-inline: auto; border-radius: 14px; border:1px solid rgba(255,255,255,.28); background-image: linear-gradient(145deg, rgba(255,255,255,.20), rgba(0,0,0,.03)); box-shadow: 0 18px 40px rgba(0,0,0,.22), 0 8px 18px rgba(0,0,0,.14), inset 0 4px 12px rgba(255,255,255,.32), inset 0 -4px 12px rgba(0,0,0,.18); }
         .dashboard-stats .card-body hr{display:none!important;}
