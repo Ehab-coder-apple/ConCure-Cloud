@@ -1168,6 +1168,15 @@
         /* Ensure inner content stays centered with safe side padding */
         .page-nutrition .content-wrapper, .page-foods .content-wrapper { max-width: 1300px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
 
+
+            /* Nutrition: make container fluid on desktop to reduce right-side whitespace */
+            @media (min-width: 992px) {
+                .page-nutrition .content-wrapper {
+                    max-width: none !important;
+                    width: 100% !important; /* fill available space inside main-content */
+                }
+            }
+
         /* Hard kill any decorative lines inside stat-cards to match Finance style */
         .stat-cards .card { position: relative; overflow: hidden; }
         .stat-cards hr,
