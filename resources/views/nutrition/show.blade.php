@@ -18,7 +18,7 @@
   /* Make the inner container narrower and centered */
   .page-nutrition #nutrition-show{
     margin-left: auto !important; margin-right: auto !important;
-    width: min(1100px, calc(100% - 64px)) !important; /* up to 1100px wide, else keep ~32px gap on both sides */
+    width: min(1000px, calc(100% - 80px)) !important; /* max 1000px, else keep 40px gap on both sides */
     max-width: none !important;
     padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box;
   }
