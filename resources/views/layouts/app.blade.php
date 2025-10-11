@@ -72,7 +72,7 @@
 
         /* Sidebar Layout Overrides */
         :root {
-            --sidebar-width: 290px;
+            --sidebar-width: 250px; /* fixed sidebar width */
             --topbar-height: 60px;
             --sidebar-bg: #1e293b;
             --sidebar-text: #cbd5e1;
@@ -477,22 +477,22 @@
         /* Force proper spacing for main content */
         @media (min-width: 992px) {
             .main-content {
-                margin-inline-start: 290px !important;
-                margin-left: 290px !important; /* explicit LTR fallback */
+                margin-inline-start: var(--sidebar-width) !important;
+                margin-left: var(--sidebar-width) !important; /* explicit LTR fallback */
                 max-width: 100% !important;
             }
             .main-footer {
-                margin-inline-start: 290px !important;
-                margin-left: 290px !important; /* explicit LTR fallback */
+                margin-inline-start: var(--sidebar-width) !important;
+                margin-left: var(--sidebar-width) !important; /* explicit LTR fallback */
             }
             .topbar {
-                left: 290px !important;
+                left: var(--sidebar-width) !important;
             }
             [dir='rtl'] .topbar {
-                right: 290px !important; left: auto !important;
+                right: var(--sidebar-width) !important; left: auto !important;
             }
-            [dir='rtl'] .main-content { margin-right: 290px !important; }
-            [dir='rtl'] .main-footer { margin-right: 290px !important; }
+            [dir='rtl'] .main-content { margin-right: var(--sidebar-width) !important; }
+            [dir='rtl'] .main-footer { margin-right: var(--sidebar-width) !important; }
         }
 
         /* Footer Styles */
@@ -1021,11 +1021,11 @@
 
         /* Nutrition pages: ensure offset so content never sits under sidebar */
         body:has(.container:has(.fas.fa-apple-alt)) .main-content {
-            margin-inline-start: 290px !important;
-            margin-left: 290px !important; /* LTR fallback */
+            margin-inline-start: var(--sidebar-width) !important;
+            margin-left: var(--sidebar-width) !important; /* LTR fallback */
         }
         [dir='rtl'] body:has(.container:has(.fas.fa-apple-alt)) .main-content {
-            margin-right: 290px !important;
+            margin-right: var(--sidebar-width) !important;
         }
 
         /* Dashboard Statistics Cards Styling */
@@ -1144,7 +1144,7 @@
 
         /* Cross-browser fallback (no :has): make nutrition/foods pages responsive and centered */
         @media (min-width: 992px) {
-            .page-nutrition .main-content, .page-foods .main-content { margin-left: 290px !important; }
+            .page-nutrition .main-content, .page-foods .main-content { margin-left: var(--sidebar-width) !important; }
 
         /* Nutrition show: reliably center the top container within the content area */
             .page-nutrition .content-wrapper {
@@ -1155,12 +1155,12 @@
             .page-nutrition .content-wrapper > .container[style*="margin-top: 80px"] {
                 margin-left: auto !important;
                 margin-right: auto !important;
-                margin-top: 0 !important; /* move page further up */
-                transform: translate(28px, -8px); /* nudge right and slightly up */
+                margin-top: 0 !important;
+                transform: translate(40px, -14px); /* +12px right, -6px up from previous */
             }
 
 
-            [dir='rtl'].page-nutrition .main-content, [dir='rtl'].page-foods .main-content { margin-left: 0 !important; margin-right: 290px !important; }
+            [dir='rtl'].page-nutrition .main-content, [dir='rtl'].page-foods .main-content { margin-left: 0 !important; margin-right: var(--sidebar-width) !important; }
         }
         @media (max-width: 991.98px) {
             .page-nutrition .main-content, .page-foods .main-content { margin-left: 0 !important; margin-right: 0 !important; }
