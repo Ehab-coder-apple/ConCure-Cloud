@@ -653,6 +653,16 @@
             background: white !important;
         }
 
+        /* Nutrition show page: center the main container within content area */
+        .page-nutrition .container[style*="margin-top: 80px"] {
+            max-width: 1200px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+        }
+
+
         /* Fix any overlay issues */
         .container[style*="margin-top: 80px"] *,
         .container:has(.fas.fa-apple-alt) * {
