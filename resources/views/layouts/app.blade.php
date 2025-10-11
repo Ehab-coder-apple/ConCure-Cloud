@@ -1148,6 +1148,23 @@
         /* Ensure inner content stays centered with safe side padding */
         .page-nutrition .content-wrapper, .page-foods .content-wrapper { max-width: 1300px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
 
+        /* Hard kill any decorative lines inside stat-cards to match Finance style */
+        .stat-cards .card { position: relative; overflow: hidden; }
+        .stat-cards hr,
+        .stat-cards .card hr { display: none !important; height: 0 !important; }
+        .stat-cards .border-bottom,
+        .stat-cards .card .border-bottom { border-bottom: 0 !important; }
+        .stat-cards .card::before,
+        .stat-cards .card::after,
+        .stat-cards .card-body::before,
+        .stat-cards .card-body::after,
+        .stat-cards .card-body > *::before,
+        .stat-cards .card-body > *::after { content: none !important; display: none !important; }
+        .stat-cards .card *,
+        .stat-cards .card-body *,
+        .stat-cards .card h2,
+        .stat-cards .card small { text-decoration: none !important; background-image: none !important; }
+
     </style>
     @if(request()->boolean('layout-debug'))
     <style>
