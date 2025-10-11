@@ -1155,6 +1155,8 @@
             .page-nutrition .content-wrapper > .container[style*="margin-top: 80px"] {
                 margin-left: auto !important;
                 margin-right: auto !important;
+                margin-top: 0 !important; /* move page further up */
+                transform: translate(28px, -8px); /* nudge right and slightly up */
             }
 
 
