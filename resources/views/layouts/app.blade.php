@@ -467,9 +467,9 @@
         }
 
         .content-wrapper {
-            padding: 1rem 16px;             /* vertical + safe horizontal padding */
-            max-width: 1300px;              /* center content area */
-            margin: 0 auto;                 /* center in viewport */
+            padding: 0; /* padding handled by .main-content */
+            max-width: none; /* fill available width */
+            margin: 0; /* no centering wrapper */
             width: 100%;
             box-sizing: border-box;
         }
@@ -479,11 +479,14 @@
             .main-content {
                 margin-inline-start: var(--sidebar-width) !important;
                 margin-left: var(--sidebar-width) !important; /* explicit LTR fallback */
-                max-width: 100% !important;
+                width: calc(100% - var(--sidebar-width)) !important; /* fill beside sidebar */
+                padding-left: 30px !important; padding-right: 30px !important; box-sizing: border-box;
+                max-width: none !important;
             }
             .main-footer {
                 margin-inline-start: var(--sidebar-width) !important;
                 margin-left: var(--sidebar-width) !important; /* explicit LTR fallback */
+                width: calc(100% - var(--sidebar-width)) !important;
             }
             .topbar {
                 left: var(--sidebar-width) !important;
@@ -491,7 +494,11 @@
             [dir='rtl'] .topbar {
                 right: var(--sidebar-width) !important; left: auto !important;
             }
-            [dir='rtl'] .main-content { margin-right: var(--sidebar-width) !important; }
+            [dir='rtl'] .main-content {
+                margin-right: var(--sidebar-width) !important; margin-left: 0 !important;
+                width: calc(100% - var(--sidebar-width)) !important;
+                padding-left: 30px !important; padding-right: 30px !important;
+            }
             [dir='rtl'] .main-footer { margin-right: var(--sidebar-width) !important; }
         }
 
@@ -546,6 +553,8 @@
 
             .main-content {
                 margin-left: 0;
+                width: 100%;
+                padding-left: 24px; padding-right: 24px; box-sizing: border-box;
             }
 
             .main-footer {
@@ -555,10 +564,12 @@
             /* When sidebar is open on small screens, push content/topbar/footer so they are not under it */
             body.sidebar-open .main-content {
                 margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
             }
             [dir='rtl'] body.sidebar-open .main-content {
                 margin-left: 0;
                 margin-right: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
             }
             body.sidebar-open .topbar {
                 left: var(--sidebar-width);
@@ -1163,14 +1174,9 @@
                 transform: translateY(-14px);
             }
 
-                /* Nutrition desktop: keep sidebar offset, add symmetric inner padding, and nudge slightly right for visual balance */
-                .page-nutrition .main-content { margin-left: calc(var(--sidebar-width) + 24px) !important; padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box; }
-                [dir='rtl'] .page-nutrition .main-content { margin-left: 0 !important; margin-right: calc(var(--sidebar-width) + 24px) !important; padding-left: 16px !important; padding-right: 16px !important; }
-
-
-                /* Foods desktop: keep sidebar offset, add symmetric inner padding, and nudge slightly right for visual balance */
-                .page-foods .main-content { margin-left: calc(var(--sidebar-width) + 24px) !important; padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box; }
-                [dir='rtl'] .page-foods .main-content { margin-left: 0 !important; margin-right: calc(var(--sidebar-width) + 24px) !important; padding-left: 16px !important; padding-right: 16px !important; }
+                /* Nutrition/Foods desktop: use global layout sizing; keep only padding */
+                .page-nutrition .main-content, .page-foods .main-content { padding-left: 30px !important; padding-right: 30px !important; box-sizing: border-box; }
+                [dir='rtl'] .page-nutrition .main-content, [dir='rtl'] .page-foods .main-content { padding-left: 30px !important; padding-right: 30px !important; }
 
 
 
@@ -1180,8 +1186,8 @@
             /* Default: no offset on small screens */
             .page-nutrition .main-content, .page-foods .main-content { margin-left: 0 !important; margin-right: 0 !important; }
             /* When the mobile sidebar is open, rely on global push; add symmetric padding only */
-            body.sidebar-open .page-nutrition .main-content { margin-left: var(--sidebar-width) !important; padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box; }
-            [dir='rtl'] body.sidebar-open .page-nutrition .main-content { margin-left: 0 !important; margin-right: var(--sidebar-width) !important; padding-left: 16px !important; padding-right: 16px !important; }
+            body.sidebar-open .page-nutrition .main-content { margin-left: var(--sidebar-width) !important; padding-left: 24px !important; padding-right: 24px !important; box-sizing: border-box; }
+            [dir='rtl'] body.sidebar-open .page-nutrition .main-content { margin-left: 0 !important; margin-right: var(--sidebar-width) !important; padding-left: 24px !important; padding-right: 24px !important; }
         }
         /* Ensure inner content stays centered with safe side padding */
         .page-nutrition .content-wrapper, .page-foods .content-wrapper { max-width: 1300px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
