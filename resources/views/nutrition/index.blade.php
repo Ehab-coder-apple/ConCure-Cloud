@@ -41,7 +41,7 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
+    <div class="row mb-4 dashboard-stats g-1">
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-primary text-white h-100">
                 <div class="card-body">
