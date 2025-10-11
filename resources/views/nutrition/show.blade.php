@@ -5,9 +5,9 @@
 
 @push('styles')
 <style>
-/* Nutrition Show page only: enforce equal left/right whitespace */
+/* Nutrition Show page only: shrink and center content to create equal side whitespace */
 @media (min-width: 992px){
-  /* Cancel global page nudge just for this page */
+  /* Keep only the sidebar offset on desktop */
   .page-nutrition .main-content{
     margin-left: var(--sidebar-width) !important;
   }
@@ -15,9 +15,10 @@
     margin-left: 0 !important; margin-right: var(--sidebar-width) !important;
   }
 
+  /* Make the inner container narrower and centered */
   .page-nutrition #nutrition-show{
-    margin-left: 0 !important; margin-right: 0 !important;
-    width: 100% !important;
+    margin-left: auto !important; margin-right: auto !important;
+    width: min(1100px, calc(100% - 64px)) !important; /* up to 1100px wide, else keep ~32px gap on both sides */
     max-width: none !important;
     padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box;
   }
@@ -27,10 +28,6 @@
   .page-nutrition #nutrition-show{
     margin-left: 0 !important; margin-right: 0 !important; width: 100% !important;
     padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box;
-  }
-  /* When mobile sidebar is open, container remains full-width */
-  body.sidebar-open .page-nutrition #nutrition-show{
-    margin-left: 0 !important; margin-right: 0 !important; width: 100% !important;
   }
 }
 </style>
