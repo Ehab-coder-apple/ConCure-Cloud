@@ -1164,6 +1164,20 @@
         .stat-cards .card-body *,
         .stat-cards .card h2,
         .stat-cards .card small { text-decoration: none !important; background-image: none !important; }
+        /* Finance-style cards: ensure absolutely no inner lines/guides inside stat cards */
+        .stat-cards hr,
+        .stat-cards .card hr { display:none !important; }
+        .stat-cards .card *,
+        .stat-cards .card h1,
+        .stat-cards .card h2,
+        .stat-cards .card h3,
+        .stat-cards .card h4,
+        .stat-cards .card h5,
+        .stat-cards .card h6,
+        .stat-cards .card small { border:0 !important; background-image:none !important; text-decoration:none !important; box-shadow:none !important; }
+        .stat-cards .card *::before,
+        .stat-cards .card *::after { content:none !important; display:none !important; border:0 !important; background:none !important; box-shadow:none !important; }
+
         /* Override page-level header underline on stat cards (Dashboard/Nutrition) */
         .stat-cards h1,
         .stat-cards h2,
