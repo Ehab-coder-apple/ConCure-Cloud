@@ -1153,18 +1153,23 @@
                 align-items: stretch; /* allow children to span full width */
             }
             .page-nutrition .content-wrapper > .container[style*="margin-top: 80px"] {
-                margin-left: 16px !important; /* shift 16px to the right */
+                margin-left: 0 !important;
                 margin-right: 0 !important;
                 margin-top: 0 !important;
                 max-width: none !important;
-                width: calc(100% - 16px) !important; /* avoid horizontal overflow */
+                width: 100% !important;
                 padding-left: 0 !important;
                 padding-right: 0 !important;
                 transform: translateY(-14px);
             }
 
+                /* Nudge entire Nutrition page content 16px to the right */
+                .page-nutrition .main-content { margin-left: calc(var(--sidebar-width) + 16px) !important; }
+                [dir='rtl'] .page-nutrition .main-content { margin-left: 0 !important; margin-right: calc(var(--sidebar-width) + 16px) !important; }
 
-            [dir='rtl'].page-nutrition .main-content, [dir='rtl'].page-foods .main-content { margin-left: 0 !important; margin-right: var(--sidebar-width) !important; }
+
+
+            [dir='rtl'].page-foods .main-content { margin-left: 0 !important; margin-right: var(--sidebar-width) !important; }
         }
         @media (max-width: 991.98px) {
             .page-nutrition .main-content, .page-foods .main-content { margin-left: 0 !important; margin-right: 0 !important; }
