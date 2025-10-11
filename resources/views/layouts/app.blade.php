@@ -1168,6 +1168,11 @@
                 [dir='rtl'] .page-nutrition .main-content { margin-left: 0 !important; margin-right: calc(var(--sidebar-width) + 12px) !important; padding-left: 16px !important; padding-right: 16px !important; }
 
 
+                /* Foods desktop: keep sidebar offset, add symmetric inner padding, and nudge slightly right for visual balance */
+                .page-foods .main-content { margin-left: calc(var(--sidebar-width) + 12px) !important; padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box; }
+                [dir='rtl'] .page-foods .main-content { margin-left: 0 !important; margin-right: calc(var(--sidebar-width) + 12px) !important; padding-left: 16px !important; padding-right: 16px !important; }
+
+
 
             [dir='rtl'].page-foods .main-content { margin-left: 0 !important; margin-right: var(--sidebar-width) !important; }
         }
