@@ -1150,13 +1150,17 @@
             .page-nutrition .content-wrapper {
                 display: flex;
                 flex-direction: column;
-                align-items: center; /* horizontally center children */
+                align-items: stretch; /* allow children to span full width */
             }
             .page-nutrition .content-wrapper > .container[style*="margin-top: 80px"] {
-                margin-left: auto !important;
-                margin-right: auto !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
                 margin-top: 0 !important;
-                transform: translateY(-14px); /* remove horizontal nudge for perfect centering */
+                max-width: none !important;
+                width: 100% !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                transform: translateY(-14px);
             }
 
 
