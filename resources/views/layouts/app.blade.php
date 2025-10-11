@@ -1163,9 +1163,9 @@
                 transform: translateY(-14px);
             }
 
-                /* Nutrition desktop: keep standard sidebar offset, add symmetric inner padding for centering */
-                .page-nutrition .main-content { padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box; }
-                [dir='rtl'] .page-nutrition .main-content { padding-left: 16px !important; padding-right: 16px !important; }
+                /* Nutrition desktop: keep sidebar offset, add symmetric inner padding, and nudge slightly right for visual balance */
+                .page-nutrition .main-content { margin-left: calc(var(--sidebar-width) + 8px) !important; padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box; }
+                [dir='rtl'] .page-nutrition .main-content { margin-left: 0 !important; margin-right: calc(var(--sidebar-width) + 8px) !important; padding-left: 16px !important; padding-right: 16px !important; }
 
 
 
