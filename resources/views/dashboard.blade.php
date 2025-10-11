@@ -49,7 +49,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-primary text-white h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">Total Patients</h6>
                             <h2 class="mb-0">{{ number_format($totalPatients) }}</h2>
@@ -70,7 +70,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-success text-white h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">Active Prescriptions</h6>
                             <h2 class="mb-0">{{ number_format($activePrescriptions) }}</h2>
@@ -91,7 +91,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-warning text-white h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">Pending Lab Requests</h6>
                             <h2 class="mb-0">{{ number_format($pendingLabRequests) }}</h2>
@@ -112,7 +112,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-info text-white h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">Today's Appointments</h6>
                             <h2 class="mb-0">{{ number_format($todayAppointments ?? 0) }}</h2>
@@ -133,7 +133,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-success text-white h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">Nutrition Plans</h6>
                             <h2 class="mb-0">{{ number_format($activeNutritionPlans ?? 0) }}</h2>
@@ -154,7 +154,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-secondary text-white h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">Revenue ({{ ucfirst($selectedPeriod ?? 'month') }})</h6>
                             <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($totalRevenue, 2) }}</h2>

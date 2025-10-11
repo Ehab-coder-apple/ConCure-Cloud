@@ -45,7 +45,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-primary text-white h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">{{ __('Total Plans') }}</h6>
                             <h2 class="mb-0">{{ number_format($stats['total']) }}</h2>
@@ -60,7 +60,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-success text-white h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">{{ __('Active Plans') }}</h6>
                             <h2 class="mb-0">{{ number_format($stats['active']) }}</h2>
@@ -75,7 +75,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-info text-white h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">{{ __('Completed') }}</h6>
                             <h2 class="mb-0">{{ number_format($stats['completed']) }}</h2>
@@ -90,7 +90,7 @@
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-warning text-white h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">{{ __('This Month') }}</h6>
                             <h2 class="mb-0">{{ number_format($nutritionPlans->where('created_at', '>=', now()->startOfMonth())->count()) }}</h2>
