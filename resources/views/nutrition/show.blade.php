@@ -2,8 +2,42 @@
 
 @section('page-title', $dietPlan->title)
 
+
+@push('styles')
+<style>
+/* Nutrition Show page only: center content area relative to sidebar and make side whitespace symmetric */
+@media (min-width: 992px){
+  .page-nutrition #nutrition-show{
+    margin-left: var(--sidebar-width) !important;  /* offset from fixed sidebar */
+    margin-right: 0 !important;
+    width: calc(100vw - var(--sidebar-width)) !important; /* fill remaining viewport */
+    max-width: none !important;
+    padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box;
+  }
+  [dir='rtl'] .page-nutrition #nutrition-show{
+    margin-left: 0 !important; margin-right: var(--sidebar-width) !important;
+    width: calc(100vw - var(--sidebar-width)) !important;
+  }
+}
+
+@media (max-width: 991.98px){
+  .page-nutrition #nutrition-show{
+    margin-left: 0 !important; margin-right: 0 !important; width: 100% !important;
+    padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box;
+  }
+  body.sidebar-open .page-nutrition #nutrition-show{
+    margin-left: var(--sidebar-width) !important; margin-right: 0 !important;
+    width: calc(100vw - var(--sidebar-width)) !important;
+  }
+  [dir='rtl'] body.sidebar-open .page-nutrition #nutrition-show{
+    margin-left: 0 !important; margin-right: var(--sidebar-width) !important;
+  }
+}
+</style>
+@endpush
+
 @section('content')
-<div class="container" style="margin-top: 80px;">
+<div id="nutrition-show" class="container" style="margin-top: 80px;">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
