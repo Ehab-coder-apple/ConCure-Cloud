@@ -1156,7 +1156,7 @@
                 margin-left: auto !important;
                 margin-right: auto !important;
                 margin-top: 0 !important;
-                transform: translate(40px, -14px); /* +12px right, -6px up from previous */
+                transform: translateY(-14px); /* remove horizontal nudge for perfect centering */
             }
 
 
