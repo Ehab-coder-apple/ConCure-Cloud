@@ -1146,7 +1146,17 @@
         @media (min-width: 992px) {
             .page-nutrition .main-content, .page-foods .main-content { margin-left: 290px !important; }
 
-        
+        /* Nutrition show: reliably center the top container within the content area */
+            .page-nutrition .content-wrapper {
+                display: flex;
+                flex-direction: column;
+                align-items: center; /* horizontally center children */
+            }
+            .page-nutrition .content-wrapper > .container[style*="margin-top: 80px"] {
+                margin-left: auto !important;
+                margin-right: auto !important;
+            }
+
 
             [dir='rtl'].page-nutrition .main-content, [dir='rtl'].page-foods .main-content { margin-left: 0 !important; margin-right: 290px !important; }
         }
