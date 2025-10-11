@@ -1177,6 +1177,11 @@
         .stat-cards .card small { border:0 !important; background-image:none !important; text-decoration:none !important; box-shadow:none !important; }
         .stat-cards .card *::before,
         .stat-cards .card *::after { content:none !important; display:none !important; border:0 !important; background:none !important; box-shadow:none !important; }
+        /* Cancel page-level header rule on inner flex rows inside stat cards */
+        .stat-cards .d-flex.justify-content-between { border-bottom: 0 !important; padding: 0 !important; margin-bottom: 0 !important; }
+        .container:has(.fas.fa-apple-alt) .stat-cards .d-flex.justify-content-between { border-bottom: 0 !important; padding: 0 !important; margin-bottom: 0 !important; }
+        .container[style*="margin-top: 80px"] .stat-cards .d-flex.justify-content-between { border-bottom: 0 !important; padding: 0 !important; margin-bottom: 0 !important; }
+
 
         /* Override page-level header underline on stat cards (Dashboard/Nutrition) */
         .stat-cards h1,
