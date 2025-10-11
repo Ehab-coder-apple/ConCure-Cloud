@@ -1163,9 +1163,9 @@
                 transform: translateY(-14px);
             }
 
-                /* Nudge entire Nutrition page content 16px to the right */
-                .page-nutrition .main-content { margin-left: calc(var(--sidebar-width) + 16px) !important; }
-                [dir='rtl'] .page-nutrition .main-content { margin-left: 0 !important; margin-right: calc(var(--sidebar-width) + 16px) !important; }
+                /* Nutrition desktop: keep standard sidebar offset, add symmetric inner padding for centering */
+                .page-nutrition .main-content { padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box; }
+                [dir='rtl'] .page-nutrition .main-content { padding-left: 16px !important; padding-right: 16px !important; }
 
 
 
@@ -1174,9 +1174,9 @@
         @media (max-width: 991.98px) {
             /* Default: no offset on small screens */
             .page-nutrition .main-content, .page-foods .main-content { margin-left: 0 !important; margin-right: 0 !important; }
-            /* When the mobile sidebar is open, also nudge Nutrition content by +16px so it doesn't sit under the sidebar */
-            body.sidebar-open .page-nutrition .main-content { margin-left: calc(var(--sidebar-width) + 16px) !important; }
-            [dir='rtl'] body.sidebar-open .page-nutrition .main-content { margin-left: 0 !important; margin-right: calc(var(--sidebar-width) + 16px) !important; }
+            /* When the mobile sidebar is open, rely on global push; add symmetric padding only */
+            body.sidebar-open .page-nutrition .main-content { margin-left: var(--sidebar-width) !important; padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box; }
+            [dir='rtl'] body.sidebar-open .page-nutrition .main-content { margin-left: 0 !important; margin-right: var(--sidebar-width) !important; padding-left: 16px !important; padding-right: 16px !important; }
         }
         /* Ensure inner content stays centered with safe side padding */
         .page-nutrition .content-wrapper, .page-foods .content-wrapper { max-width: 1300px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
