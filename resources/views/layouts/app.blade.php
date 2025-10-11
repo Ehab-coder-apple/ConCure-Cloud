@@ -627,11 +627,9 @@
 
         /* Professional Nutrition Page Layout - Fixed Overlay Issue */
         .container[style*="margin-top: 80px"] {
-            /* Nutrition pages container: rely on global centering; just provide interior padding and visual style */
+            /* Nutrition pages container: keep only safe horizontal padding; no vertical shift */
             padding-left: 30px !important;
             padding-right: 30px !important;
-            padding-top: 30px !important;
-            padding-bottom: 30px !important;
             position: relative !important;
             z-index: 1 !important;
             background: white !important;
@@ -1148,16 +1146,7 @@
         @media (min-width: 992px) {
             .page-nutrition .main-content, .page-foods .main-content { margin-left: 290px !important; }
 
-        /* Nutrition show: center first-level children of content area without changing widths */
-        .page-nutrition .content-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* horizontally center children (like the top .container) */
-        }
-        .page-nutrition .content-wrapper > .container[style*="margin-top: 80px"] {
-            margin-left: 0 !important; /* flex centering handles horizontal centering */
-            margin-right: 0 !important;
-        }
+        
 
             [dir='rtl'].page-nutrition .main-content, [dir='rtl'].page-foods .main-content { margin-left: 0 !important; margin-right: 290px !important; }
         }
