@@ -1115,6 +1115,13 @@
         .stat-cards .card-body, .stat-cards .card-body > *, .stat-cards h2, .stat-cards h6{ border:0 !important; }
         .stat-cards .card-body::before, .stat-cards .card-body::after, .stat-cards h2::before, .stat-cards h2::after{ display:none !important; content:none !important; }
         @media (max-width: 576px){ .stat-cards .card { border-radius: 10px; } }
+        /* Extra-strong removal of any decorative lines inside stat cards */
+        .stat-cards .card *,
+        .stat-cards .card::before,
+        .stat-cards .card::after{ background-image:none !important; text-decoration:none !important; }
+        .stat-cards .card *{ border-bottom:0 !important; }
+        .stat-cards .card .divider, .stat-cards .card .separator{ display:none !important; }
+
 
         /* Shared compact embossed stat cards (used on Dashboard and Nutrition index) */
         .dashboard-stats .card { position: relative; overflow: hidden; width: 90%; margin-inline: auto; border-radius: 14px; border:1px solid rgba(255,255,255,.28); background-image: linear-gradient(145deg, rgba(255,255,255,.20), rgba(0,0,0,.03)); box-shadow: 0 18px 40px rgba(0,0,0,.22), 0 8px 18px rgba(0,0,0,.14), inset 0 4px 12px rgba(255,255,255,.32), inset 0 -4px 12px rgba(0,0,0,.18); }
