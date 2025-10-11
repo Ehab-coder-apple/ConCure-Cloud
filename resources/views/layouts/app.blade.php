@@ -1153,11 +1153,11 @@
                 align-items: stretch; /* allow children to span full width */
             }
             .page-nutrition .content-wrapper > .container[style*="margin-top: 80px"] {
-                margin-left: 0 !important;
+                margin-left: 16px !important; /* shift 16px to the right */
                 margin-right: 0 !important;
                 margin-top: 0 !important;
                 max-width: none !important;
-                width: 100% !important;
+                width: calc(100% - 16px) !important; /* avoid horizontal overflow */
                 padding-left: 0 !important;
                 padding-right: 0 !important;
                 transform: translateY(-14px);
