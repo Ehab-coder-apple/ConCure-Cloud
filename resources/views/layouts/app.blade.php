@@ -1164,6 +1164,12 @@
         .stat-cards .card-body *,
         .stat-cards .card h2,
         .stat-cards .card small { text-decoration: none !important; background-image: none !important; }
+        /* Override page-level header underline on stat cards (Dashboard/Nutrition) */
+        .stat-cards h1,
+        .stat-cards h2,
+        .stat-cards .card h1,
+        .stat-cards .card h2 { border-bottom: 0 !important; padding-bottom: 0 !important; margin-bottom: .25rem !important; }
+
 
     </style>
     @if(request()->boolean('layout-debug'))
