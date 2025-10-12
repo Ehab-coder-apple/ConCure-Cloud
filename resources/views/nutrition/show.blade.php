@@ -21,7 +21,8 @@
   .page-nutrition #nutrition-show{
     margin-left: 0 !important; margin-right: 0 !important;
     width: 100% !important; max-width: none !important;
-    padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box;
+    /* Rely on .main-content for ~30px side padding on desktop */
+    padding-left: 0 !important; padding-right: 0 !important; box-sizing: border-box;
   }
 }
 
