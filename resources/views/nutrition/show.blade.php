@@ -11,17 +11,19 @@
   .page-nutrition .main-content{
     margin-left: var(--sidebar-width) !important;
     width: calc(100% - var(--sidebar-width)) !important;
+    padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box;
   }
   [dir='rtl'] .page-nutrition .main-content{
     margin-left: 0 !important; margin-right: var(--sidebar-width) !important;
     width: calc(100% - var(--sidebar-width)) !important;
+    padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box;
   }
 
   /* Make inner container fluid inside main-content (no centering cap) */
   .page-nutrition #nutrition-show{
     margin-left: 0 !important; margin-right: 0 !important;
     width: 100% !important; max-width: none !important;
-    /* Rely on .main-content for ~30px side padding on desktop */
+    /* Rely on .main-content for ~20px side padding on desktop */
     padding-left: 0 !important; padding-right: 0 !important; box-sizing: border-box;
   }
 }

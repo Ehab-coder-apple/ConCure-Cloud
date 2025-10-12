@@ -1174,9 +1174,11 @@
                 transform: translateY(-14px);
             }
 
-                /* Nutrition/Foods desktop: use global layout sizing; keep only padding */
-                .page-nutrition .main-content, .page-foods .main-content { padding-left: 30px !important; padding-right: 30px !important; box-sizing: border-box; }
-                [dir='rtl'] .page-nutrition .main-content, [dir='rtl'] .page-foods .main-content { padding-left: 30px !important; padding-right: 30px !important; }
+                /* Desktop padding: Nutrition uses 20px; Foods keeps 30px */
+                .page-nutrition .main-content { padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box; }
+                .page-foods .main-content { padding-left: 30px !important; padding-right: 30px !important; box-sizing: border-box; }
+                [dir='rtl'] .page-nutrition .main-content { padding-left: 20px !important; padding-right: 20px !important; }
+                [dir='rtl'] .page-foods .main-content { padding-left: 30px !important; padding-right: 30px !important; }
 
 
 
