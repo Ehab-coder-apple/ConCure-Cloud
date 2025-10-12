@@ -1047,9 +1047,9 @@
             }
             @media (min-width: 992px) {
                 body.page-nutrition .main-content {
-                    /* add extra breathing room beside sidebar on desktop (+6px) */
-                    padding-left: 48px !important;
-                    padding-right: 48px !important;
+                    /* add extra breathing room beside sidebar on desktop (+26px total from original) */
+                    padding-left: 68px !important;
+                    padding-right: 68px !important;
                 }
             }
 
