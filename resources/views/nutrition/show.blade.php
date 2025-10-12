@@ -5,6 +5,18 @@
 
 @push('styles')
 <style>
+/* Nutrition page: force content to start after fixed sidebar on desktop, match Radiology spec */
+@media (min-width: 992px) {
+  html body.page-nutrition .main-content {
+    margin-left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box;
+  }
+  html[dir='rtl'] body.page-nutrition .main-content {
+    margin-left: 0 !important; margin-right: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+  }
+}
 
 /* Ensure dropdowns appear above other buttons (override global z-index reset) */
 .page-nutrition .dropdown-menu,
@@ -12,7 +24,6 @@
   position: absolute !important;
   z-index: 1060 !important; /* higher than buttons and content */
 }
-
 </style>
 @endpush
 
