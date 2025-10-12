@@ -508,7 +508,18 @@ class NutritionController extends Controller
         $user = Auth::user();
 
         // Ensure related patient exists and user has access
-        $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
+        $dietPlan->load([
+            'patient',
+            'doctor',
+            // Order meals and foods in DB to avoid PHP collection sorts in Blade
+            'meals' => function ($q) {
+                $q->orderBy('day_number')->orderBy('suggested_time')->orderBy('option_number');
+            },
+            'meals.foods' => function ($q) {
+                $q->orderBy('id');
+            },
+            'meals.foods.food',
+        ]);
         if (!$dietPlan->patient) {
             return redirect()->route('nutrition.index')
                 ->with('error', __('The patient record for this nutrition plan was not found.'));
@@ -517,10 +528,13 @@ class NutritionController extends Controller
             abort(403, 'Unauthorized access to nutrition plan.');
         }
 
+        // Precompute flags used repeatedly in Blade to avoid extra queries
+        $isFlexiblePlan = $dietPlan->meals->contains(function ($m) { return (bool)($m->is_option_based ?? false); });
+
         // Calculate nutritional totals
         $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
 
-        return view('nutrition.show', compact('dietPlan', 'nutritionalTotals'));
+        return view('nutrition.show', compact('dietPlan', 'nutritionalTotals', 'isFlexiblePlan'));
     }
 
     /**

@@ -771,8 +771,8 @@ function shareOnWhatsApp() {
     const targetCarbs = "{{ $dietPlan->target_carbs }}";
     const targetFat = "{{ $dietPlan->target_fat }}";
 
-    // Check if this is a flexible meal plan
-    const isFlexiblePlan = {{ $dietPlan->meals()->where('is_option_based', true)->exists() ? 'true' : 'false' }};
+    // Check if this is a flexible meal plan (precomputed in controller)
+    const isFlexiblePlan = {{ isset($isFlexiblePlan) && $isFlexiblePlan ? 'true' : 'false' }};
 
     // Build meal summary
     let mealSummary = "";
@@ -1464,8 +1464,8 @@ window.sendWhatsAppSimple = function() {
             @endforeach
         };
 
-        // Check if this is a flexible meal plan
-        var isFlexiblePlan = {{ $dietPlan->meals()->where('is_option_based', true)->exists() ? 'true' : 'false' }};
+        // Check if this is a flexible meal plan (precomputed in controller)
+        var isFlexiblePlan = {{ isset($isFlexiblePlan) && $isFlexiblePlan ? 'true' : 'false' }};
 
         if (isFlexiblePlan) {
             // Flexible meal plan format with options
