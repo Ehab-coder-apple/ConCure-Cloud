@@ -5,21 +5,22 @@
 
 @push('styles')
 <style>
-/* Nutrition Show page only: shrink and center content to create equal side whitespace */
+/* Nutrition Show page: fill available width beside sidebar (reduce right white space) */
 @media (min-width: 992px){
-  /* Keep only the sidebar offset on desktop */
+  /* Ensure content sits next to the fixed sidebar and uses full remaining width */
   .page-nutrition .main-content{
     margin-left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
   }
   [dir='rtl'] .page-nutrition .main-content{
     margin-left: 0 !important; margin-right: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
   }
 
-  /* Make the inner container narrower and centered */
+  /* Make inner container fluid inside main-content (no centering cap) */
   .page-nutrition #nutrition-show{
-    margin-left: auto !important; margin-right: auto !important;
-    width: min(1000px, calc(100% - 80px)) !important; /* max 1000px, else keep 40px gap on both sides */
-    max-width: none !important;
+    margin-left: 0 !important; margin-right: 0 !important;
+    width: 100% !important; max-width: none !important;
     padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box;
   }
 }
