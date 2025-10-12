@@ -5,35 +5,7 @@
 
 @push('styles')
 <style>
-/* Nutrition Show page: fill available width beside sidebar (reduce right white space) */
-@media (min-width: 992px){
-  /* Ensure content sits next to the fixed sidebar and uses full remaining width */
-  .page-nutrition .main-content{
-    margin-left: var(--sidebar-width) !important;
-    width: calc(100% - var(--sidebar-width)) !important;
-    padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box;
-  }
-  [dir='rtl'] .page-nutrition .main-content{
-    margin-left: 0 !important; margin-right: var(--sidebar-width) !important;
-    width: calc(100% - var(--sidebar-width)) !important;
-    padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box;
-  }
 
-  /* Make inner container fluid inside main-content (no centering cap) */
-  .page-nutrition #nutrition-show{
-    margin-left: 0 !important; margin-right: 0 !important;
-    width: 100% !important; max-width: none !important;
-    /* Rely on .main-content for ~20px side padding on desktop */
-    padding-left: 0 !important; padding-right: 0 !important; box-sizing: border-box;
-  }
-}
-
-@media (max-width: 991.98px){
-  .page-nutrition #nutrition-show{
-    margin-left: 0 !important; margin-right: 0 !important; width: 100% !important;
-    padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box;
-  }
-}
 /* Ensure dropdowns appear above other buttons (override global z-index reset) */
 .page-nutrition .dropdown-menu,
 .page-nutrition .dropdown-menu.show{
@@ -45,7 +17,7 @@
 @endpush
 
 @section('content')
-<div id="nutrition-show" class="container" style="margin-top: 80px;">
+<div id="nutrition-show" class="container">
 
     <div class="row">
         <div class="col-12">

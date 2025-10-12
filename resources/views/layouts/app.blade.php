@@ -1153,55 +1153,6 @@
         .dashboard-stats small{font-size:0.68rem;}
         .dashboard-stats .fa-2x{font-size:0.95rem!important;}
 
-        /* Cross-browser fallback (no :has): make nutrition/foods pages responsive and centered */
-        @media (min-width: 992px) {
-            .page-nutrition .main-content, .page-foods .main-content { margin-left: var(--sidebar-width) !important; }
-
-        /* Nutrition show: reliably center the top container within the content area */
-            .page-nutrition .content-wrapper {
-                display: flex;
-                flex-direction: column;
-                align-items: stretch; /* allow children to span full width */
-            }
-            .page-nutrition .content-wrapper > .container[style*="margin-top: 80px"] {
-                margin-left: 0 !important;
-                margin-right: 0 !important;
-                margin-top: 0 !important;
-                max-width: none !important;
-                width: 100% !important;
-                padding-left: 0 !important;
-                padding-right: 0 !important;
-                transform: translateY(-14px);
-            }
-
-                /* Desktop padding: Nutrition uses 20px; Foods keeps 30px */
-                .page-nutrition .main-content { padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box; }
-                .page-foods .main-content { padding-left: 30px !important; padding-right: 30px !important; box-sizing: border-box; }
-                [dir='rtl'] .page-nutrition .main-content { padding-left: 20px !important; padding-right: 20px !important; }
-                [dir='rtl'] .page-foods .main-content { padding-left: 30px !important; padding-right: 30px !important; }
-
-
-
-            [dir='rtl'].page-foods .main-content { margin-left: 0 !important; margin-right: var(--sidebar-width) !important; }
-        }
-        @media (max-width: 991.98px) {
-            /* Default: no offset on small screens */
-            .page-nutrition .main-content, .page-foods .main-content { margin-left: 0 !important; margin-right: 0 !important; }
-            /* When the mobile sidebar is open, rely on global push; add symmetric padding only */
-            body.sidebar-open .page-nutrition .main-content { margin-left: var(--sidebar-width) !important; padding-left: 24px !important; padding-right: 24px !important; box-sizing: border-box; }
-            [dir='rtl'] body.sidebar-open .page-nutrition .main-content { margin-left: 0 !important; margin-right: var(--sidebar-width) !important; padding-left: 24px !important; padding-right: 24px !important; }
-        }
-        /* Ensure inner content stays centered with safe side padding */
-        .page-nutrition .content-wrapper, .page-foods .content-wrapper { max-width: 1300px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
-
-
-            /* Nutrition: make container fluid on desktop to reduce right-side whitespace */
-            @media (min-width: 992px) {
-                .page-nutrition .content-wrapper {
-                    max-width: none !important;
-                    width: 100% !important; /* fill available space inside main-content */
-                }
-            }
 
         /* Hard kill any decorative lines inside stat-cards to match Finance style */
         .stat-cards .card { position: relative; overflow: hidden; }
