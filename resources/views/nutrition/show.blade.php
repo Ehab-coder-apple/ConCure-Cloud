@@ -5,32 +5,11 @@
 
 @push('styles')
 <style>
-/* Nutrition page: belt-and-suspenders offset so content never sits under the fixed sidebar */
-@media (min-width: 992px) {
-  /* Primary: push the page's main content area */
-  body.page-nutrition .main-content {
-    margin-left: var(--sidebar-width) !important;
-    width: calc(100% - var(--sidebar-width)) !important;
-    padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box;
-  }
-  /* Fallback: if a page variation renders without the expected wrapper, push the page container itself */
-  body.page-nutrition #nutrition-show {
-    margin-left: var(--sidebar-width) !important;
-    width: calc(100% - var(--sidebar-width)) !important;
-    padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box;
-  }
-  [dir='rtl'] body.page-nutrition .main-content,
-  [dir='rtl'] body.page-nutrition #nutrition-show {
-    margin-left: 0 !important; margin-right: var(--sidebar-width) !important;
-    width: calc(100% - var(--sidebar-width)) !important;
-  }
-}
-
-/* Ensure dropdowns appear above other buttons (override global z-index reset) */
+/* Nutrition show: dropdowns should appear above content */
 .page-nutrition .dropdown-menu,
-.page-nutrition .dropdown-menu.show{
+.page-nutrition .dropdown-menu.show {
   position: absolute !important;
-  z-index: 1060 !important; /* higher than buttons and content */
+  z-index: 1060 !important;
 }
 </style>
 @endpush
@@ -721,51 +700,7 @@
 @endsection
 
 <script>
-// Ensure content never sits under the fixed sidebar on desktop by syncing to the actual sidebar width
-(function(){
-  function applySidebarOffset(){
-    try{
-      if(window.innerWidth < 992) { resetOffsets(); return; }
-      var sidebar = document.querySelector('.sidebar');
-      var ltr = document.documentElement.getAttribute('dir') !== 'rtl';
-      var w = sidebar ? Math.round(sidebar.getBoundingClientRect().width) : 0;
-      var main = document.querySelector('.main-content');
-      var container = document.getElementById('nutrition-show');
-      if(main){
-        if(ltr){ main.style.marginLeft = w + 'px'; main.style.marginRight = ''; }
-        else   { main.style.marginRight = w + 'px'; main.style.marginLeft = ''; }
-        main.style.width = 'calc(100% - ' + w + 'px)';
-        main.style.boxSizing = 'border-box';
-        main.style.paddingLeft = '20px';
-        main.style.paddingRight = '20px';
-      }
-      if(container){
-        if(ltr){ container.style.marginLeft = w + 'px'; container.style.marginRight = ''; }
-        else   { container.style.marginRight = w + 'px'; container.style.marginLeft = ''; }
-        container.style.width = 'calc(100% - ' + w + 'px)';
-        container.style.boxSizing = 'border-box';
-        container.style.paddingLeft = '20px';
-        container.style.paddingRight = '20px';
-      }
-    }catch(e){ /* no-op */ }
-  }
-  function resetOffsets(){
-    ['.main-content','#nutrition-show'].forEach(function(sel){
-      var el = document.querySelector(sel);
-      if(!el) return;
-      el.style.marginLeft = '';
-      el.style.marginRight = '';
-      el.style.width = '';
-      el.style.paddingLeft = '';
-      el.style.paddingRight = '';
-    });
-  }
-  window.addEventListener('DOMContentLoaded', applySidebarOffset);
-  window.addEventListener('resize', applySidebarOffset);
-})();
-
-// Basic test to see if JavaScript is working
-console.log('JavaScript is loading...');
+// Page uses global layout offsets for sidebar/topbar. No per-page JS layout tweaks needed.
 // Safer Share Internally handler (prevents giant clickable area)
 (function(){
   document.addEventListener('DOMContentLoaded', function(){
