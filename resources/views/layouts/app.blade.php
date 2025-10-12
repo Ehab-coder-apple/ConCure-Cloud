@@ -1039,6 +1039,20 @@
             margin-right: var(--sidebar-width) !important;
         }
 
+
+            /* Nutrition pages: stronger separation from sidebar and below topbar */
+            body.page-nutrition .main-content {
+                margin-top: var(--topbar-height) !important; /* enforce top spacing under fixed topbar */
+                padding-top: 8px !important;                 /* small breathing room below topbar */
+            }
+            @media (min-width: 992px) {
+                body.page-nutrition .main-content {
+                    /* add extra breathing room beside sidebar on desktop */
+                    padding-left: 42px !important;
+                    padding-right: 42px !important;
+                }
+            }
+
         /* Dashboard Statistics Cards Styling */
         .card.bg-primary, .card.bg-secondary, .card.bg-success, .card.bg-info, .card.bg-warning, .card.bg-danger {
             border-radius: 12px !important;
