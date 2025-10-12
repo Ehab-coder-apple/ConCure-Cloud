@@ -5,14 +5,22 @@
 
 @push('styles')
 <style>
-/* Nutrition page: force content to start after fixed sidebar on desktop, match Radiology spec */
+/* Nutrition page: belt-and-suspenders offset so content never sits under the fixed sidebar */
 @media (min-width: 992px) {
-  html body.page-nutrition .main-content {
+  /* Primary: push the page's main content area */
+  body.page-nutrition .main-content {
     margin-left: var(--sidebar-width) !important;
     width: calc(100% - var(--sidebar-width)) !important;
     padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box;
   }
-  html[dir='rtl'] body.page-nutrition .main-content {
+  /* Fallback: if a page variation renders without the expected wrapper, push the page container itself */
+  body.page-nutrition #nutrition-show {
+    margin-left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    padding-left: 20px !important; padding-right: 20px !important; box-sizing: border-box;
+  }
+  [dir='rtl'] body.page-nutrition .main-content,
+  [dir='rtl'] body.page-nutrition #nutrition-show {
     margin-left: 0 !important; margin-right: var(--sidebar-width) !important;
     width: calc(100% - var(--sidebar-width)) !important;
   }
