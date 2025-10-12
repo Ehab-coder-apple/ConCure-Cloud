@@ -30,11 +30,19 @@
     padding-left: 16px !important; padding-right: 16px !important; box-sizing: border-box;
   }
 }
+/* Ensure dropdowns appear above other buttons (override global z-index reset) */
+.page-nutrition .dropdown-menu,
+.page-nutrition .dropdown-menu.show{
+  position: absolute !important;
+  z-index: 1060 !important; /* higher than buttons and content */
+}
+
 </style>
 @endpush
 
 @section('content')
 <div id="nutrition-show" class="container" style="margin-top: 80px;">
+
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
