@@ -1909,8 +1909,10 @@ class NutritionController extends Controller
                     continue;
                 }
 
-                // Calculate based on quantity (assuming nutritional info is per 100g)
-                $multiplier = $quantity / 100;
+                // Calculate based on grams equivalent of the specified unit (nutrition is per 100g)
+                $unit = $mealFood->unit ?: 'g';
+                $grams = (float) $food->convertToGrams((float) $quantity, (string) $unit);
+                $multiplier = $grams / 100.0;
 
                 $totals['calories'] += ($food->calories ?? 0) * $multiplier;
                 $totals['protein'] += ($food->protein ?? 0) * $multiplier;

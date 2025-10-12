@@ -82,48 +82,55 @@ class DietPlanMealFood extends Model
     }
 
     /**
-     * Calculate calories for this food item.
+     * Calculate calories for this food item (unit-aware via grams equivalent).
      */
     public function getCaloriesAttribute(): float
     {
         if ($this->food && $this->quantity) {
-            // Calculate calories based on food's calories per 100g and quantity
-            return ($this->food->calories * $this->quantity) / 100;
+            $grams = $this->calcGramsForCurrent();
+            if ($grams === null) { return 0; }
+            return ($this->food->calories * $grams) / 100.0;
         }
-        return 0;
+        return 0.0;
     }
 
     /**
-     * Calculate protein for this food item.
+     * Calculate protein for this food item (unit-aware).
      */
     public function getProteinAttribute(): float
     {
         if ($this->food && $this->quantity) {
-            return ($this->food->protein * $this->quantity) / 100;
+            $grams = $this->calcGramsForCurrent();
+            if ($grams === null) { return 0.0; }
+            return ($this->food->protein * $grams) / 100.0;
         }
-        return 0;
+        return 0.0;
     }
 
     /**
-     * Calculate carbs for this food item.
+     * Calculate carbs for this food item (unit-aware).
      */
     public function getCarbsAttribute(): float
     {
         if ($this->food && $this->quantity) {
-            return ($this->food->carbohydrates * $this->quantity) / 100;
+            $grams = $this->calcGramsForCurrent();
+            if ($grams === null) { return 0.0; }
+            return ($this->food->carbohydrates * $grams) / 100.0;
         }
-        return 0;
+        return 0.0;
     }
 
     /**
-     * Calculate fat for this food item.
+     * Calculate fat for this food item (unit-aware).
      */
     public function getFatAttribute(): float
     {
         if ($this->food && $this->quantity) {
-            return ($this->food->fat * $this->quantity) / 100;
+            $grams = $this->calcGramsForCurrent();
+            if ($grams === null) { return 0.0; }
+            return ($this->food->fat * $grams) / 100.0;
         }
-        return 0;
+        return 0.0;
     }
 
     /**
