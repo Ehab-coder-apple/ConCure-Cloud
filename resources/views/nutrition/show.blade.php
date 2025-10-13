@@ -11,6 +11,23 @@
   position: absolute !important;
   z-index: 1060 !important;
 }
+
+/* Contain and guard layout on this page regardless of layout version */
+#nutrition-show { overflow-x: hidden; }
+#nutrition-show .row > [class^="col-"],
+#nutrition-show .row > [class*=" col-"] { min-width: 0 !important; max-width: 100% !important; }
+#nutrition-show .card { max-width: 100% !important; }
+#nutrition-show .btn-group, #nutrition-show .d-flex { flex-wrap: wrap !important; }
+
+/* Runtime-guarded offset if the main-content margin is missing (older layout build) */
+body.fix-nutrition-offset #nutrition-show.container {
+  margin-left: var(--sidebar-width) !important;
+  width: calc(100% - var(--sidebar-width)) !important;
+  max-width: none !important;
+}
+@media (max-width: 991.98px) {
+  body.fix-nutrition-offset #nutrition-show.container { margin-left: 0 !important; width: 100% !important; }
+}
 </style>
 @endpush
 
@@ -681,6 +698,9 @@
 
 <!-- Export PDF Language Modal -->
 <div class="modal fade" id="exportPdfLanguageModal" tabindex="-1" aria-labelledby="exportPdfLanguageModalLabel" aria-hidden="true">
+
+
+
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <!-- Content will be populated by JavaScript -->
@@ -1557,3 +1577,29 @@ console.log('sendWhatsAppSimple function defined at end:', typeof window.sendWha
 console.log('=== SIMPLE WHATSAPP FUNCTION LOADING COMPLETE ===');
 
 </script>
+
+@push('scripts')
+<script>
+// Nutrition page runtime guard: if the layout on this host didn't offset .main-content, add a body class to compensate
+(function(){
+  function applyNutritionOffsetGuard(){
+    try {
+      var mc = document.querySelector('.main-content');
+      var needs = true;
+      if (mc) {
+        var ml = parseFloat(getComputedStyle(mc).marginLeft || '0');
+        // When the sidebar is 250px, any margin-left >= 200px means offset exists
+        needs = !(ml >= 200);
+      }
+      document.body.classList.toggle('fix-nutrition-offset', !!needs);
+    } catch (e) { /* no-op */ }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyNutritionOffsetGuard);
+  } else {
+    applyNutritionOffsetGuard();
+  }
+  window.addEventListener('resize', applyNutritionOffsetGuard);
+})();
+</script>
+@endpush
