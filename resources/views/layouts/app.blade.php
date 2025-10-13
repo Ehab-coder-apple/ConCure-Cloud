@@ -1071,6 +1071,25 @@
                 }
             }
 
+            /* Nutrition: contain internal layout to avoid any horizontal overflow or overlap */
+            .page-nutrition .main-content,
+            .page-nutrition #nutrition-show { overflow-x: hidden; }
+
+            /* Ensure the nutrition container never exceeds available space beside the sidebar */
+            .page-nutrition #nutrition-show.container { max-width: 100% !important; width: 100% !important; }
+
+            /* Prevent flex/grid columns from forcing overflow; keep cards within bounds */
+            .page-nutrition #nutrition-show .row > [class^="col-"],
+            .page-nutrition #nutrition-show .row > [class*=" col-"],
+            .page-nutrition #nutrition-show [class^="col-"],
+            .page-nutrition #nutrition-show [class*=" col-"] { min-width: 0 !important; max-width: 100% !important; }
+            .page-nutrition #nutrition-show .card { max-width: 100% !important; }
+
+            /* Button groups should wrap instead of pushing horizontally */
+            .page-nutrition #nutrition-show .btn-group,
+            .page-nutrition #nutrition-show .d-flex { flex-wrap: wrap !important; }
+
+
 
         /* Dashboard Statistics Cards Styling */
         .card.bg-primary, .card.bg-secondary, .card.bg-success, .card.bg-info, .card.bg-warning, .card.bg-danger {
