@@ -21,8 +21,8 @@
 
 /* Runtime-guarded offset if the main-content margin is missing (older layout build) */
 body.fix-nutrition-offset #nutrition-show.container {
-  margin-left: var(--sidebar-width) !important;
-  width: calc(100% - var(--sidebar-width)) !important;
+  margin-left: 250px !important;
+  width: calc(100% - 250px) !important;
   max-width: none !important;
 }
 @media (max-width: 991.98px) {
@@ -1580,20 +1580,53 @@ console.log('=== SIMPLE WHATSAPP FUNCTION LOADING COMPLETE ===');
 
 @push('scripts')
 <script>
-// Nutrition page runtime guard: if the layout on this host didn't offset .main-content, add a body class to compensate
+// Nutrition page runtime guard: if this host serves older CSS without the 250px offset,
+// apply an inline fix so content never sits under the fixed sidebar.
 (function(){
+  var DESKTOP_BP = 992; // Bootstrap lg breakpoint
+  var SIDEBAR_W = 250;  // hard-coded fallback independent of CSS vars
+
+  function setInlineOffsets(enable){
+    var mc = document.querySelector('.main-content');
+    var topbar = document.querySelector('.topbar');
+    var footer = document.querySelector('.main-footer');
+    var container = document.getElementById('nutrition-show');
+
+    if (enable) {
+      if (mc) {
+        mc.style.marginLeft = SIDEBAR_W + 'px';
+        mc.style.width = 'calc(100% - ' + SIDEBAR_W + 'px)';
+      }
+      if (topbar) topbar.style.left = SIDEBAR_W + 'px';
+      if (footer) footer.style.marginLeft = SIDEBAR_W + 'px';
+      if (container && container.classList.contains('container')) {
+        container.style.marginLeft = SIDEBAR_W + 'px';
+        container.style.width = 'calc(100% - ' + SIDEBAR_W + 'px)';
+      }
+      document.body.classList.add('fix-nutrition-offset');
+    } else {
+      if (mc) { mc.style.marginLeft = ''; mc.style.width = ''; }
+      if (topbar) topbar.style.left = '';
+      if (footer) footer.style.marginLeft = '';
+      if (container) { container.style.marginLeft = ''; container.style.width = ''; }
+      document.body.classList.remove('fix-nutrition-offset');
+    }
+  }
+
   function applyNutritionOffsetGuard(){
     try {
       var mc = document.querySelector('.main-content');
+      var desktop = window.innerWidth >= DESKTOP_BP;
       var needs = true;
       if (mc) {
         var ml = parseFloat(getComputedStyle(mc).marginLeft || '0');
-        // When the sidebar is 250px, any margin-left >= 200px means offset exists
+        // if margin-left already around 250px, no fix needed
         needs = !(ml >= 200);
       }
-      document.body.classList.toggle('fix-nutrition-offset', !!needs);
+      if (desktop && needs) setInlineOffsets(true); else setInlineOffsets(false);
     } catch (e) { /* no-op */ }
   }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', applyNutritionOffsetGuard);
   } else {
