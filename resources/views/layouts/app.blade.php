@@ -1040,21 +1040,10 @@
         }
 
 
-            /* Nutrition pages: stronger separation from sidebar and below topbar */
+            /* Nutrition pages: rely on global 30px desktop padding; only ensure top spacing */
             body.page-nutrition .main-content {
                 margin-top: var(--topbar-height) !important; /* enforce top spacing under fixed topbar */
                 padding-top: 8px !important;                 /* small breathing room below topbar */
-            }
-            @media (min-width: 992px) {
-                /* LTR: increase only left; keep right at 48px. RTL mirrors it */
-                [dir='ltr'] body.page-nutrition .main-content {
-                    padding-left: 68px !important;
-                    padding-right: 48px !important;
-                }
-                [dir='rtl'] body.page-nutrition .main-content {
-                    padding-right: 68px !important;
-                    padding-left: 48px !important;
-                }
             }
 
         /* Dashboard Statistics Cards Styling */
