@@ -1046,6 +1046,32 @@
                 padding-top: 8px !important;                 /* small breathing room below topbar */
             }
 
+            /* Nutrition: enforce correct sidebar offset; plus fallback if wrapper is missing */
+            @media (min-width: 992px) {
+                body.page-nutrition .main-content {
+                    margin-left: var(--sidebar-width) !important;
+                    width: calc(100% - var(--sidebar-width)) !important;
+                }
+                /* Fallback: if for any reason .main-content is not in the DOM, push #nutrition-show itself */
+                body.page-nutrition:not(:has(.main-content)) #nutrition-show.container {
+                    margin-left: var(--sidebar-width) !important;
+                    width: calc(100% - var(--sidebar-width)) !important;
+                }
+            }
+            @media (max-width: 991.98px) {
+                /* Keep mobile behavior consistent when the sidebar is open */
+                body.page-nutrition.sidebar-open .main-content {
+                    margin-left: var(--sidebar-width) !important;
+                    width: calc(100% - var(--sidebar-width)) !important;
+                }
+                /* Fallback for mobile if wrapper is missing and sidebar is opened */
+                body.page-nutrition.sidebar-open:not(:has(.main-content)) #nutrition-show.container {
+                    margin-left: var(--sidebar-width) !important;
+                    width: calc(100% - var(--sidebar-width)) !important;
+                }
+            }
+
+
         /* Dashboard Statistics Cards Styling */
         .card.bg-primary, .card.bg-secondary, .card.bg-success, .card.bg-info, .card.bg-warning, .card.bg-danger {
             border-radius: 12px !important;
