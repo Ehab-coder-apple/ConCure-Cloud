@@ -1588,32 +1588,43 @@ console.log('=== SIMPLE WHATSAPP FUNCTION LOADING COMPLETE ===');
 
 @push('scripts')
 <script>
-// Nutrition page runtime guard: if this host serves older CSS without the 250px offset,
-// apply an inline fix so content never sits under the fixed sidebar.
+// Nutrition page runtime guard: if this host serves older CSS without the sidebar offset,
+// apply an inline fix so content never sits under the fixed sidebar. Sidebar width is
+// detected dynamically from the actual .sidebar element (fallback to 250px).
 (function(){
   var DESKTOP_BP = 992; // Bootstrap lg breakpoint
-  var SIDEBAR_W = 250;  // hard-coded fallback independent of CSS vars
+
+  function getSidebarWidth(){
+    try {
+      var sb = document.querySelector('.sidebar');
+      var w = sb && sb.offsetWidth ? sb.offsetWidth : 250;
+      // sanity clamp to avoid absurd numbers
+      if (!(w > 0)) w = 250;
+      return Math.max(180, Math.min(400, Math.round(w)));
+    } catch (e) { return 250; }
+  }
 
   function setInlineOffsets(enable){
+    var w = getSidebarWidth();
     var mc = document.querySelector('.main-content');
+    var cw = document.querySelector('.content-wrapper');
     var topbar = document.querySelector('.topbar');
     var footer = document.querySelector('.main-footer');
     var container = document.getElementById('nutrition-show');
 
     if (enable) {
-      if (mc) {
-        mc.style.marginLeft = SIDEBAR_W + 'px';
-        mc.style.width = 'calc(100% - ' + SIDEBAR_W + 'px)';
-      }
-      if (topbar) topbar.style.left = SIDEBAR_W + 'px';
-      if (footer) footer.style.marginLeft = SIDEBAR_W + 'px';
+      if (mc) { mc.style.marginLeft = w + 'px'; mc.style.width = 'calc(100% - ' + w + 'px)'; }
+      if (cw && !mc) { cw.style.marginLeft = w + 'px'; cw.style.width = 'calc(100% - ' + w + 'px)'; }
+      if (topbar) topbar.style.left = w + 'px';
+      if (footer) footer.style.marginLeft = w + 'px';
       if (container && container.classList.contains('container')) {
-        container.style.marginLeft = SIDEBAR_W + 'px';
-        container.style.width = 'calc(100% - ' + SIDEBAR_W + 'px)';
+        container.style.marginLeft = w + 'px';
+        container.style.width = 'calc(100% - ' + w + 'px)';
       }
       document.body.classList.add('fix-nutrition-offset');
     } else {
       if (mc) { mc.style.marginLeft = ''; mc.style.width = ''; }
+      if (cw) { cw.style.marginLeft = ''; cw.style.width = ''; }
       if (topbar) topbar.style.left = '';
       if (footer) footer.style.marginLeft = '';
       if (container) { container.style.marginLeft = ''; container.style.width = ''; }
@@ -1623,14 +1634,10 @@ console.log('=== SIMPLE WHATSAPP FUNCTION LOADING COMPLETE ===');
 
   function applyNutritionOffsetGuard(){
     try {
-      var mc = document.querySelector('.main-content');
+      var wrapper = document.querySelector('.main-content') || document.querySelector('.content-wrapper');
       var desktop = window.innerWidth >= DESKTOP_BP;
-      var needs = true;
-      if (mc) {
-        var ml = parseFloat(getComputedStyle(mc).marginLeft || '0');
-        // if margin-left already around 250px, no fix needed
-        needs = !(ml >= 200);
-      }
+      var ml = wrapper ? parseFloat(getComputedStyle(wrapper).marginLeft || '0') : 0;
+      var needs = !(ml >= 200); // consider anything >=200px already offset
       if (desktop && needs) setInlineOffsets(true); else setInlineOffsets(false);
     } catch (e) { /* no-op */ }
   }
