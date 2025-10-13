@@ -1046,10 +1046,14 @@
                 padding-top: 8px !important;                 /* small breathing room below topbar */
             }
             @media (min-width: 992px) {
-                body.page-nutrition .main-content {
-                    /* add extra breathing room beside sidebar on desktop (+26px total from original) */
+                /* LTR: increase only left; keep right at 48px. RTL mirrors it */
+                [dir='ltr'] body.page-nutrition .main-content {
                     padding-left: 68px !important;
+                    padding-right: 48px !important;
+                }
+                [dir='rtl'] body.page-nutrition .main-content {
                     padding-right: 68px !important;
+                    padding-left: 48px !important;
                 }
             }
 
