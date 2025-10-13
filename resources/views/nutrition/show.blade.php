@@ -1637,8 +1637,9 @@ console.log('=== SIMPLE WHATSAPP FUNCTION LOADING COMPLETE ===');
       var wrapper = document.querySelector('.main-content') || document.querySelector('.content-wrapper');
       var desktop = window.innerWidth >= DESKTOP_BP;
       var ml = wrapper ? parseFloat(getComputedStyle(wrapper).marginLeft || '0') : 0;
-      var needs = !(ml >= 200); // consider anything >=200px already offset
-      if (desktop && needs) setInlineOffsets(true); else setInlineOffsets(false);
+      var w = getSidebarWidth();
+      var needs = desktop && (Math.abs(ml - w) > 8); // misaligned by >8px from actual sidebar width
+      setInlineOffsets(needs);
     } catch (e) { /* no-op */ }
   }
 
