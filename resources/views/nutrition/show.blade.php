@@ -12,6 +12,13 @@
   z-index: 1060 !important;
 }
 
+/* Hard guarantee: on Nutrition pages, offset the main content/topbar/footer by 250px on desktop */
+@media (min-width: 992px) {
+  body.page-nutrition .main-content { margin-left: 250px !important; width: calc(100% - 250px) !important; }
+  body.page-nutrition .topbar { left: 250px !important; }
+  body.page-nutrition .main-footer { margin-left: 250px !important; width: calc(100% - 250px) !important; }
+}
+
 /* Contain and guard layout on this page regardless of layout version */
 #nutrition-show { overflow-x: hidden; }
 #nutrition-show .row > [class^="col-"],
