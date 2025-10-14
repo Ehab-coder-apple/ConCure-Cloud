@@ -187,9 +187,6 @@
                                 <i class="fas fa-times me-1"></i>
                                 {{ __('Cancel') }}
                             </a>
-                            <button type="button" class="btn btn-info" onclick="debugForm()">
-                                <i class="fas fa-bug me-1"></i>Debug
-                            </button>
                             <button type="submit" class="btn btn-primary" id="submitBtn">
                                 <i class="fas fa-file-prescription me-1" id="submitIcon"></i>
                                 <span id="submitText">{{ __('Create Prescription') }}</span>
@@ -304,30 +301,6 @@ function addMedication(name = '', strength = '', dosage = '', frequency = '', du
 
 function addQuickMedicine(name, strength, dosage, frequency, duration) {
     addMedication(name, strength, dosage, frequency, duration, 'Take as directed');
-}
-
-function debugForm() {
-    const form = document.querySelector('form');
-    const formData = new FormData(form);
-
-    console.log('=== FORM DEBUG ===');
-    console.log('Form action:', form.action);
-    console.log('Form method:', form.method);
-
-    console.log('Form data:');
-    for (let [key, value] of formData.entries()) {
-        console.log(key + ':', value);
-    }
-
-    // Check medications specifically
-    const medicationInputs = document.querySelectorAll('input[name*="medications"]');
-    console.log('Medication inputs found:', medicationInputs.length);
-
-    medicationInputs.forEach((input, index) => {
-        console.log(`Medication input ${index}:`, input.name, '=', input.value);
-    });
-
-    alert('Check browser console for form debug information');
 }
 
 function handleFormSubmit(event) {

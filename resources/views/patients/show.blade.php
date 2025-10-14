@@ -290,20 +290,8 @@
                                 }
                                 $allPrescriptions = $allPrescriptions->sortByDesc('created_at')->take(5);
 
-                                // Debug info
-                                $prescriptionCount = $patient->prescriptions ? $patient->prescriptions->count() : 0;
-                                $simplePrescriptionCount = $patient->simplePrescriptions ? $patient->simplePrescriptions->count() : 0;
-                                $appointmentCount = $patient->appointments ? $patient->appointments->count() : 0;
                             @endphp
 
-                            <!-- Debug Info (remove in production) -->
-                            <div class="alert alert-info small mb-3">
-                                <strong>Debug:</strong>
-                                Prescriptions: {{ $prescriptionCount }},
-                                Simple Prescriptions: {{ $simplePrescriptionCount }},
-                                Appointments: {{ $appointmentCount }},
-                                Total Combined: {{ $allPrescriptions->count() }}
-                            </div>
 
                             @if($allPrescriptions->count() > 0)
                                 <div class="list-group list-group-flush">

@@ -1033,7 +1033,6 @@ document.getElementById('clinicSettingsForm').addEventListener('submit', functio
         alertDiv.className = 'alert alert-danger alert-dismissible fade show';
         alertDiv.innerHTML = `
             {{ __("An error occurred. Please try again.") }}<br>
-            <small>Debug: ${error.message}</small>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
 

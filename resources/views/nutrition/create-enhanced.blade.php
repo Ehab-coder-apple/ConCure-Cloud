@@ -1184,7 +1184,6 @@ function loadInitialFoods() {
                 <div class="col-12 text-center text-muted py-4">
                     <i class="fas fa-search fa-2x mb-2"></i>
                     <p>{{ __('Start typing to search for foods or select a food group...') }}</p>
-                    <small class="text-danger d-block mt-2">Debug: ${error.message}</small>
                 </div>
             `;
         });
