@@ -476,12 +476,20 @@
 
         /* Force proper spacing for main content */
         @media (min-width: 992px) {
-            .main-content {
+            .main-content,
+            /* Increase specificity to beat any page-level overrides */
+            #app > .main-content,
+            body > #app > .main-content {
                 margin-inline-start: var(--sidebar-width) !important;
                 margin-left: var(--sidebar-width) !important; /* explicit LTR fallback */
                 width: calc(100% - var(--sidebar-width)) !important; /* fill beside sidebar */
                 padding-left: 30px !important; padding-right: 30px !important; box-sizing: border-box;
                 max-width: none !important;
+            }
+            /* Hard fallback in case a legacy build renders content directly as .content-wrapper */
+            body:not(:has(.main-content)) #app > .content-wrapper {
+                margin-left: var(--sidebar-width) !important;
+                width: calc(100% - var(--sidebar-width)) !important;
             }
             .main-footer {
                 margin-inline-start: var(--sidebar-width) !important;
@@ -494,7 +502,8 @@
             [dir='rtl'] .topbar {
                 right: var(--sidebar-width) !important; left: auto !important;
             }
-            [dir='rtl'] .main-content {
+            [dir='rtl'] .main-content,
+            [dir='rtl'] body > #app > .main-content {
                 margin-right: var(--sidebar-width) !important; margin-left: 0 !important;
                 width: calc(100% - var(--sidebar-width)) !important;
                 padding-left: 30px !important; padding-right: 30px !important;
@@ -1746,15 +1755,18 @@
                 function setInline(enable){
                     var w = getSidebarWidth();
                     var mc = document.querySelector('.main-content');
+                    var cw = document.querySelector('.content-wrapper');
                     var topbar = document.querySelector('.topbar');
                     var footer = document.querySelector('.main-footer');
                     if(enable){
                         if(mc){ mc.style.marginLeft = w + 'px'; mc.style.width = 'calc(100% - ' + w + 'px)'; }
+                        else if(cw){ cw.style.marginLeft = w + 'px'; cw.style.width = 'calc(100% - ' + w + 'px)'; }
                         if(topbar){ topbar.style.left = w + 'px'; }
                         if(footer){ footer.style.marginLeft = w + 'px'; footer.style.width = 'calc(100% - ' + w + 'px)'; }
                         document.body.classList.add('layout-force-offset');
                     } else {
                         if(mc){ mc.style.marginLeft = ''; mc.style.width = ''; }
+                        if(cw){ cw.style.marginLeft = ''; cw.style.width = ''; }
                         if(topbar){ topbar.style.left = ''; }
                         if(footer){ footer.style.marginLeft = ''; footer.style.width = ''; }
                         document.body.classList.remove('layout-force-offset');
