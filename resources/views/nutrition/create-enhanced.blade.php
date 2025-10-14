@@ -44,7 +44,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
-                                <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id" required>
+                                <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id" required onchange="updateCalorieCalculation()">
                                     <option value="">{{ __('Select Patient') }}</option>
                                     @foreach($patients as $patient)
                                     <option value="{{ $patient->id }}" 
@@ -162,7 +162,7 @@
                                 </label>
                                 <div class="input-group">
                                     <input type="number" class="form-control bg-light @error('target_calories') is-invalid @enderror"
-                                           id="target_calories" name="target_calories" value="{{ old('target_calories', $dietPlan?->target_calories ?? 2000) }}"
+                                           id="target_calories" name="target_calories" value="{{ old('target_calories', $dietPlan?->target_calories ?? '') }}"
                                            min="800" max="4000" step="1" readonly style="font-weight: bold; color: #0d6efd;">
                                     <span class="input-group-text">
                                         <i class="fas fa-calculator text-primary" title="{{ __('Auto-calculated from macronutrients') }}"></i>
@@ -179,7 +179,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="target_protein" class="form-label">{{ __('Protein (g)') }}</label>
                                 <input type="number" class="form-control @error('target_protein') is-invalid @enderror"
-                                       id="target_protein" name="target_protein" value="{{ old('target_protein', $dietPlan?->target_protein ?? 150) }}"
+                                       id="target_protein" name="target_protein" value="{{ old('target_protein', $dietPlan?->target_protein ?? '') }}"
                                        min="0" max="500" step="any">
                                 @error('target_protein')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -192,7 +192,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="target_carbs" class="form-label">{{ __('Carbohydrates (g)') }}</label>
                                 <input type="number" class="form-control @error('target_carbs') is-invalid @enderror"
-                                       id="target_carbs" name="target_carbs" value="{{ old('target_carbs', $dietPlan?->target_carbs ?? 250) }}"
+                                       id="target_carbs" name="target_carbs" value="{{ old('target_carbs', $dietPlan?->target_carbs ?? '') }}"
                                        min="0" max="1000" step="any">
                                 @error('target_carbs')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -202,7 +202,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="target_fat" class="form-label">{{ __('Fat (g)') }}</label>
                                 <input type="number" class="form-control @error('target_fat') is-invalid @enderror"
-                                       id="target_fat" name="target_fat" value="{{ old('target_fat', $dietPlan?->target_fat ?? 65) }}"
+                                       id="target_fat" name="target_fat" value="{{ old('target_fat', $dietPlan?->target_fat ?? '') }}"
                                        min="0" max="300" step="any">
                                 @error('target_fat')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -469,7 +469,7 @@
                                                     <div class="progress mt-1" style="height: 6px;">
                                                         <div class="progress-bar" id="calories-progress" style="width: 0%"></div>
                                                     </div>
-                                                    <small class="text-muted" id="calories-target">Target: 2000</small>
+                                                    <small class="text-muted" id="calories-target">Target: —</small>
                                                 </div>
                                             </div>
                                             <div class="col-md-3">
@@ -479,7 +479,7 @@
                                                     <div class="progress mt-1" style="height: 6px;">
                                                         <div class="progress-bar bg-success" id="protein-progress" style="width: 0%"></div>
                                                     </div>
-                                                    <small class="text-muted" id="protein-target">Target: 150g</small>
+                                                    <small class="text-muted" id="protein-target">Target: —</small>
                                                 </div>
                                             </div>
                                             <div class="col-md-3">
@@ -489,7 +489,7 @@
                                                     <div class="progress mt-1" style="height: 6px;">
                                                         <div class="progress-bar bg-warning" id="carbs-progress" style="width: 0%"></div>
                                                     </div>
-                                                    <small class="text-muted" id="carbs-target">Target: 250g</small>
+                                                    <small class="text-muted" id="carbs-target">Target: —</small>
                                                 </div>
                                             </div>
                                             <div class="col-md-3">
@@ -499,7 +499,7 @@
                                                     <div class="progress mt-1" style="height: 6px;">
                                                         <div class="progress-bar bg-danger" id="fat-progress" style="width: 0%"></div>
                                                     </div>
-                                                    <small class="text-muted" id="fat-target">Target: 65g</small>
+                                                    <small class="text-muted" id="fat-target">Target: —</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -736,13 +736,11 @@ let optionCounters = {
 // Initialize when document is ready
 document.addEventListener('DOMContentLoaded', function() {
     initializeMealPlanning();
-    calculateTotalCalories(); // Calculate calories on page load
+    // Only calculate when patient data is available
     updateNutritionTargets();
-
-    // Safety: if calories field remains empty, derive from macros
-    const tcInit = document.getElementById('target_calories');
-    if (!tcInit.value || isNaN(parseFloat(tcInit.value))) {
-        calculateTotalCalories();
+    const pidEl = document.getElementById('patient_id');
+    if (pidEl && pidEl.value) {
+        updateCalorieCalculation();
     }
 
     // Remove step validation from macronutrient fields
@@ -2015,28 +2013,33 @@ function updateNutritionSummary() {
     document.getElementById('total-fat').textContent = (Math.round(totalFat * 10) / 10) + 'g';
 
     // Update progress bars
-    const targetCalories = parseFloat(document.getElementById('target_calories').value) || 2000;
-    const targetProtein = parseFloat(document.getElementById('target_protein').value) || 150;
-    const targetCarbs = parseFloat(document.getElementById('target_carbs').value) || 250;
-    const targetFat = parseFloat(document.getElementById('target_fat').value) || 65;
+    const targetCalories = parseFloat(document.getElementById('target_calories').value) || 0;
+    const targetProtein = parseFloat(document.getElementById('target_protein').value) || 0;
+    const targetCarbs = parseFloat(document.getElementById('target_carbs').value) || 0;
+    const targetFat = parseFloat(document.getElementById('target_fat').value) || 0;
 
-    document.getElementById('calories-progress').style.width = Math.min((totalCalories / targetCalories) * 100, 100) + '%';
-    document.getElementById('protein-progress').style.width = Math.min((totalProtein / targetProtein) * 100, 100) + '%';
-    document.getElementById('carbs-progress').style.width = Math.min((totalCarbs / targetCarbs) * 100, 100) + '%';
-    document.getElementById('fat-progress').style.width = Math.min((totalFat / targetFat) * 100, 100) + '%';
+    const caloriesPct = targetCalories > 0 ? Math.min((totalCalories / targetCalories) * 100, 100) : 0;
+    const proteinPct = targetProtein > 0 ? Math.min((totalProtein / targetProtein) * 100, 100) : 0;
+    const carbsPct = targetCarbs > 0 ? Math.min((totalCarbs / targetCarbs) * 100, 100) : 0;
+    const fatPct = targetFat > 0 ? Math.min((totalFat / targetFat) * 100, 100) : 0;
+
+    document.getElementById('calories-progress').style.width = caloriesPct + '%';
+    document.getElementById('protein-progress').style.width = proteinPct + '%';
+    document.getElementById('carbs-progress').style.width = carbsPct + '%';
+    document.getElementById('fat-progress').style.width = fatPct + '%';
 }
 
 // Update nutrition targets display
 function updateNutritionTargets() {
-    const targetCalories = document.getElementById('target_calories').value || 2000;
-    const targetProtein = document.getElementById('target_protein').value || 150;
-    const targetCarbs = document.getElementById('target_carbs').value || 250;
-    const targetFat = document.getElementById('target_fat').value || 65;
+    const targetCalories = (document.getElementById('target_calories').value || '').trim();
+    const targetProtein = (document.getElementById('target_protein').value || '').trim();
+    const targetCarbs = (document.getElementById('target_carbs').value || '').trim();
+    const targetFat = (document.getElementById('target_fat').value || '').trim();
 
-    document.getElementById('calories-target').textContent = `Target: ${targetCalories}`;
-    document.getElementById('protein-target').textContent = `Target: ${targetProtein}g`;
-    document.getElementById('carbs-target').textContent = `Target: ${targetCarbs}g`;
-    document.getElementById('fat-target').textContent = `Target: ${targetFat}g`;
+    document.getElementById('calories-target').textContent = `Target: ${targetCalories || '—'}`;
+    document.getElementById('protein-target').textContent = `Target: ${targetProtein ? targetProtein + 'g' : '—'}`;
+    document.getElementById('carbs-target').textContent = `Target: ${targetCarbs ? targetCarbs + 'g' : '—'}`;
+    document.getElementById('fat-target').textContent = `Target: ${targetFat ? targetFat + 'g' : '—'}`;
 
     updateNutritionSummary();
 }
