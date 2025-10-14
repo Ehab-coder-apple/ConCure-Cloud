@@ -1632,25 +1632,10 @@ console.log('=== SIMPLE WHATSAPP FUNCTION LOADING COMPLETE ===');
     }
   }
 
-  function isSidebarVisible(){
-    try {
-      var sb = document.querySelector('.sidebar');
-      if (!sb) return false;
-      var rect = sb.getBoundingClientRect();
-      // Consider visible if at least 40px is on-screen
-      return rect.right > 40 && rect.left < innerWidth - 40 && rect.width > 0;
-    } catch (e) { return false; }
-  }
-
   function applyNutritionOffsetGuard(){
     try {
-      var wrapper = document.querySelector('.main-content') || document.querySelector('.content-wrapper');
-      var ml = wrapper ? parseFloat(getComputedStyle(wrapper).marginLeft || '0') : 0;
-      var w = getSidebarWidth();
-      var sidebarIsVisible = isSidebarVisible();
-      // Need offsets whenever the sidebar is visible and the margin is not aligned
-      var needs = sidebarIsVisible && (Math.abs(ml - w) > 8);
-      setInlineOffsets(needs);
+      var enable = window.innerWidth >= 992; // desktop
+      setInlineOffsets(enable);
     } catch (e) { /* no-op */ }
   }
 
