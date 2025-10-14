@@ -1006,17 +1006,42 @@ function loadExistingMealData() {
                     meal.foods.forEach(mealFood => {
                         const food = mealFood.food;
                         if (food) {
+                            // Unit-aware reconstruction of existing meal foods
+                            const qty = parseFloat(mealFood.quantity) || 0;
+                            const unit = (mealFood.unit || 'g').toLowerCase();
+                            const servingWeight = parseFloat(food.serving_weight || 0) || 100;
+                            const gramsPerPiece = food.grams_per_piece ? parseFloat(food.grams_per_piece) : null;
+
+                            let grams = 0;
+                            switch (unit) {
+                                case 'kg': grams = qty * 1000; break;
+                                case 'g': grams = qty; break;
+                                case 'mg': grams = qty / 1000; break;
+                                case 'ml': grams = qty; break; // assume 1ml ~= 1g
+                                case 'l': grams = qty * 1000; break;
+                                case 'cup': grams = qty * 240; break;
+                                case 'tbsp': grams = qty * 15; break;
+                                case 'tsp': grams = qty * 5; break;
+                                case 'serving': grams = servingWeight * qty; break;
+                                case 'piece': grams = (gramsPerPiece || servingWeight) * qty; break;
+                                case 'slice': grams = servingWeight * qty; break;
+                                default: grams = qty; break; // fallback treat as grams
+                            }
+                            const multiplier = grams / 100;
+
                             const foodItem = {
                                 food_id: food.id,
                                 food_name: mealFood.food_name,
                                 displayName: mealFood.food_name,
-                                quantity: parseFloat(mealFood.quantity),
-                                unit: mealFood.unit,
+                                quantity: qty,
+                                unit: unit,
+                                serving_weight: servingWeight,
+                                grams_per_piece: gramsPerPiece,
                                 preparation_notes: mealFood.preparation_notes || '',
-                                calories: Math.round((food.calories * mealFood.quantity) / 100),
-                                protein: Math.round(((food.protein * mealFood.quantity) / 100) * 10) / 10,
-                                carbs: Math.round(((food.carbohydrates * mealFood.quantity) / 100) * 10) / 10,
-                                fat: Math.round(((food.fat * mealFood.quantity) / 100) * 10) / 10
+                                calories: Math.round(((food.calories || 0) * multiplier)),
+                                protein: Math.round(((food.protein || 0) * multiplier) * 10) / 10,
+                                carbs: Math.round(((food.carbohydrates || 0) * multiplier) * 10) / 10,
+                                fat: Math.round(((food.fat || 0) * multiplier) * 10) / 10
                             };
 
                             mealOption.foods.push(foodItem);
