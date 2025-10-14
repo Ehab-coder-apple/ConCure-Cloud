@@ -1733,6 +1733,70 @@
             const sidebarOverlay = document.getElementById('sidebarOverlay');
             const submenuToggles = document.querySelectorAll('.submenu-toggle');
 
+
+            // Global layout offset guard: ensure main-content is offset by actual sidebar width
+            (function(){
+                function getSidebarWidth(){
+                    try {
+                        var sb = document.querySelector('.sidebar');
+                        var w = sb && sb.offsetWidth ? sb.offsetWidth : 250;
+                        return (w && w > 0) ? w : 250;
+                    } catch(_) { return 250; }
+                }
+                function isSidebarVisible(){
+                    try {
+                        var sb = document.querySelector('.sidebar');
+                        if(!sb) return false;
+                        var r = sb.getBoundingClientRect();
+                        return r.width > 0 && r.right > 40 && r.left < (window.innerWidth - 40);
+                    } catch(_) { return false; }
+                }
+                function setInline(enable){
+                    var w = getSidebarWidth();
+                    var mc = document.querySelector('.main-content');
+                    var topbar = document.querySelector('.topbar');
+                    var footer = document.querySelector('.main-footer');
+                    if(enable){
+                        if(mc){ mc.style.marginLeft = w + 'px'; mc.style.width = 'calc(100% - ' + w + 'px)'; }
+                        if(topbar){ topbar.style.left = w + 'px'; }
+                        if(footer){ footer.style.marginLeft = w + 'px'; footer.style.width = 'calc(100% - ' + w + 'px)'; }
+                    } else {
+                        if(mc){ mc.style.marginLeft = ''; mc.style.width = ''; }
+                        if(topbar){ topbar.style.left = ''; }
+                        if(footer){ footer.style.marginLeft = ''; footer.style.width = ''; }
+                    }
+                }
+                function applyGuard(){
+                    try {
+                        var mc = document.querySelector('.main-content');
+                        var ml = mc ? parseFloat(getComputedStyle(mc).marginLeft || '0') : 0;
+                        var w = getSidebarWidth();
+                        var visible = isSidebarVisible();
+                        var needs = visible && (Math.abs(ml - w) > 8);
+                        setInline(needs);
+                    } catch(_) {}
+                }
+                function debounce(fn, ms){ let t; return function(){ clearTimeout(t); t = setTimeout(fn, ms); }; }
+                var debouncedApply = debounce(applyGuard, 100);
+                // Initial run
+                applyGuard();
+                // On resize and visibility changes
+                window.addEventListener('resize', debouncedApply);
+                document.addEventListener('visibilitychange', debouncedApply);
+                // React to sidebar/body class changes
+                try {
+                    var mo = new MutationObserver(debouncedApply);
+                    mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+                    if(sidebar){ mo.observe(sidebar, { attributes: true, attributeFilter: ['class', 'style'] }); }
+                } catch(_) {}
+                // Also run after explicit sidebar open/close actions
+                ['click','transitionend'].forEach(function(evt){
+                    if(sidebarToggleBtn) sidebarToggleBtn.addEventListener(evt, debouncedApply, true);
+                    if(sidebarToggle) sidebarToggle.addEventListener(evt, debouncedApply, true);
+                    if(sidebarOverlay) sidebarOverlay.addEventListener(evt, debouncedApply, true);
+                });
+            })();
+
             // Mobile sidebar toggle
             if (sidebarToggleBtn) {
                 sidebarToggleBtn.addEventListener('click', function() {
