@@ -215,7 +215,7 @@
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">
                             <i class="fas fa-chart-pie"></i> {{ __('Nutritional Information') }}
-                            <small class="text-muted">({{ __('per 100g') }})</small>
+                            <small class="text-muted">({{ __('Per serving') }})</small>
                         </h6>
                     </div>
                     <div class="card-body">
@@ -356,12 +356,15 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="serving_size" class="form-label">{{ __('Serving Size') }}</label>
-                                    <input type="text"
-                                           class="form-control @error('serving_size') is-invalid @enderror"
-                                           id="serving_size"
-                                           name="serving_size"
-                                           value="{{ old('serving_size', '100g') }}"
-                                           placeholder="e.g., 100g, 1 cup, 1 piece">
+                                    @php $unit = old('serving_size', 'g'); @endphp
+                                    <select class="form-control @error('serving_size') is-invalid @enderror" id="serving_size" name="serving_size">
+                                        <option value="serving" {{ $unit == 'serving' ? 'selected' : '' }}>{{ __('Serving') }}</option>
+                                        <option value="piece" {{ $unit == 'piece' ? 'selected' : '' }}>{{ __('Piece') }}</option>
+                                        <option value="cup" {{ $unit == 'cup' ? 'selected' : '' }}>{{ __('Cup') }}</option>
+                                        <option value="g" {{ $unit == 'g' ? 'selected' : '' }}>{{ __('Gram (g)') }}</option>
+                                        <option value="tbsp" {{ $unit == 'tbsp' ? 'selected' : '' }}>{{ __('Tablespoon (tbsp)') }}</option>
+                                        <option value="tsp" {{ $unit == 'tsp' ? 'selected' : '' }}>{{ __('Teaspoon (tsp)') }}</option>
+                                    </select>
                                     @error('serving_size')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
