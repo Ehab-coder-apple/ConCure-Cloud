@@ -18,6 +18,8 @@ use App\Services\KurdishFontService;
 use App\Services\PdfKurdishFontService;
 use App\Services\DomPdfFontLoader;
 use App\Services\WordDocumentService;
+use App\Services\MealPlanAutoGenerator;
+
 
 class NutritionController extends Controller
 {
@@ -1781,6 +1783,63 @@ class NutritionController extends Controller
             'recommendations' => $this->getCalorieRecommendations($request->goal, $calorieData)
         ]);
     }
+    /**
+     * Auto-generate a daily meal plan suggestion based on targets and language.
+     */
+    public function autoGeneratePlan(Request $request)
+    {
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'language' => 'nullable|string',
+            'goal' => 'nullable|string',
+            'activity_level' => 'nullable|string',
+            'weekly_weight_goal' => 'nullable|numeric|between:-2.0,2.0',
+            'target_calories' => 'nullable|numeric|min:500|max:5000',
+            'target_protein' => 'nullable|numeric|min:0|max:500',
+            'target_carbs' => 'nullable|numeric|min:0|max:1000',
+            'target_fat' => 'nullable|numeric|min:0|max:300',
+            'restrictions' => 'nullable|array',
+            'restrictions.*' => 'string'
+        ]);
+
+        $language = $request->language ?: 'default';
+
+        // Prefer provided targets; otherwise compute from patient + goal
+        $calories = $request->target_calories;
+        $protein  = $request->target_protein;
+        $carbs    = $request->target_carbs;
+        $fat      = $request->target_fat;
+
+        if (!$calories || !$protein || !$carbs || !$fat) {
+            $user = Auth::user();
+            $patient = Patient::where('clinic_id', $user->clinic_id)->findOrFail($request->patient_id);
+
+            $goal = $request->goal ?: 'maintenance';
+            $activity = $request->activity_level ?: 'light';
+            $weekly = is_numeric($request->weekly_weight_goal) ? (float)$request->weekly_weight_goal : 0;
+
+            $calData = $patient->calculateTargetCalories($goal, $weekly, $activity);
+            if (!$calData) {
+                return response()->json(['success'=>false,'message'=>'Unable to compute targets for this patient'], 422);
+            }
+            $macros = $this->calculateMacronutrients($calData['target_calories'], $goal);
+            $calories = $calories ?: $calData['target_calories'];
+            $protein  = $protein  ?: $macros['protein']['grams'];
+            $carbs    = $carbs    ?: $macros['carbs']['grams'];
+            $fat      = $fat      ?: $macros['fat']['grams'];
+        }
+
+        $generator = new MealPlanAutoGenerator();
+        $result = $generator->generate([
+            'calories' => (float)$calories,
+            'protein'  => (float)$protein,
+            'carbs'    => (float)$carbs,
+            'fat'      => (float)$fat,
+        ], $language, $request->restrictions ?? []);
+
+        return response()->json($result);
+    }
+
 
     /**
      * Calculate macronutrient distribution based on goal.

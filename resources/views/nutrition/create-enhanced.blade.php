@@ -29,7 +29,7 @@
         @if(isset($dietPlan))
             @method('PUT')
         @endif
-        
+
         <div class="row">
             <!-- Basic Information -->
             <div class="col-12">
@@ -47,7 +47,7 @@
                                 <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id" required onchange="updateCalorieCalculation()">
                                     <option value="">{{ __('Select Patient') }}</option>
                                     @foreach($patients as $patient)
-                                    <option value="{{ $patient->id }}" 
+                                    <option value="{{ $patient->id }}"
                                             {{ (old('patient_id', $selectedPatient?->id) == $patient->id) ? 'selected' : '' }}>
                                         {{ trim(($patient->first_name . ' ' . $patient->last_name)) ?: ($patient->phone ?? 'Unknown') }} ({{ $patient->patient_id }})
                                     </option>
@@ -345,6 +345,23 @@
                         <small class="text-muted">{{ __('Plan your daily meals with specific foods and portions') }}</small>
                     </div>
                     <div class="card-body">
+                            <!-- Auto-generate toolbar -->
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="auto-suggest-language" class="form-label mb-0 me-2">{{ __('Suggestions Language') }}</label>
+                                    <select class="form-select form-select-sm" id="auto-suggest-language" style="width:auto;min-width:160px;">
+                                        <option value="default">{{ __('Default') }}</option>
+                                        <option value="en">{{ __('English') }}</option>
+                                        <option value="ar">{{ __('العربية') }}</option>
+                                        <option value="ku_bahdini">{{ __('کوردی بادینی') }}</option>
+                                        <option value="ku_sorani">{{ __('کوردی سۆرانی') }}</option>
+                                    </select>
+                                </div>
+                                <button type="button" id="auto-generate-plan-btn" class="btn btn-primary">
+                                    <i class="fas fa-magic me-1"></i> {{ __('Auto-Generate Meal Plan') }}
+                                </button>
+                            </div>
+
 
                         <!-- Meal Types Tabs -->
                         <ul class="nav nav-tabs" id="mealTabs" role="tablist">
@@ -530,17 +547,17 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="instructions" class="form-label">{{ __('Instructions') }}</label>
-                                <textarea class="form-control @error('instructions') is-invalid @enderror" 
+                                <textarea class="form-control @error('instructions') is-invalid @enderror"
                                           id="instructions" name="instructions" rows="4"
                                           placeholder="{{ __('General instructions for following this nutrition plan...') }}">{{ old('instructions') }}</textarea>
                                 @error('instructions')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            
+
                             <div class="col-md-6 mb-3">
                                 <label for="restrictions" class="form-label">{{ __('Dietary Restrictions') }}</label>
-                                <textarea class="form-control @error('restrictions') is-invalid @enderror" 
+                                <textarea class="form-control @error('restrictions') is-invalid @enderror"
                                           id="restrictions" name="restrictions" rows="4"
                                           placeholder="{{ __('Foods to avoid, allergies, medical restrictions...') }}">{{ old('restrictions') }}</textarea>
                                 @error('restrictions')
@@ -747,8 +764,24 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCalorieCalculation();
     }
 
+    // Auto-generate meal plan handlers
+    const autoBtn = document.getElementById('auto-generate-plan-btn');
+    const autoLang = document.getElementById('auto-suggest-language');
+    if (autoBtn) {
+        autoBtn.addEventListener('click', () => autoGenerateMealPlan());
+    }
+    if (autoLang) {
+        autoLang.addEventListener('change', () => {
+            // If there are targets filled, regenerate to reflect language
+            const tc = document.getElementById('target_calories').value;
+            if (tc) autoGenerateMealPlan(true);
+        });
+    }
+
     // Remove step validation from macronutrient fields
     ['target_protein', 'target_carbs', 'target_fat'].forEach(id => {
+
+
         const field = document.getElementById(id);
         if (field) {
             field.removeAttribute('step');
@@ -2565,6 +2598,7 @@ function showCalorieCalculationDetails(data) {
                 <small class="text-muted">{{ __('For your goal') }}</small>
             </div>
             ${timeToGoalHtml}
+
         </div>
         ${data.recommendations.length > 0 ? `
             <div class="mt-3">
@@ -2588,6 +2622,98 @@ if (form) {
     console.log('Form action:', form.action);
     console.log('Form method:', form.method);
 }
+
+// Auto-generate meal plan from targets
+function autoGenerateMealPlan(silent = false) {
+    const patientId = document.getElementById('patient_id')?.value;
+    const language = document.getElementById('auto-suggest-language')?.value || 'default';
+    const goal = document.getElementById('goal')?.value || '';
+    const activity = document.getElementById('activity_level')?.value || '';
+    const weekly = document.getElementById('weekly_weight_goal')?.value || '';
+
+    if (!patientId) {
+        alert('{{ __('Please select a patient first') }}');
+        return;
+    }
+
+    // Read current targets (allow empty; backend can compute from patient)
+    const payload = {
+        patient_id: patientId,
+        language: language,
+        goal: goal || undefined,
+        activity_level: activity || undefined,
+        weekly_weight_goal: weekly || undefined,
+        target_calories: parseFloat(document.getElementById('target_calories')?.value) || undefined,
+        target_protein: parseFloat(document.getElementById('target_protein')?.value) || undefined,
+        target_carbs: parseFloat(document.getElementById('target_carbs')?.value) || undefined,
+        target_fat: parseFloat(document.getElementById('target_fat')?.value) || undefined,
+        restrictions: [],
+    };
+
+    // Simple loading state on button
+    const btn = document.getElementById('auto-generate-plan-btn');
+    const prevHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>{{ __('Generating...') }}';
+    }
+
+    fetch("{{ route('nutrition.auto-generate-plan') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(resp => resp.json())
+    .then(data => {
+        if (!data || !data.success) {
+            throw new Error(data?.message || 'Failed to generate plan');
+        }
+        if (!data.meal_options) {
+            throw new Error('No meal options returned');
+        }
+        // Apply generated options to UI state
+        applyGeneratedMealOptions(data.meal_options);
+        if (!silent) {
+            // Simple success toast
+            const ok = document.createElement('div');
+            ok.className = 'alert alert-success mt-2';
+            ok.innerHTML = '<i class="fas fa-magic me-1"></i>{{ __('Suggested meal plan added. You can edit anything before saving.') }}';
+            const cardBody = document.querySelector('#mealTabContent')?.parentElement;
+            if (cardBody) {
+                cardBody.insertBefore(ok, cardBody.firstChild.nextSibling);
+                setTimeout(() => ok.remove(), 3000);
+            }
+        }
+    })
+    .catch(err => {
+        console.error('Auto-generate failed:', err);
+        alert('{{ __('Could not auto-generate the meal plan') }}: ' + (err?.message || err));
+    })
+    .finally(() => {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = prevHtml;
+        }
+    });
+}
+
+function applyGeneratedMealOptions(generated) {
+    // Replace current options with generated suggestions
+    ['breakfast','lunch','dinner','snacks'].forEach(meal => {
+        mealOptions[meal] = Array.isArray(generated[meal]) ? generated[meal] : [];
+        optionCounters[meal] = mealOptions[meal].length || 0;
+        renderAllMealOptions(meal);
+    });
+    // Recompute per-meal calorie badges if function exists
+    if (typeof updateMealTotals === 'function') {
+        updateMealTotals();
+    }
+}
+
 
 </script>
 @endpush

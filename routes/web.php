@@ -392,6 +392,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         // Calorie calculation API
         Route::post('/calculate-calories', [App\Http\Controllers\NutritionController::class, 'calculateTargetCalories'])->name('calculate-calories');
+            // Auto-generate meal plan API
+            Route::post('/auto-generate-plan', [App\Http\Controllers\NutritionController::class, 'autoGeneratePlan'])->name('auto-generate-plan');
+
 
         // Weight tracking routes
         Route::get('/{dietPlan}/weight-tracking', [App\Http\Controllers\NutritionController::class, 'weightTracking'])->name('weight-tracking');
