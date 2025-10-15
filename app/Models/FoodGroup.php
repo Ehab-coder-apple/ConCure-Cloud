@@ -136,10 +136,14 @@ class FoodGroup extends Model
     public function scopeForClinic($query, ?int $clinicId)
     {
         if (!$clinicId) {
-            // No clinic context: show none
-            return $query->whereRaw('1 = 0');
+            // No clinic context: show global defaults
+            return $query->whereNull('clinic_id');
         }
-        return $query->where('clinic_id', $clinicId);
+        // Include global defaults (clinic_id null) and this clinic's custom groups
+        return $query->where(function ($q) use ($clinicId) {
+            $q->whereNull('clinic_id')
+              ->orWhere('clinic_id', $clinicId);
+        });
     }
 
     /**
