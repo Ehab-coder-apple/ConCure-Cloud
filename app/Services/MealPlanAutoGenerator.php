@@ -128,19 +128,29 @@ class MealPlanAutoGenerator
             if ($gramsNeeded < 30 || $gramsNeeded > 300) continue;
 
             $mult = $gramsNeeded / 100.0;
+            $cals = ($per100['calories'] ?? 0) * $mult;
+            $prot = ($per100['protein'] ?? 0) * $mult;
+            $carb = ($per100['carbohydrates'] ?? 0) * $mult;
+            $fatg = ($per100['fat'] ?? 0) * $mult;
+
             $add = [
                 'food_id' => $food->id,
                 'food_name' => $food->name,
                 'displayName' => $this->translatedName($food, $language),
                 'quantity' => round($gramsNeeded, 0),
                 'unit' => 'g',
+                // Per-item nutrition for UI rendering
+                'calories' => round($cals, 0),
+                'protein'  => round($prot, 1),
+                'carbs'    => round($carb, 1),
+                'fat'      => round($fatg, 1),
             ];
 
             $option['foods'][] = $add;
-            $option['total_calories'] += $per100['calories'] * $mult;
-            $option['total_protein']  += $per100['protein'] * $mult;
-            $option['total_carbs']    += $per100['carbohydrates'] * $mult;
-            $option['total_fat']      += $per100['fat'] * $mult;
+            $option['total_calories'] += $cals;
+            $option['total_protein']  += $prot;
+            $option['total_carbs']    += $carb;
+            $option['total_fat']      += $fatg;
 
             $added++;
             if ($added >= 1) break; // take one item from each list per pass
