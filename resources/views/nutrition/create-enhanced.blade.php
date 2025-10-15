@@ -163,6 +163,7 @@
                                 <div class="input-group">
                                     <input type="number" class="form-control bg-light @error('target_calories') is-invalid @enderror"
                                            id="target_calories" name="target_calories" value="{{ old('target_calories', $dietPlan?->target_calories ?? '') }}"
+                                           placeholder="{{ __('Select a patient to calculate') }}"
                                            min="800" max="4000" step="1" readonly style="font-weight: bold; color: #0d6efd;">
                                     <span class="input-group-text">
                                         <i class="fas fa-calculator text-primary" title="{{ __('Auto-calculated from macronutrients') }}"></i>
@@ -180,6 +181,7 @@
                                 <label for="target_protein" class="form-label">{{ __('Protein (g)') }}</label>
                                 <input type="number" class="form-control @error('target_protein') is-invalid @enderror"
                                        id="target_protein" name="target_protein" value="{{ old('target_protein', $dietPlan?->target_protein ?? '') }}"
+                                       placeholder="{{ __('Select a patient to calculate') }}"
                                        min="0" max="500" step="any">
                                 @error('target_protein')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -193,6 +195,7 @@
                                 <label for="target_carbs" class="form-label">{{ __('Carbohydrates (g)') }}</label>
                                 <input type="number" class="form-control @error('target_carbs') is-invalid @enderror"
                                        id="target_carbs" name="target_carbs" value="{{ old('target_carbs', $dietPlan?->target_carbs ?? '') }}"
+                                       placeholder="{{ __('Select a patient to calculate') }}"
                                        min="0" max="1000" step="any">
                                 @error('target_carbs')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -203,6 +206,7 @@
                                 <label for="target_fat" class="form-label">{{ __('Fat (g)') }}</label>
                                 <input type="number" class="form-control @error('target_fat') is-invalid @enderror"
                                        id="target_fat" name="target_fat" value="{{ old('target_fat', $dietPlan?->target_fat ?? '') }}"
+                                       placeholder="{{ __('Select a patient to calculate') }}"
                                        min="0" max="300" step="any">
                                 @error('target_fat')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -2031,15 +2035,24 @@ function updateNutritionSummary() {
 
 // Update nutrition targets display
 function updateNutritionTargets() {
+    const pidEl = document.getElementById('patient_id');
+    const noPatient = !(pidEl && pidEl.value);
+    const msg = 'Select a patient to calculate';
+
     const targetCalories = (document.getElementById('target_calories').value || '').trim();
     const targetProtein = (document.getElementById('target_protein').value || '').trim();
     const targetCarbs = (document.getElementById('target_carbs').value || '').trim();
     const targetFat = (document.getElementById('target_fat').value || '').trim();
 
-    document.getElementById('calories-target').textContent = `Target: ${targetCalories || '—'}`;
-    document.getElementById('protein-target').textContent = `Target: ${targetProtein ? targetProtein + 'g' : '—'}`;
-    document.getElementById('carbs-target').textContent = `Target: ${targetCarbs ? targetCarbs + 'g' : '—'}`;
-    document.getElementById('fat-target').textContent = `Target: ${targetFat ? targetFat + 'g' : '—'}`;
+    const caloriesLabel = targetCalories || (noPatient ? msg : '—');
+    const proteinLabel = targetProtein ? `${targetProtein}g` : (noPatient ? msg : '—');
+    const carbsLabel = targetCarbs ? `${targetCarbs}g` : (noPatient ? msg : '—');
+    const fatLabel = targetFat ? `${targetFat}g` : (noPatient ? msg : '—');
+
+    document.getElementById('calories-target').textContent = `Target: ${caloriesLabel}`;
+    document.getElementById('protein-target').textContent = `Target: ${proteinLabel}`;
+    document.getElementById('carbs-target').textContent = `Target: ${carbsLabel}`;
+    document.getElementById('fat-target').textContent = `Target: ${fatLabel}`;
 
     updateNutritionSummary();
 }
