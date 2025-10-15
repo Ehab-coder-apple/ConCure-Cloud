@@ -17,6 +17,7 @@ class Food extends Model
         'name',
         'name_translations',
         'food_group_id',
+        'meal_type',
         'description',
         'description_translations',
         'calories',
@@ -207,10 +208,10 @@ class Food extends Model
     {
         // Convert quantity to grams if needed
         $quantityInGrams = $this->convertToGrams($quantity, $unit);
-        
+
         // Calculate nutrition per quantity (base is per 100g)
         $factor = $quantityInGrams / 100;
-        
+
         return [
             'calories' => round($this->calories * $factor, 1),
             'protein' => round($this->protein * $factor, 1),
@@ -358,6 +359,19 @@ class Food extends Model
      */
     public function scopeHighFiber($query, float $minFiber = 5)
     {
+
+    /**
+     * Scope to filter by meal type (includes 'any' and nulls).
+     */
+    public function scopeByMealType($query, string $mealType)
+    {
+        return $query->where(function ($q) use ($mealType) {
+            $q->whereNull('meal_type')
+              ->orWhere('meal_type', 'any')
+              ->orWhere('meal_type', $mealType);
+        });
+    }
+
         return $query->where('fiber', '>=', $minFiber);
     }
 }

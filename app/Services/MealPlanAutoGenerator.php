@@ -57,17 +57,6 @@ class MealPlanAutoGenerator
             });
         }
 
-        // Rank by macro density (per 100g)
-        // Use sortByDesc on the collection directly (returns a new collection) to avoid cloning.
-        $proteinDense = $foods->sortByDesc(fn($f) => (float)($f->protein ?? 0));
-        $carbDense    = $foods->sortByDesc(fn($f) => (float)($f->carbohydrates ?? 0));
-        $fatDense     = $foods->sortByDesc(fn($f) => (float)($f->fat ?? 0));
-        $balanced     = $foods->sortByDesc(function($f){
-            // simple score favoring balanced items
-            $p = (float)($f->protein ?? 0); $c = (float)($f->carbohydrates ?? 0); $fa = (float)($f->fat ?? 0); $cal = (float)($f->calories ?? 0);
-            return $p*0.4 + $c*0.35 + $fa*0.25 + ($cal>0?50:0);
-        });
-
         $plan = [ 'breakfast'=>[], 'lunch'=>[], 'dinner'=>[], 'snacks'=>[] ];
 
         foreach ($this->mealSplits as $meal => $ratio) {
@@ -75,6 +64,29 @@ class MealPlanAutoGenerator
             $mealP   = max(10,  round($p   * $ratio));
             $mealC   = max(20,  round($c   * $ratio));
             $mealF   = max(5,   round($f   * $ratio));
+
+            // Determine meal type filter (map 'snacks' to 'snack')
+            $mealTypeFilter = $meal === 'snacks' ? 'snack' : $meal;
+
+            // Filter foods by meal type; treat null/empty as 'any' for backward compatibility
+            $mealFoods = $foods->filter(function($food) use ($mealTypeFilter) {
+                $mt = $food->meal_type ?? 'any';
+                return $mt === 'any' || $mt === $mealTypeFilter;
+            });
+
+            // Fallback: if no foods matched, use the full list to avoid empty meals
+            if ($mealFoods->isEmpty()) {
+                $mealFoods = $foods;
+            }
+
+            // Rank by macro density (per 100g) within the filtered set
+            $proteinDense = $mealFoods->sortByDesc(fn($f) => (float)($f->protein ?? 0));
+            $carbDense    = $mealFoods->sortByDesc(fn($f) => (float)($f->carbohydrates ?? 0));
+            $fatDense     = $mealFoods->sortByDesc(fn($f) => (float)($f->fat ?? 0));
+            $balanced     = $mealFoods->sortByDesc(function($f){
+                $p = (float)($f->protein ?? 0); $c = (float)($f->carbohydrates ?? 0); $fa = (float)($f->fat ?? 0); $cal = (float)($f->calories ?? 0);
+                return $p*0.4 + $c*0.35 + $fa*0.25 + ($cal>0?50:0);
+            });
 
             $option = [
                 'option_number' => 1,

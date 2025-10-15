@@ -37,6 +37,7 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                     'name_ku_sorani' => 'nullable|string|max:255',
                     'name_ku' => 'nullable|string|max:255', // Legacy support
                     'food_group' => 'nullable|string|max:255',
+                    'meal_type' => 'nullable|string|in:breakfast,lunch,dinner,snack,any,snacks',
                     'calories' => 'required|numeric|min:0|max:9999',
                     'protein' => 'nullable|numeric|min:0|max:999',
                     'carbohydrates' => 'nullable|numeric|min:0|max:999',
@@ -171,12 +172,20 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                     $descriptionTranslations['ku_sorani'] = trim($row['description_ku']);
                 }
 
+                // Normalize meal type
+                $mealType = strtolower(trim((string)($row['meal_type'] ?? '')));
+                if ($mealType === '' || $mealType === null) { $mealType = 'any'; }
+                if ($mealType === 'snacks') { $mealType = 'snack'; }
+                $allowedMealTypes = ['breakfast','lunch','dinner','snack','any'];
+                if (!in_array($mealType, $allowedMealTypes)) { $mealType = 'any'; }
+
                 // Create the food with proper data handling and error catching
                 try {
                     Food::create([
                         'name' => trim($row['name']),
                         'name_translations' => !empty($nameTranslations) ? $nameTranslations : ['en' => trim($row['name'])],
                         'food_group_id' => $foodGroupId,
+                        'meal_type' => $mealType,
                         'calories' => (float)($row['calories'] ?? 0),
                         'protein' => (float)($row['protein'] ?? 0),
                         'carbohydrates' => (float)($row['carbohydrates'] ?? 0),
@@ -386,6 +395,7 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
             'name_ku_bahdini' => 'Name in Kurdish Bahdini (Optional)',
             'name_ku_sorani' => 'Name in Kurdish Sorani (Optional)',
             'food_group' => 'Food Group (Optional)',
+            'meal_type' => 'Meal Type (Optional: breakfast, lunch, dinner, snack, any)',
             'calories' => 'Calories (Required)',
             'protein' => 'Protein (g) (Optional)',
             'carbohydrates' => 'Carbohydrates (g) (Optional)',
@@ -416,6 +426,7 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                 'name_ku_bahdini' => 'سنگی مریشک (بێ پێست)',
                 'name_ku_sorani' => 'سنگی مریشک (بێ پێست)',
                 'food_group' => 'Proteins',
+                'meal_type' => 'lunch',
                 'calories' => 165,
                 'protein' => 31,
                 'carbohydrates' => 0,
@@ -438,6 +449,7 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                 'name_ku_bahdini' => 'برنج قاوەیی (کوڵاو)',
                 'name_ku_sorani' => 'برنج قاوەیی (کوڵاو)',
                 'food_group' => 'Grains',
+                'meal_type' => 'lunch',
                 'calories' => 111,
                 'protein' => 2.6,
                 'carbohydrates' => 23,
