@@ -175,4 +175,19 @@ class FoodGroup extends Model
               ->orWhereRaw("JSON_EXTRACT(name_translations, '$.ku') LIKE ?", ["%{$search}%"]);
         });
     }
+
+    /**
+     * Canonical key used to deduplicate similar groups (e.g., Fat vs Fats & Oils).
+     */
+    public function getCanonicalKeyAttribute(): string
+    {
+        $name = strtolower(trim($this->name));
+        $name = preg_replace('/\s+/', ' ', $name);
+        // Map common synonyms to the same bucket
+        $fats = ['fat', 'fats', 'oil', 'oils', 'fat & oil', 'fats & oils'];
+        if (in_array($name, $fats, true)) {
+            return 'fats_oils';
+        }
+        return $name;
+    }
 }

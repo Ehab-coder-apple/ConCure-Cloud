@@ -88,8 +88,15 @@ class FoodController extends Controller
         $foodGroups = FoodGroup::active()->forClinic($clinicId)
             ->ordered()
             ->get()
-            ->sortByDesc(fn ($g) => $g->clinic_id ? 1 : 0)
-            ->unique(function ($g) { return strtolower($g->name); })
+            // Prefer clinic-specific, and within fats bucket prefer the label "Fats & Oils"
+            ->sortBy(function ($g) {
+                $clinicOrder = $g->clinic_id ? 0 : 1; // 0 first (clinic-specific)
+                $name = strtolower(trim($g->name));
+                $canon = $g->canonical_key ?? $name;
+                $nameOrder = ($canon === 'fats_oils' && $name === 'fats & oils') ? 0 : 1;
+                return sprintf('%d-%d-%s', $clinicOrder, $nameOrder, $name);
+            })
+            ->unique(function ($g) { return $g->canonical_key ?? strtolower($g->name); })
             ->values();
 
         return view('foods.index', compact('foods', 'foodGroups'));
@@ -107,8 +114,15 @@ class FoodController extends Controller
         $foodGroups = FoodGroup::active()->forClinic($clinicId)
             ->ordered()
             ->get()
-            ->sortByDesc(fn ($g) => $g->clinic_id ? 1 : 0)
-            ->unique(function ($g) { return strtolower($g->name); })
+            // Prefer clinic-specific, and within fats bucket prefer the label "Fats & Oils"
+            ->sortBy(function ($g) {
+                $clinicOrder = $g->clinic_id ? 0 : 1; // 0 first (clinic-specific)
+                $name = strtolower(trim($g->name));
+                $canon = $g->canonical_key ?? $name;
+                $nameOrder = ($canon === 'fats_oils' && $name === 'fats & oils') ? 0 : 1;
+                return sprintf('%d-%d-%s', $clinicOrder, $nameOrder, $name);
+            })
+            ->unique(function ($g) { return $g->canonical_key ?? strtolower($g->name); })
             ->values();
 
         return view('foods.create', compact('foodGroups'));
@@ -226,8 +240,15 @@ class FoodController extends Controller
         $foodGroups = FoodGroup::active()->forClinic($clinicId)
             ->ordered()
             ->get()
-            ->sortByDesc(fn ($g) => $g->clinic_id ? 1 : 0)
-            ->unique(function ($g) { return strtolower($g->name); })
+            // Prefer clinic-specific, and within fats bucket prefer the label "Fats & Oils"
+            ->sortBy(function ($g) {
+                $clinicOrder = $g->clinic_id ? 0 : 1; // 0 first (clinic-specific)
+                $name = strtolower(trim($g->name));
+                $canon = $g->canonical_key ?? $name;
+                $nameOrder = ($canon === 'fats_oils' && $name === 'fats & oils') ? 0 : 1;
+                return sprintf('%d-%d-%s', $clinicOrder, $nameOrder, $name);
+            })
+            ->unique(function ($g) { return $g->canonical_key ?? strtolower($g->name); })
             ->values();
 
         return view('foods.edit', compact('food', 'foodGroups'));

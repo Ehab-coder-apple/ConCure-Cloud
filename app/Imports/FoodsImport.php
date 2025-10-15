@@ -63,6 +63,12 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
 
                 // Find or create food group first - always ensure we have a food group
                 $foodGroupName = !empty($row['food_group']) ? trim($row['food_group']) : 'General';
+                // Normalize common synonyms (keep "Fats & Oils")
+                $lowerGroup = strtolower($foodGroupName);
+                $fats = ['fat','fats','oil','oils','fat & oil','fats & oils'];
+                if (in_array($lowerGroup, $fats, true)) {
+                    $foodGroupName = 'Fats & Oils';
+                }
 
                 // Try to find existing food group first (current clinic only)
                 $foodGroup = FoodGroup::where('name', $foodGroupName)
