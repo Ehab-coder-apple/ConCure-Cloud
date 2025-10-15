@@ -290,7 +290,11 @@ class WordDocumentService
                             foreach ($meal->foods as $mealFood) {
                                 $food = $mealFood->food;
                                 $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
-                                $html .= '<li class="kurdish" style="margin:1.5pt 0; font-size:10.5pt;">' . htmlspecialchars($foodName) . ' — <span style="color:#666; font-weight:normal; font-size:9.8pt;">' . htmlspecialchars($mealFood->quantity_with_equivalent) . '</span></li>';
+                                $note = trim((string)($mealFood->preparation_notes ?? ''));
+                                $line = '<li class="kurdish" style="margin:1.5pt 0; font-size:10.5pt;">' . htmlspecialchars($foodName) . ' — <span style="color:#666; font-weight:normal; font-size:9.8pt;">' . htmlspecialchars($mealFood->quantity_with_equivalent) . '</span>';
+                                if ($note !== '') { $line .= '<div style="color:#7f8c8d; font-size:9pt; margin-top:1pt;">' . htmlspecialchars($note) . '</div>'; }
+                                $line .= '</li>';
+                                $html .= $line;
                             }
                         }
 
@@ -434,7 +438,11 @@ class WordDocumentService
                         foreach ($meal->foods as $mealFood) {
                             $food = $mealFood->food;
                             $foodName = $mealFood->food_name ?? $mealFood->food_name_display ?? ($food ? $food->name : 'Unknown Food');
-                            $html .= '<li class="kurdish" style="margin:2pt 0; font-size:11pt;">' . htmlspecialchars($foodName) . ' — <span style="color:#666; font-weight:normal; font-size:10pt;">' . htmlspecialchars($mealFood->quantity_with_equivalent) . '</span></li>';
+                            $note = trim((string)($mealFood->preparation_notes ?? ''));
+                            $line = '<li class="kurdish" style="margin:2pt 0; font-size:11pt;">' . htmlspecialchars($foodName) . ' — <span style="color:#666; font-weight:normal; font-size:10pt;">' . htmlspecialchars($mealFood->quantity_with_equivalent) . '</span>';
+                            if ($note !== '') { $line .= '<div style="color:#7f8c8d; font-size:9.5pt; margin-top:1pt;">' . htmlspecialchars($note) . '</div>'; }
+                            $line .= '</li>';
+                            $html .= $line;
                         }
                     }
 

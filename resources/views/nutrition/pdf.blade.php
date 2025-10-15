@@ -464,6 +464,18 @@
                                             {{ number_format($fat, 1) }}g fat
                                         </td>
                                     </tr>
+                                    @php $prepNotes = trim((string)($mealFood->preparation_notes ?? '')); @endphp
+                                    @if($prepNotes !== '')
+                                        <tr>
+                                            <td colspan="3" class="{{ getTextDirectionClass($prepNotes) }}" style="color:#7f8c8d; font-size:11px; padding-top:4px;">
+                                                @if(isRTLText($prepNotes))
+                                                    {!! $arabicProcessor->utf8Glyphs($prepNotes) !!}
+                                                @else
+                                                    {{ $prepNotes }}
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endif
                                 </table>
                             </div>
                         @endforeach

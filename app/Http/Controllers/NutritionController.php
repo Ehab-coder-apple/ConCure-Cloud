@@ -1069,7 +1069,13 @@ class NutritionController extends Controller
                     foreach ($meal->foods as $mf) {
                         $display = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity_with_equivalent ?? ''));
                         if ($display === '') { continue; }
-                        $html .= '<li>' . e($display) . '</li>';
+                        $notes = trim((string)($mf->preparation_notes ?? ''));
+                        $item = '<li>' . e($display);
+                        if ($notes !== '') {
+                            $item .= '<div style="color:#7f8c8d; font-size:10pt; margin-top:2px;">' . e($notes) . '</div>';
+                        }
+                        $item .= '</li>';
+                        $html .= $item;
                     }
                 }
                 $html .= '</ul></div>';
@@ -1186,7 +1192,13 @@ class NutritionController extends Controller
                     foreach ($meal->foods as $mf) {
                         $display = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity_with_equivalent ?? ''));
                         if ($display === '') { continue; }
-                        $html .= '<li>' . e($display) . '</li>';
+                        $notes = trim((string)($mf->preparation_notes ?? ''));
+                        $item = '<li>' . e($display);
+                        if ($notes !== '') {
+                            $item .= '<div style="color:#7f8c8d; font-size:10pt; margin-top:2px;">' . e($notes) . '</div>';
+                        }
+                        $item .= '</li>';
+                        $html .= $item;
                     }
                 }
                 $html .= '</ul></div>';

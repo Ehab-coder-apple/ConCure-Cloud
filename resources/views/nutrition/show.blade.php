@@ -1494,6 +1494,10 @@ window.sendWhatsAppSimple = function() {
 
                             message += '  🍽️ ' + foodName + '\n';
                             message += '     📏 {{ $mealFood->quantity_with_equivalent }}\n';
+                            @php $prep = trim((string)($mealFood->preparation_notes ?? '')); @endphp
+                            @if($prep !== '')
+                                message += '     📝 ' + {!! json_encode($prep) !!} + '\n';
+                            @endif
 
                         @endforeach
                         message += '\n';
@@ -1528,6 +1532,10 @@ window.sendWhatsAppSimple = function() {
 
                                 message += '🍽️ ' + foodName + '\n';
                                 message += '   📏 {{ $food->quantity_with_equivalent }}\n';
+                                @php $prep2 = trim((string)($food->preparation_notes ?? '')); @endphp
+                                @if($prep2 !== '')
+                                    message += '   4dd ' + {!! json_encode($prep2) !!} + '\n';
+                                @endif
 
                                 message += '\n';
                             @endforeach
