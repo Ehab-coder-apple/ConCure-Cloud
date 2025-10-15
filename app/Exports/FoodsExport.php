@@ -41,8 +41,18 @@ class FoodsExport implements FromCollection, WithHeadings, WithMapping, WithStyl
      */
     public function map($food): array
     {
+        // Collect name translations (fallbacks handled by model accessors)
+        $nameEn = $food->getNameTranslation('en') ?? $food->name;
+        $nameAr = $food->getNameTranslation('ar') ?? '';
+        $nameKuBahdini = $food->getNameTranslation('ku_bahdini') ?? '';
+        $nameKuSorani = $food->getNameTranslation('ku_sorani') ?? '';
+
         return [
             $food->name,
+            $nameEn,
+            $nameAr,
+            $nameKuBahdini,
+            $nameKuSorani,
             $food->foodGroup ? $food->foodGroup->name : '',
             $food->description ?? '',
             $food->calories ?? '',
@@ -75,6 +85,10 @@ class FoodsExport implements FromCollection, WithHeadings, WithMapping, WithStyl
     {
         return [
             'Name',
+            'Name (EN)',
+            'Name (AR)',
+            'Name (KU Bahdini)',
+            'Name (KU Sorani)',
             'Food Group',
             'Description',
             'Calories (per 100g)',
