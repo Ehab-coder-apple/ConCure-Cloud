@@ -2648,6 +2648,7 @@ function autoGenerateMealPlan(silent = false) {
         target_carbs: parseFloat(document.getElementById('target_carbs')?.value) || undefined,
         target_fat: parseFloat(document.getElementById('target_fat')?.value) || undefined,
         restrictions: [],
+        report_missing: true,
     };
 
     // Simple loading state on button
@@ -2667,9 +2668,30 @@ function autoGenerateMealPlan(silent = false) {
         },
         body: JSON.stringify(payload)
     })
-    .then(resp => resp.json())
+    .then(async resp => {
+        let data = null;
+        try { data = await resp.json(); } catch(e) {}
+        if (!resp.ok) {
+            throw { httpStatus: resp.status, data };
+        }
+        return data;
+    })
     .then(data => {
         if (!data || !data.success) {
+            if (data && data.code === 'MISSING_DATA') {
+                // Render a helpful warning with a list of missing items
+                const msgs = Array.isArray(data.missing_human) ? data.missing_human : (data.missing || []);
+                const warn = document.createElement('div');
+                warn.className = 'alert alert-warning mt-2';
+                warn.innerHTML = `<strong>{{ __('Missing information to generate the plan') }}:</strong>` +
+                    (msgs.length ? `<ul class="mb-1">${msgs.map(m=>`<li>${m}</li>`).join('')}</ul>` : '') +
+                    (Array.isArray(data.suggestions) && data.suggestions.length ? `<div class="small text-muted">${data.suggestions.join('<br>')}</div>` : '');
+                const toolbar = document.getElementById('auto-generate-plan-btn')?.closest('.mb-3') || document.body;
+                toolbar.parentElement?.insertBefore(warn, toolbar.nextSibling);
+                setTimeout(()=>warn.remove(), 8000);
+                // Stop normal success path
+                return;
+            }
             throw new Error(data?.message || 'Failed to generate plan');
         }
         if (!data.meal_options) {
@@ -2691,6 +2713,10 @@ function autoGenerateMealPlan(silent = false) {
     })
     .catch(err => {
         console.error('Auto-generate failed:', err);
+        if (err && err.data && err.data.code === 'MISSING_DATA') {
+            // Already shown a warning above; do nothing
+            return;
+        }
         alert('{{ __('Could not auto-generate the meal plan') }}: ' + (err?.message || err));
     })
     .finally(() => {

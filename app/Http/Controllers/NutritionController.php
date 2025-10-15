@@ -1799,10 +1799,12 @@ class NutritionController extends Controller
             'target_carbs' => 'nullable|numeric|min:0|max:1000',
             'target_fat' => 'nullable|numeric|min:0|max:300',
             'restrictions' => 'nullable|array',
-            'restrictions.*' => 'string'
+            'restrictions.*' => 'string',
+            'report_missing' => 'nullable|boolean',
         ]);
 
         $language = $request->language ?: 'default';
+        $reportMissing = filter_var($request->report_missing, FILTER_VALIDATE_BOOLEAN);
 
         // Prefer provided targets; otherwise compute from patient + goal
         $calories = $request->target_calories;
@@ -1814,13 +1816,55 @@ class NutritionController extends Controller
             $user = Auth::user();
             $patient = Patient::where('clinic_id', $user->clinic_id)->findOrFail($request->patient_id);
 
+            // If the client asked to report missing instead of silently defaulting,
+            // build the missing list and return a helpful 422 response.
+            $missing = [];
+            if (!$request->goal) { $missing[] = 'goal'; }
+            if (!$request->activity_level) { $missing[] = 'activity_level'; }
+
+            // Patient attributes required for BMR/TDEE
+            if (!$patient->weight) { $missing[] = 'patient.weight'; }
+            if (!$patient->height) { $missing[] = 'patient.height'; }
+            if (!$patient->date_of_birth) { $missing[] = 'patient.date_of_birth'; }
+            if (!$patient->gender) { $missing[] = 'patient.gender'; }
+
+            if ($reportMissing && !empty($missing)) {
+                return response()->json([
+                    'success' => false,
+                    'code' => 'MISSING_DATA',
+                    'message' => __('Some information is missing to auto-generate the meal plan.'),
+                    'missing' => $missing,
+                    'missing_human' => $this->humanizeMissing($missing),
+                    'suggestions' => [
+                        __('Select a Goal and Activity Level, or enter calories/macros manually'),
+                        __('Complete patient profile with Weight, Height, Date of Birth, and Gender'),
+                    ],
+                ], 422);
+            }
+
+            // Default gently when report_missing is false (backward compatible)
             $goal = $request->goal ?: 'maintenance';
             $activity = $request->activity_level ?: 'light';
             $weekly = is_numeric($request->weekly_weight_goal) ? (float)$request->weekly_weight_goal : 0;
 
             $calData = $patient->calculateTargetCalories($goal, $weekly, $activity);
             if (!$calData) {
-                return response()->json(['success'=>false,'message'=>'Unable to compute targets for this patient'], 422);
+                $missing = [];
+                if (!$patient->weight) { $missing[] = 'patient.weight'; }
+                if (!$patient->height) { $missing[] = 'patient.height'; }
+                if (!$patient->date_of_birth) { $missing[] = 'patient.date_of_birth'; }
+                if (!$patient->gender) { $missing[] = 'patient.gender'; }
+
+                return response()->json([
+                    'success'=>false,
+                    'code' => 'MISSING_DATA',
+                    'message'=> __('Unable to compute targets for this patient.'),
+                    'missing' => $missing,
+                    'missing_human' => $this->humanizeMissing($missing),
+                    'suggestions' => [
+                        __('Complete patient profile with Weight, Height, Date of Birth, and Gender'),
+                    ],
+                ], 422);
             }
             $macros = $this->calculateMacronutrients($calData['target_calories'], $goal);
             $calories = $calories ?: $calData['target_calories'];
@@ -1839,6 +1883,28 @@ class NutritionController extends Controller
 
         return response()->json($result);
     }
+
+    /**
+     * Convert internal missing keys into human-friendly messages.
+     */
+    private function humanizeMissing(array $missing): array
+    {
+        $map = [
+            'goal' => __('Select a Goal'),
+            'activity_level' => __('Select an Activity Level'),
+            'patient.weight' => __('Patient weight is required'),
+            'patient.height' => __('Patient height is required'),
+            'patient.date_of_birth' => __('Patient date of birth is required'),
+            'patient.gender' => __('Patient gender is required'),
+        ];
+        $out = [];
+        foreach ($missing as $k) {
+            $out[] = $map[$k] ?? $k;
+        }
+        // Remove duplicates while preserving order
+        return array_values(array_unique($out));
+    }
+
 
 
     /**
