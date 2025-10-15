@@ -85,7 +85,12 @@ class FoodController extends Controller
         $user = auth()->user();
         $clinicId = $user?->clinic_id;
 
-        $foodGroups = FoodGroup::active()->forClinic($clinicId)->ordered()->get();
+        $foodGroups = FoodGroup::active()->forClinic($clinicId)
+            ->ordered()
+            ->get()
+            ->sortByDesc(fn ($g) => $g->clinic_id ? 1 : 0)
+            ->unique(function ($g) { return strtolower($g->name); })
+            ->values();
 
         return view('foods.index', compact('foods', 'foodGroups'));
     }
@@ -99,7 +104,12 @@ class FoodController extends Controller
 
         $user = auth()->user();
         $clinicId = $user?->clinic_id;
-        $foodGroups = FoodGroup::active()->forClinic($clinicId)->ordered()->get();
+        $foodGroups = FoodGroup::active()->forClinic($clinicId)
+            ->ordered()
+            ->get()
+            ->sortByDesc(fn ($g) => $g->clinic_id ? 1 : 0)
+            ->unique(function ($g) { return strtolower($g->name); })
+            ->values();
 
         return view('foods.create', compact('foodGroups'));
     }
@@ -213,7 +223,12 @@ class FoodController extends Controller
             abort(403, 'Cannot edit standard food items.');
         }
 
-        $foodGroups = FoodGroup::active()->forClinic($clinicId)->ordered()->get();
+        $foodGroups = FoodGroup::active()->forClinic($clinicId)
+            ->ordered()
+            ->get()
+            ->sortByDesc(fn ($g) => $g->clinic_id ? 1 : 0)
+            ->unique(function ($g) { return strtolower($g->name); })
+            ->values();
 
         return view('foods.edit', compact('food', 'foodGroups'));
     }
