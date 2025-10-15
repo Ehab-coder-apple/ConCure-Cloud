@@ -88,55 +88,43 @@ class DietPlanMeal extends Model
     }
 
     /**
-     * Calculate total calories for this meal.
+     * Calculate total calories for this meal (unit-aware via DietPlanMealFood accessors).
      */
     public function getTotalCaloriesAttribute(): float
     {
-        return $this->foods->sum(function ($food) {
-            if ($food->food && $food->quantity) {
-                // Calculate calories based on food's calories per 100g and quantity
-                return ($food->food->calories * $food->quantity) / 100;
-            }
-            return 0;
+        // Leverage DietPlanMealFood::getCaloriesAttribute(), which converts units to grams
+        return (float) $this->foods->sum(function ($food) {
+            return (float) ($food->calories ?? 0);
         });
     }
 
     /**
-     * Calculate total protein for this meal.
+     * Calculate total protein for this meal (unit-aware).
      */
     public function getTotalProteinAttribute(): float
     {
-        return $this->foods->sum(function ($food) {
-            if ($food->food && $food->quantity) {
-                return ($food->food->protein * $food->quantity) / 100;
-            }
-            return 0;
+        return (float) $this->foods->sum(function ($food) {
+            return (float) ($food->protein ?? 0);
         });
     }
 
     /**
-     * Calculate total carbs for this meal.
+     * Calculate total carbs for this meal (unit-aware).
      */
     public function getTotalCarbsAttribute(): float
     {
-        return $this->foods->sum(function ($food) {
-            if ($food->food && $food->quantity) {
-                return ($food->food->carbohydrates * $food->quantity) / 100;
-            }
-            return 0;
+        return (float) $this->foods->sum(function ($food) {
+            return (float) ($food->carbs ?? 0);
         });
     }
 
     /**
-     * Calculate total fat for this meal.
+     * Calculate total fat for this meal (unit-aware).
      */
     public function getTotalFatAttribute(): float
     {
-        return $this->foods->sum(function ($food) {
-            if ($food->food && $food->quantity) {
-                return ($food->food->fat * $food->quantity) / 100;
-            }
-            return 0;
+        return (float) $this->foods->sum(function ($food) {
+            return (float) ($food->fat ?? 0);
         });
     }
 

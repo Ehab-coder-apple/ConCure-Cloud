@@ -456,8 +456,8 @@
             /* Keep content offset from the fixed sidebar */
             margin-inline-start: var(--sidebar-width);
             margin-left: var(--sidebar-width); /* LTR fallback to avoid underlay in some browsers */
-            margin-top: var(--topbar-height);
-            min-height: calc(100vh - var(--topbar-height));
+            margin-top: calc(var(--topbar-height) + 8px); /* add breathing room below fixed topbar */
+            min-height: calc(100vh - var(--topbar-height) - 8px);
             transition: margin-inline-start 0.3s ease;
             position: relative;
             z-index: 1;
@@ -483,7 +483,7 @@
                 margin-inline-start: var(--sidebar-width) !important;
                 margin-left: var(--sidebar-width) !important; /* explicit LTR fallback */
                 width: calc(100% - var(--sidebar-width)) !important; /* fill beside sidebar */
-                padding-left: 30px !important; padding-right: 30px !important; box-sizing: border-box;
+                padding-left: 40px !important; padding-right: 30px !important; box-sizing: border-box;
                 max-width: none !important;
             }
             /* Hard fallback in case a legacy build renders content directly as .content-wrapper */
@@ -506,7 +506,7 @@
             [dir='rtl'] body > #app > .main-content {
                 margin-right: var(--sidebar-width) !important; margin-left: 0 !important;
                 width: calc(100% - var(--sidebar-width)) !important;
-                padding-left: 30px !important; padding-right: 30px !important;
+                padding-left: 40px !important; padding-right: 30px !important;
             }
             [dir='rtl'] .main-footer { margin-right: var(--sidebar-width) !important; }
         }
@@ -1049,10 +1049,10 @@
         }
 
 
-            /* Nutrition pages: rely on global 30px desktop padding; only ensure top spacing */
+            /* Nutrition pages: ensure extra clearance under fixed topbar */
             body.page-nutrition .main-content {
-                margin-top: var(--topbar-height) !important; /* enforce top spacing under fixed topbar */
-                padding-top: 8px !important;                 /* small breathing room below topbar */
+                margin-top: calc(var(--topbar-height) + 10px) !important;
+                padding-top: 12px !important;
             }
 
             /* Nutrition: enforce correct sidebar offset; plus fallback if wrapper is missing */

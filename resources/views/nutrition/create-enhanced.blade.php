@@ -2309,9 +2309,24 @@ function updateCalorieCalculation() {
     });
 
     // Only calculate if we have the required data
-    if (!patientId || !goal || !activityLevel) {
+    if (!patientId || !activityLevel) {
         console.log('Missing required data for calorie calculation');
         return;
+    }
+
+    // If goal is not selected yet, default to maintenance temporarily
+    const effectiveGoal = goal || 'maintenance';
+    if (!goal) {
+        const goalSelect = document.getElementById('goal');
+        // Add a subtle hint once
+        let hint = document.getElementById('goal-fallback-hint');
+        if (!hint && goalSelect) {
+            hint = document.createElement('div');
+            hint.id = 'goal-fallback-hint';
+            hint.className = 'form-text text-muted mt-1';
+            hint.innerHTML = '<i class="fas fa-info-circle me-1"></i>Using Maintenance temporarily. Choose a goal to refine calories/macros.';
+            goalSelect.parentElement.appendChild(hint);
+        }
     }
 
     // Show loading state
@@ -2335,7 +2350,7 @@ function updateCalorieCalculation() {
     // Prepare request data
     const requestData = {
         patient_id: patientId,
-        goal: goal,
+        goal: effectiveGoal,
         activity_level: activityLevel
     };
 
