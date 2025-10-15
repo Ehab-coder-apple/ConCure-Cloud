@@ -27,7 +27,7 @@
     <form action="{{ route('foods.update', $food) }}" method="POST">
         @csrf
         @method('PUT')
-        
+
         <div class="row">
             <!-- Basic Information -->
             <div class="col-md-6">
@@ -42,11 +42,11 @@
                             <label for="name" class="form-label">
                                 {{ __('Food Name') }} <span class="text-danger">*</span>
                             </label>
-                            <input type="text" 
-                                   class="form-control @error('name') is-invalid @enderror" 
-                                   id="name" 
-                                   name="name" 
-                                   value="{{ old('name', $food->name) }}" 
+                            <input type="text"
+                                   class="form-control @error('name') is-invalid @enderror"
+                                   id="name"
+                                   name="name"
+                                   value="{{ old('name', $food->name) }}"
                                    required>
                             @error('name')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -131,11 +131,29 @@
                             </div>
                         </div>
 
+
+                        <!-- Meal Type -->
+                        <div class="form-group">
+                            <label for="meal_type" class="form-label">{{ __('Meal Type') }}</label>
+                            <select class="form-control @error('meal_type') is-invalid @enderror" id="meal_type" name="meal_type">
+                                @php $currentMealType = old('meal_type', $food->meal_type ?? 'any'); @endphp
+                                <option value="any" {{ $currentMealType == 'any' ? 'selected' : '' }}>{{ __('Any Meal') }}</option>
+                                <option value="breakfast" {{ $currentMealType == 'breakfast' ? 'selected' : '' }}>{{ __('Breakfast') }}</option>
+                                <option value="lunch" {{ $currentMealType == 'lunch' ? 'selected' : '' }}>{{ __('Lunch') }}</option>
+                                <option value="dinner" {{ $currentMealType == 'dinner' ? 'selected' : '' }}>{{ __('Dinner') }}</option>
+                                <option value="snack" {{ $currentMealType == 'snack' ? 'selected' : '' }}>{{ __('Snack') }}</option>
+                            </select>
+                            @error('meal_type')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+
                         <div class="form-group">
                             <label for="description" class="form-label">{{ __('Description') }}</label>
-                            <textarea class="form-control @error('description') is-invalid @enderror" 
-                                      id="description" 
-                                      name="description" 
+                            <textarea class="form-control @error('description') is-invalid @enderror"
+                                      id="description"
+                                      name="description"
                                       rows="3">{{ old('description', $food->description) }}</textarea>
                             @error('description')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -211,14 +229,14 @@
                                     <label for="calories" class="form-label">
                                         {{ __('Calories') }} <span class="text-danger">*</span>
                                     </label>
-                                    <input type="number" 
-                                           class="form-control @error('calories') is-invalid @enderror" 
-                                           id="calories" 
-                                           name="calories" 
-                                           value="{{ old('calories', $food->calories) }}" 
-                                           step="0.1" 
-                                           min="0" 
-                                           max="9999" 
+                                    <input type="number"
+                                           class="form-control @error('calories') is-invalid @enderror"
+                                           id="calories"
+                                           name="calories"
+                                           value="{{ old('calories', $food->calories) }}"
+                                           step="0.1"
+                                           min="0"
+                                           max="9999"
                                            required>
                                     @error('calories')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -230,14 +248,14 @@
                                     <label for="protein" class="form-label">
                                         {{ __('Protein (g)') }} <span class="text-danger">*</span>
                                     </label>
-                                    <input type="number" 
-                                           class="form-control @error('protein') is-invalid @enderror" 
-                                           id="protein" 
-                                           name="protein" 
-                                           value="{{ old('protein', $food->protein) }}" 
-                                           step="0.1" 
-                                           min="0" 
-                                           max="999" 
+                                    <input type="number"
+                                           class="form-control @error('protein') is-invalid @enderror"
+                                           id="protein"
+                                           name="protein"
+                                           value="{{ old('protein', $food->protein) }}"
+                                           step="0.1"
+                                           min="0"
+                                           max="999"
                                            required>
                                     @error('protein')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -252,14 +270,14 @@
                                     <label for="carbohydrates" class="form-label">
                                         {{ __('Carbohydrates (g)') }} <span class="text-danger">*</span>
                                     </label>
-                                    <input type="number" 
-                                           class="form-control @error('carbohydrates') is-invalid @enderror" 
-                                           id="carbohydrates" 
-                                           name="carbohydrates" 
-                                           value="{{ old('carbohydrates', $food->carbohydrates) }}" 
-                                           step="0.1" 
-                                           min="0" 
-                                           max="999" 
+                                    <input type="number"
+                                           class="form-control @error('carbohydrates') is-invalid @enderror"
+                                           id="carbohydrates"
+                                           name="carbohydrates"
+                                           value="{{ old('carbohydrates', $food->carbohydrates) }}"
+                                           step="0.1"
+                                           min="0"
+                                           max="999"
                                            required>
                                     @error('carbohydrates')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -271,14 +289,14 @@
                                     <label for="fat" class="form-label">
                                         {{ __('Fat (g)') }} <span class="text-danger">*</span>
                                     </label>
-                                    <input type="number" 
-                                           class="form-control @error('fat') is-invalid @enderror" 
-                                           id="fat" 
-                                           name="fat" 
-                                           value="{{ old('fat', $food->fat) }}" 
-                                           step="0.1" 
-                                           min="0" 
-                                           max="999" 
+                                    <input type="number"
+                                           class="form-control @error('fat') is-invalid @enderror"
+                                           id="fat"
+                                           name="fat"
+                                           value="{{ old('fat', $food->fat) }}"
+                                           step="0.1"
+                                           min="0"
+                                           max="999"
                                            required>
                                     @error('fat')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -291,13 +309,13 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="fiber" class="form-label">{{ __('Fiber (g)') }}</label>
-                                    <input type="number" 
-                                           class="form-control @error('fiber') is-invalid @enderror" 
-                                           id="fiber" 
-                                           name="fiber" 
-                                           value="{{ old('fiber', $food->fiber) }}" 
-                                           step="0.1" 
-                                           min="0" 
+                                    <input type="number"
+                                           class="form-control @error('fiber') is-invalid @enderror"
+                                           id="fiber"
+                                           name="fiber"
+                                           value="{{ old('fiber', $food->fiber) }}"
+                                           step="0.1"
+                                           min="0"
                                            max="999">
                                     @error('fiber')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -307,13 +325,13 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="sugar" class="form-label">{{ __('Sugar (g)') }}</label>
-                                    <input type="number" 
-                                           class="form-control @error('sugar') is-invalid @enderror" 
-                                           id="sugar" 
-                                           name="sugar" 
-                                           value="{{ old('sugar', $food->sugar) }}" 
-                                           step="0.1" 
-                                           min="0" 
+                                    <input type="number"
+                                           class="form-control @error('sugar') is-invalid @enderror"
+                                           id="sugar"
+                                           name="sugar"
+                                           value="{{ old('sugar', $food->sugar) }}"
+                                           step="0.1"
+                                           min="0"
                                            max="999">
                                     @error('sugar')
                                         <div class="invalid-feedback">{{ $message }}</div>
