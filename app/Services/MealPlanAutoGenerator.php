@@ -29,10 +29,12 @@ class MealPlanAutoGenerator
         }
 
         // Prefetch a reasonably sized candidate list once to keep it fast
+        // Use get() without an explicit column list to avoid errors when optional
+        // translation columns (e.g., name_ku) are not present in some deployments.
         $foods = Food::query()
             ->where('is_active', true)
             ->limit(500)
-            ->get(['id','name','calories','protein','carbohydrates','fat','serving_weight','name_translations','name_ar','name_ku']);
+            ->get();
 
         // Basic dietary filtering (extendable)
         if (!empty($restrictions)) {
@@ -56,12 +58,13 @@ class MealPlanAutoGenerator
         }
 
         // Rank by macro density (per 100g)
-        $proteinDense = (clone $foods)->sortByDesc(fn($f) => (float)$f->protein);
-        $carbDense    = (clone $foods)->sortByDesc(fn($f) => (float)$f->carbohydrates);
-        $fatDense     = (clone $foods)->sortByDesc(fn($f) => (float)$f->fat);
-        $balanced     = (clone $foods)->sortByDesc(function($f){
+        // Use sortByDesc on the collection directly (returns a new collection) to avoid cloning.
+        $proteinDense = $foods->sortByDesc(fn($f) => (float)($f->protein ?? 0));
+        $carbDense    = $foods->sortByDesc(fn($f) => (float)($f->carbohydrates ?? 0));
+        $fatDense     = $foods->sortByDesc(fn($f) => (float)($f->fat ?? 0));
+        $balanced     = $foods->sortByDesc(function($f){
             // simple score favoring balanced items
-            $p = (float)$f->protein; $c=(float)$f->carbohydrates; $fa=(float)$f->fat; $cal=(float)$f->calories;
+            $p = (float)($f->protein ?? 0); $c = (float)($f->carbohydrates ?? 0); $fa = (float)($f->fat ?? 0); $cal = (float)($f->calories ?? 0);
             return $p*0.4 + $c*0.35 + $fa*0.25 + ($cal>0?50:0);
         });
 
