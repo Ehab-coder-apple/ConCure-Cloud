@@ -363,7 +363,7 @@
                                         <option value="cup" {{ $unit == 'cup' ? 'selected' : '' }}>{{ __('Cup') }}</option>
                                         <option value="g" {{ $unit == 'g' ? 'selected' : '' }}>{{ __('Gram (g)') }}</option>
                                         <option value="tbsp" {{ $unit == 'tbsp' ? 'selected' : '' }}>{{ __('Tablespoon (tbsp)') }}</option>
-                                        <option value="tsp" {{ $unit == 'tsp' ? 'selected' : '' }}>{{ __('Teaspoon (tsp)') }}</option>
+                                        <option value="ssp" {{ $unit == 'ssp' ? 'selected' : '' }}>{{ __('Small Spoon (ssp)') }}</option>
                                     </select>
                                     @error('serving_size')
                                         <div class="invalid-feedback">{{ $message }}</div>

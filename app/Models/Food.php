@@ -240,6 +240,7 @@ class Food extends Model
             'cup' => $quantity * 240, // Approximate
             'tbsp' => $quantity * 15,
             'tsp' => $quantity * 5,
+            'ssp' => $quantity * 5,
             'serving' => $this->serving_weight ? $quantity * (float)$this->serving_weight : $quantity * 100,
             'piece' => $this->grams_per_piece ? $quantity * (float)$this->grams_per_piece : ($this->serving_weight ? $quantity * (float)$this->serving_weight : $quantity * 100),
             default => $quantity, // Assume grams
