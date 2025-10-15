@@ -359,6 +359,8 @@ class Food extends Model
      */
     public function scopeHighFiber($query, float $minFiber = 5)
     {
+        return $query->where('fiber', '>=', $minFiber);
+    }
 
     /**
      * Scope to filter by meal type (includes 'any' and nulls).
@@ -370,8 +372,5 @@ class Food extends Model
               ->orWhere('meal_type', 'any')
               ->orWhere('meal_type', $mealType);
         });
-    }
-
-        return $query->where('fiber', '>=', $minFiber);
     }
 }
