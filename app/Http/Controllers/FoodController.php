@@ -93,7 +93,10 @@ class FoodController extends Controller
                 $clinicOrder = $g->clinic_id ? 0 : 1; // 0 first (clinic-specific)
                 $name = strtolower(trim($g->name));
                 $canon = $g->canonical_key ?? $name;
-                $nameOrder = ($canon === 'fats_oils' && $name === 'fats & oils') ? 0 : 1;
+                $nameOrder = 1;
+                if ($canon === 'fats_oils' && $name === 'fats & oils') $nameOrder = 0;
+                if ($canon === 'proteins' && $name === 'proteins') $nameOrder = 0;
+                if ($canon === 'carbohydrates' && $name === 'carbohydrates') $nameOrder = 0;
                 return sprintf('%d-%d-%s', $clinicOrder, $nameOrder, $name);
             })
             ->unique(function ($g) { return $g->canonical_key ?? strtolower($g->name); })
@@ -119,7 +122,10 @@ class FoodController extends Controller
                 $clinicOrder = $g->clinic_id ? 0 : 1; // 0 first (clinic-specific)
                 $name = strtolower(trim($g->name));
                 $canon = $g->canonical_key ?? $name;
-                $nameOrder = ($canon === 'fats_oils' && $name === 'fats & oils') ? 0 : 1;
+                $nameOrder = 1;
+                if ($canon === 'fats_oils' && $name === 'fats & oils') $nameOrder = 0;
+                if ($canon === 'proteins' && $name === 'proteins') $nameOrder = 0;
+                if ($canon === 'carbohydrates' && $name === 'carbohydrates') $nameOrder = 0;
                 return sprintf('%d-%d-%s', $clinicOrder, $nameOrder, $name);
             })
             ->unique(function ($g) { return $g->canonical_key ?? strtolower($g->name); })
@@ -245,7 +251,10 @@ class FoodController extends Controller
                 $clinicOrder = $g->clinic_id ? 0 : 1; // 0 first (clinic-specific)
                 $name = strtolower(trim($g->name));
                 $canon = $g->canonical_key ?? $name;
-                $nameOrder = ($canon === 'fats_oils' && $name === 'fats & oils') ? 0 : 1;
+                $nameOrder = 1;
+                if ($canon === 'fats_oils' && $name === 'fats & oils') $nameOrder = 0;
+                if ($canon === 'proteins' && $name === 'proteins') $nameOrder = 0;
+                if ($canon === 'carbohydrates' && $name === 'carbohydrates') $nameOrder = 0;
                 return sprintf('%d-%d-%s', $clinicOrder, $nameOrder, $name);
             })
             ->unique(function ($g) { return $g->canonical_key ?? strtolower($g->name); })

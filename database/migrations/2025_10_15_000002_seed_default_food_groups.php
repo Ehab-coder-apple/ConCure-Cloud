@@ -30,6 +30,14 @@ return new class extends Migration {
                 'color' => '#8BC34A', 'sort_order' => 3,
             ],
             [
+                'name' => 'Carbohydrates',
+                'name_translations' => json_encode(['en'=>'Carbohydrates','ar'=>'كربوهيدرات','ku'=>'کاربوهایدرات']),
+                'description' => 'Breads, pasta, rice, and starchy foods',
+                'description_translations' => json_encode(['en'=>'Breads, pasta, rice, and starchy foods','ar'=>'الخبز والمعكرونة والأرز والأطعمة النشوية','ku'=>'نان، پاستە، برنج و خواردنی نشاستەدار']),
+                'color' => '#8BC34A', 'sort_order' => 3,
+            ],
+
+            [
                 'name' => 'Proteins',
                 'name_translations' => json_encode(['en'=>'Proteins','ar'=>'بروتينات','ku'=>'پرۆتین']),
                 'description' => 'Meat, fish, eggs, and legumes',

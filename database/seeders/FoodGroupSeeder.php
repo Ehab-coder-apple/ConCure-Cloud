@@ -68,6 +68,25 @@ class FoodGroupSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'name' => 'Carbohydrates',
+                'name_translations' => json_encode([
+                    'en' => 'Carbohydrates',
+                    'ar' => 'كربوهيدرات',
+                    'ku' => 'کاربوهایدرات'
+                ]),
+                'description' => 'Breads, pasta, rice, and starchy foods',
+                'description_translations' => json_encode([
+                    'en' => 'Breads, pasta, rice, and starchy foods',
+                    'ar' => 'الخبز والمعكرونة والأرز والأطعمة النشوية',
+                    'ku' => 'نان، پاستە، برنج و خواردنی نشاستەدار'
+                ]),
+                'color' => '#8BC34A',
+                'sort_order' => 3,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            [
                 'name' => 'Proteins',
                 'name_translations' => json_encode([
                     'en' => 'Proteins',

@@ -188,6 +188,19 @@ class FoodGroup extends Model
         if (in_array($name, $fats, true)) {
             return 'fats_oils';
         }
+
+        // Normalize proteins (singular/plural)
+        $proteins = ['protein', 'proteins'];
+        if (in_array($name, $proteins, true)) {
+            return 'proteins';
+        }
+
+        // Normalize carbohydrates (common abbreviations)
+        $carbs = ['carb', 'carbs', 'carbohydrate', 'carbohydrates'];
+        if (in_array($name, $carbs, true)) {
+            return 'carbohydrates';
+        }
+
         return $name;
     }
 }
