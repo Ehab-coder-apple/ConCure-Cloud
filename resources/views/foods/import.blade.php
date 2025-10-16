@@ -31,7 +31,7 @@
                         <div class="col-md-6">
                             <h6 class="font-weight-bold text-primary">{{ __('Step 1: Download Template') }}</h6>
                             <p class="text-muted mb-3">{{ __('Download the Excel template with the correct format and sample data.') }}</p>
-                            
+
                             <!-- Excel Downloads Only -->
                             <div class="mb-3">
                                 <a href="{{ route('foods.import.template', ['sample' => 1]) }}" class="btn btn-success">
@@ -53,6 +53,9 @@
                                 <li>{{ __('Food groups will be created automatically if they don\'t exist') }}</li>
                                 <li>{{ __('Duplicate foods (same name and calories) will be skipped') }}</li>
                                 <li>{{ __('Save your file as Excel (.xlsx) or CSV (.csv) format') }}</li>
+                                <li>{{ __('To assign multiple meal types, fill the meal_types column with comma-separated values, e.g. "breakfast, snack".') }}</li>
+                                <li>{{ __('Leaving meal_types empty or typing "any" means the food is available for all meals.') }}</li>
+
                             </ul>
                         </div>
                     </div>
@@ -103,7 +106,7 @@
 
                     <form action="{{ route('foods.import.process') }}" method="POST" enctype="multipart/form-data" id="importForm">
                         @csrf
-                        
+
                         <div class="row">
                             <div class="col-md-8">
                                 <div class="form-group">
@@ -111,10 +114,10 @@
                                         {{ __('Select File') }} <span class="text-danger">*</span>
                                     </label>
                                     <div class="custom-file">
-                                        <input type="file" 
-                                               class="custom-file-input @error('file') is-invalid @enderror" 
-                                               id="file" 
-                                               name="file" 
+                                        <input type="file"
+                                               class="custom-file-input @error('file') is-invalid @enderror"
+                                               id="file"
+                                               name="file"
                                                accept=".xlsx,.xls,.csv"
                                                required>
                                         <label class="custom-file-label" for="file">{{ __('Choose file...') }}</label>
