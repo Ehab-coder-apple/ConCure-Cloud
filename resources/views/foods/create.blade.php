@@ -130,18 +130,31 @@
                         </div>
 
 
-                        <!-- Meal Type -->
+                        <!-- Meal Types -->
                         <div class="form-group">
-                            <label for="meal_type" class="form-label">{{ __('Meal Type') }}</label>
-                            <select class="form-control @error('meal_type') is-invalid @enderror" id="meal_type" name="meal_type">
-                                <option value="any" {{ old('meal_type', 'any') == 'any' ? 'selected' : '' }}>{{ __('Any Meal') }}</option>
-                                <option value="breakfast" {{ old('meal_type') == 'breakfast' ? 'selected' : '' }}>{{ __('Breakfast') }}</option>
-                                <option value="lunch" {{ old('meal_type') == 'lunch' ? 'selected' : '' }}>{{ __('Lunch') }}</option>
-                                <option value="dinner" {{ old('meal_type') == 'dinner' ? 'selected' : '' }}>{{ __('Dinner') }}</option>
-                                <option value="snack" {{ old('meal_type') == 'snack' ? 'selected' : '' }}>{{ __('Snack') }}</option>
-                            </select>
-                            @error('meal_type')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                            <label class="form-label">{{ __('Meal Types') }}</label>
+                            @php $selected = old('meal_types', []); @endphp
+                            <div class="d-flex flex-wrap gap-3">
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="meal_types[]" id="mt_breakfast" value="breakfast" {{ in_array('breakfast', $selected) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="mt_breakfast">{{ __('Breakfast') }}</label>
+                                </div>
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="meal_types[]" id="mt_lunch" value="lunch" {{ in_array('lunch', $selected) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="mt_lunch">{{ __('Lunch') }}</label>
+                                </div>
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="meal_types[]" id="mt_dinner" value="dinner" {{ in_array('dinner', $selected) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="mt_dinner">{{ __('Dinner') }}</label>
+                                </div>
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="meal_types[]" id="mt_snack" value="snack" {{ in_array('snack', $selected) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="mt_snack">{{ __('Snack') }}</label>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">{{ __('Select one or more meal types. If none selected, the item will be available for all meal types.') }}</small>
+                            @error('meal_types')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
 

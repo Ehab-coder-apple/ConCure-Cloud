@@ -37,7 +37,8 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                     'name_ku_sorani' => 'nullable|string|max:255',
                     'name_ku' => 'nullable|string|max:255', // Legacy support
                     'food_group' => 'nullable|string|max:255',
-                    'meal_type' => 'nullable|string|in:breakfast,lunch,dinner,snack,any,snacks',
+                    'meal_types' => 'nullable|string',
+                        'meal_type' => 'nullable|string',
                     'calories' => 'required|numeric|min:0|max:9999',
                     'protein' => 'nullable|numeric|min:0|max:999',
                     'carbohydrates' => 'nullable|numeric|min:0|max:999',
@@ -178,20 +179,34 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                     $descriptionTranslations['ku_sorani'] = trim($row['description_ku']);
                 }
 
-                // Normalize meal type
-                $mealType = strtolower(trim((string)($row['meal_type'] ?? '')));
-                if ($mealType === '' || $mealType === null) { $mealType = 'any'; }
-                if ($mealType === 'snacks') { $mealType = 'snack'; }
-                $allowedMealTypes = ['breakfast','lunch','dinner','snack','any'];
-                if (!in_array($mealType, $allowedMealTypes)) { $mealType = 'any'; }
+                // Normalize meal types (comma-separated or single)
+                $allowedMealTypes = ['breakfast','lunch','dinner','snack'];
+                $rawMealTypes = (string)($row['meal_types'] ?? $row['meal_type'] ?? 'any');
+                $parts = array_map('trim', explode(',', strtolower($rawMealTypes)));
+                if (count($parts) === 0 || $parts === [''] || in_array('any', $parts, true)) {
+                    $selectedMealTypes = $allowedMealTypes;
+                } else {
+                    $selectedMealTypes = [];
+                    foreach ($parts as $p) {
+                        if ($p === 'snacks') { $p = 'snack'; }
+                        if (in_array($p, $allowedMealTypes, true)) {
+                            $selectedMealTypes[] = $p;
+                        }
+                    }
+                    $selectedMealTypes = array_values(array_unique($selectedMealTypes));
+                    if (empty($selectedMealTypes)) {
+                        $selectedMealTypes = $allowedMealTypes; // default to all
+                    }
+                }
+                $legacyMealType = count($selectedMealTypes) === 1 ? $selectedMealTypes[0] : 'any';
 
                 // Create the food with proper data handling and error catching
                 try {
-                    Food::create([
+                    $food = Food::create([
                         'name' => trim($row['name']),
                         'name_translations' => !empty($nameTranslations) ? $nameTranslations : ['en' => trim($row['name'])],
                         'food_group_id' => $foodGroupId,
-                        'meal_type' => $mealType,
+                        'meal_type' => $legacyMealType,
                         'calories' => (float)($row['calories'] ?? 0),
                         'protein' => (float)($row['protein'] ?? 0),
                         'carbohydrates' => (float)($row['carbohydrates'] ?? 0),
@@ -213,6 +228,13 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                         'created_by' => $user->id,
                         'is_active' => true,
                     ]);
+
+                    // Sync many-to-many meal types
+                    $typeIds = \App\Models\MealType::whereIn('key', $selectedMealTypes)->pluck('id')->all();
+                    if (empty($typeIds) && $legacyMealType === 'any') {
+                        $typeIds = \App\Models\MealType::pluck('id')->all();
+                    }
+                    $food->mealTypes()->sync($typeIds);
 
                     $this->importedCount++;
                 } catch (\Illuminate\Database\QueryException $e) {

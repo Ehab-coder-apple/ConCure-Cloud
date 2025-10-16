@@ -150,6 +150,10 @@ class FoodController extends Controller
             'name_ku_bahdini' => 'nullable|string|max:255',
             'name_ku_sorani' => 'nullable|string|max:255',
             'food_group_id' => 'required|exists:food_groups,id',
+            // New: multiple meal types supported
+            'meal_types' => 'nullable|array',
+            'meal_types.*' => 'in:breakfast,lunch,dinner,snack',
+            // Legacy single field (optional)
             'meal_type' => 'nullable|string|in:breakfast,lunch,dinner,snack,any',
             'description' => 'nullable|string',
             'description_en' => 'nullable|string',
@@ -185,17 +189,35 @@ class FoodController extends Controller
                 $descriptionTranslations[$locale] = $request->input("description_{$locale}");
             }
         }
+        // Normalize meal types (multi-select or legacy single)
+        $allowedMealTypes = ['breakfast','lunch','dinner','snack'];
+        $selectedMealTypes = $request->input('meal_types');
+        if ($selectedMealTypes === null) {
+            $mt = strtolower((string) $request->input('meal_type', 'any'));
+            if ($mt === 'snacks') { $mt = 'snack'; }
+            $selectedMealTypes = $mt === 'any' ? $allowedMealTypes : [$mt];
+        }
+        $selectedMealTypes = array_values(array_unique(array_filter(array_map(function ($v) use ($allowedMealTypes) {
+            $k = strtolower(trim((string)$v));
+            if ($k === 'snacks') { $k = 'snack'; }
+            return in_array($k, $allowedMealTypes, true) ? $k : null;
+        }, is_array($selectedMealTypes) ? $selectedMealTypes : [$selectedMealTypes]))));
+
+        $legacyMealType = count($selectedMealTypes) === 1 ? $selectedMealTypes[0] : 'any';
+
 
         $food = Food::create([
             'name' => $request->name,
             'name_translations' => $nameTranslations,
             'food_group_id' => $request->food_group_id,
-            'meal_type' => $request->input('meal_type', 'any'),
+            // Keep legacy column temporarily; set to single selection or 'any' if multiple
+            'meal_type' => $legacyMealType,
             'description' => $request->description,
             'description_translations' => $descriptionTranslations,
             'calories' => $request->calories,
             'protein' => $request->protein,
             'carbohydrates' => $request->carbohydrates,
+
             'fat' => $request->fat,
             'fiber' => $request->fiber ?? 0,
             'sugar' => $request->sugar ?? 0,
@@ -214,6 +236,13 @@ class FoodController extends Controller
             'is_active' => true,
         ]);
 
+        // Sync many-to-many meal types
+        $typeIds = \App\Models\MealType::whereIn('key', $selectedMealTypes)->pluck('id')->all();
+        if (empty($typeIds) && $legacyMealType === 'any') {
+            $typeIds = \App\Models\MealType::pluck('id')->all();
+        }
+        $food->mealTypes()->sync($typeIds);
+
         return redirect()->route('foods.show', $food)
                         ->with('success', 'Food item created successfully.');
     }
@@ -223,7 +252,7 @@ class FoodController extends Controller
      */
     public function show(Food $food)
     {
-        $food->load(['foodGroup', 'clinic', 'creator']);
+        $food->load(['foodGroup', 'clinic', 'creator', 'mealTypes']);
 
         return view('foods.show', compact('food'));
     }
@@ -282,6 +311,10 @@ class FoodController extends Controller
             'name_ku_bahdini' => 'nullable|string|max:255',
             'name_ku_sorani' => 'nullable|string|max:255',
             'food_group_id' => 'required|exists:food_groups,id',
+            // New: multiple meal types supported
+            'meal_types' => 'nullable|array',
+            'meal_types.*' => 'in:breakfast,lunch,dinner,snack',
+            // Legacy single field (optional)
             'meal_type' => 'nullable|string|in:breakfast,lunch,dinner,snack,any',
             'description' => 'nullable|string',
             'description_en' => 'nullable|string',
@@ -318,12 +351,29 @@ class FoodController extends Controller
                 $descriptionTranslations[$locale] = $request->input("description_{$locale}");
             }
         }
+        // Normalize meal types (multi-select or legacy single)
+        $allowedMealTypes = ['breakfast','lunch','dinner','snack'];
+        $selectedMealTypes = $request->input('meal_types');
+        if ($selectedMealTypes === null) {
+            $mt = strtolower((string) $request->input('meal_type', $food->meal_type ?? 'any'));
+            if ($mt === 'snacks') { $mt = 'snack'; }
+            $selectedMealTypes = $mt === 'any' ? $allowedMealTypes : [$mt];
+        }
+        $selectedMealTypes = array_values(array_unique(array_filter(array_map(function ($v) use ($allowedMealTypes) {
+            $k = strtolower(trim((string)$v));
+            if ($k === 'snacks') { $k = 'snack'; }
+            return in_array($k, $allowedMealTypes, true) ? $k : null;
+        }, is_array($selectedMealTypes) ? $selectedMealTypes : [$selectedMealTypes]))));
+
+        $legacyMealType = count($selectedMealTypes) === 1 ? $selectedMealTypes[0] : 'any';
+
 
         $food->update([
             'name' => $request->name,
             'name_translations' => $nameTranslations,
             'food_group_id' => $request->food_group_id,
-            'meal_type' => $request->input('meal_type', $food->meal_type ?? 'any'),
+            // Keep legacy column temporarily; set to single selection or 'any' if multiple
+            'meal_type' => $legacyMealType,
             'description' => $request->description,
             'description_translations' => $descriptionTranslations,
             'calories' => $request->calories,
@@ -343,6 +393,13 @@ class FoodController extends Controller
             'grams_per_piece' => $request->grams_per_piece,
             'is_active' => $request->boolean('is_active', true),
         ]);
+
+        // Sync many-to-many meal types
+        $typeIds = \App\Models\MealType::whereIn('key', $selectedMealTypes)->pluck('id')->all();
+        if (empty($typeIds) && $legacyMealType === 'any') {
+            $typeIds = \App\Models\MealType::pluck('id')->all();
+        }
+        $food->mealTypes()->sync($typeIds);
 
         return redirect()->route('foods.show', $food)
                         ->with('success', 'Food item updated successfully.');

@@ -87,6 +87,27 @@
                         </div>
                     </div>
 
+                        <div class="row mt-2">
+                            <div class="col-sm-4">
+                                <strong>{{ __('Meal Types') }}:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                @php $types = $food->mealTypes && $food->mealTypes->count() ? $food->mealTypes->pluck('name')->toArray() : []; @endphp
+                                @if(!empty($types))
+                                    @foreach($types as $t)
+                                        <span class="badge badge-secondary me-1">{{ $t }}</span>
+                                    @endforeach
+                                @else
+                                    @if(($food->meal_type ?? 'any') === 'any')
+                                        <span class="badge badge-secondary">{{ __('All Meals') }}</span>
+                                    @else
+                                        <span class="badge badge-secondary">{{ ucfirst($food->meal_type) }}</span>
+                                    @endif
+                                @endif
+                            </div>
+                        </div>
+
+
                     <div class="row mt-2">
                         <div class="col-sm-4">
                             <strong>{{ __('Type') }}:</strong>
@@ -193,7 +214,7 @@
                     @if($food->fiber || $food->sugar || $food->sodium)
                         <hr>
                         <h6 class="font-weight-bold text-primary mb-3">{{ __('Additional Nutrients') }}</h6>
-                        
+
                         @if($food->fiber)
                             <div class="d-flex justify-content-between mb-2">
                                 <span>{{ __('Fiber') }}:</span>
@@ -304,7 +325,7 @@
                 <div class="card shadow">
                     <div class="card-body">
                         <small class="text-muted">
-                            {{ __('Created by') }}: {{ $food->creator->first_name }} {{ $food->creator->last_name }} 
+                            {{ __('Created by') }}: {{ $food->creator->first_name }} {{ $food->creator->last_name }}
                             {{ __('on') }} {{ $food->created_at->format('M d, Y \a\t g:i A') }}
                             @if($food->updated_at != $food->created_at)
                                 | {{ __('Last updated') }}: {{ $food->updated_at->format('M d, Y \a\t g:i A') }}
@@ -323,7 +344,7 @@
 function calculateNutrition() {
     const quantity = document.getElementById('quantity').value;
     const unit = document.getElementById('unit').value;
-    
+
     if (!quantity || quantity <= 0) {
         alert('{{ __("Please enter a valid quantity") }}');
         return;

@@ -32,6 +32,7 @@ class MealPlanAutoGenerator
         // Use get() without an explicit column list to avoid errors when optional
         // translation columns (e.g., name_ku) are not present in some deployments.
         $foods = Food::query()
+            ->with('mealTypes')
             ->where('is_active', true)
             ->limit(500)
             ->get();
@@ -68,8 +69,12 @@ class MealPlanAutoGenerator
             // Determine meal type filter (map 'snacks' to 'snack')
             $mealTypeFilter = $meal === 'snacks' ? 'snack' : $meal;
 
-            // Filter foods by meal type; treat null/empty as 'any' for backward compatibility
+            // Filter foods by meal type; support many-to-many relation with legacy fallback
             $mealFoods = $foods->filter(function($food) use ($mealTypeFilter) {
+                $types = $food->mealTypes ? $food->mealTypes->pluck('key')->all() : [];
+                if (!empty($types)) {
+                    return in_array($mealTypeFilter, $types, true);
+                }
                 $mt = $food->meal_type ?? 'any';
                 return $mt === 'any' || $mt === $mealTypeFilter;
             });

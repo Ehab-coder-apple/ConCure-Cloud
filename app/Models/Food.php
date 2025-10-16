@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Food extends Model
 {
@@ -92,6 +93,14 @@ class Food extends Model
     public function dietPlanMealFoods(): HasMany
     {
         return $this->hasMany(DietPlanMealFood::class);
+    }
+
+    /**
+     * Meal types associated with this food.
+     */
+    public function mealTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(MealType::class, 'food_meal_type');
     }
 
     /**
@@ -364,14 +373,19 @@ class Food extends Model
     }
 
     /**
-     * Scope to filter by meal type (includes 'any' and nulls).
+     * Scope to filter by meal type key using new relation. Falls back to legacy column.
      */
     public function scopeByMealType($query, string $mealType)
     {
         return $query->where(function ($q) use ($mealType) {
-            $q->whereNull('meal_type')
-              ->orWhere('meal_type', 'any')
-              ->orWhere('meal_type', $mealType);
+            // New relation
+            $q->whereHas('mealTypes', function ($qq) use ($mealType) {
+                $qq->where('key', $mealType);
+            })
+            // Backward compatibility with legacy column
+            ->orWhereNull('meal_type')
+            ->orWhere('meal_type', 'any')
+            ->orWhere('meal_type', $mealType);
         });
     }
 }
