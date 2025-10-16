@@ -22,14 +22,14 @@ class MealPlanAutoGenerator
     /**
      * Read options-per-meal from tenant (clinic) settings.
      * Supports keys: options_per_meal, nutrition_options_per_meal, meal_options_per_meal.
-     * Caps to 1..6 to avoid excessive combinations.
+     * Caps to 1..3 to avoid excessive combinations.
      */
     private function getOptionsPerMeal(): int
     {
         try {
             $user = Auth::user();
             $clinicId = $user->clinic_id ?? null;
-            if (!$clinicId) return 1;
+            if (!$clinicId) return 3;
 
             $keys = ['options_per_meal','nutrition_options_per_meal','meal_options_per_meal'];
             foreach ($keys as $key) {
@@ -40,14 +40,14 @@ class MealPlanAutoGenerator
                 if ($val !== null) {
                     $num = (int)$val;
                     if ($num < 1) $num = 1;
-                    if ($num > 6) $num = 6;
+                    if ($num > 3) $num = 3;
                     return $num;
                 }
             }
         } catch (\Throwable $e) {
             // Fallback silently
         }
-        return 1; // default: maintain previous single-option behavior
+        return 3; // default: 3 options per meal for all tenants unless overridden
     }
     public function generate(array $targets, string $language = 'default', array $restrictions = []): array
     {
@@ -133,7 +133,7 @@ class MealPlanAutoGenerator
                 return $p*0.4 + $c*0.35 + $fa*0.25 + ($cal>0?50:0);
             });
 
-            // How many options per meal? Read from tenant (clinic) settings; default to 1..6
+            // How many options per meal? Read from tenant (clinic) settings; default 3, capped 1..3
             $optionsPerMeal = $this->getOptionsPerMeal();
 
             // Build N options aiming at the same calorie target but with varied combinations
