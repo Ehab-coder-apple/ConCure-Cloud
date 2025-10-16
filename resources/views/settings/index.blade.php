@@ -560,6 +560,20 @@
                                             <strong>{{ __('Database') }}:</strong> SQLite
                                         </div>
 
+                                            @if(auth()->user()->isSuperAdmin())
+                                            <div class="col-12 mt-4">
+                                                <h6 class="text-primary">{{ __('Automatic Backups') }}</h6>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="auto_backup_enabled" {{ !empty($autoBackupEnabled) ? 'checked' : '' }} onchange="toggleAutoBackup(this)">
+                                                    <label class="form-check-label" for="auto_backup_enabled">{{ __('Enable automatic weekly backups') }}</label>
+                                                </div>
+                                                <small class="text-muted">{{ __('When enabled, the server runs weekly backups for all clinics every Sunday at 02:30.') }}</small>
+                                            </div>
+                                            @endif
+
+
                                         @if(auth()->user()->isSuperAdmin() || auth()->user()->role === 'admin')
                                         <div class="col-12 mt-4">
                                             <h6 class="text-primary">{{ __('User Management Statistics') }}</h6>
@@ -784,6 +798,37 @@
 }
 </style>
 @endpush
+
+    function toggleAutoBackup(el) {
+        const enabled = el.checked;
+        const label = document.querySelector('label[for="auto_backup_enabled"]');
+        const originalText = label ? label.innerHTML : '';
+        if (label) label.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>' + (enabled ? '{{ __('Enabling...') }}' : '{{ __('Disabling...') }}');
+
+        fetch('{{ route('settings.system.auto-backup') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ enabled })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                alert(data.message || '{{ __('Failed to update automatic backup setting.') }}');
+                el.checked = !enabled; // revert
+            }
+        })
+        .catch(() => {
+            alert('{{ __('Network error while updating setting.') }}');
+            el.checked = !enabled; // revert
+        })
+        .finally(() => {
+            if (label) label.innerHTML = originalText || '{{ __('Enable automatic weekly backups') }}';
+        });
+    }
+
 
 @push('scripts')
 <script>

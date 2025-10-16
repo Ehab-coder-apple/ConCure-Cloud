@@ -15,9 +15,27 @@ class BackupClinicsWeekly extends Command
 
     public function handle(ClinicBackupService $service)
     {
-        $this->info('Starting weekly clinic backups...');
-
         $retention = (int) $this->option('retention');
+
+        // Only run when super admin has enabled auto backup (global setting)
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+                $val = DB::table('settings')->whereNull('clinic_id')->where('key','auto_backup_enabled')->value('value');
+                $enabled = in_array(strtolower((string)$val), ['1','true','yes','on'], true);
+                if (!$enabled) {
+                    $this->info('Auto backup is disabled (settings:auto_backup_enabled). Exiting.');
+                    return Command::SUCCESS;
+                }
+            } else {
+                $this->info('Settings table missing; skipping weekly backups.');
+                return Command::SUCCESS;
+            }
+        } catch (\Throwable $e) {
+            $this->error('Failed to read auto backup setting: ' . $e->getMessage());
+            return Command::FAILURE;
+        }
+
+        $this->info('Starting weekly clinic backups...');
         $count = 0; $ok = 0; $fail = 0;
 
         $clinics = Clinic::query()->active()->activated()->get(['id','name']);
