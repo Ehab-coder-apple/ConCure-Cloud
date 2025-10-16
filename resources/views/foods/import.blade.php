@@ -53,8 +53,10 @@
                                 <li>{{ __('Food groups will be created automatically if they don\'t exist') }}</li>
                                 <li>{{ __('Duplicate foods (same name and calories) will be skipped') }}</li>
                                 <li>{{ __('Save your file as Excel (.xlsx) or CSV (.csv) format') }}</li>
-                                <li>{{ __('To assign multiple meal types, fill the meal_types column with comma-separated values, e.g. "breakfast, snack".') }}</li>
-                                <li>{{ __('Leaving meal_types empty or typing "any" means the food is available for all meals.') }}</li>
+                                <li>{{ __('Meal types: use the meal_types column (comma-separated), e.g. "breakfast, snack". Allowed: breakfast, lunch, dinner, snack. "snacks" is accepted as snack.') }}</li>
+                                <li>{{ __('Meal types: leave blank or write "any" if the food can be used for all meals.') }}</li>
+                                <li>{{ __('Serving size: a human-friendly label such as 100g, 1 cup, 2 pieces, 1 tbsp, 1 slice, 1 medium.') }}</li>
+                                <li>{{ __('Serving weight: the weight in grams for the serving size (optional). If omitted, calculations assume 100g or standard conversions (cup≈240g, tbsp≈15g, tsp≈5g).') }}</li>
 
                             </ul>
                         </div>
@@ -155,6 +157,19 @@
                             <h6><i class="fas fa-info-circle"></i> {{ __('Multilingual Support') }}</h6>
                             <p class="mb-0 small">{{ __('The import now supports multilingual food names and descriptions in English, Arabic, and Kurdish. You can provide translations in separate columns.') }}</p>
                         </div>
+                        <div class="alert alert-secondary">
+                            <h6 class="mb-2"><i class="fas fa-list"></i> {{ __('Meal Types') }}</h6>
+                            <ul class="small mb-2">
+                                <li>{{ __('Use meal_types (plural). Put multiple values in one cell separated by commas, e.g. "breakfast, snack".') }}</li>
+                                <li>{{ __('Allowed values: breakfast, lunch, dinner, snack (case-insensitive). "snacks" is accepted and treated as "snack".') }}</li>
+                                <li>{{ __('Leave meal_types blank or type "any" to make the food available for all meals.') }}</li>
+                            </ul>
+                            <h6 class="mb-2"><i class="fas fa-weight-hanging"></i> {{ __('Serving Fields') }}</h6>
+                            <ul class="small mb-0">
+                                <li>{{ __('serving_size: a label the user sees (examples: 100g, 1 cup, 2 pieces, 1 tbsp, 1 slice, 1 medium).') }}</li>
+                                <li>{{ __('serving_weight: weight in grams for the serving_size (optional). If empty, calculations assume 100g or standard approximations (cup≈240g, tbsp≈15g, tsp≈5g).') }}</li>
+                            </ul>
+                        </div>
 
                         <div style="overflow-x: auto;">
                             <table class="table table-bordered table-sm" style="min-width: 1200px;">
@@ -200,10 +215,10 @@
                     <div class="mt-3">
                         <small class="text-muted">
                             <strong>{{ __('Required columns:') }}</strong> name, calories<br>
-                            <strong>{{ __('Optional columns:') }}</strong> name_en, name_ar, name_ku, food_group, protein, carbohydrates, fat, fiber, sugar, sodium, serving_size, serving_weight, description, description_en, description_ar, description_ku<br>
+                            <strong>{{ __('Optional columns:') }}</strong> meal_types, name_en, name_ar, name_ku, food_group, protein, carbohydrates, fat, fiber, sugar, sodium, serving_size, serving_weight, description, description_en, description_ar, description_ku<br>
                             <strong>{{ __('Multilingual:') }}</strong> {{ __('Use name_en/name_ar/name_ku for food names in different languages') }}<br>
                             <strong>{{ __('Serving Size Examples:') }}</strong> 100g, 1 cup, 2 pieces, 1 tbsp, 1 slice, 1 medium, 1 handful<br>
-                            <strong>{{ __('Note:') }}</strong> {{ __('Nutritional values can be for any serving size - specify the serving size in the serving_size column.') }}
+                            <strong>{{ __('Note:') }}</strong> {{ __('Nutritional values can be for any serving size - specify the serving size in the serving_size column. If serving_weight is empty, 100g or standard approximations are used for calculations.') }}
                         </small>
                     </div>
                 </div>
