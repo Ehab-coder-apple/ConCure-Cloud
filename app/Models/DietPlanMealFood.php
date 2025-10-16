@@ -204,25 +204,20 @@ class DietPlanMealFood extends Model
     }
 
     /**
-     * Equivalent text like (~ 150 g) or (~ 240 ml), when applicable.
-     * Skips when the unit already expresses mass/volume directly (g, kg, mg, ml, l).
+     * Equivalent text: show grams only as (~ 150 g).
+     * Skip when the unit already expresses mass directly (g, kg, mg).
      */
     public function getEquivalentTextAttribute(): string
     {
-        // Always display both grams and milliliters together; assume 1 g == 1 ml when only one is known
+        $unit = strtolower(trim((string) ($this->unit ?? '')));
+        // If already a mass unit, no equivalent needed
+        if (in_array($unit, ['g','kg','mg'], true)) { return ''; }
+
         $grams = $this->calcGramsForCurrent();
-        $ml = $this->calcMlForCurrent();
+        if ($grams === null || $grams <= 0) { return ''; }
 
-        $hasG = ($grams !== null && $grams > 0);
-        $hasMl = ($ml !== null && $ml > 0);
-
-        if (!$hasG && $hasMl) { $grams = $ml; $hasG = true; }
-        if (!$hasMl && $hasG) { $ml = $grams; $hasMl = true; }
-
-        $gStr = $hasG ? self::formatNumber($grams) : '';
-        $mlStr = $hasMl ? self::formatNumber($ml) : '';
-
-        return '(~ ' . $gStr . ' g / ' . $mlStr . ' ml)';
+        $gStr = self::formatNumber($grams);
+        return '(~ ' . $gStr . ' g)';
     }
 
     /**
