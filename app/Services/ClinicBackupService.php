@@ -36,19 +36,22 @@ class ClinicBackupService
         @mkdir($dbDir, 0755, true);
         @mkdir($filesDir, 0755, true);
 
-        // Record log row (pending)
-        $backupId = DB::table('clinic_backups')->insertGetId([
-            'clinic_id' => $clinicId,
-            'type' => $type,
-            'status' => 'pending',
-            'disk' => config('filesystems.default', 'local'),
-            'path' => '',
-            'size_bytes' => null,
-            'created_by' => $createdBy,
-            'meta' => json_encode(['started_at' => now()->toDateTimeString()]),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // Record log row (pending) — tolerate missing migration
+        $backupId = null;
+        if (Schema::hasTable('clinic_backups')) {
+            $backupId = DB::table('clinic_backups')->insertGetId([
+                'clinic_id' => $clinicId,
+                'type' => $type,
+                'status' => 'pending',
+                'disk' => config('filesystems.default', 'local'),
+                'path' => '',
+                'size_bytes' => null,
+                'created_by' => $createdBy,
+                'meta' => json_encode(['started_at' => now()->toDateTimeString()]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         try {
             // Export DB data per table into JSON
@@ -62,14 +65,16 @@ class ClinicBackupService
             $this->zipDirectory($workDir, $zipPath);
             $size = file_exists($zipPath) ? filesize($zipPath) : 0;
 
-            // Update log as success
-            DB::table('clinic_backups')->where('id', $backupId)->update([
-                'status' => 'success',
-                'path' => $zipPath,
-                'size_bytes' => $size,
-                'completed_at' => now(),
-                'updated_at' => now(),
-            ]);
+            // Update log as success (if table exists)
+            if ($backupId && Schema::hasTable('clinic_backups')) {
+                DB::table('clinic_backups')->where('id', $backupId)->update([
+                    'status' => 'success',
+                    'path' => $zipPath,
+                    'size_bytes' => $size,
+                    'completed_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
             // Retention cleanup
             $this->applyRetention($clinicId, $retentionDays);
@@ -79,12 +84,14 @@ class ClinicBackupService
 
             return ['path' => $zipPath, 'size' => $size, 'last_backup_at' => now()];
         } catch (\Throwable $e) {
-            // Mark failed
-            DB::table('clinic_backups')->where('id', $backupId)->update([
-                'status' => 'failed',
-                'meta' => json_encode(['error' => $e->getMessage(), 'trace' => substr($e->getTraceAsString(), 0, 2000)]),
-                'updated_at' => now(),
-            ]);
+            // Mark failed when table exists
+            if ($backupId && Schema::hasTable('clinic_backups')) {
+                DB::table('clinic_backups')->where('id', $backupId)->update([
+                    'status' => 'failed',
+                    'meta' => json_encode(['error' => $e->getMessage(), 'trace' => substr($e->getTraceAsString(), 0, 2000)]),
+                    'updated_at' => now(),
+                ]);
+            }
             // Cleanup
             $this->rrmdir($workDir);
             throw $e;
@@ -301,6 +308,7 @@ class ClinicBackupService
 
     public function getLastBackupForClinic(int $clinicId)
     {
+        if (!Schema::hasTable('clinic_backups')) { return null; }
         return DB::table('clinic_backups')
             ->where('clinic_id', $clinicId)
             ->where('status', 'success')
@@ -310,6 +318,7 @@ class ClinicBackupService
 
     public function getRecentBackups(int $clinicId, int $limit = 10)
     {
+        if (!Schema::hasTable('clinic_backups')) { return collect(); }
         return DB::table('clinic_backups')
             ->where('clinic_id', $clinicId)
             ->orderByDesc('created_at')
@@ -321,19 +330,21 @@ class ClinicBackupService
     {
         if ($retentionDays <= 0) { return; }
         $cutoff = now()->subDays($retentionDays);
-        $rows = DB::table('clinic_backups')
-            ->where('clinic_id', $clinicId)
-            ->where('created_at', '<', $cutoff)
-            ->get();
-        foreach ($rows as $row) {
-            if (!empty($row->path) && file_exists($row->path)) {
-                @unlink($row->path);
+        if (Schema::hasTable('clinic_backups')) {
+            $rows = DB::table('clinic_backups')
+                ->where('clinic_id', $clinicId)
+                ->where('created_at', '<', $cutoff)
+                ->get();
+            foreach ($rows as $row) {
+                if (!empty($row->path) && file_exists($row->path)) {
+                    @unlink($row->path);
+                }
             }
+            DB::table('clinic_backups')
+                ->where('clinic_id', $clinicId)
+                ->where('created_at', '<', $cutoff)
+                ->delete();
         }
-        DB::table('clinic_backups')
-            ->where('clinic_id', $clinicId)
-            ->where('created_at', '<', $cutoff)
-            ->delete();
     }
 }
 
