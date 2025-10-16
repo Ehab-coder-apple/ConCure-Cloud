@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Food;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 
 class MealPlanAutoGenerator
@@ -16,6 +18,37 @@ class MealPlanAutoGenerator
         'snacks'    => 0.10,
     ];
 
+
+    /**
+     * Read options-per-meal from tenant (clinic) settings.
+     * Supports keys: options_per_meal, nutrition_options_per_meal, meal_options_per_meal.
+     * Caps to 1..6 to avoid excessive combinations.
+     */
+    private function getOptionsPerMeal(): int
+    {
+        try {
+            $user = Auth::user();
+            $clinicId = $user->clinic_id ?? null;
+            if (!$clinicId) return 1;
+
+            $keys = ['options_per_meal','nutrition_options_per_meal','meal_options_per_meal'];
+            foreach ($keys as $key) {
+                $val = DB::table('settings')
+                    ->where('clinic_id', $clinicId)
+                    ->where('key', $key)
+                    ->value('value');
+                if ($val !== null) {
+                    $num = (int)$val;
+                    if ($num < 1) $num = 1;
+                    if ($num > 6) $num = 6;
+                    return $num;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fallback silently
+        }
+        return 1; // default: maintain previous single-option behavior
+    }
     public function generate(array $targets, string $language = 'default', array $restrictions = []): array
     {
         $cal = (float)($targets['calories'] ?? 0);
@@ -100,31 +133,43 @@ class MealPlanAutoGenerator
                 return $p*0.4 + $c*0.35 + $fa*0.25 + ($cal>0?50:0);
             });
 
-            $option = [
-                'option_number' => 1,
-                'option_description' => 'Auto suggestion',
-                'foods' => [],
-                'total_calories' => 0,
-                'total_protein'  => 0,
-                'total_carbs'    => 0,
-                'total_fat'      => 0,
-            ];
+            // How many options per meal? Read from tenant (clinic) settings; default to 1..6
+            $optionsPerMeal = $this->getOptionsPerMeal();
 
-            $option = $this->addFromList($option, $proteinDense, 'protein', $mealP, $language);
-            $option = $this->addFromList($option, $carbDense, 'carbohydrates', $mealC, $language);
-            $option = $this->addFromList($option, $fatDense, 'fat', $mealF, $language);
+            // Build N options aiming at the same calorie target but with varied combinations
+            for ($optNum = 1; $optNum <= $optionsPerMeal; $optNum++) {
+                // Rotate lists slightly per option to encourage variety while preserving ranking bias
+                $offBase = ($optNum - 1) * 2; // small step per option
+                $protList = $proteinDense->slice($offBase)->concat($proteinDense->take($offBase));
+                $carbList = $carbDense->slice($offBase + 1)->concat($carbDense->take($offBase + 1));
+                $fatList  = $fatDense->slice($offBase + 2)->concat($fatDense->take($offBase + 2));
+                $balList  = $balanced->slice($offBase + 1)->concat($balanced->take($offBase + 1));
 
-            // If still under calories by >10%, add a balanced filler
-            $tries = 0;
-            while ($option['total_calories'] < $mealCal * 0.9 && $tries < 4) {
-                $tries++;
-                $option = $this->addFromList($option, $balanced, 'calories', ($mealCal - $option['total_calories'])/9 /*approx*/, $language, true);
+                $option = [
+                    'option_number' => $optNum,
+                    'option_description' => 'Auto suggestion',
+                    'foods' => [],
+                    'total_calories' => 0,
+                    'total_protein'  => 0,
+                    'total_carbs'    => 0,
+                    'total_fat'      => 0,
+                ];
+
+                $option = $this->addFromList($option, $protList, 'protein', $mealP, $language);
+                $option = $this->addFromList($option, $carbList, 'carbohydrates', $mealC, $language);
+                $option = $this->addFromList($option, $fatList, 'fat', $mealF, $language);
+
+                // If still under calories by >10%, add a balanced filler
+                $tries = 0;
+                while ($option['total_calories'] < $mealCal * 0.9 && $tries < 4) {
+                    $tries++;
+                    $option = $this->addFromList($option, $balList, 'calories', ($mealCal - $option['total_calories'])/9 /*approx*/, $language, true);
+                }
+                // Tighten to be close to meal calorie target (reduce if we overshoot)
+                $option = $this->rebalanceToCalorieTarget($option, $mealCal, 0.04); // 4% tolerance
+
+                $plan[$meal][] = $option;
             }
-
-            // Tighten to be close to meal calorie target (reduce if we overshoot)
-            $option = $this->rebalanceToCalorieTarget($option, $mealCal, 0.04); // 4% tolerance
-
-            $plan[$meal][] = $option;
         }
 
         // Final day-level tightening: if daily calories overshoot, scale down uniformly
@@ -246,6 +291,8 @@ class MealPlanAutoGenerator
         // Final clamp: if still slightly over, scale all items uniformly
         if ($option['total_calories'] > $upper && ($option['total_calories'] > 0)) {
             $scale = $mealCal / $option['total_calories'];
+
+
             foreach ($option['foods'] as $idx => $item) {
                 $option['foods'][$idx]['quantity'] = max(30, round(($item['quantity'] ?? 0) * $scale, 0));
                 $option['foods'][$idx]['calories'] = round(($item['calories'] ?? 0) * $scale, 0);
@@ -264,12 +311,15 @@ class MealPlanAutoGenerator
 
     /**
      * If the total daily calories overshoot the target, scale all meals down uniformly.
+     * When multiple options exist per meal, compute scaling based on the first option
+     * of each meal and apply the same scale to all options to keep them consistent.
      */
     private function rebalanceDayToCalorieTarget(array $plan, float $dailyCal, float $tolerance = 0.04): array
     {
         $current = 0.0;
         foreach ($plan as $meal => $options) {
-            foreach ($options as $opt) {
+            if (!empty($options) && isset($options[0])) {
+                $opt = $options[0];
                 $current += (float)($opt['total_calories'] ?? 0);
             }
         }
@@ -288,6 +338,8 @@ class MealPlanAutoGenerator
                 $opt['total_fat']      = 0;
                 foreach ($opt['foods'] as &$item) {
                     $item['quantity'] = max(30, round(($item['quantity'] ?? 0) * $scale, 0));
+
+
                     $item['calories'] = round(($item['calories'] ?? 0) * $scale, 0);
                     $item['protein']  = round(($item['protein'] ?? 0) * $scale, 1);
                     $item['carbs']    = round(($item['carbs'] ?? 0) * $scale, 1);
