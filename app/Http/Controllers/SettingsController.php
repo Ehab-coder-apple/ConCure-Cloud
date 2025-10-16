@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ClinicBackupService;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -68,7 +70,17 @@ class SettingsController extends Controller
             }
         }
 
-        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab'));
+        // Backup info
+        $lastBackup = null; $recentBackups = collect();
+        try {
+            if ($user->clinic_id) {
+                $service = app(\App\Services\ClinicBackupService::class);
+                $lastBackup = $service->getLastBackupForClinic((int)$user->clinic_id);
+                $recentBackups = $service->getRecentBackups((int)$user->clinic_id, 5);
+            }
+        } catch (\Throwable $e) { /* ignore */ }
+
+        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups'));
     }
 
     public function update(Request $request)
@@ -616,29 +628,44 @@ class SettingsController extends Controller
     }
 
     /**
-     * Create database backup
+     * Manual on-demand backup for the current clinic (admin/super admin only)
      */
-    public function backup()
+    public function backup(ClinicBackupService $backupService)
     {
         $user = Auth::user();
 
-        // Only allow admins to create backups
-        if ($user->role !== 'admin') {
+        // Only allow admins and super admins
+        if (!method_exists($user, 'isSuperAdmin') || (!$user->isSuperAdmin() && $user->role !== 'admin')) {
             return response()->json([
                 'success' => false,
                 'message' => __('Unauthorized to create backups.')
             ], 403);
         }
 
+        $clinicId = (int) ($user->clinic_id ?? 0);
+        if ($clinicId <= 0 && !$user->isSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => __('No clinic context for backup.')
+            ], 400);
+        }
+
         try {
-            $backupPath = $this->createDatabaseBackup();
+            $targetClinicId = $clinicId > 0 ? $clinicId : (int) request('clinic_id', 0);
+            if ($user->isSuperAdmin() && $targetClinicId > 0) {
+                $clinicId = $targetClinicId; // allow super admin to target specific clinic
+            }
+
+            $result = $backupService->generateBackupForClinic($clinicId, 'manual', $user->id, 30);
+            $fileRel = 'clinic-' . $clinicId . '/' . basename($result['path']);
 
             return response()->json([
                 'success' => true,
-                'message' => __('Database backup created successfully.'),
-                'download_url' => route('settings.download-backup', ['file' => basename($backupPath)])
+                'message' => __('Backup created successfully.'),
+                'download_url' => route('settings.download-backup', ['file' => $fileRel]),
+                'last_backup_at' => now()->toDateTimeString(),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => __('Failed to create backup: :error', ['error' => $e->getMessage()])
@@ -740,8 +767,8 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
 
-        // Only allow admins to download backups
-        if ($user->role !== 'admin') {
+        // Only allow admins and super admins to download backups
+        if (!method_exists($user, 'isSuperAdmin') || (!$user->isSuperAdmin() && $user->role !== 'admin')) {
             abort(403, 'Unauthorized to download backups.');
         }
 
@@ -750,6 +777,15 @@ class SettingsController extends Controller
         // Security check: ensure file exists and is in backup directory
         if (!file_exists($backupPath) || !str_starts_with(realpath($backupPath), realpath(storage_path('app/backups')))) {
             abort(404, 'Backup file not found.');
+        }
+
+        // Tenant isolation: Admins can only access their clinic's folder
+        if (!$user->isSuperAdmin()) {
+            $expected = 'clinic-' . (int) $user->clinic_id . DIRECTORY_SEPARATOR;
+            $relReal = trim(str_replace(realpath(storage_path('app/backups')) . DIRECTORY_SEPARATOR, '', realpath($backupPath)), DIRECTORY_SEPARATOR);
+            if (strpos($relReal, $expected) !== 0) {
+                abort(403, 'Unauthorized to access this backup.');
+            }
         }
 
         return response()->download($backupPath);

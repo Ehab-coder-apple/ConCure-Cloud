@@ -6,6 +6,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use App\Console\Commands\ResetSuperAdmin;
 use App\Console\Commands\SendSubscriptionRenewalReminders;
+use App\Console\Commands\BackupClinicsWeekly;
 
 class Kernel extends ConsoleKernel
 {
@@ -18,6 +19,7 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         ResetSuperAdmin::class,
         SendSubscriptionRenewalReminders::class,
+        BackupClinicsWeekly::class,
     ];
 
     /**
@@ -27,6 +29,9 @@ class Kernel extends ConsoleKernel
     {
         // Send subscription renewal reminders daily at 9:00 AM server time
         $schedule->command('concure:send-subscription-renewal-reminders')->dailyAt('09:00');
+
+        // Weekly clinic backups every Sunday 02:30 server time
+        $schedule->command('clinic:backup-weekly')->weeklyOn(0, '02:30')->withoutOverlapping()->onOneServer();
     }
 
     /**

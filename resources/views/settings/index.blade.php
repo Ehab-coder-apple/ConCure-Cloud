@@ -598,15 +598,48 @@
                                             <h6 class="text-primary">{{ __('Maintenance') }}</h6>
                                         </div>
                                         <div class="col-12">
+                                            @if(isset($lastBackup) || (isset($recentBackups) && $recentBackups->count()))
+                                                <div class="mb-3 p-2 bg-light rounded">
+                                                    <div class="small text-muted">
+                                                        <i class="fas fa-database me-1"></i>
+                                                        {{ __('Last backup:') }}
+                                                        <strong>
+                                                        @if(isset($lastBackup) && $lastBackup)
+                                                            {{ \Carbon\Carbon::parse($lastBackup->completed_at ?? $lastBackup->created_at)->format('Y-m-d H:i') }}
+                                                        @else
+                                                            {{ __('None') }}
+                                                        @endif
+                                                        </strong>
+                                                    </div>
+                                                    @if(isset($recentBackups) && $recentBackups->count())
+                                                        <div class="mt-1">
+                                                            <div class="small text-muted mb-1">{{ __('Recent backups:') }}</div>
+                                                            <ul class="list-unstyled mb-0">
+                                                                @foreach($recentBackups as $b)
+                                                                    <?php $rel = trim(str_replace(storage_path('app/backups/'), '', (string)$b->path), '/'); ?>
+                                                                    <li class="small">
+                                                                        <a href="{{ route('settings.download-backup', ['file' => $rel]) }}" class="text-decoration-none">
+                                                                            <i class="fas fa-file-archive me-1"></i>
+                                                                            {{ basename((string)$b->path) }}
+                                                                        </a>
+                                                                        <span class="text-muted ms-1">{{ $b->size_bytes ? number_format($b->size_bytes/1024, 0) . ' KB' : '' }}</span>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @endif
+
                                             <div class="d-flex gap-2">
-                                                @if(auth()->user()->role === 'admin')
+                                                @if(auth()->user()->isSuperAdmin() || auth()->user()->role === 'admin')
+                                                <button type="button" class="btn btn-outline-info" onclick="backupDatabase(event)">
+                                                    <i class="fas fa-database me-1"></i>
+                                                    {{ __('Backup Data') }}
+                                                </button>
                                                 <button type="button" class="btn btn-outline-warning" onclick="clearCache()">
                                                     <i class="fas fa-broom me-1"></i>
                                                     {{ __('Clear Cache') }}
-                                                </button>
-                                                <button type="button" class="btn btn-outline-info" onclick="backupDatabase()">
-                                                    <i class="fas fa-download me-1"></i>
-                                                    {{ __('Backup Database') }}
                                                 </button>
                                                 <button type="button" class="btn btn-outline-success" onclick="updateSystem()">
                                                     <i class="fas fa-sync me-1"></i>
@@ -755,7 +788,7 @@
 @push('scripts')
 <script>
 // System maintenance functions
-function backupDatabase() {
+function backupDatabase(event) {
     if (!confirm('{{ __("Create a database backup? This may take a few moments.") }}')) {
         return;
     }
