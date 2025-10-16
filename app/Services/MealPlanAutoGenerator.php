@@ -121,6 +121,9 @@ class MealPlanAutoGenerator
                 $option = $this->addFromList($option, $balanced, 'calories', ($mealCal - $option['total_calories'])/9 /*approx*/, $language, true);
             }
 
+            // Tighten to be close to meal calorie target (reduce if we overshoot)
+            $option = $this->rebalanceToCalorieTarget($option, $mealCal, 0.04); // 4% tolerance
+
             $plan[$meal][] = $option;
         }
 
@@ -177,8 +180,79 @@ class MealPlanAutoGenerator
             $option['total_fat']      += $fatg;
 
             $added++;
+
             if ($added >= 1) break; // take one item from each list per pass
         }
+        return $option;
+    }
+
+
+    /**
+     * Reduce quantities gently if we overshoot calories. Keep a small tolerance.
+     */
+    private function rebalanceToCalorieTarget(array $option, float $mealCal, float $tolerance = 0.05): array
+    {
+        $upper = $mealCal * (1 + $tolerance);
+        if (($option['total_calories'] ?? 0) <= $upper) {
+            return $option; // already within tolerance
+        }
+
+        $diff = ($option['total_calories'] ?? 0) - $mealCal; // calories to shave
+        // Walk items from last to first and reduce grams down to a 30g floor
+        for ($i = count($option['foods']) - 1; $i >= 0 && $diff > 0; $i--) {
+            $item = $option['foods'][$i];
+            $qty  = (float)($item['quantity'] ?? 0);
+            if ($qty <= 30) continue; // keep minimum practical serving
+
+            $cal  = (float)($item['calories'] ?? 0);
+            $p    = (float)($item['protein'] ?? 0);
+            $c    = (float)($item['carbs'] ?? 0);
+            $f    = (float)($item['fat'] ?? 0);
+
+            $calPerGram = $qty > 0 ? max(0.1, $cal / $qty) : 0.1;
+            $gramsToCut = min($qty - 30, ceil($diff / $calPerGram));
+            if ($gramsToCut <= 0) continue;
+
+            $newQty = max(30, $qty - $gramsToCut);
+            $scale  = $newQty / $qty;
+
+            // Scale item macros
+            $option['foods'][$i]['quantity'] = round($newQty, 0);
+            $option['foods'][$i]['calories'] = round($cal * $scale, 0);
+            $option['foods'][$i]['protein']  = round($p * $scale, 1);
+            $option['foods'][$i]['carbs']    = round($c * $scale, 1);
+            $option['foods'][$i]['fat']      = round($f * $scale, 1);
+
+            // Update totals
+            $calCut = $cal - ($cal * $scale);
+            $protCut = $p - ($p * $scale);
+            $carbCut = $c - ($c * $scale);
+            $fatCut  = $f - ($f * $scale);
+
+            $option['total_calories'] -= $calCut;
+            $option['total_protein']  -= $protCut;
+            $option['total_carbs']    -= $carbCut;
+            $option['total_fat']      -= $fatCut;
+
+            $diff = max(0, $option['total_calories'] - $mealCal);
+        }
+
+        // Final clamp: if still slightly over, scale all items uniformly
+        if ($option['total_calories'] > $upper && ($option['total_calories'] > 0)) {
+            $scale = $mealCal / $option['total_calories'];
+            foreach ($option['foods'] as $idx => $item) {
+                $option['foods'][$idx]['quantity'] = max(30, round(($item['quantity'] ?? 0) * $scale, 0));
+                $option['foods'][$idx]['calories'] = round(($item['calories'] ?? 0) * $scale, 0);
+                $option['foods'][$idx]['protein']  = round(($item['protein'] ?? 0) * $scale, 1);
+                $option['foods'][$idx]['carbs']    = round(($item['carbs'] ?? 0) * $scale, 1);
+                $option['foods'][$idx]['fat']      = round(($item['fat'] ?? 0) * $scale, 1);
+            }
+            $option['total_calories'] = round($option['total_calories'] * $scale, 0);
+            $option['total_protein']  = round($option['total_protein'] * $scale, 1);
+            $option['total_carbs']    = round($option['total_carbs'] * $scale, 1);
+            $option['total_fat']      = round($option['total_fat'] * $scale, 1);
+        }
+
         return $option;
     }
 
