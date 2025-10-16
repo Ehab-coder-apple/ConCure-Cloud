@@ -92,7 +92,16 @@
                                 <strong>{{ __('Meal Types') }}:</strong>
                             </div>
                             <div class="col-sm-8">
-                                @php $types = $food->mealTypes && $food->mealTypes->count() ? $food->mealTypes->pluck('name')->toArray() : []; @endphp
+                                @php
+                                    $types = [];
+                                    try {
+                                        if (\Illuminate\Support\Facades\Schema::hasTable('meal_types') && \Illuminate\Support\Facades\Schema::hasTable('food_meal_type') && $food->relationLoaded('mealTypes')) {
+                                            $types = $food->mealTypes->pluck('name')->toArray();
+                                        }
+                                    } catch (\Throwable $e) {
+                                        $types = [];
+                                    }
+                                @endphp
                                 @if(!empty($types))
                                     @foreach($types as $t)
                                         <span class="badge badge-secondary me-1">{{ $t }}</span>

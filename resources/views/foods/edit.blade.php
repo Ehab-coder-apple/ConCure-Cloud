@@ -135,7 +135,21 @@
                         <!-- Meal Types -->
                         <div class="form-group">
                             <label class="form-label">{{ __('Meal Types') }}</label>
-                            @php $selected = old('meal_types', isset($food) ? $food->mealTypes->pluck('key')->toArray() : []); @endphp
+                            @php
+                                $selected = old('meal_types');
+                                if ($selected === null && isset($food)) {
+                                    try {
+                                        if (\Illuminate\Support\Facades\Schema::hasTable('meal_types') && \Illuminate\Support\Facades\Schema::hasTable('food_meal_type') && $food->relationLoaded('mealTypes')) {
+                                            $selected = $food->mealTypes->pluck('key')->toArray();
+                                        } else {
+                                            $selected = [];
+                                        }
+                                    } catch (\Throwable $e) {
+                                        $selected = [];
+                                    }
+                                }
+                                if (!is_array($selected)) { $selected = []; }
+                            @endphp
                             <div class="d-flex flex-wrap gap-3">
                                 <div class="form-check me-3">
                                     <input class="form-check-input" type="checkbox" name="meal_types[]" id="mt_breakfast" value="breakfast" {{ in_array('breakfast', $selected) ? 'checked' : '' }}>

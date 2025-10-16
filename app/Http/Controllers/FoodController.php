@@ -252,7 +252,11 @@ class FoodController extends Controller
      */
     public function show(Food $food)
     {
-        $food->load(['foodGroup', 'clinic', 'creator', 'mealTypes']);
+        $relations = ['foodGroup', 'clinic', 'creator'];
+        if (\Illuminate\Support\Facades\Schema::hasTable('meal_types') && \Illuminate\Support\Facades\Schema::hasTable('food_meal_type')) {
+            $relations[] = 'mealTypes';
+        }
+        $food->load($relations);
 
         return view('foods.show', compact('food'));
     }

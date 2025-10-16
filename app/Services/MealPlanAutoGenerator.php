@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Food;
+use Illuminate\Support\Facades\Schema;
+
 
 class MealPlanAutoGenerator
 {
@@ -31,11 +33,14 @@ class MealPlanAutoGenerator
         // Prefetch a reasonably sized candidate list once to keep it fast
         // Use get() without an explicit column list to avoid errors when optional
         // translation columns (e.g., name_ku) are not present in some deployments.
-        $foods = Food::query()
-            ->with('mealTypes')
+        $hasMealTypeTables = Schema::hasTable('meal_types') && Schema::hasTable('food_meal_type');
+        $query = Food::query()
             ->where('is_active', true)
-            ->limit(500)
-            ->get();
+            ->limit(500);
+        if ($hasMealTypeTables) {
+            $query->with('mealTypes');
+        }
+        $foods = $query->get();
 
         // Basic dietary filtering (extendable)
         if (!empty($restrictions)) {
@@ -70,10 +75,12 @@ class MealPlanAutoGenerator
             $mealTypeFilter = $meal === 'snacks' ? 'snack' : $meal;
 
             // Filter foods by meal type; support many-to-many relation with legacy fallback
-            $mealFoods = $foods->filter(function($food) use ($mealTypeFilter) {
-                $types = $food->mealTypes ? $food->mealTypes->pluck('key')->all() : [];
-                if (!empty($types)) {
-                    return in_array($mealTypeFilter, $types, true);
+            $mealFoods = $foods->filter(function($food) use ($mealTypeFilter, $hasMealTypeTables) {
+                if ($hasMealTypeTables && $food->relationLoaded('mealTypes')) {
+                    $types = $food->mealTypes->pluck('key')->all();
+                    if (!empty($types)) {
+                        return in_array($mealTypeFilter, $types, true);
+                    }
                 }
                 $mt = $food->meal_type ?? 'any';
                 return $mt === 'any' || $mt === $mealTypeFilter;
