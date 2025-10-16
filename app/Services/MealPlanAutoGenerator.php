@@ -127,11 +127,15 @@ class MealPlanAutoGenerator
             $plan[$meal][] = $option;
         }
 
+        // Final day-level tightening: if daily calories overshoot, scale down uniformly
+        $plan = $this->rebalanceDayToCalorieTarget($plan, $cal, 0.04);
+
         return [
             'success' => true,
             'meal_options' => $plan,
         ];
     }
+
 
     private function addFromList(array $option, $list, string $macroKey, float $targetMacro, string $language, bool $byCalories = false): array
     {
@@ -200,6 +204,8 @@ class MealPlanAutoGenerator
         $diff = ($option['total_calories'] ?? 0) - $mealCal; // calories to shave
         // Walk items from last to first and reduce grams down to a 30g floor
         for ($i = count($option['foods']) - 1; $i >= 0 && $diff > 0; $i--) {
+
+
             $item = $option['foods'][$i];
             $qty  = (float)($item['quantity'] ?? 0);
             if ($qty <= 30) continue; // keep minimum practical serving
@@ -255,6 +261,52 @@ class MealPlanAutoGenerator
 
         return $option;
     }
+
+    /**
+     * If the total daily calories overshoot the target, scale all meals down uniformly.
+     */
+    private function rebalanceDayToCalorieTarget(array $plan, float $dailyCal, float $tolerance = 0.04): array
+    {
+        $current = 0.0;
+        foreach ($plan as $meal => $options) {
+            foreach ($options as $opt) {
+                $current += (float)($opt['total_calories'] ?? 0);
+            }
+        }
+        $upper = $dailyCal * (1 + $tolerance);
+        if ($current <= $upper || $current <= 0) {
+            return $plan; // within tolerance or nothing to scale
+        }
+
+        $scale = $dailyCal / $current;
+        foreach ($plan as $meal => &$options) {
+            foreach ($options as &$opt) {
+                if (empty($opt['foods'])) continue;
+                $opt['total_calories'] = 0;
+                $opt['total_protein']  = 0;
+                $opt['total_carbs']    = 0;
+                $opt['total_fat']      = 0;
+                foreach ($opt['foods'] as &$item) {
+                    $item['quantity'] = max(30, round(($item['quantity'] ?? 0) * $scale, 0));
+                    $item['calories'] = round(($item['calories'] ?? 0) * $scale, 0);
+                    $item['protein']  = round(($item['protein'] ?? 0) * $scale, 1);
+                    $item['carbs']    = round(($item['carbs'] ?? 0) * $scale, 1);
+                    $item['fat']      = round(($item['fat'] ?? 0) * $scale, 1);
+
+                    $opt['total_calories'] += $item['calories'];
+                    $opt['total_protein']  += $item['protein'];
+                    $opt['total_carbs']    += $item['carbs'];
+                    $opt['total_fat']      += $item['fat'];
+                }
+                unset($item);
+            }
+            unset($opt);
+        }
+        unset($options);
+
+        return $plan;
+    }
+
 
     private function translatedName($food, string $language): string
     {
