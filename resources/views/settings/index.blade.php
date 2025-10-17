@@ -877,42 +877,34 @@ function backupDatabase(event) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>{{ __("Creating Backup...") }}';
     button.disabled = true;
 
-    fetch('{{ route("settings.backup") }}', {
+    fetch('{{ route("settings.backup-direct") }}', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
     .then(async (response) => {
-        let data = null;
-        try { data = await response.json(); } catch (_) { /* non-JSON (e.g., 429 HTML) */ }
-
         if (!response.ok) {
-            const msg = (data && data.message)
-                ? data.message
-                : (response.status === 429
-                    ? '{{ __("Please wait a little before trying again. A backup was just created (rate limit)") }}'
-                    : '{{ __("Failed to create backup") }}');
-            throw new Error(msg);
+            let message = '{{ __("Failed to create backup") }}';
+            try { const data = await response.json(); if (data && data.message) message = data.message; } catch (_) { /* ignore */ }
+            throw new Error(message);
         }
+        const dispo = response.headers.get('Content-Disposition') || '';
+        let filename = (dispo.match(/filename\*=UTF-8''([^;\n]+)/) || [])[1] || (dispo.match(/filename="?([^";\n]+)/) || [])[1] || 'clinic-backup.zip';
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = decodeURIComponent(filename);
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
 
-        // Success path
         button.innerHTML = originalText;
         button.disabled = false;
-        if (data && data.success) {
-            alert(data.message || '{{ __("Backup created successfully.") }}');
-            if (data.download_url) {
-                const link = document.createElement('a');
-                link.href = data.download_url;
-                link.download = '';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        } else {
-            alert((data && data.message) || '{{ __("Failed to create backup") }}');
-        }
+        alert('{{ __("Backup created successfully.") }}');
     })
     .catch((error) => {
         console.error('Backup error:', error);

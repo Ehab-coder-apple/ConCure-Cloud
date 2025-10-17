@@ -807,6 +807,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
             ->where('file', '.*')
             ->name('download-backup')
             ->middleware('can:access-settings');
+
+        Route::post('/backup/direct', [SettingsController::class, 'backupDirect'])
+            ->name('backup-direct')
+            ->middleware(['can:access-settings', 'throttle:1,15']);
         Route::post('/system/auto-backup/clinic', [SettingsController::class, 'setClinicAutoBackup'])->name('system.auto-backup-clinic')->middleware('can:access-settings');
         Route::post('/backup/types', [SettingsController::class, 'setManualBackupDocTypes'])->name('backup-types')->middleware('can:access-settings');
         Route::post('/backup/include-db', [SettingsController::class, 'setManualBackupIncludeDb'])->name('backup-include-db')->middleware('can:access-settings');

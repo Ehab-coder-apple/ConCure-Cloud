@@ -783,6 +783,55 @@ class SettingsController extends Controller
             ], 500);
         }
     }
+    /**
+     * Manual backup that returns the ZIP directly in the same request
+     */
+    public function backupDirect(ClinicBackupService $backupService)
+    {
+        $user = Auth::user();
+        if (!method_exists($user, 'isSuperAdmin') || (!$user->isSuperAdmin() && ($user->role ?? '') !== 'admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => __('Unauthorized to create backups.')
+            ], 403);
+        }
+
+        $clinicId = (int) ($user->clinic_id ?? 0);
+        if ($clinicId <= 0 && !$user->isSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => __('No clinic context for backup.')
+            ], 400);
+        }
+
+        try {
+            $targetClinicId = $clinicId > 0 ? $clinicId : (int) request('clinic_id', 0);
+            if ($user->isSuperAdmin() && $targetClinicId > 0) {
+                $clinicId = $targetClinicId;
+            }
+
+            $result = $backupService->generateBackupForClinic($clinicId, 'manual', $user->id, 30);
+            $path = $result['path'];
+            if (!file_exists($path)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('Backup file not found after generation.')
+                ], 500);
+            }
+
+            $filename = basename($path);
+            return response()->download($path, $filename, [
+                'Content-Type' => 'application/zip',
+                'Content-Disposition' => "attachment; filename=\"$filename\""
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => __('Failed to create backup: :error', ['error' => $e->getMessage()])
+            ], 500);
+        }
+    }
+
 
     /**
      * Clear application cache
