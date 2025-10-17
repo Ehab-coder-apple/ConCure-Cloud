@@ -690,6 +690,7 @@ document.addEventListener('DOMContentLoaded', function() {
         placeholder: '{{ __("Select Patient") }}',
         allowClear: true,
         width: '100%',
+        minimumResultsForSearch: Infinity, // hide the middle search bar; show list directly
         dropdownParent: $(document.body), // ensure dropdown renders above fixed topbar
         language: {
             noResults: function() {
