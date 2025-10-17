@@ -872,7 +872,7 @@ function backupDatabase(event) {
         return;
     }
 
-    const button = event.target;
+    const button = event.currentTarget || event.target;
     const originalText = button.innerHTML;
     button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>{{ __("Creating Backup...") }}';
     button.disabled = true;
@@ -925,7 +925,7 @@ function backupDatabase(event) {
     function saveBackupDocTypes(event) {
         const exts = [];
         document.querySelectorAll('[id^="doc_"]').forEach(cb => { if (cb.checked) exts.push(cb.value); });
-        const btn = event.target;
+        const btn = event.currentTarget || event.target;
         const prev = btn.innerHTML;
         btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>{{ __("Saving...") }}';
         fetch('{{ route("settings.backup-types") }}', {
@@ -934,9 +934,21 @@ function backupDatabase(event) {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
 
+            },
+            body: JSON.stringify({ types: exts })
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false; btn.innerHTML = prev;
+            if (data && data.success) { alert('{{ __("Saved document types for manual backups.") }}'); }
+            else { alert((data && data.message) || '{{ __("Failed to save") }}'); }
+        })
+        .catch(() => { btn.disabled = false; btn.innerHTML = prev; alert('{{ __("Network error") }}'); });
+    }
+
     function saveBackupIncludeDb(event) {
         const include = document.getElementById('include_db_json')?.checked ? true : false;
-        const btn = event.target;
+        const btn = event.currentTarget || event.target;
         const prev = btn.innerHTML;
         btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>{{ __("Saving...") }}';
         fetch('{{ route("settings.backup-include-db") }}', {
@@ -956,17 +968,6 @@ function backupDatabase(event) {
         .catch(() => { btn.disabled = false; btn.innerHTML = prev; alert('{{ __("Network error") }}'); });
     }
 
-            },
-            body: JSON.stringify({ types: exts })
-        })
-        .then(r => r.json())
-        .then(data => {
-            btn.disabled = false; btn.innerHTML = prev;
-            if (data && data.success) { alert('{{ __("Saved document types for manual backups.") }}'); }
-            else { alert((data && data.message) || '{{ __("Failed to save") }}'); }
-        })
-        .catch(() => { btn.disabled = false; btn.innerHTML = prev; alert('{{ __("Network error") }}'); });
-    }
 
 
 function clearCache() {
@@ -974,7 +975,7 @@ function clearCache() {
         return;
     }
 
-    const button = event.target;
+    const button = event.currentTarget || event.target;
     const originalText = button.innerHTML;
     button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>{{ __("Clearing Cache...") }}';
     button.disabled = true;
@@ -989,6 +990,8 @@ function clearCache() {
     .then(response => response.json())
     .then(data => {
         button.innerHTML = originalText;
+
+
         button.disabled = false;
 
         if (data.success) {
