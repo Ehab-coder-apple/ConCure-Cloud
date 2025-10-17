@@ -886,7 +886,19 @@ function backupDatabase(event) {
     .then(async (response) => {
         if (!response.ok) {
             let message = '{{ __("Failed to create backup") }}';
-            try { const data = await response.json(); if (data && data.message) message = data.message; } catch (_) { /* ignore */ }
+            try {
+                const ct = response.headers.get('Content-Type') || '';
+                if (ct.includes('application/json')) {
+                    const data = await response.json();
+                    if (data && data.message) message = data.message;
+                } else {
+                    const text = await response.text();
+                    if (text && text.length < 400) message = text;
+                }
+            } catch (_) { /* ignore */ }
+            if (response.status === 429) message = '{{ __("Please wait a little before trying again. A backup was just created (rate limit)") }}';
+            if (response.status === 403) message = '{{ __("You are not authorized to create backups.") }}';
+            if (response.status === 419) message = '{{ __("Your session expired. Please refresh the page and try again.") }}';
             throw new Error(message);
         }
         const dispo = response.headers.get('Content-Disposition') || '';
