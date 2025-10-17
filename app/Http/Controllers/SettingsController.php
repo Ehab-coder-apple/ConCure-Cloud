@@ -812,11 +812,12 @@ class SettingsController extends Controller
 
             $result = $backupService->generateBackupForClinic($clinicId, 'manual', $user->id, 30);
             $path = $result['path'];
-            if (!file_exists($path)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => __('Backup file not found after generation.')
-                ], 500);
+
+            // FS flush retry (handles slow NFS/filesystems): wait up to ~2s for the file to appear
+            for ($i = 0; $i < 10; $i++) {
+                clearstatcache(true, $path);
+                if (is_file($path)) { break; }
+                usleep(200000); // 200ms
             }
 
             $filename = basename($path);
