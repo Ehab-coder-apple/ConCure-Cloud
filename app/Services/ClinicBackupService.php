@@ -36,21 +36,26 @@ class ClinicBackupService
         @mkdir($dbDir, 0755, true);
         @mkdir($filesDir, 0755, true);
 
-        // Record log row (pending) — tolerate missing migration
+        // Record log row (pending) — tolerate missing migration or connection issues
         $backupId = null;
-        if (Schema::hasTable('clinic_backups')) {
-            $backupId = DB::table('clinic_backups')->insertGetId([
-                'clinic_id' => $clinicId,
-                'type' => $type,
-                'status' => 'pending',
-                'disk' => config('filesystems.default', 'local'),
-                'path' => '',
-                'size_bytes' => null,
-                'created_by' => $createdBy,
-                'meta' => json_encode(['started_at' => now()->toDateTimeString()]),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        try {
+            if (Schema::hasTable('clinic_backups')) {
+                $backupId = DB::table('clinic_backups')->insertGetId([
+                    'clinic_id' => $clinicId,
+                    'type' => $type,
+                    'status' => 'pending',
+                    'disk' => config('filesystems.default', 'local'),
+                    'path' => '',
+                    'size_bytes' => null,
+                    'created_by' => $createdBy,
+                    'meta' => json_encode(['started_at' => now()->toDateTimeString()]),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // Swallow insert errors (e.g., table missing) and proceed without logging
+            $backupId = null;
         }
 
         try {

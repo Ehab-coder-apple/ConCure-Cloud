@@ -102,25 +102,6 @@ class SettingsController extends Controller
         return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups', 'clinicsAutoBackup'));
     }
 
-    public function setAutoBackup(Request $request)
-    {
-        $user = Auth::user();
-        if (!method_exists($user, 'isSuperAdmin') || !$user->isSuperAdmin()) {
-            return response()->json(['success' => false, 'message' => __('Only super admin can change this setting.')], 403);
-        }
-
-        $enabled = filter_var($request->input('enabled'), FILTER_VALIDATE_BOOLEAN);
-        if (!\Illuminate\Support\Facades\Schema::hasTable('settings')) {
-            return response()->json(['success' => false, 'message' => __('Settings table not found.')], 500);
-        }
-        DB::table('settings')->updateOrInsert(
-            ['clinic_id' => null, 'key' => 'auto_backup_enabled'],
-            ['value' => $enabled ? '1' : '0', 'updated_at' => now(), 'created_at' => DB::raw('COALESCE(created_at, NOW())')]
-        );
-
-        return response()->json(['success' => true, 'enabled' => $enabled]);
-    }
-
     public function setClinicAutoBackup(Request $request)
     {
         $user = Auth::user();
