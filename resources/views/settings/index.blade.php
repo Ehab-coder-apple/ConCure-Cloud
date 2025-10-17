@@ -819,36 +819,6 @@
 </style>
 @endpush
 
-    function toggleClinicAutoBackup(clinicId, el) {
-        const enabled = el.checked;
-        const inputId = 'auto_backup_' + clinicId;
-        const switchEl = document.getElementById(inputId);
-        if (switchEl) switchEl.disabled = true;
-
-        fetch('{{ route('settings.system.auto-backup-clinic') }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({ clinic_id: clinicId, enabled })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) {
-                alert(data.message || '{{ __('Failed to update automatic backup setting.') }}');
-                el.checked = !enabled; // revert
-            }
-        })
-        .catch(() => {
-            alert('{{ __('Network error while updating setting.') }}');
-            el.checked = !enabled; // revert
-        })
-        .finally(() => {
-            if (switchEl) switchEl.disabled = false;
-        });
-    }
-
 
 @push('scripts')
 <script>
@@ -883,6 +853,7 @@ function backupDatabase(event) {
                 link.href = data.download_url;
                 link.download = '';
                 document.body.appendChild(link);
+
                 link.click();
                 document.body.removeChild(link);
             }
@@ -927,6 +898,7 @@ function clearCache() {
         }
     })
     .catch(error => {
+
         console.error('Error:', error);
         button.innerHTML = originalText;
         button.disabled = false;
@@ -1299,6 +1271,38 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
+
+// Per-clinic auto-backup toggle (super admin)
+function toggleClinicAutoBackup(clinicId, el) {
+    const enabled = el.checked;
+    const inputId = 'auto_backup_' + clinicId;
+    const switchEl = document.getElementById(inputId);
+    if (switchEl) switchEl.disabled = true;
+
+    fetch('{{ route('settings.system.auto-backup-clinic') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ clinic_id: clinicId, enabled })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            alert(data.message || '{{ __('Failed to update automatic backup setting.') }}');
+            el.checked = !enabled; // revert
+        }
+    })
+    .catch(() => {
+        alert('{{ __('Network error while updating setting.') }}');
+        el.checked = !enabled; // revert
+    })
+    .finally(() => {
+        if (switchEl) switchEl.disabled = false;
+    });
+}
 
 </script>
 @endpush
