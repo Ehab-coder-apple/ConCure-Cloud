@@ -964,6 +964,11 @@
             z-index: 1050 !important;
         }
 
+
+            /* Ensure Select2 dropdown appears above fixed topbar and not clipped */
+            .select2-container { z-index: 1200 !important; }
+            .select2-container .select2-dropdown { z-index: 1201 !important; }
+
         /* Ensure modal content is clickable */
         .modal-content {
             position: relative !important;
