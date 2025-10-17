@@ -63,7 +63,7 @@ class ClinicBackupService
             $exported = $this->exportDatabase($clinicId, $dbDir);
 
             // Collect files
-            $this->collectClinicFiles($clinicId, $filesDir);
+            $this->collectClinicFiles($clinicId, $filesDir, $type === 'manual' ? 'docs-only' : 'all');
 
             // Create ZIP
             $zipPath = $clinicDir . '/' . $timestamp . '_clinic-' . $clinicId . '.zip';
@@ -230,40 +230,56 @@ class ClinicBackupService
         return ['clinics','users','patients','appointments','foods','food_groups','diet_plans','diet_plan_meals','diet_plan_meal_foods','diet_plan_weight_records','invoices','expenses','receipts'];
     }
 
-    protected function collectClinicFiles(int $clinicId, string $filesDir): void
+    protected function collectClinicFiles(int $clinicId, string $filesDir, string $mode = 'all'): void
     {
         $publicRoot = storage_path('app/public');
+        $allowed = null;
+        if ($mode === 'docs-only') {
+            // Only include common Word/Excel/PDF files for manual backups
+            $allowed = ['pdf','doc','docx','xls','xlsx','xlsm'];
+        }
 
         // 1) Receipts files: receipts/{clinic_id}/files
-        $this->copyIfExists($publicRoot . '/receipts/' . $clinicId . '/files', $filesDir . '/receipts/' . $clinicId . '/files');
+        $this->copyIfExists($publicRoot . '/receipts/' . $clinicId . '/files', $filesDir . '/receipts/' . $clinicId . '/files', $allowed);
 
         // 2) Advertisements: advertisements/{clinic_id}
-        $this->copyIfExists($publicRoot . '/advertisements/' . $clinicId, $filesDir . '/advertisements/' . $clinicId);
+        $this->copyIfExists($publicRoot . '/advertisements/' . $clinicId, $filesDir . '/advertisements/' . $clinicId, $allowed);
 
         // 3) Patient files: patients/{id}/files for clinic patients
         if (Schema::hasTable('patients')) {
             $patientIds = DB::table('patients')->where('clinic_id', $clinicId)->pluck('id')->all();
             foreach ($patientIds as $pid) {
-                $this->copyIfExists($publicRoot . '/patients/' . $pid . '/files', $filesDir . '/patients/' . $pid . '/files');
+                $this->copyIfExists($publicRoot . '/patients/' . $pid . '/files', $filesDir . '/patients/' . $pid . '/files', $allowed);
             }
         }
 
-        // 4) Clinic logo if stored in public disk under clinic-logos
-        $logoRel = null;
-        if (Schema::hasTable('settings')) {
-            $logoRel = DB::table('settings')->where('clinic_id', $clinicId)->where('key','clinic_logo')->value('value');
-        }
-        if ($logoRel) {
-            $logoRel = ltrim(str_replace(['storage/','public/'], '', $logoRel), '/');
-            $this->copyIfExists($publicRoot . '/' . $logoRel, $filesDir . '/clinic-logos/' . basename($logoRel));
+        // 4) Clinic logo if stored in public disk under clinic-logos (images usually)
+        // Include only for full backups; skip in docs-only mode
+        if ($mode !== 'docs-only') {
+            $logoRel = null;
+            if (Schema::hasTable('settings')) {
+                $logoRel = DB::table('settings')->where('clinic_id', $clinicId)->where('key','clinic_logo')->value('value');
+            }
+            if ($logoRel) {
+                $logoRel = ltrim(str_replace(['storage/','public/'], '', $logoRel), '/');
+                $this->copyIfExists($publicRoot . '/' . $logoRel, $filesDir . '/clinic-logos/' . basename($logoRel), $allowed);
+            }
         }
     }
 
-    protected function copyIfExists(string $src, string $dst): void
+    protected function copyIfExists(string $src, string $dst, ?array $allowedExts = null): void
     {
+        $passes = function(string $path) use ($allowedExts): bool {
+            if ($allowedExts === null) { return true; }
+            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION) ?? '');
+            return in_array($ext, $allowedExts, true);
+        };
+
         if (is_file($src)) {
-            @mkdir(dirname($dst), 0755, true);
-            @copy($src, $dst);
+            if ($passes($src)) {
+                @mkdir(dirname($dst), 0755, true);
+                @copy($src, $dst);
+            }
         } elseif (is_dir($src)) {
             $it = new \RecursiveIteratorIterator(
                 new \RecursiveDirectoryIterator($src, \FilesystemIterator::SKIP_DOTS),
@@ -274,6 +290,7 @@ class ClinicBackupService
                 if ($item->isDir()) {
                     @mkdir($target, 0755, true);
                 } else {
+                    if (!$passes($item->getPathname())) { continue; }
                     @mkdir(dirname($target), 0755, true);
                     @copy($item->getPathname(), $target);
                 }
