@@ -17,29 +17,29 @@ class BackupClinicsWeekly extends Command
     {
         $retention = (int) $this->option('retention');
 
-        // Only run when super admin has enabled auto backup (global setting)
-        try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
-                $val = DB::table('settings')->whereNull('clinic_id')->where('key','auto_backup_enabled')->value('value');
-                $enabled = in_array(strtolower((string)$val), ['1','true','yes','on'], true);
-                if (!$enabled) {
-                    $this->info('Auto backup is disabled (settings:auto_backup_enabled). Exiting.');
-                    return Command::SUCCESS;
-                }
-            } else {
-                $this->info('Settings table missing; skipping weekly backups.');
-                return Command::SUCCESS;
-            }
-        } catch (\Throwable $e) {
-            $this->error('Failed to read auto backup setting: ' . $e->getMessage());
-            return Command::FAILURE;
-        }
-
-        $this->info('Starting weekly clinic backups...');
+        // Start; run only for clinics with per-clinic auto backup enabled
+        $this->info('Starting weekly clinic backups (per-clinic enabled only)...');
         $count = 0; $ok = 0; $fail = 0;
 
         $clinics = Clinic::query()->active()->activated()->get(['id','name']);
         foreach ($clinics as $clinic) {
+            // Check per-clinic flag
+            try {
+                if (!\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+                    $this->line("Skipping clinic {$clinic->id}: settings table missing");
+                    continue;
+                }
+                $val = DB::table('settings')->where('clinic_id', $clinic->id)->where('key','auto_backup_enabled')->value('value');
+                $enabled = in_array(strtolower((string)$val), ['1','true','yes','on'], true);
+                if (!$enabled) {
+                    $this->line("Skipping clinic {$clinic->id}: auto backup disabled");
+                    continue;
+                }
+            } catch (\Throwable $e) {
+                $this->line("Skipping clinic {$clinic->id}: cannot read setting - " . $e->getMessage());
+                continue;
+            }
+
             $count++;
             $this->line("Backing up clinic #{$clinic->id} - {$clinic->name}...");
             try {

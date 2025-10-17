@@ -562,14 +562,34 @@
 
                                             @if(auth()->user()->isSuperAdmin())
                                             <div class="col-12 mt-4">
-                                                <h6 class="text-primary">{{ __('Automatic Backups') }}</h6>
+                                                <h6 class="text-primary">{{ __('Automatic Backups (Per Clinic)') }}</h6>
                                             </div>
-                                            <div class="col-md-8">
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="auto_backup_enabled" {{ !empty($autoBackupEnabled) ? 'checked' : '' }} onchange="toggleAutoBackup(this)">
-                                                    <label class="form-check-label" for="auto_backup_enabled">{{ __('Enable automatic weekly backups') }}</label>
+                                            <div class="col-12">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm align-middle">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>{{ __('Clinic') }}</th>
+                                                                <th class="text-center" style="width:180px;">{{ __('Auto Backup') }}</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @forelse(($clinicsAutoBackup ?? collect()) as $c)
+                                                                <tr>
+                                                                    <td>{{ $c->name }} <span class="text-muted small">(#{{ $c->id }})</span></td>
+                                                                    <td class="text-center">
+                                                                        <div class="form-check form-switch d-inline-block">
+                                                                            <input class="form-check-input" type="checkbox" id="auto_backup_{{ $c->id }}" {{ $c->enabled ? 'checked' : '' }} onchange="toggleClinicAutoBackup({{ $c->id }}, this)">
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            @empty
+                                                                <tr><td colspan="2" class="text-muted">{{ __('No clinics found or insufficient permissions.') }}</td></tr>
+                                                            @endforelse
+                                                        </tbody>
+                                                    </table>
                                                 </div>
-                                                <small class="text-muted">{{ __('When enabled, the server runs weekly backups for all clinics every Sunday at 02:30.') }}</small>
+                                                <small class="text-muted">{{ __('Only clinics enabled here will be included in the weekly backup job (Sunday 02:30). Manual backup remains available to each clinic admin regardless of this setting.') }}</small>
                                             </div>
                                             @endif
 
@@ -799,19 +819,19 @@
 </style>
 @endpush
 
-    function toggleAutoBackup(el) {
+    function toggleClinicAutoBackup(clinicId, el) {
         const enabled = el.checked;
-        const label = document.querySelector('label[for="auto_backup_enabled"]');
-        const originalText = label ? label.innerHTML : '';
-        if (label) label.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>' + (enabled ? '{{ __('Enabling...') }}' : '{{ __('Disabling...') }}');
+        const inputId = 'auto_backup_' + clinicId;
+        const switchEl = document.getElementById(inputId);
+        if (switchEl) switchEl.disabled = true;
 
-        fetch('{{ route('settings.system.auto-backup') }}', {
+        fetch('{{ route('settings.system.auto-backup-clinic') }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            body: JSON.stringify({ enabled })
+            body: JSON.stringify({ clinic_id: clinicId, enabled })
         })
         .then(r => r.json())
         .then(data => {
@@ -825,7 +845,7 @@
             el.checked = !enabled; // revert
         })
         .finally(() => {
-            if (label) label.innerHTML = originalText || '{{ __('Enable automatic weekly backups') }}';
+            if (switchEl) switchEl.disabled = false;
         });
     }
 

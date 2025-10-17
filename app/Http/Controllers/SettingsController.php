@@ -80,16 +80,26 @@ class SettingsController extends Controller
             }
         } catch (\Throwable $e) { /* ignore */ }
 
-        // Global: auto backup enabled (super admin controls)
-        $autoBackupEnabled = false;
+        // Per-clinic auto backup toggles (super admin only)
+        $clinicsAutoBackup = collect();
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
-                $val = DB::table('settings')->whereNull('clinic_id')->where('key','auto_backup_enabled')->value('value');
-                $autoBackupEnabled = in_array(strtolower((string)$val), ['1','true','yes','on'], true);
+            if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+                if (\Illuminate\Support\Facades\Schema::hasTable('clinics') && \Illuminate\Support\Facades\Schema::hasTable('settings')) {
+                    $clinics = DB::table('clinics')->select('id','name')->orderBy('id')->get();
+                    $map = DB::table('settings')
+                        ->where('key','auto_backup_enabled')
+                        ->whereNotNull('clinic_id')
+                        ->pluck('value','clinic_id');
+                    $clinicsAutoBackup = $clinics->map(function($c) use ($map){
+                        $val = $map[$c->id] ?? null;
+                        $enabled = in_array(strtolower((string)$val), ['1','true','yes','on'], true);
+                        return (object) ['id'=>$c->id,'name'=>$c->name,'enabled'=>$enabled];
+                    });
+                }
             }
         } catch (\Throwable $e) { /* ignore */ }
 
-        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups', 'autoBackupEnabled'));
+        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups', 'clinicsAutoBackup'));
     }
 
     public function setAutoBackup(Request $request)
@@ -103,9 +113,32 @@ class SettingsController extends Controller
         if (!\Illuminate\Support\Facades\Schema::hasTable('settings')) {
             return response()->json(['success' => false, 'message' => __('Settings table not found.')], 500);
         }
-
         DB::table('settings')->updateOrInsert(
             ['clinic_id' => null, 'key' => 'auto_backup_enabled'],
+            ['value' => $enabled ? '1' : '0', 'updated_at' => now(), 'created_at' => DB::raw('COALESCE(created_at, NOW())')]
+        );
+
+        return response()->json(['success' => true, 'enabled' => $enabled]);
+    }
+
+    public function setClinicAutoBackup(Request $request)
+    {
+        $user = Auth::user();
+        if (!method_exists($user, 'isSuperAdmin') || !$user->isSuperAdmin()) {
+            return response()->json(['success' => false, 'message' => __('Only super admin can change this setting.')], 403);
+        }
+
+        $clinicId = (int) $request->input('clinic_id');
+        $enabled = filter_var($request->input('enabled'), FILTER_VALIDATE_BOOLEAN);
+        if ($clinicId <= 0) {
+            return response()->json(['success' => false, 'message' => __('Invalid clinic.')], 422);
+        }
+        if (!\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+            return response()->json(['success' => false, 'message' => __('Settings table not found.')], 500);
+        }
+
+        DB::table('settings')->updateOrInsert(
+            ['clinic_id' => $clinicId, 'key' => 'auto_backup_enabled'],
             ['value' => $enabled ? '1' : '0', 'updated_at' => now(), 'created_at' => DB::raw('COALESCE(created_at, NOW())')]
         );
 

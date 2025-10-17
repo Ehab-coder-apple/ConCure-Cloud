@@ -805,6 +805,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/backup', [SettingsController::class, 'backup'])->name('backup')->middleware(['can:access-settings', 'throttle:1,15']);
         Route::get('/backup/download/{file}', [SettingsController::class, 'downloadBackup'])->name('download-backup')->middleware('can:access-settings');
         Route::post('/system/auto-backup', [SettingsController::class, 'setAutoBackup'])->name('system.auto-backup')->middleware('can:access-settings');
+        Route::post('/system/auto-backup/clinic', [SettingsController::class, 'setClinicAutoBackup'])->name('system.auto-backup-clinic')->middleware('can:access-settings');
+
 
         Route::post('/clear-cache', [SettingsController::class, 'clearCache'])->name('clear-cache')->middleware('can:access-settings');
         Route::post('/update-system', [SettingsController::class, 'updateSystem'])->name('update-system')->middleware('can:access-settings');
