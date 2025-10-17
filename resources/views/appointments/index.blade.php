@@ -404,6 +404,7 @@ $(document).ready(function() {
         allowClear: true,
         dropdownParent: $('#newAppointmentModal'),
         width: '100%',
+        minimumResultsForSearch: Infinity, // hide search bar
         language: {
             noResults: function() {
                 return '{{ __("No patients found") }}';
@@ -421,6 +422,7 @@ $(document).ready(function() {
         allowClear: true,
         dropdownParent: $('#newAppointmentModal'),
         width: '100%',
+        minimumResultsForSearch: Infinity, // hide search bar
         language: {
             noResults: function() {
                 return '{{ __("No doctors found") }}';
@@ -439,6 +441,7 @@ $(document).ready(function() {
             allowClear: true,
             dropdownParent: $('#newAppointmentModal'),
             width: '100%',
+            minimumResultsForSearch: Infinity, // hide search bar
             language: {
                 noResults: function() {
                     return '{{ __("No patients found") }}';
@@ -455,6 +458,7 @@ $(document).ready(function() {
             allowClear: true,
             dropdownParent: $('#newAppointmentModal'),
             width: '100%',
+            minimumResultsForSearch: Infinity, // hide search bar
             language: {
                 noResults: function() {
                     return '{{ __("No doctors found") }}';
