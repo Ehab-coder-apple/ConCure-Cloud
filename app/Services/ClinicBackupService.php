@@ -59,8 +59,27 @@ class ClinicBackupService
         }
 
         try {
-            // Export DB data per table into JSON
-            $exported = $this->exportDatabase($clinicId, $dbDir);
+            // Export DB data per table into JSON (optional for manual backups)
+            $includeDb = true;
+            if ($type === 'manual') {
+                $includeDb = false; // default OFF for manual backups
+                try {
+                    if (Schema::hasTable('settings')) {
+                        $val = DB::table('settings')
+                            ->where('clinic_id', $clinicId)
+                            ->where('key', 'manual_backup_include_db')
+                            ->value('value');
+                        $includeDb = in_array(strtolower((string)$val), ['1','true','yes','on'], true);
+                    }
+                } catch (\Throwable $e) { /* ignore */ }
+            }
+            $exported = [];
+            if ($includeDb) {
+                $exported = $this->exportDatabase($clinicId, $dbDir);
+            } else {
+                // remove empty db dir if present
+                $this->rrmdir($dbDir);
+            }
 
             // Collect files
             $allowedManual = null;

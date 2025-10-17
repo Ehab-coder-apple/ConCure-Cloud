@@ -809,6 +809,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
             ->middleware('can:access-settings');
         Route::post('/system/auto-backup/clinic', [SettingsController::class, 'setClinicAutoBackup'])->name('system.auto-backup-clinic')->middleware('can:access-settings');
         Route::post('/backup/types', [SettingsController::class, 'setManualBackupDocTypes'])->name('backup-types')->middleware('can:access-settings');
+        Route::post('/backup/include-db', [SettingsController::class, 'setManualBackupIncludeDb'])->name('backup-include-db')->middleware('can:access-settings');
 
         Route::post('/clear-cache', [SettingsController::class, 'clearCache'])->name('clear-cache')->middleware('can:access-settings');
         Route::post('/update-system', [SettingsController::class, 'updateSystem'])->name('update-system')->middleware('can:access-settings');

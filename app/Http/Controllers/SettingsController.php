@@ -82,6 +82,7 @@ class SettingsController extends Controller
 
         // Manual backup document types (per clinic)
         $manualDocTypes = [];
+        $manualIncludeDb = false; // default OFF for manual
         try {
             if ($user->clinic_id && \Illuminate\Support\Facades\Schema::hasTable('settings')) {
                 $raw = DB::table('settings')->where('clinic_id', $user->clinic_id)->where('key','manual_backup_doc_types')->value('value');
@@ -90,6 +91,8 @@ class SettingsController extends Controller
                     if (is_array($arr)) { $manualDocTypes = array_values(array_filter(array_map('strtolower', $arr))); }
                     else { $manualDocTypes = array_values(array_filter(array_map(fn($e)=> strtolower(trim($e)), explode(',', (string)$raw)))); }
                 }
+                $val = DB::table('settings')->where('clinic_id', $user->clinic_id)->where('key','manual_backup_include_db')->value('value');
+                $manualIncludeDb = in_array(strtolower((string)$val), ['1','true','yes','on'], true);
             }
         } catch (\Throwable $e) { /* ignore */ }
 
@@ -112,7 +115,7 @@ class SettingsController extends Controller
             }
         } catch (\Throwable $e) { /* ignore */ }
 
-        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups', 'clinicsAutoBackup', 'manualDocTypes'));
+        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups', 'clinicsAutoBackup', 'manualDocTypes', 'manualIncludeDb'));
     }
 
     public function setClinicAutoBackup(Request $request)
@@ -164,6 +167,30 @@ class SettingsController extends Controller
             ['value' => json_encode($clean), 'updated_at' => now(), 'created_at' => DB::raw('COALESCE(created_at, NOW())')]
         );
         return response()->json(['success' => true, 'types' => $clean]);
+    }
+
+    public function setManualBackupIncludeDb(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || (!$user->isSuperAdmin() && ($user->role ?? '') !== 'admin')) {
+            return response()->json(['success' => false, 'message' => __('Unauthorized.')], 403);
+        }
+        if (!\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+            return response()->json(['success' => false, 'message' => __('Settings table not found.')], 500);
+        }
+        $clinicId = (int) ($user->clinic_id ?? 0);
+        if ($user->isSuperAdmin()) {
+            $clinicId = (int) $request->input('clinic_id', $clinicId);
+        }
+        if ($clinicId <= 0) {
+            return response()->json(['success' => false, 'message' => __('No clinic context.')], 422);
+        }
+        $include = filter_var($request->input('include', false), FILTER_VALIDATE_BOOLEAN);
+        DB::table('settings')->updateOrInsert(
+            ['clinic_id' => $clinicId, 'key' => 'manual_backup_include_db'],
+            ['value' => $include ? '1' : '0', 'updated_at' => now(), 'created_at' => DB::raw('COALESCE(created_at, NOW())')]
+        );
+        return response()->json(['success' => true, 'include' => $include]);
     }
 
 

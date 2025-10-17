@@ -669,30 +669,41 @@
                                             <div class="mb-3 p-2 bg-light rounded">
                                                 <div class="small text-muted mb-1">
                                                     <i class="fas fa-file me-1"></i>
-                                                    {{ __('Manual backup: include file types') }}
+                                                    {{ __('Manual backup: options') }}
                                                 </div>
                                                 <?php $docTypes = isset($manualDocTypes) && is_array($manualDocTypes) ? $manualDocTypes : []; ?>
-                                                <div class="d-flex flex-wrap gap-3 align-items-center">
-                                                    @php $opts = [
-                                                        'pdf' => 'PDF',
-                                                        'doc' => 'Word (.doc)',
-                                                        'docx' => 'Word (.docx)',
-                                                        'xls' => 'Excel (.xls)',
-                                                        'xlsx' => 'Excel (.xlsx)',
-                                                        'xlsm' => 'Excel (.xlsm)',
-                                                        'csv' => 'CSV',
-                                                        'ppt' => 'PowerPoint (.ppt)',
-                                                        'pptx' => 'PowerPoint (.pptx)'
-                                                    ]; @endphp
-                                                    @foreach($opts as $ext => $label)
-                                                    <div class="form-check form-check-inline">
-                                                        <input class="form-check-input" type="checkbox" id="doc_{{ $ext }}" value="{{ $ext }}" {{ in_array($ext, $docTypes) ? 'checked' : '' }}>
-                                                        <label class="form-check-label" for="doc_{{ $ext }}">{{ $label }}</label>
+                                                <div class="d-flex flex-column gap-2">
+                                                    <div>
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" role="switch" id="include_db_json" {{ !empty($manualIncludeDb) ? 'checked' : '' }}>
+                                                            <label class="form-check-label" for="include_db_json">{{ __('Include database data (JSON)') }}</label>
+                                                        </div>
+                                                        <button type="button" class="btn btn-sm btn-outline-primary mt-1" onclick="saveBackupIncludeDb(event)">
+                                                            <i class="fas fa-save me-1"></i>{{ __('Save option') }}
+                                                        </button>
                                                     </div>
-                                                    @endforeach
-                                                    <button type="button" class="btn btn-sm btn-primary" onclick="saveBackupDocTypes(event)">
-                                                        <i class="fas fa-save me-1"></i>{{ __('Save types') }}
-                                                    </button>
+                                                    <div class="d-flex flex-wrap gap-3 align-items-center mt-2">
+                                                        @php $opts = [
+                                                            'pdf' => 'PDF',
+                                                            'doc' => 'Word (.doc)',
+                                                            'docx' => 'Word (.docx)',
+                                                            'xls' => 'Excel (.xls)',
+                                                            'xlsx' => 'Excel (.xlsx)',
+                                                            'xlsm' => 'Excel (.xlsm)',
+                                                            'csv' => 'CSV',
+                                                            'ppt' => 'PowerPoint (.ppt)',
+                                                            'pptx' => 'PowerPoint (.pptx)'
+                                                        ]; @endphp
+                                                        @foreach($opts as $ext => $label)
+                                                        <div class="form-check form-check-inline">
+                                                            <input class="form-check-input" type="checkbox" id="doc_{{ $ext }}" value="{{ $ext }}" {{ in_array($ext, $docTypes) ? 'checked' : '' }}>
+                                                            <label class="form-check-label" for="doc_{{ $ext }}">{{ $label }}</label>
+                                                        </div>
+                                                        @endforeach
+                                                        <button type="button" class="btn btn-sm btn-primary" onclick="saveBackupDocTypes(event)">
+                                                            <i class="fas fa-save me-1"></i>{{ __('Save types') }}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <div class="small text-muted mt-1">{{ __('Automatic backups always include all files.') }}</div>
                                             </div>
@@ -922,6 +933,29 @@ function backupDatabase(event) {
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+
+    function saveBackupIncludeDb(event) {
+        const include = document.getElementById('include_db_json')?.checked ? true : false;
+        const btn = event.target;
+        const prev = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>{{ __("Saving...") }}';
+        fetch('{{ route("settings.backup-include-db") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ include })
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false; btn.innerHTML = prev;
+            if (data && data.success) { alert('{{ __("Saved manual backup option.") }}'); }
+            else { alert((data && data.message) || '{{ __("Failed to save") }}'); }
+        })
+        .catch(() => { btn.disabled = false; btn.innerHTML = prev; alert('{{ __("Network error") }}'); });
+    }
+
             },
             body: JSON.stringify({ types: exts })
         })
