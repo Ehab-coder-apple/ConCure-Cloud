@@ -32,7 +32,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title">Monthly Revenue</h6>
-                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($monthlyRevenue, 2) }}</h2>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($monthlyRevenue, 2), '0'), '.') }}</h2>
                             <small>{{ now()->format('F Y') }}</small>
                         </div>
                         <div class="align-self-center">
@@ -49,7 +49,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title">Monthly Receipts</h6>
-                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($monthlyReceipts, 2) }}</h2>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($monthlyReceipts, 2), '0'), '.') }}</h2>
                             <small>{{ now()->format('F Y') }}</small>
                         </div>
                         <div class="align-self-center">
@@ -66,7 +66,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title">Monthly Expenses</h6>
-                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($monthlyExpenses, 2) }}</h2>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($monthlyExpenses, 2), '0'), '.') }}</h2>
                             <small>{{ now()->format('F Y') }}</small>
                         </div>
                         <div class="align-self-center">
@@ -83,7 +83,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title">Monthly Profit</h6>
-                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($monthlyProfit, 2) }}</h2>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($monthlyProfit, 2), '0'), '.') }}</h2>
                             <small>Revenue - Expenses</small>
                         </div>
                         <div class="align-self-center">
@@ -100,7 +100,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title">Outstanding</h6>
-                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($outstandingInvoices, 2) }}</h2>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($outstandingInvoices, 2), '0'), '.') }}</h2>
                             <small>Unpaid invoices</small>
                         </div>
                         <div class="align-self-center">
