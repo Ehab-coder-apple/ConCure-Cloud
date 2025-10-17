@@ -80,6 +80,19 @@ class SettingsController extends Controller
             }
         } catch (\Throwable $e) { /* ignore */ }
 
+        // Manual backup document types (per clinic)
+        $manualDocTypes = [];
+        try {
+            if ($user->clinic_id && \Illuminate\Support\Facades\Schema::hasTable('settings')) {
+                $raw = DB::table('settings')->where('clinic_id', $user->clinic_id)->where('key','manual_backup_doc_types')->value('value');
+                if ($raw) {
+                    $arr = json_decode((string)$raw, true);
+                    if (is_array($arr)) { $manualDocTypes = array_values(array_filter(array_map('strtolower', $arr))); }
+                    else { $manualDocTypes = array_values(array_filter(array_map(fn($e)=> strtolower(trim($e)), explode(',', (string)$raw)))); }
+                }
+            }
+        } catch (\Throwable $e) { /* ignore */ }
+
         // Per-clinic auto backup toggles (super admin only)
         $clinicsAutoBackup = collect();
         try {
@@ -99,7 +112,7 @@ class SettingsController extends Controller
             }
         } catch (\Throwable $e) { /* ignore */ }
 
-        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups', 'clinicsAutoBackup'));
+        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups', 'clinicsAutoBackup', 'manualDocTypes'));
     }
 
     public function setClinicAutoBackup(Request $request)
@@ -124,6 +137,33 @@ class SettingsController extends Controller
         );
 
         return response()->json(['success' => true, 'enabled' => $enabled]);
+    }
+
+    public function setManualBackupDocTypes(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || (!$user->isSuperAdmin() && ($user->role ?? '') !== 'admin')) {
+            return response()->json(['success' => false, 'message' => __('Unauthorized.')], 403);
+        }
+        if (!\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+            return response()->json(['success' => false, 'message' => __('Settings table not found.')], 500);
+        }
+        $clinicId = (int) ($user->clinic_id ?? 0);
+        if ($user->isSuperAdmin()) {
+            $clinicId = (int) $request->input('clinic_id', $clinicId);
+        }
+        if ($clinicId <= 0) {
+            return response()->json(['success' => false, 'message' => __('No clinic context.')], 422);
+        }
+        $types = $request->input('types', []);
+        if (!is_array($types)) { $types = []; }
+        $allowedSet = ['pdf','doc','docx','xls','xlsx','xlsm','csv','ppt','pptx'];
+        $clean = array_values(array_unique(array_intersect(array_map(fn($e)=> strtolower(trim((string)$e)), $types), $allowedSet)));
+        DB::table('settings')->updateOrInsert(
+            ['clinic_id' => $clinicId, 'key' => 'manual_backup_doc_types'],
+            ['value' => json_encode($clean), 'updated_at' => now(), 'created_at' => DB::raw('COALESCE(created_at, NOW())')]
+        );
+        return response()->json(['success' => true, 'types' => $clean]);
     }
 
 

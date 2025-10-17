@@ -63,7 +63,29 @@ class ClinicBackupService
             $exported = $this->exportDatabase($clinicId, $dbDir);
 
             // Collect files
-            $this->collectClinicFiles($clinicId, $filesDir, $type === 'manual' ? 'docs-only' : 'all');
+            $allowedManual = null;
+            if ($type === 'manual') {
+                try {
+                    if (Schema::hasTable('settings')) {
+                        $raw = DB::table('settings')
+                            ->where('clinic_id', $clinicId)
+                            ->where('key', 'manual_backup_doc_types')
+                            ->value('value');
+                        if ($raw) {
+                            $arr = json_decode((string)$raw, true);
+                            if (is_array($arr)) {
+                                $allowedManual = array_values(array_filter(array_map(fn($e)=> strtolower(trim((string)$e)), $arr)));
+                            } else {
+                                $allowedManual = array_values(array_filter(array_map(fn($e)=> strtolower(trim($e)), explode(',', (string)$raw))));
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) { /* ignore, fallback below */ }
+                if (!$allowedManual || count($allowedManual) === 0) {
+                    $allowedManual = ['pdf','doc','docx','xls','xlsx','xlsm'];
+                }
+            }
+            $this->collectClinicFiles($clinicId, $filesDir, $type === 'manual' ? 'docs-only' : 'all', $allowedManual);
 
             // Create ZIP
             $zipPath = $clinicDir . '/' . $timestamp . '_clinic-' . $clinicId . '.zip';
@@ -230,13 +252,13 @@ class ClinicBackupService
         return ['clinics','users','patients','appointments','foods','food_groups','diet_plans','diet_plan_meals','diet_plan_meal_foods','diet_plan_weight_records','invoices','expenses','receipts'];
     }
 
-    protected function collectClinicFiles(int $clinicId, string $filesDir, string $mode = 'all'): void
+    protected function collectClinicFiles(int $clinicId, string $filesDir, string $mode = 'all', ?array $allowedOverride = null): void
     {
         $publicRoot = storage_path('app/public');
         $allowed = null;
         if ($mode === 'docs-only') {
-            // Only include common Word/Excel/PDF files for manual backups
-            $allowed = ['pdf','doc','docx','xls','xlsx','xlsm'];
+            // Only include configured document types for manual backups
+            $allowed = $allowedOverride ?: ['pdf','doc','docx','xls','xlsx','xlsm'];
         }
 
         // 1) Receipts files: receipts/{clinic_id}/files

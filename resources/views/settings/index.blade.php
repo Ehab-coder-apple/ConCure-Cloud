@@ -665,6 +665,39 @@
                                                 </div>
                                             @endif
 
+                                            @if(auth()->user()->isSuperAdmin() || auth()->user()->role === 'admin')
+                                            <div class="mb-3 p-2 bg-light rounded">
+                                                <div class="small text-muted mb-1">
+                                                    <i class="fas fa-file me-1"></i>
+                                                    {{ __('Manual backup: include file types') }}
+                                                </div>
+                                                <?php $docTypes = isset($manualDocTypes) && is_array($manualDocTypes) ? $manualDocTypes : []; ?>
+                                                <div class="d-flex flex-wrap gap-3 align-items-center">
+                                                    @php $opts = [
+                                                        'pdf' => 'PDF',
+                                                        'doc' => 'Word (.doc)',
+                                                        'docx' => 'Word (.docx)',
+                                                        'xls' => 'Excel (.xls)',
+                                                        'xlsx' => 'Excel (.xlsx)',
+                                                        'xlsm' => 'Excel (.xlsm)',
+                                                        'csv' => 'CSV',
+                                                        'ppt' => 'PowerPoint (.ppt)',
+                                                        'pptx' => 'PowerPoint (.pptx)'
+                                                    ]; @endphp
+                                                    @foreach($opts as $ext => $label)
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="checkbox" id="doc_{{ $ext }}" value="{{ $ext }}" {{ in_array($ext, $docTypes) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="doc_{{ $ext }}">{{ $label }}</label>
+                                                    </div>
+                                                    @endforeach
+                                                    <button type="button" class="btn btn-sm btn-primary" onclick="saveBackupDocTypes(event)">
+                                                        <i class="fas fa-save me-1"></i>{{ __('Save types') }}
+                                                    </button>
+                                                </div>
+                                                <div class="small text-muted mt-1">{{ __('Automatic backups always include all files.') }}</div>
+                                            </div>
+                                            @endif
+
                                             <div class="d-flex gap-2">
                                                 @if(auth()->user()->isSuperAdmin() || auth()->user()->role === 'admin')
                                                 <button type="button" class="btn btn-outline-info" onclick="backupDatabase(event)">
@@ -877,6 +910,30 @@ function backupDatabase(event) {
         alert(error.message || '{{ __("An error occurred while creating backup") }}');
     });
 }
+
+    function saveBackupDocTypes(event) {
+        const exts = [];
+        document.querySelectorAll('[id^="doc_"]').forEach(cb => { if (cb.checked) exts.push(cb.value); });
+        const btn = event.target;
+        const prev = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>{{ __("Saving...") }}';
+        fetch('{{ route("settings.backup-types") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ types: exts })
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false; btn.innerHTML = prev;
+            if (data && data.success) { alert('{{ __("Saved document types for manual backups.") }}'); }
+            else { alert((data && data.message) || '{{ __("Failed to save") }}'); }
+        })
+        .catch(() => { btn.disabled = false; btn.innerHTML = prev; alert('{{ __("Network error") }}'); });
+    }
+
 
 function clearCache() {
     if (!confirm('{{ __("Clear all application caches? This will temporarily slow down the system.") }}')) {
