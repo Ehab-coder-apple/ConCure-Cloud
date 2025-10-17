@@ -1698,6 +1698,16 @@
                 modal.style.display = 'none';
             });
 
+            // Ensure all Bootstrap modals sit above the fixed topbar by moving them under <body>
+            try {
+                document.querySelectorAll('.modal').forEach(function(modalEl){
+                    if (modalEl.parentElement && modalEl.parentElement.tagName !== 'BODY') {
+                        document.body.appendChild(modalEl);
+                    }
+                });
+            } catch (e) { /* no-op */ }
+
+
             // Debug: Add click event debugging for Add Food buttons
             setTimeout(() => {
                 const addFoodButtons = document.querySelectorAll('.add-food-to-option-btn, #add-food-to-meal');
