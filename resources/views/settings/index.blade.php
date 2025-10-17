@@ -840,32 +840,41 @@ function backupDatabase(event) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(async (response) => {
+        let data = null;
+        try { data = await response.json(); } catch (_) { /* non-JSON (e.g., 429 HTML) */ }
+
+        if (!response.ok) {
+            const msg = (data && data.message)
+                ? data.message
+                : (response.status === 429
+                    ? '{{ __("Please wait a little before trying again. A backup was just created (rate limit)") }}'
+                    : '{{ __("Failed to create backup") }}');
+            throw new Error(msg);
+        }
+
+        // Success path
         button.innerHTML = originalText;
         button.disabled = false;
-
-        if (data.success) {
-            alert(data.message);
+        if (data && data.success) {
+            alert(data.message || '{{ __("Backup created successfully.") }}');
             if (data.download_url) {
-                // Automatically start download
                 const link = document.createElement('a');
                 link.href = data.download_url;
                 link.download = '';
                 document.body.appendChild(link);
-
                 link.click();
                 document.body.removeChild(link);
             }
         } else {
-            alert(data.message || '{{ __("Failed to create backup") }}');
+            alert((data && data.message) || '{{ __("Failed to create backup") }}');
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
+    .catch((error) => {
+        console.error('Backup error:', error);
         button.innerHTML = originalText;
         button.disabled = false;
-        alert('{{ __("An error occurred while creating backup") }}');
+        alert(error.message || '{{ __("An error occurred while creating backup") }}');
     });
 }
 
