@@ -38,16 +38,16 @@
                             <div class="row text-center">
                                 <div class="col-4">
                                     <small class="text-muted">{{ __('Revenue') }}</small>
-                                    <div class="fw-bold text-success">${{ number_format($currentMonth['revenue'], 2) }}</div>
+                                    <div class="fw-bold text-success">${{ rtrim(rtrim(number_format($currentMonth['revenue'], 2), '0'), '.') }}</div>
                                 </div>
                                 <div class="col-4">
                                     <small class="text-muted">{{ __('Expenses') }}</small>
-                                    <div class="fw-bold text-danger">${{ number_format($currentMonth['expenses'], 2) }}</div>
+                                    <div class="fw-bold text-danger">${{ rtrim(rtrim(number_format($currentMonth['expenses'], 2), '0'), '.') }}</div>
                                 </div>
                                 <div class="col-4">
                                     <small class="text-muted">{{ __('Profit') }}</small>
                                     <div class="fw-bold {{ $currentMonth['profit'] >= 0 ? 'text-success' : 'text-danger' }}">
-                                        ${{ number_format($currentMonth['profit'], 2) }}
+                                        ${{ rtrim(rtrim(number_format($currentMonth['profit'], 2), '0'), '.') }}
                                     </div>
                                 </div>
                             </div>
@@ -65,16 +65,16 @@
                             <div class="row text-center">
                                 <div class="col-4">
                                     <small class="text-muted">{{ __('Revenue') }}</small>
-                                    <div class="fw-bold text-success">${{ number_format($previousMonth['revenue'], 2) }}</div>
+                                    <div class="fw-bold text-success">${{ rtrim(rtrim(number_format($previousMonth['revenue'], 2), '0'), '.') }}</div>
                                 </div>
                                 <div class="col-4">
                                     <small class="text-muted">{{ __('Expenses') }}</small>
-                                    <div class="fw-bold text-danger">${{ number_format($previousMonth['expenses'], 2) }}</div>
+                                    <div class="fw-bold text-danger">${{ rtrim(rtrim(number_format($previousMonth['expenses'], 2), '0'), '.') }}</div>
                                 </div>
                                 <div class="col-4">
                                     <small class="text-muted">{{ __('Profit') }}</small>
                                     <div class="fw-bold {{ $previousMonth['profit'] >= 0 ? 'text-success' : 'text-danger' }}">
-                                        ${{ number_format($previousMonth['profit'], 2) }}
+                                        ${{ rtrim(rtrim(number_format($previousMonth['profit'], 2), '0'), '.') }}
                                     </div>
                                 </div>
                             </div>
@@ -92,16 +92,16 @@
                             <div class="row text-center">
                                 <div class="col-4">
                                     <small class="text-muted">{{ __('Revenue') }}</small>
-                                    <div class="fw-bold text-success">${{ number_format($yearToDate['revenue'], 2) }}</div>
+                                    <div class="fw-bold text-success">${{ rtrim(rtrim(number_format($yearToDate['revenue'], 2), '0'), '.') }}</div>
                                 </div>
                                 <div class="col-4">
                                     <small class="text-muted">{{ __('Expenses') }}</small>
-                                    <div class="fw-bold text-danger">${{ number_format($yearToDate['expenses'], 2) }}</div>
+                                    <div class="fw-bold text-danger">${{ rtrim(rtrim(number_format($yearToDate['expenses'], 2), '0'), '.') }}</div>
                                 </div>
                                 <div class="col-4">
                                     <small class="text-muted">{{ __('Profit') }}</small>
                                     <div class="fw-bold {{ $yearToDate['profit'] >= 0 ? 'text-success' : 'text-danger' }}">
-                                        ${{ number_format($yearToDate['profit'], 2) }}
+                                        ${{ rtrim(rtrim(number_format($yearToDate['profit'], 2), '0'), '.') }}
                                     </div>
                                 </div>
                             </div>

@@ -157,7 +157,7 @@
                     <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">Revenue ({{ ucfirst($selectedPeriod ?? 'month') }})</h6>
-                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format($totalRevenue, 2) }}</h2>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($totalRevenue, 2), '0'), '.') }}</h2>
                             @if(isset($pendingInvoices) && $pendingInvoices > 0)
                             <small>{{ $pendingInvoices }} pending invoices</small>
                             @endif

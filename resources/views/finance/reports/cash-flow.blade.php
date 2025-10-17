@@ -60,7 +60,7 @@
                                 <i class="fas fa-arrow-up fa-2x"></i>
                             </div>
                             <h5 class="card-title text-success">{{ __('Total Inflows') }}</h5>
-                            <h3 class="text-success">${{ number_format($cashFlowData['totalInflows'], 2) }}</h3>
+                            <h3 class="text-success">${{ rtrim(rtrim(number_format($cashFlowData['totalInflows'], 2), '0'), '.') }}</h3>
                             <small class="text-muted">{{ __('Revenue & Income') }}</small>
                         </div>
                     </div>
@@ -73,7 +73,7 @@
                                 <i class="fas fa-arrow-down fa-2x"></i>
                             </div>
                             <h5 class="card-title text-danger">{{ __('Total Outflows') }}</h5>
-                            <h3 class="text-danger">${{ number_format($cashFlowData['totalOutflows'], 2) }}</h3>
+                            <h3 class="text-danger">${{ rtrim(rtrim(number_format($cashFlowData['totalOutflows'], 2), '0'), '.') }}</h3>
                             <small class="text-muted">{{ __('Expenses & Costs') }}</small>
                         </div>
                     </div>
@@ -89,7 +89,7 @@
                                 {{ __('Net Cash Flow') }}
                             </h5>
                             <h3 class="text-{{ $cashFlowData['netCashFlow'] >= 0 ? 'success' : 'danger' }}">
-                                ${{ number_format($cashFlowData['netCashFlow'], 2) }}
+                                ${{ rtrim(rtrim(number_format($cashFlowData['netCashFlow'], 2), '0'), '.') }}
                             </h3>
                             <small class="text-muted">{{ __('Inflows - Outflows') }}</small>
                         </div>
@@ -122,7 +122,7 @@
                                             <tr>
                                                 <td>{{ \Carbon\Carbon::parse($inflow->date)->format('M d, Y') }}</td>
                                                 <td class="text-end text-success fw-bold">
-                                                    ${{ number_format($inflow->amount, 2) }}
+                                                    ${{ rtrim(rtrim(number_format($inflow->amount, 2), '0'), '.') }}
                                                 </td>
                                             </tr>
                                             @endforeach
@@ -130,7 +130,7 @@
                                         <tfoot>
                                             <tr class="table-success">
                                                 <th>{{ __('Total Inflows') }}</th>
-                                                <th class="text-end">${{ number_format($cashFlowData['totalInflows'], 2) }}</th>
+                                                <th class="text-end">${{ rtrim(rtrim(number_format($cashFlowData['totalInflows'], 2), '0'), '.') }}</th>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -168,7 +168,7 @@
                                             <tr>
                                                 <td>{{ \Carbon\Carbon::parse($outflow->date)->format('M d, Y') }}</td>
                                                 <td class="text-end text-danger fw-bold">
-                                                    ${{ number_format($outflow->amount, 2) }}
+                                                    ${{ rtrim(rtrim(number_format($outflow->amount, 2), '0'), '.') }}
                                                 </td>
                                             </tr>
                                             @endforeach
@@ -176,7 +176,7 @@
                                         <tfoot>
                                             <tr class="table-danger">
                                                 <th>{{ __('Total Outflows') }}</th>
-                                                <th class="text-end">${{ number_format($cashFlowData['totalOutflows'], 2) }}</th>
+                                                <th class="text-end">${{ rtrim(rtrim(number_format($cashFlowData['totalOutflows'], 2), '0'), '.') }}</th>
                                             </tr>
                                         </tfoot>
                                     </table>

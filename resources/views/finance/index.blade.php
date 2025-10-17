@@ -135,7 +135,7 @@
                     <h5 class="card-title">Pending Expenses</h5>
                     <h2 class="text-warning">{{ number_format($pendingExpenseCount) }}</h2>
                     <p class="text-muted mb-0">
-                        {{ $currencySymbol ?? '$' }}{{ number_format($pendingExpenses, 2) }} total
+                        {{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($pendingExpenses, 2), '0'), '.') }} total
                     </p>
                 </div>
             </div>
@@ -185,7 +185,7 @@
                                 </span>
                             </div>
                             <div class="text-end">
-                                <div class="fw-bold">{{ $currencySymbol ?? '$' }}{{ number_format($invoice->total_amount, 2) }}</div>
+                                <div class="fw-bold">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->total_amount, 2), '0'), '.') }}</div>
                                 <small class="text-muted">
                                     {{ $invoice->invoice_date->format('M d') }}
                                 </small>
@@ -231,7 +231,7 @@
                                 </span>
                             </div>
                             <div class="text-end">
-                                <div class="fw-bold text-danger">{{ $currencySymbol ?? '$' }}{{ number_format($expense->amount, 2) }}</div>
+                                <div class="fw-bold text-danger">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($expense->amount, 2), '0'), '.') }}</div>
                                 <small class="text-muted">
                                     {{ $expense->expense_date->format('M d') }}
                                 </small>

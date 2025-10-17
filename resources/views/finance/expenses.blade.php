@@ -284,7 +284,7 @@
                                             <span class="badge bg-secondary">{{ $expense->category_display }}</span>
                                         </td>
                                         <td>
-                                            <strong class="text-danger">{{ $currencySymbol ?? '$' }}{{ number_format($expense->amount, 2) }}</strong>
+                                            <strong class="text-danger">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($expense->amount, 2), '0'), '.') }}</strong>
                                             @if($expense->payment_method)
                                                 <br><small class="text-muted">{{ $expense->payment_method_display }}</small>
                                             @endif
@@ -577,7 +577,7 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold">{{ __('Amount') }}</label>
-                        <p class="form-control-plaintext">{{ $currencySymbol ?? '$' }}{{ number_format($expense->amount, 2) }}</p>
+                        <p class="form-control-plaintext">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($expense->amount, 2), '0'), '.') }}</p>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold">{{ __('Category') }}</label>

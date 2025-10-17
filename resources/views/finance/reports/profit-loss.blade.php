@@ -60,7 +60,7 @@
                                 <i class="fas fa-dollar-sign fa-2x"></i>
                             </div>
                             <h5 class="card-title text-success">{{ __('Total Revenue') }}</h5>
-                            <h3 class="text-success">${{ number_format($profitLossData['revenue']['total'], 2) }}</h3>
+                            <h3 class="text-success">${{ rtrim(rtrim(number_format($profitLossData['revenue']['total'], 2), '0'), '.') }}</h3>
                             <small class="text-muted">{{ __('All Income Sources') }}</small>
                         </div>
                     </div>
@@ -73,7 +73,7 @@
                                 <i class="fas fa-receipt fa-2x"></i>
                             </div>
                             <h5 class="card-title text-danger">{{ __('Total Expenses') }}</h5>
-                            <h3 class="text-danger">${{ number_format($profitLossData['expenses']['total'], 2) }}</h3>
+                            <h3 class="text-danger">${{ rtrim(rtrim(number_format($profitLossData['expenses']['total'], 2), '0'), '.') }}</h3>
                             <small class="text-muted">{{ __('All Operating Costs') }}</small>
                         </div>
                     </div>
@@ -89,7 +89,7 @@
                                 {{ __('Gross Profit') }}
                             </h5>
                             <h3 class="text-{{ $profitLossData['grossProfit'] >= 0 ? 'success' : 'danger' }}">
-                                ${{ number_format($profitLossData['grossProfit'], 2) }}
+                                ${{ rtrim(rtrim(number_format($profitLossData['grossProfit'], 2), '0'), '.') }}
                             </h3>
                             <small class="text-muted">{{ __('Revenue - Expenses') }}</small>
                         </div>
@@ -143,7 +143,7 @@
                                                     <span class="badge bg-success">{{ ucfirst(str_replace('_', ' ', $type)) }}</span>
                                                 </td>
                                                 <td class="text-end text-success fw-bold">
-                                                    ${{ number_format($amount, 2) }}
+                                                    ${{ rtrim(rtrim(number_format($amount, 2), '0'), '.') }}
                                                 </td>
                                                 <td class="text-end">
                                                     {{ number_format($percentage, 1) }}%
@@ -154,7 +154,7 @@
                                         <tfoot>
                                             <tr class="table-success">
                                                 <th>{{ __('Total Revenue') }}</th>
-                                                <th class="text-end">${{ number_format($profitLossData['revenue']['total'], 2) }}</th>
+                                                <th class="text-end">${{ rtrim(rtrim(number_format($profitLossData['revenue']['total'], 2), '0'), '.') }}</th>
                                                 <th class="text-end">100%</th>
                                             </tr>
                                         </tfoot>
@@ -201,7 +201,7 @@
                                                     <span class="badge bg-danger">{{ ucfirst(str_replace('_', ' ', $category)) }}</span>
                                                 </td>
                                                 <td class="text-end text-danger fw-bold">
-                                                    ${{ number_format($amount, 2) }}
+                                                    ${{ rtrim(rtrim(number_format($amount, 2), '0'), '.') }}
                                                 </td>
                                                 <td class="text-end">
                                                     {{ number_format($percentage, 1) }}%
@@ -212,7 +212,7 @@
                                         <tfoot>
                                             <tr class="table-danger">
                                                 <th>{{ __('Total Expenses') }}</th>
-                                                <th class="text-end">${{ number_format($profitLossData['expenses']['total'], 2) }}</th>
+                                                <th class="text-end">${{ rtrim(rtrim(number_format($profitLossData['expenses']['total'], 2), '0'), '.') }}</th>
                                                 <th class="text-end">100%</th>
                                             </tr>
                                         </tfoot>
@@ -246,19 +246,19 @@
                                         <tr>
                                             <td class="fw-bold">{{ __('Total Revenue') }}</td>
                                             <td class="text-end text-success fw-bold fs-5">
-                                                ${{ number_format($profitLossData['revenue']['total'], 2) }}
+                                                ${{ rtrim(rtrim(number_format($profitLossData['revenue']['total'], 2), '0'), '.') }}
                                             </td>
                                         </tr>
                                         <tr>
                                             <td class="fw-bold">{{ __('Total Expenses') }}</td>
                                             <td class="text-end text-danger fw-bold fs-5">
-                                                -${{ number_format($profitLossData['expenses']['total'], 2) }}
+                                                -${{ rtrim(rtrim(number_format($profitLossData['expenses']['total'], 2), '0'), '.') }}
                                             </td>
                                         </tr>
                                         <tr class="table-{{ $profitLossData['grossProfit'] >= 0 ? 'success' : 'danger' }}">
                                             <td class="fw-bold fs-4">{{ __('Net Profit/Loss') }}</td>
                                             <td class="text-end fw-bold fs-4">
-                                                ${{ number_format($profitLossData['grossProfit'], 2) }}
+                                                ${{ rtrim(rtrim(number_format($profitLossData['grossProfit'], 2), '0'), '.') }}
                                             </td>
                                         </tr>
                                         <tr>

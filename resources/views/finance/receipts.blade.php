@@ -158,7 +158,7 @@
                                                 @endif
                                             </td>
                                             <td>{{ $receipt->category_name }}</td>
-                                            <td><strong>{{ $currencySymbol }}{{ number_format($receipt->amount, 2) }}</strong></td>
+                                            <td><strong>{{ $currencySymbol }}{{ rtrim(rtrim(number_format($receipt->amount, 2), '0'), '.') }}</strong></td>
                                             <td>{{ $receipt->payer_name ?? '-' }}</td>
                                             <td>{{ $receipt->payment_method_name }}</td>
                                             <td>

@@ -357,8 +357,8 @@
                             @endif
                         </td>
                         <td class="text-center">{{ number_format($item->quantity, 0) }}</td>
-                        <td class="text-end">{{ $currencySymbol ?? '$' }}{{ number_format($item->unit_price, 2) }}</td>
-                        <td class="text-end">{{ $currencySymbol ?? '$' }}{{ number_format($item->total_price, 2) }}</td>
+                        <td class="text-end">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($item->unit_price, 2), '0'), '.') }}</td>
+                        <td class="text-end">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($item->total_price, 2), '0'), '.') }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -386,37 +386,37 @@
                 <div class="total-section">
                     <div class="row mb-2">
                         <div class="col-6"><strong>{{ __('Subtotal:') }}</strong></div>
-                        <div class="col-6 text-end">{{ $currencySymbol ?? '$' }}{{ number_format($invoice->subtotal, 2) }}</div>
+                        <div class="col-6 text-end">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->subtotal, 2), '0'), '.') }}</div>
                     </div>
 
                     @if($invoice->discount_amount > 0)
                     <div class="row mb-2">
                         <div class="col-6">{{ __('Discount:') }}</div>
-                        <div class="col-6 text-end text-success">-{{ $currencySymbol ?? '$' }}{{ number_format($invoice->discount_amount, 2) }}</div>
+                        <div class="col-6 text-end text-success">-{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->discount_amount, 2), '0'), '.') }}</div>
                     </div>
                     @endif
 
                     @if($invoice->tax_amount > 0)
                     <div class="row mb-2">
                         <div class="col-6">{{ __('Tax') }} ({{ number_format($invoice->tax_rate, 1) }}%):</div>
-                        <div class="col-6 text-end">{{ $currencySymbol ?? '$' }}{{ number_format($invoice->tax_amount, 2) }}</div>
+                        <div class="col-6 text-end">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->tax_amount, 2), '0'), '.') }}</div>
                     </div>
                     @endif
 
                     <hr>
                     <div class="row mb-2">
                         <div class="col-6"><h5>{{ __('Total Amount:') }}</h5></div>
-                        <div class="col-6 text-end"><h5>{{ $currencySymbol ?? '$' }}{{ number_format($invoice->total_amount, 2) }}</h5></div>
+                        <div class="col-6 text-end"><h5>{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->total_amount, 2), '0'), '.') }}</h5></div>
                     </div>
 
                     @if($invoice->paid_amount > 0)
                     <div class="row mb-2">
                         <div class="col-6">{{ __('Paid Amount:') }}</div>
-                        <div class="col-6 text-end text-success">{{ $currencySymbol ?? '$' }}{{ number_format($invoice->paid_amount, 2) }}</div>
+                        <div class="col-6 text-end text-success">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->paid_amount, 2), '0'), '.') }}</div>
                     </div>
                     <div class="row">
                         <div class="col-6"><strong>{{ __('Balance Due:') }}</strong></div>
-                        <div class="col-6 text-end"><strong class="text-{{ $invoice->balance > 0 ? 'danger' : 'success' }}">{{ $currencySymbol ?? '$' }}{{ number_format($invoice->balance, 2) }}</strong></div>
+                        <div class="col-6 text-end"><strong class="text-{{ $invoice->balance > 0 ? 'danger' : 'success' }}">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->balance, 2), '0'), '.') }}</strong></div>
                     </div>
                     @endif
                 </div>

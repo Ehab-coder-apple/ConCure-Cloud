@@ -169,7 +169,7 @@
                                         <td>{{ $invoice->invoice_date ? $invoice->invoice_date->format('M d, Y') : '-' }}</td>
                                         <td>{{ $invoice->due_date ? $invoice->due_date->format('M d, Y') : '-' }}</td>
                                         <td>
-                                            <strong>{{ $currencySymbol ?? '$' }}{{ number_format($invoice->total_amount ?? 0, 2) }}</strong>
+                                            <strong>{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->total_amount ?? 0, 2), '0'), '.') }}</strong>
                                         </td>
                                         <td>
                                             @php
@@ -440,16 +440,16 @@
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between">
                                         <span>{{ __('Subtotal') }}:</span>
-                                        <span id="edit-subtotal">{{ $currencySymbol ?? '$' }}0.00</span>
+                                        <span id="edit-subtotal">{{ $currencySymbol ?? '$' }}0</span>
                                     </div>
                                     <div class="d-flex justify-content-between">
                                         <span>{{ __('Tax') }} (<span id="edit-tax-rate">0</span>%):</span>
-                                        <span id="edit-tax-amount">{{ $currencySymbol ?? '$' }}0.00</span>
+                                        <span id="edit-tax-amount">{{ $currencySymbol ?? '$' }}0</span>
                                     </div>
                                     <hr>
                                     <div class="d-flex justify-content-between fw-bold">
                                         <span>{{ __('Total') }}:</span>
-                                        <span id="edit-total">{{ $currencySymbol ?? '$' }}0.00</span>
+                                        <span id="edit-total">{{ $currencySymbol ?? '$' }}0</span>
                                     </div>
                                 </div>
                             </div>
@@ -556,6 +556,12 @@
 <script>
 // Currency symbol for JavaScript
 const currencySymbol = '{{ $currencySymbol ?? "$" }}';
+// Format amount: show decimals only if needed
+function formatAmount(value) {
+    const n = parseFloat(value) || 0;
+    const s = (Math.round(n * 100) / 100).toFixed(2);
+    return s.replace(/\.?0+$/, '');
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     let itemIndex = 1;
@@ -674,7 +680,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="col-md-2">
                         <label class="form-label">{{ __('Total') }}</label>
                         <input type="text" class="form-control item-total" readonly
-                               value="${item ? (item.quantity * item.unit_price).toFixed(2) : '0.00'}">
+                               value="${item ? formatAmount(item.quantity * item.unit_price) : '0'}">
                     </div>
                     <div class="col-md-1 d-flex align-items-end">
                         <button type="button" class="btn btn-outline-danger btn-sm remove-item-btn">
@@ -786,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById('email-invoice-details').innerHTML = `
                             <div><strong>{{ __('Invoice:') }}</strong> ${data.invoice.invoice_number}</div>
                             <div><strong>{{ __('Patient:') }}</strong> ${data.invoice.patient_name}</div>
-                            <div><strong>{{ __('Amount:') }}</strong> ${currencySymbol}${parseFloat(data.invoice.total_amount).toFixed(2)}</div>
+                            <div><strong>{{ __('Amount:') }}</strong> ${currencySymbol}${formatAmount(data.invoice.total_amount)}</div>
                             <div><strong>{{ __('Status:') }}</strong> <span class="badge bg-${data.invoice.status === 'paid' ? 'success' : (data.invoice.status === 'overdue' ? 'danger' : 'warning')}">${data.invoice.status.charAt(0).toUpperCase() + data.invoice.status.slice(1)}</span></div>
                         `;
 
@@ -891,7 +897,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const total = quantity * unitPrice;
 
             // Update the total field for this item
-            totalInput.value = total.toFixed(2);
+            totalInput.value = formatAmount(total);
             subtotal += total;
         });
 
@@ -906,10 +912,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const taxAmountElement = document.getElementById('edit-tax-amount');
         const totalElement = document.getElementById('edit-total');
 
-        if (subtotalElement) subtotalElement.textContent = currencySymbol + subtotal.toFixed(2);
+        if (subtotalElement) subtotalElement.textContent = currencySymbol + formatAmount(subtotal);
         if (taxRateElement) taxRateElement.textContent = taxRate;
-        if (taxAmountElement) taxAmountElement.textContent = currencySymbol + taxAmount.toFixed(2);
-        if (totalElement) totalElement.textContent = currencySymbol + finalTotal.toFixed(2);
+        if (taxAmountElement) taxAmountElement.textContent = currencySymbol + formatAmount(taxAmount);
+        if (totalElement) totalElement.textContent = currencySymbol + formatAmount(finalTotal);
     }
 
     // Handle edit form submission
@@ -950,7 +956,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.showMarkAsPaidModal = function(invoiceId, invoiceNumber, balance) {
         document.getElementById('mark-paid-invoice-id').value = invoiceId;
         document.getElementById('mark-paid-invoice-number').textContent = invoiceNumber;
-        document.getElementById('mark-paid-balance').textContent = currencySymbol + parseFloat(balance).toFixed(2);
+        document.getElementById('mark-paid-balance').textContent = currencySymbol + formatAmount(balance);
         document.getElementById('paid_amount').value = parseFloat(balance).toFixed(2);
         document.getElementById('paid_amount').max = parseFloat(balance).toFixed(2);
 
