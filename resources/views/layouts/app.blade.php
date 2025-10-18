@@ -978,8 +978,6 @@
             /* Do not override Select2's default hidden-accessible styles to avoid layout issues */
             /* Removed custom off-screen rules so positioning computes correctly in Chrome */
             /* Ensure Select2 dropdown in New Appointment modal floats and doesn't take layout space */
-            #newAppointmentModal .select2-container { position: relative !important; }
-            #newAppointmentModal .select2-container .select2-dropdown { position: absolute !important; }
 
 
         /* Ensure modal content is clickable */

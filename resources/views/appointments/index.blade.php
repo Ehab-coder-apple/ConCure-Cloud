@@ -187,7 +187,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="doctor_id" class="form-label">{{ __('Doctor') }} <span class="text-danger">*</span></label>
-                            <select class="form-select d-none" id="doctor_id" name="doctor_id" required>
+                            <select class="form-select" id="doctor_id" name="doctor_id" required>
                                 <option value="">{{ __('Select Doctor') }}</option>
                                 @foreach(($doctors ?? []) as $doctor)
                                     <option value="{{ $doctor->id }}">Dr. {{ $doctor->first_name }} {{ $doctor->last_name }}{{ ($doctor->role ?? null) === 'admin' ? ' (Admin)' : '' }}</option>
@@ -408,7 +408,7 @@ $(document).ready(function() {
                 theme: 'bootstrap-5',
                 placeholder: '{{ __("Select Patient") }}',
                 allowClear: true,
-                dropdownParent: $modal,
+                dropdownParent: $(document.body),
                 width: '100%',
                 minimumResultsForSearch: Infinity,
                 dropdownCssClass: 'no-search'
@@ -420,7 +420,7 @@ $(document).ready(function() {
                 theme: 'bootstrap-5',
                 placeholder: '{{ __("Select Doctor") }}',
                 allowClear: true,
-                dropdownParent: $modal,
+                dropdownParent: $(document.body),
                 width: '100%',
                 minimumResultsForSearch: Infinity,
                 dropdownCssClass: 'no-search'
