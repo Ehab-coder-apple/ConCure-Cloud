@@ -971,6 +971,8 @@
             /* Hide Select2 search box inside New Appointment modal (Patient/Doctor) */
             #newAppointmentModal .select2-search--dropdown,
             #newAppointmentModal .select2-search { display: none !important; }
+            /* Utility for explicitly hidden search via dropdownCssClass */
+            .select2-dropdown.no-search .select2-search--dropdown { display: none !important; }
 
         /* Ensure modal content is clickable */
         .modal-content {

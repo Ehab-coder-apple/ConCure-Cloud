@@ -405,6 +405,7 @@ $(document).ready(function() {
         dropdownParent: $('#newAppointmentModal'),
         width: '100%',
         minimumResultsForSearch: Infinity, // hide search bar
+        dropdownCssClass: 'no-search',
         language: {
             noResults: function() {
                 return '{{ __("No patients found") }}';
@@ -423,6 +424,7 @@ $(document).ready(function() {
         dropdownParent: $('#newAppointmentModal'),
         width: '100%',
         minimumResultsForSearch: Infinity, // hide search bar
+        dropdownCssClass: 'no-search',
         language: {
             noResults: function() {
                 return '{{ __("No doctors found") }}';
@@ -442,6 +444,7 @@ $(document).ready(function() {
             dropdownParent: $('#newAppointmentModal'),
             width: '100%',
             minimumResultsForSearch: Infinity, // hide search bar
+            dropdownCssClass: 'no-search',
             language: {
                 noResults: function() {
                     return '{{ __("No patients found") }}';
@@ -459,16 +462,30 @@ $(document).ready(function() {
             dropdownParent: $('#newAppointmentModal'),
             width: '100%',
             minimumResultsForSearch: Infinity, // hide search bar
+            dropdownCssClass: 'no-search',
             language: {
                 noResults: function() {
                     return '{{ __("No doctors found") }}';
                 },
                 searching: function() {
                     return '{{ __("Searching...") }}';
+
+
                 }
             }
         });
     });
+});
+
+
+// As a final guard, hide the search input when these dropdowns open
+$(document).on('select2:open', function(e) {
+    const targetId = e.target && e.target.id;
+    if (targetId === 'patient_id' || targetId === 'doctor_id') {
+        document.querySelectorAll('.select2-container--open .select2-search--dropdown').forEach(function(el){
+            el.style.display = 'none';
+        });
+    }
 });
 
 </script>
