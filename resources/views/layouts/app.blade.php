@@ -968,6 +968,9 @@
             /* Ensure Select2 dropdown appears above fixed topbar and not clipped */
             .select2-container { z-index: 1200 !important; }
             .select2-container .select2-dropdown { z-index: 1201 !important; }
+            /* Hide Select2 search box inside New Appointment modal (Patient/Doctor) */
+            #newAppointmentModal .select2-search--dropdown,
+            #newAppointmentModal .select2-search { display: none !important; }
 
         /* Ensure modal content is clickable */
         .modal-content {

@@ -233,6 +233,7 @@ $(document).ready(function() {
         placeholder: '{{ __("Select patient...") }}',
         allowClear: true,
         width: '100%',
+        minimumResultsForSearch: Infinity,
         language: {
             noResults: function() {
                 return '{{ __("No patients found") }}';
@@ -249,6 +250,7 @@ $(document).ready(function() {
         placeholder: '{{ __("Select doctor...") }}',
         allowClear: true,
         width: '100%',
+        minimumResultsForSearch: Infinity,
         language: {
             noResults: function() {
                 return '{{ __("No doctors found") }}';
