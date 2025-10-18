@@ -975,19 +975,8 @@
             #newAppointmentModal .select2-search { display: none !important; }
             /* Utility for explicitly hidden search via dropdownCssClass */
             .select2-dropdown.no-search .select2-search--dropdown { display: none !important; }
-            /* Ensure the original selects transformed by Select2 are fully hidden */
-            select.select2-hidden-accessible { display: none !important; position: absolute !important; left: -9999px !important; height: 0 !important; width: 0 !important; }
-
-            /* Hard-hide the native selects for Patient/Doctor inside the New Appointment modal */
-            #newAppointmentModal select#patient_id,
-            #newAppointmentModal select#doctor_id {
-                position: absolute !important;
-                left: -10000px !important;
-                width: 1px !important;
-                height: 1px !important;
-                opacity: 0 !important;
-                pointer-events: none !important;
-            }
+            /* Do not override Select2's default hidden-accessible styles to avoid layout issues */
+            /* Removed custom off-screen rules so positioning computes correctly in Chrome */
             /* Ensure Select2 dropdown in New Appointment modal floats and doesn't take layout space */
             #newAppointmentModal .select2-container { position: relative !important; }
             #newAppointmentModal .select2-container .select2-dropdown { position: absolute !important; }

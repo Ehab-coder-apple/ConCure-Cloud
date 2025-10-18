@@ -178,7 +178,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
-                            <select class="form-select d-none" id="patient_id" name="patient_id" required>
+                            <select class="form-select" id="patient_id" name="patient_id" required>
                                 <option value="">{{ __('Select Patient') }}</option>
                                 @foreach(($patients ?? []) as $patient)
                                     <option value="{{ $patient->id }}">{{ $patient->first_name }} {{ $patient->last_name }} ({{ $patient->patient_id }})</option>
@@ -395,14 +395,6 @@ function showAppointmentDetails(event) {
   }, true);
 })();
 
-// Helper to ensure the original selects are fully hidden once Select2 attaches
-function hideOriginalAppointmentSelects() {
-    $('#patient_id, #doctor_id').each(function() {
-        var $s = $(this);
-        // Move off-screen without affecting form submission
-        $s.css({ position: 'absolute', left: '-10000px', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none' });
-    });
-}
 
 // Initialize Select2 only after the New Appointment modal is fully visible
 $(document).ready(function() {
@@ -435,8 +427,7 @@ $(document).ready(function() {
             });
         }
 
-        // Ensure the original selects never show beneath Select2
-        hideOriginalAppointmentSelects();
+
     });
 });
 
