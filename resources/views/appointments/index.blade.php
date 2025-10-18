@@ -178,7 +178,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
-                            <select class="form-select" id="patient_id" name="patient_id" required>
+                            <select class="form-select d-none" id="patient_id" name="patient_id" required>
                                 <option value="">{{ __('Select Patient') }}</option>
                                 @foreach(($patients ?? []) as $patient)
                                     <option value="{{ $patient->id }}">{{ $patient->first_name }} {{ $patient->last_name }} ({{ $patient->patient_id }})</option>
@@ -187,7 +187,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="doctor_id" class="form-label">{{ __('Doctor') }} <span class="text-danger">*</span></label>
-                            <select class="form-select" id="doctor_id" name="doctor_id" required>
+                            <select class="form-select d-none" id="doctor_id" name="doctor_id" required>
                                 <option value="">{{ __('Select Doctor') }}</option>
                                 @foreach(($doctors ?? []) as $doctor)
                                     <option value="{{ $doctor->id }}">Dr. {{ $doctor->first_name }} {{ $doctor->last_name }}{{ ($doctor->role ?? null) === 'admin' ? ' (Admin)' : '' }}</option>
@@ -404,94 +404,39 @@ function hideOriginalAppointmentSelects() {
     });
 }
 
-// Initialize Select2 for patient and doctor dropdowns in modal
+// Initialize Select2 only after the New Appointment modal is fully visible
 $(document).ready(function() {
-    // Initialize Select2 for patient dropdown with search
-    $('#patient_id').select2({
-        theme: 'bootstrap-5',
-        placeholder: '{{ __("Select Patient") }}',
-        allowClear: true,
-        dropdownParent: $('#newAppointmentModal'),
-        width: '100%',
-        minimumResultsForSearch: Infinity, // hide search bar
-        dropdownCssClass: 'no-search',
-        language: {
-            noResults: function() {
-                return '{{ __("No patients found") }}';
-            },
-            searching: function() {
-                return '{{ __("Searching...") }}';
-            }
-        }
-    });
-
-    // Ensure the native select is not visible beneath Select2
-    hideOriginalAppointmentSelects();
-
-    // Initialize Select2 for doctor dropdown with search
-    $('#doctor_id').select2({
-        theme: 'bootstrap-5',
-        placeholder: '{{ __("Select Doctor") }}',
-        allowClear: true,
-        dropdownParent: $('#newAppointmentModal'),
-        width: '100%',
-        minimumResultsForSearch: Infinity, // hide search bar
-        dropdownCssClass: 'no-search',
-        language: {
-            noResults: function() {
-                return '{{ __("No doctors found") }}';
-            },
-            searching: function() {
-                return '{{ __("Searching...") }}';
-            }
-        }
-    });
-
-    // Ensure the native select is not visible beneath Select2
-    hideOriginalAppointmentSelects();
-
-    // Reinitialize Select2 when modal is shown (to fix positioning issues)
     $('#newAppointmentModal').on('shown.bs.modal', function () {
-        $('#patient_id').select2('destroy').select2({
-            theme: 'bootstrap-5',
-            placeholder: '{{ __("Select Patient") }}',
-            allowClear: true,
-            dropdownParent: $('#newAppointmentModal'),
-            width: '100%',
-            minimumResultsForSearch: Infinity, // hide search bar
-            dropdownCssClass: 'no-search',
-            language: {
-                noResults: function() {
-                    return '{{ __("No patients found") }}';
-                },
-                searching: function() {
-                    return '{{ __("Searching...") }}';
-                }
-            }
-        });
+        var $modal = $(this);
+        var $patient = $modal.find('#patient_id');
+        var $doctor  = $modal.find('#doctor_id');
 
-        // Ensure the native select is not visible beneath Select2
+        if (!$patient.hasClass('select2-hidden-accessible')) {
+            $patient.removeClass('d-none').select2({
+                theme: 'bootstrap-5',
+                placeholder: '{{ __("Select Patient") }}',
+                allowClear: true,
+                dropdownParent: $modal,
+                width: '100%',
+                minimumResultsForSearch: Infinity,
+                dropdownCssClass: 'no-search'
+            });
+        }
+
+        if (!$doctor.hasClass('select2-hidden-accessible')) {
+            $doctor.removeClass('d-none').select2({
+                theme: 'bootstrap-5',
+                placeholder: '{{ __("Select Doctor") }}',
+                allowClear: true,
+                dropdownParent: $modal,
+                width: '100%',
+                minimumResultsForSearch: Infinity,
+                dropdownCssClass: 'no-search'
+            });
+        }
+
+        // Ensure the original selects never show beneath Select2
         hideOriginalAppointmentSelects();
-
-        $('#doctor_id').select2('destroy').select2({
-            theme: 'bootstrap-5',
-            placeholder: '{{ __("Select Doctor") }}',
-            allowClear: true,
-            dropdownParent: $('#newAppointmentModal'),
-            width: '100%',
-            minimumResultsForSearch: Infinity, // hide search bar
-            dropdownCssClass: 'no-search',
-            language: {
-                noResults: function() {
-                    return '{{ __("No doctors found") }}';
-                },
-                searching: function() {
-                    return '{{ __("Searching...") }}';
-
-
-                }
-            }
-        });
     });
 });
 
