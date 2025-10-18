@@ -395,6 +395,15 @@ function showAppointmentDetails(event) {
   }, true);
 })();
 
+// Helper to ensure the original selects are fully hidden once Select2 attaches
+function hideOriginalAppointmentSelects() {
+    $('#patient_id, #doctor_id').each(function() {
+        var $s = $(this);
+        // Move off-screen without affecting form submission
+        $s.css({ position: 'absolute', left: '-10000px', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none' });
+    });
+}
+
 // Initialize Select2 for patient and doctor dropdowns in modal
 $(document).ready(function() {
     // Initialize Select2 for patient dropdown with search
@@ -416,6 +425,9 @@ $(document).ready(function() {
         }
     });
 
+    // Ensure the native select is not visible beneath Select2
+    hideOriginalAppointmentSelects();
+
     // Initialize Select2 for doctor dropdown with search
     $('#doctor_id').select2({
         theme: 'bootstrap-5',
@@ -434,6 +446,9 @@ $(document).ready(function() {
             }
         }
     });
+
+    // Ensure the native select is not visible beneath Select2
+    hideOriginalAppointmentSelects();
 
     // Reinitialize Select2 when modal is shown (to fix positioning issues)
     $('#newAppointmentModal').on('shown.bs.modal', function () {
@@ -454,6 +469,9 @@ $(document).ready(function() {
                 }
             }
         });
+
+        // Ensure the native select is not visible beneath Select2
+        hideOriginalAppointmentSelects();
 
         $('#doctor_id').select2('destroy').select2({
             theme: 'bootstrap-5',
