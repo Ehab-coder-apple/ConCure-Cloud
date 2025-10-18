@@ -973,6 +973,8 @@
             #newAppointmentModal .select2-search { display: none !important; }
             /* Utility for explicitly hidden search via dropdownCssClass */
             .select2-dropdown.no-search .select2-search--dropdown { display: none !important; }
+            /* Ensure the original selects transformed by Select2 are fully hidden */
+            select.select2-hidden-accessible { display: none !important; position: absolute !important; left: -9999px !important; height: 0 !important; width: 0 !important; }
 
         /* Ensure modal content is clickable */
         .modal-content {
