@@ -988,6 +988,10 @@
                 opacity: 0 !important;
                 pointer-events: none !important;
             }
+            /* Ensure Select2 dropdown in New Appointment modal floats and doesn't take layout space */
+            #newAppointmentModal .select2-container { position: relative !important; }
+            #newAppointmentModal .select2-container .select2-dropdown { position: absolute !important; }
+
 
         /* Ensure modal content is clickable */
         .modal-content {
