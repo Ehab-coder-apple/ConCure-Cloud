@@ -706,7 +706,7 @@
         .modal .btn,
         .modal a,
         .modal input,
-        .modal select {
+        .modal select:not(.select2-hidden-accessible) {
             pointer-events: auto !important;
             z-index: auto !important;
             position: relative !important;
