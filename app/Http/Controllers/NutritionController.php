@@ -481,9 +481,15 @@ class NutritionController extends Controller
                            ->with('success', 'Nutrition plan created successfully.');
 
         } catch (\Exception $e) {
-            DB::rollback();
-            return back()->withInput()
-                        ->with('error', 'Failed to create nutrition plan. Please try again.');
+            DB::rollBack();
+            \Log::error('Failed to create nutrition plan', [
+                'error' => $e->getMessage(),
+                'code' => method_exists($e, 'getCode') ? $e->getCode() : null,
+                'trace' => substr($e->getTraceAsString(), 0, 2000),
+                'request' => request()->except(['_token']),
+            ]);
+            $msg = config('app.debug') ? $e->getMessage() : 'Failed to create nutrition plan. Please try again.';
+            return back()->withInput()->with('error', $msg);
         }
     }
 
