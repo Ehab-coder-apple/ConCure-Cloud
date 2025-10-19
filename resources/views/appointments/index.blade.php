@@ -407,7 +407,7 @@ $(document).ready(function() {
             $patient.removeClass('d-none').select2({
                 theme: 'bootstrap-5',
                 placeholder: '{{ __("Select Patient") }}',
-                allowClear: true,
+                allowClear: false,
                 dropdownParent: $(document.body),
                 width: '100%',
                 minimumResultsForSearch: Infinity,
@@ -419,7 +419,7 @@ $(document).ready(function() {
             $doctor.removeClass('d-none').select2({
                 theme: 'bootstrap-5',
                 placeholder: '{{ __("Select Doctor") }}',
-                allowClear: true,
+                allowClear: false,
                 dropdownParent: $(document.body),
                 width: '100%',
                 minimumResultsForSearch: Infinity,

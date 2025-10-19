@@ -991,6 +991,9 @@
                 top: 0 !important;
             }
 
+            /* Hide Select2 clear (x) button in the New Appointment modal */
+            #newAppointmentModal .select2-selection__clear { display: none !important; }
+
             /* Utility for explicitly hidden search via dropdownCssClass */
             .select2-dropdown.no-search .select2-search--dropdown { display: none !important; }
             /* Do not override Select2's default hidden-accessible styles to avoid layout issues */
