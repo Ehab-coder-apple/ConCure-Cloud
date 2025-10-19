@@ -973,6 +973,24 @@
             /* Hide Select2 search box inside New Appointment modal (Patient/Doctor) */
             #newAppointmentModal .select2-search--dropdown,
             #newAppointmentModal .select2-search { display: none !important; }
+            /* Normalize Select2 single selection layout inside the New Appointment modal */
+            #newAppointmentModal .select2-container .select2-selection--single {
+                height: calc(1.5em + .75rem + 2px) !important;
+                min-height: calc(1.5em + .75rem + 2px) !important;
+                padding: .375rem .75rem !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+            #newAppointmentModal .select2-container .select2-selection__rendered {
+                line-height: 1.5 !important;
+                padding-left: 0 !important;
+                margin-left: 0 !important;
+            }
+            #newAppointmentModal .select2-container .select2-selection__arrow {
+                height: 100% !important;
+                top: 0 !important;
+            }
+
             /* Utility for explicitly hidden search via dropdownCssClass */
             .select2-dropdown.no-search .select2-search--dropdown { display: none !important; }
             /* Do not override Select2's default hidden-accessible styles to avoid layout issues */
@@ -990,6 +1008,12 @@
                 overflow: hidden !important;
                 white-space: nowrap !important;
                 left: -10000px !important;
+            }
+
+
+            /* Final safeguard: hide original selects inside the New Appointment modal */
+            #newAppointmentModal select.select2-hidden-accessible {
+                display: none !important;
             }
 
 
