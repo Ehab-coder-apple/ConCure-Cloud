@@ -67,6 +67,7 @@ class DietPlan extends Model
         'weight_gain' => 'Weight Gain',
         'maintenance' => 'Weight Maintenance',
         'muscle_gain' => 'Muscle Gain',
+        'diabetic' => 'Diabetic',
         'health_improvement' => 'Health Improvement',
         'other' => 'Other',
     ];
