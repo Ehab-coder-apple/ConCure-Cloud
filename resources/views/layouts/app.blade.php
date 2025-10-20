@@ -1109,14 +1109,14 @@
             /* Nutrition pages: ensure extra clearance under fixed topbar */
             body.page-nutrition .main-content {
                 /* Extra clearance so top cards never sit under the fixed topbar */
-                margin-top: calc(var(--topbar-height) + 68px) !important;
-                padding-top: 30px !important;
+                margin-top: calc(var(--topbar-height) + 84px) !important;
+                padding-top: 34px !important;
             }
 
             /* Safety: ensure the very first content block starts below the topbar */
-            body.page-nutrition .content-wrapper > *:first-child { margin-top: 28px !important; }
+            body.page-nutrition .content-wrapper > *:first-child { margin-top: 32px !important; }
             /* Nudge the nutrition container itself a bit further down for guaranteed clearance */
-            body.page-nutrition #nutrition-show.container { padding-top: 20px !important; }
+            body.page-nutrition #nutrition-show.container { padding-top: 24px !important; }
 
 
             /* Nutrition: enforce correct sidebar offset; plus fallback if wrapper is missing */
