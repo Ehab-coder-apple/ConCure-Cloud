@@ -1113,6 +1113,12 @@
                 padding-top: 16px !important;
             }
 
+            /* Safety: ensure the very first content block starts below the topbar */
+            body.page-nutrition .content-wrapper > *:first-child { margin-top: 12px !important; }
+            /* Nudge the nutrition container itself a bit further down for guaranteed clearance */
+            body.page-nutrition #nutrition-show.container { padding-top: 8px !important; }
+
+
             /* Nutrition: enforce correct sidebar offset; plus fallback if wrapper is missing */
             @media (min-width: 992px) {
                 body.page-nutrition .main-content {
