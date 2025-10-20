@@ -1106,17 +1106,17 @@
         }
 
 
-            /* Nutrition pages: ensure extra clearance under fixed topbar */
-            body.page-nutrition .main-content {
+            /* Nutrition SHOW page only: ensure extra clearance under fixed topbar */
+            body.page-nutrition-show .main-content {
                 /* Extra clearance so top cards never sit under the fixed topbar */
                 margin-top: calc(var(--topbar-height) + 84px) !important;
                 padding-top: 34px !important;
             }
 
-            /* Safety: ensure the very first content block starts below the topbar */
-            body.page-nutrition .content-wrapper > *:first-child { margin-top: 32px !important; }
-            /* Nudge the nutrition container itself a bit further down for guaranteed clearance */
-            body.page-nutrition #nutrition-show.container { padding-top: 24px !important; }
+            /* Safety: on SHOW page ensure the very first content block starts below the topbar */
+            body.page-nutrition-show .content-wrapper > *:first-child { margin-top: 32px !important; }
+            /* Nudge the nutrition SHOW container itself a bit further down for guaranteed clearance */
+            body.page-nutrition-show #nutrition-show.container { padding-top: 24px !important; }
 
 
             /* Nutrition: enforce correct sidebar offset; plus fallback if wrapper is missing */
@@ -1347,6 +1347,8 @@
     if (request()->routeIs('dashboard')) $bodyClasses[] = 'page-dashboard';
     if (request()->routeIs('messages.*')) $bodyClasses[] = 'page-messages';
     if (request()->routeIs('nutrition.*')) $bodyClasses[] = 'page-nutrition';
+    if (request()->routeIs('nutrition.index')) $bodyClasses[] = 'page-nutrition-index';
+    if (request()->routeIs('nutrition.show')) $bodyClasses[] = 'page-nutrition-show';
     if (request()->routeIs('foods.*') || request()->routeIs('food-groups.*')) $bodyClasses[] = 'page-foods';
     $bodyClassAttr = implode(' ', $bodyClasses);
 @endphp
