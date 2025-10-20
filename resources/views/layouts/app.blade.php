@@ -1108,8 +1108,9 @@
 
             /* Nutrition pages: ensure extra clearance under fixed topbar */
             body.page-nutrition .main-content {
-                margin-top: calc(var(--topbar-height) + 10px) !important;
-                padding-top: 12px !important;
+                /* Extra clearance so top cards never sit under the fixed topbar */
+                margin-top: calc(var(--topbar-height) + 22px) !important;
+                padding-top: 16px !important;
             }
 
             /* Nutrition: enforce correct sidebar offset; plus fallback if wrapper is missing */
