@@ -27,9 +27,11 @@ class UserController extends Controller
 
         $query = User::with('clinic', 'creator');
 
-        // Filter by clinic for non-program-owner users
-        // All clinic users are restricted to their clinic
-        $query->where('clinic_id', $user->clinic_id);
+        // For tenant (non-super-admin) users: restrict to their clinic and hide super admins
+        if (!(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
+            $query->where('clinic_id', $user->clinic_id)
+                  ->where('role', '!=', 'super_admin');
+        }
 
         // Apply filters
         if ($request->filled('role')) {

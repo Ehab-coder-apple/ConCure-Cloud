@@ -440,8 +440,9 @@
                                                     </div>
                                                     <div class="card-body">
                                                         @php
+                                                            // Show only users from the current clinic and hide super admins in tenant view
                                                             $users = \App\Models\User::where('clinic_id', auth()->user()->clinic_id)
-                                                                ->orWhere('role', 'super_admin')
+                                                                ->where('role', '!=', 'super_admin')
                                                                 ->orderBy('created_at', 'desc')
                                                                 ->take(5)
                                                                 ->get();
