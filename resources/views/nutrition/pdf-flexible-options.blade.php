@@ -278,7 +278,7 @@
     <div class="patient-info">
         <strong>Patient:</strong> <span class="kurdish">{{ $dietPlan->patient->first_name }} {{ $dietPlan->patient->last_name }}</span> &nbsp;&nbsp;&nbsp;
         <strong>Plan #:</strong> {{ $dietPlan->plan_number }} &nbsp;&nbsp;&nbsp;
-        <strong>Date:</strong> {{ $dietPlan->created_at->format('M d, Y') }} &nbsp;&nbsp;&nbsp;
+        <strong>Date:</strong> {{ now()->format('Y-m-d') }} &nbsp;&nbsp;&nbsp;
         <strong>Created by:</strong> <span class="kurdish">{{ $dietPlan->doctor->full_name_with_title }}</span>
     </div>
 

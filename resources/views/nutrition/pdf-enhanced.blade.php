@@ -195,8 +195,8 @@
             <div class="info-value">{{ $dietPlan->plan_number }}</div>
         </div>
         <div class="info-row">
-            <div class="info-label">Created Date:</div>
-            <div class="info-value">{{ $dietPlan->created_at->format('Y-m-d') }}</div>
+            <div class="info-label">Date:</div>
+            <div class="info-value">{{ now()->format('Y-m-d') }}</div>
         </div>
         <div class="info-row">
             <div class="info-label">Doctor:</div>
