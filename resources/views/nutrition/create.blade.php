@@ -26,7 +26,7 @@
 
     <form action="{{ route('nutrition.store') }}" method="POST">
         @csrf
-        
+
         <div class="row">
             <!-- Basic Information -->
             <div class="col-lg-8">
@@ -44,7 +44,7 @@
                                 <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id" required>
                                     <option value="">{{ __('Select Patient') }}</option>
                                     @foreach($patients as $patient)
-                                    <option value="{{ $patient->id }}" 
+                                    <option value="{{ $patient->id }}"
                                             {{ (old('patient_id', $selectedPatient?->id) == $patient->id) ? 'selected' : '' }}>
                                         {{ trim(($patient->first_name . ' ' . $patient->last_name)) ?: ($patient->phone ?? 'Unknown') }} ({{ $patient->patient_id }})
                                     </option>
@@ -56,7 +56,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="title" class="form-label">{{ __('Plan Title') }} <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('title') is-invalid @enderror" 
+                                <input type="text" class="form-control @error('title') is-invalid @enderror"
                                        id="title" name="title" value="{{ old('title') }}" required
                                        placeholder="{{ __('e.g., Weight Loss Plan for John Doe') }}">
                                 @error('title')
@@ -64,10 +64,10 @@
                                 @enderror
                             </div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="description" class="form-label">{{ __('Description') }}</label>
-                            <textarea class="form-control @error('description') is-invalid @enderror" 
+                            <textarea class="form-control @error('description') is-invalid @enderror"
                                       id="description" name="description" rows="3"
                                       placeholder="{{ __('Describe the nutrition plan objectives and approach...') }}">{{ old('description') }}</textarea>
                             @error('description')
@@ -94,8 +94,8 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="duration_days" class="form-label">{{ __('Duration (Days)') }}</label>
-                                <input type="number" class="form-control @error('duration_days') is-invalid @enderror" 
-                                       id="duration_days" name="duration_days" value="{{ old('duration_days') }}" 
+                                <input type="number" class="form-control @error('duration_days') is-invalid @enderror"
+                                       id="duration_days" name="duration_days" value="{{ old('duration_days') }}"
                                        min="1" max="365" placeholder="{{ __('e.g., 30') }}">
                                 @error('duration_days')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -105,7 +105,7 @@
 
                         <div class="mb-3">
                             <label for="goal_description" class="form-label">{{ __('Goal Description') }}</label>
-                            <textarea class="form-control @error('goal_description') is-invalid @enderror" 
+                            <textarea class="form-control @error('goal_description') is-invalid @enderror"
                                       id="goal_description" name="goal_description" rows="2"
                                       placeholder="{{ __('Specific details about the goal...') }}">{{ old('goal_description') }}</textarea>
                             @error('goal_description')
@@ -124,12 +124,29 @@
                         </h6>
                     </div>
                     <div class="card-body">
+                        <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                            <div>
+                                <label for="activity_level_calc" class="form-label mb-1 small">{{ __('Activity Level') }}</label>
+                                <select class="form-select form-select-sm" id="activity_level_calc" style="min-width:220px">
+                                    <option value="sedentary">{{ __('Sedentary (little/no exercise)') }}</option>
+                                    <option value="light" selected>{{ __('Light (1-3 days/week)') }}</option>
+                                    <option value="moderate">{{ __('Moderate (3-5 days/week)') }}</option>
+                                    <option value="active">{{ __('Active (6-7 days/week)') }}</option>
+                                    <option value="very_active">{{ __('Very Active (physical job)') }}</option>
+                                </select>
+                            </div>
+                            <button type="button" id="btn-auto-calc-targets" class="btn btn-sm btn-primary mt-4">
+                                <i class="fas fa-calculator me-1"></i>{{ __('Auto-calculate from patient') }}
+                            </button>
+                            <small class="text-muted ms-1">{{ __('Uses age, gender, height, weight + goal to split calories, protein, carbs, and fat.') }}</small>
+                        </div>
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="target_calories" class="form-label">{{ __('Daily Calories') }}</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control @error('target_calories') is-invalid @enderror" 
-                                           id="target_calories" name="target_calories" value="{{ old('target_calories') }}" 
+                                    <input type="number" class="form-control @error('target_calories') is-invalid @enderror"
+                                           id="target_calories" name="target_calories" value="{{ old('target_calories') }}"
                                            min="500" max="5000" step="50" placeholder="{{ __('e.g., 2000') }}">
                                     <span class="input-group-text">kcal</span>
                                 </div>
@@ -140,8 +157,8 @@
                             <div class="col-md-6 mb-3">
                                 <label for="target_protein" class="form-label">{{ __('Daily Protein') }}</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control @error('target_protein') is-invalid @enderror" 
-                                           id="target_protein" name="target_protein" value="{{ old('target_protein') }}" 
+                                    <input type="number" class="form-control @error('target_protein') is-invalid @enderror"
+                                           id="target_protein" name="target_protein" value="{{ old('target_protein') }}"
                                            min="0" max="500" step="5" placeholder="{{ __('e.g., 120') }}">
                                     <span class="input-group-text">g</span>
                                 </div>
@@ -150,13 +167,13 @@
                                 @enderror
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="target_carbs" class="form-label">{{ __('Daily Carbohydrates') }}</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control @error('target_carbs') is-invalid @enderror" 
-                                           id="target_carbs" name="target_carbs" value="{{ old('target_carbs') }}" 
+                                    <input type="number" class="form-control @error('target_carbs') is-invalid @enderror"
+                                           id="target_carbs" name="target_carbs" value="{{ old('target_carbs') }}"
                                            min="0" max="1000" step="10" placeholder="{{ __('e.g., 250') }}">
                                     <span class="input-group-text">g</span>
                                 </div>
@@ -167,8 +184,8 @@
                             <div class="col-md-6 mb-3">
                                 <label for="target_fat" class="form-label">{{ __('Daily Fat') }}</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control @error('target_fat') is-invalid @enderror" 
-                                           id="target_fat" name="target_fat" value="{{ old('target_fat') }}" 
+                                    <input type="number" class="form-control @error('target_fat') is-invalid @enderror"
+                                           id="target_fat" name="target_fat" value="{{ old('target_fat') }}"
                                            min="0" max="300" step="5" placeholder="{{ __('e.g., 70') }}">
                                     <span class="input-group-text">g</span>
                                 </div>
@@ -191,17 +208,17 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="instructions" class="form-label">{{ __('Instructions') }}</label>
-                            <textarea class="form-control @error('instructions') is-invalid @enderror" 
+                            <textarea class="form-control @error('instructions') is-invalid @enderror"
                                       id="instructions" name="instructions" rows="4"
                                       placeholder="{{ __('Detailed instructions for following the nutrition plan...') }}">{{ old('instructions') }}</textarea>
                             @error('instructions')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="restrictions" class="form-label">{{ __('Dietary Restrictions') }}</label>
-                            <textarea class="form-control @error('restrictions') is-invalid @enderror" 
+                            <textarea class="form-control @error('restrictions') is-invalid @enderror"
                                       id="restrictions" name="restrictions" rows="3"
                                       placeholder="{{ __('Foods to avoid, allergies, medical restrictions...') }}">{{ old('restrictions') }}</textarea>
                             @error('restrictions')
@@ -224,16 +241,16 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="start_date" class="form-label">{{ __('Start Date') }} <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control @error('start_date') is-invalid @enderror" 
+                            <input type="date" class="form-control @error('start_date') is-invalid @enderror"
                                    id="start_date" name="start_date" value="{{ old('start_date', date('Y-m-d')) }}" required>
                             @error('start_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="end_date" class="form-label">{{ __('End Date') }}</label>
-                            <input type="date" class="form-control @error('end_date') is-invalid @enderror" 
+                            <input type="date" class="form-control @error('end_date') is-invalid @enderror"
                                    id="end_date" name="end_date" value="{{ old('end_date') }}">
                             @error('end_date')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -306,6 +323,8 @@ function applyDiabeticTemplate() {
     document.getElementById('target_calories').value = '1800';
     document.getElementById('target_protein').value = '100';
     document.getElementById('target_carbs').value = '180';
+
+
     document.getElementById('target_fat').value = '60';
     document.getElementById('duration_days').value = '90';
     document.getElementById('instructions').value = 'Monitor blood sugar regularly. Eat at consistent times. Choose complex carbohydrates over simple sugars.';
@@ -316,13 +335,78 @@ function applyDiabeticTemplate() {
 document.getElementById('duration_days').addEventListener('change', function() {
     const startDate = document.getElementById('start_date').value;
     const duration = parseInt(this.value);
-    
+
     if (startDate && duration) {
         const start = new Date(startDate);
         const end = new Date(start.getTime() + (duration * 24 * 60 * 60 * 1000));
         document.getElementById('end_date').value = end.toISOString().split('T')[0];
     }
 });
+
+// Auto-calc daily targets from patient profile
+function weeklyGoalBy(goal) {
+    switch(goal) {
+        case 'weight_loss': return -0.5; // kg/week
+        case 'weight_gain': return 0.5;
+        case 'muscle_gain': return 0.25;
+        default: return 0; // maintenance/diabetic/other
+    }
+}
+
+document.getElementById('btn-auto-calc-targets').addEventListener('click', function() {
+    const patientId = document.getElementById('patient_id').value;
+    const goal = document.getElementById('goal').value;
+    const activity = document.getElementById('activity_level_calc').value || 'light';
+    if (!patientId) { alert("{{ __('Please select a patient first') }}"); return; }
+    if (!goal) { alert("{{ __('Please choose a goal first') }}"); return; }
+
+    const payload = {
+        patient_id: patientId,
+        goal: goal,
+        activity_level: activity,
+        weekly_weight_goal: weeklyGoalBy(goal)
+    };
+
+    const btn = this;
+    const prev = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>{{ __('Calculating') }}...';
+
+    fetch('/nutrition/calculate-calories', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').getAttribute('content')
+        },
+        body: JSON.stringify(payload)
+    }).then(r => r.json())
+      .then(data => {
+          if (!data || data.success === false) throw data;
+          document.getElementById('target_calories').value = data.calories.target_calories;
+          document.getElementById('target_protein').value = data.macronutrients.protein.grams;
+          document.getElementById('target_carbs').value = data.macronutrients.carbs.grams;
+          document.getElementById('target_fat').value = data.macronutrients.fat.grams;
+      })
+      .catch(err => {
+          console.error('Auto-calc failed', err);
+          if (err && err.message) alert(err.message);
+          else alert("{{ __('Unable to calculate targets. Please ensure patient profile has weight, height, date of birth and gender.') }}");
+      })
+      .finally(() => { btn.disabled = false; btn.innerHTML = prev; });
+});
+
+// If targets are empty on load, try auto-calc once after small delay
+window.addEventListener('load', function() {
+    if (!document.getElementById('target_calories').value) {
+        setTimeout(() => {
+            if (!document.getElementById('target_calories').value) {
+                const btn = document.getElementById('btn-auto-calc-targets');
+                if (btn) btn.click();
+            }
+        }, 300);
+    }
+});
+
 </script>
 @endpush
 @endsection

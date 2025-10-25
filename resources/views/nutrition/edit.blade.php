@@ -57,7 +57,7 @@
     <form action="{{ route('nutrition.update', $dietPlan) }}" method="POST" id="nutrition-form">
         @csrf
         @method('PUT')
-        
+
         <div class="row">
             <!-- Main Plan Information -->
             <div class="col-lg-8">
@@ -73,7 +73,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
-                                <select class="form-select @error('patient_id') is-invalid @enderror" 
+                                <select class="form-select @error('patient_id') is-invalid @enderror"
                                         id="patient_id" name="patient_id" required>
                                     <option value="">{{ __('Select Patient') }}</option>
                                     @foreach($patients as $patient)
@@ -88,7 +88,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="title" class="form-label">{{ __('Plan Title') }} <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('title') is-invalid @enderror" 
+                                <input type="text" class="form-control @error('title') is-invalid @enderror"
                                        id="title" name="title" value="{{ old('title', $dietPlan->title) }}" required
                                        placeholder="{{ __('e.g., Weight Loss Plan for John Doe') }}">
                                 @error('title')
@@ -96,10 +96,10 @@
                                 @enderror
                             </div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="description" class="form-label">{{ __('Description') }}</label>
-                            <textarea class="form-control @error('description') is-invalid @enderror" 
+                            <textarea class="form-control @error('description') is-invalid @enderror"
                                       id="description" name="description" rows="3"
                                       placeholder="{{ __('Describe the nutrition plan objectives and approach...') }}">{{ old('description', $dietPlan->description) }}</textarea>
                             @error('description')
@@ -118,13 +118,30 @@
                         </h6>
                     </div>
                     <div class="card-body">
+                        <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                            <div>
+                                <label for="activity_level_calc" class="form-label mb-1 small">{{ __('Activity Level') }}</label>
+                                <select class="form-select form-select-sm" id="activity_level_calc" style="min-width:220px">
+                                    <option value="sedentary">{{ __('Sedentary (little/no exercise)') }}</option>
+                                    <option value="light" selected>{{ __('Light (1-3 days/week)') }}</option>
+                                    <option value="moderate">{{ __('Moderate (3-5 days/week)') }}</option>
+                                    <option value="active">{{ __('Active (6-7 days/week)') }}</option>
+                                    <option value="very_active">{{ __('Very Active (physical job)') }}</option>
+                                </select>
+                            </div>
+                            <button type="button" id="btn-auto-calc-targets" class="btn btn-sm btn-primary mt-4">
+                                <i class="fas fa-calculator me-1"></i>{{ __('Auto-calculate from patient') }}
+                            </button>
+                            <small class="text-muted ms-1">{{ __('Uses age, gender, height, weight + goal to split calories, protein, carbs, and fat.') }}</small>
+                        </div>
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="target_calories" class="form-label">{{ __('Target Calories') }}</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control @error('target_calories') is-invalid @enderror" 
-                                           id="target_calories" name="target_calories" 
-                                           value="{{ old('target_calories', $dietPlan->target_calories) }}" 
+                                    <input type="number" class="form-control @error('target_calories') is-invalid @enderror"
+                                           id="target_calories" name="target_calories"
+                                           value="{{ old('target_calories', $dietPlan->target_calories) }}"
                                            min="500" max="5000" step="0.1"
                                            placeholder="{{ __('e.g., 2000') }}">
                                     <span class="input-group-text">kcal</span>
@@ -136,9 +153,9 @@
                             <div class="col-md-6 mb-3">
                                 <label for="target_protein" class="form-label">{{ __('Target Protein') }}</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control @error('target_protein') is-invalid @enderror" 
-                                           id="target_protein" name="target_protein" 
-                                           value="{{ old('target_protein', $dietPlan->target_protein) }}" 
+                                    <input type="number" class="form-control @error('target_protein') is-invalid @enderror"
+                                           id="target_protein" name="target_protein"
+                                           value="{{ old('target_protein', $dietPlan->target_protein) }}"
                                            min="0" max="500" step="0.1"
                                            placeholder="{{ __('e.g., 150') }}">
                                     <span class="input-group-text">g</span>
@@ -148,14 +165,14 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="target_carbs" class="form-label">{{ __('Target Carbohydrates') }}</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control @error('target_carbs') is-invalid @enderror" 
-                                           id="target_carbs" name="target_carbs" 
-                                           value="{{ old('target_carbs', $dietPlan->target_carbs) }}" 
+                                    <input type="number" class="form-control @error('target_carbs') is-invalid @enderror"
+                                           id="target_carbs" name="target_carbs"
+                                           value="{{ old('target_carbs', $dietPlan->target_carbs) }}"
                                            min="0" max="1000" step="0.1"
                                            placeholder="{{ __('e.g., 250') }}">
                                     <span class="input-group-text">g</span>
@@ -167,9 +184,9 @@
                             <div class="col-md-6 mb-3">
                                 <label for="target_fat" class="form-label">{{ __('Target Fat') }}</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control @error('target_fat') is-invalid @enderror" 
-                                           id="target_fat" name="target_fat" 
-                                           value="{{ old('target_fat', $dietPlan->target_fat) }}" 
+                                    <input type="number" class="form-control @error('target_fat') is-invalid @enderror"
+                                           id="target_fat" name="target_fat"
+                                           value="{{ old('target_fat', $dietPlan->target_fat) }}"
                                            min="0" max="300" step="0.1"
                                            placeholder="{{ __('e.g., 70') }}">
                                     <span class="input-group-text">g</span>
@@ -304,7 +321,7 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="goal" class="form-label">{{ __('Primary Goal') }} <span class="text-danger">*</span></label>
-                            <select class="form-select @error('goal') is-invalid @enderror" 
+                            <select class="form-select @error('goal') is-invalid @enderror"
                                     id="goal" name="goal" required>
                                 <option value="">{{ __('Select Goal') }}</option>
                                 @foreach(\App\Models\DietPlan::GOALS as $key => $label)
@@ -317,10 +334,10 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="goal_description" class="form-label">{{ __('Goal Description') }}</label>
-                            <textarea class="form-control @error('goal_description') is-invalid @enderror" 
+                            <textarea class="form-control @error('goal_description') is-invalid @enderror"
                                       id="goal_description" name="goal_description" rows="3"
                                       placeholder="{{ __('Describe specific goals and expectations...') }}">{{ old('goal_description', $dietPlan->goal_description) }}</textarea>
                             @error('goal_description')
@@ -341,30 +358,30 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="start_date" class="form-label">{{ __('Start Date') }} <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control @error('start_date') is-invalid @enderror" 
-                                   id="start_date" name="start_date" 
+                            <input type="date" class="form-control @error('start_date') is-invalid @enderror"
+                                   id="start_date" name="start_date"
                                    value="{{ old('start_date', $dietPlan->start_date?->format('Y-m-d')) }}" required>
                             @error('start_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="end_date" class="form-label">{{ __('End Date') }}</label>
-                            <input type="date" class="form-control @error('end_date') is-invalid @enderror" 
-                                   id="end_date" name="end_date" 
+                            <input type="date" class="form-control @error('end_date') is-invalid @enderror"
+                                   id="end_date" name="end_date"
                                    value="{{ old('end_date', $dietPlan->end_date?->format('Y-m-d')) }}">
                             @error('end_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                             <div class="form-text">{{ __('Leave empty for ongoing plans') }}</div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="duration_days" class="form-label">{{ __('Duration (Days)') }}</label>
-                            <input type="number" class="form-control @error('duration_days') is-invalid @enderror" 
-                                   id="duration_days" name="duration_days" 
-                                   value="{{ old('duration_days', $dietPlan->duration_days) }}" 
+                            <input type="number" class="form-control @error('duration_days') is-invalid @enderror"
+                                   id="duration_days" name="duration_days"
+                                   value="{{ old('duration_days', $dietPlan->duration_days) }}"
                                    min="1" max="365"
                                    placeholder="{{ __('e.g., 30') }}">
                             @error('duration_days')
@@ -385,7 +402,7 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="status" class="form-label">{{ __('Status') }} <span class="text-danger">*</span></label>
-                            <select class="form-select @error('status') is-invalid @enderror" 
+                            <select class="form-select @error('status') is-invalid @enderror"
                                     id="status" name="status" required>
                                 @foreach(\App\Models\DietPlan::STATUSES as $key => $label)
                                 <option value="{{ $key }}" {{ old('status', $dietPlan->status) == $key ? 'selected' : '' }}>
@@ -397,10 +414,10 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="notes" class="form-label">{{ __('Notes') }}</label>
-                            <textarea class="form-control @error('notes') is-invalid @enderror" 
+                            <textarea class="form-control @error('notes') is-invalid @enderror"
                                       id="notes" name="notes" rows="3"
                                       placeholder="{{ __('Additional notes about the plan...') }}">{{ old('notes', $dietPlan->notes) }}</textarea>
                             @error('notes')
@@ -530,6 +547,65 @@ $(document).ready(function() {
                 break;
         }
     });
+
+    // Auto-calc daily targets from patient profile
+    function weeklyGoalBy(goal) {
+        switch(goal) {
+            case 'weight_loss': return -0.5; // kg/week
+            case 'weight_gain': return 0.5;
+            case 'muscle_gain': return 0.25;
+            default: return 0; // maintenance/diabetic/other
+        }
+    }
+
+    $('#btn-auto-calc-targets').on('click', function() {
+        const patientId = $('#patient_id').val();
+        const goal = $('#goal').val();
+        const activity = $('#activity_level_calc').val() || 'light';
+        if (!patientId) { alert('{{ __('Please select a patient first') }}'); return; }
+        if (!goal) { alert('{{ __('Please choose a goal first') }}'); return; }
+
+        const payload = {
+            patient_id: patientId,
+            goal: goal,
+            activity_level: activity,
+            weekly_weight_goal: weeklyGoalBy(goal)
+        };
+
+        // Visual feedback
+        const btn = $(this);
+        const prev = btn.html();
+        btn.prop('disabled', true).html('<span class=\"spinner-border spinner-border-sm me-2\"></span>{{ __('Calculating') }}...');
+
+        fetch('/nutrition/calculate-calories', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': $('meta[name=\"csrf-token\"]').attr('content')
+            },
+            body: JSON.stringify(payload)
+        }).then(r => r.json())
+          .then(data => {
+              if (!data || data.success === false) throw data;
+              $('#target_calories').val(data.calories.target_calories);
+              $('#target_protein').val(data.macronutrients.protein.grams);
+              $('#target_carbs').val(data.macronutrients.carbs.grams);
+              $('#target_fat').val(data.macronutrients.fat.grams);
+          })
+          .catch(err => {
+              console.error('Auto-calc failed', err);
+              if (err && err.message) alert(err.message);
+              else alert('{{ __('Unable to calculate targets. Please ensure patient profile has weight, height, date of birth and gender.') }}');
+          })
+          .finally(() => { btn.prop('disabled', false).html(prev); });
+    });
+
+    // If targets are empty on load, try auto-calc once
+    if (!$('#target_calories').val()) {
+        setTimeout(() => { if (!$('#target_calories').val()) { $('#btn-auto-calc-targets').click(); } }, 300);
+    }
+
 });
 </script>
 @endpush
