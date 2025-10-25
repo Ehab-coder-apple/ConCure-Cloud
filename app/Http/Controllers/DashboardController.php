@@ -116,15 +116,25 @@ class DashboardController extends Controller
             $data['newPatientsThisMonth'] = $applyPeriod($data['newPatientsThisMonth'], 'created_at')->count();
         }
 
-        // Prescription statistics
+        // Prescription statistics (include Simple Prescriptions if available)
         if ($user->canPrescribe() || $user->canManagePatients() ) {
             $prescriptionsQuery = Prescription::query();
             $prescriptionsQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
             });
 
-            $data['activePrescriptions'] = $prescriptionsQuery->active()->count();
-            $data['prescriptionsThisMonth'] = $applyPeriod((clone $prescriptionsQuery), 'prescribed_date')->count();
+            $activeCount = $prescriptionsQuery->active()->count();
+            $thisPeriodCount = $applyPeriod((clone $prescriptionsQuery), 'prescribed_date')->count();
+
+            // Also count simple_prescriptions for this clinic if the model/table exists
+            if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
+                $spBase = \App\Models\SimplePrescription::query()->where('clinic_id', $user->clinic_id);
+                $activeCount += (clone $spBase)->where('status', 'active')->count();
+                $thisPeriodCount += $applyPeriod((clone $spBase), 'prescribed_date')->count();
+            }
+
+            $data['activePrescriptions'] = $activeCount;
+            $data['prescriptionsThisMonth'] = $thisPeriodCount;
         }
 
         // Lab request statistics
@@ -419,11 +429,17 @@ class DashboardController extends Controller
                         ->count();
                 }
                 if ($user->canPrescribe() || $user->canManagePatients()) {
-                    $stats[$key]['prescriptions'] = Prescription::whereHas('patient', function ($q) use ($user) {
+                    $rxCount = Prescription::whereHas('patient', function ($q) use ($user) {
                             $q->where('clinic_id', $user->clinic_id);
                         })
                         ->whereDate('prescribed_date', $day->toDateString())
                         ->count();
+                    if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
+                        $rxCount += \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
+                            ->whereDate('prescribed_date', $day->toDateString())
+                            ->count();
+                    }
+                    $stats[$key]['prescriptions'] = $rxCount;
                 }
                 if ($user->canAccessFinance()) {
                     $stats[$key]['revenue'] = Invoice::where('clinic_id', $user->clinic_id)
@@ -444,11 +460,17 @@ class DashboardController extends Controller
                         ->count();
                 }
                 if ($user->canPrescribe() || $user->canManagePatients()) {
-                    $stats[$key]['prescriptions'] = Prescription::whereHas('patient', function ($q) use ($user) {
+                    $rxCount = Prescription::whereHas('patient', function ($q) use ($user) {
                             $q->where('clinic_id', $user->clinic_id);
                         })
                         ->whereYear('prescribed_date', $year)
                         ->count();
+                    if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
+                        $rxCount += \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
+                            ->whereYear('prescribed_date', $year)
+                            ->count();
+                    }
+                    $stats[$key]['prescriptions'] = $rxCount;
                 }
                 if ($user->canAccessFinance()) {
                     $stats[$key]['revenue'] = Invoice::where('clinic_id', $user->clinic_id)
@@ -470,12 +492,19 @@ class DashboardController extends Controller
                         ->count();
                 }
                 if ($user->canPrescribe() || $user->canManagePatients()) {
-                    $stats[$key]['prescriptions'] = Prescription::whereHas('patient', function ($q) use ($user) {
+                    $rxCount = Prescription::whereHas('patient', function ($q) use ($user) {
                             $q->where('clinic_id', $user->clinic_id);
                         })
                         ->whereMonth('prescribed_date', $month->month)
                         ->whereYear('prescribed_date', $month->year)
                         ->count();
+                    if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
+                        $rxCount += \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
+                            ->whereMonth('prescribed_date', $month->month)
+                            ->whereYear('prescribed_date', $month->year)
+                            ->count();
+                    }
+                    $stats[$key]['prescriptions'] = $rxCount;
                 }
                 if ($user->canAccessFinance()) {
                     $stats[$key]['revenue'] = Invoice::where('clinic_id', $user->clinic_id)
