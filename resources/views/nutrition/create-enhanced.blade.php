@@ -2216,6 +2216,109 @@ function updateBMIDisplay() {
     }
 }
 
+
+// Persist and auto-restore Weight Management & BMI preferences (localStorage)
+(function() {
+    const CURRENT_USER_ID = @json(auth()->id());
+
+    function wmKey() {
+        const patientId = document.getElementById('patient_id')?.value || 'none';
+        return `cc:wm_bmi:${CURRENT_USER_ID || 'anon'}:${patientId}`;
+    }
+
+    function getVal(id) {
+        const el = document.getElementById(id);
+        if (!el) return null;
+        if (el.type === 'number') return el.value !== '' ? parseFloat(el.value) : null;
+        return el.value ?? null;
+    }
+
+    function setVal(id, value) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (value === null || value === undefined || value === '') return;
+        el.value = value;
+    }
+
+    function collectPrefs() {
+        return {
+            initial_weight: getVal('initial_weight'),
+            target_weight_goal: getVal('target_weight_goal') ?? getVal('target_weight'),
+            initial_height: getVal('initial_height'),
+            weekly_weight_goal: getVal('weekly_weight_goal'),
+            // Optional future controls if present in the UI
+            period: document.getElementById('weight_period')?.value || null,
+            date_from: document.getElementById('weight_date_from')?.value || null,
+            date_to: document.getElementById('weight_date_to')?.value || null,
+        };
+    }
+
+    function applyPrefs(prefs) {
+        if (!prefs) return;
+        setVal('initial_weight', prefs.initial_weight);
+        setVal('target_weight_goal', prefs.target_weight_goal);
+        setVal('initial_height', prefs.initial_height);
+        setVal('weekly_weight_goal', prefs.weekly_weight_goal);
+        if (document.getElementById('weight_period') && prefs.period !== undefined) {
+            document.getElementById('weight_period').value = prefs.period;
+        }
+        if (document.getElementById('weight_date_from') && prefs.date_from) {
+            document.getElementById('weight_date_from').value = prefs.date_from;
+        }
+        if (document.getElementById('weight_date_to') && prefs.date_to) {
+            document.getElementById('weight_date_to').value = prefs.date_to;
+        }
+    }
+
+    function savePrefs() {
+        try {
+            localStorage.setItem(wmKey(), JSON.stringify(collectPrefs()));
+        } catch (e) {
+            // ignore storage errors
+        }
+    }
+
+    function loadPrefs() {
+        try {
+            const raw = localStorage.getItem(wmKey());
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load and apply last-used preferences before computing BMI
+        const existing = loadPrefs();
+        if (existing) {
+            applyPrefs(existing);
+        }
+
+        // Save on any changes to relevant controls
+        ['initial_weight','target_weight_goal','initial_height','weekly_weight_goal','weight_period','weight_date_from','weight_date_to']
+            .forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                ['input','change'].forEach(evt => el.addEventListener(evt, savePrefs));
+            });
+
+        // When patient changes, switch key namespace and try to restore
+        const patientEl = document.getElementById('patient_id');
+        if (patientEl) {
+            patientEl.addEventListener('change', function() {
+                setTimeout(function() {
+                    const prefs = loadPrefs();
+                    if (prefs) applyPrefs(prefs);
+                    if (typeof updateBMIDisplay === 'function') updateBMIDisplay();
+                }, 0);
+            });
+        }
+
+        // Recompute BMI with restored values
+        if (typeof updateBMIDisplay === 'function') updateBMIDisplay();
+    });
+})();
+
 // Add event listeners for BMI calculation
 document.addEventListener('DOMContentLoaded', function() {
     const weightHeightInputs = ['initial_weight', 'target_weight', 'target_weight_goal', 'initial_height', 'weekly_weight_goal'];
