@@ -353,6 +353,24 @@ function weeklyGoalBy(goal) {
     }
 }
 
+// Clamp and round value to the input's step/min/max
+function clampAndRoundToStep(value, inputId) {
+    var input = document.getElementById(inputId);
+    var v = parseFloat(value);
+    if (!input || isNaN(v)) return '';
+    var min = parseFloat(input.min);
+    var max = parseFloat(input.max);
+    var stepAttr = input.step || '1';
+    var step = (stepAttr === 'any') ? 1 : parseFloat(stepAttr);
+    if (!step || isNaN(step)) step = 1;
+    var rounded = Math.round(v / step) * step;
+    if (!isNaN(min)) rounded = Math.max(rounded, min);
+    if (!isNaN(max)) rounded = Math.min(rounded, max);
+    var decimals = ((step.toString().split('.')[1]) || '').length;
+    return decimals > 0 ? rounded.toFixed(decimals) : Math.round(rounded).toString();
+}
+
+
 document.getElementById('btn-auto-calc-targets').addEventListener('click', function() {
     const patientId = document.getElementById('patient_id').value;
     const goal = document.getElementById('goal').value;
@@ -382,10 +400,10 @@ document.getElementById('btn-auto-calc-targets').addEventListener('click', funct
     }).then(r => r.json())
       .then(data => {
           if (!data || data.success === false) throw data;
-          document.getElementById('target_calories').value = data.calories.target_calories;
-          document.getElementById('target_protein').value = data.macronutrients.protein.grams;
-          document.getElementById('target_carbs').value = data.macronutrients.carbs.grams;
-          document.getElementById('target_fat').value = data.macronutrients.fat.grams;
+          document.getElementById('target_calories').value = clampAndRoundToStep(data.calories.target_calories, 'target_calories');
+          document.getElementById('target_protein').value  = clampAndRoundToStep(data.macronutrients.protein.grams, 'target_protein');
+          document.getElementById('target_carbs').value    = clampAndRoundToStep(data.macronutrients.carbs.grams, 'target_carbs');
+          document.getElementById('target_fat').value      = clampAndRoundToStep(data.macronutrients.fat.grams, 'target_fat');
       })
       .catch(err => {
           console.error('Auto-calc failed', err);

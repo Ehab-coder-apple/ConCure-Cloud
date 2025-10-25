@@ -558,6 +558,23 @@ $(document).ready(function() {
         }
     }
 
+    // Clamp and round value to the input's step/min/max
+    function clampAndRoundToStep(value, $input) {
+        let v = parseFloat(value);
+        if (isNaN(v)) return '';
+        const min = parseFloat($input.attr('min'));
+        const max = parseFloat($input.attr('max'));
+        let stepAttr = $input.attr('step') || '1';
+        let step = (stepAttr === 'any') ? 1 : parseFloat(stepAttr);
+        if (!step || isNaN(step)) step = 1;
+        let rounded = Math.round(v / step) * step;
+        if (!isNaN(min)) rounded = Math.max(rounded, min);
+        if (!isNaN(max)) rounded = Math.min(rounded, max);
+        const decimals = ((step.toString().split('.')[1]) || '').length;
+        return decimals > 0 ? rounded.toFixed(decimals) : Math.round(rounded).toString();
+    }
+
+
     $('#btn-auto-calc-targets').on('click', function() {
         const patientId = $('#patient_id').val();
         const goal = $('#goal').val();
@@ -588,10 +605,14 @@ $(document).ready(function() {
         }).then(r => r.json())
           .then(data => {
               if (!data || data.success === false) throw data;
-              $('#target_calories').val(data.calories.target_calories);
-              $('#target_protein').val(data.macronutrients.protein.grams);
-              $('#target_carbs').val(data.macronutrients.carbs.grams);
-              $('#target_fat').val(data.macronutrients.fat.grams);
+              const $cal = $('#target_calories');
+              const $pro = $('#target_protein');
+              const $car = $('#target_carbs');
+              const $fat = $('#target_fat');
+              $cal.val(clampAndRoundToStep(data.calories.target_calories, $cal));
+              $pro.val(clampAndRoundToStep(data.macronutrients.protein.grams, $pro));
+              $car.val(clampAndRoundToStep(data.macronutrients.carbs.grams, $car));
+              $fat.val(clampAndRoundToStep(data.macronutrients.fat.grams, $fat));
           })
           .catch(err => {
               console.error('Auto-calc failed', err);
