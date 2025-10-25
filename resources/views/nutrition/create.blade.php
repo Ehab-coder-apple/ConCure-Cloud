@@ -407,6 +407,18 @@ window.addEventListener('load', function() {
     }
 });
 
+// Auto-run calculation when inputs change
+['patient_id','goal','activity_level_calc'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('change', function(){
+            var btn = document.getElementById('btn-auto-calc-targets');
+            if (btn) btn.click();
+        });
+    }
+});
+
+
 </script>
 @endpush
 @endsection

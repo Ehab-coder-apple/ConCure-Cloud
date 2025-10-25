@@ -601,6 +601,12 @@ $(document).ready(function() {
           .finally(() => { btn.prop('disabled', false).html(prev); });
     });
 
+
+    // Auto-run calculation when patient/goal/activity changes
+    $('#patient_id, #goal, #activity_level_calc').on('change', function() {
+        $('#btn-auto-calc-targets').trigger('click');
+    });
+
     // If targets are empty on load, try auto-calc once
     if (!$('#target_calories').val()) {
         setTimeout(() => { if (!$('#target_calories').val()) { $('#btn-auto-calc-targets').click(); } }, 300);
