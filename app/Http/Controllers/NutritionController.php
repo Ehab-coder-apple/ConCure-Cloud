@@ -1007,9 +1007,7 @@ class NutritionController extends Controller
             $genderMap = ['male' => 'Male', 'm' => 'Male', 'female' => 'Female', 'f' => 'Female'];
             $gender = $genderMap[strtolower((string)$genderRaw)] ?? ucfirst((string)$genderRaw);
             $age = $patient->age ?? null;
-            $dateStr = $dietPlan->start_date
-                ? \Carbon\Carbon::parse($dietPlan->start_date)->format('Y-m-d')
-                : ($dietPlan->updated_at ? $dietPlan->updated_at->format('Y-m-d') : date('Y-m-d'));
+            $dateStr = now()->toDateString();
             $infoParts = [];
             if (!empty($patientName)) { $infoParts[] = 'Name: ' . e($patientName); }
             if (!empty($gender)) { $infoParts[] = 'Gender: ' . e($gender); }
@@ -1129,9 +1127,7 @@ class NutritionController extends Controller
             $genderMap = ['male' => 'Male', 'm' => 'Male', 'female' => 'Female', 'f' => 'Female'];
             $gender = $genderMap[strtolower((string)$genderRaw)] ?? ucfirst((string)$genderRaw);
             $age = $patient->age ?? null;
-            $dateStr = $dietPlan->start_date
-                ? \Carbon\Carbon::parse($dietPlan->start_date)->format('Y-m-d')
-                : ($dietPlan->updated_at ? $dietPlan->updated_at->format('Y-m-d') : date('Y-m-d'));
+            $dateStr = now()->toDateString();
             $infoParts = [];
             if (!empty($patientName)) { $infoParts[] = 'Name: ' . e($patientName); }
             if (!empty($gender)) { $infoParts[] = 'Gender: ' . e($gender); }
