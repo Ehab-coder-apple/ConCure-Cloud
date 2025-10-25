@@ -142,7 +142,7 @@
                                     <input type="number" class="form-control @error('target_calories') is-invalid @enderror"
                                            id="target_calories" name="target_calories"
                                            value="{{ old('target_calories', $dietPlan->target_calories) }}"
-                                           min="500" max="5000" step="0.1"
+                                           min="500" max="5000" step="50"
                                            placeholder="{{ __('e.g., 2000') }}">
                                     <span class="input-group-text">kcal</span>
                                     @error('target_calories')
@@ -156,7 +156,7 @@
                                     <input type="number" class="form-control @error('target_protein') is-invalid @enderror"
                                            id="target_protein" name="target_protein"
                                            value="{{ old('target_protein', $dietPlan->target_protein) }}"
-                                           min="0" max="500" step="0.1"
+                                           min="0" max="500" step="5"
                                            placeholder="{{ __('e.g., 150') }}">
                                     <span class="input-group-text">g</span>
                                     @error('target_protein')
@@ -173,7 +173,7 @@
                                     <input type="number" class="form-control @error('target_carbs') is-invalid @enderror"
                                            id="target_carbs" name="target_carbs"
                                            value="{{ old('target_carbs', $dietPlan->target_carbs) }}"
-                                           min="0" max="1000" step="0.1"
+                                           min="0" max="1000" step="10"
                                            placeholder="{{ __('e.g., 250') }}">
                                     <span class="input-group-text">g</span>
                                     @error('target_carbs')
@@ -187,7 +187,7 @@
                                     <input type="number" class="form-control @error('target_fat') is-invalid @enderror"
                                            id="target_fat" name="target_fat"
                                            value="{{ old('target_fat', $dietPlan->target_fat) }}"
-                                           min="0" max="300" step="0.1"
+                                           min="0" max="300" step="5"
                                            placeholder="{{ __('e.g., 70') }}">
                                     <span class="input-group-text">g</span>
                                     @error('target_fat')
@@ -573,6 +573,15 @@ $(document).ready(function() {
         const decimals = ((step.toString().split('.')[1]) || '').length;
         return decimals > 0 ? rounded.toFixed(decimals) : Math.round(rounded).toString();
     }
+
+    // Normalize any pre-filled values to the nearest valid step on load
+    ['#target_calories','#target_protein','#target_carbs','#target_fat'].forEach(function(sel){
+        const $el = $(sel);
+        if ($el.length && $el.val()) {
+            $el.val(clampAndRoundToStep($el.val(), $el));
+        }
+    });
+
 
 
     $('#btn-auto-calc-targets').on('click', function() {
