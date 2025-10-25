@@ -76,13 +76,81 @@ class DietPlanWeightRecord extends Model
         });
 
         static::created(function ($record) {
-            // Update diet plan current weight and BMI
+            // Update diet plan current weight and BMI only if this is the latest record
             $dietPlan = $record->dietPlan;
             if ($dietPlan) {
-                $dietPlan->update([
-                    'current_weight' => $record->weight,
-                    'current_bmi' => $record->bmi,
-                ]);
+                $latest = self::where('diet_plan_id', $record->diet_plan_id)
+                    ->orderBy('record_date', 'desc')
+                    ->orderBy('id', 'desc')
+                    ->first();
+                if ($latest && $latest->id === $record->id) {
+                    $dietPlan->update([
+                        'current_weight' => $record->weight,
+                        'current_bmi' => $record->bmi,
+                    ]);
+                }
+            }
+        });
+
+        static::updating(function ($record) {
+            // Recalculate BMI if height and weight are provided
+            if ($record->height && $record->weight) {
+                $record->bmi = Patient::calculateBMI($record->weight, $record->height);
+            } else {
+                $record->bmi = null;
+            }
+
+            // Recalculate weight change relative to previous record (by date) or initial plan weight
+            $previousRecord = self::where('diet_plan_id', $record->diet_plan_id)
+                ->where('id', '!=', $record->id)
+                ->where('record_date', '<', $record->record_date)
+                ->orderBy('record_date', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($previousRecord) {
+                $record->weight_change = $record->weight - $previousRecord->weight;
+                if ($previousRecord->weight > 0) {
+                    $record->weight_change_percentage = ($record->weight_change / $previousRecord->weight) * 100;
+                } else {
+                    $record->weight_change_percentage = null;
+                }
+            } else {
+                // First record - compare with diet plan initial weight
+                $dietPlan = DietPlan::find($record->diet_plan_id);
+                if ($dietPlan && $dietPlan->initial_weight) {
+                    $record->weight_change = $record->weight - $dietPlan->initial_weight;
+                    if ($dietPlan->initial_weight > 0) {
+                        $record->weight_change_percentage = ($record->weight_change / $dietPlan->initial_weight) * 100;
+                    } else {
+                        $record->weight_change_percentage = null;
+                    }
+                } else {
+                    $record->weight_change = null;
+                    $record->weight_change_percentage = null;
+                }
+            }
+
+            // Ensure record date exists
+            if (!$record->record_date) {
+                $record->record_date = now()->toDateString();
+            }
+        });
+
+        static::updated(function ($record) {
+            // Keep diet plan's current values in sync with the latest record
+            $dietPlan = $record->dietPlan;
+            if ($dietPlan) {
+                $latest = self::where('diet_plan_id', $record->diet_plan_id)
+                    ->orderBy('record_date', 'desc')
+                    ->orderBy('id', 'desc')
+                    ->first();
+                if ($latest) {
+                    $dietPlan->update([
+                        'current_weight' => $latest->weight,
+                        'current_bmi' => $latest->bmi,
+                    ]);
+                }
             }
         });
     }

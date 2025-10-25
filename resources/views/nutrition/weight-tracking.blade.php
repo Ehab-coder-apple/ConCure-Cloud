@@ -122,7 +122,7 @@
                 <div class="card-body">
                     <div class="row text-center">
                         <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
-                            <div class="border-end border-lg-block d-none d-lg-block h-100"></div>
+                            <!-- removed vertical divider to prevent overlap with BMI badges -->
                             <h5 class="mb-2">{{ __('Initial BMI') }}</h5>
                             @if($dietPlan->initial_bmi)
                                 <h3 class="mb-1">
@@ -146,7 +146,7 @@
                         </div>
 
                         <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
-                            <div class="border-end border-lg-block d-none d-lg-block h-100"></div>
+                            <!-- removed vertical divider to prevent overlap with BMI badges -->
                             <h5 class="mb-2">{{ __('Current BMI') }}</h5>
                             @if($dietPlan->current_bmi)
                                 <h3 class="mb-1">
