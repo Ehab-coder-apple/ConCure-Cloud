@@ -95,7 +95,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="duration_days" class="form-label">{{ __('Duration (Days)') }}</label>
                                 <input type="number" class="form-control @error('duration_days') is-invalid @enderror"
-                                       id="duration_days" name="duration_days" value="{{ old('duration_days', 30) }}"
+                                       id="duration_days" name="duration_days" value="{{ old('duration_days', 7) }}"
                                        min="1" max="365">
                                 @error('duration_days')
                                 <div class="invalid-feedback">{{ $message }}</div>
