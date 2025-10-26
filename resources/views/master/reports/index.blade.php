@@ -143,6 +143,12 @@
           <div class="text-xs text-uppercase text-secondary mb-1">Service Charges (in range)</div>
           <div class="h5 mb-0 text-gray-800">{{ $currencySymbol }}{{ number_format($serviceCharges ?? 0, 2) }}</div>
         </div>
+          <div class="mt-2">
+            <a href="{{ route('master.reports.service-charges.export', request()->query()) }}" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-file-export me-1"></i> Export CSV
+            </a>
+          </div>
+
         <div class="icon-circle bg-secondary text-white"><i class="fas fa-receipt"></i></div>
       </div>
     </div>

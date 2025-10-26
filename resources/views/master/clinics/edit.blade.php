@@ -132,7 +132,7 @@
                         </div>
 
                         <!-- Billing & Fees -->
-                        <div class="card mb-4">
+                        <div class="card mb-4" id="billingCard">
                             <div class="card-header">
                                 <h6 class="m-0 font-weight-bold text-primary">
                                     <i class="fas fa-file-invoice-dollar me-2"></i>
@@ -182,6 +182,16 @@
                                         <div class="form-text">If set, service charge will be included in reports for the selected date range.</div>
                                     </div>
                                 </div>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="service_charge_note" class="form-label">Service Charge Note</label>
+                                        <input type="text" class="form-control @error('service_charge_note') is-invalid @enderror" id="service_charge_note" name="service_charge_note" value="{{ old('service_charge_note', $clinic->service_charge_note) }}" placeholder="Optional note (e.g. setup scope, payment reference)">
+                                        @error('service_charge_note')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
                                 <div class="text-muted small">Note: Demo clinics are excluded from Master financial reports.</div>
                             </div>
                         </div>
@@ -297,6 +307,28 @@
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-warning">
                                 <i class="fas fa-key me-2"></i>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Hide Billing & Fees when Demo clinic selected
+        const billingCard = document.getElementById('billingCard');
+        const demoRadio = document.getElementById('clinic_type_demo');
+        const tenantRadio = document.getElementById('clinic_type_tenant');
+        function updateBillingVisibility() {
+            if (!billingCard) return;
+            const isDemo = demoRadio && demoRadio.checked;
+            billingCard.classList.toggle('d-none', !!isDemo);
+            const inputs = billingCard.querySelectorAll('input, select, textarea, button');
+            inputs.forEach(el => { el.disabled = !!isDemo; });
+        }
+        if (demoRadio) demoRadio.addEventListener('change', updateBillingVisibility);
+        if (tenantRadio) tenantRadio.addEventListener('change', updateBillingVisibility);
+        updateBillingVisibility();
+    });
+</script>
+@endpush
+
                                 Reset Admin Password
                             </button>
                         </div>

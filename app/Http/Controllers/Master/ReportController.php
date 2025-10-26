@@ -153,6 +153,57 @@ class ReportController extends Controller
     }
 
     /**
+     * Export service charges within filters as CSV
+     */
+    public function exportServiceCharges(Request $request)
+    {
+        $from = $this->parseDate($request->query('from'));
+        $to   = $this->parseDate($request->query('to'));
+        $clinicId = $request->query('clinic_id');
+
+        if (!(Schema::hasColumn('clinics', 'service_charge_amount') && Schema::hasColumn('clinics', 'service_charge_date'))) {
+            return redirect()->route('master.reports')->with('error', 'Service charge fields are not available. Please run migrations.');
+        }
+
+        $query = Clinic::query()
+            ->where('is_active', true)
+            ->whereNotNull('service_charge_amount')
+            ->where('service_charge_amount', '>', 0);
+
+        if (Schema::hasColumn('clinics', 'is_demo')) { $query->where('is_demo', false); }
+        if ($from) { $query->whereDate('service_charge_date', '>=', $from->toDateString()); }
+        if ($to)   { $query->whereDate('service_charge_date', '<=', $to->toDateString()); }
+        if (!$from && !$to) {
+            $query->whereBetween('service_charge_date', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()]);
+        }
+        if ($clinicId) { $query->where('id', $clinicId); }
+
+        $filename = 'service-charges-' . now()->format('Ymd_His') . '.csv';
+
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            // CSV Header
+            fputcsv($out, ['clinic_id', 'clinic_name', 'service_charge_amount', 'service_charge_date', 'service_charge_note']);
+            // Rows
+            $query->orderBy('service_charge_date')
+                ->get(['id', 'name', 'service_charge_amount', 'service_charge_date', 'service_charge_note'])
+                ->each(function ($c) use ($out) {
+                    fputcsv($out, [
+                        $c->id,
+                        $c->name,
+                        number_format((float) $c->service_charge_amount, 2, '.', ''),
+                        optional($c->service_charge_date)->toDateString(),
+                        $c->service_charge_note,
+                    ]);
+                });
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+
+    /**
      * Get patient statistics
      */
     private function getPatientStats($from, $to, $clinicId): array

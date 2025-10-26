@@ -32,6 +32,7 @@ class Clinic extends Model
         'billing_user_count',
         'service_charge_amount',
         'service_charge_date',
+        'service_charge_note',
     ];
 
     protected $casts = [

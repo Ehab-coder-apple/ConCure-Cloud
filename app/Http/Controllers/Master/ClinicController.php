@@ -71,6 +71,7 @@ class ClinicController extends Controller
             'billing_user_count' => 'nullable|integer|min:1|max:100000',
             'service_charge_amount' => 'nullable|numeric|min:0|max:10000000',
             'service_charge_date' => 'nullable|date',
+            'service_charge_note' => 'nullable|string|max:500',
             // Admin
             'admin_first_name' => 'required|string|max:255',
             'admin_last_name' => 'required|string|max:255',
@@ -98,6 +99,7 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'billing_user_count')) { $clinicData['billing_user_count'] = $request->input('billing_user_count'); }
             if (Schema::hasColumn('clinics', 'service_charge_amount')) { $clinicData['service_charge_amount'] = $request->input('service_charge_amount'); }
             if (Schema::hasColumn('clinics', 'service_charge_date')) { $clinicData['service_charge_date'] = $request->input('service_charge_date'); }
+            if (Schema::hasColumn('clinics', 'service_charge_note')) { $clinicData['service_charge_note'] = $request->input('service_charge_note'); }
             $clinic = Clinic::create($clinicData);
 
             // Create admin user for the clinic
@@ -185,6 +187,7 @@ class ClinicController extends Controller
             'billing_user_count' => 'nullable|integer|min:1|max:100000',
             'service_charge_amount' => 'nullable|numeric|min:0|max:10000000',
             'service_charge_date' => 'nullable|date',
+            'service_charge_note' => 'nullable|string|max:500',
             // Admin user validation
             'admin_first_name' => 'required|string|max:255',
             'admin_last_name' => 'required|string|max:255',
@@ -215,6 +218,7 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'billing_user_count')) { $updateData['billing_user_count'] = $request->input('billing_user_count'); }
             if (Schema::hasColumn('clinics', 'service_charge_amount')) { $updateData['service_charge_amount'] = $request->input('service_charge_amount'); }
             if (Schema::hasColumn('clinics', 'service_charge_date')) { $updateData['service_charge_date'] = $request->input('service_charge_date'); }
+            if (Schema::hasColumn('clinics', 'service_charge_note')) { $updateData['service_charge_note'] = $request->input('service_charge_note'); }
             $clinic->update($updateData);
 
             // Update admin user information if admin exists

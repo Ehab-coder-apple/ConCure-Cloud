@@ -31,10 +31,10 @@ Route::middleware(['super.guest'])->group(function () {
 
 // Master Authenticated Routes
 Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(function () {
-    
+
     // Authentication
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    
+
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/clinic-status', [DashboardController::class, 'getClinicStatusData'])->name('dashboard.clinic-status');
@@ -43,13 +43,13 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::get('/dashboard/pending-registrations', [DashboardController::class, 'getPendingRegistrations'])->name('dashboard.pending-registrations');
     Route::post('/dashboard/approve-clinic/{clinic}', [DashboardController::class, 'approveClinic'])->name('dashboard.approve-clinic');
     Route::post('/dashboard/reject-clinic/{clinic}', [DashboardController::class, 'rejectClinic'])->name('dashboard.reject-clinic');
-    
+
     // Clinic Management
     Route::resource('clinics', ClinicController::class);
     Route::patch('/clinics/{clinic}/activate', [ClinicController::class, 'activate'])->name('clinics.activate');
     Route::patch('/clinics/{clinic}/deactivate', [ClinicController::class, 'deactivate'])->name('clinics.deactivate');
     Route::post('/clinics/{clinic}/reset-admin-password', [ClinicController::class, 'resetAdminPassword'])->name('clinics.reset-admin-password');
-    
+
     // User Management
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
@@ -60,7 +60,7 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::post('/users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
     Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-    
+
     // Plans CRUD
     Route::resource('plans', PlanController::class)->except(['show']);
 
@@ -89,6 +89,8 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
     Route::post('/reports/payments', [PaymentsController::class, 'store'])->name('reports.payments.store');
     Route::post('/reports/payments/import', [PaymentsController::class, 'import'])->name('reports.payments.import');
+        Route::get('/reports/service-charges/export', [ReportController::class, 'exportServiceCharges'])->name('reports.service-charges.export');
+
 });
 
 // Redirect /master to dashboard if authenticated, login if not
