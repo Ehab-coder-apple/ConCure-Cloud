@@ -990,17 +990,17 @@ class NutritionController extends Controller
             $dir = 'rtl';
             $html = '<!doctype html><html><head><meta charset="utf-8">'
                   . '<style>body{font-family: DejaVu Sans, Amiri; font-size:12pt; direction:rtl;}'
-                  . 'h2{margin:0 0 6px; text-align:center; color:#20B2AA} .meta{font-size:10pt; text-align:center; color:#666; margin:0 0 12px}'
+                  . '.header{width:100%; margin:0 0 12px 0;}'
+                  . '.plan-title{margin:0; font-size:16pt; color:#20B2AA; font-weight:700;}'
+                  . '.clinic-name{color:#20B2AA; font-weight:600; font-size:11pt;}'
+                  . '.meta{font-size:10pt; color:#666; margin:2px 0 0;}'
                   . 'ul{margin:0; padding-right:16px;} li{margin:2px 0}'
-                  . '.meal{margin:12px 0; page-break-inside: avoid; border:1px solid #eee; background:#fafafa; border-radius:6px; padding:8px 10px;}'
-                  . '.title{font-weight:bold; font-size:14pt; margin:0 0 6px 0; display:inline-block;} .badge{background:#20B2AA; color:#fff; padding:2px 8px; border-radius:10px; font-size:11pt; display:inline-block; margin:0 0 0 6px;}'
+                  . '.serving{font-size:10pt; color:#555;}'
+                  . '.meal{margin:12px 0; page-break-inside: avoid; border:1px solid #e9ecef; background:#fff; border-radius:6px; padding:10px 12px;}'
+                  . '.title{font-weight:bold; font-size:13pt; margin:0 0 6px 0; display:inline-block;}'
+                  . '.badge{background:#20B2AA; color:#fff; padding:2px 8px; border-radius:10px; font-size:10pt; display:inline-block; margin:0 0 0 6px;}'
                   . '</style></head><body dir="' . $dir . '">';
-            $html .= '<h2>Nutrition Plan #' . e($dietPlan->plan_number) . '</h2>';
-            $metaParts = [];
-            if ($dietPlan->patient && $dietPlan->patient->name) { $metaParts[] = e($dietPlan->patient->name); }
-            if ($dietPlan->doctor && $dietPlan->doctor->name) { $metaParts[] = e($dietPlan->doctor->name); }
-            if (!empty($metaParts)) { $html .= '<div class="meta">' . implode(' • ', $metaParts) . '</div>'; }
-            // Additional patient info line: Patient, Gender, Age, Date
+            // Build header: logo and plan title on the same row
             $patient = $dietPlan->patient;
             $patientName = $patient ? ($patient->full_name ?? ($patient->name ?? '')) : '';
             $genderRaw = $patient->gender ?? '';
@@ -1013,19 +1013,22 @@ class NutritionController extends Controller
             if (!empty($gender)) { $infoParts[] = 'Gender: ' . e($gender); }
             if ($age !== null) { $infoParts[] = 'Age: ' . e((string)$age); }
             if (!empty($dateStr)) { $infoParts[] = 'Date: ' . e($dateStr); }
-            if (!empty($infoParts)) { $html .= '<div class="meta">' . implode(' • ', $infoParts) . '</div>'; }
             $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($user->clinic_id);
-            if (!empty($clinicInfo['logo_pdf_path']) || !empty($clinicInfo['name'])) {
-                $html .= '<table style="width:100%; margin:0 0 12px 0;"><tr>';
-                if (!empty($clinicInfo['logo_pdf_path'])) {
-                    $html .= '<td style="width:72px; vertical-align:top; text-align:center;"><img src="' . e($clinicInfo['logo_pdf_path']) . '" style="max-height:64px; max-width:64px; border:1px solid #e9ecef; border-radius:6px; padding:2px;"></td>';
-                }
-                $align = !empty($clinicInfo['logo_pdf_path']) ? 'left' : 'center';
-                $pad = !empty($clinicInfo['logo_pdf_path']) ? 'padding-left:12px;' : '';
-                $html .= '<td style="vertical-align:top; text-align:' . $align . '; ' . $pad . '">';
-                if (!empty($clinicInfo['name'])) { $html .= '<div style="color:#20B2AA; font-weight:bold; font-size:12pt; margin:0 0 2px 0;">' . e($clinicInfo['name']) . '</div>'; }
-                $html .= '</td></tr></table>';
+            $html .= '<table class="header"><tr>';
+            // In RTL, first cell appears on the right (logo)
+            $logoCell = '';
+            if (!empty($clinicInfo['logo_pdf_path'])) {
+                $logoCell = '<td style="width:80px; vertical-align:middle; text-align:center;"><img src="' . e($clinicInfo['logo_pdf_path']) . '" style="max-height:60px; max-width:60px; border:1px solid #e9ecef; border-radius:6px; padding:2px;"></td>';
+            } else {
+                $logoCell = '<td style="width:80px;"></td>';
             }
+            $html .= $logoCell;
+            $html .= '<td style="vertical-align:middle;">'
+                  . '<div class="plan-title">Nutrition Plan #' . e($dietPlan->plan_number) . '</div>'
+                  . (!empty($clinicInfo['name']) ? '<div class="clinic-name">' . e($clinicInfo['name']) . '</div>' : '')
+                  . (!empty($infoParts) ? '<div class="meta">' . implode(' • ', $infoParts) . '</div>' : '')
+                  . '</td>';
+            $html .= '</tr></table>';
 
             // Group meals by normalized meal_type and detected option number (robust to Eloquent/dynamic props)
             $groups = [];
@@ -1088,10 +1091,12 @@ class NutritionController extends Controller
                     $html .= '<ul style="margin:6px 0 0 0; padding-right:14px;">';
                     foreach ($optMeals[$optNo] as $meal) {
                         foreach ($meal->foods as $mf) {
-                            $display = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity_with_equivalent ?? ''));
-                            if ($display === '') { continue; }
+                            $name = trim((string)($mf->food_name ?? ''));
+                            $qtyeq = trim((string)($mf->quantity_with_equivalent ?? ''));
+                            if ($name === '' && $qtyeq === '') { continue; }
                             $notes = trim((string)($mf->preparation_notes ?? ''));
-                            $item = '<li>' . e($display);
+                            $item = '<li>' . e($name);
+                            if ($qtyeq !== '') { $item .= ' <span class="serving">' . e($qtyeq) . '</span>'; }
                             if ($notes !== '') {
                                 $item .= '<div style="color:#7f8c8d; font-size:10pt; margin-top:2px;">' . e($notes) . '</div>';
                             }
@@ -1129,17 +1134,17 @@ class NutritionController extends Controller
             $dir = $isKurdish ? 'rtl' : 'ltr';
             $html = '<!doctype html><html><head><meta charset="utf-8">'
                   . '<style>body{font-family: DejaVu Sans, Amiri; font-size:12pt; direction:' . $dir . ';}'
-                  . 'h2{margin:0 0 6px; text-align:center; color:#20B2AA} .meta{font-size:10pt; text-align:center; color:#666; margin:0 0 12px}'
+                  . '.header{width:100%; margin:0 0 12px 0;}'
+                  . '.plan-title{margin:0; font-size:16pt; color:#20B2AA; font-weight:700;}'
+                  . '.clinic-name{color:#20B2AA; font-weight:600; font-size:11pt;}'
+                  . '.meta{font-size:10pt; color:#666; margin:2px 0 0;}'
                   . 'ul{margin:0; padding-' . ($dir==='rtl'?'right':'left') . ':16px;} li{margin:2px 0}'
-                  . '.meal{margin:12px 0; page-break-inside: avoid; border:1px solid #eee; background:#fafafa; border-radius:6px; padding:8px 10px;}'
-                  . '.title{font-weight:bold; font-size:14pt; margin:0 0 6px 0; display:inline-block;} .badge{background:#20B2AA; color:#fff; padding:2px 8px; border-radius:10px; font-size:11pt; display:inline-block; margin:0 0 0 6px;}'
+                  . '.serving{font-size:10pt; color:#555;}'
+                  . '.meal{margin:12px 0; page-break-inside: avoid; border:1px solid #e9ecef; background:#fff; border-radius:6px; padding:10px 12px;}'
+                  . '.title{font-weight:bold; font-size:13pt; margin:0 0 6px 0; display:inline-block;}'
+                  . '.badge{background:#20B2AA; color:#fff; padding:2px 8px; border-radius:10px; font-size:10pt; display:inline-block; margin:0 0 0 6px;}'
                   . '</style></head><body dir="' . $dir . '">';
-            $html .= '<h2>Nutrition Plan #' . e($dietPlan->plan_number) . '</h2>';
-            $metaParts = [];
-            if ($dietPlan->patient && $dietPlan->patient->name) { $metaParts[] = e($dietPlan->patient->name); }
-            if ($dietPlan->doctor && $dietPlan->doctor->name) { $metaParts[] = e($dietPlan->doctor->name); }
-            if (!empty($metaParts)) { $html .= '<div class="meta">' . implode(' • ', $metaParts) . '</div>'; }
-            // Additional patient info line: Patient, Gender, Age, Date
+            // Header row with logo and title
             $patient = $dietPlan->patient;
             $patientName = $patient ? ($patient->full_name ?? ($patient->name ?? '')) : '';
             $genderRaw = $patient->gender ?? '';
@@ -1152,19 +1157,21 @@ class NutritionController extends Controller
             if (!empty($gender)) { $infoParts[] = 'Gender: ' . e($gender); }
             if ($age !== null) { $infoParts[] = 'Age: ' . e((string)$age); }
             if (!empty($dateStr)) { $infoParts[] = 'Date: ' . e($dateStr); }
-            if (!empty($infoParts)) { $html .= '<div class="meta">' . implode(' • ', $infoParts) . '</div>'; }
             $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($user->clinic_id);
-            if (!empty($clinicInfo['logo_pdf_path']) || !empty($clinicInfo['name'])) {
-                $html .= '<table style="width:100%; margin:0 0 12px 0;"><tr>';
-                if (!empty($clinicInfo['logo_pdf_path'])) {
-                    $html .= '<td style="width:72px; vertical-align:top; text-align:center;"><img src="' . e($clinicInfo['logo_pdf_path']) . '" style="max-height:64px; max-width:64px; border:1px solid #e9ecef; border-radius:6px; padding:2px;"></td>';
-                }
-                $align = !empty($clinicInfo['logo_pdf_path']) ? 'left' : 'center';
-                $pad = !empty($clinicInfo['logo_pdf_path']) ? 'padding-left:12px;' : '';
-                $html .= '<td style="vertical-align:top; text-align:' . $align . '; ' . $pad . '">';
-                if (!empty($clinicInfo['name'])) { $html .= '<div style="color:#20B2AA; font-weight:bold; font-size:12pt; margin:0 0 2px 0;">' . e($clinicInfo['name']) . '</div>'; }
-                $html .= '</td></tr></table>';
-            }
+            $html .= '<table class="header"><tr>';
+            // In LTR/RTL handle automatically by dir; place logo cell opposite to text
+            $logoCell = '';
+            if (!empty($clinicInfo['logo_pdf_path'])) {
+                $logoCell = '<td style="width:80px; vertical-align:middle; text-align:center;"><img src="' . e($clinicInfo['logo_pdf_path']) . '" style="max-height:60px; max-width:60px; border:1px solid #e9ecef; border-radius:6px; padding:2px;"></td>';
+            } else { $logoCell = '<td style="width:80px;"></td>'; }
+            if ($dir === 'rtl') { $html .= $logoCell; }
+            $html .= '<td style="vertical-align:middle;">'
+                  . '<div class="plan-title">Nutrition Plan #' . e($dietPlan->plan_number) . '</div>'
+                  . (!empty($clinicInfo['name']) ? '<div class="clinic-name">' . e($clinicInfo['name']) . '</div>' : '')
+                  . (!empty($infoParts) ? '<div class="meta">' . implode(' • ', $infoParts) . '</div>' : '')
+                  . '</td>';
+            if ($dir !== 'rtl') { $html .= $logoCell; }
+            $html .= '</tr></table>';
 
             // Group meals by normalized meal_type and detected option number (robust)
             $groups = [];
@@ -1228,10 +1235,12 @@ class NutritionController extends Controller
                     $html .= '<ul style="margin:6px 0 0 0; ' . $padSide . ':14px;">';
                     foreach ($optMeals[$optNo] as $meal) {
                         foreach ($meal->foods as $mf) {
-                            $display = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity_with_equivalent ?? ''));
-                            if ($display === '') { continue; }
+                            $name = trim((string)($mf->food_name ?? ''));
+                            $qtyeq = trim((string)($mf->quantity_with_equivalent ?? ''));
+                            if ($name === '' && $qtyeq === '') { continue; }
                             $notes = trim((string)($mf->preparation_notes ?? ''));
-                            $item = '<li>' . e($display);
+                            $item = '<li>' . e($name);
+                            if ($qtyeq !== '') { $item .= ' <span class="serving">' . e($qtyeq) . '</span>'; }
                             if ($notes !== '') {
                                 $item .= '<div style="color:#7f8c8d; font-size:10pt; margin-top:2px;">' . e($notes) . '</div>';
                             }
