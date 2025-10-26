@@ -263,11 +263,11 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if($record->weight_change)
+                                            @if($record->weight_change !== null)
                                                 <span class="{{ $record->weight_change_badge_class }}">
                                                     {{ $record->weight_change > 0 ? '+' : '' }}{{ number_format($record->weight_change, 1) }} kg
                                                 </span>
-                                                @if($record->weight_change_percentage)
+                                                @if($record->weight_change_percentage !== null)
                                                     <br><small class="text-muted">({{ $record->weight_change_percentage > 0 ? '+' : '' }}{{ number_format($record->weight_change_percentage, 1) }}%)</small>
                                                 @endif
                                             @else

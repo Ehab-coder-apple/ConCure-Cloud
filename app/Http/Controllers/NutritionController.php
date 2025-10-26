@@ -2260,6 +2260,9 @@ class NutritionController extends Controller
 
         $dietPlan->addWeightRecord($recordData);
 
+        // Recalculate series to ensure BMI/changes and sync current values
+        $dietPlan->recalculateWeightSeries();
+
         // Update target weight and BMI if provided
         $updateData = [];
         if ($request->filled('target_weight')) {
@@ -2271,6 +2274,10 @@ class NutritionController extends Controller
 
         if (!empty($updateData)) {
             $dietPlan->update($updateData);
+            // Weight goal depends on target_weight
+            if (isset($updateData['target_weight']) && $dietPlan->initial_weight !== null) {
+                $dietPlan->update(['weight_goal_kg' => $dietPlan->target_weight - $dietPlan->initial_weight]);
+            }
         }
 
         return back()->with('success', 'Weight record added successfully.');
@@ -2330,6 +2337,9 @@ class NutritionController extends Controller
 
         $weightRecord->update($updateData);
 
+        // Recalculate series to ensure BMI/changes and sync current values
+        $dietPlan->recalculateWeightSeries();
+
         // Update target weight and BMI if provided
         $dietPlanUpdateData = [];
         if ($request->filled('target_weight')) {
@@ -2341,6 +2351,9 @@ class NutritionController extends Controller
 
         if (!empty($dietPlanUpdateData)) {
             $dietPlan->update($dietPlanUpdateData);
+            if (isset($dietPlanUpdateData['target_weight']) && $dietPlan->initial_weight !== null) {
+                $dietPlan->update(['weight_goal_kg' => $dietPlan->target_weight - $dietPlan->initial_weight]);
+            }
         }
 
         return back()->with('success', 'Weight record updated successfully.');
@@ -2369,6 +2382,9 @@ class NutritionController extends Controller
         }
 
         $weightRecord->delete();
+
+        // Recalculate series after deletion
+        $dietPlan->recalculateWeightSeries();
 
         return back()->with('success', 'Weight record deleted successfully.');
     }

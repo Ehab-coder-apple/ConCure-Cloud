@@ -282,6 +282,55 @@ class DietPlan extends Model
     }
 
     /**
+     * Recalculate BMI and weight changes across all weight records and
+     * synchronize current weight/BMI on the plan.
+     */
+    public function recalculateWeightSeries(): void
+    {
+        $previousWeight = $this->initial_weight;
+
+        $records = $this->weightRecords()
+            ->orderBy('record_date', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        foreach ($records as $rec) {
+            // Recompute BMI
+            if ($rec->height && $rec->weight) {
+                $rec->bmi = Patient::calculateBMI((float)$rec->weight, (float)$rec->height);
+            } else {
+                $rec->bmi = null;
+            }
+
+            // Recompute change vs previous (or initial for first)
+            if ($previousWeight !== null) {
+                $change = (float)$rec->weight - (float)$previousWeight;
+                $rec->weight_change = $change;
+                $rec->weight_change_percentage = $previousWeight > 0 ? ($change / (float)$previousWeight) * 100 : null;
+            } else {
+                $rec->weight_change = null;
+                $rec->weight_change_percentage = null;
+            }
+
+            $rec->saveQuietly();
+
+            $previousWeight = $rec->weight;
+        }
+
+        // Sync plan's current values to the latest record
+        $latest = $this->weightRecords()
+            ->orderBy('record_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+        if ($latest) {
+            $this->update([
+                'current_weight' => $latest->weight,
+                'current_bmi' => $latest->bmi,
+            ]);
+        }
+    }
+
+    /**
      * Get total weight change from start.
      */
     public function getTotalWeightChangeAttribute(): ?float
