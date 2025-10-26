@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Schema;
 
 class ClinicController extends Controller
 {
@@ -74,16 +75,19 @@ class ClinicController extends Controller
         DB::beginTransaction();
         try {
             // Create clinic
-            $clinic = Clinic::create([
+            $clinicData = [
                 'name' => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'address' => $request->address,
                 'max_users' => $request->max_users,
                 'is_active' => true,
-                'is_demo' => $request->input('clinic_type') === 'demo',
                 'activated_at' => now(),
-            ]);
+            ];
+            if (Schema::hasColumn('clinics', 'is_demo')) {
+                $clinicData['is_demo'] = $request->input('clinic_type') === 'demo';
+            }
+            $clinic = Clinic::create($clinicData);
 
             // Create admin user for the clinic
             $adminUsername = strtolower(str_replace(' ', '', $request->admin_first_name . $request->admin_last_name));
@@ -180,14 +184,17 @@ class ClinicController extends Controller
         DB::beginTransaction();
         try {
             // Update clinic information
-            $clinic->update([
+            $updateData = [
                 'name' => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'address' => $request->address,
                 'max_users' => $request->max_users,
-                'is_demo' => $request->input('clinic_type') === 'demo',
-            ]);
+            ];
+            if (Schema::hasColumn('clinics', 'is_demo')) {
+                $updateData['is_demo'] = $request->input('clinic_type') === 'demo';
+            }
+            $clinic->update($updateData);
 
             // Update admin user information if admin exists
             if ($adminUser) {

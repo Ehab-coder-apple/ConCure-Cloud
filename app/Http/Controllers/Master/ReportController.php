@@ -89,7 +89,11 @@ class ReportController extends Controller
 
         // Financials (master subscriptions)
         $currencySymbol = config('concure.currency_symbol', '$');
-        $activeSubscribers = Clinic::where('is_active', true)->where('is_demo', false)->count();
+        $activeSubscribersQuery = Clinic::where('is_active', true);
+        if (Schema::hasColumn('clinics', 'is_demo')) {
+            $activeSubscribersQuery->where('is_demo', false);
+        }
+        $activeSubscribers = $activeSubscribersQuery->count();
         $monthlyFee = (float) config('concure.subscription.monthly_fee', 29);
         $expectedMonthlyFees = $activeSubscribers * $monthlyFee;
 
@@ -322,10 +326,12 @@ class ReportController extends Controller
         if ($from) { $invoicesBase->whereDate('created_at', '>=', $from->toDateString()); }
         if ($to) { $invoicesBase->whereDate('created_at', '<=', $to->toDateString()); }
         if ($clinicId) { $invoicesBase->where('clinic_id', $clinicId); }
-        // Exclude demo clinics from financial stats
-        $invoicesBase->whereHas('clinic', function ($q) {
-            $q->where('is_demo', false);
-        });
+        // Exclude demo clinics from financial stats (guard if column exists)
+        if (Schema::hasColumn('clinics', 'is_demo')) {
+            $invoicesBase->whereHas('clinic', function ($q) {
+                $q->where('is_demo', false);
+            });
+        }
 
         $totalInvoices = (clone $invoicesBase)->count();
         $totalRevenue = (clone $invoicesBase)->sum('total_amount');
