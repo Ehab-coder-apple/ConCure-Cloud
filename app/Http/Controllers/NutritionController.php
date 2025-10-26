@@ -1051,8 +1051,19 @@ class NutritionController extends Controller
                 $groups[$key]['meals'][] = $m;
             }
 
+            // Build per-meal-type map of options to render options in a single row
+            $byType = [];
             foreach ($groups as $g) {
-                $type = $g['type'] ?? 'meal';
+                $t = $g['type'] ?? 'meal';
+                $o = $g['option'] ?? '1';
+                if (!isset($byType[$t])) { $byType[$t] = []; }
+                if (!isset($byType[$t][$o])) { $byType[$t][$o] = []; }
+                // Merge meals for the same type/option
+                $byType[$t][$o] = array_merge($byType[$t][$o], $g['meals']);
+            }
+
+            foreach ($byType as $type => $optMeals) {
+                // Localized meal-type label
                 $label = $type;
                 if ($type === 'breakfast') { $label = 'الفطور'; }
                 elseif ($type === 'lunch') { $label = 'الغداء'; }
@@ -1064,27 +1075,35 @@ class NutritionController extends Controller
 
                 $html .= '<div class="meal">';
                 $labelText = e($label);
-                if (!empty($g['option'])) {
-                    $optHtml = '<span class="badge">' . 'الخيار ' . e($g['option']) . '</span>';
-                    $html .= '<div class="title">' . $labelText . ' — ' . $optHtml . '</div>';
-                } else {
-                    $html .= '<div class="title">' . $labelText . '</div>';
-                }
-                $html .= '<ul>';
-                foreach ($g['meals'] as $meal) {
-                    foreach ($meal->foods as $mf) {
-                        $display = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity_with_equivalent ?? ''));
-                        if ($display === '') { continue; }
-                        $notes = trim((string)($mf->preparation_notes ?? ''));
-                        $item = '<li>' . e($display);
-                        if ($notes !== '') {
-                            $item .= '<div style="color:#7f8c8d; font-size:10pt; margin-top:2px;">' . e($notes) . '</div>';
+                $html .= '<div class="title">' . $labelText . '</div>';
+
+                // Render options horizontally in a single row
+                $opts = array_keys($optMeals);
+                sort($opts, SORT_NATURAL);
+                $colWidth = max(1, floor(100 / max(1, count($opts))));
+                $html .= '<table style="width:100%; border-collapse:collapse;"><tr>';
+                foreach ($opts as $optNo) {
+                    $html .= '<td style="vertical-align:top; width:' . $colWidth . '%; border:1px solid #e9ecef; padding:8px;">';
+                    $html .= '<div class="badge">' . 'الخيار ' . e($optNo) . '</div>';
+                    $html .= '<ul style="margin:6px 0 0 0; padding-right:14px;">';
+                    foreach ($optMeals[$optNo] as $meal) {
+                        foreach ($meal->foods as $mf) {
+                            $display = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity_with_equivalent ?? ''));
+                            if ($display === '') { continue; }
+                            $notes = trim((string)($mf->preparation_notes ?? ''));
+                            $item = '<li>' . e($display);
+                            if ($notes !== '') {
+                                $item .= '<div style="color:#7f8c8d; font-size:10pt; margin-top:2px;">' . e($notes) . '</div>';
+                            }
+                            $item .= '</li>';
+                            $html .= $item;
                         }
-                        $item .= '</li>';
-                        $html .= $item;
                     }
+                    $html .= '</ul>';
+                    $html .= '</td>';
                 }
-                $html .= '</ul></div>';
+                $html .= '</tr></table>';
+                $html .= '</div>';
             }
 
             // Append Instructions & Dietary Restrictions if provided
@@ -1163,8 +1182,17 @@ class NutritionController extends Controller
                 $groups[$key]['meals'][] = $m;
             }
 
+            // Build per-meal-type map to render options in a single horizontal row
+            $byType = [];
             foreach ($groups as $g) {
-                $type = $g['type'] ?? 'meal';
+                $t = $g['type'] ?? 'meal';
+                $o = $g['option'] ?? '1';
+                if (!isset($byType[$t])) { $byType[$t] = []; }
+                if (!isset($byType[$t][$o])) { $byType[$t][$o] = []; }
+                $byType[$t][$o] = array_merge($byType[$t][$o], $g['meals']);
+            }
+
+            foreach ($byType as $type => $optMeals) {
                 // Meal type labels per language (basic set)
                 if ($isKurdish) {
                     // Default to Sorani/Bahdini generic words
@@ -1187,27 +1215,35 @@ class NutritionController extends Controller
 
                 $html .= '<div class="meal">';
                 $labelText = e($label);
-                if (!empty($g['option'])) {
-                    $optHtml = '<span class="badge">' . 'Option ' . e($g['option']) . '</span>';
-                    $html .= '<div class="title">' . $labelText . ' — ' . $optHtml . '</div>';
-                } else {
-                    $html .= '<div class="title">' . $labelText . '</div>';
-                }
-                $html .= '<ul>';
-                foreach ($g['meals'] as $meal) {
-                    foreach ($meal->foods as $mf) {
-                        $display = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity_with_equivalent ?? ''));
-                        if ($display === '') { continue; }
-                        $notes = trim((string)($mf->preparation_notes ?? ''));
-                        $item = '<li>' . e($display);
-                        if ($notes !== '') {
-                            $item .= '<div style="color:#7f8c8d; font-size:10pt; margin-top:2px;">' . e($notes) . '</div>';
+                $html .= '<div class="title">' . $labelText . '</div>';
+
+                $opts = array_keys($optMeals);
+                sort($opts, SORT_NATURAL);
+                $colWidth = max(1, floor(100 / max(1, count($opts))));
+                $html .= '<table style="width:100%; border-collapse:collapse;"><tr>';
+                foreach ($opts as $optNo) {
+                    $html .= '<td style="vertical-align:top; width:' . $colWidth . '%; border:1px solid #e9ecef; padding:8px;">';
+                    $html .= '<div class="badge">' . 'Option ' . e($optNo) . '</div>';
+                    $padSide = ($dir === 'rtl') ? 'padding-right' : 'padding-left';
+                    $html .= '<ul style="margin:6px 0 0 0; ' . $padSide . ':14px;">';
+                    foreach ($optMeals[$optNo] as $meal) {
+                        foreach ($meal->foods as $mf) {
+                            $display = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity_with_equivalent ?? ''));
+                            if ($display === '') { continue; }
+                            $notes = trim((string)($mf->preparation_notes ?? ''));
+                            $item = '<li>' . e($display);
+                            if ($notes !== '') {
+                                $item .= '<div style="color:#7f8c8d; font-size:10pt; margin-top:2px;">' . e($notes) . '</div>';
+                            }
+                            $item .= '</li>';
+                            $html .= $item;
                         }
-                        $item .= '</li>';
-                        $html .= $item;
                     }
+                    $html .= '</ul>';
+                    $html .= '</td>';
                 }
-                $html .= '</ul></div>';
+                $html .= '</tr></table>';
+                $html .= '</div>';
             }
 
             // Append Instructions & Dietary Restrictions if provided
