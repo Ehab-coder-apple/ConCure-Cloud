@@ -24,6 +24,7 @@ try {
             'phone' => '123456789',
             'address' => 'Demo Address',
             'is_active' => true,
+            'is_demo' => true,
             'activated_at' => now(),
             'subscription_expires_at' => now()->addYear(),
             'max_users' => 50,
@@ -35,6 +36,7 @@ try {
         // Make sure clinic is active
         $clinic->update([
             'is_active' => true,
+            'is_demo' => true,
             'activated_at' => now(),
             'subscription_expires_at' => now()->addYear(),
         ]);

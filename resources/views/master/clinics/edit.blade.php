@@ -100,6 +100,24 @@
                                 <div class="form-text">Maximum number of users allowed for this clinic</div>
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label d-block">Clinic Type</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="clinic_type" id="clinic_type_tenant" value="tenant" {{ old('clinic_type', $clinic->is_demo ? 'demo' : 'tenant') === 'tenant' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="clinic_type_tenant">Tenant Clinic</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="clinic_type" id="clinic_type_demo" value="demo" {{ old('clinic_type', $clinic->is_demo ? 'demo' : 'tenant') === 'demo' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="clinic_type_demo">Demo Clinic (Sales)</label>
+                                </div>
+                                @error('clinic_type')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">Changing clinic type affects reporting. Demo clinics are excluded from financial reports.</div>
+                            </div>
+                        </div>
+
 
                         <div class="mb-4">
                             <label for="address" class="form-label">Address</label>

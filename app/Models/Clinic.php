@@ -19,6 +19,7 @@ class Clinic extends Model
         'logo',
         'settings',
         'is_active',
+        'is_demo',
         'max_users',
         'activated_at',
         'activation_code',
@@ -32,6 +33,7 @@ class Clinic extends Model
     protected $casts = [
         'settings' => 'array',
         'is_active' => 'boolean',
+        'is_demo' => 'boolean',
         'activated_at' => 'datetime',
         'next_billing_at' => 'datetime',
         'custom_monthly_price' => 'decimal:2',

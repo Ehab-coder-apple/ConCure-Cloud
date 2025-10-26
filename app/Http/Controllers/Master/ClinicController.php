@@ -64,6 +64,7 @@ class ClinicController extends Controller
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'max_users' => 'required|integer|min:1|max:1000',
+            'clinic_type' => 'nullable|in:tenant,demo',
             'admin_first_name' => 'required|string|max:255',
             'admin_last_name' => 'required|string|max:255',
             'admin_email' => 'required|email|unique:users,email',
@@ -80,6 +81,7 @@ class ClinicController extends Controller
                 'address' => $request->address,
                 'max_users' => $request->max_users,
                 'is_active' => true,
+                'is_demo' => $request->input('clinic_type') === 'demo',
                 'activated_at' => now(),
             ]);
 
@@ -162,6 +164,7 @@ class ClinicController extends Controller
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'max_users' => 'required|integer|min:1|max:1000',
+            'clinic_type' => 'nullable|in:tenant,demo',
             // Admin user validation
             'admin_first_name' => 'required|string|max:255',
             'admin_last_name' => 'required|string|max:255',
@@ -183,6 +186,7 @@ class ClinicController extends Controller
                 'phone' => $request->phone,
                 'address' => $request->address,
                 'max_users' => $request->max_users,
+                'is_demo' => $request->input('clinic_type') === 'demo',
             ]);
 
             // Update admin user information if admin exists

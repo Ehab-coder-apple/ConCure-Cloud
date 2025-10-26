@@ -95,7 +95,12 @@
                                                 <i class="fas fa-hospital text-white"></i>
                                             </div>
                                             <div>
-                                                <div class="font-weight-bold">{{ $clinic->name }}</div>
+                                                <div class="font-weight-bold">
+                                                    {{ $clinic->name }}
+                                                    @if($clinic->is_demo)
+                                                        <span class="badge bg-secondary ms-2" title="Demo clinic">Demo</span>
+                                                    @endif
+                                                </div>
                                                 <div class="text-muted small">ID: {{ $clinic->id }}</div>
                                             </div>
                                         </div>
