@@ -119,7 +119,7 @@
         <div>
           <div class="text-xs text-uppercase text-primary mb-1">Expected Monthly Fees</div>
           <div class="h5 mb-0 text-gray-800">{{ $currencySymbol }}{{ number_format($expectedMonthlyFees, 2) }}</div>
-          <small class="text-muted">{{ $activeSubscribers }} active subscribers × {{ $currencySymbol }}{{ number_format($monthlyFee, 2) }}</small>
+          <small class="text-muted">{{ $expectedFormulaNote ?? '' }}</small>
         </div>
         <div class="icon-circle bg-primary text-white"><i class="fas fa-file-invoice-dollar"></i></div>
       </div>
@@ -136,6 +136,18 @@
       </div>
     </div>
   </div>
+  <div class="col-md-4">
+    <div class="card reports-card border-left-secondary">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-uppercase text-secondary mb-1">Service Charges (in range)</div>
+          <div class="h5 mb-0 text-gray-800">{{ $currencySymbol }}{{ number_format($serviceCharges ?? 0, 2) }}</div>
+        </div>
+        <div class="icon-circle bg-secondary text-white"><i class="fas fa-receipt"></i></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Patient Analytics -->

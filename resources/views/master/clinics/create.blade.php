@@ -131,6 +131,61 @@
                         </div>
                     </div>
                 </div>
+                <!-- Billing & Fees -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>
+                            Billing & Fees
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="billing_user_price" class="form-label">Price per User (monthly)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">{{ config('concure.currency_symbol', '$') }}</span>
+                                    <input type="number" step="0.01" min="0" class="form-control @error('billing_user_price') is-invalid @enderror" id="billing_user_price" name="billing_user_price" value="{{ old('billing_user_price') }}" placeholder="e.g. 5.00">
+                                </div>
+                                @error('billing_user_price')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">Set the monthly fee charged per user for this clinic (optional).</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="billing_user_count" class="form-label">Billable Users</label>
+                                <input type="number" min="1" step="1" class="form-control @error('billing_user_count') is-invalid @enderror" id="billing_user_count" name="billing_user_count" value="{{ old('billing_user_count') }}" placeholder="Leave empty to use Maximum Users">
+                                @error('billing_user_count')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">If empty, the Maximum Users value will be used.</div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="service_charge_amount" class="form-label">One-time Service Charge</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">{{ config('concure.currency_symbol', '$') }}</span>
+                                    <input type="number" step="0.01" min="0" class="form-control @error('service_charge_amount') is-invalid @enderror" id="service_charge_amount" name="service_charge_amount" value="{{ old('service_charge_amount') }}" placeholder="e.g. 100.00">
+                                </div>
+                                @error('service_charge_amount')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">Charged once when the contract is signed.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="service_charge_date" class="form-label">Service Charge Date</label>
+                                <input type="date" class="form-control @error('service_charge_date') is-invalid @enderror" id="service_charge_date" name="service_charge_date" value="{{ old('service_charge_date') }}">
+                                @error('service_charge_date')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">If set, service charge will be included in reports for the selected date range.</div>
+                            </div>
+                        </div>
+                        <div class="text-muted small">Note: Demo clinics are excluded from Master financial reports.</div>
+                    </div>
+                </div>
+
 
                 <!-- Admin User Information -->
                 <div class="card mb-4">

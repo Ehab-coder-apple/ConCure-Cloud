@@ -90,12 +90,37 @@ class ReportController extends Controller
         // Financials (master subscriptions)
         $currencySymbol = config('concure.currency_symbol', '$');
         $activeSubscribersQuery = Clinic::where('is_active', true);
-        if (Schema::hasColumn('clinics', 'is_demo')) {
-            $activeSubscribersQuery->where('is_demo', false);
-        }
+        if (Schema::hasColumn('clinics', 'is_demo')) { $activeSubscribersQuery->where('is_demo', false); }
         $activeSubscribers = $activeSubscribersQuery->count();
-        $monthlyFee = (float) config('concure.subscription.monthly_fee', 29);
-        $expectedMonthlyFees = $activeSubscribers * $monthlyFee;
+
+        // Expected monthly fees: per-clinic billable user count × price/user (fallback to flat fee)
+        $expectedMonthlyFees = 0.0;
+        if (Schema::hasColumn('clinics', 'billing_user_price') && Schema::hasColumn('clinics', 'billing_user_count')) {
+            $feesQuery = Clinic::query()->where('is_active', true);
+            if (Schema::hasColumn('clinics', 'is_demo')) { $feesQuery->where('is_demo', false); }
+            $expectedMonthlyFees = (float) $feesQuery->select(DB::raw('SUM(COALESCE(billing_user_price, 0) * COALESCE(billing_user_count, max_users)) as total'))
+                                                  ->value('total');
+            $expectedFormulaNote = 'Sum of per-clinic (users × price/user)';
+        } else {
+            $monthlyFee = (float) config('concure.subscription.monthly_fee', 29);
+            $expectedMonthlyFees = $activeSubscribers * $monthlyFee;
+            $expectedFormulaNote = $activeSubscribers.' subscribers × '.$currencySymbol.number_format($monthlyFee, 2);
+        }
+
+        // One-time service charges within range (default current month)
+        $serviceCharges = 0.0;
+        if (Schema::hasColumn('clinics', 'service_charge_amount') && Schema::hasColumn('clinics', 'service_charge_date')) {
+            $scQuery = Clinic::query()->where('is_active', true)
+                ->whereNotNull('service_charge_amount')
+                ->where('service_charge_amount', '>', 0);
+            if (Schema::hasColumn('clinics', 'is_demo')) { $scQuery->where('is_demo', false); }
+            if ($from) { $scQuery->whereDate('service_charge_date', '>=', $from->toDateString()); }
+            if ($to)   { $scQuery->whereDate('service_charge_date', '<=', $to->toDateString()); }
+            if (!$from && !$to) {
+                $scQuery->whereBetween('service_charge_date', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()]);
+            }
+            $serviceCharges = (float) $scQuery->sum('service_charge_amount');
+        }
 
         // Collected amount for selected period (defaults to current month)
         $collectedAmount = 0.0;
@@ -122,7 +147,7 @@ class ReportController extends Controller
             'clinicsTotal', 'clinicsActive', 'clinicsInactive',
             'usersByRole',
             'patientStats', 'prescriptionStats', 'labStats', 'appointmentStats', 'financialStats',
-            'currencySymbol', 'activeSubscribers', 'monthlyFee', 'expectedMonthlyFees', 'collectedAmount',
+            'currencySymbol', 'activeSubscribers', 'expectedMonthlyFees', 'collectedAmount', 'serviceCharges', 'expectedFormulaNote',
             'clinics'
         ));
     }

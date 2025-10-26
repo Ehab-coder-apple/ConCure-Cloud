@@ -66,6 +66,12 @@ class ClinicController extends Controller
             'address' => 'nullable|string',
             'max_users' => 'required|integer|min:1|max:1000',
             'clinic_type' => 'nullable|in:tenant,demo',
+            // Billing fields
+            'billing_user_price' => 'nullable|numeric|min:0|max:1000000',
+            'billing_user_count' => 'nullable|integer|min:1|max:100000',
+            'service_charge_amount' => 'nullable|numeric|min:0|max:10000000',
+            'service_charge_date' => 'nullable|date',
+            // Admin
             'admin_first_name' => 'required|string|max:255',
             'admin_last_name' => 'required|string|max:255',
             'admin_email' => 'required|email|unique:users,email',
@@ -87,6 +93,11 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'is_demo')) {
                 $clinicData['is_demo'] = $request->input('clinic_type') === 'demo';
             }
+            // Optional billing fields
+            if (Schema::hasColumn('clinics', 'billing_user_price')) { $clinicData['billing_user_price'] = $request->input('billing_user_price'); }
+            if (Schema::hasColumn('clinics', 'billing_user_count')) { $clinicData['billing_user_count'] = $request->input('billing_user_count'); }
+            if (Schema::hasColumn('clinics', 'service_charge_amount')) { $clinicData['service_charge_amount'] = $request->input('service_charge_amount'); }
+            if (Schema::hasColumn('clinics', 'service_charge_date')) { $clinicData['service_charge_date'] = $request->input('service_charge_date'); }
             $clinic = Clinic::create($clinicData);
 
             // Create admin user for the clinic
@@ -169,6 +180,11 @@ class ClinicController extends Controller
             'address' => 'nullable|string',
             'max_users' => 'required|integer|min:1|max:1000',
             'clinic_type' => 'nullable|in:tenant,demo',
+            // Billing fields
+            'billing_user_price' => 'nullable|numeric|min:0|max:1000000',
+            'billing_user_count' => 'nullable|integer|min:1|max:100000',
+            'service_charge_amount' => 'nullable|numeric|min:0|max:10000000',
+            'service_charge_date' => 'nullable|date',
             // Admin user validation
             'admin_first_name' => 'required|string|max:255',
             'admin_last_name' => 'required|string|max:255',
@@ -194,6 +210,11 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'is_demo')) {
                 $updateData['is_demo'] = $request->input('clinic_type') === 'demo';
             }
+            // Optional billing fields
+            if (Schema::hasColumn('clinics', 'billing_user_price')) { $updateData['billing_user_price'] = $request->input('billing_user_price'); }
+            if (Schema::hasColumn('clinics', 'billing_user_count')) { $updateData['billing_user_count'] = $request->input('billing_user_count'); }
+            if (Schema::hasColumn('clinics', 'service_charge_amount')) { $updateData['service_charge_amount'] = $request->input('service_charge_amount'); }
+            if (Schema::hasColumn('clinics', 'service_charge_date')) { $updateData['service_charge_date'] = $request->input('service_charge_date'); }
             $clinic->update($updateData);
 
             // Update admin user information if admin exists

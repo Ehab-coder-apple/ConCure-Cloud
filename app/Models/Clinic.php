@@ -28,6 +28,10 @@ class Clinic extends Model
         'next_billing_at',
         'custom_monthly_price',
         'custom_yearly_price',
+        'billing_user_price',
+        'billing_user_count',
+        'service_charge_amount',
+        'service_charge_date',
     ];
 
     protected $casts = [
@@ -38,6 +42,9 @@ class Clinic extends Model
         'next_billing_at' => 'datetime',
         'custom_monthly_price' => 'decimal:2',
         'custom_yearly_price' => 'decimal:2',
+        'billing_user_price' => 'decimal:2',
+        'service_charge_amount' => 'decimal:2',
+        'service_charge_date' => 'date',
     ];
 
     /**
