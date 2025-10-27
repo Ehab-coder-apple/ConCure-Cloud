@@ -313,17 +313,17 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Hide Billing & Fees when Demo clinic selected
         const billingCard = document.getElementById('billingCard');
-        const demoRadio = document.getElementById('clinic_type_demo');
-        const tenantRadio = document.getElementById('clinic_type_tenant');
         function updateBillingVisibility() {
             if (!billingCard) return;
-            const isDemo = demoRadio && demoRadio.checked;
+            const selected = document.querySelector('input[name="clinic_type"]:checked');
+            const isDemo = selected && selected.value === 'demo';
             billingCard.classList.toggle('d-none', !!isDemo);
-            const inputs = billingCard.querySelectorAll('input, select, textarea, button');
-            inputs.forEach(el => { el.disabled = !!isDemo; });
+            billingCard.querySelectorAll('input, select, textarea, button')
+                .forEach(el => { el.disabled = !!isDemo; });
         }
-        if (demoRadio) demoRadio.addEventListener('change', updateBillingVisibility);
-        if (tenantRadio) tenantRadio.addEventListener('change', updateBillingVisibility);
+        document.querySelectorAll('input[name="clinic_type"]').forEach(r => {
+            r.addEventListener('change', updateBillingVisibility);
+        });
         updateBillingVisibility();
     });
 </script>
