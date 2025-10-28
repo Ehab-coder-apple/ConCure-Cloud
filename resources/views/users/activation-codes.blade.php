@@ -281,6 +281,9 @@
                                     <option value="doctor">{{ __('Doctor') }}</option>
                                     <option value="assistant">{{ __('Assistant') }}</option>
                                     <option value="nurse">{{ __('Nurse') }}</option>
+                                    <option value="pharmacist">{{ __('Pharmacist') }}</option>
+                                    <option value="lab_dept">{{ __('Lab Technician') }}</option>
+                                    <option value="radiology_dept">{{ __('Radiology Dept.') }}</option>
                                     <option value="accountant">{{ __('Accountant') }}</option>
                                 </select>
                             </div>

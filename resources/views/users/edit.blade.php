@@ -552,6 +552,7 @@ function updateRoleDescription() {
         'nutritionist': '{{ __("Specialized access to nutrition plans, diet management, food database, and patient dietary care.") }}',
         'pharmacist': '{{ __("Pharmacy operations: manage and verify prescriptions, and handle medicine inventory.") }}',
         'lab_dept': '{{ __("Laboratory operations: process lab requests and record results.") }}',
+        'radiology_dept': '{{ __("Radiology operations: process imaging requests and record results.") }}',
         'assistant': '{{ __("Patient management, appointment scheduling, and basic medical record access.") }}',
         'nurse': '{{ __("Patient care features, vital signs recording, and medication administration.") }}',
         'accountant': '{{ __("Financial management, invoicing, expense tracking, and reporting features.") }}'

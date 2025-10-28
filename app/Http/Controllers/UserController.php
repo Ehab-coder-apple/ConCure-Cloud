@@ -396,7 +396,7 @@ class UserController extends Controller
         $request->validate([
             'type' => 'required|in:clinic,user',
             'clinic_id' => 'required_if:type,user|exists:clinics,id',
-            'role' => 'required_if:type,user|in:admin,doctor,assistant,nurse,accountant,patient',
+            'role' => 'required_if:type,user|in:admin,doctor,assistant,nurse,accountant,patient,nutritionist,pharmacist,lab_dept,radiology_dept',
             'notes' => 'nullable|string|max:500',
         ]);
 
