@@ -156,7 +156,7 @@
                                                 <option value="pharmacist" {{ old('role', request('assign_to') ? 'assistant' : '') == 'pharmacist' ? 'selected' : '' }}>{{ __('Pharmacist') }}</option>
                                             @endif
                                             @if(in_array('lab_dept', $availableRoles ?? []))
-                                                <option value="lab_dept" {{ old('role', request('assign_to') ? 'assistant' : '') == 'lab_dept' ? 'selected' : '' }}>{{ __('Lab Dept.') }}</option>
+                                                <option value="lab_dept" {{ old('role', request('assign_to') ? 'assistant' : '') == 'lab_dept' ? 'selected' : '' }}>{{ __('Lab Technician') }}</option>
                                             @endif
                                             @if(in_array('radiology_dept', $availableRoles ?? []))
                                                 <option value="radiology_dept" {{ old('role', request('assign_to') ? 'assistant' : '') == 'radiology_dept' ? 'selected' : '' }}>{{ __('Radiology Dept.') }}</option>
