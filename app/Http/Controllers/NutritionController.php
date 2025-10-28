@@ -664,6 +664,75 @@ class NutritionController extends Controller
             'status' => 'required|in:active,completed,cancelled',
             'meal_options' => 'nullable|string', // JSON string of meal options data
         ]);
+        // Save-as-new flow: when requested from Enhanced editor, clone into a new plan with today's date
+        if ($request->boolean('save_as_new')) {
+            try {
+                DB::beginTransaction();
+
+                $createData = [
+                    'patient_id' => $dietPlan->patient_id,
+                    'doctor_id' => $user->id,
+                    'title' => $request->input('title', $dietPlan->title),
+                    'description' => $request->input('description', $dietPlan->description),
+                    'goal' => $request->input('goal', $dietPlan->goal),
+                    'goal_description' => $request->input('goal_description', $dietPlan->goal_description),
+                    'duration_days' => $request->input('duration_days', $dietPlan->duration_days),
+                    'target_calories' => $request->input('target_calories', $dietPlan->target_calories),
+                    'target_protein' => $request->input('target_protein', $dietPlan->target_protein),
+                    'target_carbs' => $request->input('target_carbs', $dietPlan->target_carbs),
+                    'target_fat' => $request->input('target_fat', $dietPlan->target_fat),
+                    'target_weight' => $request->input('target_weight', $dietPlan->target_weight),
+                    'instructions' => $request->input('instructions', $dietPlan->instructions),
+                    'restrictions' => $request->input('restrictions', $dietPlan->restrictions),
+                    'start_date' => now()->toDateString(),
+                    'end_date' => $request->input('end_date'),
+                    'status' => $request->input('status', 'active'),
+                ];
+
+                $newPlan = DietPlan::create($createData);
+
+                if ($request->filled('meal_options')) {
+                    $mealOptionsData = json_decode($request->meal_options, true);
+                    if ($mealOptionsData && is_array($mealOptionsData)) {
+                        foreach ($mealOptionsData as $mealType => $options) {
+                            if (!empty($options) && is_array($options)) {
+                                foreach ($options as $optionIndex => $option) {
+                                    if (!empty($option['foods']) && is_array($option['foods'])) {
+                                        $meal = $newPlan->meals()->create([
+                                            'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
+                                            'day_number' => null,
+                                            'option_number' => $option['option_number'] ?? ($optionIndex + 1),
+                                            'is_option_based' => true,
+                                            'option_description' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1)))),
+                                            'meal_name' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1))))
+                                        ]);
+                                        foreach ($option['foods'] as $food) {
+                                            $meal->foods()->create([
+                                                'food_id' => $food['food_id'] ?? null,
+                                                'food_name' => $food['food_name'] ?? $food['displayName'] ?? 'Unknown Food',
+                                                'quantity' => $food['quantity'] ?? 100,
+                                                'unit' => $food['unit'] ?? 'g',
+                                                'preparation_notes' => $food['preparation_notes'] ?? $food['notes'] ?? null,
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                DB::commit();
+
+                return redirect()->route('nutrition.show', $newPlan)
+                    ->with('success', 'Saved as a new nutrition plan dated today. Original plan unchanged.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                \Log::error('Save-as-new in update() failed', ['diet_plan_id' => $dietPlan->id, 'error' => $e->getMessage()]);
+                return back()->withInput()->withErrors(['error' => 'Failed to save as new: ' . $e->getMessage()]);
+            }
+        }
+
 
         $dietPlan->update($request->only([
             'title', 'description', 'goal', 'goal_description', 'duration_days',

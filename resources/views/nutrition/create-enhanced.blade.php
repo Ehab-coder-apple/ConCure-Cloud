@@ -28,6 +28,7 @@
         @csrf
         @if(isset($dietPlan))
             @method('PUT')
+            <input type="hidden" name="save_as_new" value="1">
         @endif
 
         <div class="row">
@@ -612,7 +613,7 @@
                     </a>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-1"></i>
-                        {{ isset($dietPlan) ? __('Update Nutrition Plan') : __('Create Nutrition Plan') }}
+                        {{ isset($dietPlan) ? __('Save As New Nutrition Plan') : __('Create Nutrition Plan') }}
                     </button>
                 </div>
             </div>
@@ -1084,6 +1085,23 @@ function loadExistingMealData() {
                             mealOption.total_protein += foodItem.protein;
                             mealOption.total_carbs += foodItem.carbs;
                             mealOption.total_fat += foodItem.fat;
+                        } else {
+                            // Custom food without linked master record - still show it with 0 macros
+                            const qty = parseFloat(mealFood.quantity) || 0;
+                            const unit = (mealFood.unit || 'g').toLowerCase();
+                            const foodItem = {
+                                food_id: null,
+                                food_name: mealFood.food_name || 'Custom Food',
+                                displayName: mealFood.food_name || 'Custom Food',
+                                quantity: qty,
+                                unit: unit,
+                                preparation_notes: mealFood.preparation_notes || '',
+                                calories: 0,
+                                protein: 0,
+                                carbs: 0,
+                                fat: 0
+                            };
+                            mealOption.foods.push(foodItem);
                         }
                     });
                 });
