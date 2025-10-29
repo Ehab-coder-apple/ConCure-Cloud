@@ -274,14 +274,10 @@
                                         <div class="alert alert-info mb-4">
                                             <i class="fas fa-info-circle me-2"></i>
                                             <strong>{{ __('Flexible Permission System:') }}</strong>
-                                            {{ __('You can grant any combination of permissions to this user, regardless of their role. Use the role-based suggestions below as starting points, then customize as needed for their specific responsibilities.') }}
+                                            {{ __('Select the permissions below as needed. Role does not auto-assign permissions; admins must choose access explicitly for each user.') }}
                                         </div>
 
-                                        <div class="alert alert-success mb-4">
-                                            <i class="fas fa-lightbulb me-2"></i>
-                                            <strong>{{ __('Quick Setup:') }}</strong>
-                                            {{ __('Click on a role-based suggestion button below to automatically select appropriate permissions for common roles, then modify as needed.') }}
-                                        </div>
+
 
                                         <!-- Permission Sections -->
                                         <div class="row">
@@ -333,63 +329,7 @@
                                             @endforeach
                                         </div>
 
-                                        <!-- Global Permission Actions -->
-                                        <div class="row mt-4">
-                                            <div class="col-12">
-                                                <div class="card bg-light">
-                                                    <div class="card-body">
-                                                        <h6 class="mb-3 text-center">{{ __('Quick Actions') }}</h6>
 
-                                                        <!-- Role-Based Suggestions -->
-                                                        <div class="row mb-3">
-                                                            <div class="col-12">
-                                                                <h6 class="text-muted mb-2">{{ __('Role-Based Suggestions:') }}</h6>
-                                                                <div class="btn-group-sm d-flex flex-wrap gap-2">
-                                                                    <button type="button" class="btn btn-outline-primary" onclick="applyRolePermissions('admin')">
-                                                                        <i class="fas fa-user-shield me-1"></i>
-                                                                        {{ __('Admin Permissions') }}
-                                                                    </button>
-                                                                    <button type="button" class="btn btn-outline-info" onclick="applyRolePermissions('doctor')">
-                                                                        <i class="fas fa-user-md me-1"></i>
-                                                                        {{ __('Doctor Permissions') }}
-                                                                    </button>
-                                                                    <button type="button" class="btn btn-outline-success" onclick="applyRolePermissions('assistant')">
-                                                                        <i class="fas fa-user-tie me-1"></i>
-                                                                        {{ __('Assistant Permissions') }}
-                                                                    </button>
-                                                                    <button type="button" class="btn btn-outline-warning" onclick="applyRolePermissions('nurse')">
-                                                                        <i class="fas fa-user-nurse me-1"></i>
-                                                                        {{ __('Nurse Permissions') }}
-                                                                    </button>
-                                                                    <button type="button" class="btn btn-outline-secondary" onclick="applyRolePermissions('accountant')">
-                                                                        <i class="fas fa-calculator me-1"></i>
-                                                                        {{ __('Accountant Permissions') }}
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <hr>
-
-                                                        <!-- General Actions -->
-                                                        <div class="text-center">
-                                                            <button type="button" class="btn btn-success me-2" onclick="selectAllPermissions()">
-                                                                <i class="fas fa-check-double me-1"></i>
-                                                                {{ __('Grant All Permissions') }}
-                                                            </button>
-                                                            <button type="button" class="btn btn-warning me-2" onclick="selectBasicPermissions()">
-                                                                <i class="fas fa-user me-1"></i>
-                                                                {{ __('Basic User Permissions') }}
-                                                            </button>
-                                                            <button type="button" class="btn btn-danger" onclick="deselectAllPermissions()">
-                                                                <i class="fas fa-times me-1"></i>
-                                                                {{ __('Remove All Permissions') }}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
 
@@ -431,19 +371,7 @@ const sectionPermissions = {
     @endforeach
 };
 
-// Role-based permission suggestions
-const rolePermissions = {
-    @php
-        $roles = ['admin', 'doctor', 'assistant', 'nurse', 'accountant', 'patient'];
-    @endphp
-    @foreach($roles as $role)
-    '{{ $role }}': [
-        @foreach(\App\Models\User::getSuggestedPermissions($role) as $permission)
-        '{{ $permission }}',
-        @endforeach
-    ],
-    @endforeach
-};
+
 
 function updateRoleDescription() {
     const role = document.getElementById('role').value;
@@ -510,68 +438,7 @@ function deselectAllInSection(sectionKey) {
     });
 }
 
-function selectAllPermissions() {
-    const checkboxes = document.querySelectorAll('input[name="permissions[]"]');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = true;
-    });
-}
 
-function deselectAllPermissions() {
-    const checkboxes = document.querySelectorAll('input[name="permissions[]"]');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = false;
-    });
-}
-
-function selectBasicPermissions() {
-    // First deselect all
-    deselectAllPermissions();
-
-    // Then select basic permissions
-    const basicPermissions = [
-        'dashboard_view',
-        'patients_view',
-        'appointments_view',
-        'prescriptions_view',
-        'medicines_view'
-    ];
-
-    basicPermissions.forEach(permission => {
-        const checkbox = document.getElementById('permission_' + permission);
-        if (checkbox) {
-            checkbox.checked = true;
-        }
-    });
-}
-
-function applyRolePermissions(role) {
-    // First deselect all permissions
-    deselectAllPermissions();
-
-    // Get suggested permissions for the role
-    const permissions = rolePermissions[role] || [];
-
-    // Apply the permissions
-    permissions.forEach(permission => {
-        const checkbox = document.getElementById('permission_' + permission);
-        if (checkbox) {
-            checkbox.checked = true;
-        }
-    });
-
-    // Show a notification
-    const roleNames = {
-        'admin': 'Administrator',
-        'doctor': 'Doctor',
-        'assistant': 'Assistant',
-        'nurse': 'Nurse',
-        'accountant': 'Accountant',
-        'patient': 'Patient'
-    };
-
-    console.log(`Applied ${roleNames[role]} permissions (${permissions.length} permissions)`);
-}
 
 // Auto-generate username from first and last name
 document.getElementById('first_name').addEventListener('input', generateUsername);
