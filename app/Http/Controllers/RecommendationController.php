@@ -65,6 +65,11 @@ class RecommendationController extends Controller
     {
         $user = auth()->user();
 
+        // Check lab view permission
+        if (!$user->canViewLabRequests()) {
+            abort(403, 'You do not have permission to view lab requests.');
+        }
+
         $query = LabRequest::with(['patient', 'doctor', 'tests']);
 
         // Filter by clinic for all users
@@ -161,8 +166,8 @@ class RecommendationController extends Controller
     {
         $user = auth()->user();
 
-        // Check if user has permission to create prescriptions (admin-delegated)
-        if (!$user->hasPermission('prescriptions_create')) {
+        // Check if user has permission to create lab requests
+        if (!$user->canCreateLabRequests()) {
             abort(403, 'You do not have permission to create lab requests. Please contact your administrator.');
         }
 
@@ -216,6 +221,12 @@ class RecommendationController extends Controller
     public function showLabRequest(LabRequest $labRequest)
     {
         $user = auth()->user();
+        // Check if user has permission to view lab requests
+        if (!$user->canViewLabRequests()) {
+            abort(403, 'You do not have permission to view lab requests.');
+        }
+
+
 
         // Enforce clinic and doctor access
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
@@ -286,6 +297,12 @@ class RecommendationController extends Controller
     public function printLabRequest(LabRequest $labRequest)
     {
         $user = auth()->user();
+        // Check if user has permission to view/print lab requests
+        if (!$user->canViewLabRequests()) {
+            abort(403, 'You do not have permission to print lab requests.');
+        }
+
+
 
         // Ensure user can only print lab requests from their clinic
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
@@ -316,6 +333,10 @@ class RecommendationController extends Controller
         // Ensure user can only access lab requests from their clinic
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to lab request.');
+        }
+        // Check if user has permission to view/download lab request
+        if (!$user->canViewLabRequests()) {
+            abort(403, 'You do not have permission to download lab request PDFs.');
         }
         // Ensure assistants/doctors can only access assigned doctor data
         if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->canAccessDoctor($labRequest->doctor_id)) {
@@ -357,7 +378,7 @@ class RecommendationController extends Controller
         }
 
         // Check if user has permission to edit lab requests
-        if (!$user->hasPermission('prescriptions_create')) {
+        if (!$user->canEditLabRequests()) {
             abort(403, 'You do not have permission to edit lab requests. Please contact your administrator.');
         }
 
@@ -403,7 +424,7 @@ class RecommendationController extends Controller
         }
 
         // Check if user has permission to edit lab requests
-        if (!$user->hasPermission('prescriptions_create')) {
+        if (!$user->canEditLabRequests()) {
             abort(403, 'You do not have permission to edit lab requests. Please contact your administrator.');
         }
 
@@ -466,6 +487,12 @@ class RecommendationController extends Controller
     public function updateLabRequestStatus(Request $request, LabRequest $labRequest)
     {
         $user = auth()->user();
+        // Check permission to update status
+        if (!$user->canEditLabRequests()) {
+            abort(403, 'You do not have permission to update lab request status.');
+        }
+
+
 
         // Ensure user can only update lab requests from their clinic
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
@@ -497,6 +524,12 @@ class RecommendationController extends Controller
     public function destroyLabRequest(LabRequest $labRequest)
     {
         $user = auth()->user();
+        // Check permission to delete lab requests
+        if (!$user->canDeleteLabRequests()) {
+            abort(403, 'You do not have permission to delete lab requests.');
+        }
+
+
 
         // Ensure user can only delete lab requests from their clinic
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {

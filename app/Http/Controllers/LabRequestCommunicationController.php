@@ -34,6 +34,12 @@ class LabRequestCommunicationController extends Controller
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to lab request.');
         }
+        // Check permission to send lab requests via WhatsApp
+        if (!$user->canEditLabRequests()) {
+            abort(403, 'You do not have permission to send lab requests.');
+        }
+
+
 
         $request->validate([
             'phone_number' => 'nullable|string',
@@ -128,6 +134,12 @@ class LabRequestCommunicationController extends Controller
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to lab request.');
         }
+        // Check permission to send lab requests via Email
+        if (!$user->canEditLabRequests()) {
+            abort(403, 'You do not have permission to send lab requests.');
+        }
+
+
 
         $request->validate([
             'email' => 'nullable|email',
@@ -199,6 +211,12 @@ class LabRequestCommunicationController extends Controller
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to lab request.');
         }
+        // Check permission to upload lab results
+        if (!$user->canEditLabRequests()) {
+            abort(403, 'You do not have permission to upload lab results.');
+        }
+
+
 
         $request->validate([
             'result_file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
@@ -207,7 +225,7 @@ class LabRequestCommunicationController extends Controller
 
         try {
             $file = $request->file('result_file');
-            
+
             // Generate unique filename
             $filename = 'lab_result_' . $labRequest->request_number . '_' . time() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs("patients/{$labRequest->patient_id}/lab_results", $filename, 'public');
@@ -306,20 +324,20 @@ class LabRequestCommunicationController extends Controller
         $message .= "📋 *Patient:* {$labRequest->patient->full_name}\n";
         $message .= "🆔 *Patient ID:* {$labRequest->patient->patient_id}\n";
         $message .= "⚡ *Priority:* {$labRequest->priority_display}\n";
-        
+
         if ($labRequest->due_date) {
             $message .= "📅 *Due Date:* {$labRequest->due_date->format('M d, Y')}\n";
         }
-        
+
         $message .= "\n🧪 *Tests Required:*\n";
         foreach ($labRequest->tests as $index => $test) {
             $message .= ($index + 1) . ". {$test->test_name}\n";
         }
-        
+
         if ($labRequest->clinical_notes) {
             $message .= "\n📝 *Clinical Notes:*\n{$labRequest->clinical_notes}\n";
         }
-        
+
         $message .= "\n👨‍⚕️ *Requested by:* Dr. {$labRequest->doctor->first_name} {$labRequest->doctor->last_name}\n";
         $message .= "🏥 *Clinic:* " . (auth()->user()->clinic->name ?? 'ConCure Clinic') . "\n\n";
         $message .= "Please process this request and send the results back.\n\n";

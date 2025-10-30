@@ -481,6 +481,43 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user can view lab requests.
+     */
+    public function canViewLabRequests(): bool
+    {
+        return $this->hasAnyPermission(['lab_view', 'lab_create', 'lab_edit', 'lab_delete', 'lab_manage']);
+    }
+
+    /**
+     * Check if user can create lab requests.
+     */
+    public function canCreateLabRequests(): bool
+    {
+        // DEVELOPMENT MODE: Disable all permission checks
+        if (config('app.debug') || env('DISABLE_PERMISSIONS', true)) {
+            return true;
+        }
+
+        return $this->hasAnyPermission(['lab_create', 'lab_manage']);
+    }
+
+    /**
+     * Check if user can edit lab requests.
+     */
+    public function canEditLabRequests(): bool
+    {
+        return $this->hasAnyPermission(['lab_edit', 'lab_manage']);
+    }
+
+    /**
+     * Check if user can delete lab requests.
+     */
+    public function canDeleteLabRequests(): bool
+    {
+        return $this->hasAnyPermission(['lab_delete', 'lab_manage']);
+    }
+
+    /**
      * Check if user has a specific permission.
      */
     public function hasPermission(string $permission): bool
@@ -848,7 +885,7 @@ class User extends Authenticatable
             'lab_dept' => [
                 // Laboratory operations
                 'dashboard_view',
-                'lab_requests_view', 'lab_requests_edit',
+                'lab_view', 'lab_edit',
                 'reports_view',
             ],
             'radiology_dept' => [
