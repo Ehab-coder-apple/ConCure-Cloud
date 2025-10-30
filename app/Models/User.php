@@ -669,6 +669,14 @@ class User extends Authenticatable
                 'nutrition_delete' => 'Delete Nutrition Plans',
                 'nutrition_manage' => 'Full Nutrition Management',
             ],
+            'lab' => [
+                'lab_view' => 'View Lab Requests',
+                'lab_create' => 'Create Lab Requests',
+                'lab_edit' => 'Edit Lab Requests',
+                'lab_delete' => 'Delete Lab Requests',
+                'lab_manage' => 'Full Lab Management',
+            ],
+
             'radiology' => [
                 'radiology_view' => 'View Radiology Requests',
                 'radiology_create' => 'Create Radiology Requests',
@@ -753,6 +761,12 @@ class User extends Authenticatable
                 'icon' => 'fas fa-apple-alt',
                 'color' => 'success',
             ],
+            'lab' => [
+                'name' => 'Laboratory',
+                'icon' => 'fas fa-vials',
+                'color' => 'info',
+            ],
+
             'food_database' => [
                 'name' => 'Food Database',
                 'icon' => 'fas fa-database',
