@@ -1713,6 +1713,11 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 @endif
+                <!-- Global Back Button -->
+                <div class="mb-3 d-print-none">
+                    <x-back-button />
+                </div>
+
 
                 @yield('content')
             </div>
