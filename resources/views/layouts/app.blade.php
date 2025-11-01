@@ -1626,6 +1626,9 @@
                     <button class="sidebar-toggle-btn d-lg-none" id="sidebarToggleBtn">
                         <i class="fas fa-bars"></i>
                     </button>
+
+                        <x-back-button class="btn btn-outline-secondary btn-sm me-2" />
+
                     <div class="page-title">
                         @hasSection('page-title')
                             @yield('page-title')
@@ -1713,11 +1716,6 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 @endif
-                <!-- Global Back Button -->
-                <div class="mb-3 d-print-none">
-                    <x-back-button />
-                </div>
-
 
                 @yield('content')
             </div>

@@ -219,9 +219,12 @@
     <div class="main-content">
         <!-- Top Bar -->
         <div class="topbar d-flex justify-content-between align-items-center">
-            <div>
-                <h5 class="mb-0">Welcome back, {{ auth()->user()->full_name }}</h5>
-                <small class="text-muted">Super Administrator</small>
+            <div class="d-flex align-items-center">
+                <x-back-button :fallback="route('master.dashboard')" class="btn btn-outline-secondary btn-sm me-2" />
+                <div>
+                    <h5 class="mb-0">Welcome back, {{ auth()->user()->full_name }}</h5>
+                    <small class="text-muted">Super Administrator</small>
+                </div>
             </div>
             <div>
                 <span class="badge bg-primary me-2">
@@ -262,11 +265,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
-
-            <!-- Global Back Button -->
-            <div class="mb-3 d-print-none">
-                <x-back-button :fallback="route('master.dashboard')" />
-            </div>
 
             @yield('content')
         </div>
