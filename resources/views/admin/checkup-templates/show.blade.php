@@ -366,8 +366,8 @@ function confirmDelete() {
     if (confirm('{{ __("Are you sure you want to delete this template? This action cannot be undone.") }}')) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '{{ route("admin.checkup-templates.destroy", $template) }}';
-        
+        form.action = '{{ route("admin.checkup-templates.destroy", ["checkup_template" => $template->id]) }}';
+
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';
         csrfToken.name = '_token';
