@@ -235,11 +235,11 @@
                                                    class="btn btn-outline-primary" title="{{ __('Edit') }}">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                <form action="{{ route('admin.checkup-templates.toggle-status', ['template' => $template->id]) }}"
+                                                <form action="{{ url('/admin/checkup-templates/'.$template->id.'/toggle-status') }}"
                                                       method="POST" class="d-inline">
                                                     @csrf
                                                     @method('PATCH')
-                                                    <button type="submit" class="btn btn-outline-{{ $template->is_active ? 'warning' : 'success' }}" 
+                                                    <button type="submit" class="btn btn-outline-{{ $template->is_active ? 'warning' : 'success' }}"
                                                             title="{{ $template->is_active ? __('Deactivate') : __('Activate') }}">
                                                         <i class="fas fa-{{ $template->is_active ? 'pause' : 'play' }}"></i>
                                                     </button>
