@@ -241,7 +241,7 @@ class CustomCheckupTemplateController extends Controller
 
         $clonedTemplate = $template->cloneTemplate($request->name, Auth::user());
 
-        return redirect()->route('admin.checkup-templates.edit', $clonedTemplate)
+        return redirect()->route('admin.checkup-templates.edit', ['checkup_template' => $clonedTemplate->id])
                         ->with('success', "Template cloned successfully as '{$clonedTemplate->name}'.");
     }
 
