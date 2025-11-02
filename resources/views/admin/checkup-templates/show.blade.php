@@ -294,7 +294,7 @@
                     </div>
                     
                     <div class="btn-group me-2" role="group">
-                        <form action="{{ route('admin.checkup-templates.toggle-status', ['template' => $template->id]) }}" method="POST" class="d-inline">
+                        <form action="{{ url('/admin/checkup-templates/'.$template->id.'/toggle-status') }}" method="POST" class="d-inline">
                             @csrf
                             @method('PATCH')
                             <button type="submit" class="btn btn-outline-{{ $template->is_active ? 'warning' : 'success' }}">
@@ -330,7 +330,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('admin.checkup-templates.clone', ['template' => $template->id]) }}" method="POST">
+            <form action="{{ url('/admin/checkup-templates/'.$template->id.'/clone') }}" method="POST">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
