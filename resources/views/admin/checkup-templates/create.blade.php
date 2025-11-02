@@ -16,7 +16,7 @@
                     <p class="text-muted mb-0">{{ __('Design a custom checkup form for specific medical conditions') }}</p>
                 </div>
                 <div>
-                    <a href="{{ route('admin.checkup-templates.index') }}" class="btn btn-outline-secondary">
+                    <a href="{{ url('/admin/checkup-templates') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back to Templates') }}
                     </a>
@@ -69,7 +69,7 @@
     </div>
 
     <!-- Template Form -->
-    <form action="{{ route('admin.checkup-templates.store') }}" method="POST" id="templateForm">
+    <form action="{{ url('/admin/checkup-templates') }}" method="POST" id="templateForm">
         @csrf
         
         <!-- Basic Information -->
@@ -207,7 +207,7 @@
                                 </button>
                             </div>
                             <div>
-                                <a href="{{ route('admin.checkup-templates.index') }}" class="btn btn-secondary me-2">
+                                <a href="{{ url('/admin/checkup-templates') }}" class="btn btn-secondary me-2">
                                     <i class="fas fa-times me-1"></i>
                                     {{ __('Cancel') }}
                                 </a>
