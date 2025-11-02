@@ -16,7 +16,7 @@
                     <p class="text-muted mb-0">{{ __('Checkup Template Details') }}</p>
                 </div>
                 <div>
-                    <a href="{{ route('admin.checkup-templates.index') }}" class="btn btn-outline-secondary me-2">
+                    <a href="{{ url('/admin/checkup-templates') }}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back to Templates') }}
                     </a>
@@ -239,7 +239,7 @@
                                 <tr>
                                     <td>
                                         @if($assignment->patient)
-                                            <a href="{{ route('patients.show', $assignment->patient) }}" class="text-decoration-none">
+                                            <a href="{{ url('/patients/'.$assignment->patient->id) }}" class="text-decoration-none">
                                                 {{ $assignment->patient->full_name }}
                                             </a>
                                             <br><small class="text-muted">ID: {{ $assignment->patient->patient_id }}</small>
@@ -366,7 +366,7 @@ function confirmDelete() {
     if (confirm('{{ __("Are you sure you want to delete this template? This action cannot be undone.") }}')) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '{{ route("admin.checkup-templates.destroy", ["checkup_template" => $template->id]) }}';
+        form.action = '{{ url("/admin/checkup-templates/".$template->id) }}';
 
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';
