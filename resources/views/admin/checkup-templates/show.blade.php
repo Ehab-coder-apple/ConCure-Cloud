@@ -88,7 +88,7 @@
                                 </tr>
                                 <tr>
                                     <td><strong>{{ __('Created Date') }}:</strong></td>
-                                    <td>{{ $template->created_at->format('M d, Y g:i A') }}</td>
+                                    <td>{{ $template->created_at?->format('M d, Y g:i A') ?? '-' }}</td>
                                 </tr>
                             </table>
                         </div>

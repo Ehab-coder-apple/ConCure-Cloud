@@ -121,7 +121,17 @@ class CustomCheckupTemplate extends Model
      */
     public function getFormSectionsAttribute(): array
     {
-        return $this->form_config['sections'] ?? [];
+        $config = $this->form_config;
+        if (!is_array($config)) {
+            if (is_string($config)) {
+                $decoded = json_decode($config, true);
+                $config = is_array($decoded) ? $decoded : [];
+            } else {
+                $config = [];
+            }
+        }
+        $sections = $config['sections'] ?? [];
+        return is_array($sections) ? $sections : [];
     }
 
     /**
@@ -132,14 +142,18 @@ class CustomCheckupTemplate extends Model
         $fields = [];
         $sections = $this->form_sections;
 
+        if (!is_array($sections)) {
+            return [];
+        }
+
         foreach ($sections as $sectionKey => $section) {
-            if (isset($section['fields'])) {
-                foreach ($section['fields'] as $fieldKey => $field) {
-                    $fields[$fieldKey] = array_merge($field, [
-                        'section' => $sectionKey,
-                        'field_name' => $fieldKey
-                    ]);
-                }
+            $sectionFields = isset($section['fields']) && is_array($section['fields']) ? $section['fields'] : [];
+            foreach ($sectionFields as $fieldKey => $field) {
+                $fieldData = is_array($field) ? $field : [];
+                $fields[$fieldKey] = array_merge($fieldData, [
+                    'section' => $sectionKey,
+                    'field_name' => $fieldKey
+                ]);
             }
         }
 
