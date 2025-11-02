@@ -231,11 +231,11 @@
                                                    class="btn btn-outline-info" title="{{ __('View') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="{{ route('admin.checkup-templates.edit', $template) }}" 
+                                                <a href="{{ route('admin.checkup-templates.edit', ['checkup_template' => $template->id]) }}"
                                                    class="btn btn-outline-primary" title="{{ __('Edit') }}">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                <form action="{{ route('admin.checkup-templates.toggle-status', $template) }}" 
+                                                <form action="{{ route('admin.checkup-templates.toggle-status', ['template' => $template->id]) }}"
                                                       method="POST" class="d-inline">
                                                     @csrf
                                                     @method('PATCH')
