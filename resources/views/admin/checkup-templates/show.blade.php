@@ -235,7 +235,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($template->patientAssignments->take(10) as $assignment)
+                                @foreach($assignments as $assignment)
                                 <tr>
                                     <td>
                                         @if($assignment->patient)

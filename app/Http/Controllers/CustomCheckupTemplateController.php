@@ -133,7 +133,25 @@ class CustomCheckupTemplateController extends Controller
             ]);
         }
 
-        return view('admin.checkup-templates.show', compact('template', 'usageStats'));
+        // Safely load at most 10 assignments to avoid lazy-loading surprises in Blade
+        $assignments = collect();
+        if (Schema::hasTable('patient_checkup_template_assignments')) {
+            try {
+                $assignments = $template->patientAssignments()
+                    ->with(['patient', 'assignedBy'])
+                    ->orderByDesc('assigned_at')
+                    ->take(10)
+                    ->get();
+            } catch (\Throwable $e) {
+                Log::warning('CustomCheckupTemplateController@show assignments load failed', [
+                    'template_id' => $template->id,
+                    'error' => $e->getMessage(),
+                ]);
+                $assignments = collect();
+            }
+        }
+
+        return view('admin.checkup-templates.show', compact('template', 'usageStats', 'assignments'));
     }
 
     /**
