@@ -84,7 +84,7 @@
                                 </tr>
                                 <tr>
                                     <td><strong>{{ __('Created By') }}:</strong></td>
-                                    <td>{{ $template->creator->first_name }} {{ $template->creator->last_name }}</td>
+                                    <td>{{ $template->creator?->full_name ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>{{ __('Created Date') }}:</strong></td>
@@ -238,14 +238,18 @@
                                 @foreach($template->patientAssignments->take(10) as $assignment)
                                 <tr>
                                     <td>
-                                        <a href="{{ route('patients.show', $assignment->patient) }}" class="text-decoration-none">
-                                            {{ $assignment->patient->full_name }}
-                                        </a>
-                                        <br><small class="text-muted">ID: {{ $assignment->patient->patient_id }}</small>
+                                        @if($assignment->patient)
+                                            <a href="{{ route('patients.show', $assignment->patient) }}" class="text-decoration-none">
+                                                {{ $assignment->patient->full_name }}
+                                            </a>
+                                            <br><small class="text-muted">ID: {{ $assignment->patient->patient_id }}</small>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                     </td>
                                     <td>{{ $assignment->medical_condition ?: '-' }}</td>
-                                    <td>{{ $assignment->assigned_at->format('M d, Y') }}</td>
-                                    <td>{{ $assignment->assignedBy->first_name }} {{ $assignment->assignedBy->last_name }}</td>
+                                    <td>{{ $assignment->assigned_at?->format('M d, Y') ?? '-' }}</td>
+                                    <td>{{ $assignment->assignedBy?->full_name ?? '-' }}</td>
                                     <td>
                                         <span class="badge {{ $assignment->is_active ? 'bg-success' : 'bg-secondary' }}">
                                             {{ $assignment->is_active ? __('Active') : __('Inactive') }}
