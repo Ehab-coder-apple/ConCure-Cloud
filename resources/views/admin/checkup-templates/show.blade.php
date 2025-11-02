@@ -84,11 +84,11 @@
                                 </tr>
                                 <tr>
                                     <td><strong>{{ __('Created By') }}:</strong></td>
-                                    <td>{{ $template->creator?->full_name ?? '-' }}</td>
+                                    <td>{{ optional($template->creator)->full_name ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>{{ __('Created Date') }}:</strong></td>
-                                    <td>{{ $template->created_at?->format('M d, Y g:i A') ?? '-' }}</td>
+                                    <td>{{ optional($template->created_at)->format('M d, Y g:i A') ?? '-' }}</td>
                                 </tr>
                             </table>
                         </div>
@@ -248,8 +248,8 @@
                                         @endif
                                     </td>
                                     <td>{{ $assignment->medical_condition ?: '-' }}</td>
-                                    <td>{{ $assignment->assigned_at?->format('M d, Y') ?? '-' }}</td>
-                                    <td>{{ $assignment->assignedBy?->full_name ?? '-' }}</td>
+                                    <td>{{ optional($assignment->assigned_at)->format('M d, Y') ?? '-' }}</td>
+                                    <td>{{ optional($assignment->assignedBy)->full_name ?? '-' }}</td>
                                     <td>
                                         <span class="badge {{ $assignment->is_active ? 'bg-success' : 'bg-secondary' }}">
                                             {{ $assignment->is_active ? __('Active') : __('Inactive') }}
