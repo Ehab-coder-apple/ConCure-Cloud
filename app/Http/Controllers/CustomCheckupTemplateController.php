@@ -7,6 +7,7 @@ use App\Models\PatientCheckupTemplateAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class CustomCheckupTemplateController extends Controller
 {
@@ -103,8 +104,34 @@ class CustomCheckupTemplateController extends Controller
     {
         $this->authorizeTemplateAccess($template);
 
-        $template->load(['creator', 'patientAssignments.patient']);
-        $usageStats = $template->usage_stats;
+        // Load relations safely depending on schema availability
+        try {
+            $template->load(['creator']);
+            if (Schema::hasTable('patient_checkup_template_assignments')) {
+                $template->load(['patientAssignments.patient']);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('CustomCheckupTemplateController@show relation load failed', [
+                'template_id' => $template->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // Compute usage stats with model-level guards
+        try {
+            $usageStats = $template->usage_stats;
+        } catch (\Throwable $e) {
+            $usageStats = [
+                'total_assignments' => 0,
+                'active_assignments' => 0,
+                'total_checkups' => 0,
+                'usage_rate' => 0,
+            ];
+            Log::warning('CustomCheckupTemplateController@show usage_stats failed', [
+                'template_id' => $template->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return view('admin.checkup-templates.show', compact('template', 'usageStats'));
     }

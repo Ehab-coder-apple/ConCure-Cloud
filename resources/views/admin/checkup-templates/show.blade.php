@@ -212,7 +212,7 @@
     </div>
 
     <!-- Patient Assignments -->
-    @if($template->patientAssignments->count() > 0)
+    @if(($usageStats['total_assignments'] ?? 0) > 0)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -260,9 +260,9 @@
                             </tbody>
                         </table>
                     </div>
-                    @if($template->patientAssignments->count() > 10)
+                    @if(($usageStats['total_assignments'] ?? 0) > 10)
                         <div class="text-center mt-3">
-                            <small class="text-muted">{{ __('Showing 10 of') }} {{ $template->patientAssignments->count() }} {{ __('assignments') }}</small>
+                            <small class="text-muted">{{ __('Showing 10 of') }} {{ $usageStats['total_assignments'] }} {{ __('assignments') }}</small>
                         </div>
                     @endif
                 </div>
@@ -304,7 +304,8 @@
                         </form>
                     </div>
 
-                    @if($template->patientAssignments->count() === 0 && $template->checkups->count() === 0)
+                    @php $canDelete = (($usageStats['total_assignments'] ?? 0) === 0) && (($usageStats['total_checkups'] ?? 0) === 0); @endphp
+                    @if($canDelete)
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
                             <i class="fas fa-trash me-1"></i>

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class CustomCheckupTemplate extends Model
 {
@@ -181,9 +182,14 @@ class CustomCheckupTemplate extends Model
      */
     public function getUsageStatsAttribute(): array
     {
-        $assignmentsCount = $this->patientAssignments()->count();
-        $activeAssignmentsCount = $this->patientAssignments()->where('is_active', true)->count();
-        $checkupsCount = $this->checkups()->count();
+        // Be resilient if migrations haven't run on some environments
+        $assignmentsTable = Schema::hasTable('patient_checkup_template_assignments');
+        $checkupsTable = Schema::hasTable('patient_checkups');
+        $checkupsHasTemplate = $checkupsTable && Schema::hasColumn('patient_checkups', 'template_id');
+
+        $assignmentsCount = $assignmentsTable ? $this->patientAssignments()->count() : 0;
+        $activeAssignmentsCount = $assignmentsTable ? $this->patientAssignments()->where('is_active', true)->count() : 0;
+        $checkupsCount = $checkupsHasTemplate ? $this->checkups()->count() : 0;
 
         return [
             'total_assignments' => $assignmentsCount,
