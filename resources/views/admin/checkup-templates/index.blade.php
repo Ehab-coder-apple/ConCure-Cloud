@@ -16,7 +16,7 @@
                     <p class="text-muted mb-0">{{ __('Create and manage specialized checkup forms for different medical conditions') }}</p>
                 </div>
                 <div>
-                    <a href="{{ url('/admin/checkup-templates/create') }}" class="btn btn-primary">
+                    <a href="{{ route('admin.checkup-templates.create') }}" class="btn btn-primary">
                         <i class="fas fa-plus me-1"></i>
                         {{ __('Create Template') }}
                     </a>
@@ -227,15 +227,15 @@
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <a href="{{ url('/admin/checkup-templates/'.$template->id) }}"
+                                                <a href="{{ route('admin.checkup-templates.show', $template) }}"
                                                    class="btn btn-outline-info" title="{{ __('View') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="{{ url('/admin/checkup-templates/'.$template->id.'/edit') }}"
+                                                <a href="{{ route('admin.checkup-templates.edit', $template) }}"
                                                    class="btn btn-outline-primary" title="{{ __('Edit') }}">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                <form action="{{ url('/admin/checkup-templates/'.$template->id.'/toggle-status') }}"
+                                                <form action="{{ route('admin.checkup-templates.toggle-status', ['template' => $template->id]) }}"
                                                       method="POST" class="d-inline">
                                                     @csrf
                                                     @method('PATCH')
@@ -266,7 +266,7 @@
                             <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">{{ __('No Checkup Templates Created') }}</h5>
                             <p class="text-muted">{{ __('Create your first custom checkup template to get started.') }}</p>
-                            <a href="{{ url('/admin/checkup-templates/create') }}" class="btn btn-primary">
+                            <a href="{{ route('admin.checkup-templates.create') }}" class="btn btn-primary">
                                 <i class="fas fa-plus me-1"></i>
                                 {{ __('Create First Template') }}
                             </a>
@@ -317,7 +317,7 @@
 
 <script>
 function createFromTemplate(templateType) {
-    window.location.href = '{{ url("/admin/checkup-templates/create") }}?template=' + templateType;
+    window.location.href = '{{ route("admin.checkup-templates.create") }}?template=' + templateType;
 }
 
 function cloneTemplate(templateId, templateName) {
@@ -391,7 +391,7 @@ function bulkAction(action) {
     if (confirm(confirmMessage)) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '{{ url("/admin/checkup-templates") }}';
+        form.action = '{{ route('admin.checkup-templates.store') }}';
         
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';

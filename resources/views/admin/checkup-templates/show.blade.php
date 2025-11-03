@@ -24,11 +24,11 @@
                     <p class="text-muted mb-0">{{ __('Checkup Template Details') }}</p>
                 </div>
                 <div>
-                    <a href="{{ url('/admin/checkup-templates') }}" class="btn btn-outline-secondary me-2">
+                    <a href="{{ route('admin.checkup-templates.index') }}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back to Templates') }}
                     </a>
-                    <a href="{{ url('/admin/checkup-templates/'.$templateId.'/edit') }}" class="btn btn-primary">
+                    <a href="{{ route('admin.checkup-templates.edit', $templateId) }}" class="btn btn-primary">
                         <i class="fas fa-edit me-1"></i>
                         {{ __('Edit Template') }}
                     </a>
@@ -208,7 +208,7 @@
                             <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
                             <h5 class="text-muted">{{ __('No Form Structure Defined') }}</h5>
                             <p class="text-muted">{{ __('This template does not have any form sections or fields configured.') }}</p>
-                            <a href="{{ url('/admin/checkup-templates/'.$templateId.'/edit') }}" class="btn btn-primary">
+                            <a href="{{ route('admin.checkup-templates.edit', $templateId) }}" class="btn btn-primary">
                                 <i class="fas fa-edit me-1"></i>
                                 {{ __('Configure Form Structure') }}
                             </a>
@@ -291,7 +291,7 @@
                 </div>
                 <div class="card-body">
                     <div class="btn-group me-2" role="group">
-                        <a href="{{ url('/admin/checkup-templates/'.$templateId.'/edit') }}" class="btn btn-primary">
+                        <a href="{{ route('admin.checkup-templates.edit', $templateId) }}" class="btn btn-primary">
                             <i class="fas fa-edit me-1"></i>
                             {{ __('Edit Template') }}
                         </a>
@@ -302,7 +302,7 @@
                     </div>
 
                     <div class="btn-group me-2" role="group">
-                        <form action="{{ url('/admin/checkup-templates/'.$template->id.'/toggle-status') }}" method="POST" class="d-inline">
+                        <form action="{{ route('admin.checkup-templates.toggle-status', ['template' => $templateId]) }}" method="POST" class="d-inline">
                             @csrf
                             @method('PATCH')
                             <button type="submit" class="btn btn-outline-{{ $template->is_active ? 'warning' : 'success' }}">
@@ -338,7 +338,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ url('/admin/checkup-templates/'.$template->id.'/clone') }}" method="POST">
+            <form action="{{ route('admin.checkup-templates.clone', ['template' => $templateId]) }}" method="POST">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
@@ -374,7 +374,7 @@ function confirmDelete() {
     if (confirm('{{ __("Are you sure you want to delete this template? This action cannot be undone.") }}')) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '{{ url("/admin/checkup-templates/".$template->id) }}';
+        form.action = '{{ route('admin.checkup-templates.destroy', $templateId) }}';
 
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';
