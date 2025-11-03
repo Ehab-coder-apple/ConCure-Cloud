@@ -186,7 +186,15 @@
                         </div>
                         
                         <!-- Hidden input to store form configuration -->
-                        <input type="hidden" name="form_config" id="form_config" value="{{ old('form_config', json_encode($template->form_config, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)) }}">
+                        @php
+                            $oldFormConfig = old('form_config');
+                            $formConfigJson = is_string($oldFormConfig)
+                                ? $oldFormConfig
+                                : (is_array($oldFormConfig)
+                                    ? json_encode($oldFormConfig, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)
+                                    : json_encode($template->form_config, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE));
+                        @endphp
+                        <input type="hidden" name="form_config" id="form_config" value="{{ $formConfigJson }}">
                     </div>
                 </div>
             </div>
