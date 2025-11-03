@@ -227,11 +227,11 @@
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <a href="{{ route('admin.checkup-templates.show', $template) }}"
+                                                <a href="{{ route('admin.checkup-templates.show', ['checkup_template' => $template->id]) }}"
                                                    class="btn btn-outline-info" title="{{ __('View') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="{{ route('admin.checkup-templates.edit', $template) }}"
+                                                <a href="{{ route('admin.checkup-templates.edit', ['checkup_template' => $template->id]) }}"
                                                    class="btn btn-outline-primary" title="{{ __('Edit') }}">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
@@ -390,15 +390,10 @@ function bulkAction(action) {
     
     if (confirm(confirmMessage)) {
         const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route('admin.checkup-templates.store') }}';
+        form.method = 'GET';
+        form.action = '{{ route('admin.checkup-templates.index') }}';
         
-        const csrfToken = document.createElement('input');
-        csrfToken.type = 'hidden';
-        csrfToken.name = '_token';
-        csrfToken.value = '{{ csrf_token() }}';
-        form.appendChild(csrfToken);
-        
+
         const actionInput = document.createElement('input');
         actionInput.type = 'hidden';
         actionInput.name = 'bulk_action';

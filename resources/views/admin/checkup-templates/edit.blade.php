@@ -69,7 +69,7 @@
     </div>
 
     <!-- Template Form -->
-    <form action="{{ route('admin.checkup-templates.update', $template) }}" method="POST" id="templateForm">
+    <form action="{{ route('admin.checkup-templates.update', ['checkup_template' => $template->id]) }}" method="POST" id="templateForm">
         @csrf
         @method('PUT')
         
