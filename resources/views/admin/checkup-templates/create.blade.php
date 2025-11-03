@@ -185,7 +185,15 @@
                         </div>
                         
                         <!-- Hidden input to store form configuration as JSON string -->
-                        <input type="hidden" name="form_config_json" id="form_config_json" value="{{ old('form_config', '{}') }}">
+                        @php
+                            $oldFormConfig = old('form_config');
+                            $formConfigJson = is_string($oldFormConfig)
+                                ? $oldFormConfig
+                                : (is_array($oldFormConfig)
+                                    ? json_encode($oldFormConfig, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)
+                                    : '{}');
+                        @endphp
+                        <input type="hidden" name="form_config_json" id="form_config_json" value="{{ $formConfigJson }}">
 
                         <!-- Hidden container for form_config array fields (will be populated by JavaScript) -->
                         <div id="form_config_fields"></div>
@@ -633,8 +641,9 @@ document.addEventListener('DOMContentLoaded', function() {
         addSection();
     }
 
-    // Load existing form config if editing
-    const existingConfig = document.getElementById('form_config').value;
+    // Load existing form config if present (create uses form_config_json)
+    const formConfigInput = document.getElementById('form_config') || document.getElementById('form_config_json');
+    const existingConfig = formConfigInput ? formConfigInput.value : '';
     if (existingConfig) {
         try {
             const config = JSON.parse(existingConfig);
