@@ -200,8 +200,7 @@
                                 }
                             }
                             if ($formConfigJson === '') {
-                                // Always fall back to normalized sections from model accessor
-                                $formConfigJson = json_encode(['sections' => $template->form_sections], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+                                $formConfigJson = json_encode($template->form_config, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
                             }
                         @endphp
                         <input type="hidden" name="form_config" id="form_config" value="{{ $formConfigJson }}">
@@ -536,21 +535,6 @@ function updateFormConfig() {
     });
 
 
-function ensureFormConfigOnSubmit() {
-    updateFormConfig();
-    try {
-        const raw = document.getElementById('form_config').value || '{}';
-        const cfg = JSON.parse(raw);
-        if (!cfg.sections || Object.keys(cfg.sections).length === 0) {
-            alert('Please add at least one section and give it a title before updating.');
-            return false;
-        }
-    } catch (e) {
-        alert('Form configuration is invalid JSON. Please adjust your sections and try again.');
-        return false;
-    }
-    return true;
-}
 
     document.getElementById('form_config').value = JSON.stringify({ sections: sections });
 }
@@ -617,6 +601,8 @@ function initFormBuilder() {
             if (config && config.sections && Object.keys(config.sections).length) {
                 loadExistingConfig(config);
             }
+
+
         } catch (e) {
             console.error('Error loading existing config:', e);
         }
@@ -641,5 +627,23 @@ function loadExistingConfig(config) {
         addSection(section.title, section.fields);
     });
 }
+
+function ensureFormConfigOnSubmit() {
+    updateFormConfig();
+    try {
+        const raw = document.getElementById('form_config').value || '{}';
+        const cfg = JSON.parse(raw);
+        if (!cfg.sections || Object.keys(cfg.sections).length === 0) {
+            alert('Please add at least one section and give it a title before updating.');
+            return false;
+        }
+    } catch (e) {
+        alert('Form configuration is invalid JSON. Please adjust your sections and try again.');
+        return false;
+    }
+    return true;
+}
+
 </script>
 @endsection
+
