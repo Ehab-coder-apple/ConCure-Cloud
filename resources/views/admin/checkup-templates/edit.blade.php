@@ -200,7 +200,8 @@
                                 }
                             }
                             if ($formConfigJson === '') {
-                                $formConfigJson = json_encode($template->form_config, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+                                // Fall back to normalized sections accessor
+                                $formConfigJson = json_encode(['sections' => $template->form_sections], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
                             }
                         @endphp
                         <input type="hidden" name="form_config" id="form_config" value="{{ $formConfigJson }}">
@@ -588,24 +589,24 @@ function previewTemplate() {
 
 // Initialize form builder (robust against already-fired DOMContentLoaded)
 function initFormBuilder() {
-    // Add initial section if none exists
-    if (document.getElementById('formBuilder').children.length === 0) {
-        addSection();
-    }
-
-    // Load existing form config if editing
+    // Load existing form config first (do not overwrite it with an empty section)
+    let loaded = false;
     const existingConfig = document.getElementById('form_config').value;
     if (existingConfig) {
         try {
             const config = JSON.parse(existingConfig);
             if (config && config.sections && Object.keys(config.sections).length) {
                 loadExistingConfig(config);
+                loaded = true;
             }
-
-
         } catch (e) {
             console.error('Error loading existing config:', e);
         }
+    }
+
+    // If nothing loaded, add an initial blank section
+    if (!loaded && document.getElementById('formBuilder').children.length === 0) {
+        addSection();
     }
 }
 
