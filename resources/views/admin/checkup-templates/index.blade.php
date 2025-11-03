@@ -227,11 +227,11 @@
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <a href="{{ route('admin.checkup-templates.show', ['checkup_template' => $template->id]) }}"
+                                                <a href="{{ route('admin.checkup-templates.show', ['template' => $template->id]) }}"
                                                    class="btn btn-outline-info" title="{{ __('View') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="{{ route('admin.checkup-templates.edit', ['checkup_template' => $template->id]) }}"
+                                                <a href="{{ route('admin.checkup-templates.edit', ['template' => $template->id]) }}"
                                                    class="btn btn-outline-primary" title="{{ __('Edit') }}">
                                                     <i class="fas fa-edit"></i>
                                                 </a>

@@ -254,7 +254,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::patch('custom-vital-signs/{customVitalSign}/toggle-status', [App\Http\Controllers\CustomVitalSignsController::class, 'toggleStatus'])->name('custom-vital-signs.toggle-status');
 
         // Custom Checkup Templates Management
-        Route::resource('checkup-templates', App\Http\Controllers\CustomCheckupTemplateController::class);
+        Route::resource('checkup-templates', App\Http\Controllers\CustomCheckupTemplateController::class)
+            ->parameters(['checkup-templates' => 'template']);
         Route::patch('checkup-templates/{template}/toggle-status', [App\Http\Controllers\CustomCheckupTemplateController::class, 'toggleStatus'])->name('checkup-templates.toggle-status');
         Route::post('checkup-templates/{template}/clone', [App\Http\Controllers\CustomCheckupTemplateController::class, 'clone'])->name('checkup-templates.clone');
         Route::get('checkup-templates/{template}/preview', [App\Http\Controllers\CustomCheckupTemplateController::class, 'preview'])->name('checkup-templates.preview');
