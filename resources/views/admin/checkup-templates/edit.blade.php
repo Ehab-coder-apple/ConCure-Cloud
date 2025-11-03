@@ -188,11 +188,20 @@
                         <!-- Hidden input to store form configuration -->
                         @php
                             $oldFormConfig = old('form_config');
-                            $formConfigJson = is_string($oldFormConfig)
-                                ? $oldFormConfig
-                                : (is_array($oldFormConfig)
-                                    ? json_encode($oldFormConfig, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)
-                                    : json_encode($template->form_config, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE));
+                            $formConfigJson = '';
+                            if (is_string($oldFormConfig)) {
+                                $decoded = json_decode($oldFormConfig, true);
+                                if (is_array($decoded) && !empty($decoded['sections'])) {
+                                    $formConfigJson = $oldFormConfig; // keep client's JSON if it has sections
+                                }
+                            } elseif (is_array($oldFormConfig)) {
+                                if (!empty($oldFormConfig['sections'])) {
+                                    $formConfigJson = json_encode($oldFormConfig, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+                                }
+                            }
+                            if ($formConfigJson === '') {
+                                $formConfigJson = json_encode($template->form_config, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+                            }
                         @endphp
                         <input type="hidden" name="form_config" id="form_config" value="{{ $formConfigJson }}">
                     </div>
