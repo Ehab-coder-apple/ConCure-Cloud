@@ -567,8 +567,8 @@ function previewTemplate() {
     modal.show();
 }
 
-// Initialize form builder
-document.addEventListener('DOMContentLoaded', function() {
+// Initialize form builder (robust against already-fired DOMContentLoaded)
+function initFormBuilder() {
     // Add initial section if none exists
     if (document.getElementById('formBuilder').children.length === 0) {
         addSection();
@@ -579,12 +579,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (existingConfig) {
         try {
             const config = JSON.parse(existingConfig);
-            loadExistingConfig(config);
+            if (config && config.sections && Object.keys(config.sections).length) {
+                loadExistingConfig(config);
+            }
         } catch (e) {
             console.error('Error loading existing config:', e);
         }
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFormBuilder);
+} else {
+    initFormBuilder();
+}
 
 function loadExistingConfig(config) {
     // Clear existing form builder
