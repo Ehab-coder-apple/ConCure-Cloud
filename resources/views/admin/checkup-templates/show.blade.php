@@ -3,6 +3,14 @@
 @section('page-title', $template->name . ' - ' . __('Checkup Template Details'))
 
 @section('content')
+@php
+    $templateId = $template->id
+        ?? optional(request()->route('template'))->id
+        ?? optional(request()->route('checkup_template'))->id
+        ?? request()->route('template')
+        ?? request()->route('checkup_template');
+@endphp
+
 <div class="container">
     <!-- Header Section -->
     <div class="row mb-4">
@@ -20,7 +28,7 @@
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back to Templates') }}
                     </a>
-                    <a href="{{ url('/admin/checkup-templates/'.$template->id.'/edit') }}" class="btn btn-primary">
+                    <a href="{{ url('/admin/checkup-templates/'.$templateId.'/edit') }}" class="btn btn-primary">
                         <i class="fas fa-edit me-1"></i>
                         {{ __('Edit Template') }}
                     </a>
@@ -158,7 +166,7 @@
                                 <i class="fas fa-folder me-2"></i>
                                 {{ $section['title'] ?? $sectionKey }}
                             </h6>
-                            
+
                             @if(isset($section['fields']) && is_array($section['fields']))
                                 <div class="row">
                                     @foreach($section['fields'] as $fieldKey => $field)
@@ -200,7 +208,7 @@
                             <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
                             <h5 class="text-muted">{{ __('No Form Structure Defined') }}</h5>
                             <p class="text-muted">{{ __('This template does not have any form sections or fields configured.') }}</p>
-                            <a href="{{ url('/admin/checkup-templates/'.$template->id.'/edit') }}" class="btn btn-primary">
+                            <a href="{{ url('/admin/checkup-templates/'.$templateId.'/edit') }}" class="btn btn-primary">
                                 <i class="fas fa-edit me-1"></i>
                                 {{ __('Configure Form Structure') }}
                             </a>
@@ -283,7 +291,7 @@
                 </div>
                 <div class="card-body">
                     <div class="btn-group me-2" role="group">
-                        <a href="{{ url('/admin/checkup-templates/'.$template->id.'/edit') }}" class="btn btn-primary">
+                        <a href="{{ url('/admin/checkup-templates/'.$templateId.'/edit') }}" class="btn btn-primary">
                             <i class="fas fa-edit me-1"></i>
                             {{ __('Edit Template') }}
                         </a>
@@ -292,7 +300,7 @@
                             {{ __('Clone Template') }}
                         </button>
                     </div>
-                    
+
                     <div class="btn-group me-2" role="group">
                         <form action="{{ url('/admin/checkup-templates/'.$template->id.'/toggle-status') }}" method="POST" class="d-inline">
                             @csrf
@@ -373,13 +381,13 @@ function confirmDelete() {
         csrfToken.name = '_token';
         csrfToken.value = '{{ csrf_token() }}';
         form.appendChild(csrfToken);
-        
+
         const methodInput = document.createElement('input');
         methodInput.type = 'hidden';
         methodInput.name = '_method';
         methodInput.value = 'DELETE';
         form.appendChild(methodInput);
-        
+
         document.body.appendChild(form);
         form.submit();
     }
