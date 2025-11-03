@@ -80,6 +80,13 @@ class CustomCheckupTemplateController extends Controller
      */
     public function store(Request $request)
     {
+        // Accept JSON string from the builder and normalize to array before validation
+        $rawConfig = $request->input('form_config');
+        if (is_string($rawConfig)) {
+            $decoded = json_decode($rawConfig, true);
+            $request->merge(['form_config' => is_array($decoded) ? $decoded : []]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
@@ -173,6 +180,13 @@ class CustomCheckupTemplateController extends Controller
     public function update(Request $request, CustomCheckupTemplate $template)
     {
         $this->authorizeTemplateAccess($template);
+
+        // Accept JSON string from the builder and normalize to array before validation
+        $rawConfig = $request->input('form_config');
+        if (is_string($rawConfig)) {
+            $decoded = json_decode($rawConfig, true);
+            $request->merge(['form_config' => is_array($decoded) ? $decoded : []]);
+        }
 
         $request->validate([
             'name' => 'required|string|max:255',
