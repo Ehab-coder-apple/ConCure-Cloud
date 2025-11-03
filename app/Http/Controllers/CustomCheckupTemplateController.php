@@ -273,6 +273,17 @@ class CustomCheckupTemplateController extends Controller
             'sections_count' => $template->sections_count,
         ]);
     }
+    /**
+     * Get activity summary/usage stats for a template (AJAX helper).
+     */
+    public function activitySummary(CustomCheckupTemplate $template)
+    {
+        $this->authorizeTemplateAccess($template);
+
+        return response()->json($template->usage_stats);
+    }
+
+
 
     /**
      * Handle bulk actions on templates.

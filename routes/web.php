@@ -259,6 +259,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::patch('checkup-templates/{template}/toggle-status', [App\Http\Controllers\CustomCheckupTemplateController::class, 'toggleStatus'])->name('checkup-templates.toggle-status');
         Route::post('checkup-templates/{template}/clone', [App\Http\Controllers\CustomCheckupTemplateController::class, 'clone'])->name('checkup-templates.clone');
         Route::get('checkup-templates/{template}/preview', [App\Http\Controllers\CustomCheckupTemplateController::class, 'preview'])->name('checkup-templates.preview');
+        Route::get('checkup-templates/{template}/activity-summary', [App\Http\Controllers\CustomCheckupTemplateController::class, 'activitySummary'])->name('checkup-templates.activity-summary');
 
         // Test route for debugging
         Route::get('checkup-templates-test', function() {
