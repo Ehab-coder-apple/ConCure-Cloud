@@ -69,10 +69,10 @@
     </div>
 
     <!-- Template Form -->
-    <form action="{{ route('admin.checkup-templates.update', ['template' => $template->id]) }}" method="POST" id="templateForm" onsubmit="updateFormConfig()">
+    <form action="{{ route('admin.checkup-templates.update', ['template' => $template->id]) }}" method="POST" id="templateForm" onsubmit="return ensureFormConfigOnSubmit()">
         @csrf
         @method('PUT')
-        
+
         <!-- Basic Information -->
         <div class="row mb-4">
             <div class="col-12">
@@ -95,7 +95,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="checkup_type" class="form-label">{{ __('Checkup Type') }} <span class="text-danger">*</span></label>
-                                <select class="form-select @error('checkup_type') is-invalid @enderror" 
+                                <select class="form-select @error('checkup_type') is-invalid @enderror"
                                         id="checkup_type" name="checkup_type" required>
                                     <option value="">{{ __('Select type...') }}</option>
                                     @foreach($checkupTypes as $key => $label)
@@ -109,7 +109,7 @@
                                 @enderror
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="medical_condition" class="form-label">{{ __('Medical Condition') }}</label>
@@ -130,7 +130,7 @@
                                 @enderror
                             </div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="description" class="form-label">{{ __('Description') }}</label>
                             <textarea class="form-control @error('description') is-invalid @enderror"
@@ -140,7 +140,7 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        
+
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="is_default" name="is_default" value="1" {{ old('is_default', $template->is_default) ? 'checked' : '' }}>
                             <label class="form-check-label" for="is_default">
@@ -173,18 +173,18 @@
                                 <li>{{ __('Use the preview to see how the form will look') }}</li>
                             </ul>
                         </div>
-                        
+
                         <div id="formBuilder">
                             <!-- Form sections will be added here dynamically -->
                         </div>
-                        
+
                         <div class="text-center mt-3">
                             <button type="button" class="btn btn-outline-primary" onclick="addSection()">
                                 <i class="fas fa-plus me-1"></i>
                                 {{ __('Add Section') }}
                             </button>
                         </div>
-                        
+
                         <!-- Hidden input to store form configuration -->
                         @php
                             $oldFormConfig = old('form_config');
@@ -200,7 +200,8 @@
                                 }
                             }
                             if ($formConfigJson === '') {
-                                $formConfigJson = json_encode($template->form_config, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+                                // Always fall back to normalized sections from model accessor
+                                $formConfigJson = json_encode(['sections' => $template->form_sections], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
                             }
                         @endphp
                         <input type="hidden" name="form_config" id="form_config" value="{{ $formConfigJson }}">
@@ -358,39 +359,39 @@ const defaultTemplates = {
 function loadTemplate(templateKey) {
     const template = defaultTemplates[templateKey];
     if (!template) return;
-    
+
     // Fill basic information
     document.getElementById('name').value = template.name;
     document.getElementById('medical_condition').value = template.medical_condition;
     document.getElementById('specialty').value = template.specialty;
     document.getElementById('checkup_type').value = template.checkup_type;
     document.getElementById('description').value = template.description;
-    
+
     // Clear existing form builder
     document.getElementById('formBuilder').innerHTML = '';
     sectionCounter = 0;
     fieldCounter = 0;
-    
+
     // Load sections and fields
     Object.keys(template.sections).forEach(sectionKey => {
         const section = template.sections[sectionKey];
         addSection(section.title, section.fields);
     });
-    
+
     updateFormConfig();
 }
 
 function addSection(title = '', fields = {}) {
     sectionCounter++;
     const sectionId = 'section_' + sectionCounter;
-    
+
     const sectionHtml = `
         <div class="card mb-3" id="${sectionId}">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
                         <i class="fas fa-folder me-2"></i>
-                        <input type="text" class="form-control d-inline-block" style="width: auto;" 
+                        <input type="text" class="form-control d-inline-block" style="width: auto;"
                                placeholder="Section Title" value="${title}" onchange="updateFormConfig()">
                     </h6>
                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSection('${sectionId}')">
@@ -409,15 +410,15 @@ function addSection(title = '', fields = {}) {
             </div>
         </div>
     `;
-    
+
     document.getElementById('formBuilder').insertAdjacentHTML('beforeend', sectionHtml);
-    
+
     // Add existing fields if provided
     Object.keys(fields).forEach(fieldKey => {
         const field = fields[fieldKey];
         addField(sectionId, field);
     });
-    
+
     updateFormConfig();
 }
 
@@ -429,19 +430,19 @@ function removeSection(sectionId) {
 function addField(sectionId, fieldData = {}) {
     fieldCounter++;
     const fieldId = 'field_' + fieldCounter;
-    
+
     const fieldHtml = `
         <div class="border rounded p-3 mb-3" id="${fieldId}">
             <div class="row">
                 <div class="col-md-4 mb-2">
                     <label class="form-label">Field Label</label>
-                    <input type="text" class="form-control" placeholder="Field Label" 
+                    <input type="text" class="form-control" placeholder="Field Label"
                            value="${fieldData.label || ''}" onchange="updateFormConfig()">
                 </div>
                 <div class="col-md-3 mb-2">
                     <label class="form-label">Field Type</label>
                     <select class="form-select" onchange="updateFieldType(this); updateFormConfig()">
-                        ${Object.keys(fieldTypes).map(key => 
+                        ${Object.keys(fieldTypes).map(key =>
                             `<option value="${key}" ${fieldData.type === key ? 'selected' : ''}>${fieldTypes[key]}</option>`
                         ).join('')}
                     </select>
@@ -466,15 +467,15 @@ function addField(sectionId, fieldData = {}) {
             </div>
         </div>
     `;
-    
+
     document.getElementById(sectionId + '_fields').insertAdjacentHTML('beforeend', fieldHtml);
-    
+
     // Show options field if needed
     if (fieldData.type === 'select' || fieldData.type === 'radio') {
         const fieldElement = document.getElementById(fieldId);
         fieldElement.querySelector('.field-options').style.display = 'block';
     }
-    
+
     updateFormConfig();
 }
 
@@ -487,7 +488,7 @@ function updateFieldType(selectElement) {
     const fieldContainer = selectElement.closest('.border');
     const optionsDiv = fieldContainer.querySelector('.field-options');
     const fieldType = selectElement.value;
-    
+
     if (fieldType === 'select' || fieldType === 'radio') {
         optionsDiv.style.display = 'block';
     } else {
@@ -497,31 +498,31 @@ function updateFieldType(selectElement) {
 
 function updateFormConfig() {
     const sections = {};
-    
+
     document.querySelectorAll('#formBuilder .card').forEach(sectionCard => {
         const sectionTitle = sectionCard.querySelector('input[placeholder="Section Title"]').value;
         if (!sectionTitle) return;
-        
+
         const sectionKey = sectionTitle.toLowerCase().replace(/\s+/g, '_');
         sections[sectionKey] = {
             title: sectionTitle,
             fields: {}
         };
-        
+
         sectionCard.querySelectorAll('.section-fields .border').forEach(fieldDiv => {
             const label = fieldDiv.querySelector('input[placeholder="Field Label"]').value;
             if (!label) return;
-            
+
             const fieldKey = label.toLowerCase().replace(/\s+/g, '_');
             const type = fieldDiv.querySelector('select').value;
             const required = fieldDiv.querySelector('input[type="checkbox"]').checked;
-            
+
             const field = {
                 type: type,
                 label: label,
                 required: required
             };
-            
+
             // Add options for select/radio fields
             if (type === 'select' || type === 'radio') {
                 const optionsText = fieldDiv.querySelector('textarea').value;
@@ -529,30 +530,47 @@ function updateFormConfig() {
                     field.options = optionsText.split('\n').filter(opt => opt.trim());
                 }
             }
-            
+
             sections[sectionKey].fields[fieldKey] = field;
         });
     });
-    
+
+
+function ensureFormConfigOnSubmit() {
+    updateFormConfig();
+    try {
+        const raw = document.getElementById('form_config').value || '{}';
+        const cfg = JSON.parse(raw);
+        if (!cfg.sections || Object.keys(cfg.sections).length === 0) {
+            alert('Please add at least one section and give it a title before updating.');
+            return false;
+        }
+    } catch (e) {
+        alert('Form configuration is invalid JSON. Please adjust your sections and try again.');
+        return false;
+    }
+    return true;
+}
+
     document.getElementById('form_config').value = JSON.stringify({ sections: sections });
 }
 
 function previewTemplate() {
     updateFormConfig();
     const formConfig = JSON.parse(document.getElementById('form_config').value || '{}');
-    
+
     let previewHtml = '<div class="alert alert-info">This is how your template will look in checkup forms:</div>';
-    
+
     Object.keys(formConfig.sections || {}).forEach(sectionKey => {
         const section = formConfig.sections[sectionKey];
         previewHtml += `<h6 class="text-primary border-bottom pb-2">${section.title}</h6>`;
         previewHtml += '<div class="row">';
-        
+
         Object.keys(section.fields || {}).forEach(fieldKey => {
             const field = section.fields[fieldKey];
             previewHtml += `<div class="col-md-6 mb-3">`;
             previewHtml += `<label class="form-label">${field.label}${field.required ? ' <span class="text-danger">*</span>' : ''}</label>`;
-            
+
             switch (field.type) {
                 case 'select':
                     previewHtml += '<select class="form-select" disabled><option>Select...</option>';
@@ -572,13 +590,13 @@ function previewTemplate() {
                 default:
                     previewHtml += `<input type="${field.type}" class="form-control" disabled>`;
             }
-            
+
             previewHtml += '</div>';
         });
-        
+
         previewHtml += '</div>';
     });
-    
+
     document.getElementById('previewContent').innerHTML = previewHtml;
     const modal = new bootstrap.Modal(document.getElementById('previewModal'));
     modal.show();
