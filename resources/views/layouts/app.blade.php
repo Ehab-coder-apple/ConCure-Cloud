@@ -1511,7 +1511,7 @@
                         @endif
 
                             <!-- Forms -->
-                            @if(Auth::user()->canViewPatientForms() || Auth::user()->canManageFormTemplates() || Auth::user()->canAssignForms() || Auth::user()->canFillForms())
+                            @if(Auth::user()->canAccessSection('forms'))
                             <li class="nav-item">
                                 <a href="{{ route('forms.templates.index') }}" class="nav-link {{ request()->routeIs('forms.*') ? 'active' : '' }}">
                                     <i class="nav-icon fas fa-file-alt"></i>
