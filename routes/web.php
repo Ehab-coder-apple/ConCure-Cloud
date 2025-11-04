@@ -870,6 +870,20 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
 });
 
+
+    // Forms Management (top-level, not nested under Recommendations)
+    Route::prefix('forms')->name('forms.')->group(function () {
+        Route::prefix('templates')->name('templates.')->group(function () {
+            Route::get('/', [FormTemplateController::class, 'index'])->name('index');
+            Route::get('/create', [FormTemplateController::class, 'create'])->name('create');
+            Route::post('/', [FormTemplateController::class, 'store'])->name('store');
+            Route::get('/{formTemplate}/edit', [FormTemplateController::class, 'edit'])->name('edit');
+            Route::put('/{formTemplate}', [FormTemplateController::class, 'update'])->name('update');
+            Route::delete('/{formTemplate}', [FormTemplateController::class, 'destroy'])->name('destroy');
+            Route::get('/{formTemplate}/download', [FormTemplateController::class, 'download'])->name('download');
+        });
+    });
+
 // Development routes (remove in production)
 if (config('app.debug')) {
 
