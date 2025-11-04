@@ -255,9 +255,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/', [App\Http\Controllers\PatientFormController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\PatientFormController::class, 'create'])->name('create');
         Route::post('/', [App\Http\Controllers\PatientFormController::class, 'store'])->name('store');
-        // Fill routes must come before the catch-all /{patientForm}
+        // Fill/PDF routes must come before the catch-all /{patientForm}
         Route::get('/{patientForm}/fill', [App\Http\Controllers\PatientFormController::class, 'fill'])->name('fill');
         Route::post('/{patientForm}/fill', [App\Http\Controllers\PatientFormController::class, 'submitFill'])->name('fill.submit');
+        Route::get('/{patientForm}/pdf', [App\Http\Controllers\PatientFormController::class, 'pdf'])->name('pdf');
         Route::get('/{patientForm}', [App\Http\Controllers\PatientFormController::class, 'show'])->name('show');
         Route::delete('/{patientForm}', [App\Http\Controllers\PatientFormController::class, 'destroy'])->name('destroy');
     });

@@ -64,6 +64,11 @@
                         <i class="fas fa-clipboard-list me-1"></i>
                         {{ __('Checkup') }}
                     </a>
+                    <a href="{{ route('patients.forms.index', $patient) }}" class="btn btn-secondary btn-sm me-1">
+                        <i class="fas fa-file-alt me-1"></i>
+                        {{ __('Forms') }}
+                    </a>
+
                     <button type="button" class="btn btn-primary btn-sm" onclick="newPrescription()">
                         <i class="fas fa-prescription-bottle-alt me-1"></i>
                         {{ __('Prescription') }}
@@ -181,6 +186,95 @@
                             <p>{{ $patient->medical_history ?? __('No medical history recorded yet.') }}</p>
                         </div>
                     </div>
+                    <!-- Forms Summary -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-file-alt me-2"></i>
+                                {{ __('Forms') }}
+                            </h6>
+                            <div>
+                                <a href="{{ route('patients.forms.index', $patient) }}" class="btn btn-sm btn-outline-secondary me-2">
+                                    <i class="fas fa-list me-1"></i> {{ __('View All') }}
+                                </a>
+                                @if(Auth::user()->canAssignForms())
+                                <a href="{{ route('patients.forms.create', $patient) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-plus me-1"></i> {{ __('Assign Form') }}
+                                </a>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            @php
+                                $recentForms = \App\Models\PatientForm::where('patient_id', $patient->id)
+                                    ->where('clinic_id', $patient->clinic_id)
+                                    ->with('template')
+                                    ->orderByDesc('assigned_at')
+                                    ->take(5)
+                                    ->get();
+                            @endphp
+                            @if($recentForms->count() > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ __('Form') }}</th>
+                                                <th>{{ __('Status') }}</th>
+                                                <th>{{ __('Assigned') }}</th>
+                                                <th>{{ __('Completed') }}</th>
+                                                <th class="text-end">{{ __('Actions') }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($recentForms as $f)
+                                            @php
+                                              $badge = match($f->status){
+                                                'completed' => 'success',
+                                                'in_progress' => 'info',
+                                                default => 'secondary'
+                                              };
+                                            @endphp
+                                            <tr>
+                                                <td>{{ $f->template?->name ?? __('Form') }}</td>
+                                                <td><span class="badge bg-{{ $badge }}">{{ __(Str::title(str_replace('_',' ', $f->status))) }}</span></td>
+                                                <td><small class="text-muted">{{ $f->assigned_at?->format('Y-m-d') ?? '-' }}</small></td>
+                                                <td><small class="text-muted">{{ $f->completed_at?->format('Y-m-d') ?? '-' }}</small></td>
+                                                <td class="text-end">
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        @if(Auth::user()->canFillForms() && $f->status !== 'completed')
+                                                        <a href="{{ route('patients.forms.fill', [$patient, $f]) }}" class="btn btn-outline-primary" title="{{ __('Fill/Continue') }}">
+                                                            <i class="fas fa-pen"></i>
+                                                        </a>
+                                                        @endif
+                                                        <a href="{{ route('patients.forms.show', [$patient, $f]) }}" class="btn btn-outline-info" title="{{ __('Open') }}">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        @if($f->status === 'completed')
+                                                        <a href="{{ route('patients.forms.pdf', [$patient, $f]) }}" class="btn btn-outline-success" title="{{ __('PDF') }}">
+                                                            <i class="fas fa-file-pdf"></i>
+                                                        </a>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-center py-4">
+                                    <i class="fas fa-file-alt fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-2">{{ __('No forms assigned yet.') }}</p>
+                                    @if(Auth::user()->canAssignForms())
+                                    <a href="{{ route('patients.forms.create', $patient) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-plus me-1"></i> {{ __('Assign First Form') }}
+                                    </a>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
 
                     <!-- Recent Visits -->
                     <div class="card mb-4">

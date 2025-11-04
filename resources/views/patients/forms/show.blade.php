@@ -16,6 +16,11 @@
                     <i class="fas fa-pen me-1"></i> {{ __('Fill / Continue') }}
                 </a>
                 @endif
+                @if($assignment->status === 'completed')
+                <a href="{{ route('patients.forms.pdf', [$patient, $assignment]) }}" class="btn btn-success">
+                    <i class="fas fa-file-pdf me-1"></i> {{ __('Download PDF') }}
+                </a>
+                @endif
                 <a href="{{ route('patients.forms.index', $patient) }}" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left me-1"></i> {{ __('Back') }}
                 </a>

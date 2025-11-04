@@ -106,6 +106,11 @@
                                             <a href="{{ route('patients.forms.show', [$patient, $f]) }}" class="btn btn-outline-info" title="{{ __('View') }}">
                                                 <i class="fas fa-eye"></i>
                                             </a>
+                                            @if($f->status === 'completed')
+                                            <a href="{{ route('patients.forms.pdf', [$patient, $f]) }}" class="btn btn-outline-success" title="{{ __('Download PDF') }}">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </a>
+                                            @endif
                                             @if(Auth::user()->canAssignForms())
                                             <form method="POST" action="{{ route('patients.forms.destroy', [$patient, $f]) }}" onsubmit="return confirm('{{ __('Remove this form from the patient?') }}')">
                                                 @csrf

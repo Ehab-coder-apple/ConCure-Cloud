@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
+
 use App\Models\FormTemplate;
 use App\Models\Patient;
 use App\Models\PatientForm;
@@ -214,6 +216,37 @@ class PatientFormController extends Controller
         $patientForm->markInProgress();
         return redirect()->route('patients.forms.show', [$patient, $patientForm])
             ->with('success', 'Progress saved.');
+    }
+
+    /**
+     * Export a completed form as PDF
+     */
+    public function pdf(Patient $patient, PatientForm $patientForm)
+    {
+        $this->authorizePatientAccess($patient);
+        $user = Auth::user();
+        if (!$user->canViewPatientForms() && !$user->canManageFormTemplates() && !$user->canFillForms() && !$user->canAssignForms()) {
+            abort(403, 'Insufficient permissions to export forms.');
+        }
+
+        if ((int) $patientForm->patient_id !== (int) $patient->id) {
+            abort(403, 'Unauthorized access to patient form.');
+        }
+
+        if (!$patientForm->isCompleted()) {
+            return redirect()->route('patients.forms.show', [$patient, $patientForm])
+                ->with('warning', 'Only completed forms can be exported as PDF.');
+        }
+
+        $patientForm->load(['template', 'assignedBy', 'filledBy']);
+
+        $pdf = Pdf::loadView('patients.forms.pdf', [
+            'patient' => $patient,
+            'assignment' => $patientForm,
+        ])->setPaper('a4');
+
+        $filename = 'PatientForm-' . str_replace(' ', '-', ($patientForm->template->name ?? 'Form')) . '-' . now()->format('Ymd_His') . '.pdf';
+        return $pdf->download($filename);
     }
 
     /**
