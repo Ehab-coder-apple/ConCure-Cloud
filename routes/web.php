@@ -992,7 +992,7 @@ Route::get('/debug-plan-by-number/{plan_number}', function($plan_number) {
             'trace' => config('app.debug') ? $e->getTraceAsString() : null,
         ], 500);
     }
-})->name('debug.plan.by.number');
+})->middleware(['auth'])->name('debug.plan.by.number');
 
 // Debug/repair: copy meals from one plan to another by plan_number (dry-run by default)
 Route::get('/debug-copy-meals/{from}/{to}', function($from, $to) {
@@ -1086,7 +1086,7 @@ Route::get('/debug-copy-meals/{from}/{to}', function($from, $to) {
             'trace' => config('app.debug') ? $e->getTraceAsString() : null,
         ], 500);
     }
-})->name('debug.copy.meals');
+})->middleware(['auth'])->name('debug.copy.meals');
 
 
 if (config('app.debug')) {
