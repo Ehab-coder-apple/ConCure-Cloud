@@ -20,8 +20,10 @@
     </style>
 </head>
 <body>
-    <h2 class="mb-2">{{ __('Patient Form') }}</h2>
-    <div class="mb-3 text-muted">{{ $assignment->template?->name ?? __('Form') }}</div>
+    @include('components.pdf-clinic-header', [
+        'clinicId' => $patient->clinic_id ?? null,
+        'documentTitle' => __('Patient Form') . ' — ' . ($assignment->template?->name ?? __('Form')),
+    ])
 
     <div class="section">
         <h4 class="mb-1">{{ __('Patient') }}</h4>
@@ -48,6 +50,13 @@
                 <td><strong>{{ __('Completed At') }}:</strong> {{ $assignment->completed_at?->format('Y-m-d H:i') ?? '-' }}</td>
                 <td><strong>{{ __('Filled By') }}:</strong> {{ $assignment->filledBy?->name ?? '-' }}</td>
             </tr>
+    @if(!empty($assignment->notes))
+    <div class="section">
+        <h4 class="mb-1">{{ __('Notes') }}</h4>
+        <div class="text-muted">{{ $assignment->notes }}</div>
+    </div>
+    @endif
+
         </table>
     </div>
 

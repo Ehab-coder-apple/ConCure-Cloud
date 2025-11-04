@@ -17,8 +17,8 @@
                 </a>
                 @endif
                 @if($assignment->status === 'completed')
-                <a href="{{ route('patients.forms.pdf', [$patient, $assignment]) }}" class="btn btn-success">
-                    <i class="fas fa-file-pdf me-1"></i> {{ __('Download PDF') }}
+                <a href="{{ route('patients.forms.pdf', [$patient, $assignment]) }}?open=1" target="_blank" class="btn btn-success">
+                    <i class="fas fa-file-pdf me-1"></i> {{ __('Open PDF') }}
                 </a>
                 @endif
                 <a href="{{ route('patients.forms.index', $patient) }}" class="btn btn-outline-secondary">

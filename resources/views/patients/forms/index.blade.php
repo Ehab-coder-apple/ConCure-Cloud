@@ -107,7 +107,7 @@
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             @if($f->status === 'completed')
-                                            <a href="{{ route('patients.forms.pdf', [$patient, $f]) }}" class="btn btn-outline-success" title="{{ __('Download PDF') }}">
+                                            <a href="{{ route('patients.forms.pdf', [$patient, $f]) }}?open=1" target="_blank" class="btn btn-outline-success" title="{{ __('Open PDF') }}">
                                                 <i class="fas fa-file-pdf"></i>
                                             </a>
                                             @endif

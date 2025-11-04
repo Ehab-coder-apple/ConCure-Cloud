@@ -246,6 +246,9 @@ class PatientFormController extends Controller
         ])->setPaper('a4');
 
         $filename = 'PatientForm-' . str_replace(' ', '-', ($patientForm->template->name ?? 'Form')) . '-' . now()->format('Ymd_His') . '.pdf';
+        if (request()->boolean('open')) {
+            return $pdf->stream($filename);
+        }
         return $pdf->download($filename);
     }
 
