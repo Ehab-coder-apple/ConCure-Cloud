@@ -6,6 +6,7 @@ use App\Models\FormTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class FormTemplateController extends Controller
 {
@@ -169,11 +170,39 @@ class FormTemplateController extends Controller
         }
 
         $path = $formTemplate->file_path;
-        if (!$path || !Storage::disk('public')->exists($path)) {
+        $disk = Storage::disk('public');
+        if (!$path || !$disk->exists($path)) {
             return back()->with('error', __('File not found.'));
         }
 
-        return Storage::disk('public')->download($path, $formTemplate->original_filename ?: basename($path));
+        $absolutePath = $disk->path($path);
+        $filename = $formTemplate->original_filename ?: basename($path);
+        $mime = File::mimeType($absolutePath) ?: 'application/octet-stream';
+
+        try {
+            // Stream in chunks to play nicely with proxies and avoid memory spikes
+            return response()->streamDownload(function () use ($absolutePath) {
+                $stream = fopen($absolutePath, 'rb');
+                while (!feof($stream)) {
+                    echo fread($stream, 1024 * 1024); // 1MB chunks
+                    @ob_flush();
+                    flush();
+                }
+                fclose($stream);
+            }, $filename, [
+                'Content-Type' => $mime,
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Form template download failed', [
+                'template_id' => $formTemplate->id,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+            // Fallback to Laravel's Storage download
+            return $disk->download($path, $filename);
+        }
     }
 
     private function authorizeTemplateAccess(FormTemplate $formTemplate): void
