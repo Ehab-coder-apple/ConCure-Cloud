@@ -28,7 +28,6 @@
         @csrf
         @if(isset($dietPlan))
             @method('PUT')
-            <input type="hidden" name="save_as_new" value="1">
         @endif
 
         <div class="row">
@@ -611,10 +610,21 @@
                         <i class="fas fa-times me-1"></i>
                         {{ __('Cancel') }}
                     </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i>
-                        {{ isset($dietPlan) ? __('Save As New Nutrition Plan') : __('Create Nutrition Plan') }}
-                    </button>
+                    @if(isset($dietPlan))
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>
+                            {{ __('Update Nutrition Plan') }}
+                        </button>
+                        <button type="submit" name="save_as_new" value="1" class="btn btn-outline-primary">
+                            <i class="fas fa-clone me-1"></i>
+                            {{ __('Save As New Nutrition Plan') }}
+                        </button>
+                    @else
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>
+                            {{ __('Create Nutrition Plan') }}
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>
