@@ -250,6 +250,16 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/{template}/preview', [App\Http\Controllers\PatientCheckupTemplateController::class, 'preview'])->name('preview');
     });
 
+    // Patient Forms Management
+    Route::prefix('patients/{patient}/forms')->name('patients.forms.')->group(function () {
+        Route::get('/', [App\Http\Controllers\PatientFormController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\PatientFormController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\PatientFormController::class, 'store'])->name('store');
+        Route::get('/{patientForm}', [App\Http\Controllers\PatientFormController::class, 'show'])->name('show');
+        Route::delete('/{patientForm}', [App\Http\Controllers\PatientFormController::class, 'destroy'])->name('destroy');
+    });
+
+
     // Custom Vital Signs Management (Admin only)
     Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
         Route::resource('custom-vital-signs', App\Http\Controllers\CustomVitalSignsController::class);

@@ -62,7 +62,7 @@ class Patient extends Model
             if (!$patient->patient_id) {
                 $patient->patient_id = self::generatePatientId($patient->clinic_id);
             }
-            
+
             // Calculate BMI if height and weight are provided
             if ($patient->height && $patient->weight) {
                 $patient->bmi = self::calculateBMI($patient->weight, $patient->height);
@@ -218,7 +218,7 @@ class Patient extends Model
                              ->whereNotNull('weight')
                              ->latest('checkup_date')
                              ->first();
-        
+
         return $latestCheckup ? $latestCheckup->weight : $this->weight;
     }
 
@@ -474,4 +474,13 @@ class Patient extends Model
     {
         return \App\Models\PatientCheckupTemplateAssignment::getRecommendedTemplates($this);
     }
+
+    /**
+     * Get the patient's assigned forms.
+     */
+    public function patientForms()
+    {
+        return $this->hasMany(\App\Models\PatientForm::class);
+    }
+
 }
