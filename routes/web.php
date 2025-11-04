@@ -20,6 +20,8 @@ use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\MainWelcomeController;
 use App\Http\Controllers\MessagingController;
 
+use App\Http\Controllers\FormTemplateController;
+
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Route;
@@ -402,6 +404,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/{dietPlan}/weight-tracking', [App\Http\Controllers\NutritionController::class, 'weightTracking'])->name('weight-tracking');
         Route::post('/{dietPlan}/weight-records', [App\Http\Controllers\NutritionController::class, 'storeWeightRecord'])->name('weight-records.store');
         Route::put('/{dietPlan}/weight-records/{weightRecord}', [App\Http\Controllers\NutritionController::class, 'updateWeightRecord'])->name('weight-records.update');
+
+
+
         Route::delete('/{dietPlan}/weight-records/{weightRecord}', [App\Http\Controllers\NutritionController::class, 'deleteWeightRecord'])->name('weight-records.delete');
     });
 
@@ -417,6 +422,22 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::put('/lab-requests/{labRequest}', [RecommendationController::class, 'updateLabRequest'])->name('lab-requests.update');
         Route::get('/lab-requests/{labRequest}/print', [RecommendationController::class, 'printLabRequest'])->name('lab-requests.print');
         Route::get('/lab-requests/{labRequest}/pdf', [RecommendationController::class, 'pdfLabRequest'])->name('lab-requests.pdf');
+
+    // Forms Management
+    Route::prefix('forms')->name('forms.')->group(function () {
+        // Template management
+        Route::prefix('templates')->name('templates.')->group(function () {
+            Route::get('/', [FormTemplateController::class, 'index'])->name('index');
+            Route::get('/create', [FormTemplateController::class, 'create'])->name('create');
+            Route::post('/', [FormTemplateController::class, 'store'])->name('store');
+            Route::get('/{formTemplate}/edit', [FormTemplateController::class, 'edit'])->name('edit');
+            Route::put('/{formTemplate}', [FormTemplateController::class, 'update'])->name('update');
+            Route::delete('/{formTemplate}', [FormTemplateController::class, 'destroy'])->name('destroy');
+            Route::get('/{formTemplate}/download', [FormTemplateController::class, 'download'])->name('download');
+        });
+    });
+
+
 
         // Radiology Requests
         Route::prefix('radiology')->name('radiology.')->group(function () {
