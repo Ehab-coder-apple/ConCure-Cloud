@@ -10,7 +10,12 @@
                 <i class="fas fa-file-alt text-secondary"></i>
                 {{ $assignment->template?->name ?? __('Form') }}
             </h1>
-            <div>
+            <div class="d-flex gap-2">
+                @if(Auth::user()->canFillForms() && $assignment->status !== 'completed')
+                <a href="{{ route('patients.forms.fill', [$patient, $assignment]) }}" class="btn btn-primary">
+                    <i class="fas fa-pen me-1"></i> {{ __('Fill / Continue') }}
+                </a>
+                @endif
                 <a href="{{ route('patients.forms.index', $patient) }}" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left me-1"></i> {{ __('Back') }}
                 </a>
@@ -74,10 +79,22 @@
                 </div>
             </div>
 
+            @php($content = data_get($assignment->form_data, 'content'))
+            @if(!empty($content))
+            <div class="card">
+                <div class="card-header fw-bold">
+                    <i class="fas fa-align-left me-1"></i> {{ __('Form Data') }}
+                </div>
+                <div class="card-body">
+                    <pre class="mb-0" style="white-space: pre-wrap;">{{ $content }}</pre>
+                </div>
+            </div>
+            @else
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-1"></i>
-                {{ __('Form filling will be implemented in Step 6. For now, you can manage assignments and download templates.') }}
+                {{ __('No data has been entered yet. Click Fill to start.') }}
             </div>
+            @endif
         </div>
     </div>
 </div>

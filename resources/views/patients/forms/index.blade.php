@@ -98,6 +98,11 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
+                                            @if(Auth::user()->canFillForms() && $f->status !== 'completed')
+                                            <a href="{{ route('patients.forms.fill', [$patient, $f]) }}" class="btn btn-outline-primary" title="{{ __('Fill/Continue') }}">
+                                                <i class="fas fa-pen"></i>
+                                            </a>
+                                            @endif
                                             <a href="{{ route('patients.forms.show', [$patient, $f]) }}" class="btn btn-outline-info" title="{{ __('View') }}">
                                                 <i class="fas fa-eye"></i>
                                             </a>

@@ -148,6 +148,75 @@ class PatientFormController extends Controller
     }
 
     /**
+     * Show fill page for an assignment
+     */
+    public function fill(Patient $patient, PatientForm $patientForm)
+    {
+        $this->authorizePatientAccess($patient);
+        $user = Auth::user();
+        if (!$user->canFillForms() && !$user->canAssignForms() && !$user->canManageFormTemplates()) {
+            abort(403, 'You do not have permission to fill forms.');
+        }
+
+        if ((int) $patientForm->patient_id !== (int) $patient->id) {
+            abort(403, 'Unauthorized access to patient form.');
+        }
+
+        if ($patientForm->isCompleted()) {
+            return redirect()->route('patients.forms.show', [$patient, $patientForm])
+                ->with('info', 'This form is already completed.');
+        }
+
+        return view('patients.forms.fill', [
+            'patient' => $patient,
+            'assignment' => $patientForm->load(['template', 'assignedBy', 'filledBy']),
+        ]);
+    }
+
+    /**
+     * Submit filled data (save progress or complete)
+     */
+    public function submitFill(Request $request, Patient $patient, PatientForm $patientForm)
+    {
+        $this->authorizePatientAccess($patient);
+        $user = Auth::user();
+        if (!$user->canFillForms() && !$user->canAssignForms() && !$user->canManageFormTemplates()) {
+            abort(403, 'You do not have permission to fill forms.');
+        }
+
+        if ((int) $patientForm->patient_id !== (int) $patient->id) {
+            abort(403, 'Unauthorized access to patient form.');
+        }
+
+        if ($patientForm->isCompleted()) {
+            return redirect()->route('patients.forms.show', [$patient, $patientForm])
+                ->with('info', 'This form is already completed.');
+        }
+
+        $data = $request->validate([
+            'content' => 'nullable|string',
+            'action' => 'required|string|in:save,complete',
+        ]);
+
+        // Persist data
+        $payload = [
+            'content' => $data['content'] ?? '',
+        ];
+
+        if ($data['action'] === 'complete') {
+            $patientForm->markCompleted($user->id, $payload);
+            return redirect()->route('patients.forms.show', [$patient, $patientForm])
+                ->with('success', 'Form marked as completed.');
+        }
+
+        // Save progress (in progress)
+        $patientForm->form_data = $payload;
+        $patientForm->markInProgress();
+        return redirect()->route('patients.forms.show', [$patient, $patientForm])
+            ->with('success', 'Progress saved.');
+    }
+
+    /**
      * Authorization helper similar to other patient controllers
      */
     private function authorizePatientAccess(Patient $patient): void
