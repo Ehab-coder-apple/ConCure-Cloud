@@ -35,6 +35,9 @@ class User extends Authenticatable
         'last_login_at',
         'language',
         'permissions',
+        'can_manage_form_templates',
+        'can_assign_forms',
+        'can_fill_forms',
         'metadata',
         'clinic_id',
         'created_by',
@@ -61,6 +64,9 @@ class User extends Authenticatable
         'expires_at' => 'datetime',
         'last_login_at' => 'datetime',
         'permissions' => 'array',
+        'can_manage_form_templates' => 'boolean',
+        'can_assign_forms' => 'boolean',
+        'can_fill_forms' => 'boolean',
         'metadata' => 'array',
         'is_active' => 'boolean',
         'password' => 'hashed',
@@ -517,6 +523,84 @@ class User extends Authenticatable
         return $this->hasAnyPermission(['lab_delete', 'lab_manage']);
     }
 
+
+    /**
+     * Check if user can view patient forms and templates.
+     */
+    public function canViewPatientForms(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+        if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
+            return true;
+        }
+
+        // If user can assign/fill/manage templates, they implicitly can view
+        if (($this->can_assign_forms ?? false) || ($this->can_fill_forms ?? false) || ($this->can_manage_form_templates ?? false)) {
+            return true;
+        }
+
+        return $this->hasAnyPermission(['forms_view', 'forms_assign', 'forms_fill', 'forms_templates_manage', 'forms_manage']);
+    }
+
+    /**
+     * Check if user can manage form templates.
+     */
+    public function canManageFormTemplates(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+        if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
+            return true;
+        }
+
+        if ($this->can_manage_form_templates ?? false) {
+            return true;
+        }
+
+        return $this->hasAnyPermission(['forms_templates_manage', 'forms_manage']);
+    }
+
+    /**
+     * Check if user can assign forms to patients.
+     */
+    public function canAssignForms(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+        if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
+            return true;
+        }
+
+        if ($this->can_assign_forms ?? false) {
+            return true;
+        }
+
+        return $this->hasAnyPermission(['forms_assign', 'forms_manage']);
+    }
+
+    /**
+     * Check if user can fill patient forms.
+     */
+    public function canFillForms(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+        if (app()->environment('local') && (config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
+            return true;
+        }
+
+        if ($this->can_fill_forms ?? false) {
+            return true;
+        }
+
+        return $this->hasAnyPermission(['forms_fill', 'forms_manage']);
+    }
+
     /**
      * Check if user has a specific permission.
      */
@@ -706,6 +790,13 @@ class User extends Authenticatable
                 'nutrition_delete' => 'Delete Nutrition Plans',
                 'nutrition_manage' => 'Full Nutrition Management',
             ],
+            'forms' => [
+                'forms_view' => 'View Forms',
+                'forms_templates_manage' => 'Manage Form Templates',
+                'forms_assign' => 'Assign Forms to Patients',
+                'forms_fill' => 'Fill Patient Forms',
+                'forms_manage' => 'Full Forms Management',
+            ],
             'lab' => [
                 'lab_view' => 'View Lab Requests',
                 'lab_create' => 'Create Lab Requests',
@@ -797,6 +888,11 @@ class User extends Authenticatable
                 'name' => 'Nutrition Plans',
                 'icon' => 'fas fa-apple-alt',
                 'color' => 'success',
+            ],
+            'forms' => [
+                'name' => 'Forms',
+                'icon' => 'fas fa-file-alt',
+                'color' => 'secondary',
             ],
             'lab' => [
                 'name' => 'Laboratory',
