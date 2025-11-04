@@ -782,40 +782,67 @@ class NutritionController extends Controller
             ]);
 
             if ($mealOptionsData && is_array($mealOptionsData)) {
-                // Delete existing meals for this diet plan
-                $dietPlan->meals()->delete();
+                // Safety check: ensure at least one food exists before wiping existing meals
+                $hasFoods = false;
+                foreach ($mealOptionsData as $mt => $opts) {
+                    if (is_array($opts)) {
+                        foreach ($opts as $opt) {
+                            if (!empty($opt['foods']) && is_array($opt['foods']) && count($opt['foods']) > 0) {
+                                $hasFoods = true;
+                                break 2;
+                            }
+                        }
+                    }
+                }
 
-                // Process each meal type and its options
-                foreach ($mealOptionsData as $mealType => $options) {
-                    if (!empty($options) && is_array($options)) {
-                        foreach ($options as $optionIndex => $option) {
-                            if (!empty($option['foods']) && is_array($option['foods'])) {
-                                // Create a meal for this option
-                                $meal = $dietPlan->meals()->create([
-                                    'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
-                                    'day_number' => null, // Option-based: no day number
-                                    'option_number' => $option['option_number'] ?? ($optionIndex + 1),
-                                    'is_option_based' => true,
-                                    'option_description' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1)))),
-                                    'meal_name' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1))))
-                                ]);
+                if (!$hasFoods) {
+                    $existingMealsCount = $dietPlan->meals()->count();
+                    \Log::warning('Attempted update with empty meal_options; preserving existing meals', [
+                        'diet_plan_id' => $dietPlan->id,
+                        'existing_meals_count' => $existingMealsCount,
+                    ]);
+                    if ($existingMealsCount > 0) {
+                        return back()->withInput()->withErrors([
+                            'error' => 'No meal data received. Existing meals were preserved. Please add foods to at least one meal before saving.'
+                        ]);
+                    }
+                    // No existing meals to preserve; do nothing
+                } else {
+                    // Delete existing meals for this diet plan and recreate from payload
+                    $dietPlan->meals()->delete();
 
-                                // Add foods to this meal
-                                foreach ($option['foods'] as $food) {
-                                    $meal->foods()->create([
-                                        'food_id' => $food['food_id'] ?? null,
-                                        'food_name' => $food['food_name'] ?? $food['displayName'] ?? 'Unknown Food',
-                                        'quantity' => $food['quantity'] ?? 100,
-                                        'unit' => $food['unit'] ?? 'g',
-                                        'preparation_notes' => $food['preparation_notes'] ?? $food['notes'] ?? null,
+                    // Process each meal type and its options
+                    foreach ($mealOptionsData as $mealType => $options) {
+                        if (!empty($options) && is_array($options)) {
+                            foreach ($options as $optionIndex => $option) {
+                                if (!empty($option['foods']) && is_array($option['foods'])) {
+                                    // Create a meal for this option
+                                    $meal = $dietPlan->meals()->create([
+                                        'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
+                                        'day_number' => null, // Option-based: no day number
+                                        'option_number' => $option['option_number'] ?? ($optionIndex + 1),
+                                        'is_option_based' => true,
+                                        'option_description' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1)))),
+                                        'meal_name' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1))))
+                                    ]);
+
+                                    // Add foods to this meal
+                                    foreach ($option['foods'] as $food) {
+                                        $meal->foods()->create([
+                                            'food_id' => $food['food_id'] ?? null,
+                                            'food_name' => $food['food_name'] ?? $food['displayName'] ?? 'Unknown Food',
+                                            'quantity' => $food['quantity'] ?? 100,
+                                            'unit' => $food['unit'] ?? 'g',
+                                            'preparation_notes' => $food['preparation_notes'] ?? $food['notes'] ?? null,
+                                        ]);
+                                    }
+
+                                    \Log::info("Created meal option for {$mealType}", [
+                                        'meal_id' => $meal->id,
+                                        'option_number' => $optionIndex + 1,
+                                        'foods_count' => count($option['foods'])
                                     ]);
                                 }
-
-                                \Log::info("Created meal option for {$mealType}", [
-                                    'meal_id' => $meal->id,
-                                    'option_number' => $optionIndex + 1,
-                                    'foods_count' => count($option['foods'])
-                                ]);
                             }
                         }
                     }
