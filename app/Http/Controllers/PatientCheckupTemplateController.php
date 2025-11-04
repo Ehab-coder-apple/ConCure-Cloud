@@ -13,26 +13,33 @@ class PatientCheckupTemplateController extends Controller
     /**
      * Display patient's checkup template assignments.
      */
-    public function index(Patient $patient)
+    public function index(Request $request, Patient $patient)
     {
         $this->authorizePatientAccess($patient);
 
-        $assignments = $patient->checkupTemplateAssignments()
-                              ->with(['template', 'assignedBy'])
-                              ->orderBy('is_active', 'desc')
-                              ->orderBy('assigned_at', 'desc')
-                              ->get();
+        // By default, only show active assignments so "removed" ones disappear from the list
+        $showInactive = $request->boolean('show_inactive', false);
+
+        $assignmentsQuery = $patient->checkupTemplateAssignments()
+                                    ->with(['template', 'assignedBy'])
+                                    ->orderBy('assigned_at', 'desc');
+
+        if (!$showInactive) {
+            $assignmentsQuery->where('is_active', true);
+        }
+
+        $assignments = $assignmentsQuery->get();
 
         $availableTemplates = CustomCheckupTemplate::forClinic($patient->clinic_id)
                                                   ->active()
-                                                  ->whereNotIn('id', $assignments->where('is_active', true)->pluck('template_id'))
+                                                  ->whereNotIn('id', $assignments->pluck('template_id'))
                                                   ->orderBy('medical_condition')
                                                   ->orderBy('name')
                                                   ->get();
 
         $recommendedTemplates = $patient->recommended_checkup_templates;
 
-        return view('patients.checkup-templates.index', compact('patient', 'assignments', 'availableTemplates', 'recommendedTemplates'));
+        return view('patients.checkup-templates.index', compact('patient', 'assignments', 'availableTemplates', 'recommendedTemplates', 'showInactive'));
     }
 
     /**
