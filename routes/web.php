@@ -948,6 +948,147 @@ Route::get('/debug-diet-plans', function() {
     }
 })->name('debug.diet.plans');
 
+// Debug: fetch plan by plan_number quickly
+Route::get('/debug-plan-by-number/{plan_number}', function($plan_number) {
+    try {
+        $plan = \App\Models\DietPlan::where('plan_number', $plan_number)
+            ->with(['patient', 'meals.foods'])
+            ->first();
+        if (!$plan) {
+            return response()->json([
+                'error' => 'DietPlan not found',
+                'plan_number' => $plan_number,
+            ], 404);
+        }
+
+        $siblings = \App\Models\DietPlan::where('patient_id', $plan->patient_id)
+            ->orderBy('created_at', 'desc')
+            ->withCount('meals')
+            ->take(10)
+            ->get(['id','plan_number','patient_id','created_at']);
+
+        return response()->json([
+            'success' => true,
+            'plan' => [
+                'id' => $plan->id,
+                'plan_number' => $plan->plan_number,
+                'patient_id' => $plan->patient_id,
+                'meals_count' => $plan->meals->count(),
+                'foods_total' => $plan->meals->sum(function($m){ return $m->foods->count(); }),
+                'created_at' => (string) $plan->created_at,
+            ],
+            'recent_for_same_patient' => $siblings->map(function($p){
+                return [
+                    'id' => $p->id,
+                    'plan_number' => $p->plan_number,
+                    'meals_count' => $p->meals_count,
+                    'created_at' => (string) $p->created_at,
+                ];
+            }),
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => config('app.debug') ? $e->getTraceAsString() : null,
+        ], 500);
+    }
+})->name('debug.plan.by.number');
+
+// Debug/repair: copy meals from one plan to another by plan_number (dry-run by default)
+Route::get('/debug-copy-meals/{from}/{to}', function($from, $to) {
+    $dryRun = filter_var(request()->query('dry_run', '1'), FILTER_VALIDATE_BOOLEAN);
+    try {
+        $src = \App\Models\DietPlan::where('plan_number', $from)
+            ->with(['patient', 'meals.foods'])
+            ->first();
+        $dst = \App\Models\DietPlan::where('plan_number', $to)
+            ->with(['patient', 'meals'])
+            ->first();
+
+        if (!$src || !$dst) {
+            return response()->json([
+                'error' => 'Source or destination plan not found',
+                'from' => $from,
+                'to' => $to,
+            ], 404);
+        }
+        if ($src->patient_id !== $dst->patient_id) {
+            return response()->json([
+                'error' => 'Source and destination must belong to the same patient',
+                'src_patient_id' => $src->patient_id,
+                'dst_patient_id' => $dst->patient_id,
+            ], 422);
+        }
+
+        $summary = [
+            'from' => [
+                'id' => $src->id,
+                'plan_number' => $src->plan_number,
+                'meals_count' => $src->meals->count(),
+                'foods_total' => $src->meals->sum(function($m){ return $m->foods->count(); }),
+            ],
+            'to' => [
+                'id' => $dst->id,
+                'plan_number' => $dst->plan_number,
+                'meals_count_before' => $dst->meals->count(),
+            ],
+            'dry_run' => $dryRun,
+        ];
+
+        if ($dryRun) {
+            $summary['action'] = 'No changes made. Call with ?dry_run=0 to perform copy.';
+            return response()->json($summary);
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function() use ($src, $dst, &$summary) {
+            // Remove existing meals on destination (if any)
+            $deleted = $dst->meals()->delete();
+            $copiedMeals = 0; $copiedFoods = 0;
+
+            foreach ($src->meals as $meal) {
+                $newMeal = $dst->meals()->create([
+                    'day_number' => $meal->day_number,
+                    'meal_type' => $meal->meal_type,
+                    'option_number' => $meal->option_number,
+                    'is_option_based' => (bool) $meal->is_option_based,
+                    'option_description' => $meal->option_description,
+                    'meal_name' => $meal->meal_name,
+                    'instructions' => $meal->instructions,
+                    'suggested_time' => $meal->suggested_time,
+                ]);
+                $copiedMeals++;
+
+                foreach ($meal->foods as $food) {
+                    $newMeal->foods()->create([
+                        'food_id' => $food->food_id,
+                        'food_name' => $food->food_name,
+                        'quantity' => $food->quantity,
+                        'unit' => $food->unit,
+                        'preparation_notes' => $food->preparation_notes,
+                    ]);
+                    $copiedFoods++;
+                }
+            }
+
+            $summary['to']['meals_count_after'] = $dst->meals()->count();
+            $summary['copied'] = [
+                'meals' => $copiedMeals,
+                'foods' => $copiedFoods,
+                'deleted_before_copy' => $deleted,
+            ];
+        });
+
+        $summary['status'] = 'copied';
+        return response()->json($summary);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => config('app.debug') ? $e->getTraceAsString() : null,
+        ], 500);
+    }
+})->name('debug.copy.meals');
+
+
 if (config('app.debug')) {
     // Create demo users if they don't exist
     Route::get('/dev/create-demo-users', function () {
