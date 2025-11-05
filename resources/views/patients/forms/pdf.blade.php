@@ -4,19 +4,18 @@
     <meta charset="UTF-8">
     <title>{{ __('Patient Form') }} - {{ $patient->full_name }}</title>
     <style>
-        body { font-family: DejaVu Sans, Helvetica, Arial, sans-serif; font-size: 12px; color: #111; }
+        @page { margin: 24px 28px; }
+        body { font-family: DejaVu Sans, Helvetica, Arial, sans-serif; font-size: 11.5px; line-height: 1.45; color: #222; }
         h1, h2, h3, h4 { margin: 0 0 8px 0; }
-        .text-muted { color: #555; }
-        .mb-1 { margin-bottom: 4px; }
-        .mb-2 { margin-bottom: 8px; }
-        .mb-3 { margin-bottom: 12px; }
-        .mb-4 { margin-bottom: 16px; }
-        .section { margin-top: 16px; }
-        .hr { border-top: 1px solid #ddd; margin: 10px 0; }
+        .section { margin-top: 14px; }
+        .section-title { font-size: 13px; color: #111; margin-bottom: 6px; font-weight: 700; }
+        .hr { border-top: 1px solid #e5e7eb; margin: 10px 0; }
         .table { width: 100%; border-collapse: collapse; }
-        .table td { padding: 6px 8px; vertical-align: top; }
-        .table--border td { border: 1px solid #ddd; }
-        pre { white-space: pre-wrap; word-wrap: break-word; background: #f8f8f8; padding: 10px; border: 1px solid #eee; }
+        .meta-table { width: 100%; border-collapse: collapse; background: #f9fbfd; border: 1px solid #e5e7eb; }
+        .meta-table td { padding: 6px 10px; border-bottom: 1px solid #eef2f7; vertical-align: top; width: 50%; }
+        .meta-table tr:last-child td { border-bottom: 0; }
+        pre { white-space: pre-wrap; word-wrap: break-word; background: #fafafa; padding: 12px; border: 1px solid #eee; font-family: 'DejaVu Sans Mono', 'Courier New', monospace; font-size: 11px; line-height: 1.5; }
+        .muted { color: #666; }
     </style>
 </head>
 <body>
@@ -26,8 +25,8 @@
     ])
 
     <div class="section">
-        <h4 class="mb-1">{{ __('Patient') }}</h4>
-        <table class="table">
+        <div class="section-title">{{ __('Patient') }}</div>
+        <table class="meta-table">
             <tr>
                 <td><strong>{{ __('Name') }}:</strong> {{ $patient->full_name }}</td>
                 <td><strong>{{ __('Patient ID') }}:</strong> {{ $patient->patient_id ?? $patient->id }}</td>
@@ -40,8 +39,8 @@
     </div>
 
     <div class="section">
-        <h4 class="mb-1">{{ __('Assignment Info') }}</h4>
-        <table class="table">
+        <div class="section-title">{{ __('Assignment Info') }}</div>
+        <table class="meta-table">
             <tr>
                 <td><strong>{{ __('Assigned At') }}:</strong> {{ $assignment->assigned_at?->format('Y-m-d H:i') ?? '-' }}</td>
                 <td><strong>{{ __('Assigned By') }}:</strong> {{ $assignment->assignedBy?->name ?? '-' }}</td>
@@ -50,19 +49,20 @@
                 <td><strong>{{ __('Completed At') }}:</strong> {{ $assignment->completed_at?->format('Y-m-d H:i') ?? '-' }}</td>
                 <td><strong>{{ __('Filled By') }}:</strong> {{ $assignment->filledBy?->name ?? '-' }}</td>
             </tr>
-    @if(!empty($assignment->notes))
-    <div class="section">
-        <h4 class="mb-1">{{ __('Notes') }}</h4>
-        <div class="text-muted">{{ $assignment->notes }}</div>
-    </div>
-    @endif
-
         </table>
     </div>
 
+    @if(!empty($assignment->notes))
+    <div class="section">
+        <div class="section-title">{{ __('Notes') }}</div>
+        <div class="muted">{{ $assignment->notes }}</div>
+    </div>
+    @endif
+
+
     @php($content = data_get($assignment->form_data, 'content'))
     <div class="section">
-        <h4 class="mb-1">{{ __('Form Data') }}</h4>
+        <div class="section-title">{{ __('Form Data') }}</div>
         @if(!empty($content))
             <pre>{{ $content }}</pre>
         @else
