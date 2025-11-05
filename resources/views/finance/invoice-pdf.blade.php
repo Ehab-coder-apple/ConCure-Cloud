@@ -194,6 +194,12 @@
         if (!$clinicLogoPath && !empty($clinicInfo['logo']) && preg_match('#^https?://#i', $clinicInfo['logo'])) {
             $clinicLogoUrl = $clinicInfo['logo'];
         }
+        $clinicLogoSrc = null;
+        if ($clinicLogoPath && file_exists($clinicLogoPath)) {
+            $clinicLogoSrc = 'file://' . $clinicLogoPath;
+        } elseif ($clinicLogoUrl) {
+            $clinicLogoSrc = $clinicLogoUrl;
+        }
     @endphp
 
     <!-- Header -->
@@ -201,9 +207,9 @@
         <table class="header-table">
             <tr>
                 <!-- Left Section: Logo -->
-                @if($clinicLogoPath || $clinicLogoUrl)
+                @if($clinicLogoSrc)
                     <td style="width: 25%; vertical-align: middle; text-align: left; padding-right: 15px;">
-                        <img src="{{ $clinicLogoPath ?: $clinicLogoUrl }}"
+                        <img src="{{ $clinicLogoSrc }}"
                              alt="Clinic Logo"
                              style="max-height: 110px; max-width: 115px; object-fit: contain; border-radius: 6px; border: 1px solid #dee2e6; padding: 2px; background: white;">
                     </td>

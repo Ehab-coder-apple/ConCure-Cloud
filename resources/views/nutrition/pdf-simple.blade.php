@@ -191,18 +191,24 @@
                 $clinicLogoUrl = $clinicInfo['logo'];
             }
             $clinicName = $clinicInfo['name'] ?? ($dietPlan->patient->clinic->name ?? 'ConCure Clinic');
+            $clinicLogoSrc = null;
+            if ($clinicLogoPath && file_exists($clinicLogoPath)) {
+                $clinicLogoSrc = 'file://' . $clinicLogoPath;
+            } elseif ($clinicLogoUrl) {
+                $clinicLogoSrc = $clinicLogoUrl;
+            }
         @endphp
 
         <table class="clinic-header-table">
             <tr>
-                @if($clinicLogoPath || $clinicLogoUrl)
+                @if($clinicLogoSrc)
                     <td style="width: 90px; vertical-align: top; text-align: center;">
-                        <img src="{{ $clinicLogoPath ?: $clinicLogoUrl }}"
+                        <img src="{{ $clinicLogoSrc }}"
                              alt="Clinic Logo"
                              class="clinic-logo">
                     </td>
                 @endif
-                <td style="vertical-align: top; text-align: {{ ($clinicLogoPath || $clinicLogoUrl) ? 'left' : 'center' }}; {{ ($clinicLogoPath || $clinicLogoUrl) ? 'padding-left: 15px;' : '' }}">
+                <td style="vertical-align: top; text-align: {{ $clinicLogoSrc ? 'left' : 'center' }}; {{ $clinicLogoSrc ? 'padding-left: 15px;' : '' }}">
                     <div class="clinic-name">{{ $clinicName }}</div>
                     <h1>Daily Meal Plan</h1>
                 </td>
