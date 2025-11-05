@@ -111,6 +111,15 @@
             // Allow all content in the editor; we sanitize on the server side
             allowedContent: true
         });
+        // Ensure editor content syncs back to textarea on submit
+        var formEl = document.querySelector('form');
+        if (formEl) {
+            formEl.addEventListener('submit', function(){
+                if (CKEDITOR.instances && CKEDITOR.instances.content) {
+                    CKEDITOR.instances.content.updateElement();
+                }
+            });
+        }
     }
 })();
 </script>
