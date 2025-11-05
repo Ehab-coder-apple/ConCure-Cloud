@@ -184,19 +184,10 @@
 <body class="{{ !empty($isArabicOutput) && $isArabicOutput ? 'rtl' : '' }}">
     <div class="header">
         @php
-            $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($dietPlan->patient->clinic_id);
-            $clinicLogoPath = $clinicInfo['logo_pdf_path'] ?? null;
-            $clinicLogoUrl = null;
-            if (!$clinicLogoPath && !empty($clinicInfo['logo']) && preg_match('#^https?://#i', $clinicInfo['logo'])) {
-                $clinicLogoUrl = $clinicInfo['logo'];
-            }
+            $clinicId = $dietPlan->patient->clinic_id;
+            $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($clinicId);
             $clinicName = $clinicInfo['name'] ?? ($dietPlan->patient->clinic->name ?? 'ConCure Clinic');
-            $clinicLogoSrc = null;
-            if ($clinicLogoPath && file_exists($clinicLogoPath)) {
-                $clinicLogoSrc = 'file://' . $clinicLogoPath;
-            } elseif ($clinicLogoUrl) {
-                $clinicLogoSrc = $clinicLogoUrl;
-            }
+            $clinicLogoSrc = \App\Helpers\ClinicHelper::getClinicLogoPdfSrc($clinicId);
         @endphp
 
         <table class="clinic-header-table">

@@ -188,18 +188,7 @@
 <body>
     @php
         $clinicId = $invoice->clinic_id ?? auth()->user()->clinic_id ?? null;
-        $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($clinicId);
-        $clinicLogoPath = $clinicInfo['logo_pdf_path'] ?? null;
-        $clinicLogoUrl = null;
-        if (!$clinicLogoPath && !empty($clinicInfo['logo']) && preg_match('#^https?://#i', $clinicInfo['logo'])) {
-            $clinicLogoUrl = $clinicInfo['logo'];
-        }
-        $clinicLogoSrc = null;
-        if ($clinicLogoPath && file_exists($clinicLogoPath)) {
-            $clinicLogoSrc = 'file://' . $clinicLogoPath;
-        } elseif ($clinicLogoUrl) {
-            $clinicLogoSrc = $clinicLogoUrl;
-        }
+        $clinicLogoSrc = \App\Helpers\ClinicHelper::getClinicLogoPdfSrc($clinicId);
     @endphp
 
     <!-- Header -->

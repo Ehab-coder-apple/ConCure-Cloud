@@ -5,25 +5,8 @@
     $clinicName = $clinicName ?? ($info['name'] ?? 'ConCure Clinic');
     $documentTitle = $documentTitle ?? '';
 
-    // Prefer an absolute filesystem path for PDF engines (more reliable than HTTP)
-    $logoSrc = $info['logo_pdf_path'] ?? null;
-    if ($logoSrc && !preg_match('#^(?:https?://|data:|file://)#i', $logoSrc)) {
-        // If it's a local absolute path, normalize for DomPDF using file:// and verify existence
-        if (file_exists($logoSrc)) {
-            $logoSrc = 'file://' . $logoSrc;
-        } else {
-            $logoSrc = null; // force fallback below
-        }
-    }
-    // Fallback to stored HTTPS logo if no local path resolved
-    if (!$logoSrc && !empty($info['logo'])) {
-        if (preg_match('#^https?://#i', $info['logo'])) {
-            $logoSrc = $info['logo'];
-        } elseif (!empty($cid)) {
-            // Try public route that streams the stored logo
-            try { $logoSrc = route('clinic.logo', ['clinic' => $cid]); } catch (\Throwable $e) { /* ignore */ }
-        }
-    }
+    // Resolve best logo source for PDF (base64 data URI when possible)
+    $logoSrc = \App\Helpers\ClinicHelper::getClinicLogoPdfSrc($cid);
 
     $lines = [];
     if (!empty($info['address'])) { $lines[] = $info['address']; }

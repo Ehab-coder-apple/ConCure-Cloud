@@ -97,7 +97,7 @@ class ClinicHelper
         }
 
         $clinic = DB::table('clinics')->where('id', $clinicId)->first();
-        
+
         return [
             'name' => $clinic->name ?? 'ConCure Clinic',
             'logo' => self::getClinicLogo($clinicId),
@@ -107,4 +107,48 @@ class ClinicHelper
             'email' => $clinic->email ?? null,
         ];
     }
+
+    /**
+     * Resolve the best logo source for PDFs.
+     * Prefers embedding as a base64 data URI (most reliable for DomPDF),
+     * and falls back to a public URL if no local file is available.
+     */
+    public static function getClinicLogoPdfSrc($clinicId)
+    {
+        // Try local absolute path first
+        $path = self::getClinicLogoPdfPath($clinicId);
+        if ($path && file_exists($path) && is_readable($path)) {
+            // Detect mime type
+            $mime = null;
+            if (function_exists('mime_content_type')) {
+                $mime = @mime_content_type($path) ?: null;
+            }
+            if (!$mime) {
+                $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                $map = [
+                    'png' => 'image/png',
+                    'jpg' => 'image/jpeg',
+                    'jpeg' => 'image/jpeg',
+                    'gif' => 'image/gif',
+                    'svg' => 'image/svg+xml',
+                    'webp' => 'image/webp',
+                    'bmp' => 'image/bmp',
+                ];
+                $mime = $map[$ext] ?? 'image/png';
+            }
+
+            try {
+                $data = @file_get_contents($path);
+                if ($data !== false && strlen($data) > 0) {
+                    return 'data:' . $mime . ';base64,' . base64_encode($data);
+                }
+            } catch (\Throwable $e) {
+                // Ignore and fall back to URL
+            }
+        }
+
+        // Fallback to stored HTTPS/logo route or external URL
+        return self::getClinicLogo($clinicId);
+    }
+
 }
