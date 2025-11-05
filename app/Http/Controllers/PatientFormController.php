@@ -202,7 +202,7 @@ class PatientFormController extends Controller
         $data = $request->validate([
             'content' => 'nullable|string',
             'action' => 'required|string|in:save,complete',
-            'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:' . config('app.concure.max_file_size'),
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:' . config('app.concure.max_file_size', 10240),
         ]);
 
         // Persist data
