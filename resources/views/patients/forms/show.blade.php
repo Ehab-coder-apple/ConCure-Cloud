@@ -17,8 +17,19 @@
                 </a>
                 @endif
                 @if($assignment->status === 'completed')
-                <a href="{{ route('patients.forms.pdf', [$patient, $assignment]) }}?open=1" target="_blank" class="btn btn-success">
-                    <i class="fas fa-file-pdf me-1"></i> {{ __('Open PDF') }}
+                    @if($assignment->hasSnapshotPdf())
+                    <a href="{{ route('patients.forms.pdf-snapshot', [$patient, $assignment]) }}" target="_blank" class="btn btn-success">
+                        <i class="fas fa-file-pdf me-1"></i> {{ __('Open Stored PDF') }}
+                    </a>
+                    @else
+                    <a href="{{ route('patients.forms.pdf', [$patient, $assignment]) }}?open=1" target="_blank" class="btn btn-success">
+                        <i class="fas fa-file-pdf me-1"></i> {{ __('Open PDF') }}
+                    </a>
+                    @endif
+                @endif
+                @if($assignment->hasAttachment())
+                <a href="{{ route('patients.forms.attachment', [$patient, $assignment]) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-paperclip me-1"></i> {{ __('Download Attachment') }}
                 </a>
                 @endif
                 <a href="{{ route('patients.forms.index', $patient) }}" class="btn btn-outline-secondary">
@@ -61,7 +72,7 @@
                         <div class="col-md-4 mb-3">
                             <strong>{{ __('Filled By') }}:</strong><br>
                             <span class="text-muted">{{ $assignment->filledBy?->name ?? '-' }}</span>
-                        </div>
+
                         <div class="col-md-4 mb-3">
                             <strong>{{ __('Template File') }}:</strong><br>
                             @if($assignment->template)
@@ -72,7 +83,18 @@
                                 <span class="text-muted">{{ __('N/A') }}</span>
                             @endif
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <strong>{{ __('Attachment') }}:</strong><br>
+                            @if($assignment->hasAttachment())
+                                <a href="{{ route('patients.forms.attachment', [$patient, $assignment]) }}" class="text-decoration-none">
+                                    <i class="fas fa-paperclip me-1"></i> {{ $assignment->attachment_name ?? __('Download Attachment') }}
+                                </a>
+                            @else
+                                <span class="text-muted">{{ __('None') }}</span>
+                            @endif
+                        </div>
                     </div>
+
                     @if($assignment->notes)
                     <div class="row">
                         <div class="col-12">
@@ -83,7 +105,6 @@
                     @endif
                 </div>
             </div>
-
             @php($content = data_get($assignment->form_data, 'content'))
             @if(!empty($content))
             <div class="card">

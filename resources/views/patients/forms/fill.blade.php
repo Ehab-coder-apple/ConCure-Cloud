@@ -22,7 +22,7 @@
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-body">
-                    <form method="POST" action="{{ route('patients.forms.fill.submit', [$patient, $assignment]) }}">
+                    <form method="POST" action="{{ route('patients.forms.fill.submit', [$patient, $assignment]) }}" enctype="multipart/form-data">
                         @csrf
 
                         <div class="mb-3">
@@ -32,6 +32,23 @@
                             <div class="text-danger small">{{ $message }}</div>
                             @enderror
                         </div>
+
+                            <div class="mb-3">
+                                <label for="attachment" class="form-label fw-bold">{{ __('Attach Completed Form (Optional)') }}</label>
+                                <input type="file" class="form-control @error('attachment') is-invalid @enderror" id="attachment" name="attachment" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                <small class="text-muted">{{ __('Upload a scanned or filled document (PDF, Word, or Image). Max 10MB.') }}</small>
+                                @error('attachment')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                @if($assignment->hasAttachment())
+                                    <div class="mt-2">
+                                        <a href="{{ route('patients.forms.attachment', [$patient, $assignment]) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-paperclip me-1"></i> {{ __('Download current attachment') }}
+                                        </a>
+                                    </div>
+                                @endif
+                            </div>
+
 
                         <div class="d-flex gap-2">
                             <button type="submit" name="action" value="save" class="btn btn-info">

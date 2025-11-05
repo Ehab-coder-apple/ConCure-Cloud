@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class PatientForm extends Model
 {
@@ -22,12 +23,16 @@ class PatientForm extends Model
         'status',
         'form_data',
         'notes',
+        // Attachments & snapshot PDF
+        'attachment_path', 'attachment_name', 'attachment_mime', 'attachment_size',
+        'pdf_path', 'pdf_generated_at',
     ];
 
     protected $casts = [
         'assigned_at' => 'datetime',
         'completed_at' => 'datetime',
         'form_data' => 'array',
+        'pdf_generated_at' => 'datetime',
     ];
 
     // Relationships
@@ -99,6 +104,38 @@ class PatientForm extends Model
         $this->form_data = $data; // cast handles JSON
         $this->save();
     }
+
+    // Storage helpers
+    public static function baseStorageDir(): string
+    {
+        return 'patient_forms';
+    }
+
+    public function storageDir(): string
+    {
+        return self::baseStorageDir() . '/' . $this->clinic_id . '/' . $this->patient_id . '/' . $this->id;
+    }
+
+    public function attachmentUrl(): ?string
+    {
+        return $this->attachment_path ? Storage::disk('public')->url($this->attachment_path) : null;
+    }
+
+    public function pdfUrl(): ?string
+    {
+        return $this->pdf_path ? Storage::disk('public')->url($this->pdf_path) : null;
+    }
+
+    public function hasAttachment(): bool
+    {
+        return !empty($this->attachment_path);
+    }
+
+    public function hasSnapshotPdf(): bool
+    {
+        return !empty($this->pdf_path);
+    }
+
 
     public function isCompleted(): bool
     {

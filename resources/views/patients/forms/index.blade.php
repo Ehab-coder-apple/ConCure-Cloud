@@ -76,7 +76,14 @@
                                         @if($f->notes)
                                             <br><small class="text-muted">{{ Str::limit($f->notes, 80) }}</small>
                                         @endif
-                                    </td>
+                                            @if($f->hasAttachment())
+                                                <span class="ms-2 text-muted" title="{{ __('Has attachment') }}"><i class="fas fa-paperclip"></i></span>
+                                            @endif
+                                            @if($f->hasSnapshotPdf())
+                                                <span class="ms-1 text-success" title="{{ __('Stored PDF available') }}"><i class="fas fa-file-pdf"></i></span>
+                                            @endif
+                                        </td>
+
                                     <td>
                                         <small class="text-muted">{{ $f->assigned_at?->format('Y-m-d H:i') ?? '-' }}</small>
                                         @if($f->assignedBy)
@@ -107,8 +114,19 @@
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             @if($f->status === 'completed')
-                                            <a href="{{ route('patients.forms.pdf', [$patient, $f]) }}?open=1" target="_blank" class="btn btn-outline-success" title="{{ __('Open PDF') }}">
-                                                <i class="fas fa-file-pdf"></i>
+                                                @if($f->hasSnapshotPdf())
+                                                <a href="{{ route('patients.forms.pdf-snapshot', [$patient, $f]) }}" target="_blank" class="btn btn-outline-success" title="{{ __('Open Stored PDF') }}">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
+                                                @else
+                                                <a href="{{ route('patients.forms.pdf', [$patient, $f]) }}?open=1" target="_blank" class="btn btn-outline-success" title="{{ __('Open PDF') }}">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
+                                                @endif
+                                            @endif
+                                            @if($f->hasAttachment())
+                                            <a href="{{ route('patients.forms.attachment', [$patient, $f]) }}" class="btn btn-outline-primary" title="{{ __('Download Attachment') }}">
+                                                <i class="fas fa-paperclip"></i>
                                             </a>
                                             @endif
                                             @if(Auth::user()->canAssignForms())

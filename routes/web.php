@@ -259,6 +259,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/{patientForm}/fill', [App\Http\Controllers\PatientFormController::class, 'fill'])->name('fill');
         Route::post('/{patientForm}/fill', [App\Http\Controllers\PatientFormController::class, 'submitFill'])->name('fill.submit');
         Route::get('/{patientForm}/pdf', [App\Http\Controllers\PatientFormController::class, 'pdf'])->name('pdf');
+        Route::get('/{patientForm}/attachment', [App\Http\Controllers\PatientFormController::class, 'attachment'])->name('attachment');
+        Route::get('/{patientForm}/pdf-snapshot', [App\Http\Controllers\PatientFormController::class, 'pdfSnapshot'])->name('pdf-snapshot');
+
         Route::get('/{patientForm}', [App\Http\Controllers\PatientFormController::class, 'show'])->name('show');
         Route::delete('/{patientForm}', [App\Http\Controllers\PatientFormController::class, 'destroy'])->name('destroy');
     });

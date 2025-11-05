@@ -10,6 +10,10 @@ use App\Models\PatientForm;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
+
 
 class PatientFormController extends Controller
 {
@@ -198,6 +202,7 @@ class PatientFormController extends Controller
         $data = $request->validate([
             'content' => 'nullable|string',
             'action' => 'required|string|in:save,complete',
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:' . config('app.concure.max_file_size'),
         ]);
 
         // Persist data
@@ -205,8 +210,39 @@ class PatientFormController extends Controller
             'content' => $data['content'] ?? '',
         ];
 
+        // Handle optional attachment upload (allowed in both save and complete flows)
+        if ($request->hasFile('attachment')) {
+            $attachment = $request->file('attachment');
+            $disk = Storage::disk('public');
+            $dir = $patientForm->storageDir() . '/attachments';
+            $originalName = $attachment->getClientOriginalName();
+            $filename = time() . '_' . $originalName;
+            $path = $attachment->storeAs($dir, $filename, 'public');
+
+            // Delete previous attachment if any
+            if ($patientForm->attachment_path && $patientForm->attachment_path !== $path && $disk->exists($patientForm->attachment_path)) {
+                $disk->delete($patientForm->attachment_path);
+            }
+            $patientForm->attachment_path = $path;
+            $patientForm->attachment_name = $originalName;
+            $patientForm->attachment_mime = $attachment->getClientMimeType() ?: $attachment->getMimeType();
+            $patientForm->attachment_size = $attachment->getSize();
+            $patientForm->save();
+        }
+
         if ($data['action'] === 'complete') {
             $patientForm->markCompleted($user->id, $payload);
+
+            // Generate and store immutable PDF snapshot
+            try {
+                $this->generateAndStorePdfSnapshot($patient, $patientForm);
+            } catch (\Throwable $e) {
+                \Log::error('Failed to generate form PDF snapshot', [
+                    'assignment_id' => $patientForm->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return redirect()->route('patients.forms.show', [$patient, $patientForm])
                 ->with('success', 'Form marked as completed.');
         }
@@ -251,6 +287,137 @@ class PatientFormController extends Controller
         }
         return $pdf->download($filename);
     }
+
+    /**
+     * Download/stream the uploaded attachment (if any)
+     */
+    public function attachment(Patient $patient, PatientForm $patientForm)
+    {
+        $this->authorizePatientAccess($patient);
+        $user = Auth::user();
+        if (!$user->canViewPatientForms() && !$user->canFillForms() && !$user->canAssignForms()) {
+            abort(403, 'You do not have permission to view attachments.');
+        }
+        if ((int) $patientForm->patient_id !== (int) $patient->id) {
+            abort(403, 'Unauthorized access to patient form.');
+        }
+        if (empty($patientForm->attachment_path)) {
+            return back()->with('error', __('No attachment for this form.'));
+        }
+
+        $disk = Storage::disk('public');
+        $path = $patientForm->attachment_path;
+        if (!$disk->exists($path)) {
+            return back()->with('error', __('Attachment file not found.'));
+        }
+
+        $absolutePath = $disk->path($path);
+        $filename = $patientForm->attachment_name ?: basename($path);
+        $mime = File::mimeType($absolutePath) ?: 'application/octet-stream';
+
+        try {
+            return response()->streamDownload(function () use ($absolutePath) {
+                $stream = fopen($absolutePath, 'rb');
+                while (!feof($stream)) {
+                    echo fread($stream, 1024 * 1024);
+                    @ob_flush();
+                    flush();
+                }
+                fclose($stream);
+            }, $filename, [
+                'Content-Type' => $mime,
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Attachment stream failed', [
+                'assignment_id' => $patientForm->id,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+            return $disk->download($path, $filename);
+        }
+    }
+
+    /**
+     * Generate and store a PDF snapshot for the completed form
+     */
+    protected function generateAndStorePdfSnapshot(Patient $patient, PatientForm $patientForm): void
+    {
+        // Ensure relationships for the PDF view
+        $patientForm->load(['template', 'assignedBy', 'filledBy']);
+
+        $pdf = Pdf::loadView('patients.forms.pdf', [
+            'patient' => $patient,
+            'assignment' => $patientForm,
+        ])->setPaper('a4');
+
+        $content = $pdf->output();
+        $disk = Storage::disk('public');
+        $dir = $patientForm->storageDir() . '/pdf';
+        $filename = 'PatientForm-' . Str::slug($patientForm->template->name ?? 'Form') . '-' . now()->format('Ymd_His') . '.pdf';
+        $path = $dir . '/' . $filename;
+
+        $disk->put($path, $content, 'public');
+        $patientForm->pdf_path = $path;
+        $patientForm->pdf_generated_at = now();
+        $patientForm->save();
+    }
+
+    /**
+     * Stream the stored PDF snapshot, if available
+     */
+    public function pdfSnapshot(Patient $patient, PatientForm $patientForm)
+    {
+        $this->authorizePatientAccess($patient);
+        $user = Auth::user();
+        if (!$user->canViewPatientForms() && !$user->canManageFormTemplates() && !$user->canFillForms() && !$user->canAssignForms()) {
+            abort(403, 'Insufficient permissions to view PDF snapshot.');
+        }
+        if ((int) $patientForm->patient_id !== (int) $patient->id) {
+            abort(403, 'Unauthorized access to patient form.');
+        }
+        if (empty($patientForm->pdf_path)) {
+            return redirect()->route('patients.forms.show', [$patient, $patientForm])
+                ->with('warning', __('No stored PDF snapshot for this form yet.'));
+        }
+
+        $disk = Storage::disk('public');
+        $path = $patientForm->pdf_path;
+        if (!$disk->exists($path)) {
+            return redirect()->route('patients.forms.show', [$patient, $patientForm])
+                ->with('error', __('Stored PDF snapshot file not found.'));
+        }
+
+        $absolutePath = $disk->path($path);
+        $filename = basename($path);
+        $mime = File::mimeType($absolutePath) ?: 'application/pdf';
+
+        try {
+            return response()->streamDownload(function () use ($absolutePath) {
+                $stream = fopen($absolutePath, 'rb');
+                while (!feof($stream)) {
+                    echo fread($stream, 1024 * 1024);
+                    @ob_flush();
+                    flush();
+                }
+                fclose($stream);
+            }, $filename, [
+                'Content-Type' => $mime,
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('PDF snapshot stream failed', [
+                'assignment_id' => $patientForm->id,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+            return $disk->download($path, $filename);
+        }
+    }
+
+
 
     /**
      * Authorization helper similar to other patient controllers
