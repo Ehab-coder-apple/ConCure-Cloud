@@ -187,8 +187,9 @@
 </head>
 <body>
     @php
-        $clinicId = $invoice->clinic_id ?? auth()->user()->clinic_id ?? 2;
-        $clinicLogo = \App\Http\Controllers\SettingsController::getClinicLogo($clinicId);
+        $clinicId = $invoice->clinic_id ?? auth()->user()->clinic_id ?? null;
+        $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($clinicId);
+        $clinicLogoPath = $clinicInfo['logo_pdf_path'] ?? null;
     @endphp
 
     <!-- Header -->
@@ -196,10 +197,10 @@
         <table class="header-table">
             <tr>
                 <!-- Left Section: Logo -->
-                @if($clinicLogo)
+                @if($clinicLogoPath)
                     <td style="width: 25%; vertical-align: middle; text-align: left; padding-right: 15px;">
-                        <img src="{{ public_path('storage/' . str_replace('storage/', '', $clinicLogo)) }}"
-                             alt=""
+                        <img src="{{ $clinicLogoPath }}"
+                             alt="Clinic Logo"
                              style="max-height: 110px; max-width: 115px; object-fit: contain; border-radius: 6px; border: 1px solid #dee2e6; padding: 2px; background: white;">
                     </td>
                 @else

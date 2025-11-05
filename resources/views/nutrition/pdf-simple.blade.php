@@ -184,20 +184,21 @@
 <body class="{{ !empty($isArabicOutput) && $isArabicOutput ? 'rtl' : '' }}">
     <div class="header">
         @php
-            $clinicLogo = \App\Http\Controllers\SettingsController::getClinicLogo($dietPlan->patient->clinic_id);
-            $clinicName = $dietPlan->patient->clinic->name ?? 'ConCure Clinic';
+            $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($dietPlan->patient->clinic_id);
+            $clinicLogoPath = $clinicInfo['logo_pdf_path'] ?? null;
+            $clinicName = $clinicInfo['name'] ?? ($dietPlan->patient->clinic->name ?? 'ConCure Clinic');
         @endphp
 
         <table class="clinic-header-table">
             <tr>
-                @if($clinicLogo)
+                @if($clinicLogoPath)
                     <td style="width: 90px; vertical-align: top; text-align: center;">
-                        <img src="{{ public_path('storage/' . str_replace('storage/', '', $clinicLogo)) }}"
+                        <img src="{{ $clinicLogoPath }}"
                              alt="Clinic Logo"
                              class="clinic-logo">
                     </td>
                 @endif
-                <td style="vertical-align: top; text-align: {{ $clinicLogo ? 'left' : 'center' }}; {{ $clinicLogo ? 'padding-left: 15px;' : '' }}">
+                <td style="vertical-align: top; text-align: {{ $clinicLogoPath ? 'left' : 'center' }}; {{ $clinicLogoPath ? 'padding-left: 15px;' : '' }}">
                     <div class="clinic-name">{{ $clinicName }}</div>
                     <h1>Daily Meal Plan</h1>
                 </td>
