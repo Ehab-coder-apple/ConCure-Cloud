@@ -112,7 +112,7 @@
                     <i class="fas fa-align-left me-1"></i> {{ __('Form Data') }}
                 </div>
                 <div class="card-body">
-                    <pre class="mb-0" style="white-space: pre-wrap;">{{ $content }}</pre>
+                    <div class="rich-content mb-0">{!! $content !!}</div>
                 </div>
             </div>
             @else
@@ -125,4 +125,14 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+.rich-content table { width: 100%; border-collapse: collapse; }
+.rich-content table, .rich-content th, .rich-content td { border: 1px solid #ced4da; }
+.rich-content th, .rich-content td { padding: 6px 8px; }
+.rich-content thead th { background: #f1f3f5; }
+</style>
+@endpush
+
 

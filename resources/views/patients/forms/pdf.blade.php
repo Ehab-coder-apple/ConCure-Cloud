@@ -16,7 +16,13 @@
         .meta-table tr:last-child td { border-bottom: 0; }
         pre { white-space: pre-wrap; word-wrap: break-word; background: #fafafa; padding: 12px; border: 1px solid #eee; font-family: 'DejaVu Sans Mono', 'Courier New', monospace; font-size: 11px; line-height: 1.5; }
         .muted { color: #666; }
+        /* Rich content (from CKEditor): ensure tables render in PDF */
+        .form-rich-content table { width: 100%; border-collapse: collapse; }
+        .form-rich-content table, .form-rich-content th, .form-rich-content td { border: 1px solid #6b7280; }
+        .form-rich-content th, .form-rich-content td { padding: 6px 8px; vertical-align: top; }
+        .form-rich-content thead th { background: #f3f4f6; }
     </style>
+
 </head>
 <body>
     @include('components.pdf-clinic-header', [
@@ -64,7 +70,7 @@
     <div class="section">
         <div class="section-title">{{ __('Form Data') }}</div>
         @if(!empty($content))
-            <pre>{{ $content }}</pre>
+            <div class="form-rich-content">{!! $content !!}</div>
         @else
             <div class="text-muted">{{ __('No content provided.') }}</div>
         @endif

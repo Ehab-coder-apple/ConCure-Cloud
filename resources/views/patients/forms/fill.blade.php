@@ -88,3 +88,30 @@
 </div>
 @endsection
 
+
+
+@push('scripts')
+<script src="https://cdn.ckeditor.com/4.22.1/full-all/ckeditor.js"></script>
+<script>
+(function(){
+    if (window.CKEDITOR) {
+        CKEDITOR.replace('content', {
+            height: 420,
+            removePlugins: 'resize',
+            extraPlugins: 'table,pastefromword',
+            toolbar: [
+                { name: 'clipboard', items: ['Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo'] },
+                { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'RemoveFormat'] },
+                { name: 'paragraph', items: ['NumberedList','BulletedList','-','Outdent','Indent','-','JustifyLeft','JustifyCenter','JustifyRight'] },
+                { name: 'insert', items: ['Table','HorizontalRule'] },
+                { name: 'links', items: ['Link','Unlink'] },
+                { name: 'styles', items: ['Format'] },
+                { name: 'document', items: ['Source'] }
+            ],
+            // Allow all content in the editor; we sanitize on the server side
+            allowedContent: true
+        });
+    }
+})();
+</script>
+@endpush

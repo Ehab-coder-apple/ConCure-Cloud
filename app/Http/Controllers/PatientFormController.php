@@ -205,9 +205,22 @@ class PatientFormController extends Controller
             'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:' . config('app.concure.max_file_size', 10240),
         ]);
 
+        // Sanitize rich HTML content to allow safe tables and basic formatting
+        $content = $data['content'] ?? '';
+        if (!empty($content)) {
+            // Allow a safe subset of tags; attributes are generally stripped
+            $allowed = '<p><br><strong><b><em><i><u><ul><ol><li><table><thead><tbody><tfoot><tr><td><th><h1><h2><h3><h4>';
+            $content = strip_tags($content, $allowed);
+            // Remove inline event handlers (onclick, onload, etc.)
+            $content = preg_replace('/on\w+\s*=\s*"[^"]*"/i', '', $content);
+            $content = preg_replace("/on\w+\s*=\s*'[^']*'/i", '', $content);
+            // Remove javascript: in href/src/style
+            $content = preg_replace('/javascript\s*:/i', '', $content);
+        }
+
         // Persist data
         $payload = [
-            'content' => $data['content'] ?? '',
+            'content' => $content,
         ];
 
         // Handle optional attachment upload (allowed in both save and complete flows)
