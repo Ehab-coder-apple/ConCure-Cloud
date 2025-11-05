@@ -186,19 +186,23 @@
         @php
             $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($dietPlan->patient->clinic_id);
             $clinicLogoPath = $clinicInfo['logo_pdf_path'] ?? null;
+            $clinicLogoUrl = null;
+            if (!$clinicLogoPath && !empty($clinicInfo['logo']) && preg_match('#^https?://#i', $clinicInfo['logo'])) {
+                $clinicLogoUrl = $clinicInfo['logo'];
+            }
             $clinicName = $clinicInfo['name'] ?? ($dietPlan->patient->clinic->name ?? 'ConCure Clinic');
         @endphp
 
         <table class="clinic-header-table">
             <tr>
-                @if($clinicLogoPath)
+                @if($clinicLogoPath || $clinicLogoUrl)
                     <td style="width: 90px; vertical-align: top; text-align: center;">
-                        <img src="{{ $clinicLogoPath }}"
+                        <img src="{{ $clinicLogoPath ?: $clinicLogoUrl }}"
                              alt="Clinic Logo"
                              class="clinic-logo">
                     </td>
                 @endif
-                <td style="vertical-align: top; text-align: {{ $clinicLogoPath ? 'left' : 'center' }}; {{ $clinicLogoPath ? 'padding-left: 15px;' : '' }}">
+                <td style="vertical-align: top; text-align: {{ ($clinicLogoPath || $clinicLogoUrl) ? 'left' : 'center' }}; {{ ($clinicLogoPath || $clinicLogoUrl) ? 'padding-left: 15px;' : '' }}">
                     <div class="clinic-name">{{ $clinicName }}</div>
                     <h1>Daily Meal Plan</h1>
                 </td>

@@ -190,6 +190,10 @@
         $clinicId = $invoice->clinic_id ?? auth()->user()->clinic_id ?? null;
         $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($clinicId);
         $clinicLogoPath = $clinicInfo['logo_pdf_path'] ?? null;
+        $clinicLogoUrl = null;
+        if (!$clinicLogoPath && !empty($clinicInfo['logo']) && preg_match('#^https?://#i', $clinicInfo['logo'])) {
+            $clinicLogoUrl = $clinicInfo['logo'];
+        }
     @endphp
 
     <!-- Header -->
@@ -197,9 +201,9 @@
         <table class="header-table">
             <tr>
                 <!-- Left Section: Logo -->
-                @if($clinicLogoPath)
+                @if($clinicLogoPath || $clinicLogoUrl)
                     <td style="width: 25%; vertical-align: middle; text-align: left; padding-right: 15px;">
-                        <img src="{{ $clinicLogoPath }}"
+                        <img src="{{ $clinicLogoPath ?: $clinicLogoUrl }}"
                              alt="Clinic Logo"
                              style="max-height: 110px; max-width: 115px; object-fit: contain; border-radius: 6px; border: 1px solid #dee2e6; padding: 2px; background: white;">
                     </td>
