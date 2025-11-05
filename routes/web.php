@@ -868,11 +868,13 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/user-guide', [SettingsController::class, 'userGuide'])->name('user-guide');
     });
 
-    // Serve clinic logo (auth-protected) without requiring public/storage symlink
-    Route::get('/clinic-logo/{clinic}', [SettingsController::class, 'serveClinicLogo'])->name('clinic.logo');
 
 });
 
+
+
+// Public route: Serve clinic logo without requiring auth (for PDFs and public embeds)
+Route::get('/clinic-logo/{clinic}', [\App\Http\Controllers\SettingsController::class, 'serveClinicLogo'])->name('clinic.logo');
 
     // Forms Management (top-level, not nested under Recommendations)
     Route::prefix('forms')->name('forms.')->group(function () {
