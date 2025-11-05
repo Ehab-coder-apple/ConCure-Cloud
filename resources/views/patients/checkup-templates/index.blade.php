@@ -175,6 +175,12 @@
                                                         onclick="previewTemplate({{ $assignment->template->id }})" title="{{ __('Preview') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
+                                                <a href="{{ route('checkups.create', ['patient' => $patient, 'template_id' => $assignment->template_id]) }}"
+                                                   class="btn btn-outline-success"
+                                                   title="{{ __('Start Checkup') }}">
+                                                    <i class="fas fa-file-medical"></i>
+                                                </a>
+
                                                 <button type="button" class="btn btn-outline-primary"
                                                         onclick="editAssignment({{ $assignment->id }}, '{{ $assignment->medical_condition }}', '{{ $assignment->reason }}')"
                                                         title="{{ __('Edit') }}">

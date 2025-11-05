@@ -42,7 +42,7 @@
                     <form action="{{ route('checkups.update', [$patient, $checkup]) }}" method="POST">
                         @csrf
                         @method('PUT')
-                        
+
                         <!-- Checkup Date -->
                         <div class="row mb-4">
                             <div class="col-md-6">
@@ -63,7 +63,7 @@
                                     <i class="fas fa-heartbeat me-1"></i>
                                     {{ __('Vital Signs') }}
                                 </h6>
-                                
+
                                 <div class="mb-3">
                                     <label for="weight" class="form-label">{{ __('Weight (kg)') }}</label>
                                     <input type="number" class="form-control @error('weight') is-invalid @enderror"
@@ -73,7 +73,7 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <label for="height" class="form-label">{{ __('Height (cm)') }}</label>
                                     <input type="number" class="form-control @error('height') is-invalid @enderror"
@@ -83,7 +83,7 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <label for="blood_pressure" class="form-label">{{ __('Blood Pressure') }}</label>
                                     <input type="text" class="form-control @error('blood_pressure') is-invalid @enderror"
@@ -94,49 +94,49 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <label for="heart_rate" class="form-label">{{ __('Heart Rate (bpm)') }}</label>
-                                    <input type="number" class="form-control @error('heart_rate') is-invalid @enderror" 
-                                           id="heart_rate" name="heart_rate" min="30" max="200" 
+                                    <input type="number" class="form-control @error('heart_rate') is-invalid @enderror"
+                                           id="heart_rate" name="heart_rate" min="30" max="200"
                                            value="{{ old('heart_rate', $checkup->heart_rate) }}" placeholder="72">
                                     @error('heart_rate')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
-                            
+
                             <!-- Additional Measurements -->
                             <div class="col-md-6">
                                 <h6 class="text-primary mb-3">
                                     <i class="fas fa-thermometer-half me-1"></i>
                                     {{ __('Additional Measurements') }}
                                 </h6>
-                                
+
                                 <div class="mb-3">
                                     <label for="temperature" class="form-label">{{ __('Temperature (°C)') }}</label>
-                                    <input type="number" class="form-control @error('temperature') is-invalid @enderror" 
-                                           id="temperature" name="temperature" step="0.1" min="30" max="45" 
+                                    <input type="number" class="form-control @error('temperature') is-invalid @enderror"
+                                           id="temperature" name="temperature" step="0.1" min="30" max="45"
                                            value="{{ old('temperature', $checkup->temperature) }}" placeholder="36.5">
                                     @error('temperature')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <label for="respiratory_rate" class="form-label">{{ __('Respiratory Rate (per min)') }}</label>
-                                    <input type="number" class="form-control @error('respiratory_rate') is-invalid @enderror" 
-                                           id="respiratory_rate" name="respiratory_rate" min="5" max="50" 
+                                    <input type="number" class="form-control @error('respiratory_rate') is-invalid @enderror"
+                                           id="respiratory_rate" name="respiratory_rate" min="5" max="50"
                                            value="{{ old('respiratory_rate', $checkup->respiratory_rate) }}" placeholder="16">
                                     @error('respiratory_rate')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <label for="blood_sugar" class="form-label">{{ __('Blood Sugar (mg/dL)') }}</label>
-                                    <input type="number" class="form-control @error('blood_sugar') is-invalid @enderror" 
-                                           id="blood_sugar" name="blood_sugar" step="0.1" min="20" max="600" 
+                                    <input type="number" class="form-control @error('blood_sugar') is-invalid @enderror"
+                                           id="blood_sugar" name="blood_sugar" step="0.1" min="20" max="600"
                                            value="{{ old('blood_sugar', $checkup->blood_sugar) }}" placeholder="100">
                                     @error('blood_sugar')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -201,6 +201,79 @@
                         </div>
                         @endif
 
+                            @if($checkup->template)
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <h6 class="text-primary mb-3">
+                                        <i class="fas fa-file-medical me-1"></i>
+                                        {{ __('Template') }}: {{ $checkup->template->name }}
+                                    </h6>
+
+                                    @foreach($checkup->template->form_sections as $sectionKey => $section)
+                                        <div class="mb-3">
+                                            <h6 class="fw-semibold">{{ $section['title'] ?? Str::headline($sectionKey) }}</h6>
+                                            <div class="row">
+                                                @php $fields = $section['fields'] ?? []; @endphp
+                                                @foreach($fields as $fieldKey => $field)
+                                                    @php $type = $field['type'] ?? 'text'; $existing = $checkup->custom_fields[$fieldKey] ?? null; $oldVal = old('custom_fields.'.$fieldKey); $val = isset($oldVal) ? $oldVal : $existing; @endphp
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label">{{ $field['label'] ?? Str::headline($fieldKey) }}
+                                                            @if(!empty($field['required'])) <span class="text-danger">*</span> @endif
+                                                        </label>
+
+                                                        @switch($type)
+                                                            @case('textarea')
+                                                                <textarea class="form-control" name="custom_fields[{{ $fieldKey }}]" rows="3" placeholder="{{ $field['placeholder'] ?? '' }}">{{ $val }}</textarea>
+                                                                @break
+
+                                                            @case('number')
+                                                                <input type="number" class="form-control" name="custom_fields[{{ $fieldKey }}]"
+                                                                    @if(isset($field['min'])) min="{{ $field['min'] }}" @endif
+                                                                    @if(isset($field['max'])) max="{{ $field['max'] }}" @endif
+                                                                    step="{{ $field['step'] ?? '0.1' }}" value="{{ $val }}" placeholder="{{ $field['placeholder'] ?? '' }}">
+                                                                @break
+
+                                                            @case('select')
+                                                                <select class="form-select" name="custom_fields[{{ $fieldKey }}]">
+                                                                    <option value="">{{ __('Select...') }}</option>
+                                                                    @php $opts = $field['options'] ?? []; @endphp
+                                                                    @foreach($opts as $optValue => $optLabel)
+                                                                        @php $value = is_int($optValue) ? $optLabel : $optValue; $label = is_int($optValue) ? $optLabel : $optLabel; @endphp
+                                                                        <option value="{{ $value }}" {{ (string)$val === (string)$value ? 'selected' : '' }}>{{ $label }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                                @break
+
+                                                            @case('checkbox')
+                                                                <input type="hidden" name="custom_fields[{{ $fieldKey }}]" value="0">
+                                                                @php $isChecked = (bool)($val === '1' || $val === 1 || $val === true); @endphp
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input" type="checkbox" value="1" id="cf_{{ $fieldKey }}" name="custom_fields[{{ $fieldKey }}]" {{ $isChecked ? 'checked' : '' }}>
+                                                                    <label class="form-check-label" for="cf_{{ $fieldKey }}">{{ $field['label'] ?? Str::headline($fieldKey) }}</label>
+                                                                </div>
+                                                                @break
+
+                                                            @case('date')
+                                                                <input type="date" class="form-control" name="custom_fields[{{ $fieldKey }}]" value="{{ $val }}">
+                                                                @break
+
+                                                            @case('time')
+                                                                <input type="time" class="form-control" name="custom_fields[{{ $fieldKey }}]" value="{{ $val }}">
+                                                                @break
+
+                                                            @default
+                                                                <input type="text" class="form-control" name="custom_fields[{{ $fieldKey }}]" value="{{ $val }}" placeholder="{{ $field['placeholder'] ?? '' }}">
+                                                        @endswitch
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+
+
                         <!-- Clinical Notes -->
                         <div class="row mt-4">
                             <div class="col-12">
@@ -208,31 +281,31 @@
                                     <i class="fas fa-notes-medical me-1"></i>
                                     {{ __('Clinical Notes') }}
                                 </h6>
-                                
+
                                 <div class="mb-3">
                                     <label for="symptoms" class="form-label">{{ __('Symptoms') }}</label>
-                                    <textarea class="form-control @error('symptoms') is-invalid @enderror" 
-                                              id="symptoms" name="symptoms" rows="3" 
+                                    <textarea class="form-control @error('symptoms') is-invalid @enderror"
+                                              id="symptoms" name="symptoms" rows="3"
                                               placeholder="{{ __('Describe any symptoms the patient is experiencing...') }}">{{ old('symptoms', $checkup->symptoms) }}</textarea>
                                     @error('symptoms')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <label for="notes" class="form-label">{{ __('Clinical Notes') }}</label>
-                                    <textarea class="form-control @error('notes') is-invalid @enderror" 
-                                              id="notes" name="notes" rows="3" 
+                                    <textarea class="form-control @error('notes') is-invalid @enderror"
+                                              id="notes" name="notes" rows="3"
                                               placeholder="{{ __('Additional observations and notes...') }}">{{ old('notes', $checkup->notes) }}</textarea>
                                     @error('notes')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <label for="recommendations" class="form-label">{{ __('Recommendations') }}</label>
-                                    <textarea class="form-control @error('recommendations') is-invalid @enderror" 
-                                              id="recommendations" name="recommendations" rows="3" 
+                                    <textarea class="form-control @error('recommendations') is-invalid @enderror"
+                                              id="recommendations" name="recommendations" rows="3"
                                               placeholder="{{ __('Treatment recommendations and follow-up instructions...') }}">{{ old('recommendations', $checkup->recommendations) }}</textarea>
                                     @error('recommendations')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -240,7 +313,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Submit Buttons -->
                         <div class="row mt-4">
                             <div class="col-12">
@@ -268,20 +341,20 @@
 document.addEventListener('DOMContentLoaded', function() {
     const weightInput = document.getElementById('weight');
     const heightInput = document.getElementById('height');
-    
+
     function calculateBMI() {
         const weight = parseFloat(weightInput.value);
         const height = parseFloat(heightInput.value);
-        
+
         if (weight && height) {
             const heightInMeters = height / 100;
             const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
-            
+
             // You can display BMI somewhere if needed
             console.log('BMI:', bmi);
         }
     }
-    
+
     weightInput.addEventListener('input', calculateBMI);
     heightInput.addEventListener('input', calculateBMI);
 });

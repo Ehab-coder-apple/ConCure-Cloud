@@ -13,7 +13,7 @@
                         {{ __('Checkup Details') }}
                     </h1>
                     <p class="text-muted mb-0">
-                        {{ __('Patient:') }} {{ $patient->full_name }} ({{ $patient->patient_id }}) | 
+                        {{ __('Patient:') }} {{ $patient->full_name }} ({{ $patient->patient_id }}) |
                         {{ __('Date:') }} {{ \Carbon\Carbon::parse($checkup->checkup_date)->format('M d, Y g:i A') }}
                     </p>
                 </div>
@@ -54,7 +54,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         @if($checkup->height)
                         <div class="col-6">
                             <div class="d-flex align-items-center">
@@ -66,7 +66,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         @if($checkup->bmi)
                         <div class="col-6">
                             <div class="d-flex align-items-center">
@@ -78,7 +78,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         @if($checkup->blood_pressure)
                         <div class="col-6">
                             <div class="d-flex align-items-center">
@@ -90,7 +90,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         @if($checkup->heart_rate)
                         <div class="col-6">
                             <div class="d-flex align-items-center">
@@ -102,7 +102,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         @if($checkup->temperature)
                         <div class="col-6">
                             <div class="d-flex align-items-center">
@@ -118,7 +118,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Additional Measurements -->
         <div class="col-md-6 mb-4">
             <div class="card h-100">
@@ -141,7 +141,7 @@
                             </div>
                         </div>
                         @endif
-                        
+
                         @if($checkup->blood_sugar)
                         <div class="col-6">
                             <div class="d-flex align-items-center">
@@ -154,7 +154,7 @@
                         </div>
                         @endif
                     </div>
-                    
+
                     @if(!$checkup->respiratory_rate && !$checkup->blood_sugar)
                     <div class="text-center text-muted py-3">
                         <i class="fas fa-info-circle me-1"></i>
@@ -165,7 +165,41 @@
             </div>
         </div>
     </div>
-    
+
+    @if($checkup->template && is_array($checkup->custom_fields) && count($checkup->custom_fields))
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-file-medical text-primary me-2"></i>
+                        {{ __('Template Fields') }} — {{ $checkup->template->name }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @foreach($checkup->template->form_sections as $sectionKey => $section)
+                        <h6 class="text-secondary mb-2">{{ $section['title'] ?? Str::headline($sectionKey) }}</h6>
+                        <div class="row g-3 mb-3">
+                            @php $fields = $section['fields'] ?? []; @endphp
+                            @foreach($fields as $fieldKey => $field)
+                                @php $label = $field['label'] ?? Str::headline($fieldKey); $val = $checkup->custom_fields[$fieldKey] ?? null; @endphp
+                                @if($val !== null && $val !== '')
+                                    <div class="col-md-4">
+                                        <small class="text-muted d-block">{{ $label }}</small>
+                                        @php $display = is_bool($val) || $val === 0 || $val === 1 || $val === '0' || $val === '1' ? ((int)$val ? __('Yes') : __('No')) : $val; @endphp
+                                        <strong>{{ $display }}</strong>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+
     <!-- Clinical Notes -->
     <div class="row">
         <div class="col-12">
@@ -184,14 +218,14 @@
                             <p class="mb-0">{{ $checkup->symptoms }}</p>
                         </div>
                         @endif
-                        
+
                         @if($checkup->notes)
                         <div class="col-md-4 mb-3">
                             <h6 class="text-primary">{{ __('Clinical Notes') }}</h6>
                             <p class="mb-0">{{ $checkup->notes }}</p>
                         </div>
                         @endif
-                        
+
                         @if($checkup->recommendations)
                         <div class="col-md-4 mb-3">
                             <h6 class="text-primary">{{ __('Recommendations') }}</h6>
@@ -199,7 +233,7 @@
                         </div>
                         @endif
                     </div>
-                    
+
                     @if(!$checkup->symptoms && !$checkup->notes && !$checkup->recommendations)
                     <div class="text-center text-muted py-3">
                         <i class="fas fa-info-circle me-1"></i>
@@ -210,7 +244,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Checkup Metadata -->
     <div class="row mt-4">
         <div class="col-12">

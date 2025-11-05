@@ -15,33 +15,41 @@ class CheckupController extends Controller
     public function index(Request $request, Patient $patient)
     {
         $this->authorizePatientAccess($patient);
-        
+
         $query = PatientCheckup::with('recorder')
                               ->where('patient_id', $patient->id)
                               ->latest('checkup_date');
-        
+
         // Apply date filter if provided
         if ($request->filled('date_from')) {
             $query->where('checkup_date', '>=', $request->date_from);
         }
-        
+
         if ($request->filled('date_to')) {
             $query->where('checkup_date', '<=', $request->date_to . ' 23:59:59');
         }
-        
+
         $checkups = $query->paginate(15);
-        
+
         return view('checkups.index', compact('patient', 'checkups'));
     }
 
     /**
      * Show the form for creating a new checkup.
      */
-    public function create(Patient $patient)
+    public function create(\Illuminate\Http\Request $request, Patient $patient)
     {
         $this->authorizePatientAccess($patient);
-        
-        return view('checkups.create', compact('patient'));
+
+        $template = null;
+        if ($request->filled('template_id')) {
+            $template = \App\Models\CustomCheckupTemplate::find($request->template_id);
+            if ($template && $template->clinic_id !== $patient->clinic_id) {
+                abort(403, 'Unauthorized access to template.');
+            }
+        }
+
+        return view('checkups.create', compact('patient', 'template'));
     }
 
     /**
@@ -50,7 +58,7 @@ class CheckupController extends Controller
     public function store(Request $request, Patient $patient)
     {
         $this->authorizePatientAccess($patient);
-        
+
         $validationRules = [
             'weight' => 'nullable|numeric|min:1|max:500',
             'height' => 'nullable|numeric|min:50|max:300',
@@ -90,6 +98,14 @@ class CheckupController extends Controller
 
         $request->validate($validationRules);
 
+        // Validate template ownership (if provided)
+        if ($request->filled('template_id')) {
+            $tpl = \App\Models\CustomCheckupTemplate::findOrFail($request->template_id);
+            if ($tpl->clinic_id !== $patient->clinic_id) {
+                abort(403, 'Unauthorized access to template.');
+            }
+        }
+
         // Process custom vital signs
         $customVitalSigns = [];
         if ($request->has('custom_vital_signs')) {
@@ -112,6 +128,7 @@ class CheckupController extends Controller
 
         PatientCheckup::create([
             'patient_id' => $patient->id,
+            'template_id' => $request->template_id,
             'weight' => $request->weight,
             'height' => $request->height,
             'blood_pressure' => $request->blood_pressure,
@@ -120,6 +137,7 @@ class CheckupController extends Controller
             'respiratory_rate' => $request->respiratory_rate,
             'blood_sugar' => $request->blood_sugar,
             'custom_vital_signs' => $customVitalSigns ?: null,
+            'custom_fields' => $customFields ?: null,
             'symptoms' => $request->symptoms,
             'notes' => $request->notes,
             'recommendations' => $request->recommendations,
@@ -137,14 +155,14 @@ class CheckupController extends Controller
     public function show(Patient $patient, PatientCheckup $checkup)
     {
         $this->authorizePatientAccess($patient);
-        
+
         // Ensure checkup belongs to the patient
         if ($checkup->patient_id !== $patient->id) {
             abort(404);
         }
-        
+
         $checkup->load('recorder');
-        
+
         return view('checkups.show', compact('patient', 'checkup'));
     }
 
@@ -154,12 +172,12 @@ class CheckupController extends Controller
     public function edit(Patient $patient, PatientCheckup $checkup)
     {
         $this->authorizePatientAccess($patient);
-        
+
         // Ensure checkup belongs to the patient
         if ($checkup->patient_id !== $patient->id) {
             abort(404);
         }
-        
+
         return view('checkups.edit', compact('patient', 'checkup'));
     }
 
@@ -169,12 +187,12 @@ class CheckupController extends Controller
     public function update(Request $request, Patient $patient, PatientCheckup $checkup)
     {
         $this->authorizePatientAccess($patient);
-        
+
         // Ensure checkup belongs to the patient
         if ($checkup->patient_id !== $patient->id) {
             abort(404);
         }
-        
+
         $request->validate([
             'weight' => 'nullable|numeric|min:1|max:500',
             'height' => 'nullable|numeric|min:50|max:300',
@@ -187,7 +205,18 @@ class CheckupController extends Controller
             'notes' => 'nullable|string',
             'recommendations' => 'nullable|string',
             'checkup_date' => 'nullable|date',
+            'custom_fields' => 'nullable|array',
         ]);
+
+        // Process custom template fields for update
+        $customFields = [];
+        if ($request->has('custom_fields')) {
+            foreach ($request->custom_fields as $fieldName => $value) {
+                if ($value !== null && $value !== '' && $value !== []) {
+                    $customFields[$fieldName] = ($value === 'on') ? 1 : $value;
+                }
+            }
+        }
 
         $checkup->update([
             'weight' => $request->weight,
@@ -197,6 +226,7 @@ class CheckupController extends Controller
             'temperature' => $request->temperature,
             'respiratory_rate' => $request->respiratory_rate,
             'blood_sugar' => $request->blood_sugar,
+            'custom_fields' => $customFields ?: null,
             'symptoms' => $request->symptoms,
             'notes' => $request->notes,
             'recommendations' => $request->recommendations,
@@ -213,12 +243,12 @@ class CheckupController extends Controller
     public function destroy(Patient $patient, PatientCheckup $checkup)
     {
         $this->authorizePatientAccess($patient);
-        
+
         // Ensure checkup belongs to the patient
         if ($checkup->patient_id !== $patient->id) {
             abort(404);
         }
-        
+
         $checkup->delete();
 
         return redirect()->route('checkups.index', $patient)
