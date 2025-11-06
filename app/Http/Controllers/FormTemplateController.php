@@ -172,34 +172,49 @@ class FormTemplateController extends Controller
         $path = $formTemplate->file_path;
         $disk = Storage::disk('public');
         if (!$path || !$disk->exists($path)) {
-            return back()->with('error', __('File not found.'));
+            return redirect()->route('forms.templates.index')->with('error', __('File not found.'));
         }
 
         $absolutePath = $disk->path($path);
         $filename = $formTemplate->original_filename ?: basename($path);
         $mime = File::mimeType($absolutePath) ?: 'application/octet-stream';
+        $size = $formTemplate->file_size ?: (@is_file($absolutePath) ? @filesize($absolutePath) : null);
+
+        // Try to open stream first so any failure is handled here (not inside the response callback)
+        $stream = @fopen($absolutePath, 'rb');
+        if ($stream === false) {
+            \Log::warning('Form template fopen failed; falling back to storage download', [
+                'template_id' => $formTemplate->id,
+                'path' => $path,
+            ]);
+            return $disk->download($path, $filename);
+        }
+
+        $headers = [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+        ];
+        if (!empty($size)) {
+            $headers['Content-Length'] = $size;
+        }
 
         try {
-            // Stream in chunks to play nicely with proxies and avoid memory spikes
-            return response()->streamDownload(function () use ($absolutePath) {
-                $stream = fopen($absolutePath, 'rb');
+            return response()->streamDownload(function () use ($stream) {
                 while (!feof($stream)) {
                     echo fread($stream, 1024 * 1024); // 1MB chunks
                     @ob_flush();
                     flush();
                 }
                 fclose($stream);
-            }, $filename, [
-                'Content-Type' => $mime,
-                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-                'Pragma' => 'no-cache',
-            ]);
+            }, $filename, $headers);
         } catch (\Throwable $e) {
             \Log::error('Form template download failed', [
                 'template_id' => $formTemplate->id,
                 'path' => $path,
                 'error' => $e->getMessage(),
             ]);
+            if (is_resource($stream)) { @fclose($stream); }
             // Fallback to Laravel's Storage download
             return $disk->download($path, $filename);
         }
