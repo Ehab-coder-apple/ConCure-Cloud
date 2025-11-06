@@ -128,8 +128,8 @@
 
 @push('styles')
 <style>
-.rich-content table { width: 100%; border-collapse: collapse; }
-.rich-content table, .rich-content th, .rich-content td { border: 1px solid #ced4da; }
+.rich-content table { width: 100%; border-collapse: collapse !important; }
+.rich-content table, .rich-content th, .rich-content td { border: 1px solid #ced4da !important; }
 .rich-content th, .rich-content td { padding: 6px 8px; }
 .rich-content thead th { background: #f1f3f5; }
 </style>
