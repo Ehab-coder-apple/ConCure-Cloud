@@ -208,8 +208,8 @@ class PatientFormController extends Controller
         // Sanitize rich HTML content to allow safe tables and basic formatting
         $content = $data['content'] ?? '';
         if (!empty($content)) {
-            // Allow a safe subset of tags; attributes are generally stripped
-            $allowed = '<p><br><strong><b><em><i><u><ul><ol><li><table><thead><tbody><tfoot><tr><td><th><h1><h2><h3><h4>';
+            // Allow a safe subset of tags including tables and basic layout wrappers
+            $allowed = '<p><br><strong><b><em><i><u><ul><ol><li><table><thead><tbody><tfoot><tr><td><th><h1><h2><h3><h4><div><span><colgroup><col>';
             $content = strip_tags($content, $allowed);
             // Remove inline event handlers (onclick, onload, etc.)
             $content = preg_replace('/on\w+\s*=\s*"[^"]*"/i', '', $content);

@@ -98,7 +98,7 @@
         CKEDITOR.replace('content', {
             height: 420,
             removePlugins: 'resize',
-            extraPlugins: 'table,pastefromword',
+            extraPlugins: 'table,tabletools,tableselection,pastefromword',
             toolbar: [
                 { name: 'clipboard', items: ['Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo'] },
                 { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'RemoveFormat'] },
@@ -108,8 +108,16 @@
                 { name: 'styles', items: ['Format'] },
                 { name: 'document', items: ['Source'] }
             ],
-            // Allow all content in the editor; we sanitize on the server side
-            allowedContent: true
+            // Keep all content (tables from Word) and sanitize on the server side
+            allowedContent: true,
+            pasteFromWordRemoveFontStyles: false,
+            pasteFromWordRemoveStyles: false,
+            // Add visual borders inside the editor so pasted tables are clearly visible
+            on: {
+                instanceReady: function(evt) {
+                    evt.editor.addCss('table{border-collapse:collapse;width:100%} table,th,td{border:1px solid #ced4da;} th,td{padding:6px 8px;} thead th{background:#f1f3f5;}');
+                }
+            }
         });
         // Ensure editor content syncs back to textarea on submit
         var formEl = document.querySelector('form');
