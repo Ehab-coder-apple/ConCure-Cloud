@@ -91,7 +91,7 @@
 
 
 @push('scripts')
-<script src="https://cdn.ckeditor.com/4.22.1/full-all/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/4.25.1/full-all/ckeditor.js"></script>
 <script>
 (function(){
     if (window.CKEDITOR) {
