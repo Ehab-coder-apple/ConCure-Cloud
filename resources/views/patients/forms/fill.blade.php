@@ -26,11 +26,15 @@
                         @csrf
 
                         <div class="mb-3">
-                            <label for="content" class="form-label fw-bold">{{ __('Form Content / Notes') }}</label>
-                            <textarea name="content" id="content" rows="14" class="form-control" placeholder="{{ __('Enter form notes or content here...') }}">{{ old('content', data_get($assignment->form_data, 'content', '')) }}</textarea>
+                            <label for="content_editable" class="form-label fw-bold">{{ __('Form Content / Notes') }}</label>
+                            <div id="content_editable" class="form-control" contenteditable="true" style="min-height:420px; overflow:auto;">
+                                {!! old('content', data_get($assignment->form_data, 'content', '')) !!}
+                            </div>
+                            <textarea name="content" id="content" class="d-none">{{ old('content', data_get($assignment->form_data, 'content', '')) }}</textarea>
                             @error('content')
                             <div class="text-danger small">{{ $message }}</div>
                             @enderror
+                            <small class="text-muted">{{ __('Tip: Paste from Word. Borders will be shown on review and in PDF.') }}</small>
                         </div>
 
                             <div class="mb-3">
@@ -90,13 +94,33 @@
 
 
 
+@push('styles')
+<style>
+#content_editable table { border-collapse: collapse; width: 100%; }
+#content_editable table, #content_editable th, #content_editable td { border: 1px solid #ced4da; }
+#content_editable th, #content_editable td { padding: 6px 8px; }
+#content_editable thead th { background: #f1f3f5; }
+</style>
+@endpush
+
 @push('scripts')
 <script src="https://cdn.ckeditor.com/4.25.1/full-all/ckeditor.js"></script>
 <script>
 (function(){
+    var editable = document.getElementById('content_editable');
+    var hidden = document.getElementById('content');
+    if (!editable || !hidden) return;
+
+    function syncToHidden(){
+        if (window.CKEDITOR && CKEDITOR.instances && CKEDITOR.instances['content_editable']) {
+            hidden.value = CKEDITOR.instances['content_editable'].getData();
+        } else {
+            hidden.value = editable.innerHTML;
+        }
+    }
+
     if (window.CKEDITOR) {
-        CKEDITOR.replace('content', {
-            height: 420,
+        CKEDITOR.inline('content_editable', {
             removePlugins: 'resize',
             extraPlugins: 'table,tabletools,tableselection,pastefromword',
             toolbar: [
@@ -108,26 +132,22 @@
                 { name: 'styles', items: ['Format'] },
                 { name: 'document', items: ['Source'] }
             ],
-            // Keep all content (tables from Word) and sanitize on the server side
             allowedContent: true,
             pasteFromWordRemoveFontStyles: false,
             pasteFromWordRemoveStyles: false,
-            // Add visual borders inside the editor so pasted tables are clearly visible
             on: {
                 instanceReady: function(evt) {
                     evt.editor.addCss('table{border-collapse:collapse;width:100%} table,th,td{border:1px solid #ced4da;} th,td{padding:6px 8px;} thead th{background:#f1f3f5;}');
                 }
             }
         });
-        // Ensure editor content syncs back to textarea on submit
-        var formEl = document.querySelector('form');
-        if (formEl) {
-            formEl.addEventListener('submit', function(){
-                if (CKEDITOR.instances && CKEDITOR.instances.content) {
-                    CKEDITOR.instances.content.updateElement();
-                }
-            });
-        }
+    }
+
+    var formEl = document.querySelector('form');
+    if (formEl) {
+        formEl.addEventListener('submit', function(){
+            syncToHidden();
+        });
     }
 })();
 </script>
