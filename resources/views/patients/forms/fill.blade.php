@@ -31,6 +31,7 @@
                                 {!! old('content', data_get($assignment->form_data, 'content', '')) !!}
                             </div>
                             <textarea name="content" id="content" class="d-none">{{ old('content', data_get($assignment->form_data, 'content', '')) }}</textarea>
+                            <input type="hidden" name="content_html" id="content_html" value="{{ old('content', data_get($assignment->form_data, 'content', '')) }}">
                             @error('content')
                             <div class="text-danger small">{{ $message }}</div>
                             @enderror
@@ -109,15 +110,28 @@
 (function(){
     var editable = document.getElementById('content_editable');
     var hidden = document.getElementById('content');
+    var hiddenHtml = document.getElementById('content_html');
     if (!editable || !hidden) return;
 
-    function syncToHidden(){
-        if (window.CKEDITOR && CKEDITOR.instances && CKEDITOR.instances['content_editable']) {
-            hidden.value = CKEDITOR.instances['content_editable'].getData();
-        } else {
-            hidden.value = editable.innerHTML;
-        }
+    function setHidden(html){
+        hidden.value = html || '';
+        if (hiddenHtml) hiddenHtml.value = html || '';
     }
+
+    function getHtml(){
+        if (window.CKEDITOR && CKEDITOR.instances && CKEDITOR.instances['content_editable']) {
+            return CKEDITOR.instances['content_editable'].getData();
+        }
+        return editable.innerHTML;
+    }
+
+    function syncToHidden(){
+        setHidden(getHtml());
+    }
+
+    // Keep hidden in sync while typing/pasting
+    editable.addEventListener('input', syncToHidden);
+    editable.addEventListener('paste', function(){ setTimeout(syncToHidden, 0); });
 
     if (window.CKEDITOR) {
         CKEDITOR.inline('content_editable', {
@@ -138,10 +152,14 @@
             on: {
                 instanceReady: function(evt) {
                     evt.editor.addCss('table{border-collapse:collapse;width:100%} table,th,td{border:1px solid #ced4da;} th,td{padding:6px 8px;} thead th{background:#f1f3f5;}');
+                    evt.editor.on('change', syncToHidden);
                 }
             }
         });
     }
+
+    // Initial sync
+    syncToHidden();
 
     var formEl = document.querySelector('form');
     if (formEl) {

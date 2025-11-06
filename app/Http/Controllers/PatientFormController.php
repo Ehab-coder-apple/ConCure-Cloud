@@ -201,12 +201,19 @@ class PatientFormController extends Controller
 
         $data = $request->validate([
             'content' => 'nullable|string',
+            'content_html' => 'nullable|string',
             'action' => 'required|string|in:save,complete',
             'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:' . config('app.concure.max_file_size', 10240),
         ]);
 
+        // Prefer the main content field; fall back to content_html (JS fallback)
+        $rawContent = $request->input('content');
+        if ($rawContent === null || $rawContent === '') {
+            $rawContent = $request->input('content_html', '');
+        }
+
         // Sanitize rich HTML content to allow safe tables and basic formatting
-        $content = $data['content'] ?? '';
+        $content = $rawContent ?? '';
         if (!empty($content)) {
             // Allow a safe subset of tags including tables and basic layout wrappers
             $allowed = '<p><br><strong><b><em><i><u><ul><ol><li><table><thead><tbody><tfoot><tr><td><th><h1><h2><h3><h4><div><span><colgroup><col>';
