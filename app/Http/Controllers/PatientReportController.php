@@ -6,6 +6,7 @@ use App\Models\Patient;
 use App\Models\PatientCheckup;
 use App\Models\Prescription;
 use App\Models\Appointment;
+use App\Models\PatientImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -106,7 +107,13 @@ class PatientReportController extends Controller
         
         // Calculate BMI history
         $bmiHistory = $this->calculateBmiHistory($checkups);
-        
+
+        // Get images in date range
+        $images = PatientImage::where('patient_id', $patient->id)
+            ->whereBetween('created_at', [$dateFromCarbon, $dateToCarbon])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return [
             'checkups' => $checkups,
             'prescriptions' => $prescriptions,
@@ -114,6 +121,7 @@ class PatientReportController extends Controller
             'vital_trends' => $vitalTrends,
             'latest_checkup' => $latestCheckup,
             'bmi_history' => $bmiHistory,
+            'images' => $images,
             'summary' => [
                 'total_checkups' => $checkups->count(),
                 'total_prescriptions' => $prescriptions->count(),

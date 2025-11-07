@@ -225,6 +225,9 @@ class PatientController extends Controller
             'files' => function ($q) {
                 $q->with('uploader')->latest()->limit(10);
             },
+        'images' => function ($q) {
+            $q->latest()->limit(12);
+        },
             'prescriptions' => function ($q) {
                 $q->with('doctor')->latest()->limit(5);
             },

@@ -110,6 +110,14 @@ class Patient extends Model
     }
 
     /**
+     * Get the images for the patient.
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(\App\Models\PatientImage::class);
+    }
+
+    /**
      * Get the prescriptions for the patient.
      */
     public function prescriptions(): HasMany

@@ -13,30 +13,30 @@
             margin: 0;
             padding: 20px;
         }
-        
+
         .header {
             text-align: center;
             border-bottom: 2px solid #007bff;
             padding-bottom: 20px;
             margin-bottom: 30px;
         }
-        
+
         .header h1 {
             color: #007bff;
             margin: 0;
             font-size: 24px;
         }
-        
+
         .header p {
             margin: 5px 0;
             color: #666;
         }
-        
+
         .section {
             margin-bottom: 25px;
             page-break-inside: avoid;
         }
-        
+
         .section-title {
             background-color: #f8f9fa;
             padding: 10px;
@@ -45,34 +45,34 @@
             font-size: 14px;
             margin-bottom: 15px;
         }
-        
+
         .patient-info {
             display: table;
             width: 100%;
             margin-bottom: 20px;
         }
-        
+
         .patient-info-row {
             display: table-row;
         }
-        
+
         .patient-info-cell {
             display: table-cell;
             padding: 8px;
             border-bottom: 1px solid #eee;
             width: 25%;
         }
-        
+
         .patient-info-cell strong {
             color: #007bff;
         }
-        
+
         .summary-stats {
             display: table;
             width: 100%;
             margin-bottom: 20px;
         }
-        
+
         .summary-stat {
             display: table-cell;
             text-align: center;
@@ -80,24 +80,24 @@
             border: 1px solid #ddd;
             background-color: #f8f9fa;
         }
-        
+
         .summary-stat h3 {
             margin: 0;
             color: #007bff;
             font-size: 18px;
         }
-        
+
         .summary-stat p {
             margin: 5px 0 0 0;
             color: #666;
         }
-        
+
         .vital-signs {
             display: table;
             width: 100%;
             margin-bottom: 20px;
         }
-        
+
         .vital-sign {
             display: table-cell;
             text-align: center;
@@ -105,37 +105,37 @@
             border: 1px solid #ddd;
             width: 16.66%;
         }
-        
+
         .vital-sign h6 {
             margin: 5px 0;
             font-size: 14px;
             color: #333;
         }
-        
+
         .vital-sign small {
             color: #666;
             font-size: 10px;
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
         }
-        
+
         table th,
         table td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
-        
+
         table th {
             background-color: #f8f9fa;
             font-weight: bold;
             color: #007bff;
         }
-        
+
         .badge {
             padding: 3px 8px;
             border-radius: 3px;
@@ -143,12 +143,12 @@
             font-weight: bold;
             color: white;
         }
-        
+
         .badge-success { background-color: #28a745; }
         .badge-warning { background-color: #ffc107; color: #333; }
         .badge-danger { background-color: #dc3545; }
         .badge-info { background-color: #17a2b8; }
-        
+
         .footer {
             position: fixed;
             bottom: 20px;
@@ -160,7 +160,7 @@
             border-top: 1px solid #ddd;
             padding-top: 10px;
         }
-        
+
         .page-break {
             page-break-before: always;
         }
@@ -247,35 +247,35 @@
                 <small>Weight</small>
             </div>
             @endif
-            
+
             @if($reportData['latest_checkup']->height)
             <div class="vital-sign">
                 <h6>{{ $reportData['latest_checkup']->height }} cm</h6>
                 <small>Height</small>
             </div>
             @endif
-            
+
             @if($reportData['latest_checkup']->blood_pressure)
             <div class="vital-sign">
                 <h6>{{ $reportData['latest_checkup']->blood_pressure }}</h6>
                 <small>Blood Pressure</small>
             </div>
             @endif
-            
+
             @if($reportData['latest_checkup']->heart_rate)
             <div class="vital-sign">
                 <h6>{{ $reportData['latest_checkup']->heart_rate }} bpm</h6>
                 <small>Heart Rate</small>
             </div>
             @endif
-            
+
             @if($reportData['latest_checkup']->temperature)
             <div class="vital-sign">
                 <h6>{{ $reportData['latest_checkup']->temperature }}°C</h6>
                 <small>Temperature</small>
             </div>
             @endif
-            
+
             @if($reportData['latest_checkup']->blood_sugar)
             <div class="vital-sign">
                 <h6>{{ $reportData['latest_checkup']->blood_sugar }} mg/dL</h6>
@@ -339,6 +339,52 @@
         </table>
     </div>
     @endif
+    <!-- Patient Images -->
+    @if(isset($reportData['images']) && $reportData['images']->count() > 0)
+    <div class="section page-break">
+        <div class="section-title">Patient Images</div>
+        @php $images = $reportData['images']; @endphp
+        <table>
+            <tbody>
+            @for($i=0; $i < $images->count(); $i+=2)
+                <tr>
+                    @for($j=0; $j<2; $j++)
+                        @php $img = $images[$i+$j] ?? null; @endphp
+                        <td style="width:50%; vertical-align:top;">
+                            @if($img)
+                                @if(str_starts_with($img->mime ?? '', 'image/'))
+                                    @php
+                                        try {
+                                            $bytes = \Storage::disk('public')->get($img->path);
+                                            $base64 = 'data:' . ($img->mime ?? 'image/jpeg') . ';base64,' . base64_encode($bytes);
+                                        } catch (\Exception $e) {
+                                            $base64 = null;
+                                        }
+                                    @endphp
+                                    @if($base64)
+                                        <img src="{{ $base64 }}" style="max-width:100%; max-height:300px; border:1px solid #ddd; padding:4px;">
+                                    @else
+                                        <div style="padding:10px; border:1px solid #ddd;">Image unavailable</div>
+                                    @endif
+                                @else
+                                    <div style="padding:10px; border:1px solid #ddd;">
+                                        <strong>PDF Attachment</strong><br>
+                                        {{ $img->filename }}
+                                    </div>
+                                @endif
+                                @if($img->caption)
+                                    <div style="margin-top:6px; font-size:11px; color:#555;">{{ $img->caption }}</div>
+                                @endif
+                            @endif
+                        </td>
+                    @endfor
+                </tr>
+            @endfor
+            </tbody>
+        </table>
+    </div>
+    @endif
+
 
     <!-- Recent Checkups -->
     @if($reportData['checkups']->count() > 0)

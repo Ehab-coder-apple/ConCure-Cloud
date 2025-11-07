@@ -170,6 +170,86 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Medical Images -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-images me-2"></i>
+                                {{ __('Medical Images') }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            @if(session('success'))
+                                <div class="alert alert-success py-2">{{ session('success') }}</div>
+                            @endif
+                            @if($errors->any())
+                                <div class="alert alert-danger py-2">{{ $errors->first() }}</div>
+                            @endif
+
+                            @can('patients_edit')
+                            <form action="{{ route('patients.images.store', $patient) }}" method="POST" enctype="multipart/form-data" class="mb-3">
+                                @csrf
+                                <div class="input-group">
+                                    <input type="file" name="images[]" class="form-control" accept="image/jpeg,image/png,application/pdf" multiple required>
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-upload me-1"></i>{{ __('Upload') }}
+                                    </button>
+                                </div>
+                                <small class="text-muted d-block mt-1">{{ __('Allowed: JPG, PNG, PDF. Max 10MB each.') }}</small>
+                            </form>
+                            @endcan
+
+                            @php
+                                $patientImages = $patient->relationLoaded('images') ? $patient->images : \App\Models\PatientImage::where('patient_id', $patient->id)->latest()->limit(24)->get();
+                            @endphp
+
+                            @if($patientImages->count() === 0)
+                                <div class="text-center py-4">
+                                    <i class="fas fa-image fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">{{ __('No images uploaded yet.') }}</p>
+                                </div>
+                            @else
+                                <div class="row g-2">
+                                    @foreach($patientImages as $img)
+                                        <div class="col-6 col-md-4">
+                                            <div class="border rounded p-2 h-100 d-flex flex-column">
+                                                @if(str_starts_with($img->mime ?? '', 'image/'))
+                                                    <a href="{{ $img->url }}" target="_blank" class="d-block mb-2" title="{{ $img->filename }}">
+                                                        <img src="{{ $img->url }}" alt="" class="img-fluid rounded" style="object-fit:cover; width:100%; height:140px;">
+                                                    </a>
+                                                @else
+                                                    <a href="{{ $img->url }}" target="_blank" class="d-flex align-items-center justify-content-center bg-light rounded mb-2" style="height:140px;">
+                                                        <i class="fas fa-file-pdf fa-2x text-danger"></i>
+                                                    </a>
+                                                @endif
+                                                @if($img->caption)
+                                                    <div class="small mb-1">{{ $img->caption }}</div>
+                                                @endif
+                                                <div class="d-flex gap-1 mt-auto">
+                                                    @can('patients_edit')
+                                                    <form action="{{ route('patients.images.update', [$patient, $img]) }}" method="POST" class="flex-grow-1 d-flex gap-1">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="text" name="caption" class="form-control form-control-sm" placeholder="{{ __('Add caption') }}" value="{{ $img->caption }}">
+                                                        <button class="btn btn-sm btn-outline-secondary" type="submit" title="{{ __('Save') }}">
+                                                            <i class="fas fa-save"></i>
+                                                        </button>
+                                                    </form>
+                                                    <form action="{{ route('patients.images.destroy', [$patient, $img]) }}" method="POST" onsubmit="return confirm('{{ __('Delete this image?') }}')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-sm btn-outline-danger" type="submit" title="{{ __('Delete') }}"><i class="fas fa-trash"></i></button>
+                                                    </form>
+                                                    @endcan
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Medical Records -->

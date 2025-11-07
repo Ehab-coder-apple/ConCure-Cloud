@@ -210,6 +210,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/{patient}/history', [PatientController::class, 'history'])->name('history');
         Route::post('/{patient}/checkup', [PatientController::class, 'addCheckup'])->name('checkup');
         Route::post('/{patient}/upload', [PatientController::class, 'uploadFile'])->name('upload');
+
+        // Patient Images
+        Route::post('/{patient}/images', [App\Http\Controllers\PatientImageController::class, 'store'])->name('images.store');
+        Route::patch('/{patient}/images/{image}', [App\Http\Controllers\PatientImageController::class, 'update'])->name('images.update');
+        Route::delete('/{patient}/images/{image}', [App\Http\Controllers\PatientImageController::class, 'destroy'])->name('images.destroy');
     });
 
     // Checkup Management
