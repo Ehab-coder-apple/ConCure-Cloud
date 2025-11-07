@@ -616,12 +616,76 @@
                             </a>
                         </div>
                         <div class="card-body">
-                            <div class="text-center py-4">
-                                <i class="fas fa-vial fa-2x text-muted mb-2"></i>
-                                <p class="text-muted mb-0">{{ __('No lab results recorded yet.') }}</p>
-                            </div>
+                            @php $canEditPatients = auth()->check() && (auth()->user()->canManagePatients() || auth()->user()->hasPermission('patients_edit')); @endphp
+                            @if($canEditPatients)
+                            <form action="{{ route('patients.upload', $patient) }}" method="POST" enctype="multipart/form-data" class="mb-3">
+                                @csrf
+                                <input type="hidden" name="category" value="lab_result">
+                                <div class="input-group">
+                                    <input type="file" name="file" class="form-control" accept="image/jpeg,image/png,application/pdf" required>
+                                    <input type="text" name="description" class="form-control" placeholder="{{ __('Description (optional)') }}">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-upload me-1"></i>{{ __('Upload Lab Result') }}
+                                    </button>
+                                </div>
+                                <small class="text-muted d-block mt-1">{{ __('Allowed: JPG, JPEG, PNG, PDF. Max 10MB.') }}</small>
+                            </form>
+                            @endif
+
+                            @php
+                                $labFiles = \App\Models\PatientFile::byPatient($patient->id)->byCategory('lab_result')->latest()->get();
+                            @endphp
+
+                            @if($labFiles->count() === 0)
+                                <div class="text-center py-4">
+                                    <i class="fas fa-vial fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">{{ __('No lab results recorded yet.') }}</p>
+                                </div>
+                            @else
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ __('File') }}</th>
+                                                <th>{{ __('Uploaded') }}</th>
+                                                <th class="text-end">{{ __('Actions') }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($labFiles as $f)
+                                            <tr>
+                                                <td>
+                                                    <i class="{{ $f->file_icon }} me-2"></i>
+                                                    <a href="{{ $f->file_url }}" target="_blank">{{ $f->original_name }}</a>
+                                                    <div class="small text-muted">{{ strtoupper($f->file_extension) }} • {{ $f->file_size_human }}</div>
+                                                </td>
+                                                <td>
+                                                    {{ $f->created_at?->format('Y-m-d H:i') }}
+                                                </td>
+                                                <td class="text-end">
+                                                    <div class="btn-group" role="group">
+                                                        <a href="{{ $f->file_url }}" target="_blank" class="btn btn-outline-info btn-sm"><i class="fas fa-external-link-alt"></i> {{ __('Open') }}</a>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openAndPrint('{{ $f->file_url }}')"><i class="fas fa-print"></i> {{ __('Print') }}</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
                         </div>
                     </div>
+
+                    <script>
+                    function openAndPrint(url){
+                        const w = window.open(url, '_blank');
+                        if(!w){ return; }
+                        const tryPrint = () => { try { w.focus(); w.print(); } catch(e){} };
+                        w.onload = tryPrint;
+                        setTimeout(tryPrint, 1200);
+                    }
+                    </script>
                 </div>
             </div>
         </div>

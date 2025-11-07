@@ -130,7 +130,8 @@ class PatientFile extends Model
      */
     public function getFileUrlAttribute(): string
     {
-        return Storage::url($this->file_path);
+        // Use relative path so links always use the current host (prevents SSL/domain mismatch)
+        return '/storage/' . ltrim($this->file_path, '/');
     }
 
     /**
