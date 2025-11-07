@@ -186,7 +186,8 @@
                                 <div class="alert alert-danger py-2">{{ $errors->first() }}</div>
                             @endif
 
-                            @can('patients_edit')
+                            @php $canEditPatients = auth()->check() && (auth()->user()->canManagePatients() || auth()->user()->hasPermission('patients_edit')); @endphp
+                            @if($canEditPatients)
                             <form action="{{ route('patients.images.store', $patient) }}" method="POST" enctype="multipart/form-data" class="mb-3">
                                 @csrf
                                 <div class="input-group">
@@ -197,7 +198,7 @@
                                 </div>
                                 <small class="text-muted d-block mt-1">{{ __('Allowed: JPG, PNG, PDF. Max 10MB each.') }}</small>
                             </form>
-                            @endcan
+                            @endif
 
                             @php
                                 $patientImages = $patient->relationLoaded('images') ? $patient->images : \App\Models\PatientImage::where('patient_id', $patient->id)->latest()->limit(24)->get();
@@ -226,7 +227,7 @@
                                                     <div class="small mb-1">{{ $img->caption }}</div>
                                                 @endif
                                                 <div class="d-flex gap-1 mt-auto">
-                                                    @can('patients_edit')
+                                                    @if($canEditPatients)
                                                     <form action="{{ route('patients.images.update', [$patient, $img]) }}" method="POST" class="flex-grow-1 d-flex gap-1">
                                                         @csrf
                                                         @method('PATCH')
@@ -240,7 +241,7 @@
                                                         @method('DELETE')
                                                         <button class="btn btn-sm btn-outline-danger" type="submit" title="{{ __('Delete') }}"><i class="fas fa-trash"></i></button>
                                                     </form>
-                                                    @endcan
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
