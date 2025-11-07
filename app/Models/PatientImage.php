@@ -36,7 +36,8 @@ class PatientImage extends Model
 
     public function getUrlAttribute(): string
     {
-        return Storage::disk('public')->url($this->path);
+        // Return a relative path so it always uses the current host (avoids SSL/domain mismatches)
+        return '/storage/' . ltrim($this->path, '/');
     }
 
     public function isImage(): bool
