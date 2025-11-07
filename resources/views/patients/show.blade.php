@@ -616,6 +616,13 @@
                             </a>
                         </div>
                         <div class="card-body">
+                            @if(session('success'))
+                                <div class="alert alert-success py-2">{{ session('success') }}</div>
+                            @endif
+                            @if($errors->any())
+                                <div class="alert alert-danger py-2">{{ $errors->first() }}</div>
+                            @endif
+
                             @php $canEditPatients = auth()->check() && (auth()->user()->canManagePatients() || auth()->user()->hasPermission('patients_edit')); @endphp
                             @if($canEditPatients)
                             <form action="{{ route('patients.upload', $patient) }}" method="POST" enctype="multipart/form-data" class="mb-3">
@@ -663,9 +670,22 @@
                                                     {{ $f->created_at?->format('Y-m-d H:i') }}
                                                 </td>
                                                 <td class="text-end">
-                                                    <div class="btn-group" role="group">
+                                                    <div class="d-flex gap-1 justify-content-end flex-wrap">
                                                         <a href="{{ $f->file_url }}" target="_blank" class="btn btn-outline-info btn-sm"><i class="fas fa-external-link-alt"></i> {{ __('Open') }}</a>
                                                         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openAndPrint('{{ $f->file_url }}')"><i class="fas fa-print"></i> {{ __('Print') }}</button>
+                                                        @if($canEditPatients)
+                                                        <form action="{{ route('patients.files.update', [$patient, $f]) }}" method="POST" class="d-flex gap-1">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <input type="text" name="description" class="form-control form-control-sm" placeholder="{{ __('Add caption') }}" value="{{ $f->description }}" style="max-width:220px;">
+                                                            <button class="btn btn-sm btn-outline-secondary" type="submit" title="{{ __('Save') }}"><i class="fas fa-save"></i></button>
+                                                        </form>
+                                                        <form action="{{ route('patients.files.destroy', [$patient, $f]) }}" method="POST" onsubmit="return confirm('{{ __('Delete this file?') }}')">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button class="btn btn-sm btn-outline-danger" type="submit" title="{{ __('Delete') }}"><i class="fas fa-trash"></i></button>
+                                                        </form>
+                                                        @endif
                                                     </div>
                                                 </td>
                                             </tr>

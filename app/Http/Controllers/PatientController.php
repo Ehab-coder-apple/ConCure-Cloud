@@ -527,6 +527,43 @@ class PatientController extends Controller
     }
 
     /**
+     * Update a patient's file (e.g., description/caption).
+     */
+    public function updateFile(Request $request, Patient $patient, PatientFile $file)
+    {
+        $this->authorizePatientAccess($patient);
+        if ($file->patient_id !== $patient->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        $file->update([
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        return back()->with('success', __('File updated successfully.'));
+    }
+
+    /**
+     * Delete a patient's file.
+     */
+    public function destroyFile(Patient $patient, PatientFile $file)
+    {
+        $this->authorizePatientAccess($patient);
+        if ($file->patient_id !== $patient->id) {
+            abort(403);
+        }
+
+        $file->delete();
+
+        return back()->with('success', __('File deleted successfully.'));
+    }
+
+
+    /**
      * Check patient permission (disabled in development mode)
      */
     private function checkPatientPermission($permission)

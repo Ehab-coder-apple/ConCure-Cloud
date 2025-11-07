@@ -211,6 +211,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/{patient}/checkup', [PatientController::class, 'addCheckup'])->name('checkup');
         Route::post('/{patient}/upload', [PatientController::class, 'uploadFile'])->name('upload');
 
+
+        // Patient Files (update description, delete)
+        Route::patch('/{patient}/files/{file}', [PatientController::class, 'updateFile'])->name('files.update');
+        Route::delete('/{patient}/files/{file}', [PatientController::class, 'destroyFile'])->name('files.destroy');
+
         // Patient Images
         Route::post('/{patient}/images', [App\Http\Controllers\PatientImageController::class, 'store'])->name('images.store');
         Route::patch('/{patient}/images/{image}', [App\Http\Controllers\PatientImageController::class, 'update'])->name('images.update');
