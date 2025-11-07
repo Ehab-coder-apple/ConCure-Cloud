@@ -494,10 +494,17 @@ class PatientController extends Controller
         ]);
 
         $file = $request->file('file');
+        $ext = strtolower($file->getClientOriginalExtension());
         $allowedTypes = config('app.concure.allowed_file_types');
 
-        if (!in_array(strtolower($file->getClientOriginalExtension()), $allowedTypes)) {
-            return back()->withErrors(['file' => 'File type not allowed.']);
+        // Restrict lab results to images/PDF only
+        if ($request->category === 'lab_result') {
+            $labAllowed = ['jpg','jpeg','png','pdf'];
+            if (!in_array($ext, $labAllowed)) {
+                return back()->withErrors(['file' => __('Only JPG, JPEG, PNG, or PDF allowed for lab results.')]);
+            }
+        } elseif (!in_array($ext, $allowedTypes)) {
+            return back()->withErrors(['file' => __('File type not allowed.')]);
         }
 
         // Generate unique filename
