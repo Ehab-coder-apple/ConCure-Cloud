@@ -20,6 +20,11 @@ class PatientImage extends Model
         'mime',
         'size',
         'caption',
+        'condition_tags',
+    ];
+
+    protected $casts = [
+        'condition_tags' => 'array',
     ];
 
     protected $appends = ['url'];

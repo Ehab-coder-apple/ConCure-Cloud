@@ -46,7 +46,7 @@ class ImageBankController extends Controller
             }
         }
 
-        // Filter: medical condition (from active vital sign assignments)
+        // Filter: patient-level medical condition (from active assignments)
         $condition = trim((string) $request->input('condition'));
         if ($condition !== '') {
             $patientIds = PatientVitalSignsAssignment::query()
@@ -66,8 +66,18 @@ class ImageBankController extends Controller
             if (!empty($patientIds)) {
                 $query->whereIn('patient_id', $patientIds);
             } else {
-                // No patients match -> force empty result
                 $query->whereRaw('1=0');
+            }
+        }
+
+        // Filter: image-level condition tag
+        $tag = trim((string) $request->input('tag'));
+        if ($tag !== '') {
+            // Prefer JSON contains; fallback to LIKE for older setups
+            try {
+                $query->whereJsonContains('condition_tags', $tag);
+            } catch (\Throwable $e) {
+                $query->where('condition_tags', 'like', '%"' . addcslashes($tag, '"%_') . '"%');
             }
         }
 
@@ -92,7 +102,7 @@ class ImageBankController extends Controller
             ->limit(200)
             ->get(['id','patient_id','first_name','last_name']);
 
-        // Distinct conditions (active)
+        // Distinct patient-level conditions (active)
         $conditions = PatientVitalSignsAssignment::query()
             ->where('is_active', true)
             ->whereNotNull('medical_condition')
@@ -105,13 +115,31 @@ class ImageBankController extends Controller
             ->orderBy('medical_condition')
             ->pluck('medical_condition');
 
+        // Distinct image-level tags (flatten and unique)
+        $tags = collect(
+            PatientImage::query()
+                ->when($user && $user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+                ->whereNotNull('condition_tags')
+                ->pluck('condition_tags')
+                ->all()
+        )->flatMap(function ($arr) {
+            if (is_string($arr)) {
+                // Some DBs may return JSON string
+                $decoded = json_decode($arr, true);
+                return is_array($decoded) ? $decoded : [];
+            }
+            return is_array($arr) ? $arr : [];
+        })->filter()->unique()->sort()->values();
+
         return view('images.bank', [
             'images' => $images,
             'patients' => $patients,
             'conditions' => $conditions,
+            'tags' => $tags,
             'filters' => [
                 'patient' => $patientParam,
                 'condition' => $condition,
+                'tag' => $tag,
                 'q' => $q,
             ],
         ]);

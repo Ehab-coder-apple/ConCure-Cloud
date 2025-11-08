@@ -15,7 +15,7 @@
   <div class="card mb-4">
     <div class="card-body">
       <form method="GET" action="{{ route('image-bank.index') }}" class="row g-3 align-items-end">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label class="form-label">{{ __('Patient') }}</label>
           <input type="text" name="patient" value="{{ $filters['patient'] ?? '' }}" class="form-control" list="patientsDatalist" placeholder="{{ __('Search by name or code') }}">
           <datalist id="patientsDatalist">
@@ -25,8 +25,8 @@
           </datalist>
           <small class="text-muted">{{ __('Type numeric ID for direct match, or name/code for search') }}</small>
         </div>
-        <div class="col-md-4">
-          <label class="form-label">{{ __('Condition') }}</label>
+        <div class="col-md-3">
+          <label class="form-label">{{ __('Patient Condition') }}</label>
           <select name="condition" class="form-select">
             <option value="">{{ __('All') }}</option>
             @foreach($conditions as $cond)
@@ -34,7 +34,16 @@
             @endforeach
           </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+          <label class="form-label">{{ __('Image Tag (Condition)') }}</label>
+          <select name="tag" class="form-select">
+            <option value="">{{ __('All') }}</option>
+            @foreach($tags as $t)
+              <option value="{{ $t }}" {{ ($filters['tag'] ?? '') === $t ? 'selected' : '' }}>#{{ $t }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="col-md-3">
           <label class="form-label">{{ __('Search') }}</label>
           <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" placeholder="{{ __('Caption or file name') }}">
         </div>
@@ -63,6 +72,13 @@
                   <img src="{{ $img->url }}" alt="" class="img-fluid rounded" style="object-fit:cover; width:100%; height:160px;">
                 </a>
                 <div class="small text-muted mb-1">{{ $img->patient->first_name ?? '' }} {{ $img->patient->last_name ?? '' }}</div>
+                @if(is_array($img->condition_tags) && count($img->condition_tags))
+                  <div class="mb-1">
+                    @foreach($img->condition_tags as $t)
+                      <span class="badge bg-light text-dark border me-1">#{{ $t }}</span>
+                    @endforeach
+                  </div>
+                @endif
                 @if($img->caption)
                   <div class="small mb-2">{{ \Illuminate\Support\Str::limit($img->caption, 60) }}</div>
                 @endif

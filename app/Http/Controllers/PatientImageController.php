@@ -33,6 +33,7 @@ class PatientImageController extends Controller
             'images.*' => 'file|mimes:jpg,jpeg,png,pdf|max:10240', // 10MB
             'captions' => 'array',
             'captions.*' => 'nullable|string|max:255',
+            'condition_tags' => 'nullable|string|max:500', // comma-separated tags
         ]);
 
         $user = auth()->user();
@@ -47,6 +48,16 @@ class PatientImageController extends Controller
 
                 $caption = $request->input("captions.$idx") ?? null;
 
+                // Parse comma-separated tags (applies to all uploaded files in this batch)
+                $tagsRaw = (string) $request->input('condition_tags', '');
+                $tags = collect(preg_split('/[,]+/', $tagsRaw))
+                    ->map(fn($t) => trim($t))
+                    ->filter()
+                    ->unique()
+                    ->take(10)
+                    ->values()
+                    ->all();
+
                 $img = PatientImage::create([
                     'clinic_id' => $patient->clinic_id,
                     'patient_id' => $patient->id,
@@ -56,6 +67,7 @@ class PatientImageController extends Controller
                     'mime' => $file->getMimeType(),
                     'size' => $file->getSize(),
                     'caption' => $caption,
+                    'condition_tags' => $tags,
                 ]);
                 $stored[] = $img->id;
             }
@@ -72,10 +84,22 @@ class PatientImageController extends Controller
         }
         $request->validate([
             'caption' => 'nullable|string|max:255',
+            'condition_tags' => 'nullable|string|max:500',
         ]);
         $image->caption = $request->input('caption');
+        if ($request->has('condition_tags')) {
+            $tagsRaw = (string) $request->input('condition_tags', '');
+            $tags = collect(preg_split('/[,]+/', $tagsRaw))
+                ->map(fn($t) => trim($t))
+                ->filter()
+                ->unique()
+                ->take(10)
+                ->values()
+                ->all();
+            $image->condition_tags = $tags;
+        }
         $image->save();
-        return back()->with('success', __('Caption updated.'));
+        return back()->with('success', __('Image updated.'));
     }
 
     public function destroy(Patient $patient, PatientImage $image)

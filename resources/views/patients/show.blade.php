@@ -190,13 +190,20 @@
                             @if($canEditPatients)
                             <form action="{{ route('patients.images.store', $patient) }}" method="POST" enctype="multipart/form-data" class="mb-3">
                                 @csrf
-                                <div class="input-group">
+                                <div class="input-group mb-2">
                                     <input type="file" name="images[]" class="form-control" accept="image/jpeg,image/png,application/pdf" multiple required>
                                     <button class="btn btn-primary" type="submit">
                                         <i class="fas fa-upload me-1"></i>{{ __('Upload') }}
                                     </button>
                                 </div>
-                                <small class="text-muted d-block mt-1">{{ __('Allowed: JPG, PNG, PDF. Max 10MB each.') }}</small>
+                                <div class="row g-2">
+                                    <div class="col-md-8">
+                                        <input type="text" name="condition_tags" class="form-control" placeholder="{{ __('Condition tags (comma-separated), e.g., Knee, MRI, ACL') }}">
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-center">
+                                        <small class="text-muted">{{ __('Allowed: JPG, PNG, PDF. Max 10MB each.') }}</small>
+                                    </div>
+                                </div>
                             </form>
                             @endif
 
@@ -226,12 +233,20 @@
                                                 @if($img->caption)
                                                     <div class="small mb-1">{{ $img->caption }}</div>
                                                 @endif
+                                                @if(is_array($img->condition_tags) && count($img->condition_tags))
+                                                    <div class="mb-1">
+                                                        @foreach($img->condition_tags as $t)
+                                                            <span class="badge bg-light text-dark border me-1">#{{ $t }}</span>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
                                                 <div class="d-flex gap-1 mt-auto">
                                                     @if($canEditPatients)
-                                                    <form action="{{ route('patients.images.update', [$patient, $img]) }}" method="POST" class="flex-grow-1 d-flex gap-1">
+                                                    <form action="{{ route('patients.images.update', [$patient, $img]) }}" method="POST" class="flex-grow-1 d-flex gap-1 flex-wrap">
                                                         @csrf
                                                         @method('PATCH')
-                                                        <input type="text" name="caption" class="form-control form-control-sm" placeholder="{{ __('Add caption') }}" value="{{ $img->caption }}">
+                                                        <input type="text" name="caption" class="form-control form-control-sm" placeholder="{{ __('Add caption') }}" value="{{ $img->caption }}" style="max-width: 45%">
+                                                        <input type="text" name="condition_tags" class="form-control form-control-sm" placeholder="{{ __('Tags (comma-separated)') }}" value="{{ is_array($img->condition_tags) ? implode(', ', $img->condition_tags) : '' }}" style="max-width: 45%">
                                                         <button class="btn btn-sm btn-outline-secondary" type="submit" title="{{ __('Save') }}">
                                                             <i class="fas fa-save"></i>
                                                         </button>
