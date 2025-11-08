@@ -1446,6 +1446,17 @@
                                 <span class="nav-text">{{ __('Patients') }}</span>
                             </a>
                         </li>
+
+                            <!-- Medical Image Bank -->
+                            @if(Auth::user()->canAccessSection('patients'))
+                            <li class="nav-item">
+                                <a href="{{ route('image-bank.index') }}" class="nav-link {{ request()->routeIs('image-bank.*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-images"></i>
+                                    <span class="nav-text">{{ __('Medical Image Bank') }}</span>
+                                </a>
+                            </li>
+                            @endif
+
                         @endif
 
                             <!-- Messages -->

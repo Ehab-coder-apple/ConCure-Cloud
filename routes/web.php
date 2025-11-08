@@ -218,6 +218,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         // Patient Images
         Route::post('/{patient}/images', [App\Http\Controllers\PatientImageController::class, 'store'])->name('images.store');
+
         Route::patch('/{patient}/images/{image}', [App\Http\Controllers\PatientImageController::class, 'update'])->name('images.update');
         Route::delete('/{patient}/images/{image}', [App\Http\Controllers\PatientImageController::class, 'destroy'])->name('images.destroy');
     });
@@ -235,6 +236,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     // Patient Reports
     Route::get('/patients/{patient}/report', [App\Http\Controllers\PatientReportController::class, 'generateReport'])->name('patient.report');
+
+
+    // Medical Image Bank (top-level)
+    Route::get('/image-bank', [App\Http\Controllers\ImageBankController::class, 'index'])->name('image-bank.index');
 
     // Patient Vital Signs Management
     Route::prefix('patients/{patient}/vital-signs')->name('patients.vital-signs.')->group(function () {
