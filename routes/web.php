@@ -21,6 +21,8 @@ use App\Http\Controllers\MainWelcomeController;
 use App\Http\Controllers\MessagingController;
 
 use App\Http\Controllers\FormTemplateController;
+use App\Http\Controllers\AssistantController;
+
 
 
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -240,6 +242,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     // Medical Image Bank (top-level)
     Route::get('/image-bank', [App\Http\Controllers\ImageBankController::class, 'index'])->name('image-bank.index');
+
+        // AI Medical Assistant (top-level)
+        Route::prefix('ai-assistant')->name('assistant.')->group(function () {
+            Route::get('/', [AssistantController::class, 'index'])->name('index');
+            Route::post('/accept', [AssistantController::class, 'acceptDisclaimer'])->name('accept');
+            Route::post('/send', [AssistantController::class, 'send'])->name('send');
+            Route::delete('/clear', [AssistantController::class, 'clearHistory'])->name('clear');
+        });
+
 
     // Patient Vital Signs Management
     Route::prefix('patients/{patient}/vital-signs')->name('patients.vital-signs.')->group(function () {
