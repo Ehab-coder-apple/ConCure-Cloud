@@ -1457,15 +1457,6 @@
                             </li>
                             @endif
 
-                                <!-- AI Medical Assistant -->
-                                @if(Auth::check())
-                                <li class="nav-item">
-                                    <a href="{{ route('assistant.index') }}" class="nav-link {{ request()->routeIs('assistant.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-robot"></i>
-                                        <span class="nav-text">{{ __('AI Medical Assistant') }}</span>
-                                    </a>
-                                </li>
-                                @endif
 
 
                         @endif
@@ -1478,6 +1469,15 @@
                                     <span class="badge bg-danger ms-auto" id="sidebarUnread">0</span>
                                 </a>
                             </li>
+
+                            <!-- AI Medical Assistant (available to all authenticated users) -->
+                            <li class="nav-item">
+                                <a href="{{ route('assistant.index') }}" class="nav-link {{ request()->routeIs('assistant.*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-robot"></i>
+                                    <span class="nav-text">{{ __('AI Medical Assistant') }}</span>
+                                </a>
+                            </li>
+
 
 
                         <!-- Prescriptions -->
