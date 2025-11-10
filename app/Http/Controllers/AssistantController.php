@@ -106,15 +106,16 @@ class AssistantController extends Controller
 
         $provider = config('ai.provider', 'openai');
         if ($provider === 'openai') {
-            $apiKey = config('ai.openai.api_key');
-            $model = config('ai.openai.model', 'gpt-4o-mini');
+            $apiKey = config('ai.openai.api_key') ?: env('OPENAI_API_KEY');
+            $model = config('ai.openai.model', 'gpt-4o-mini') ?: env('OPENAI_MODEL', 'gpt-4o-mini');
+            $baseUrl = config('ai.openai.base_url', 'https://api.openai.com/v1');
             if (!$apiKey) {
                 return $this->noKeyFallback($locale);
             }
             try {
                 $resp = Http::timeout(30)
                     ->withToken($apiKey)
-                    ->post('https://api.openai.com/v1/chat/completions', [
+                    ->post($baseUrl . '/chat/completions', [
                         'model' => $model,
                         'temperature' => 0.2,
                         'max_tokens' => 700,
