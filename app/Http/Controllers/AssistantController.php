@@ -7,6 +7,7 @@ use App\Models\AiDisclaimerAcceptance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AssistantController extends Controller
 {
@@ -124,8 +125,15 @@ class AssistantController extends Controller
                 if ($resp->successful()) {
                     return (string) data_get($resp->json(), 'choices.0.message.content', $this->fallback($locale));
                 }
+                Log::warning('OpenAI chat/completions failed', [
+                    'status' => $resp->status(),
+                    'body' => $resp->body(),
+                ]);
                 return $this->fallback($locale);
             } catch (\Throwable $e) {
+                Log::error('OpenAI request exception', [
+                    'error' => $e->getMessage(),
+                ]);
                 return $this->fallback($locale);
             }
         }
