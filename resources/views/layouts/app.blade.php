@@ -1470,6 +1470,7 @@
                                 </a>
                             </li>
 
+                            @if(Route::has('assistant.index'))
                             <!-- AI Medical Assistant (available to all authenticated users) -->
                             <li class="nav-item">
                                 <a href="{{ route('assistant.index') }}" class="nav-link {{ request()->routeIs('assistant.*') ? 'active' : '' }}">
@@ -1477,6 +1478,7 @@
                                     <span class="nav-text">{{ __('AI Medical Assistant') }}</span>
                                 </a>
                             </li>
+                            @endif
 
 
 
