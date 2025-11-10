@@ -13,6 +13,10 @@ return [
 
         // Optional: base URL override for self-hosted gateways
         'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+
+        // Optional: explicit project or org headers for project-scoped keys
+        'project' => env('OPENAI_PROJECT'), // e.g., proj_ABC123
+        'organization' => env('OPENAI_ORG'), // e.g., org_ABC123
     ],
 ];
 

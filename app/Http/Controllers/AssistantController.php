@@ -114,14 +114,23 @@ class AssistantController extends Controller
                 return $this->noKeyFallback($locale);
             }
             try {
-                $resp = Http::timeout(30)
-                    ->withToken($apiKey)
-                    ->post($baseUrl . '/chat/completions', [
-                        'model' => $model,
-                        'temperature' => 0.2,
-                        'max_tokens' => 700,
-                        'messages' => $messages,
-                    ]);
+                $project = config('ai.openai.project') ?: env('OPENAI_PROJECT');
+                $org = config('ai.openai.organization') ?: env('OPENAI_ORG');
+                $headers = [];
+                if ($project) { $headers['OpenAI-Project'] = $project; }
+                if ($org) { $headers['OpenAI-Organization'] = $org; }
+
+                $http = Http::timeout(30)->withToken($apiKey);
+                if (!empty($headers)) {
+                    $http = $http->withHeaders($headers);
+                }
+
+                $resp = $http->post($baseUrl . '/chat/completions', [
+                    'model' => $model,
+                    'temperature' => 0.2,
+                    'max_tokens' => 700,
+                    'messages' => $messages,
+                ]);
                 if ($resp->successful()) {
                     return (string) data_get($resp->json(), 'choices.0.message.content', $this->fallback($locale));
                 }
