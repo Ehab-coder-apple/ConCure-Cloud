@@ -104,10 +104,10 @@ class AssistantController extends Controller
             ];
         }
 
-        $provider = env('AI_PROVIDER', 'openai');
+        $provider = config('ai.provider', 'openai');
         if ($provider === 'openai') {
-            $apiKey = env('OPENAI_API_KEY');
-            $model = env('OPENAI_MODEL', 'gpt-4o-mini');
+            $apiKey = config('ai.openai.api_key');
+            $model = config('ai.openai.model', 'gpt-4o-mini');
             if (!$apiKey) {
                 return $this->noKeyFallback($locale);
             }
