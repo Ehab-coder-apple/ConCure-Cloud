@@ -7,12 +7,14 @@ use App\Models\FoodGroup;
 use App\Imports\FoodsImport;
 use App\Exports\FoodsTemplateExport;
 use App\Exports\FoodsExport;
+use App\Http\Traits\SmartSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class FoodController extends Controller
 {
+    use SmartSearch;
     /**
      * Check food database permission (disabled in development mode)
      */
@@ -577,9 +579,9 @@ class FoodController extends Controller
         }
 
 
-        // Handle search term (support both 'search' and 'q' parameters)
-        $searchTerm = $request->search ?? $request->q;
-        if ($searchTerm && mb_strlen($searchTerm) >= 1) {
+        // Handle search term with smart search validation
+        $searchTerm = $this->getValidatedSearchTerm($request);
+        if ($searchTerm !== null) {
             $query->search($searchTerm);
         }
         // If no search term provided, we'll return the first foods (popular/recent foods)

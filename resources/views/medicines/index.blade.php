@@ -94,8 +94,9 @@
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label class="form-label">{{ __('Search') }}</label>
-                                <input type="text" class="form-control" name="search" value="{{ request('search') }}" 
-                                       placeholder="{{ __('Search by name, generic name, or brand...') }}">
+                                <input type="text" class="form-control" name="search" value="{{ request('search') }}"
+                                       placeholder="{{ __('Search by name, generic, brand (min 1 character)...') }}"
+                                       minlength="1">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">{{ __('Form') }}</label>

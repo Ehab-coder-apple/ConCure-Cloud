@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\SmartSearch;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Clinic;
 
 class UserController extends Controller
 {
+    use SmartSearch;
     /**
      * Display a listing of master users.
      */
@@ -16,14 +18,14 @@ class UserController extends Controller
     {
         $query = User::where('role', 'master_admin');
 
-        // Search functionality
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('username', 'like', "%{$search}%");
+        // Apply smart search filter
+        $searchTerm = $this->getValidatedSearchTerm($request);
+        if ($searchTerm !== null) {
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('first_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('last_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('email', 'like', "%{$searchTerm}%")
+                  ->orWhere('username', 'like', "%{$searchTerm}%");
             });
         }
 

@@ -390,6 +390,12 @@
   }
 
   async function searchRecipients(q) {
+    // Minimum length validation
+    if (q.trim().length < 1) {
+      renderRecipientResults([]);
+      return;
+    }
+
     const url = '/messages/recipients?query=' + encodeURIComponent(q || '');
     try {
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -404,7 +410,8 @@
     selectedRecipientId.value = '';
     createConvBtn.disabled = true;
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => searchRecipients(q), 250);
+    // Debounce with 300ms delay for consistency
+    searchTimer = setTimeout(() => searchRecipients(q), 300);
   });
 
   createConvBtn.addEventListener('click', async () => {

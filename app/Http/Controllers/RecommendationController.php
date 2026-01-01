@@ -15,12 +15,14 @@ use App\Models\DietPlanMealFood;
 use App\Models\Food;
 use App\Models\ExternalLab;
 use App\Services\WhatsAppService;
+use App\Http\Traits\SmartSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class RecommendationController extends Controller
 {
+    use SmartSearch;
     /**
      * Display the recommendations dashboard.
      */
@@ -105,14 +107,15 @@ class RecommendationController extends Controller
             $query->where('lab_name', 'like', "%{$request->custom_lab_name}%");
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('request_number', 'like', "%{$search}%")
-                  ->orWhereHas('patient', function ($pq) use ($search) {
-                      $pq->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('patient_id', 'like', "%{$search}%");
+        // Apply smart search filter
+        $searchTerm = $this->getValidatedSearchTerm($request);
+        if ($searchTerm !== null) {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('request_number', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('patient', function ($pq) use ($searchTerm) {
+                      $pq->where('first_name', 'like', "%{$searchTerm}%")
+                        ->orWhere('last_name', 'like', "%{$searchTerm}%")
+                        ->orWhere('patient_id', 'like', "%{$searchTerm}%");
                   });
             });
         }
@@ -589,14 +592,15 @@ class RecommendationController extends Controller
             $query->byStatus($request->status);
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('prescription_number', 'like', "%{$search}%")
-                  ->orWhereHas('patient', function ($pq) use ($search) {
-                      $pq->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('patient_id', 'like', "%{$search}%");
+        // Apply smart search filter
+        $searchTerm = $this->getValidatedSearchTerm($request);
+        if ($searchTerm !== null) {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('prescription_number', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('patient', function ($pq) use ($searchTerm) {
+                      $pq->where('first_name', 'like', "%{$searchTerm}%")
+                        ->orWhere('last_name', 'like', "%{$searchTerm}%")
+                        ->orWhere('patient_id', 'like', "%{$searchTerm}%");
                   });
             });
         }
@@ -679,15 +683,16 @@ class RecommendationController extends Controller
             $query->byGoal($request->goal);
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('plan_number', 'like', "%{$search}%")
-                  ->orWhere('title', 'like', "%{$search}%")
-                  ->orWhereHas('patient', function ($pq) use ($search) {
-                      $pq->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('patient_id', 'like', "%{$search}%");
+        // Apply smart search filter
+        $searchTerm = $this->getValidatedSearchTerm($request);
+        if ($searchTerm !== null) {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('plan_number', 'like', "%{$searchTerm}%")
+                  ->orWhere('title', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('patient', function ($pq) use ($searchTerm) {
+                      $pq->where('first_name', 'like', "%{$searchTerm}%")
+                        ->orWhere('last_name', 'like', "%{$searchTerm}%")
+                        ->orWhere('patient_id', 'like', "%{$searchTerm}%");
                   });
             });
         }

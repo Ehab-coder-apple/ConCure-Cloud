@@ -1420,11 +1420,12 @@ function renderAllMealOptions(mealType) {
 // Search for foods
 function searchFoods(query, groupId = '', language = 'default') {
 
-    if (query.length < 2 && !groupId) {
+    // Smart search: minimum 1 character required (unless filtering by group)
+    if (query.length < 1 && !groupId) {
         document.getElementById('food-results').innerHTML = `
             <div class="col-12 text-center text-muted py-4">
                 <i class="fas fa-search fa-2x mb-2"></i>
-                <p>{{ __('Start typing to search for foods...') }}</p>
+                <p>{{ __('Start typing to search for foods (minimum 1 character)...') }}</p>
             </div>
         `;
         return;

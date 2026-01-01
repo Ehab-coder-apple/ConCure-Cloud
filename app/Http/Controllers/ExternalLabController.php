@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExternalLab;
+use App\Http\Traits\SmartSearch;
 use Illuminate\Http\Request;
 
 class ExternalLabController extends Controller
 {
+    use SmartSearch;
     /**
      * Display a listing of external labs.
      */
@@ -21,13 +23,13 @@ class ExternalLabController extends Controller
 
         $query = ExternalLab::byClinic($user->clinic_id)->with('creator');
 
-        // Apply search filter
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+        // Apply smart search filter
+        $searchTerm = $this->getValidatedSearchTerm($request);
+        if ($searchTerm !== null) {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                  ->orWhere('phone', 'like', "%{$searchTerm}%")
+                  ->orWhere('email', 'like', "%{$searchTerm}%");
             });
         }
 

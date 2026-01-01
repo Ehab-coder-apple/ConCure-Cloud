@@ -6,6 +6,7 @@ use App\Models\Medicine;
 use App\Imports\MedicinesImport;
 use App\Exports\MedicinesTemplateExport;
 use App\Exports\MedicinesExport;
+use App\Http\Traits\SmartSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class MedicineController extends Controller
 {
+    use SmartSearch;
     /**
      * Display a listing of medicines.
      */
@@ -23,14 +25,10 @@ class MedicineController extends Controller
         $query = Medicine::with(['creator'])
             ->where('clinic_id', $user->clinic_id);
 
-        // Apply filters
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('generic_name', 'like', "%{$search}%")
-                  ->orWhere('brand_name', 'like', "%{$search}%");
-            });
+        // Apply smart search filter
+        $searchTerm = $this->getValidatedSearchTerm($request);
+        if ($searchTerm !== null) {
+            $query->search($searchTerm);
         }
 
         if ($request->filled('form')) {
@@ -259,15 +257,20 @@ class MedicineController extends Controller
     public function search(Request $request)
     {
         $user = Auth::user();
-        $search = $request->get('q', '');
 
-        $medicines = Medicine::where('clinic_id', $user->clinic_id)
-            ->where('is_active', true)
-            ->where(function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('generic_name', 'like', "%{$search}%")
-                      ->orWhere('brand_name', 'like', "%{$search}%");
-            })
+        // Validate and get search term (supports both 'q' and 'search' parameters)
+        $searchTerm = $this->getValidatedSearchTerm($request, 'q');
+
+        // Build query
+        $query = Medicine::where('clinic_id', $user->clinic_id)
+            ->where('is_active', true);
+
+        // Apply search if valid term provided
+        if ($searchTerm !== null) {
+            $query->search($searchTerm);
+        }
+
+        $medicines = $query
             ->select('id', 'name', 'generic_name', 'brand_name', 'dosage', 'form')
             ->limit(20)
             ->get()

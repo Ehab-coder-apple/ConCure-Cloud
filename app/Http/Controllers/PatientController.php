@@ -8,6 +8,7 @@ use App\Models\PatientFile;
 use App\Imports\PatientsImport;
 use App\Exports\PatientsExport;
 use App\Models\Clinic;
+use App\Http\Traits\SmartSearch;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -19,6 +20,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class PatientController extends Controller
 {
+    use SmartSearch;
     /**
      * Display a listing of patients.
      */
@@ -41,9 +43,10 @@ class PatientController extends Controller
             $query->byClinic($user->clinic_id);
         }
 
-        // Apply filters
-        if ($request->filled('search')) {
-            $query->search($request->search);
+        // Apply smart search filter
+        $searchTerm = $this->getValidatedSearchTerm($request);
+        if ($searchTerm !== null) {
+            $query->search($searchTerm);
         }
 
         if ($request->filled('gender')) {
@@ -388,23 +391,17 @@ class PatientController extends Controller
         $query->orderBy('first_name')
                         ->orderBy('last_name');
 
-        // Add search functionality if needed
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('patient_id', 'like', "%{$search}%");
-            });
+        // Apply smart search with minimum length validation
+        $searchTerm = $this->getValidatedSearchTerm($request);
+        if ($searchTerm !== null) {
+            $query->search($searchTerm);
         }
 
         $patients = $query->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $patients,
-            'count' => $patients->count()
-        ]);
+        return response()->json(
+            $this->getSearchResponse($patients, $searchTerm, 'Start typing to search patients...')
+        );
     }
 
     /**

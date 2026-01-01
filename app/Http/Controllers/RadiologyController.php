@@ -6,6 +6,7 @@ use App\Models\Patient;
 use App\Models\RadiologyRequest;
 use App\Models\RadiologyRequestTest;
 use App\Models\RadiologyTest;
+use App\Http\Traits\SmartSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class RadiologyController extends Controller
 {
+    use SmartSearch;
     /**
      * Display a listing of radiology requests.
      */
@@ -500,23 +502,26 @@ class RadiologyController extends Controller
     public function searchTests(Request $request)
     {
         $user = Auth::user();
-        $search = $request->get('search');
+        $searchTerm = $this->getValidatedSearchTerm($request);
         $category = $request->get('category');
 
-        $tests = RadiologyTest::where(function ($query) use ($user) {
-            $query->whereNull('clinic_id')
-                  ->orWhere('clinic_id', $user->clinic_id);
+        $query = RadiologyTest::where(function ($q) use ($user) {
+            $q->whereNull('clinic_id')
+              ->orWhere('clinic_id', $user->clinic_id);
         })
         ->active()
-        ->when($category, function ($query, $category) {
-            return $query->where('category', $category);
-        })
-        ->when($search, function ($query, $search) {
-            return $query->search($search);
-        })
-        ->ordered()
-        ->limit(50)
-        ->get();
+        ->when($category, function ($q, $category) {
+            return $q->where('category', $category);
+        });
+
+        // Apply smart search if valid term provided
+        if ($searchTerm !== null) {
+            $query->search($searchTerm);
+        }
+
+        $tests = $query->ordered()
+            ->limit(50)
+            ->get();
 
         return response()->json($tests);
     }

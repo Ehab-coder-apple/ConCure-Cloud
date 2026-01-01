@@ -50,8 +50,10 @@
                     <form method="GET" action="{{ route('patients.index') }}" class="row g-3">
                         <div class="col-md-4">
                             <label for="search" class="form-label">{{ __('Search Patients') }}</label>
-                            <input type="text" class="form-control" id="search" name="search" 
-                                   value="{{ request('search') }}" placeholder="{{ __('Name, ID, Phone...') }}">
+                            <input type="text" class="form-control" id="search" name="search"
+                                   value="{{ request('search') }}"
+                                   placeholder="{{ __('Search by name, ID, phone, email (min 1 character)...') }}"
+                                   minlength="1">
                         </div>
                         <div class="col-md-3">
                             <label for="status" class="form-label">{{ __('Status') }}</label>

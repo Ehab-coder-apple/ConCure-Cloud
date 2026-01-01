@@ -10,6 +10,7 @@ use App\Models\Transfer;
 use App\Models\User;
 use App\Models\Patient;
 use App\Models\AuditLog;
+use App\Http\Traits\SmartSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Validator;
 
 class MessagingController extends Controller
 {
+    use SmartSearch;
     /**
      * List user's conversations (clinic-scoped)
      */
@@ -289,26 +291,38 @@ class MessagingController extends Controller
     public function recipients(Request $request)
     {
         $user = $request->user();
-        $q = trim((string) $request->get('query', ''));
-        $base = User::query()
+
+        // Use smart search validation (supports 'query', 'search', and 'q' parameters)
+        $searchTerm = $this->getValidatedSearchTerm($request, 'query');
+
+        $query = User::query()
             ->where('clinic_id', $user->clinic_id)
             ->where('is_active', true)
             ->where('id', '!=', $user->id);
-        if ($q !== '') {
-            $base->where(function ($w) use ($q) {
-                $w->where('first_name', 'like', "%$q%")
-                  ->orWhere('last_name', 'like', "%$q%")
-                  ->orWhere('email', 'like', "%$q%")
-                  ->orWhere('username', 'like', "%$q%");
+
+        // Apply search if valid term provided
+        if ($searchTerm !== null) {
+            $query->where(function ($w) use ($searchTerm) {
+                $w->where('first_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('last_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('email', 'like', "%{$searchTerm}%")
+                  ->orWhere('username', 'like', "%{$searchTerm}%");
             });
         }
-        $users = $base->limit(20)->get(['id','first_name','last_name','role']);
-        $out = $users->map(fn($u) => [
+
+        $users = $query->limit(20)->get(['id','first_name','last_name','role']);
+        $recipients = $users->map(fn($u) => [
             'id' => $u->id,
             'name' => trim(($u->first_name.' '.$u->last_name)) ?: ('User #'.$u->id),
             'role' => $u->role,
         ]);
-        return response()->json(['success' => true, 'recipients' => $out]);
+
+        return response()->json([
+            'success' => true,
+            'recipients' => $recipients,
+            'count' => $recipients->count(),
+            'search_term' => $searchTerm,
+        ]);
     }
 
 
