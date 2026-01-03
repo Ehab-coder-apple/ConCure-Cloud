@@ -202,21 +202,21 @@
                     </div>
                     @endif
 
-                    <!-- Automatic WhatsApp Setup Section -->
-                    @if(!$status['configured'])
+                    <!-- Automatic WhatsApp Setup Section (Legacy - only show if no Twilio config) -->
+                    @if(!$status['configured'] && !$status['config_check']['twilio'])
                     <div class="row mb-4">
                         <div class="col-12">
-                            <div class="card border-primary">
-                                <div class="card-header bg-primary text-white">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
                                     <h5 class="mb-0">
-                                        <i class="fas fa-magic"></i>
-                                        {{ __('Automatic WhatsApp Setup') }}
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        {{ __('Alternative: WhatsApp Web (Not Recommended)') }}
                                     </h5>
                                 </div>
                                 <div class="card-body">
-                                    <div class="alert alert-info">
+                                    <div class="alert alert-warning">
                                         <i class="fas fa-info-circle"></i>
-                                        {{ __('Set up WhatsApp Web automatically so all sections of your clinic can send messages directly. This is a one-time setup process.') }}
+                                        <strong>{{ __('Note:') }}</strong> {{ __('This method requires server configuration and is not recommended for multi-tenant setups. Please use Twilio configuration above instead.') }}
                                     </div>
 
                                     <form id="autoSetupForm">
@@ -231,9 +231,9 @@
                                                 </small>
                                             </div>
                                             <div class="col-md-6 d-flex align-items-end">
-                                                <button type="submit" class="btn btn-primary btn-lg">
+                                                <button type="submit" class="btn btn-warning">
                                                     <i class="fab fa-whatsapp"></i>
-                                                    {{ __('Setup WhatsApp Web Automatically') }}
+                                                    {{ __('Setup WhatsApp Web (Advanced)') }}
                                                 </button>
                                             </div>
                                         </div>
