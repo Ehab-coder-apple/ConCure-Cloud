@@ -833,6 +833,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/qr', [App\Http\Controllers\WhatsAppController::class, 'qrCode'])->name('qr');
         Route::get('/patients', [App\Http\Controllers\WhatsAppController::class, 'patientsList'])->name('patients');
         Route::post('/broadcast', [App\Http\Controllers\WhatsAppController::class, 'broadcast'])->name('broadcast');
+        Route::post('/configure/twilio', [App\Http\Controllers\WhatsAppController::class, 'configureTwilio'])->name('configure.twilio');
 
     });
 

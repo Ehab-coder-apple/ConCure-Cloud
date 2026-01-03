@@ -121,6 +121,87 @@
                         </div>
                     </div>
 
+                    <!-- Twilio Configuration Section -->
+                    @if(!$status['config_check']['twilio'])
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-cog"></i>
+                                        {{ __('Twilio WhatsApp Configuration') }}
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        {{ __('Configure Twilio to send WhatsApp messages programmatically. This is the recommended method for production use.') }}
+                                    </div>
+
+                                    <form id="twilioConfigForm">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="twilio_sid" class="form-label">{{ __('Twilio Account SID') }}</label>
+                                                <input type="text" class="form-control" id="twilio_sid" name="twilio_sid"
+                                                       placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" required>
+                                                <small class="form-text text-muted">
+                                                    {{ __('Your Twilio Account SID from the Twilio Console') }}
+                                                </small>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="twilio_token" class="form-label">{{ __('Twilio Auth Token') }}</label>
+                                                <input type="password" class="form-control" id="twilio_token" name="twilio_token"
+                                                       placeholder="********************************" required>
+                                                <small class="form-text text-muted">
+                                                    {{ __('Your Twilio Auth Token from the Twilio Console') }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="twilio_from" class="form-label">{{ __('Twilio WhatsApp Number') }}</label>
+                                                <input type="text" class="form-control" id="twilio_from" name="twilio_from"
+                                                       value="whatsapp:+14155238886" placeholder="whatsapp:+14155238886" required>
+                                                <small class="form-text text-muted">
+                                                    {{ __('Your Twilio WhatsApp-enabled phone number (format: whatsapp:+1234567890)') }}
+                                                </small>
+                                            </div>
+                                            <div class="col-md-6 mb-3 d-flex align-items-end">
+                                                <button type="submit" class="btn btn-info">
+                                                    <i class="fas fa-save"></i>
+                                                    {{ __('Save Twilio Configuration') }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+
+                                    <!-- Configuration Status -->
+                                    <div id="twilioConfigStatus" class="mt-3" style="display: none;"></div>
+
+                                    <!-- Help Section -->
+                                    <div class="mt-3">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#twilioHelp">
+                                            <i class="fas fa-question-circle"></i> {{ __('How to get Twilio credentials?') }}
+                                        </button>
+                                        <div class="collapse mt-2" id="twilioHelp">
+                                            <div class="card card-body">
+                                                <ol>
+                                                    <li>{{ __('Sign up for a Twilio account at') }} <a href="https://www.twilio.com/try-twilio" target="_blank">https://www.twilio.com/try-twilio</a></li>
+                                                    <li>{{ __('Go to the Twilio Console Dashboard') }}</li>
+                                                    <li>{{ __('Copy your Account SID and Auth Token') }}</li>
+                                                    <li>{{ __('Enable WhatsApp on your Twilio number or use the Twilio Sandbox') }}</li>
+                                                    <li>{{ __('For sandbox, use: whatsapp:+14155238886') }}</li>
+                                                    <li>{{ __('Paste the credentials above and click Save') }}</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     <!-- Automatic WhatsApp Setup Section -->
                     @if(!$status['configured'])
                     <div class="row mb-4">
@@ -372,6 +453,54 @@
 
 @push('scripts')
 <script>
+// Twilio Configuration Form
+document.getElementById('twilioConfigForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const twilioSid = document.getElementById('twilio_sid').value;
+    const twilioToken = document.getElementById('twilio_token').value;
+    const twilioFrom = document.getElementById('twilio_from').value;
+    const statusDiv = document.getElementById('twilioConfigStatus');
+
+    // Show loading
+    statusDiv.style.display = 'block';
+    statusDiv.className = 'mt-3 alert alert-info';
+    statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ __("Saving configuration...") }}';
+
+    // Call save endpoint
+    fetch('/whatsapp/configure/twilio', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            twilio_sid: twilioSid,
+            twilio_token: twilioToken,
+            twilio_from: twilioFrom
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusDiv.className = 'mt-3 alert alert-success';
+            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+
+            // Reload page after 2 seconds to show updated status
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            statusDiv.className = 'mt-3 alert alert-danger';
+            statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || '{{ __("Failed to save configuration") }}');
+        }
+    })
+    .catch(error => {
+        statusDiv.className = 'mt-3 alert alert-danger';
+        statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> {{ __("Failed to save configuration:") }} ' + error.message;
+    });
+});
+
 // Automatic WhatsApp Setup
 document.getElementById('autoSetupForm')?.addEventListener('submit', function(e) {
     e.preventDefault();

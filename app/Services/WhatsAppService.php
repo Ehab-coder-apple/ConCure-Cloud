@@ -24,11 +24,28 @@ class WhatsAppService
         $config = config('whatsapp', []);
         $defaultProvider = $config['default_provider'] ?? env('WHATSAPP_PROVIDER', 'twilio');
 
-        // Twilio configuration
-        $twilioConfig = $config['providers']['twilio'] ?? [];
-        $this->twilioSid = $twilioConfig['account_sid'] ?? env('TWILIO_SID');
-        $this->twilioToken = $twilioConfig['auth_token'] ?? env('TWILIO_TOKEN');
-        $this->twilioFrom = $twilioConfig['from_number'] ?? env('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886');
+        // Try to load clinic-specific WhatsApp configuration
+        $clinicWhatsAppConfig = null;
+        if (auth()->check() && auth()->user()->clinic_id) {
+            $clinic = auth()->user()->clinic;
+            if ($clinic && isset($clinic->settings['whatsapp'])) {
+                $clinicWhatsAppConfig = $clinic->settings['whatsapp'];
+            }
+        }
+
+        // Twilio configuration - prioritize clinic settings over env
+        if ($clinicWhatsAppConfig && isset($clinicWhatsAppConfig['provider']) && $clinicWhatsAppConfig['provider'] === 'twilio') {
+            $this->twilioSid = $clinicWhatsAppConfig['twilio_sid'] ?? null;
+            $this->twilioToken = $clinicWhatsAppConfig['twilio_token'] ?? null;
+            $this->twilioFrom = $clinicWhatsAppConfig['twilio_from'] ?? 'whatsapp:+14155238886';
+            $defaultProvider = 'twilio'; // Force Twilio if configured in clinic settings
+        } else {
+            // Fallback to config/env
+            $twilioConfig = $config['providers']['twilio'] ?? [];
+            $this->twilioSid = $twilioConfig['account_sid'] ?? env('TWILIO_SID');
+            $this->twilioToken = $twilioConfig['auth_token'] ?? env('TWILIO_TOKEN');
+            $this->twilioFrom = $twilioConfig['from_number'] ?? env('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886');
+        }
 
         // Meta WhatsApp Business API configuration
         $metaConfig = $config['providers']['meta'] ?? [];
@@ -48,6 +65,7 @@ class WhatsAppService
             Log::info('WhatsApp Service Initialized', [
                 'provider' => $this->provider,
                 'default_provider' => $defaultProvider,
+                'clinic_config_used' => !empty($clinicWhatsAppConfig),
                 'twilio_configured' => !empty($this->twilioSid) && !empty($this->twilioToken),
                 'meta_configured' => !empty($this->apiToken) && !empty($this->phoneNumberId),
                 'chatapi_configured' => !empty($this->apiUrl) && !empty($chatApiToken),

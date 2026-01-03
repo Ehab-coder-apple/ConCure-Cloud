@@ -137,6 +137,60 @@ class WhatsAppController extends Controller
     }
 
     /**
+     * Configure Twilio WhatsApp settings
+     */
+    public function configureTwilio(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'twilio_sid' => 'required|string',
+            'twilio_token' => 'required|string',
+            'twilio_from' => 'required|string',
+        ]);
+
+        try {
+            $clinic = $user->clinic;
+            if (!$clinic) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Clinic not found'
+                ], 404);
+            }
+
+            // Store Twilio configuration in clinic settings
+            $settings = $clinic->settings ?? [];
+            $settings['whatsapp'] = [
+                'provider' => 'twilio',
+                'twilio_sid' => $request->twilio_sid,
+                'twilio_token' => $request->twilio_token,
+                'twilio_from' => $request->twilio_from,
+                'configured_at' => now()->toDateTimeString(),
+                'configured_by' => $user->id,
+            ];
+
+            $clinic->settings = $settings;
+            $clinic->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Twilio configuration saved successfully! You can now send WhatsApp messages.'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to save Twilio configuration', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save configuration: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Check WhatsApp setup status
      */
     public function checkSetupStatus()
