@@ -180,7 +180,7 @@
 
                                     <!-- Help Section -->
                                     <div class="mt-3">
-                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#twilioHelp">
+                                        <button class="btn btn-sm btn-primary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#twilioHelp">
                                             <i class="fas fa-question-circle"></i> {{ __('How to get Twilio credentials?') }}
                                         </button>
                                         <div class="collapse mt-2" id="twilioHelp">
