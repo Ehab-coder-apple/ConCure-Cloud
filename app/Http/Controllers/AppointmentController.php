@@ -40,18 +40,13 @@ class AppointmentController extends Controller
 
         $legacy = $this->isLegacyAppointments();
 
+        // Date filter - only apply if explicitly provided
+        // Don't default to today to show all appointments
         if ($request->filled('date')) {
             if ($legacy) {
                 $query->whereDate('appointments.appointment_date', $request->date);
             } else {
                 $query->whereDate('appointments.appointment_datetime', $request->date);
-            }
-        } else {
-            // Default to today's appointments
-            if ($legacy) {
-                $query->whereDate('appointments.appointment_date', Carbon::today());
-            } else {
-                $query->whereDate('appointments.appointment_datetime', Carbon::today());
             }
         }
 

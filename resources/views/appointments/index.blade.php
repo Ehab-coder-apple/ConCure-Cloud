@@ -37,9 +37,9 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <form method="GET" action="{{ route('appointments.index') }}" class="row g-2">
+                            <form method="GET" action="{{ route('appointments.index') }}" class="row g-2" id="appointmentFilterForm">
                                 <div class="col-md-6">
-                                    <select class="form-select" name="status">
+                                    <select class="form-select" name="status" onchange="this.form.submit()">
                                         <option value="">{{ __('All Statuses') }}</option>
                                         <option value="scheduled" {{ request('status') == 'scheduled' ? 'selected' : '' }}>{{ __('Scheduled') }}</option>
                                         <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>{{ __('Confirmed') }}</option>
@@ -48,7 +48,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <input type="date" class="form-control" name="date" value="{{ request('date', date('Y-m-d')) }}">
+                                    <input type="date" class="form-control" name="date" value="{{ request('date') }}" onchange="this.form.submit()" placeholder="{{ __('All dates') }}">
                                 </div>
                             </form>
                         </div>
@@ -61,8 +61,12 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-clock me-2"></i>
-                        {{ __('Today\'s Appointments') }} - {{ date('F d, Y') }}
-                        <span class="badge bg-primary ms-2">{{ $appointments->count() ?? 8 }}</span>
+                        @if(request('date'))
+                            {{ __('Appointments') }} - {{ \Carbon\Carbon::parse(request('date'))->format('F d, Y') }}
+                        @else
+                            {{ __('All Appointments') }}
+                        @endif
+                        <span class="badge bg-primary ms-2">{{ $appointments->total() }}</span>
                     </h6>
                 </div>
                 <div class="card-body p-0">
@@ -136,7 +140,13 @@
                         <!-- Empty state (no demo rows for real clinics) -->
                         <div class="text-center text-muted py-5">
                             <div class="mb-2"><i class="fas fa-calendar-times fa-2x"></i></div>
-                            <p class="mb-3">{{ __('No appointments match your current filters for today.') }}</p>
+                            <p class="mb-3">
+                                @if(request('date'))
+                                    {{ __('No appointments found for') }} {{ \Carbon\Carbon::parse(request('date'))->format('F d, Y') }}
+                                @else
+                                    {{ __('No appointments found. Create your first appointment to get started.') }}
+                                @endif
+                            </p>
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newAppointmentModal">
                                 <i class="fas fa-plus me-1"></i> {{ __('Create Appointment') }}
                             </button>
