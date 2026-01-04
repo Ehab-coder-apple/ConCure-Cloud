@@ -75,7 +75,7 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>{{ __('Time') }}</th>
+                                        <th>{{ __('Date & Time') }}</th>
                                         <th>{{ __('Patient') }}</th>
                                         <th>{{ __('Doctor') }}</th>
                                         <th>{{ __('Type') }}</th>
@@ -88,7 +88,8 @@
                                     @foreach($appointments as $appointment)
                                     <tr>
                                         <td>
-                                            <div class="fw-bold">{{ \Carbon\Carbon::parse($appointment->appointment_datetime ?? now())->format('g:i A') }}</div>
+                                            <div class="fw-bold">{{ \Carbon\Carbon::parse($appointment->appointment_datetime ?? now())->format('M d, Y') }}</div>
+                                            <div class="text-primary">{{ \Carbon\Carbon::parse($appointment->appointment_datetime ?? now())->format('g:i A') }}</div>
                                             <small class="text-muted">{{ $appointment->duration_minutes ?? '30' }} {{ __('min') }}</small>
                                         </td>
                                         <td>
