@@ -312,32 +312,30 @@
                         <h6>{{ __('Categories') }}</h6>
                         <div class="list-group" id="categoryList">
                             <button type="button" class="list-group-item list-group-item-action active" data-category="">
-                                {{ __('All Tests') }} <span class="badge bg-primary">26</span>
+                                {{ __('All Tests') }} <span class="badge bg-primary">{{ array_sum($categoryCounts) }}</span>
                             </button>
-                            <button type="button" class="list-group-item list-group-item-action" data-category="x_ray">
-                                {{ __('X-Ray') }} <span class="badge bg-secondary">5</span>
-                            </button>
-                            <button type="button" class="list-group-item list-group-item-action" data-category="ct_scan">
-                                {{ __('CT Scan') }} <span class="badge bg-secondary">5</span>
-                            </button>
-                            <button type="button" class="list-group-item list-group-item-action" data-category="mri">
-                                {{ __('MRI') }} <span class="badge bg-secondary">5</span>
-                            </button>
-                            <button type="button" class="list-group-item list-group-item-action" data-category="ultrasound">
-                                {{ __('Ultrasound') }} <span class="badge bg-secondary">4</span>
-                            </button>
-                            <button type="button" class="list-group-item list-group-item-action" data-category="nuclear_medicine">
-                                {{ __('Nuclear Medicine') }} <span class="badge bg-secondary">3</span>
-                            </button>
-                            <button type="button" class="list-group-item list-group-item-action" data-category="angiography">
-                                {{ __('Angiography') }} <span class="badge bg-secondary">2</span>
-                            </button>
-                            <button type="button" class="list-group-item list-group-item-action" data-category="mammography">
-                                {{ __('Mammography') }} <span class="badge bg-secondary">1</span>
-                            </button>
-                            <button type="button" class="list-group-item list-group-item-action" data-category="other">
-                                {{ __('Other') }} <span class="badge bg-secondary">1</span>
-                            </button>
+                            @php
+                                $categoryLabels = [
+                                    'x_ray' => __('X-Ray'),
+                                    'ct_scan' => __('CT Scan'),
+                                    'mri' => __('MRI'),
+                                    'ultrasound' => __('Ultrasound'),
+                                    'mammography' => __('Mammography'),
+                                    'nuclear_medicine' => __('Nuclear Medicine'),
+                                    'angiography' => __('Angiography'),
+                                    'pet_scan' => __('PET Scan'),
+                                    'bone_scan' => __('Bone Scan'),
+                                    'fluoroscopy' => __('Fluoroscopy'),
+                                    'other' => __('Other'),
+                                ];
+                            @endphp
+                            @foreach($categoryLabels as $categoryKey => $categoryLabel)
+                                @if(isset($categoryCounts[$categoryKey]) && $categoryCounts[$categoryKey] > 0)
+                                    <button type="button" class="list-group-item list-group-item-action" data-category="{{ $categoryKey }}">
+                                        {{ $categoryLabel }} <span class="badge bg-secondary">{{ $categoryCounts[$categoryKey] }}</span>
+                                    </button>
+                                @endif
+                            @endforeach
                         </div>
                     </div>
                     <div class="col-md-8">

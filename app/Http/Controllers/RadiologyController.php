@@ -101,6 +101,17 @@ class RadiologyController extends Controller
                   ->orWhere('clinic_id', $user->clinic_id);
         })->active()->ordered()->get();
 
+        // Get category counts for the modal
+        $categoryCounts = RadiologyTest::where(function ($query) use ($user) {
+            $query->whereNull('clinic_id')
+                  ->orWhere('clinic_id', $user->clinic_id);
+        })
+        ->active()
+        ->selectRaw('category, COUNT(*) as count')
+        ->groupBy('category')
+        ->pluck('count', 'category')
+        ->toArray();
+
         // Pre-select patient if provided
         $selectedPatient = null;
         if ($request->filled('patient_id')) {
@@ -109,7 +120,7 @@ class RadiologyController extends Controller
                                     ->first();
         }
 
-        return view('radiology.create', compact('patients', 'radiologyTests', 'selectedPatient'));
+        return view('radiology.create', compact('patients', 'radiologyTests', 'selectedPatient', 'categoryCounts'));
     }
 
     /**
@@ -252,9 +263,20 @@ class RadiologyController extends Controller
                   ->orWhere('clinic_id', $user->clinic_id);
         })->active()->ordered()->get();
 
+        // Get category counts for the modal
+        $categoryCounts = RadiologyTest::where(function ($query) use ($user) {
+            $query->whereNull('clinic_id')
+                  ->orWhere('clinic_id', $user->clinic_id);
+        })
+        ->active()
+        ->selectRaw('category, COUNT(*) as count')
+        ->groupBy('category')
+        ->pluck('count', 'category')
+        ->toArray();
+
         $radiologyRequest->load(['tests.radiologyTest']);
 
-        return view('radiology.edit', compact('radiologyRequest', 'patients', 'radiologyTests'));
+        return view('radiology.edit', compact('radiologyRequest', 'patients', 'radiologyTests', 'categoryCounts'));
     }
 
     /**
