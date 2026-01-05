@@ -321,11 +321,9 @@
                                 ];
                             @endphp
                             @foreach($categoryLabels as $categoryKey => $categoryLabel)
-                                @if(isset($categoryCounts[$categoryKey]) && $categoryCounts[$categoryKey] > 0)
-                                    <button type="button" class="list-group-item list-group-item-action" data-category="{{ $categoryKey }}">
-                                        {{ $categoryLabel }} <span class="badge bg-secondary">{{ $categoryCounts[$categoryKey] }}</span>
-                                    </button>
-                                @endif
+                                <button type="button" class="list-group-item list-group-item-action" data-category="{{ $categoryKey }}">
+                                    {{ $categoryLabel }} <span class="badge bg-secondary">{{ $categoryCounts[$categoryKey] ?? 0 }}</span>
+                                </button>
                             @endforeach
                         </div>
                     </div>
