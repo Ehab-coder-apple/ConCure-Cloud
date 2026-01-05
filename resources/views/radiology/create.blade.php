@@ -363,8 +363,27 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ __('Category') }} <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="category" placeholder="{{ __('e.g., x_ray, ct_scan, mri, ultrasound') }}" required>
-                        <div class="form-text">{{ __('Use existing category or create new one') }}</div>
+                        <select class="form-select" name="category" required>
+                            <option value="">{{ __('Select a category') }}</option>
+                            @php
+                                $categoryOptions = [
+                                    'x_ray' => __('X-Ray'),
+                                    'ct_scan' => __('CT Scan'),
+                                    'mri' => __('MRI'),
+                                    'ultrasound' => __('Ultrasound'),
+                                    'mammography' => __('Mammography'),
+                                    'nuclear_medicine' => __('Nuclear Medicine'),
+                                    'angiography' => __('Angiography'),
+                                    'pet_scan' => __('PET Scan'),
+                                    'bone_scan' => __('Bone Scan'),
+                                    'fluoroscopy' => __('Fluoroscopy'),
+                                    'other' => __('Other'),
+                                ];
+                            @endphp
+                            @foreach($categoryOptions as $categoryKey => $categoryLabel)
+                                <option value="{{ $categoryKey }}">{{ $categoryLabel }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ __('Description') }}</label>
