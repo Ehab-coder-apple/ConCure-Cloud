@@ -372,23 +372,118 @@
                     </div>
 
 
-                    <!-- Recent Visits -->
+                    <!-- Recent Checkups -->
                     <div class="card mb-4">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">
-                                <i class="fas fa-calendar-check me-2"></i>
-                                {{ __('Recent Visits') }}
+                                <i class="fas fa-stethoscope me-2"></i>
+                                {{ __('Recent Checkups') }}
                             </h6>
-                            <button type="button" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ route('checkups.create', $patient) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-plus me-1"></i>
-                                {{ __('New Visit') }}
-                            </button>
+                                {{ __('New Checkup') }}
+                            </a>
                         </div>
                         <div class="card-body">
-                            <div class="text-center py-4">
-                                <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
-                                <p class="text-muted mb-0">{{ __('No visits recorded yet.') }}</p>
-                            </div>
+                            @if($patient->checkups && $patient->checkups->count() > 0)
+                                <div class="list-group list-group-flush">
+                                    @foreach($patient->checkups as $checkup)
+                                    <div class="list-group-item px-0">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <span class="badge bg-success me-2">
+                                                        {{ \Carbon\Carbon::parse($checkup->checkup_date)->format('M d, Y') }}
+                                                    </span>
+                                                    @if($checkup->recorder)
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-user-md me-1"></i>
+                                                            {{ $checkup->recorder->name }}
+                                                        </small>
+                                                    @endif
+                                                </div>
+
+                                                <div class="row g-2 mb-2">
+                                                    @if($checkup->weight)
+                                                        <div class="col-auto">
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-weight me-1"></i>
+                                                                <strong>{{ $checkup->weight }} kg</strong>
+                                                            </small>
+                                                        </div>
+                                                    @endif
+                                                    @if($checkup->height)
+                                                        <div class="col-auto">
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-ruler-vertical me-1"></i>
+                                                                <strong>{{ $checkup->height }} cm</strong>
+                                                            </small>
+                                                        </div>
+                                                    @endif
+                                                    @if($checkup->blood_pressure)
+                                                        <div class="col-auto">
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-heartbeat me-1"></i>
+                                                                <strong>{{ $checkup->blood_pressure }}</strong>
+                                                            </small>
+                                                        </div>
+                                                    @endif
+                                                    @if($checkup->temperature)
+                                                        <div class="col-auto">
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-thermometer-half me-1"></i>
+                                                                <strong>{{ $checkup->temperature }}°C</strong>
+                                                            </small>
+                                                        </div>
+                                                    @endif
+                                                </div>
+
+                                                @if($checkup->symptoms)
+                                                    <div class="mb-1">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-notes-medical me-1"></i>
+                                                            <strong>{{ __('Symptoms:') }}</strong> {{ Str::limit($checkup->symptoms, 100) }}
+                                                        </small>
+                                                    </div>
+                                                @endif
+
+                                                @if($checkup->notes)
+                                                    <div>
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-clipboard me-1"></i>
+                                                            {{ Str::limit($checkup->notes, 100) }}
+                                                        </small>
+                                                    </div>
+                                                @endif
+                                            </div>
+
+                                            <div class="ms-3">
+                                                <a href="{{ route('checkups.show', [$patient, $checkup]) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+
+                                @if($patient->checkups->count() >= 10)
+                                    <div class="text-center mt-3">
+                                        <a href="{{ route('checkups.index', $patient) }}" class="btn btn-sm btn-outline-secondary">
+                                            {{ __('View All Checkups') }}
+                                        </a>
+                                    </div>
+                                @endif
+                            @else
+                                <div class="text-center py-4">
+                                    <i class="fas fa-stethoscope fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-3">{{ __('No checkups recorded yet.') }}</p>
+                                    <a href="{{ route('checkups.create', $patient) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-plus me-1"></i>
+                                        {{ __('Record First Checkup') }}
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
