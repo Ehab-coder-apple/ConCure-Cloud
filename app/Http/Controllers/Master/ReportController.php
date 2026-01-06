@@ -595,7 +595,7 @@ class ReportController extends Controller
             ]);
 
             foreach ($sessions as $session) {
-                $endTime = $session->logout_at ?? $session->last_activity;
+                $endTime = $session->logout_at ?? $session->estimated_end;
 
                 fputcsv($file, [
                     $session->user_name,
@@ -608,7 +608,7 @@ class ReportController extends Controller
                     $session->duration_formatted,
                     $session->login_count,
                     $session->ip_address ?? '',
-                    $session->status
+                    $session->status . ($session->estimated_end ? ' (Estimated)' : '')
                 ]);
             }
 
@@ -697,19 +697,46 @@ class ReportController extends Controller
             ->orderBy('performed_at', 'asc')
             ->first();
 
-        $endTime = $logout ? $logout->performed_at : $session['last_activity'];
-        $duration = $session['login_at']->diffInMinutes($endTime);
-
-        // Determine status
+        // Determine end time and status
         $status = 'Completed';
-        if (!$logout) {
-            // Check if session is recent (within last hour)
+        $endTime = null;
+
+        if ($logout) {
+            // Explicit logout found
+            $endTime = $logout->performed_at;
+            $status = 'Completed';
+        } else {
+            // No logout - estimate session end time
+
+            // Check if this is a recent session (within last hour)
             if ($session['last_activity']->diffInMinutes(now()) < 60) {
+                // Active session - use current time as estimated end
+                $endTime = now();
                 $status = 'Active Session';
             } else {
+                // Old session - estimate end time based on typical session duration
+                // Look for the next login from the same user to estimate when they stopped
+                $nextLogin = AuditLog::where('action', 'login')
+                    ->where('user_id', $session['user_id'])
+                    ->where('performed_at', '>', $session['last_activity'])
+                    ->orderBy('performed_at', 'asc')
+                    ->first();
+
+                if ($nextLogin) {
+                    // Use the time just before next login as estimated end
+                    // Assume they logged out 1 minute before next login
+                    $endTime = $nextLogin->performed_at->copy()->subMinute();
+                } else {
+                    // No next login found - estimate based on typical session length
+                    // Add 30 minutes to last activity as reasonable estimate
+                    $endTime = $session['last_activity']->copy()->addMinutes(30);
+                }
+
                 $status = 'Timed Out';
             }
         }
+
+        $duration = $session['login_at']->diffInMinutes($endTime);
 
         return (object) [
             'user_id' => $session['user_id'],
@@ -720,6 +747,7 @@ class ReportController extends Controller
             'login_at' => $session['login_at'],
             'logout_at' => $logout?->performed_at,
             'last_activity' => $session['last_activity'],
+            'estimated_end' => !$logout ? $endTime : null,
             'duration_minutes' => $duration,
             'duration_formatted' => $this->formatDuration($duration),
             'ip_address' => $session['ip_address'],

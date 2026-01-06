@@ -164,13 +164,13 @@
                             </td>
                             <td>
                                 @php
-                                    $endTime = $session->logout_at ?? $session->last_activity;
+                                    $endTime = $session->logout_at ?? $session->estimated_end;
                                 @endphp
                                 <div>{{ $endTime->format('M d, Y') }}</div>
                                 <small class="text-muted">{{ $endTime->format('g:i A') }}</small>
                                 @if(!$session->logout_at)
                                     <small class="text-warning d-block">
-                                        <i class="fas fa-info-circle"></i> Last activity
+                                        <i class="fas fa-info-circle"></i> Estimated
                                     </small>
                                 @endif
                             </td>
