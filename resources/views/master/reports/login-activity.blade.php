@@ -55,7 +55,7 @@
             <div class="card-body">
                 <div class="text-xs text-uppercase text-warning mb-1">Active Sessions</div>
                 <div class="h5 mb-0 text-gray-800">{{ number_format($stats['active_sessions']) }}</div>
-                <small class="text-muted">Currently active or no logout</small>
+                <small class="text-muted">{{ number_format($stats['timed_out_sessions']) }} timed out</small>
             </div>
         </div>
     </div>
@@ -127,7 +127,7 @@
 <div class="card">
     <div class="card-header">
         <i class="fas fa-table me-2"></i>Login Sessions
-        <span class="badge bg-primary ms-2">{{ $sessions->total() }} total</span>
+        <span class="badge bg-primary ms-2">{{ $paginatedSessions->total() }} total</span>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -137,15 +137,16 @@
                         <th>User</th>
                         <th>Role</th>
                         <th>Clinic</th>
-                        <th>Login Time</th>
-                        <th>Logout Time</th>
+                        <th>Session Start</th>
+                        <th>Session End</th>
                         <th>Duration</th>
+                        <th>Activities</th>
                         <th>IP Address</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($sessions as $session)
+                    @forelse($paginatedSessions as $session)
                         <tr>
                             <td>
                                 <div class="fw-bold">{{ $session->user_name }}</div>
@@ -162,30 +163,39 @@
                                 <small class="text-muted">{{ $session->login_at->format('g:i A') }}</small>
                             </td>
                             <td>
-                                @if($session->logout_at)
-                                    <div>{{ $session->logout_at->format('M d, Y') }}</div>
-                                    <small class="text-muted">{{ $session->logout_at->format('g:i A') }}</small>
-                                @else
-                                    <span class="text-muted">—</span>
+                                @php
+                                    $endTime = $session->logout_at ?? $session->last_activity;
+                                @endphp
+                                <div>{{ $endTime->format('M d, Y') }}</div>
+                                <small class="text-muted">{{ $endTime->format('g:i A') }}</small>
+                                @if(!$session->logout_at)
+                                    <small class="text-warning d-block">
+                                        <i class="fas fa-info-circle"></i> Last activity
+                                    </small>
                                 @endif
                             </td>
                             <td>
-                                @if($session->duration_formatted)
-                                    <span class="badge bg-info">{{ $session->duration_formatted }}</span>
-                                @else
-                                    <span class="text-muted">—</span>
-                                @endif
+                                <span class="badge bg-info">{{ $session->duration_formatted }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {{ $session->login_count }} {{ $session->login_count > 1 ? 'logins' : 'login' }}
+                                </span>
                             </td>
                             <td>
                                 <code class="text-sm">{{ $session->ip_address ?? 'N/A' }}</code>
                             </td>
                             <td>
                                 @if($session->status === 'Active Session')
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-circle"></i> Active
+                                    </span>
+                                @elseif($session->status === 'Timed Out')
                                     <span class="badge bg-warning">
-                                        <i class="fas fa-circle-notch fa-spin"></i> Active
+                                        <i class="fas fa-clock"></i> Timed Out
                                     </span>
                                 @else
-                                    <span class="badge bg-success">
+                                    <span class="badge bg-secondary">
                                         <i class="fas fa-check"></i> Completed
                                     </span>
                                 @endif
@@ -193,7 +203,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">
+                            <td colspan="9" class="text-center text-muted py-4">
                                 <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                                 No login sessions found for the selected filters.
                             </td>
@@ -204,9 +214,9 @@
         </div>
 
         <!-- Pagination -->
-        @if($sessions->hasPages())
+        @if($paginatedSessions->hasPages())
             <div class="mt-3">
-                {{ $sessions->appends(request()->query())->links() }}
+                {{ $paginatedSessions->appends(request()->query())->links() }}
             </div>
         @endif
     </div>
