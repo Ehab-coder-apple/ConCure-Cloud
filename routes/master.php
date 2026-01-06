@@ -89,7 +89,11 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
     Route::post('/reports/payments', [PaymentsController::class, 'store'])->name('reports.payments.store');
     Route::post('/reports/payments/import', [PaymentsController::class, 'import'])->name('reports.payments.import');
-        Route::get('/reports/service-charges/export', [ReportController::class, 'exportServiceCharges'])->name('reports.service-charges.export');
+    Route::get('/reports/service-charges/export', [ReportController::class, 'exportServiceCharges'])->name('reports.service-charges.export');
+
+    // Login/Logout Activity Report
+    Route::get('/reports/login-activity', [ReportController::class, 'loginActivity'])->name('reports.login-activity');
+    Route::get('/reports/login-activity/export', [ReportController::class, 'exportLoginActivity'])->name('reports.login-activity.export');
 
 });
 

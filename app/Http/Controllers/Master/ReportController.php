@@ -16,8 +16,10 @@ use App\Models\Appointment;
 use App\Models\Invoice;
 use App\Models\PatientCheckup;
 use App\Models\SubscriptionPayment;
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
@@ -438,5 +440,288 @@ class ReportController extends Controller
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /**
+     * Show Login/Logout Activity Report
+     */
+    public function loginActivity(Request $request)
+    {
+        // Log access to this report
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'user_name' => Auth::user()->full_name,
+            'user_role' => Auth::user()->role,
+            'clinic_id' => Auth::user()->clinic_id,
+            'action' => 'view_login_activity_report',
+            'description' => 'Accessed Login/Logout Activity Report',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'performed_at' => now(),
+        ]);
+
+        // Get filter parameters
+        $filters = [
+            'from' => $request->query('from', now()->subDays(30)->format('Y-m-d')),
+            'to' => $request->query('to', now()->format('Y-m-d')),
+            'clinic_id' => $request->query('clinic_id'),
+            'user_id' => $request->query('user_id'),
+            'role' => $request->query('role'),
+        ];
+
+        $from = $this->parseDate($filters['from']);
+        $to = $this->parseDate($filters['to']);
+
+        // Get all login events
+        $loginQuery = AuditLog::where('action', 'login')
+            ->when($from, fn($q) => $q->whereDate('performed_at', '>=', $from->toDateString()))
+            ->when($to, fn($q) => $q->whereDate('performed_at', '<=', $to->toDateString()))
+            ->when($filters['clinic_id'], fn($q) => $q->where('clinic_id', $filters['clinic_id']))
+            ->when($filters['user_id'], fn($q) => $q->where('user_id', $filters['user_id']))
+            ->when($filters['role'], fn($q) => $q->where('user_role', $filters['role']))
+            ->with(['user', 'clinic'])
+            ->orderBy('performed_at', 'desc');
+
+        // Paginate results
+        $sessions = $loginQuery->paginate(50)->through(function ($login) {
+            // Find the corresponding logout
+            $logout = AuditLog::where('action', 'logout')
+                ->where('user_id', $login->user_id)
+                ->where('performed_at', '>', $login->performed_at)
+                ->orderBy('performed_at', 'asc')
+                ->first();
+
+            $duration = null;
+            $status = 'Active Session';
+
+            if ($logout) {
+                $duration = $login->performed_at->diffInMinutes($logout->performed_at);
+                $status = 'Completed';
+            }
+
+            return (object) [
+                'user_id' => $login->user_id,
+                'user_name' => $login->user_name,
+                'user_role' => $login->user_role,
+                'clinic_id' => $login->clinic_id,
+                'clinic_name' => $login->clinic?->name ?? 'N/A',
+                'login_at' => $login->performed_at,
+                'logout_at' => $logout?->performed_at,
+                'duration_minutes' => $duration,
+                'duration_formatted' => $duration ? $this->formatDuration($duration) : null,
+                'ip_address' => $login->ip_address,
+                'status' => $status,
+            ];
+        });
+
+        // Get summary statistics
+        $stats = $this->getLoginActivityStats($from, $to, $filters);
+
+        // Get filter options
+        $clinics = Clinic::orderBy('name')->get(['id', 'name']);
+        $users = User::whereNotIn('role', ['super_admin', 'master_admin'])
+            ->when($filters['clinic_id'], fn($q) => $q->where('clinic_id', $filters['clinic_id']))
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name', 'role']);
+
+        $roles = User::ROLES;
+        unset($roles['super_admin'], $roles['master_admin']);
+
+        return view('master.reports.login-activity', compact(
+            'sessions',
+            'filters',
+            'stats',
+            'clinics',
+            'users',
+            'roles'
+        ));
+    }
+
+    /**
+     * Export Login/Logout Activity Report to CSV
+     */
+    public function exportLoginActivity(Request $request)
+    {
+        // Log export action
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'user_name' => Auth::user()->full_name,
+            'user_role' => Auth::user()->role,
+            'clinic_id' => Auth::user()->clinic_id,
+            'action' => 'export_login_activity_report',
+            'description' => 'Exported Login/Logout Activity Report to CSV',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'performed_at' => now(),
+        ]);
+
+        $filters = [
+            'from' => $request->query('from', now()->subDays(30)->format('Y-m-d')),
+            'to' => $request->query('to', now()->format('Y-m-d')),
+            'clinic_id' => $request->query('clinic_id'),
+            'user_id' => $request->query('user_id'),
+            'role' => $request->query('role'),
+        ];
+
+        $from = $this->parseDate($filters['from']);
+        $to = $this->parseDate($filters['to']);
+
+        // Get all login events
+        $logins = AuditLog::where('action', 'login')
+            ->when($from, fn($q) => $q->whereDate('performed_at', '>=', $from->toDateString()))
+            ->when($to, fn($q) => $q->whereDate('performed_at', '<=', $to->toDateString()))
+            ->when($filters['clinic_id'], fn($q) => $q->where('clinic_id', $filters['clinic_id']))
+            ->when($filters['user_id'], fn($q) => $q->where('user_id', $filters['user_id']))
+            ->when($filters['role'], fn($q) => $q->where('user_role', $filters['role']))
+            ->with(['user', 'clinic'])
+            ->orderBy('performed_at', 'desc')
+            ->get();
+
+        $filename = 'login_activity_' . now()->format('Y-m-d_His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function() use ($logins) {
+            $file = fopen('php://output', 'w');
+
+            // Add CSV headers
+            fputcsv($file, [
+                'User Name',
+                'Role',
+                'Clinic',
+                'Login Date',
+                'Login Time',
+                'Logout Date',
+                'Logout Time',
+                'Duration',
+                'IP Address',
+                'Status'
+            ]);
+
+            foreach ($logins as $login) {
+                // Find corresponding logout
+                $logout = AuditLog::where('action', 'logout')
+                    ->where('user_id', $login->user_id)
+                    ->where('performed_at', '>', $login->performed_at)
+                    ->orderBy('performed_at', 'asc')
+                    ->first();
+
+                $duration = null;
+                $status = 'Active Session';
+
+                if ($logout) {
+                    $durationMinutes = $login->performed_at->diffInMinutes($logout->performed_at);
+                    $duration = $this->formatDuration($durationMinutes);
+                    $status = 'Completed';
+                }
+
+                fputcsv($file, [
+                    $login->user_name,
+                    ucfirst($login->user_role ?? 'N/A'),
+                    $login->clinic?->name ?? 'N/A',
+                    $login->performed_at->format('Y-m-d'),
+                    $login->performed_at->format('H:i:s'),
+                    $logout?->performed_at->format('Y-m-d') ?? '',
+                    $logout?->performed_at->format('H:i:s') ?? '',
+                    $duration ?? '',
+                    $login->ip_address ?? '',
+                    $status
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Get login activity statistics
+     */
+    private function getLoginActivityStats($from, $to, $filters)
+    {
+        $baseQuery = AuditLog::where('action', 'login')
+            ->when($from, fn($q) => $q->whereDate('performed_at', '>=', $from->toDateString()))
+            ->when($to, fn($q) => $q->whereDate('performed_at', '<=', $to->toDateString()))
+            ->when($filters['clinic_id'], fn($q) => $q->where('clinic_id', $filters['clinic_id']))
+            ->when($filters['user_id'], fn($q) => $q->where('user_id', $filters['user_id']))
+            ->when($filters['role'], fn($q) => $q->where('user_role', $filters['role']));
+
+        $totalSessions = (clone $baseQuery)->count();
+        $uniqueUsers = (clone $baseQuery)->distinct('user_id')->count('user_id');
+
+        // Calculate average session duration
+        $logins = (clone $baseQuery)->get();
+        $totalDuration = 0;
+        $completedSessions = 0;
+
+        foreach ($logins as $login) {
+            $logout = AuditLog::where('action', 'logout')
+                ->where('user_id', $login->user_id)
+                ->where('performed_at', '>', $login->performed_at)
+                ->orderBy('performed_at', 'asc')
+                ->first();
+
+            if ($logout) {
+                $totalDuration += $login->performed_at->diffInMinutes($logout->performed_at);
+                $completedSessions++;
+            }
+        }
+
+        $avgDuration = $completedSessions > 0 ? round($totalDuration / $completedSessions) : 0;
+        $activeSessions = $totalSessions - $completedSessions;
+
+        // Sessions by role
+        $sessionsByRole = (clone $baseQuery)
+            ->selectRaw('user_role, COUNT(*) as count')
+            ->groupBy('user_role')
+            ->pluck('count', 'user_role')
+            ->toArray();
+
+        // Sessions by clinic
+        $sessionsByClinic = (clone $baseQuery)
+            ->join('clinics', 'audit_logs.clinic_id', '=', 'clinics.id')
+            ->selectRaw('clinics.name, COUNT(*) as count')
+            ->groupBy('clinics.id', 'clinics.name')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->pluck('count', 'name')
+            ->toArray();
+
+        return [
+            'total_sessions' => $totalSessions,
+            'unique_users' => $uniqueUsers,
+            'completed_sessions' => $completedSessions,
+            'active_sessions' => $activeSessions,
+            'avg_duration' => $avgDuration,
+            'avg_duration_formatted' => $this->formatDuration($avgDuration),
+            'sessions_by_role' => $sessionsByRole,
+            'sessions_by_clinic' => $sessionsByClinic,
+        ];
+    }
+
+    /**
+     * Format duration in minutes to human-readable format
+     */
+    private function formatDuration($minutes)
+    {
+        if ($minutes < 60) {
+            return $minutes . ' min';
+        }
+
+        $hours = floor($minutes / 60);
+        $mins = $minutes % 60;
+
+        if ($hours < 24) {
+            return $hours . 'h ' . $mins . 'm';
+        }
+
+        $days = floor($hours / 24);
+        $hours = $hours % 24;
+
+        return $days . 'd ' . $hours . 'h ' . $mins . 'm';
     }
 }

@@ -3,11 +3,18 @@
 @section('title', 'Reports | ConCure Master')
 
 @section('content')
-<div class="d-flex align-items-center mb-3">
-    <i class="fas fa-chart-bar fa-2x text-primary me-3"></i>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-chart-bar fa-2x text-primary me-3"></i>
+        <div>
+            <h5 class="mb-0">System Reports</h5>
+            <small class="text-muted">High-level analytics across all clinics</small>
+        </div>
+    </div>
     <div>
-        <h5 class="mb-0">System Reports</h5>
-        <small class="text-muted">High-level analytics across all clinics</small>
+        <a href="{{ route('master.reports.login-activity') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-sign-in-alt me-1"></i> Login Activity Report
+        </a>
     </div>
 </div>
 
