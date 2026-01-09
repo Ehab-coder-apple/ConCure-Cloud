@@ -561,6 +561,55 @@
                                             <strong>{{ __('Database') }}:</strong> SQLite
                                         </div>
 
+                                        @if(auth()->user()->isSuperAdmin() || auth()->user()->role === 'admin')
+                                        <div class="col-12 mt-4">
+                                            <h6 class="text-primary">{{ __('Session Settings') }}</h6>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="card bg-light border-0">
+                                                <div class="card-body">
+                                                    <form id="sessionLifetimeForm">
+                                                        @csrf
+                                                        <div class="row align-items-end">
+                                                            <div class="col-md-6">
+                                                                <label for="session_lifetime" class="form-label">
+                                                                    <i class="fas fa-clock me-1"></i>
+                                                                    {{ __('Session Lifetime (minutes)') }}
+                                                                </label>
+                                                                <input type="number"
+                                                                       class="form-control"
+                                                                       id="session_lifetime"
+                                                                       name="session_lifetime"
+                                                                       value="{{ $globalSettings['session_lifetime'] ?? 480 }}"
+                                                                       min="5"
+                                                                       max="43200"
+                                                                       required>
+                                                                <small class="text-muted">
+                                                                    {{ __('How long users can stay logged in without activity. Min: 5 minutes, Max: 30 days (43200 minutes)') }}
+                                                                </small>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="text-muted small">
+                                                                    <strong>{{ __('Current:') }}</strong>
+                                                                    <span id="currentSessionDisplay">
+                                                                        {{ floor(($globalSettings['session_lifetime'] ?? 480) / 60) }} {{ __('hours') }}
+                                                                        {{ ($globalSettings['session_lifetime'] ?? 480) % 60 }} {{ __('minutes') }}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <button type="submit" class="btn btn-primary w-100">
+                                                                    <i class="fas fa-save me-1"></i>
+                                                                    {{ __('Update Session Lifetime') }}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
+
                                             @if(auth()->user()->isSuperAdmin())
                                             <div class="col-12 mt-4">
                                                 <h6 class="text-primary">{{ __('Automatic Backups (Per Clinic)') }}</h6>
@@ -1411,6 +1460,74 @@ function toggleClinicAutoBackup(clinicId, el) {
         if (switchEl) switchEl.disabled = false;
     });
 }
+
+// Handle session lifetime form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const sessionForm = document.getElementById('sessionLifetimeForm');
+    const sessionInput = document.getElementById('session_lifetime');
+    const sessionDisplay = document.getElementById('currentSessionDisplay');
+
+    if (sessionForm) {
+        // Update display when input changes
+        sessionInput.addEventListener('input', function() {
+            const minutes = parseInt(this.value) || 0;
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            sessionDisplay.textContent = `${hours} {{ __('hours') }} ${mins} {{ __('minutes') }}`;
+        });
+
+        sessionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> {{ __("Updating...") }}';
+            submitBtn.disabled = true;
+
+            const formData = new FormData(this);
+
+            fetch('{{ route("settings.update-session-lifetime") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${data.success ? 'success' : 'danger'} alert-dismissible fade show mt-3`;
+                alertDiv.innerHTML = `
+                    ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                sessionForm.parentElement.appendChild(alertDiv);
+
+                if (data.success) {
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 5000);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                alertDiv.innerHTML = `
+                    {{ __("An error occurred. Please try again.") }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                sessionForm.parentElement.appendChild(alertDiv);
+            })
+            .finally(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+    }
+});
 
 </script>
 @endpush

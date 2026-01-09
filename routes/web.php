@@ -44,6 +44,17 @@ Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 })->name('csrf-token');
 
+// Session Activity & Auto-Logout Routes
+// Config endpoint is public (no auth required) so JavaScript can load it
+Route::get('/session/config', [App\Http\Controllers\SessionActivityController::class, 'getConfig'])->name('session.config');
+
+// Protected session routes (require authentication)
+Route::middleware('auth')->group(function () {
+    Route::post('/session/keep-alive', [App\Http\Controllers\SessionActivityController::class, 'keepAlive'])->name('session.keep-alive');
+    Route::get('/session/status', [App\Http\Controllers\SessionActivityController::class, 'checkStatus'])->name('session.status');
+    Route::post('/session/auto-logout', [App\Http\Controllers\SessionActivityController::class, 'autoLogout'])->name('session.auto-logout');
+});
+
 
 
 
@@ -884,6 +895,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         Route::post('/clear-cache', [SettingsController::class, 'clearCache'])->name('clear-cache')->middleware('can:access-settings');
         Route::post('/update-system', [SettingsController::class, 'updateSystem'])->name('update-system')->middleware('can:access-settings');
+        Route::post('/session-lifetime', [SettingsController::class, 'updateSessionLifetime'])->name('update-session-lifetime')->middleware('can:access-settings');
 
         // Audit logs (permission-gated)
         Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs')->middleware('can:view-audit-logs');

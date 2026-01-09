@@ -273,6 +273,11 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- Auto-Logout Security Module -->
+    @auth
+    <script src="{{ asset('js/auto-logout.js') }}"></script>
+    @endauth
+
     @stack('scripts')
 </body>
 </html>

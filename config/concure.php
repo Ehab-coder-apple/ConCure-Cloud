@@ -101,4 +101,44 @@ return [
         'retention_days' => env('CONCURE_BACKUP_RETENTION_DAYS', 30),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Auto-Logout Security Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure automatic logout for enhanced security. Users will be logged
+    | out after a period of inactivity to protect sensitive medical data.
+    |
+    | NOTE: The timeout_minutes setting is now configurable via the Admin Panel
+    | (Settings → System Settings → Session Settings). The database value takes
+    | precedence over this config value.
+    |
+    */
+    'auto_logout' => [
+        // Enable/disable auto-logout feature
+        'enabled' => env('CONCURE_AUTO_LOGOUT_ENABLED', true),
+
+        // Inactivity timeout in minutes (FALLBACK ONLY - use Admin Panel to configure)
+        // This value is only used if no database setting exists
+        // Configure via: Settings → System Settings → Session Settings
+        'timeout_minutes' => env('CONCURE_AUTO_LOGOUT_TIMEOUT', 10),
+
+        // Warning time before logout in minutes (auto-calculated as 20% of timeout or 2 min, whichever is smaller)
+        'warning_minutes' => env('CONCURE_AUTO_LOGOUT_WARNING', 2),
+
+        // Keep-alive ping interval in seconds (default: 60 seconds)
+        // How often to ping server during active use
+        'keepalive_interval' => env('CONCURE_AUTO_LOGOUT_KEEPALIVE', 60),
+
+        // Activities that reset the inactivity timer
+        'tracked_events' => [
+            'mousemove',
+            'mousedown',
+            'keypress',
+            'scroll',
+            'touchstart',
+            'click',
+        ],
+    ],
+
 ];

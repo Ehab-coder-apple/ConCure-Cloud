@@ -31,6 +31,37 @@
                             <p class="login-subtitle">Sign in to your clinic dashboard</p>
                         </div>
 
+                        @if(session('auto_logout_reason'))
+                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                <i class="fas fa-clock me-2"></i>
+                                <strong>Session Expired</strong>
+                                @if(session('auto_logout_reason') === 'inactivity')
+                                    <p class="mb-0">You were automatically logged out due to inactivity. This is a security measure to protect sensitive medical data.</p>
+                                @elseif(session('auto_logout_reason') === 'session_expired')
+                                    <p class="mb-0">Your session has expired. Please log in again to continue.</p>
+                                @else
+                                    <p class="mb-0">You have been logged out. Please log in again to continue.</p>
+                                @endif
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>
+                                {{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
+                        @if(session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                {{ session('error') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
                         <form method="POST" action="{{ route('login') }}" class="login-form needs-validation" novalidate id="loginForm">
                             @csrf
 

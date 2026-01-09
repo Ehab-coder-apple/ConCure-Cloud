@@ -115,7 +115,18 @@ class SettingsController extends Controller
             }
         } catch (\Throwable $e) { /* ignore */ }
 
-        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups', 'clinicsAutoBackup', 'manualDocTypes', 'manualIncludeDb'));
+        // Get global settings (admin only)
+        $globalSettings = [];
+        if ($user->role === 'admin' || (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
+            $sessionLifetime = DB::table('settings')
+                ->whereNull('clinic_id')
+                ->where('key', 'session_lifetime')
+                ->value('value');
+
+            $globalSettings['session_lifetime'] = $sessionLifetime ?? 480; // Default 8 hours
+        }
+
+        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups', 'clinicsAutoBackup', 'manualDocTypes', 'manualIncludeDb', 'globalSettings'));
     }
 
     public function setClinicAutoBackup(Request $request)
@@ -888,6 +899,53 @@ class SettingsController extends Controller
             'success' => false,
             'message' => __('System update feature is coming soon.')
         ]);
+    }
+
+    /**
+     * Update session lifetime setting
+     */
+    public function updateSessionLifetime(Request $request)
+    {
+        $user = Auth::user();
+
+        // Only allow admins to update session lifetime
+        if ($user->role !== 'admin' && !(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
+            return response()->json([
+                'success' => false,
+                'message' => __('Unauthorized. Only administrators can update session settings.')
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'session_lifetime' => 'required|integer|min:5|max:43200', // Min 5 minutes, Max 30 days
+        ]);
+
+        try {
+            DB::table('settings')->updateOrInsert(
+                [
+                    'clinic_id' => null,
+                    'key' => 'session_lifetime'
+                ],
+                [
+                    'value' => $validated['session_lifetime'],
+                    'type' => 'integer',
+                    'updated_at' => now()
+                ]
+            );
+
+            // Update the session config in runtime
+            config(['session.lifetime' => $validated['session_lifetime']]);
+
+            return response()->json([
+                'success' => true,
+                'message' => __('Session lifetime updated successfully. New sessions will use :minutes minutes.', ['minutes' => $validated['session_lifetime']])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => __('Failed to update session lifetime: :error', ['error' => $e->getMessage()])
+            ], 500);
+        }
     }
 
     /**

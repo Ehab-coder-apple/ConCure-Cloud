@@ -1786,6 +1786,14 @@
     <!-- Smart Search Utility -->
     <script src="{{ asset('js/smart-search.js') }}"></script>
 
+    <!-- Auto-Logout Security Module -->
+    @auth
+    <script>
+        console.log('🔍 Checking auto-logout.js path:', '{{ asset('js/auto-logout.js') }}');
+    </script>
+    <script src="{{ asset('js/auto-logout.js') }}" onerror="console.error('❌ Failed to load auto-logout.js')"></script>
+    @endauth
+
     <!-- Sidebar JS -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {

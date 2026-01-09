@@ -167,6 +167,7 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\ConCureServiceProvider::class,
+        App\Providers\SessionConfigServiceProvider::class,
     ])->toArray(),
 
     /*
