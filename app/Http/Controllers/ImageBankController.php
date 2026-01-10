@@ -16,10 +16,10 @@ class ImageBankController extends Controller
     {
         $user = auth()->user();
 
-        // Permissions: allow anyone who can manage/view patients; in dev, bypass
+        // Permissions: require patients_images permission or admin access
         if (!(config('app.debug') || env('DISABLE_PERMISSIONS', true))) {
-            if (!$user || (!$user->canManagePatients() && !$user->hasPermission('patients_view'))) {
-                abort(403);
+            if (!$user || (!$user->canManagePatients() && !$user->hasPermission('patients_images') && !$user->hasPermission('patients_view'))) {
+                abort(403, 'You do not have permission to access the Medical Image Bank.');
             }
         }
 

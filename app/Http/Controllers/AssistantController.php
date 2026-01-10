@@ -14,6 +14,14 @@ class AssistantController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+
+        // Check permission for AI Assistant access
+        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', true))) {
+            if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('ai_assistant_access')) {
+                abort(403, 'You do not have permission to access the AI Medical Assistant.');
+            }
+        }
+
         $accepted = AiDisclaimerAcceptance::where('user_id', $user->id)->exists();
         $messages = AiChatMessage::where('user_id', $user->id)
             ->orderBy('created_at')
@@ -30,6 +38,14 @@ class AssistantController extends Controller
     public function acceptDisclaimer(Request $request)
     {
         $user = Auth::user();
+
+        // Check permission for AI Assistant access
+        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', true))) {
+            if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('ai_assistant_access')) {
+                abort(403, 'You do not have permission to access the AI Medical Assistant.');
+            }
+        }
+
         AiDisclaimerAcceptance::updateOrCreate(
             ['user_id' => $user->id],
             [
@@ -44,6 +60,14 @@ class AssistantController extends Controller
     public function clearHistory(Request $request)
     {
         $user = Auth::user();
+
+        // Check permission for AI Assistant access
+        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', true))) {
+            if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('ai_assistant_access')) {
+                abort(403, 'You do not have permission to access the AI Medical Assistant.');
+            }
+        }
+
         AiChatMessage::where('user_id', $user->id)->delete();
         return back()->with('success', __('Chat history cleared.'));
     }
@@ -55,6 +79,14 @@ class AssistantController extends Controller
         ]);
 
         $user = Auth::user();
+
+        // Check permission for AI Assistant access
+        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', true))) {
+            if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('ai_assistant_access')) {
+                abort(403, 'You do not have permission to access the AI Medical Assistant.');
+            }
+        }
+
         $accepted = AiDisclaimerAcceptance::where('user_id', $user->id)->exists();
         if (!$accepted) {
             return redirect()->route('assistant.index')->with('error', __('Please accept the disclaimer to use the assistant.'));

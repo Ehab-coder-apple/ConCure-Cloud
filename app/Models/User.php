@@ -761,6 +761,7 @@ class User extends Authenticatable
                 'patients_delete' => 'Delete Patients',
                 'patients_files' => 'Manage Patient Files',
                 'patients_history' => 'View Patient History',
+                'patients_images' => 'Access Medical Image Bank',
             ],
             'prescriptions' => [
                 'prescriptions_view' => 'View Prescriptions',
@@ -850,6 +851,9 @@ class User extends Authenticatable
                 'reports_export' => 'Export Reports',
                 'reports_audit' => 'View Audit Logs',
             ],
+            'ai_assistant' => [
+                'ai_assistant_access' => 'Access AI Medical Assistant',
+            ],
         ];
     }
 
@@ -924,6 +928,11 @@ class User extends Authenticatable
                 'name' => 'Reports & Analytics',
                 'icon' => 'fas fa-chart-bar',
                 'color' => 'info',
+            ],
+            'ai_assistant' => [
+                'name' => 'AI Medical Assistant',
+                'icon' => 'fas fa-robot',
+                'color' => 'primary',
             ],
         ];
     }

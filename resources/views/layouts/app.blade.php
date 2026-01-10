@@ -1448,7 +1448,7 @@
                         </li>
 
                             <!-- Medical Image Bank -->
-                            @if(Auth::user()->canAccessSection('patients'))
+                            @if(Auth::user()->hasPermission('patients_images') || Auth::user()->canManagePatients())
                             <li class="nav-item">
                                 <a href="{{ route('image-bank.index') }}" class="nav-link {{ request()->routeIs('image-bank.*') ? 'active' : '' }}">
                                     <i class="nav-icon fas fa-images"></i>
@@ -1470,8 +1470,8 @@
                                 </a>
                             </li>
 
-                            @if(Route::has('assistant.index'))
-                            <!-- AI Medical Assistant (available to all authenticated users) -->
+                            @if(Route::has('assistant.index') && (Auth::user()->hasPermission('ai_assistant_access') || Auth::user()->isSuperAdmin() || Auth::user()->isClinicAdmin()))
+                            <!-- AI Medical Assistant -->
                             <li class="nav-item">
                                 <a href="{{ route('assistant.index') }}" class="nav-link {{ request()->routeIs('assistant.*') ? 'active' : '' }}">
                                     <i class="nav-icon fas fa-robot"></i>
