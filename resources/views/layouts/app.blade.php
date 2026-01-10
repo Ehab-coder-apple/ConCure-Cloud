@@ -1448,7 +1448,7 @@
                         </li>
 
                             <!-- Medical Image Bank -->
-                            @if(Auth::user()->hasPermission('patients_images') || Auth::user()->canManagePatients())
+                            @if(Auth::user()->hasPermission('patients_images') || Auth::user()->isSuperAdmin() || Auth::user()->isClinicAdmin())
                             <li class="nav-item">
                                 <a href="{{ route('image-bank.index') }}" class="nav-link {{ request()->routeIs('image-bank.*') ? 'active' : '' }}">
                                     <i class="nav-icon fas fa-images"></i>
