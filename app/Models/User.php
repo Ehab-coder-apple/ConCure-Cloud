@@ -882,7 +882,7 @@ class User extends Authenticatable
             'image_bank' => [
                 'name' => 'Medical Image Bank',
                 'icon' => 'fas fa-images',
-                'color' => 'purple',
+                'color' => 'primary',
             ],
             'prescriptions' => [
                 'name' => 'Prescriptions',
