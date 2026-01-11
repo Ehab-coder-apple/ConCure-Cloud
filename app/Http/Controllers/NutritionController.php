@@ -76,16 +76,19 @@ class NutritionController extends Controller
         $nutritionPlans = $query->latest()->paginate(15);
 
         // Get statistics
+        $statsQuery = DietPlan::whereHas('patient', function ($q) use ($user) {
+            $q->where('clinic_id', $user->clinic_id);
+        });
+
+        // Filter statistics by doctor if user is a doctor or nutritionist
+        if (in_array($user->role, ['doctor', 'nutritionist'])) {
+            $statsQuery->where('doctor_id', $user->id);
+        }
+
         $stats = [
-            'total' => DietPlan::whereHas('patient', function ($q) use ($user) {
-                $q->where('clinic_id', $user->clinic_id);
-            })->count(),
-            'active' => DietPlan::whereHas('patient', function ($q) use ($user) {
-                $q->where('clinic_id', $user->clinic_id);
-            })->where('status', 'active')->count(),
-            'completed' => DietPlan::whereHas('patient', function ($q) use ($user) {
-                $q->where('clinic_id', $user->clinic_id);
-            })->where('status', 'completed')->count(),
+            'total' => (clone $statsQuery)->count(),
+            'active' => (clone $statsQuery)->where('status', 'active')->count(),
+            'completed' => (clone $statsQuery)->where('status', 'completed')->count(),
         ];
 
         // Get patients for filter dropdown
