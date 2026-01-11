@@ -36,9 +36,9 @@ class AppointmentController extends Controller
             ->where('appointments.clinic_id', $user->clinic_id);
 
         // Filter by doctor for non-admin users
-        // Only Super Admins, Clinic Admins, and users with appointments_manage permission can see all appointments
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
-            // Regular doctors and other users can only see their own appointments
+        // Only Super Admins and Clinic Admins can see all appointments
+        // Regular doctors and other users can only see their own appointments
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
             $query->where('appointments.doctor_id', $user->id);
         }
 
@@ -115,7 +115,7 @@ class AppointmentController extends Controller
                     ->where('appointments.clinic_id', $user->clinic_id);
 
                 // Apply same role-based filtering for calendar view
-                if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+                if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
                     $calendarQuery->where('appointments.doctor_id', $user->id);
                 }
 
@@ -353,7 +353,7 @@ class AppointmentController extends Controller
             ->where('appointments.clinic_id', $user->clinic_id);
 
         // Apply role-based filtering
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
             $query->where('appointments.doctor_id', $user->id);
         }
 
@@ -378,7 +378,7 @@ class AppointmentController extends Controller
             ->where('clinic_id', $user->clinic_id);
 
         // Apply role-based filtering
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
             $query->where('doctor_id', $user->id);
         }
 
@@ -448,7 +448,7 @@ class AppointmentController extends Controller
             ->where('clinic_id', $user->clinic_id);
 
         // Apply role-based filtering
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
             $query->where('doctor_id', $user->id);
         }
 
@@ -474,7 +474,7 @@ class AppointmentController extends Controller
             ->where('clinic_id', $user->clinic_id);
 
         // Apply role-based filtering
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
             $query->where('doctor_id', $user->id);
         }
 
@@ -504,7 +504,7 @@ class AppointmentController extends Controller
             ->where('clinic_id', $user->clinic_id);
 
         // Apply role-based filtering
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
             $query->where('doctor_id', $user->id);
         }
 
