@@ -19,6 +19,8 @@ class AppointmentController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
+
         $query = DB::table('appointments')
             ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
             ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
@@ -31,7 +33,14 @@ class AppointmentController extends Controller
                 'doctors.first_name as doctor_first_name',
                 'doctors.last_name as doctor_last_name'
             )
-            ->where('appointments.clinic_id', Auth::user()->clinic_id);
+            ->where('appointments.clinic_id', $user->clinic_id);
+
+        // Filter by doctor for non-admin users
+        // Only Super Admins, Clinic Admins, and users with appointments_manage permission can see all appointments
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+            // Regular doctors and other users can only see their own appointments
+            $query->where('appointments.doctor_id', $user->id);
+        }
 
         // Apply filters
         if ($request->filled('status')) {
@@ -103,7 +112,12 @@ class AppointmentController extends Controller
                         'doctors.first_name as doctor_first_name',
                         'doctors.last_name as doctor_last_name'
                     )
-                    ->where('appointments.clinic_id', Auth::user()->clinic_id);
+                    ->where('appointments.clinic_id', $user->clinic_id);
+
+                // Apply same role-based filtering for calendar view
+                if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+                    $calendarQuery->where('appointments.doctor_id', $user->id);
+                }
 
                 if ($legacy) {
                     $calendarQuery = $calendarQuery
@@ -314,7 +328,9 @@ class AppointmentController extends Controller
      */
     public function show($id)
     {
-        $appointment = DB::table('appointments')
+        $user = Auth::user();
+
+        $query = DB::table('appointments')
             ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
             ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
             ->leftJoin('users as creators', 'appointments.created_by', '=', 'creators.id')
@@ -334,8 +350,14 @@ class AppointmentController extends Controller
                 'creators.last_name as creator_last_name'
             )
             ->where('appointments.id', $id)
-            ->where('appointments.clinic_id', Auth::user()->clinic_id)
-            ->first();
+            ->where('appointments.clinic_id', $user->clinic_id);
+
+        // Apply role-based filtering
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+            $query->where('appointments.doctor_id', $user->id);
+        }
+
+        $appointment = $query->first();
 
         if (!$appointment) {
             abort(404, 'Appointment not found');
@@ -349,10 +371,18 @@ class AppointmentController extends Controller
      */
     public function edit($id)
     {
-        $appointment = DB::table('appointments')
+        $user = Auth::user();
+
+        $query = DB::table('appointments')
             ->where('id', $id)
-            ->where('clinic_id', Auth::user()->clinic_id)
-            ->first();
+            ->where('clinic_id', $user->clinic_id);
+
+        // Apply role-based filtering
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+            $query->where('doctor_id', $user->id);
+        }
+
+        $appointment = $query->first();
 
         if (!$appointment) {
             abort(404, 'Appointment not found');
@@ -411,10 +441,18 @@ class AppointmentController extends Controller
             $data['duration_minutes'] = $request->duration ?? 30;
         }
 
-        $updated = DB::table('appointments')
+        $user = Auth::user();
+
+        $query = DB::table('appointments')
             ->where('id', $id)
-            ->where('clinic_id', Auth::user()->clinic_id)
-            ->update($data);
+            ->where('clinic_id', $user->clinic_id);
+
+        // Apply role-based filtering
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+            $query->where('doctor_id', $user->id);
+        }
+
+        $updated = $query->update($data);
 
         if ($updated) {
             return redirect()->route('appointments.show', $id)
@@ -429,10 +467,18 @@ class AppointmentController extends Controller
      */
     public function destroy($id)
     {
-        $deleted = DB::table('appointments')
+        $user = Auth::user();
+
+        $query = DB::table('appointments')
             ->where('id', $id)
-            ->where('clinic_id', Auth::user()->clinic_id)
-            ->delete();
+            ->where('clinic_id', $user->clinic_id);
+
+        // Apply role-based filtering
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+            $query->where('doctor_id', $user->id);
+        }
+
+        $deleted = $query->delete();
 
         if ($deleted) {
             return redirect()->route('appointments.index')
@@ -451,13 +497,21 @@ class AppointmentController extends Controller
             'status' => 'required|in:scheduled,confirmed,completed,cancelled'
         ]);
 
-        $updated = DB::table('appointments')
+        $user = Auth::user();
+
+        $query = DB::table('appointments')
             ->where('id', $id)
-            ->where('clinic_id', Auth::user()->clinic_id)
-            ->update([
-                'status' => $request->status,
-                'updated_at' => now(),
-            ]);
+            ->where('clinic_id', $user->clinic_id);
+
+        // Apply role-based filtering
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('appointments_manage')) {
+            $query->where('doctor_id', $user->id);
+        }
+
+        $updated = $query->update([
+            'status' => $request->status,
+            'updated_at' => now(),
+        ]);
 
         if ($updated) {
             return response()->json([
