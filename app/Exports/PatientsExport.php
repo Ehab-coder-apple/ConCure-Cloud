@@ -16,10 +16,12 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 class PatientsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
     protected $clinicId;
+    protected $user;
 
-    public function __construct($clinicId = null)
+    public function __construct($clinicId = null, $user = null)
     {
         $this->clinicId = $clinicId;
+        $this->user = $user;
     }
 
     /**
@@ -31,6 +33,22 @@ class PatientsExport implements FromCollection, WithHeadings, WithMapping, WithS
 
         if ($this->clinicId) {
             $query->where('clinic_id', $this->clinicId);
+        }
+
+        // Filter patients based on user role
+        if ($this->user && !$this->user->isSuperAdmin() && !$this->user->isClinicAdmin()) {
+            $userId = $this->user->id;
+            $query->where(function($q) use ($userId) {
+                $q->whereHas('appointments', function($appointmentQuery) use ($userId) {
+                    $appointmentQuery->where('doctor_id', $userId);
+                })
+                ->orWhereHas('prescriptions', function($prescriptionQuery) use ($userId) {
+                    $prescriptionQuery->where('doctor_id', $userId);
+                })
+                ->orWhereHas('simplePrescriptions', function($simplePrescriptionQuery) use ($userId) {
+                    $simplePrescriptionQuery->where('doctor_id', $userId);
+                });
+            });
         }
 
         return $query->orderBy('created_at', 'desc')->get();

@@ -43,6 +43,23 @@ class PatientController extends Controller
             $query->byClinic($user->clinic_id);
         }
 
+        // Filter patients based on user role
+        // Only Super Admins and Clinic Admins can see all patients
+        // Regular doctors can only see patients they have appointments or prescriptions with
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            $query->where(function($q) use ($user) {
+                $q->whereHas('appointments', function($appointmentQuery) use ($user) {
+                    $appointmentQuery->where('doctor_id', $user->id);
+                })
+                ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
+                    $prescriptionQuery->where('doctor_id', $user->id);
+                })
+                ->orWhereHas('simplePrescriptions', function($simplePrescriptionQuery) use ($user) {
+                    $simplePrescriptionQuery->where('doctor_id', $user->id);
+                });
+            });
+        }
+
         // Apply smart search filter
         $searchTerm = $this->getValidatedSearchTerm($request);
         if ($searchTerm !== null) {
@@ -388,6 +405,22 @@ class PatientController extends Controller
         if ($user->clinic_id) {
             $query->where('clinic_id', $user->clinic_id);
         }
+
+        // Filter patients based on user role
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            $query->where(function($q) use ($user) {
+                $q->whereHas('appointments', function($appointmentQuery) use ($user) {
+                    $appointmentQuery->where('doctor_id', $user->id);
+                })
+                ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
+                    $prescriptionQuery->where('doctor_id', $user->id);
+                })
+                ->orWhereHas('simplePrescriptions', function($simplePrescriptionQuery) use ($user) {
+                    $simplePrescriptionQuery->where('doctor_id', $user->id);
+                });
+            });
+        }
+
         $query->orderBy('first_name')
                         ->orderBy('last_name');
 
@@ -581,22 +614,30 @@ class PatientController extends Controller
      */
     private function authorizePatientAccess(Patient $patient): void
     {
-        // DEVELOPMENT MODE: Completely disable patient access authorization
-        if (config('app.debug') || env('DISABLE_PERMISSIONS', true)) {
-            return; // Allow all access during development
-        }
-
         $user = auth()->user();
+
+        // Super admins can access all patients
+        if ($user->isSuperAdmin()) {
+            return;
+        }
 
         // Users can only access patients in their clinic
         if ($patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to patient.');
         }
 
-        // Permission-based access only
-        if (!$user->hasPermission('patients_view') &&
-            !$user->canManagePatients()) {
-            abort(403, 'Insufficient permissions to view patients.');
+        // Clinic admins can access all patients in their clinic
+        if ($user->isClinicAdmin()) {
+            return;
+        }
+
+        // Regular doctors can only access patients they have appointments or prescriptions with
+        $hasAccess = $patient->appointments()->where('doctor_id', $user->id)->exists()
+                  || $patient->prescriptions()->where('doctor_id', $user->id)->exists()
+                  || $patient->simplePrescriptions()->where('doctor_id', $user->id)->exists();
+
+        if (!$hasAccess) {
+            abort(403, 'You can only access patients you have appointments or prescriptions with.');
         }
     }
 
@@ -734,7 +775,7 @@ class PatientController extends Controller
             $clinicId = $user->clinic_id;
 
             return Excel::download(
-                new PatientsExport($clinicId),
+                new PatientsExport($clinicId, $user),
                 $filename,
                 \Maatwebsite\Excel\Excel::XLSX,
                 [
@@ -767,6 +808,21 @@ class PatientController extends Controller
             // Restrict to clinic for non-super admin users
             if ($user->clinic_id) {
                 $query->where('clinic_id', $user->clinic_id);
+            }
+
+            // Filter patients based on user role
+            if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+                $query->where(function($q) use ($user) {
+                    $q->whereHas('appointments', function($appointmentQuery) use ($user) {
+                        $appointmentQuery->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
+                        $prescriptionQuery->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('simplePrescriptions', function($simplePrescriptionQuery) use ($user) {
+                        $simplePrescriptionQuery->where('doctor_id', $user->id);
+                    });
+                });
             }
 
             $count = $query->count();
@@ -833,6 +889,21 @@ class PatientController extends Controller
             // Restrict to clinic for non-super admin users
             if ($user->clinic_id) {
                 $query->where('clinic_id', $user->clinic_id);
+            }
+
+            // Filter patients based on user role
+            if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+                $query->where(function($q) use ($user) {
+                    $q->whereHas('appointments', function($appointmentQuery) use ($user) {
+                        $appointmentQuery->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
+                        $prescriptionQuery->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('simplePrescriptions', function($simplePrescriptionQuery) use ($user) {
+                        $simplePrescriptionQuery->where('doctor_id', $user->id);
+                    });
+                });
             }
 
             $count = $query->count();

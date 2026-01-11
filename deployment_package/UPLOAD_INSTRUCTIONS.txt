@@ -1,0 +1,69 @@
+================================================================================
+AUTO-LOGOUT FEATURE - MANUAL DEPLOYMENT INSTRUCTIONS
+================================================================================
+
+STEP 1: Upload New Files
+-------------------------
+Upload these NEW files to your server (create directories if they don't exist):
+
+1. public/js/auto-logout.js
+   → Upload to: /home/master_mmthsmyaaw/public_html/public/js/auto-logout.js
+
+2. app/Http/Controllers/SessionActivityController.php
+   → Upload to: /home/master_mmthsmyaaw/public_html/app/Http/Controllers/SessionActivityController.php
+
+3. app/Providers/SessionConfigServiceProvider.php
+   → Upload to: /home/master_mmthsmyaaw/public_html/app/Providers/SessionConfigServiceProvider.php
+
+4. database/migrations/2026_01_08_184121_add_session_lifetime_to_settings_table.php
+   → Upload to: /home/master_mmthsmyaaw/public_html/database/migrations/2026_01_08_184121_add_session_lifetime_to_settings_table.php
+
+
+STEP 2: Replace Modified Files
+-------------------------------
+BACKUP the old files first, then upload these MODIFIED files:
+
+1. resources/views/layouts/app.blade.php
+2. resources/views/master/layouts/app.blade.php
+3. resources/views/settings/index.blade.php
+4. resources/views/auth/login.blade.php
+5. routes/web.php
+6. config/concure.php
+7. config/app.php
+8. app/Http/Controllers/SettingsController.php
+9. app/Http/Kernel.php
+
+
+STEP 3: Run Commands via SSH or Terminal in cPanel
+---------------------------------------------------
+ssh master_mmthsmyaaw@your-server-ip
+
+cd /home/master_mmthsmyaaw/public_html
+
+# Run migration
+php artisan migrate --force
+
+# Clear caches
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+php artisan route:clear
+
+# Rebuild caches
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# Fix permissions
+chmod -R 755 storage bootstrap/cache public/js
+chown -R master_mmthsmyaaw:master_mmthsmyaaw storage bootstrap/cache public/js
+
+
+STEP 4: Verify Deployment
+--------------------------
+1. Refresh your browser (Ctrl+Shift+R)
+2. Open browser console (F12)
+3. You should see: "🔐 Auto-logout initialized"
+4. Check Settings > System Settings for "Session Duration" field
+
+================================================================================
