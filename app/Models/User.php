@@ -761,7 +761,13 @@ class User extends Authenticatable
                 'patients_delete' => 'Delete Patients',
                 'patients_files' => 'Manage Patient Files',
                 'patients_history' => 'View Patient History',
+            ],
+            'image_bank' => [
                 'patients_images' => 'Access Medical Image Bank',
+                'image_bank_view' => 'View Medical Images',
+                'image_bank_upload' => 'Upload Medical Images',
+                'image_bank_delete' => 'Delete Medical Images',
+                'image_bank_manage' => 'Full Image Bank Management',
             ],
             'prescriptions' => [
                 'prescriptions_view' => 'View Prescriptions',
@@ -873,6 +879,11 @@ class User extends Authenticatable
                 'icon' => 'fas fa-users',
                 'color' => 'info',
             ],
+            'image_bank' => [
+                'name' => 'Medical Image Bank',
+                'icon' => 'fas fa-images',
+                'color' => 'purple',
+            ],
             'prescriptions' => [
                 'name' => 'Prescriptions',
                 'icon' => 'fas fa-prescription-bottle-alt',
@@ -903,7 +914,11 @@ class User extends Authenticatable
                 'icon' => 'fas fa-vials',
                 'color' => 'info',
             ],
-
+            'radiology' => [
+                'name' => 'Radiology',
+                'icon' => 'fas fa-x-ray',
+                'color' => 'primary',
+            ],
             'food_database' => [
                 'name' => 'Food Database',
                 'icon' => 'fas fa-database',
