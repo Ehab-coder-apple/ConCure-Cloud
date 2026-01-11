@@ -21,9 +21,9 @@ class MedicineController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
+
         $query = Medicine::with(['creator'])
-            ->where('clinic_id', $user->clinic_id);
+            ->visibleToUser($user);
 
         // Apply smart search filter
         $searchTerm = $this->getValidatedSearchTerm($request);
@@ -49,12 +49,13 @@ class MedicineController extends Controller
 
         $medicines = $query->latest()->paginate(15);
 
-        // Get statistics
+        // Get statistics - apply same visibility filtering
+        $statsQuery = Medicine::visibleToUser($user);
         $stats = [
-            'total' => Medicine::where('clinic_id', $user->clinic_id)->count(),
-            'active' => Medicine::where('clinic_id', $user->clinic_id)->where('is_active', true)->count(),
-            'frequent' => Medicine::where('clinic_id', $user->clinic_id)->where('is_frequent', true)->count(),
-            'forms' => Medicine::where('clinic_id', $user->clinic_id)->distinct('form')->count('form'),
+            'total' => $statsQuery->count(),
+            'active' => (clone $statsQuery)->where('is_active', true)->count(),
+            'frequent' => (clone $statsQuery)->where('is_frequent', true)->count(),
+            'forms' => (clone $statsQuery)->distinct('form')->count('form'),
         ];
 
         return view('medicines.index', compact('medicines', 'stats'));
@@ -261,8 +262,8 @@ class MedicineController extends Controller
         // Validate and get search term (supports both 'q' and 'search' parameters)
         $searchTerm = $this->getValidatedSearchTerm($request, 'q');
 
-        // Build query
-        $query = Medicine::where('clinic_id', $user->clinic_id)
+        // Build query with role-based filtering
+        $query = Medicine::visibleToUser($user)
             ->where('is_active', true);
 
         // Apply search if valid term provided
@@ -459,7 +460,7 @@ class MedicineController extends Controller
             $clinicId = $user->clinic_id;
 
             return Excel::download(
-                new MedicinesExport($clinicId),
+                new MedicinesExport($clinicId, $user),
                 $filename,
                 \Maatwebsite\Excel\Excel::XLSX,
                 [
@@ -487,11 +488,12 @@ class MedicineController extends Controller
         try {
             DB::beginTransaction();
 
-            $query = Medicine::whereIn('id', $request->medicine_ids);
+            $query = Medicine::whereIn('id', $request->medicine_ids)
+                ->visibleToUser($user);
 
-            // Restrict to clinic
-            if ($user->clinic_id) {
-                $query->where('clinic_id', $user->clinic_id);
+            // For regular users, only allow deleting their own medicines
+            if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+                $query->where('created_by', $user->id);
             }
 
             $count = $query->count();
@@ -532,7 +534,13 @@ class MedicineController extends Controller
         try {
             DB::beginTransaction();
 
-            $query = Medicine::where('clinic_id', $user->clinic_id);
+            $query = Medicine::visibleToUser($user);
+
+            // For regular users, only allow clearing their own medicines
+            if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+                $query->where('created_by', $user->id);
+            }
+
             $count = $query->count();
 
             // Delete all medicines

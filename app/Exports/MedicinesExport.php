@@ -16,10 +16,12 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 class MedicinesExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
     protected $clinicId;
+    protected $user;
 
-    public function __construct($clinicId = null)
+    public function __construct($clinicId = null, $user = null)
     {
         $this->clinicId = $clinicId;
+        $this->user = $user;
     }
 
     /**
@@ -29,7 +31,11 @@ class MedicinesExport implements FromCollection, WithHeadings, WithMapping, With
     {
         $query = Medicine::with(['clinic', 'creator']);
 
-        if ($this->clinicId) {
+        // Apply role-based filtering if user is provided
+        if ($this->user) {
+            $query->visibleToUser($this->user);
+        } elseif ($this->clinicId) {
+            // Fallback to clinic filtering if no user provided
             $query->where('clinic_id', $this->clinicId);
         }
 

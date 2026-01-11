@@ -143,4 +143,37 @@ class Medicine extends Model
     {
         return $query->where('form', $form);
     }
+
+    /**
+     * Scope to filter by creator.
+     */
+    public function scopeByCreator($query, int $creatorId)
+    {
+        return $query->where('created_by', $creatorId);
+    }
+
+    /**
+     * Scope to filter medicines visible to a specific user based on role.
+     * Regular users see: their own medicines + admin-uploaded medicines
+     * Admins see: all medicines in their clinic
+     */
+    public function scopeVisibleToUser($query, User $user)
+    {
+        // Super Admins and Clinic Admins see all medicines in their clinic
+        if ($user->isSuperAdmin() || $user->isClinicAdmin()) {
+            return $query->where('clinic_id', $user->clinic_id);
+        }
+
+        // Regular users see their own medicines + medicines uploaded by admins
+        return $query->where('clinic_id', $user->clinic_id)
+            ->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id) // Their own medicines
+                  ->orWhereHas('creator', function ($creatorQuery) { // Or medicines uploaded by admins
+                      $creatorQuery->where(function ($adminQuery) {
+                          $adminQuery->where('role', 'super_admin')
+                                    ->orWhere('role', 'admin');
+                      });
+                  });
+            });
+    }
 }
