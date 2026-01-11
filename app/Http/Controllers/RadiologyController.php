@@ -60,6 +60,12 @@ class RadiologyController extends Controller
 
         // Get statistics (avoid byClinic when clinic_id is null)
         $base = $user->clinic_id ? RadiologyRequest::byClinic($user->clinic_id) : RadiologyRequest::query();
+
+        // Filter statistics by doctor if user is a doctor
+        if (in_array($user->role, ['doctor', 'nutritionist'])) {
+            $base = $base->byDoctor($user->id);
+        }
+
         $stats = [
             'total' => (clone $base)->count(),
             'pending' => (clone $base)->byStatus('pending')->count(),
