@@ -76,6 +76,11 @@ class FormTemplate extends Model
         });
     }
 
+    public function scopeByCreator($query, int $creatorId)
+    {
+        return $query->where('created_by', $creatorId);
+    }
+
     // Helpers
     public static function storageBaseDir(): string
     {

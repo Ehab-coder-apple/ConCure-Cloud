@@ -61,7 +61,14 @@ class PatientFormController extends Controller
             abort(403, 'You do not have permission to assign forms.');
         }
 
-        $templates = FormTemplate::forClinic($patient->clinic_id)->active()->orderBy('name')->get();
+        $templatesQuery = FormTemplate::forClinic($patient->clinic_id)->active();
+
+        // Filter by creator for regular doctors
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            $templatesQuery->byCreator($user->id);
+        }
+
+        $templates = $templatesQuery->orderBy('name')->get();
 
         return view('patients.forms.create', [
             'patient' => $patient,
@@ -90,6 +97,11 @@ class PatientFormController extends Controller
         // Ensure template belongs to the same clinic as the patient
         if ((int) $template->clinic_id !== (int) $patient->clinic_id) {
             abort(403, 'Unauthorized access to template.');
+        }
+
+        // Regular doctors can only assign their own templates
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $template->created_by !== $user->id) {
+            abort(403, 'You can only assign forms from templates you created.');
         }
 
         DB::transaction(function () use ($patient, $template, $user, $request) {

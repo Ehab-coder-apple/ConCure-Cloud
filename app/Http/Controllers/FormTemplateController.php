@@ -20,6 +20,11 @@ class FormTemplateController extends Controller
         $query = FormTemplate::query()->forClinic($user->clinic_id)
             ->search($request->get('search'));
 
+        // Filter by creator for regular doctors
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            $query->byCreator($user->id);
+        }
+
         if ($request->filled('status')) {
             $query->where('is_active', $request->get('status') === 'active');
         }
@@ -227,6 +232,11 @@ class FormTemplateController extends Controller
             $userClinicId = (int)$user->clinic_id;
             $templateClinicId = (int)$formTemplate->clinic_id;
             if ($userClinicId && $templateClinicId && $userClinicId !== $templateClinicId) {
+                abort(403, 'Unauthorized access to template.');
+            }
+
+            // Regular doctors can only access their own templates
+            if (!$user->isClinicAdmin() && $formTemplate->created_by !== $user->id) {
                 abort(403, 'Unauthorized access to template.');
             }
         }
