@@ -15,8 +15,16 @@ class SimplePrescriptionController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
         $query = SimplePrescription::with(['patient', 'doctor'])
-            ->forClinic(Auth::user()->clinic_id);
+            ->forClinic($user->clinic_id);
+
+        // Filter prescriptions based on user role
+        // Only Super Admins and Clinic Admins can see all prescriptions
+        // Regular doctors can only see their own prescriptions
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            $query->where('doctor_id', $user->id);
+        }
 
         // Filter by patient name
         if ($request->filled('patient_name')) {
@@ -156,25 +164,37 @@ class SimplePrescriptionController extends Controller
 
     public function show($id)
     {
+        $user = Auth::user();
         $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines'])
-            ->forClinic(Auth::user()->clinic_id)
+            ->forClinic($user->clinic_id)
             ->findOrFail($id);
+
+        // Authorization: Only allow access to own prescriptions for regular doctors
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+            abort(403, 'You can only view your own prescriptions.');
+        }
 
         return view('simple-prescriptions.show', compact('prescription'));
     }
 
     public function edit($id)
     {
+        $user = Auth::user();
         $prescription = SimplePrescription::with('medicines')
-            ->forClinic(Auth::user()->clinic_id)
+            ->forClinic($user->clinic_id)
             ->findOrFail($id);
 
-        $patients = Patient::where('clinic_id', Auth::user()->clinic_id)
+        // Authorization: Only allow editing own prescriptions for regular doctors
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+            abort(403, 'You can only edit your own prescriptions.');
+        }
+
+        $patients = Patient::where('clinic_id', $user->clinic_id)
             ->where('is_active', true)
             ->orderBy('first_name')
             ->get();
 
-        $medicines = Medicine::where('clinic_id', Auth::user()->clinic_id)
+        $medicines = Medicine::where('clinic_id', $user->clinic_id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -184,7 +204,13 @@ class SimplePrescriptionController extends Controller
 
     public function update(Request $request, $id)
     {
-        $prescription = SimplePrescription::forClinic(Auth::user()->clinic_id)->findOrFail($id);
+        $user = Auth::user();
+        $prescription = SimplePrescription::forClinic($user->clinic_id)->findOrFail($id);
+
+        // Authorization: Only allow updating own prescriptions for regular doctors
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+            abort(403, 'You can only update your own prescriptions.');
+        }
 
         // Simple validation
         $request->validate([
@@ -262,7 +288,13 @@ class SimplePrescriptionController extends Controller
 
     public function destroy($id)
     {
-        $prescription = SimplePrescription::forClinic(Auth::user()->clinic_id)->findOrFail($id);
+        $user = Auth::user();
+        $prescription = SimplePrescription::forClinic($user->clinic_id)->findOrFail($id);
+
+        // Authorization: Only allow deleting own prescriptions for regular doctors
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+            abort(403, 'You can only delete your own prescriptions.');
+        }
 
         $prescription->delete();
 
@@ -272,9 +304,15 @@ class SimplePrescriptionController extends Controller
 
     public function pdf($id)
     {
+        $user = Auth::user();
         $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
-            ->forClinic(Auth::user()->clinic_id)
+            ->forClinic($user->clinic_id)
             ->findOrFail($id);
+
+        // Authorization: Only allow PDF generation for own prescriptions for regular doctors
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+            abort(403, 'You can only generate PDF for your own prescriptions.');
+        }
 
         $pdf = Pdf::loadView('simple-prescriptions.pdf', compact('prescription'));
 
@@ -285,9 +323,15 @@ class SimplePrescriptionController extends Controller
 
     public function print($id)
     {
+        $user = Auth::user();
         $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
-            ->forClinic(Auth::user()->clinic_id)
+            ->forClinic($user->clinic_id)
             ->findOrFail($id);
+
+        // Authorization: Only allow printing own prescriptions for regular doctors
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+            abort(403, 'You can only print your own prescriptions.');
+        }
 
         return view('simple-prescriptions.print', compact('prescription'));
     }

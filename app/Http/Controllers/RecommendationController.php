@@ -587,6 +587,13 @@ class RecommendationController extends Controller
             $q->where('clinic_id', $user->clinic_id);
         });
 
+        // Filter prescriptions based on user role
+        // Only Super Admins and Clinic Admins can see all prescriptions
+        // Regular doctors can only see their own prescriptions
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            $query->where('doctor_id', $user->id);
+        }
+
         // Apply filters
         if ($request->filled('status')) {
             $query->byStatus($request->status);

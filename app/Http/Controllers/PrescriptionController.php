@@ -13,6 +13,7 @@ class PrescriptionController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
         $query = DB::table('prescriptions')
             ->leftJoin('patients', 'prescriptions.patient_id', '=', 'patients.id')
             ->leftJoin('users as doctors', 'prescriptions.doctor_id', '=', 'doctors.id')
@@ -24,7 +25,14 @@ class PrescriptionController extends Controller
                 'doctors.first_name as doctor_first_name',
                 'doctors.last_name as doctor_last_name'
             )
-            ->where('prescriptions.clinic_id', Auth::user()->clinic_id);
+            ->where('prescriptions.clinic_id', $user->clinic_id);
+
+        // Filter prescriptions based on user role
+        // Only Super Admins and Clinic Admins can see all prescriptions
+        // Regular doctors can only see their own prescriptions
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            $query->where('prescriptions.doctor_id', $user->id);
+        }
 
         // Apply filters
         if ($request->filled('search')) {
@@ -179,6 +187,7 @@ class PrescriptionController extends Controller
      */
     public function show($id)
     {
+        $user = Auth::user();
         $prescription = DB::table('prescriptions')
             ->leftJoin('patients', 'prescriptions.patient_id', '=', 'patients.id')
             ->leftJoin('users as doctors', 'prescriptions.doctor_id', '=', 'doctors.id')
@@ -200,11 +209,16 @@ class PrescriptionController extends Controller
                 'doctors.email as doctor_email'
             )
             ->where('prescriptions.id', $id)
-            ->where('prescriptions.clinic_id', Auth::user()->clinic_id)
+            ->where('prescriptions.clinic_id', $user->clinic_id)
             ->first();
 
         if (!$prescription) {
             abort(404, 'Prescription not found');
+        }
+
+        // Authorization: Only allow viewing own prescriptions for regular doctors
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+            abort(403, 'You can only view your own prescriptions.');
         }
 
         // Get prescription medicines
@@ -231,13 +245,19 @@ class PrescriptionController extends Controller
      */
     public function edit($id)
     {
+        $user = Auth::user();
         $prescription = DB::table('prescriptions')
             ->where('id', $id)
-            ->where('clinic_id', Auth::user()->clinic_id)
+            ->where('clinic_id', $user->clinic_id)
             ->first();
 
         if (!$prescription) {
             abort(404, 'Prescription not found');
+        }
+
+        // Authorization: Only allow editing own prescriptions for regular doctors
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+            abort(403, 'You can only edit your own prescriptions.');
         }
 
         $patients = DB::table('patients')
@@ -254,6 +274,23 @@ class PrescriptionController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $user = Auth::user();
+
+        // Check authorization before validation
+        $prescription = DB::table('prescriptions')
+            ->where('id', $id)
+            ->where('clinic_id', $user->clinic_id)
+            ->first();
+
+        if (!$prescription) {
+            abort(404, 'Prescription not found');
+        }
+
+        // Authorization: Only allow updating own prescriptions for regular doctors
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+            abort(403, 'You can only update your own prescriptions.');
+        }
+
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'diagnosis' => 'nullable|string|max:500',
@@ -266,7 +303,7 @@ class PrescriptionController extends Controller
 
         $updated = DB::table('prescriptions')
             ->where('id', $id)
-            ->where('clinic_id', Auth::user()->clinic_id)
+            ->where('clinic_id', $user->clinic_id)
             ->update([
                 'patient_id' => $request->patient_id,
                 'diagnosis' => $request->diagnosis,
@@ -291,8 +328,25 @@ class PrescriptionController extends Controller
      */
     public function destroy($id)
     {
+        $user = Auth::user();
+
         try {
             DB::beginTransaction();
+
+            // Check authorization before deletion
+            $prescription = DB::table('prescriptions')
+                ->where('id', $id)
+                ->where('clinic_id', $user->clinic_id)
+                ->first();
+
+            if (!$prescription) {
+                abort(404, 'Prescription not found');
+            }
+
+            // Authorization: Only allow deleting own prescriptions for regular doctors
+            if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+                abort(403, 'You can only delete your own prescriptions.');
+            }
 
             // Delete prescription medicines first
             DB::table('prescription_medicines')
@@ -302,7 +356,7 @@ class PrescriptionController extends Controller
             // Delete prescription
             $deleted = DB::table('prescriptions')
                 ->where('id', $id)
-                ->where('clinic_id', Auth::user()->clinic_id)
+                ->where('clinic_id', $user->clinic_id)
                 ->delete();
 
             DB::commit();
