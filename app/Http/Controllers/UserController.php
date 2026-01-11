@@ -209,7 +209,7 @@ class UserController extends Controller
     {
         $this->authorizeUserAccess($user);
 
-        $user->load('clinic', 'creator', 'createdUsers', 'auditLogs');
+        $user->load('clinic', 'creator', 'createdUsers', 'auditLogs', 'assistants', 'doctors');
 
         return view('users.show', compact('user'));
     }

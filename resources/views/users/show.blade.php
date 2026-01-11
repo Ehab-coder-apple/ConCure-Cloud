@@ -182,6 +182,19 @@
                                     <small class="text-muted">{{ __('Created By') }}</small>
                                     <div class="fw-bold">{{ $user->creator->full_name ?? 'System Administrator' }}</div>
                                 </div>
+                                @if($user->role === 'assistant' && $user->doctors->isNotEmpty())
+                                <div class="col-md-12">
+                                    <small class="text-muted">{{ __('Assigned to Doctor') }}</small>
+                                    <div class="fw-bold">
+                                        @foreach($user->doctors as $doctor)
+                                            <span class="badge bg-success me-1">
+                                                <i class="fas fa-user-md me-1"></i>
+                                                {{ $doctor->full_name }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>
