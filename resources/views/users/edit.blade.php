@@ -330,75 +330,6 @@
                                         </div>
                                     </div>
 
-                                    @if(($user->role ?? '') === 'doctor')
-                                    <!-- Assistants Management -->
-                                    <div class="col-12 mt-4">
-                                        <h6 class="text-primary border-bottom pb-2 mb-3">
-                                            <i class="fas fa-user-friends me-2"></i>
-                                            {{ __('Assigned Assistants') }}
-                                        </h6>
-
-                                        <div class="card">
-                                            <div class="card-body">
-                                                <div class="row g-3 align-items-end">
-                                                    <div class="col-md-8">
-                                                        <label class="form-label">{{ __('Add Assistant') }}</label>
-                                                        <form action="{{ route('users.assistants.attach', $user->id) }}" method="POST" class="d-flex gap-2">
-                                                            @csrf
-                                                            <select name="assistant_id" class="form-select">
-                                                                @forelse(($availableAssistants ?? collect()) as $assistant)
-                                                                    <option value="{{ $assistant->id }}">{{ $assistant->full_name }} ({{ $assistant->email }})</option>
-                                                                @empty
-                                                                    <option value="">{{ __('No available assistants in your clinic') }}</option>
-                                                                @endforelse
-                                                            </select>
-                                                            <button type="submit" class="btn btn-outline-primary">
-                                                                <i class="fas fa-user-plus me-1"></i> {{ __('Assign') }}
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-
-                                                <hr>
-
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm align-middle">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>{{ __('Name') }}</th>
-                                                                <th>{{ __('Email') }}</th>
-                                                                <th class="text-end">{{ __('Actions') }}</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @forelse(($assistants ?? collect()) as $assistant)
-                                                                <tr>
-                                                                    <td>{{ $assistant->full_name }}</td>
-                                                                    <td>{{ $assistant->email }}</td>
-                                                                    <td class="text-end">
-                                                                        <form action="{{ route('users.assistants.detach', [$user->id, $assistant->id]) }}" method="POST" onsubmit="return confirm('{{ __('Remove this assistant?') }}');">
-                                                                            @csrf
-                                                                            @method('DELETE')
-                                                                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                                                <i class="fas fa-user-minus me-1"></i> {{ __('Remove') }}
-                                                                            </button>
-                                                                        </form>
-                                                                    </td>
-                                                                </tr>
-                                                            @empty
-                                                                <tr>
-                                                                    <td colspan="3" class="text-muted">{{ __('No assistants assigned yet.') }}</td>
-                                                                </tr>
-                                                            @endforelse
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endif
-
-
                                     <!-- Password Change -->
                                     <div class="col-12 mt-4">
                                         <h6 class="text-primary border-bottom pb-2 mb-3">
@@ -446,6 +377,74 @@
                                     </div>
                                 </div>
                             </form>
+
+                            @if(($user->role ?? '') === 'doctor')
+                            <!-- Assistants Management - Moved outside main form to avoid nested forms -->
+                            <div class="mt-4">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-user-friends me-2"></i>
+                                    {{ __('Assigned Assistants') }}
+                                </h6>
+
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row g-3 align-items-end">
+                                            <div class="col-md-8">
+                                                <label class="form-label">{{ __('Add Assistant') }}</label>
+                                                <form action="{{ route('users.assistants.attach', $user->id) }}" method="POST" class="d-flex gap-2">
+                                                    @csrf
+                                                    <select name="assistant_id" class="form-select">
+                                                        @forelse(($availableAssistants ?? collect()) as $assistant)
+                                                            <option value="{{ $assistant->id }}">{{ $assistant->full_name }} ({{ $assistant->email }})</option>
+                                                        @empty
+                                                            <option value="">{{ __('No available assistants in your clinic') }}</option>
+                                                        @endforelse
+                                                    </select>
+                                                    <button type="submit" class="btn btn-outline-primary">
+                                                        <i class="fas fa-user-plus me-1"></i> {{ __('Assign') }}
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-sm align-middle">
+                                                <thead>
+                                                    <tr>
+                                                        <th>{{ __('Name') }}</th>
+                                                        <th>{{ __('Email') }}</th>
+                                                        <th class="text-end">{{ __('Actions') }}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @forelse(($assistants ?? collect()) as $assistant)
+                                                        <tr>
+                                                            <td>{{ $assistant->full_name }}</td>
+                                                            <td>{{ $assistant->email }}</td>
+                                                            <td class="text-end">
+                                                                <form action="{{ route('users.assistants.detach', [$user->id, $assistant->id]) }}" method="POST" onsubmit="return confirm('{{ __('Remove this assistant?') }}');">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                                        <i class="fas fa-user-minus me-1"></i> {{ __('Remove') }}
+                                                                    </button>
+                                                                </form>
+                                                            </td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td colspan="3" class="text-muted">{{ __('No assistants assigned yet.') }}</td>
+                                                        </tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>

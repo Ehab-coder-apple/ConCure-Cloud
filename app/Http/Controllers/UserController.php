@@ -302,6 +302,13 @@ class UserController extends Controller
             'permissions' => $request->input('permissions', []),
         ];
 
+        // Debug logging
+        \Log::info('User Update Request', [
+            'user_id' => $user->id,
+            'permissions_input' => $request->input('permissions', []),
+            'all_request_data' => $request->all(),
+        ]);
+
         // Clinic users cannot change clinic assignment
 
         if ($request->filled('password')) {
