@@ -391,19 +391,24 @@
                                         <div class="row g-3 align-items-end">
                                             <div class="col-md-8">
                                                 <label class="form-label">{{ __('Add Assistant') }}</label>
-                                                <form action="{{ route('users.assistants.attach', $user->id) }}" method="POST" class="d-flex gap-2">
-                                                    @csrf
-                                                    <select name="assistant_id" class="form-select">
-                                                        @forelse(($availableAssistants ?? collect()) as $assistant)
-                                                            <option value="{{ $assistant->id }}">{{ $assistant->full_name }} ({{ $assistant->email }})</option>
-                                                        @empty
-                                                            <option value="">{{ __('No available assistants in your clinic') }}</option>
-                                                        @endforelse
-                                                    </select>
-                                                    <button type="submit" class="btn btn-outline-primary">
-                                                        <i class="fas fa-user-plus me-1"></i> {{ __('Assign') }}
-                                                    </button>
-                                                </form>
+                                                @if(($availableAssistants ?? collect())->isNotEmpty())
+                                                    <form action="{{ route('users.assistants.attach', $user->id) }}" method="POST" class="d-flex gap-2">
+                                                        @csrf
+                                                        <select name="assistant_id" class="form-select" required>
+                                                            @foreach($availableAssistants as $assistant)
+                                                                <option value="{{ $assistant->id }}">{{ $assistant->full_name }} ({{ $assistant->email }})</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <button type="submit" class="btn btn-outline-primary">
+                                                            <i class="fas fa-user-plus me-1"></i> {{ __('Assign') }}
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <div class="alert alert-info mb-0">
+                                                        <i class="fas fa-info-circle me-2"></i>
+                                                        {{ __('No available assistants in your clinic') }}
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
 
