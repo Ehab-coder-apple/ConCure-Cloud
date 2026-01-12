@@ -111,6 +111,12 @@ class DashboardController extends Controller
             $patientsQuery = Patient::query();
             $patientsQuery->where('clinic_id', $user->clinic_id);
 
+            // Filter for assistants: only show patients of their assigned doctors
+            if ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                $patientsQuery->whereIn('doctor_id', $doctorIds);
+            }
+
             $data['totalPatients'] = $patientsQuery->active()->count();
             $data['newPatientsThisMonth'] = (clone $patientsQuery)->active();
             $data['newPatientsThisMonth'] = $applyPeriod($data['newPatientsThisMonth'], 'created_at')->count();
@@ -121,6 +127,12 @@ class DashboardController extends Controller
             $prescriptionsQuery = Prescription::query();
             $prescriptionsQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
+
+                // Filter for assistants: only show patients of their assigned doctors
+                if ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+                    $q->whereIn('doctor_id', $doctorIds);
+                }
             });
 
             $activeCount = $prescriptionsQuery->active()->count();
@@ -129,6 +141,13 @@ class DashboardController extends Controller
             // Also count simple_prescriptions for this clinic if the model/table exists
             if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
                 $spBase = \App\Models\SimplePrescription::query()->where('clinic_id', $user->clinic_id);
+
+                // Filter for assistants
+                if ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+                    $spBase->whereIn('doctor_id', $doctorIds);
+                }
+
                 $activeCount += (clone $spBase)->where('status', 'active')->count();
                 $thisPeriodCount += $applyPeriod((clone $spBase), 'prescribed_date')->count();
             }
@@ -142,6 +161,12 @@ class DashboardController extends Controller
             $labRequestsQuery = LabRequest::query();
             $labRequestsQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
+
+                // Filter for assistants: only show patients of their assigned doctors
+                if ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+                    $q->whereIn('doctor_id', $doctorIds);
+                }
             });
 
             $data['pendingLabRequests'] = $labRequestsQuery->pending()->count();
@@ -155,6 +180,12 @@ class DashboardController extends Controller
             $dietPlansQuery = DietPlan::query();
             $dietPlansQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
+
+                // Filter for assistants: only show patients of their assigned doctors
+                if ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+                    $q->whereIn('doctor_id', $doctorIds);
+                }
             });
 
             $data['activeDietPlans'] = $dietPlansQuery->active()->count();
@@ -197,6 +228,9 @@ class DashboardController extends Controller
                 $base = DB::table('appointments')->where('clinic_id', $user->clinic_id);
                 if ($user->role === 'doctor') {
                     $base->where('doctor_id', $user->id);
+                } elseif ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+                    $base->whereIn('doctor_id', $doctorIds);
                 }
                 $now = Carbon::now();
                 $data['totalAppointments'] = (clone $base)->count();
@@ -212,6 +246,9 @@ class DashboardController extends Controller
                 $appointmentsQuery->where('clinic_id', $user->clinic_id);
                 if ($user->role === 'doctor') {
                     $appointmentsQuery->where('doctor_id', $user->id);
+                } elseif ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+                    $appointmentsQuery->whereIn('doctor_id', $doctorIds);
                 }
                 $data['totalAppointments'] = $appointmentsQuery->count();
                 $data['todayAppointments'] = (clone $appointmentsQuery)
@@ -229,9 +266,18 @@ class DashboardController extends Controller
             $nutritionQuery = \App\Models\DietPlan::query();
             $nutritionQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
+
+                // Filter for assistants: only show patients of their assigned doctors
+                if ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+                    $q->whereIn('doctor_id', $doctorIds);
+                }
             });
             if ($user->role === 'doctor') {
                 $nutritionQuery->where('doctor_id', $user->id);
+            } elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                $nutritionQuery->whereIn('doctor_id', $doctorIds);
             }
 
             $data['totalNutritionPlans'] = $nutritionQuery->count();
@@ -298,6 +344,9 @@ class DashboardController extends Controller
                 $q->where('appointments.patient_id', $user->patient_id ?? 0);
             } elseif ($user->role === 'doctor') {
                 $q->where('appointments.doctor_id', $user->id);
+            } elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                $q->whereIn('appointments.doctor_id', $doctorIds);
             }
             $rows = $q->whereRaw("STR_TO_DATE(CONCAT(appointment_date,' ', appointment_time), '%Y-%m-%d %H:%i:%s') >= ?", [$now->format('Y-m-d H:i:s')])
                 ->orderBy('appointment_date')->orderBy('appointment_time')
@@ -325,6 +374,9 @@ class DashboardController extends Controller
             $query->where('clinic_id', $user->clinic_id);
             if ($user->role === 'doctor') {
                 $query->where('doctor_id', $user->id);
+            } elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                $query->whereIn('doctor_id', $doctorIds);
             }
         }
         return $query->where('appointment_datetime', '>=', now())
@@ -363,6 +415,9 @@ class DashboardController extends Controller
                     $q->where('appointments.patient_id', $user->patient_id ?? 0);
                 } elseif ($user->role === 'doctor') {
                     $q->where('appointments.doctor_id', $user->id);
+                } elseif ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+                    $q->whereIn('appointments.doctor_id', $doctorIds);
                 }
                 $rows = $q->orderBy('appointments.appointment_time')
                     ->get([
@@ -387,6 +442,9 @@ class DashboardController extends Controller
                     $query->where('clinic_id', $user->clinic_id);
                     if ($user->role === 'doctor') {
                         $query->where('doctor_id', $user->id);
+                    } elseif ($user->role === 'assistant') {
+                        $doctorIds = $user->allowedDoctorIds();
+                        $query->whereIn('doctor_id', $doctorIds);
                     }
                 }
                 $dayAppointments = $query->whereDate('appointment_datetime', $dateKey)
@@ -424,20 +482,40 @@ class DashboardController extends Controller
                 $stats[$key] = ['patients' => 0, 'prescriptions' => 0, 'revenue' => 0];
 
                 if ($user->canManagePatients()) {
-                    $stats[$key]['patients'] = Patient::where('clinic_id', $user->clinic_id)
-                        ->whereDate('created_at', $day->toDateString())
-                        ->count();
+                    $patientsQuery = Patient::where('clinic_id', $user->clinic_id)
+                        ->whereDate('created_at', $day->toDateString());
+
+                    // Filter for assistants
+                    if ($user->role === 'assistant') {
+                        $doctorIds = $user->allowedDoctorIds();
+                        $patientsQuery->whereIn('doctor_id', $doctorIds);
+                    }
+
+                    $stats[$key]['patients'] = $patientsQuery->count();
                 }
                 if ($user->canPrescribe() || $user->canManagePatients()) {
                     $rxCount = Prescription::whereHas('patient', function ($q) use ($user) {
                             $q->where('clinic_id', $user->clinic_id);
+
+                            // Filter for assistants
+                            if ($user->role === 'assistant') {
+                                $doctorIds = $user->allowedDoctorIds();
+                                $q->whereIn('doctor_id', $doctorIds);
+                            }
                         })
                         ->whereDate('prescribed_date', $day->toDateString())
                         ->count();
                     if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
-                        $rxCount += \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
-                            ->whereDate('prescribed_date', $day->toDateString())
-                            ->count();
+                        $spQuery = \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
+                            ->whereDate('prescribed_date', $day->toDateString());
+
+                        // Filter for assistants
+                        if ($user->role === 'assistant') {
+                            $doctorIds = $user->allowedDoctorIds();
+                            $spQuery->whereIn('doctor_id', $doctorIds);
+                        }
+
+                        $rxCount += $spQuery->count();
                     }
                     $stats[$key]['prescriptions'] = $rxCount;
                 }
@@ -455,20 +533,40 @@ class DashboardController extends Controller
                 $stats[$key] = ['patients' => 0, 'prescriptions' => 0, 'revenue' => 0];
 
                 if ($user->canManagePatients()) {
-                    $stats[$key]['patients'] = Patient::where('clinic_id', $user->clinic_id)
-                        ->whereYear('created_at', $year)
-                        ->count();
+                    $patientsQuery = Patient::where('clinic_id', $user->clinic_id)
+                        ->whereYear('created_at', $year);
+
+                    // Filter for assistants
+                    if ($user->role === 'assistant') {
+                        $doctorIds = $user->allowedDoctorIds();
+                        $patientsQuery->whereIn('doctor_id', $doctorIds);
+                    }
+
+                    $stats[$key]['patients'] = $patientsQuery->count();
                 }
                 if ($user->canPrescribe() || $user->canManagePatients()) {
                     $rxCount = Prescription::whereHas('patient', function ($q) use ($user) {
                             $q->where('clinic_id', $user->clinic_id);
+
+                            // Filter for assistants
+                            if ($user->role === 'assistant') {
+                                $doctorIds = $user->allowedDoctorIds();
+                                $q->whereIn('doctor_id', $doctorIds);
+                            }
                         })
                         ->whereYear('prescribed_date', $year)
                         ->count();
                     if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
-                        $rxCount += \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
-                            ->whereYear('prescribed_date', $year)
-                            ->count();
+                        $spQuery = \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
+                            ->whereYear('prescribed_date', $year);
+
+                        // Filter for assistants
+                        if ($user->role === 'assistant') {
+                            $doctorIds = $user->allowedDoctorIds();
+                            $spQuery->whereIn('doctor_id', $doctorIds);
+                        }
+
+                        $rxCount += $spQuery->count();
                     }
                     $stats[$key]['prescriptions'] = $rxCount;
                 }
@@ -486,23 +584,43 @@ class DashboardController extends Controller
                 $stats[$key] = ['patients' => 0, 'prescriptions' => 0, 'revenue' => 0];
 
                 if ($user->canManagePatients()) {
-                    $stats[$key]['patients'] = Patient::where('clinic_id', $user->clinic_id)
+                    $patientsQuery = Patient::where('clinic_id', $user->clinic_id)
                         ->whereMonth('created_at', $month->month)
-                        ->whereYear('created_at', $month->year)
-                        ->count();
+                        ->whereYear('created_at', $month->year);
+
+                    // Filter for assistants
+                    if ($user->role === 'assistant') {
+                        $doctorIds = $user->allowedDoctorIds();
+                        $patientsQuery->whereIn('doctor_id', $doctorIds);
+                    }
+
+                    $stats[$key]['patients'] = $patientsQuery->count();
                 }
                 if ($user->canPrescribe() || $user->canManagePatients()) {
                     $rxCount = Prescription::whereHas('patient', function ($q) use ($user) {
                             $q->where('clinic_id', $user->clinic_id);
+
+                            // Filter for assistants
+                            if ($user->role === 'assistant') {
+                                $doctorIds = $user->allowedDoctorIds();
+                                $q->whereIn('doctor_id', $doctorIds);
+                            }
                         })
                         ->whereMonth('prescribed_date', $month->month)
                         ->whereYear('prescribed_date', $month->year)
                         ->count();
                     if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
-                        $rxCount += \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
+                        $spQuery = \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
                             ->whereMonth('prescribed_date', $month->month)
-                            ->whereYear('prescribed_date', $month->year)
-                            ->count();
+                            ->whereYear('prescribed_date', $month->year);
+
+                        // Filter for assistants
+                        if ($user->role === 'assistant') {
+                            $doctorIds = $user->allowedDoctorIds();
+                            $spQuery->whereIn('doctor_id', $doctorIds);
+                        }
+
+                        $rxCount += $spQuery->count();
                     }
                     $stats[$key]['prescriptions'] = $rxCount;
                 }
