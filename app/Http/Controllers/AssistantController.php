@@ -16,7 +16,7 @@ class AssistantController extends Controller
         $user = Auth::user();
 
         // Check permission for AI Assistant access
-        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', true))) {
+        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('ai_assistant_access')) {
                 abort(403, 'You do not have permission to access the AI Medical Assistant.');
             }
@@ -40,7 +40,7 @@ class AssistantController extends Controller
         $user = Auth::user();
 
         // Check permission for AI Assistant access
-        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', true))) {
+        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('ai_assistant_access')) {
                 abort(403, 'You do not have permission to access the AI Medical Assistant.');
             }
@@ -62,7 +62,7 @@ class AssistantController extends Controller
         $user = Auth::user();
 
         // Check permission for AI Assistant access
-        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', true))) {
+        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('ai_assistant_access')) {
                 abort(403, 'You do not have permission to access the AI Medical Assistant.');
             }
@@ -81,7 +81,7 @@ class AssistantController extends Controller
         $user = Auth::user();
 
         // Check permission for AI Assistant access
-        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', true))) {
+        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
             if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('ai_assistant_access')) {
                 abort(403, 'You do not have permission to access the AI Medical Assistant.');
             }

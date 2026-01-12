@@ -112,15 +112,6 @@ class DashboardController extends Controller
             $patientsQuery->where('clinic_id', $user->clinic_id);
 
             // Filter for assistants: only show patients of their assigned doctors
-            if ($user->role === 'assistant') {
-                $doctorIds = $user->allowedDoctorIds();
-                if (!empty($doctorIds)) {
-                    $patientsQuery->whereIn('doctor_id', $doctorIds);
-                } else {
-                    // No assigned doctors, return no results
-                    $patientsQuery->whereRaw('1 = 0');
-                }
-            }
 
             $data['totalPatients'] = $patientsQuery->active()->count();
             $data['newPatientsThisMonth'] = (clone $patientsQuery)->active();
@@ -539,14 +530,6 @@ class DashboardController extends Controller
                         ->whereDate('created_at', $day->toDateString());
 
                     // Filter for assistants
-                    if ($user->role === 'assistant') {
-                        $doctorIds = $user->allowedDoctorIds();
-                        if (!empty($doctorIds)) {
-                            $patientsQuery->whereIn('doctor_id', $doctorIds);
-                        } else {
-                            $patientsQuery->whereRaw('1 = 0');
-                        }
-                    }
 
                     $stats[$key]['patients'] = $patientsQuery->count();
                 }
@@ -602,14 +585,6 @@ class DashboardController extends Controller
                         ->whereYear('created_at', $year);
 
                     // Filter for assistants
-                    if ($user->role === 'assistant') {
-                        $doctorIds = $user->allowedDoctorIds();
-                        if (!empty($doctorIds)) {
-                            $patientsQuery->whereIn('doctor_id', $doctorIds);
-                        } else {
-                            $patientsQuery->whereRaw('1 = 0');
-                        }
-                    }
 
                     $stats[$key]['patients'] = $patientsQuery->count();
                 }
@@ -666,14 +641,6 @@ class DashboardController extends Controller
                         ->whereYear('created_at', $month->year);
 
                     // Filter for assistants
-                    if ($user->role === 'assistant') {
-                        $doctorIds = $user->allowedDoctorIds();
-                        if (!empty($doctorIds)) {
-                            $patientsQuery->whereIn('doctor_id', $doctorIds);
-                        } else {
-                            $patientsQuery->whereRaw('1 = 0');
-                        }
-                    }
 
                     $stats[$key]['patients'] = $patientsQuery->count();
                 }
