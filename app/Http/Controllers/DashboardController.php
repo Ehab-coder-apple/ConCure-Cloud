@@ -114,7 +114,12 @@ class DashboardController extends Controller
             // Filter for assistants: only show patients of their assigned doctors
             if ($user->role === 'assistant') {
                 $doctorIds = $user->allowedDoctorIds();
-                $patientsQuery->whereIn('doctor_id', $doctorIds);
+                if (!empty($doctorIds)) {
+                    $patientsQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    // No assigned doctors, return no results
+                    $patientsQuery->whereRaw('1 = 0');
+                }
             }
 
             $data['totalPatients'] = $patientsQuery->active()->count();
@@ -131,7 +136,11 @@ class DashboardController extends Controller
                 // Filter for assistants: only show patients of their assigned doctors
                 if ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
-                    $q->whereIn('doctor_id', $doctorIds);
+                    if (!empty($doctorIds)) {
+                        $q->whereIn('doctor_id', $doctorIds);
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
                 }
             });
 
@@ -145,7 +154,11 @@ class DashboardController extends Controller
                 // Filter for assistants
                 if ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
-                    $spBase->whereIn('doctor_id', $doctorIds);
+                    if (!empty($doctorIds)) {
+                        $spBase->whereIn('doctor_id', $doctorIds);
+                    } else {
+                        $spBase->whereRaw('1 = 0');
+                    }
                 }
 
                 $activeCount += (clone $spBase)->where('status', 'active')->count();
@@ -165,7 +178,11 @@ class DashboardController extends Controller
                 // Filter for assistants: only show patients of their assigned doctors
                 if ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
-                    $q->whereIn('doctor_id', $doctorIds);
+                    if (!empty($doctorIds)) {
+                        $q->whereIn('doctor_id', $doctorIds);
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
                 }
             });
 
@@ -184,7 +201,11 @@ class DashboardController extends Controller
                 // Filter for assistants: only show patients of their assigned doctors
                 if ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
-                    $q->whereIn('doctor_id', $doctorIds);
+                    if (!empty($doctorIds)) {
+                        $q->whereIn('doctor_id', $doctorIds);
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
                 }
             });
 
@@ -230,7 +251,11 @@ class DashboardController extends Controller
                     $base->where('doctor_id', $user->id);
                 } elseif ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
-                    $base->whereIn('doctor_id', $doctorIds);
+                    if (!empty($doctorIds)) {
+                        $base->whereIn('doctor_id', $doctorIds);
+                    } else {
+                        $base->whereRaw('1 = 0');
+                    }
                 }
                 $now = Carbon::now();
                 $data['totalAppointments'] = (clone $base)->count();
@@ -248,7 +273,11 @@ class DashboardController extends Controller
                     $appointmentsQuery->where('doctor_id', $user->id);
                 } elseif ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
-                    $appointmentsQuery->whereIn('doctor_id', $doctorIds);
+                    if (!empty($doctorIds)) {
+                        $appointmentsQuery->whereIn('doctor_id', $doctorIds);
+                    } else {
+                        $appointmentsQuery->whereRaw('1 = 0');
+                    }
                 }
                 $data['totalAppointments'] = $appointmentsQuery->count();
                 $data['todayAppointments'] = (clone $appointmentsQuery)
@@ -270,14 +299,22 @@ class DashboardController extends Controller
                 // Filter for assistants: only show patients of their assigned doctors
                 if ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
-                    $q->whereIn('doctor_id', $doctorIds);
+                    if (!empty($doctorIds)) {
+                        $q->whereIn('doctor_id', $doctorIds);
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
                 }
             });
             if ($user->role === 'doctor') {
                 $nutritionQuery->where('doctor_id', $user->id);
             } elseif ($user->role === 'assistant') {
                 $doctorIds = $user->allowedDoctorIds();
-                $nutritionQuery->whereIn('doctor_id', $doctorIds);
+                if (!empty($doctorIds)) {
+                    $nutritionQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $nutritionQuery->whereRaw('1 = 0');
+                }
             }
 
             $data['totalNutritionPlans'] = $nutritionQuery->count();
@@ -346,7 +383,11 @@ class DashboardController extends Controller
                 $q->where('appointments.doctor_id', $user->id);
             } elseif ($user->role === 'assistant') {
                 $doctorIds = $user->allowedDoctorIds();
-                $q->whereIn('appointments.doctor_id', $doctorIds);
+                if (!empty($doctorIds)) {
+                    $q->whereIn('appointments.doctor_id', $doctorIds);
+                } else {
+                    $q->whereRaw('1 = 0');
+                }
             }
             $rows = $q->whereRaw("STR_TO_DATE(CONCAT(appointment_date,' ', appointment_time), '%Y-%m-%d %H:%i:%s') >= ?", [$now->format('Y-m-d H:i:s')])
                 ->orderBy('appointment_date')->orderBy('appointment_time')
@@ -376,7 +417,11 @@ class DashboardController extends Controller
                 $query->where('doctor_id', $user->id);
             } elseif ($user->role === 'assistant') {
                 $doctorIds = $user->allowedDoctorIds();
-                $query->whereIn('doctor_id', $doctorIds);
+                if (!empty($doctorIds)) {
+                    $query->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
             }
         }
         return $query->where('appointment_datetime', '>=', now())
@@ -417,7 +462,11 @@ class DashboardController extends Controller
                     $q->where('appointments.doctor_id', $user->id);
                 } elseif ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
-                    $q->whereIn('appointments.doctor_id', $doctorIds);
+                    if (!empty($doctorIds)) {
+                        $q->whereIn('appointments.doctor_id', $doctorIds);
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
                 }
                 $rows = $q->orderBy('appointments.appointment_time')
                     ->get([
@@ -444,7 +493,11 @@ class DashboardController extends Controller
                         $query->where('doctor_id', $user->id);
                     } elseif ($user->role === 'assistant') {
                         $doctorIds = $user->allowedDoctorIds();
-                        $query->whereIn('doctor_id', $doctorIds);
+                        if (!empty($doctorIds)) {
+                            $query->whereIn('doctor_id', $doctorIds);
+                        } else {
+                            $query->whereRaw('1 = 0');
+                        }
                     }
                 }
                 $dayAppointments = $query->whereDate('appointment_datetime', $dateKey)
@@ -488,7 +541,11 @@ class DashboardController extends Controller
                     // Filter for assistants
                     if ($user->role === 'assistant') {
                         $doctorIds = $user->allowedDoctorIds();
-                        $patientsQuery->whereIn('doctor_id', $doctorIds);
+                        if (!empty($doctorIds)) {
+                            $patientsQuery->whereIn('doctor_id', $doctorIds);
+                        } else {
+                            $patientsQuery->whereRaw('1 = 0');
+                        }
                     }
 
                     $stats[$key]['patients'] = $patientsQuery->count();
@@ -500,7 +557,11 @@ class DashboardController extends Controller
                             // Filter for assistants
                             if ($user->role === 'assistant') {
                                 $doctorIds = $user->allowedDoctorIds();
-                                $q->whereIn('doctor_id', $doctorIds);
+                                if (!empty($doctorIds)) {
+                                    $q->whereIn('doctor_id', $doctorIds);
+                                } else {
+                                    $q->whereRaw('1 = 0');
+                                }
                             }
                         })
                         ->whereDate('prescribed_date', $day->toDateString())
@@ -512,7 +573,11 @@ class DashboardController extends Controller
                         // Filter for assistants
                         if ($user->role === 'assistant') {
                             $doctorIds = $user->allowedDoctorIds();
-                            $spQuery->whereIn('doctor_id', $doctorIds);
+                            if (!empty($doctorIds)) {
+                                $spQuery->whereIn('doctor_id', $doctorIds);
+                            } else {
+                                $spQuery->whereRaw('1 = 0');
+                            }
                         }
 
                         $rxCount += $spQuery->count();
@@ -539,7 +604,11 @@ class DashboardController extends Controller
                     // Filter for assistants
                     if ($user->role === 'assistant') {
                         $doctorIds = $user->allowedDoctorIds();
-                        $patientsQuery->whereIn('doctor_id', $doctorIds);
+                        if (!empty($doctorIds)) {
+                            $patientsQuery->whereIn('doctor_id', $doctorIds);
+                        } else {
+                            $patientsQuery->whereRaw('1 = 0');
+                        }
                     }
 
                     $stats[$key]['patients'] = $patientsQuery->count();
@@ -551,7 +620,11 @@ class DashboardController extends Controller
                             // Filter for assistants
                             if ($user->role === 'assistant') {
                                 $doctorIds = $user->allowedDoctorIds();
-                                $q->whereIn('doctor_id', $doctorIds);
+                                if (!empty($doctorIds)) {
+                                    $q->whereIn('doctor_id', $doctorIds);
+                                } else {
+                                    $q->whereRaw('1 = 0');
+                                }
                             }
                         })
                         ->whereYear('prescribed_date', $year)
@@ -563,7 +636,11 @@ class DashboardController extends Controller
                         // Filter for assistants
                         if ($user->role === 'assistant') {
                             $doctorIds = $user->allowedDoctorIds();
-                            $spQuery->whereIn('doctor_id', $doctorIds);
+                            if (!empty($doctorIds)) {
+                                $spQuery->whereIn('doctor_id', $doctorIds);
+                            } else {
+                                $spQuery->whereRaw('1 = 0');
+                            }
                         }
 
                         $rxCount += $spQuery->count();
@@ -591,7 +668,11 @@ class DashboardController extends Controller
                     // Filter for assistants
                     if ($user->role === 'assistant') {
                         $doctorIds = $user->allowedDoctorIds();
-                        $patientsQuery->whereIn('doctor_id', $doctorIds);
+                        if (!empty($doctorIds)) {
+                            $patientsQuery->whereIn('doctor_id', $doctorIds);
+                        } else {
+                            $patientsQuery->whereRaw('1 = 0');
+                        }
                     }
 
                     $stats[$key]['patients'] = $patientsQuery->count();
@@ -603,7 +684,11 @@ class DashboardController extends Controller
                             // Filter for assistants
                             if ($user->role === 'assistant') {
                                 $doctorIds = $user->allowedDoctorIds();
-                                $q->whereIn('doctor_id', $doctorIds);
+                                if (!empty($doctorIds)) {
+                                    $q->whereIn('doctor_id', $doctorIds);
+                                } else {
+                                    $q->whereRaw('1 = 0');
+                                }
                             }
                         })
                         ->whereMonth('prescribed_date', $month->month)
@@ -617,7 +702,11 @@ class DashboardController extends Controller
                         // Filter for assistants
                         if ($user->role === 'assistant') {
                             $doctorIds = $user->allowedDoctorIds();
-                            $spQuery->whereIn('doctor_id', $doctorIds);
+                            if (!empty($doctorIds)) {
+                                $spQuery->whereIn('doctor_id', $doctorIds);
+                            } else {
+                                $spQuery->whereRaw('1 = 0');
+                            }
                         }
 
                         $rxCount += $spQuery->count();
