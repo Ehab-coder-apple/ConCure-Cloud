@@ -660,6 +660,11 @@ class PatientController extends Controller
             return;
         }
 
+        // Users with patient permissions can access all patients in their clinic
+        if ($user->hasAnyPermission(['patients_view', 'patients_edit', 'patients_manage'])) {
+            return;
+        }
+
         // Regular doctors can only access patients they have appointments or prescriptions with
         $hasAccess = $patient->appointments()->where('doctor_id', $user->id)->exists()
                   || $patient->prescriptions()->where('doctor_id', $user->id)->exists()
