@@ -135,6 +135,40 @@ class ConCureServiceProvider extends ServiceProvider
             return $user->hasPermission('prescriptions_delete');
         });
 
+        // Lab request gates
+        Gate::define('view-lab-requests', function (User $user) {
+            return $user->hasAnyPermission(['lab_view', 'lab_manage', 'prescriptions_view']);
+        });
+
+        Gate::define('create-lab-requests', function (User $user) {
+            return $user->hasAnyPermission(['lab_create', 'lab_manage', 'prescriptions_create']);
+        });
+
+        Gate::define('edit-lab-requests', function (User $user) {
+            return $user->hasAnyPermission(['lab_edit', 'lab_manage', 'prescriptions_edit']);
+        });
+
+        Gate::define('delete-lab-requests', function (User $user) {
+            return $user->hasAnyPermission(['lab_delete', 'lab_manage', 'prescriptions_delete']);
+        });
+
+        // Radiology request gates
+        Gate::define('view-radiology-requests', function (User $user) {
+            return $user->hasAnyPermission(['radiology_view', 'radiology_manage', 'prescriptions_view']);
+        });
+
+        Gate::define('create-radiology-requests', function (User $user) {
+            return $user->hasAnyPermission(['radiology_create', 'radiology_manage', 'prescriptions_create']);
+        });
+
+        Gate::define('edit-radiology-requests', function (User $user) {
+            return $user->hasAnyPermission(['radiology_edit', 'radiology_manage', 'prescriptions_edit']);
+        });
+
+        Gate::define('delete-radiology-requests', function (User $user) {
+            return $user->hasAnyPermission(['radiology_delete', 'radiology_manage', 'prescriptions_delete']);
+        });
+
         Gate::define('view-appointments', function (User $user) {
             return $user->hasPermission('appointments_view');
         });

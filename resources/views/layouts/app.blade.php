@@ -1493,7 +1493,7 @@
                         @endif
 
                         <!-- Lab Requests -->
-                        @if(Auth::user()->hasPermission('prescriptions_create'))
+                        @if(Auth::user()->canViewLabRequests())
                         <li class="nav-item">
                             <a href="{{ route('recommendations.lab-requests') }}" class="nav-link {{ request()->routeIs('recommendations.lab-requests*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-flask"></i>

@@ -238,7 +238,7 @@
                         </div>
                         @endif
 
-                        @can('create-prescriptions')
+                        @can('create-lab-requests')
                         <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('recommendations.lab-requests') }}" class="btn btn-outline-warning w-100">
                                 <i class="fas fa-vial d-block mb-1"></i>
@@ -247,7 +247,7 @@
                         </div>
                         @endcan
 
-                        @can('create-prescriptions')
+                        @can('create-radiology-requests')
                         <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('recommendations.radiology.index') }}" class="btn btn-outline-primary w-100">
                                 <i class="fas fa-x-ray d-block mb-1"></i>
