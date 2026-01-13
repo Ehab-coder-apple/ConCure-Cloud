@@ -338,6 +338,13 @@ class UserController extends Controller
         $user->fill($safeData);
         $user->save();
 
+        // If the updated user is currently logged in, refresh their session
+        // This ensures permission changes take effect immediately without requiring logout
+        if (auth()->check() && auth()->id() === $user->id) {
+            // Refresh the authenticated user instance in the session
+            auth()->setUser($user->fresh());
+        }
+
         return redirect()->route('users.index')
                         ->with('success', 'User updated successfully.');
     }
