@@ -145,17 +145,17 @@ class DashboardController extends Controller
             $prescriptionsQuery = Prescription::query();
             $prescriptionsQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
-
-                // Filter for assistants: only show patients of their assigned doctors
-                if ($user->role === 'assistant') {
-                    $doctorIds = $user->allowedDoctorIds();
-                    if (!empty($doctorIds)) {
-                        $q->whereIn('doctor_id', $doctorIds);
-                    } else {
-                        $q->whereRaw('1 = 0');
-                    }
-                }
             });
+
+            // Filter for assistants: only show prescriptions from their assigned doctors
+            if ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $prescriptionsQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $prescriptionsQuery->whereRaw('1 = 0');
+                }
+            }
 
             $activeCount = $prescriptionsQuery->active()->count();
             $thisPeriodCount = $applyPeriod((clone $prescriptionsQuery), 'prescribed_date')->count();
@@ -187,17 +187,17 @@ class DashboardController extends Controller
             $labRequestsQuery = LabRequest::query();
             $labRequestsQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
-
-                // Filter for assistants: only show patients of their assigned doctors
-                if ($user->role === 'assistant') {
-                    $doctorIds = $user->allowedDoctorIds();
-                    if (!empty($doctorIds)) {
-                        $q->whereIn('doctor_id', $doctorIds);
-                    } else {
-                        $q->whereRaw('1 = 0');
-                    }
-                }
             });
+
+            // Filter for assistants: only show lab requests from their assigned doctors
+            if ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $labRequestsQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $labRequestsQuery->whereRaw('1 = 0');
+                }
+            }
 
             $data['pendingLabRequests'] = $labRequestsQuery->pending()->count();
             $data['urgentLabRequests'] = $labRequestsQuery->pending()
@@ -210,17 +210,17 @@ class DashboardController extends Controller
             $dietPlansQuery = DietPlan::query();
             $dietPlansQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
-
-                // Filter for assistants: only show patients of their assigned doctors
-                if ($user->role === 'assistant') {
-                    $doctorIds = $user->allowedDoctorIds();
-                    if (!empty($doctorIds)) {
-                        $q->whereIn('doctor_id', $doctorIds);
-                    } else {
-                        $q->whereRaw('1 = 0');
-                    }
-                }
             });
+
+            // Filter for assistants: only show diet plans from their assigned doctors
+            if ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $dietPlansQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $dietPlansQuery->whereRaw('1 = 0');
+                }
+            }
 
             $data['activeDietPlans'] = $dietPlansQuery->active()->count();
             $data['expiredDietPlans'] = $dietPlansQuery->expired()->count();
