@@ -25,6 +25,17 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
+        // DEBUG: Log assistant doctor assignments
+        if ($user->role === 'assistant') {
+            \Log::info('Assistant Dashboard Debug', [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'doctors_count' => $user->doctors()->count(),
+                'doctor_ids' => $user->doctors()->pluck('users.id')->toArray(),
+                'allowed_doctor_ids' => $user->allowedDoctorIds(),
+            ]);
+        }
+
         // Determine selected period: precedence = explicit param (admin saves) -> clinic default -> 'month'
         $requested = $request->get('period');
         $isValid = in_array($requested, ['day','month','year'], true);
@@ -135,7 +146,7 @@ class DashboardController extends Controller
                 }
             }
 
-            $data['totalPatients'] = $patientsQuery->active()->count();
+            $data['totalPatients'] = (clone $patientsQuery)->active()->count();
             $data['newPatientsThisMonth'] = (clone $patientsQuery)->active();
             $data['newPatientsThisMonth'] = $applyPeriod($data['newPatientsThisMonth'], 'created_at')->count();
         }
@@ -157,7 +168,7 @@ class DashboardController extends Controller
                 }
             }
 
-            $activeCount = $prescriptionsQuery->active()->count();
+            $activeCount = (clone $prescriptionsQuery)->active()->count();
             $thisPeriodCount = $applyPeriod((clone $prescriptionsQuery), 'prescribed_date')->count();
 
             // Also count simple_prescriptions for this clinic if the model/table exists
@@ -199,8 +210,8 @@ class DashboardController extends Controller
                 }
             }
 
-            $data['pendingLabRequests'] = $labRequestsQuery->pending()->count();
-            $data['urgentLabRequests'] = $labRequestsQuery->pending()
+            $data['pendingLabRequests'] = (clone $labRequestsQuery)->pending()->count();
+            $data['urgentLabRequests'] = (clone $labRequestsQuery)->pending()
                 ->where('priority', 'urgent')
                 ->count();
         }
@@ -222,8 +233,8 @@ class DashboardController extends Controller
                 }
             }
 
-            $data['activeDietPlans'] = $dietPlansQuery->active()->count();
-            $data['expiredDietPlans'] = $dietPlansQuery->expired()->count();
+            $data['activeDietPlans'] = (clone $dietPlansQuery)->active()->count();
+            $data['expiredDietPlans'] = (clone $dietPlansQuery)->expired()->count();
         }
 
         // Financial statistics
@@ -233,11 +244,11 @@ class DashboardController extends Controller
 
             $data['totalRevenue'] = $applyPeriod((clone $invoicesQuery), 'invoice_date')->sum('total_amount');
 
-            $data['pendingInvoices'] = $invoicesQuery
+            $data['pendingInvoices'] = (clone $invoicesQuery)
                 ->whereIn('status', ['draft', 'sent'])
                 ->count();
 
-            $data['overdueInvoices'] = $invoicesQuery
+            $data['overdueInvoices'] = (clone $invoicesQuery)
                 ->where('status', 'sent')
                 ->where('due_date', '<', now())
                 ->count();
@@ -248,7 +259,7 @@ class DashboardController extends Controller
             $usersQuery = User::query();
             $usersQuery->where('clinic_id', $user->clinic_id);
 
-            $data['totalUsers'] = $usersQuery->active()->count();
+            $data['totalUsers'] = (clone $usersQuery)->active()->count();
             $data['newUsersThisMonth'] = $applyPeriod((clone $usersQuery)->active(), 'created_at')->count();
         }
 
@@ -292,7 +303,7 @@ class DashboardController extends Controller
                         $appointmentsQuery->whereRaw('1 = 0');
                     }
                 }
-                $data['totalAppointments'] = $appointmentsQuery->count();
+                $data['totalAppointments'] = (clone $appointmentsQuery)->count();
                 $data['todayAppointments'] = (clone $appointmentsQuery)
                     ->whereDate('appointment_datetime', now()->toDateString())
                     ->count();
@@ -330,8 +341,8 @@ class DashboardController extends Controller
                 }
             }
 
-            $data['totalNutritionPlans'] = $nutritionQuery->count();
-            $data['activeNutritionPlans'] = $nutritionQuery->where('status', 'active')->count();
+            $data['totalNutritionPlans'] = (clone $nutritionQuery)->count();
+            $data['activeNutritionPlans'] = (clone $nutritionQuery)->where('status', 'active')->count();
             $data['thisMonthNutritionPlans'] = $applyPeriod((clone $nutritionQuery), 'created_at')->count();
         }
 
