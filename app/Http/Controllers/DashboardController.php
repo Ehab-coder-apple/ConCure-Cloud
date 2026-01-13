@@ -111,7 +111,29 @@ class DashboardController extends Controller
             $patientsQuery = Patient::query();
             $patientsQuery->where('clinic_id', $user->clinic_id);
 
-            // Filter for assistants: only show patients of their assigned doctors
+            // Filter for assistants: show patients who have any interaction with their assigned doctors
+            // (appointments, prescriptions, lab requests, or diet plans)
+            if ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $patientsQuery->where(function($q) use ($doctorIds) {
+                        $q->whereHas('appointments', function($subQ) use ($doctorIds) {
+                            $subQ->whereIn('doctor_id', $doctorIds);
+                        })
+                        ->orWhereHas('prescriptions', function($subQ) use ($doctorIds) {
+                            $subQ->whereIn('doctor_id', $doctorIds);
+                        })
+                        ->orWhereHas('labRequests', function($subQ) use ($doctorIds) {
+                            $subQ->whereIn('doctor_id', $doctorIds);
+                        })
+                        ->orWhereHas('dietPlans', function($subQ) use ($doctorIds) {
+                            $subQ->whereIn('doctor_id', $doctorIds);
+                        });
+                    });
+                } else {
+                    $patientsQuery->whereRaw('1 = 0');
+                }
+            }
 
             $data['totalPatients'] = $patientsQuery->active()->count();
             $data['newPatientsThisMonth'] = (clone $patientsQuery)->active();

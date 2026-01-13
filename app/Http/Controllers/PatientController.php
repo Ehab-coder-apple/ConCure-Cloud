@@ -45,19 +45,48 @@ class PatientController extends Controller
 
         // Filter patients based on user role
         // Only Super Admins and Clinic Admins can see all patients
+        // Assistants see patients of their assigned doctors
         // Regular doctors can only see patients they have appointments or prescriptions with
         if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-            $query->where(function($q) use ($user) {
-                $q->whereHas('appointments', function($appointmentQuery) use ($user) {
-                    $appointmentQuery->where('doctor_id', $user->id);
-                })
-                ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
-                    $prescriptionQuery->where('doctor_id', $user->id);
-                })
-                ->orWhereHas('simplePrescriptions', function($simplePrescriptionQuery) use ($user) {
-                    $simplePrescriptionQuery->where('doctor_id', $user->id);
+            if ($user->role === 'assistant') {
+                // Assistants see patients who have any interaction with their assigned doctors
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $query->where(function($q) use ($doctorIds) {
+                        $q->whereHas('appointments', function($subQ) use ($doctorIds) {
+                            $subQ->whereIn('doctor_id', $doctorIds);
+                        })
+                        ->orWhereHas('prescriptions', function($subQ) use ($doctorIds) {
+                            $subQ->whereIn('doctor_id', $doctorIds);
+                        })
+                        ->orWhereHas('simplePrescriptions', function($subQ) use ($doctorIds) {
+                            $subQ->whereIn('doctor_id', $doctorIds);
+                        })
+                        ->orWhereHas('labRequests', function($subQ) use ($doctorIds) {
+                            $subQ->whereIn('doctor_id', $doctorIds);
+                        })
+                        ->orWhereHas('dietPlans', function($subQ) use ($doctorIds) {
+                            $subQ->whereIn('doctor_id', $doctorIds);
+                        });
+                    });
+                } else {
+                    // No assigned doctors = no patients
+                    $query->whereRaw('1 = 0');
+                }
+            } else {
+                // Regular doctors see only their own patients
+                $query->where(function($q) use ($user) {
+                    $q->whereHas('appointments', function($appointmentQuery) use ($user) {
+                        $appointmentQuery->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
+                        $prescriptionQuery->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('simplePrescriptions', function($simplePrescriptionQuery) use ($user) {
+                        $simplePrescriptionQuery->where('doctor_id', $user->id);
+                    });
                 });
-            });
+            }
         }
 
         // Apply smart search filter
