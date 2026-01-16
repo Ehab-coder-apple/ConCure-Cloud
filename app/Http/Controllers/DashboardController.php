@@ -122,9 +122,26 @@ class DashboardController extends Controller
             $patientsQuery = Patient::query();
             $patientsQuery->where('clinic_id', $user->clinic_id);
 
+            // Filter for doctors: show only their own patients
+            if ($user->role === 'doctor') {
+                $patientsQuery->where(function($q) use ($user) {
+                    $q->whereHas('appointments', function($subQ) use ($user) {
+                        $subQ->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('prescriptions', function($subQ) use ($user) {
+                        $subQ->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('labRequests', function($subQ) use ($user) {
+                        $subQ->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('dietPlans', function($subQ) use ($user) {
+                        $subQ->where('doctor_id', $user->id);
+                    });
+                });
+            }
             // Filter for assistants: show patients who have any interaction with their assigned doctors
             // (appointments, prescriptions, lab requests, or diet plans)
-            if ($user->role === 'assistant') {
+            elseif ($user->role === 'assistant') {
                 $doctorIds = $user->allowedDoctorIds();
                 if (!empty($doctorIds)) {
                     $patientsQuery->where(function($q) use ($doctorIds) {
@@ -158,8 +175,12 @@ class DashboardController extends Controller
                 $q->where('clinic_id', $user->clinic_id);
             });
 
+            // Filter for doctors: only show their own prescriptions
+            if ($user->role === 'doctor') {
+                $prescriptionsQuery->where('doctor_id', $user->id);
+            }
             // Filter for assistants: only show prescriptions from their assigned doctors
-            if ($user->role === 'assistant') {
+            elseif ($user->role === 'assistant') {
                 $doctorIds = $user->allowedDoctorIds();
                 if (!empty($doctorIds)) {
                     $prescriptionsQuery->whereIn('doctor_id', $doctorIds);
@@ -175,8 +196,12 @@ class DashboardController extends Controller
             if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
                 $spBase = \App\Models\SimplePrescription::query()->where('clinic_id', $user->clinic_id);
 
+                // Filter for doctors
+                if ($user->role === 'doctor') {
+                    $spBase->where('doctor_id', $user->id);
+                }
                 // Filter for assistants
-                if ($user->role === 'assistant') {
+                elseif ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
                     if (!empty($doctorIds)) {
                         $spBase->whereIn('doctor_id', $doctorIds);
@@ -200,8 +225,12 @@ class DashboardController extends Controller
                 $q->where('clinic_id', $user->clinic_id);
             });
 
+            // Filter for doctors: only show their own lab requests
+            if ($user->role === 'doctor') {
+                $labRequestsQuery->where('doctor_id', $user->id);
+            }
             // Filter for assistants: only show lab requests from their assigned doctors
-            if ($user->role === 'assistant') {
+            elseif ($user->role === 'assistant') {
                 $doctorIds = $user->allowedDoctorIds();
                 if (!empty($doctorIds)) {
                     $labRequestsQuery->whereIn('doctor_id', $doctorIds);
@@ -223,8 +252,12 @@ class DashboardController extends Controller
                 $q->where('clinic_id', $user->clinic_id);
             });
 
+            // Filter for doctors: only show their own diet plans
+            if ($user->role === 'doctor') {
+                $dietPlansQuery->where('doctor_id', $user->id);
+            }
             // Filter for assistants: only show diet plans from their assigned doctors
-            if ($user->role === 'assistant') {
+            elseif ($user->role === 'assistant') {
                 $doctorIds = $user->allowedDoctorIds();
                 if (!empty($doctorIds)) {
                     $dietPlansQuery->whereIn('doctor_id', $doctorIds);
