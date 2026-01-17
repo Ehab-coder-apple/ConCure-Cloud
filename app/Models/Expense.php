@@ -159,6 +159,9 @@ class Expense extends Model
      */
     public function getRecurringFrequencyDisplayAttribute(): string
     {
+        if (!$this->recurring_frequency) {
+            return '';
+        }
         return self::RECURRING_FREQUENCIES[$this->recurring_frequency] ?? $this->recurring_frequency;
     }
 
