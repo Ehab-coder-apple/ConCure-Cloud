@@ -163,18 +163,24 @@ class FinanceController extends Controller
      */
     public function expenses(Request $request)
     {
-        $user = auth()->user();
-
-        if (!$user->canAccessFinance()) {
-            abort(403, 'Access denied to expenses.');
-        }
-
-        // Verify user has a valid clinic
-        if (!$user->clinic_id) {
-            abort(403, 'User must be associated with a clinic to access expenses.');
-        }
-
         try {
+            $user = auth()->user();
+
+            if (!$user) {
+                \Log::error('Expenses page accessed without authenticated user');
+                return redirect()->route('login')->withErrors(['error' => 'Please log in to access expenses.']);
+            }
+
+            if (!$user->canAccessFinance()) {
+                \Log::warning('User attempted to access expenses without permission', ['user_id' => $user->id]);
+                abort(403, 'Access denied to expenses.');
+            }
+
+            // Verify user has a valid clinic
+            if (!$user->clinic_id) {
+                \Log::error('User without clinic_id attempted to access expenses', ['user_id' => $user->id]);
+                abort(403, 'User must be associated with a clinic to access expenses.');
+            }
             $query = Expense::with(['clinic', 'creator', 'approver']);
 
             // Filter by clinic for all users
@@ -214,13 +220,21 @@ class FinanceController extends Controller
 
             return view('finance.expenses', compact('expenses', 'currency', 'currencySymbol'));
         } catch (\Exception $e) {
+            $userId = isset($user) ? $user->id : 'unknown';
+            $clinicId = isset($user) ? $user->clinic_id : 'unknown';
+
             \Log::error('Error loading expenses page: ' . $e->getMessage(), [
-                'user_id' => $user->id,
-                'clinic_id' => $user->clinic_id,
+                'user_id' => $userId,
+                'clinic_id' => $clinicId,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return back()->withErrors(['error' => 'Failed to load expenses. Please contact support if this persists.']);
+            // Return to finance dashboard with error message
+            return redirect()->route('finance.index')
+                ->withErrors(['error' => 'Failed to load expenses: ' . $e->getMessage() . '. Please contact support if this persists.']);
         }
     }
 
