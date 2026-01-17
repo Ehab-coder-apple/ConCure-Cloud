@@ -164,49 +164,64 @@ class FinanceController extends Controller
     public function expenses(Request $request)
     {
         $user = auth()->user();
-        
+
         if (!$user->canAccessFinance()) {
             abort(403, 'Access denied to expenses.');
         }
 
-        $query = Expense::with(['clinic', 'creator', 'approver']);
-
-        // Filter by clinic for all users
-        $query->where('clinic_id', $user->clinic_id);
-
-        // Apply filters
-        if ($request->filled('status')) {
-            $query->byStatus($request->status);
+        // Verify user has a valid clinic
+        if (!$user->clinic_id) {
+            abort(403, 'User must be associated with a clinic to access expenses.');
         }
 
-        if ($request->filled('category')) {
-            $query->byCategory($request->category);
+        try {
+            $query = Expense::with(['clinic', 'creator', 'approver']);
+
+            // Filter by clinic for all users
+            $query->where('clinic_id', $user->clinic_id);
+
+            // Apply filters
+            if ($request->filled('status')) {
+                $query->byStatus($request->status);
+            }
+
+            if ($request->filled('category')) {
+                $query->byCategory($request->category);
+            }
+
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('expense_number', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%")
+                      ->orWhere('vendor_name', 'like', "%{$search}%");
+                });
+            }
+
+            if ($request->filled('date_from') && $request->filled('date_to')) {
+                $query->byDateRange($request->date_from, $request->date_to);
+            }
+
+            $expenses = $query->latest()->paginate(15);
+
+            // Get clinic currency setting
+            $currency = DB::table('settings')
+                ->where('clinic_id', $user->clinic_id)
+                ->where('key', 'currency')
+                ->value('value') ?? 'USD';
+
+            $currencySymbol = $this->getCurrencySymbol($currency);
+
+            return view('finance.expenses', compact('expenses', 'currency', 'currencySymbol'));
+        } catch (\Exception $e) {
+            \Log::error('Error loading expenses page: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'clinic_id' => $user->clinic_id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->withErrors(['error' => 'Failed to load expenses. Please contact support if this persists.']);
         }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('expense_number', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('vendor_name', 'like', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->byDateRange($request->date_from, $request->date_to);
-        }
-
-        $expenses = $query->latest()->paginate(15);
-
-        // Get clinic currency setting
-        $currency = DB::table('settings')
-            ->where('clinic_id', $user->clinic_id)
-            ->where('key', 'currency')
-            ->value('value') ?? 'USD';
-
-        $currencySymbol = $this->getCurrencySymbol($currency);
-
-        return view('finance.expenses', compact('expenses', 'currency', 'currencySymbol'));
     }
 
     /**
