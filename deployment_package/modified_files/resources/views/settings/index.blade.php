@@ -483,11 +483,11 @@
                                                                                 <span class="badge bg-{{ $color }}">{{ __(ucfirst(str_replace('_', ' ', $user->role))) }}</span>
                                                                                 @if($user->role === 'assistant' && $user->doctors && $user->doctors->count() > 0)
                                                                                     <br>
-                                                                                    <small class="text-muted">
+                                                                                    <small class="text-muted" style="font-size: 0.7rem;">
                                                                                         <i class="fas fa-user-md me-1"></i>
                                                                                         {{ __('Assigned to:') }}
                                                                                         @foreach($user->doctors as $doctor)
-                                                                                            <span class="badge bg-secondary">{{ $doctor->name }}</span>{{ !$loop->last ? ', ' : '' }}
+                                                                                            <span class="badge bg-secondary" style="font-size: 0.65rem;">{{ $doctor->name }}</span>{{ !$loop->last ? ' ' : '' }}
                                                                                         @endforeach
                                                                                     </small>
                                                                                 @endif

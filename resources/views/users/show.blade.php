@@ -60,11 +60,11 @@
                             </span>
                             @if($user->role === 'assistant' && $user->doctors && $user->doctors->count() > 0)
                                 <div class="mt-2">
-                                    <small class="text-muted">
+                                    <small class="text-muted" style="font-size: 0.75rem;">
                                         <i class="fas fa-user-md me-1"></i>
                                         {{ __('Assigned to:') }}
                                         @foreach($user->doctors as $doctor)
-                                            <span class="badge bg-secondary">{{ $doctor->name }}</span>{{ !$loop->last ? ', ' : '' }}
+                                            <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ $doctor->name }}</span>{{ !$loop->last ? ' ' : '' }}
                                         @endforeach
                                     </small>
                                 </div>
