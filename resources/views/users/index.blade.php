@@ -129,6 +129,16 @@
                                             <span class="badge bg-{{ $user->role == 'admin' ? 'warning' : ($user->role == 'doctor' ? 'success' : 'info') }}">
                                                 {{ ucfirst(str_replace('_', ' ', $user->role ?? 'User')) }}
                                             </span>
+                                            @if($user->role === 'assistant' && $user->doctors && $user->doctors->count() > 0)
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-user-md me-1"></i>
+                                                    {{ __('Assigned to:') }}
+                                                    @foreach($user->doctors as $doctor)
+                                                        <span class="badge bg-secondary">{{ $doctor->name }}</span>{{ !$loop->last ? ', ' : '' }}
+                                                    @endforeach
+                                                </small>
+                                            @endif
                                         </td>
                                         <td>
                                             <span class="badge bg-{{ $user->is_active ? 'success' : 'secondary' }}">

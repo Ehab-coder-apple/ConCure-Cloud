@@ -443,6 +443,7 @@
                                                             // Show only users from the current clinic and hide super admins in tenant view
                                                             $users = \App\Models\User::where('clinic_id', auth()->user()->clinic_id)
                                                                 ->where('role', '!=', 'super_admin')
+                                                                ->with('doctors')
                                                                 ->orderBy('created_at', 'desc')
                                                                 ->take(5)
                                                                 ->get();
@@ -480,6 +481,16 @@
                                                                                     $color = $roleColors[$user->role] ?? 'secondary';
                                                                                 @endphp
                                                                                 <span class="badge bg-{{ $color }}">{{ __(ucfirst(str_replace('_', ' ', $user->role))) }}</span>
+                                                                                @if($user->role === 'assistant' && $user->doctors && $user->doctors->count() > 0)
+                                                                                    <br>
+                                                                                    <small class="text-muted">
+                                                                                        <i class="fas fa-user-md me-1"></i>
+                                                                                        {{ __('Assigned to:') }}
+                                                                                        @foreach($user->doctors as $doctor)
+                                                                                            <span class="badge bg-secondary">{{ $doctor->name }}</span>{{ !$loop->last ? ', ' : '' }}
+                                                                                        @endforeach
+                                                                                    </small>
+                                                                                @endif
                                                                             </td>
                                                                             <td>
                                                                                 @if($user->is_active)

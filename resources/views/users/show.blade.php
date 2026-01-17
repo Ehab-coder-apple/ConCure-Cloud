@@ -58,6 +58,17 @@
                             <span class="badge bg-{{ $user->role == 'program_owner' ? 'danger' : ($user->role == 'admin' ? 'warning' : ($user->role == 'doctor' ? 'success' : 'info')) }} fs-6">
                                 {{ ucfirst(str_replace('_', ' ', $user->role ?? 'User')) }}
                             </span>
+                            @if($user->role === 'assistant' && $user->doctors && $user->doctors->count() > 0)
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user-md me-1"></i>
+                                        {{ __('Assigned to:') }}
+                                        @foreach($user->doctors as $doctor)
+                                            <span class="badge bg-secondary">{{ $doctor->name }}</span>{{ !$loop->last ? ', ' : '' }}
+                                        @endforeach
+                                    </small>
+                                </div>
+                            @endif
                             <div class="mt-3">
                                 <span class="badge bg-{{ $user->is_active ?? true ? 'success' : 'secondary' }}">
                                     {{ $user->is_active ?? true ? __('Active') : __('Inactive') }}

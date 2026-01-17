@@ -27,7 +27,7 @@ class UserController extends Controller
             abort(403, 'Unauthorized: user management is restricted to admins.');
         }
 
-        $query = User::with('clinic', 'creator');
+        $query = User::with('clinic', 'creator', 'doctors');
 
         // For tenant (non-super-admin) users: restrict to their clinic and hide super admins
         if (!(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
