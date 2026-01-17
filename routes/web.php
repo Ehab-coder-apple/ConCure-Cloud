@@ -27,6 +27,8 @@ use App\Http\Controllers\AssistantController;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 /*
 |--------------------------------------------------------------------------
@@ -779,6 +781,44 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/invoices/{invoice}/mark-paid', [FinanceController::class, 'markInvoiceAsPaid'])->name('invoices.mark-paid');
         Route::post('/invoices/{invoice}/mark-sent', [FinanceController::class, 'markInvoiceAsSent'])->name('invoices.mark-sent');
         Route::post('/invoices/{invoice}/mark-cancelled', [FinanceController::class, 'markInvoiceAsCancelled'])->name('invoices.mark-cancelled');
+
+        // Expenses - Diagnostic route
+        Route::get('/expenses/debug', function() {
+            try {
+                $user = auth()->user();
+                $debug = [
+                    'user_id' => $user->id ?? 'null',
+                    'user_email' => $user->email ?? 'null',
+                    'clinic_id' => $user->clinic_id ?? 'null',
+                    'can_access_finance' => $user->canAccessFinance() ?? 'error',
+                    'expenses_table_exists' => Schema::hasTable('expenses'),
+                    'expenses_count' => DB::table('expenses')->count(),
+                ];
+
+                // Try to query expenses
+                try {
+                    $expenses = \App\Models\Expense::with(['clinic', 'creator', 'approver'])
+                        ->where('clinic_id', $user->clinic_id)
+                        ->latest()
+                        ->limit(5)
+                        ->get();
+                    $debug['expenses_query'] = 'success';
+                    $debug['expenses_found'] = $expenses->count();
+                } catch (\Exception $e) {
+                    $debug['expenses_query'] = 'failed';
+                    $debug['expenses_error'] = $e->getMessage();
+                }
+
+                return response()->json($debug);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => explode("\n", $e->getTraceAsString())
+                ], 500);
+            }
+        })->name('expenses.debug');
 
         // Expenses
         Route::get('/expenses', [FinanceController::class, 'expenses'])->name('expenses');
