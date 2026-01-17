@@ -366,10 +366,78 @@ class UserController extends Controller
             return back()->withErrors(['error' => 'Cannot delete your own account.']);
         }
 
-        $user->delete();
+        // Check for related records that would prevent deletion
+        $relatedRecords = [];
 
-        return redirect()->route('users.index')
-                        ->with('success', 'User deleted successfully.');
+        if ($user->appointments()->count() > 0) {
+            $relatedRecords[] = $user->appointments()->count() . ' appointment(s)';
+        }
+
+        if ($user->patients()->count() > 0) {
+            $relatedRecords[] = $user->patients()->count() . ' patient(s)';
+        }
+
+        // Check for created activation codes
+        $activationCodes = \App\Models\ActivationCode::where('created_by', $user->id)->count();
+        if ($activationCodes > 0) {
+            $relatedRecords[] = $activationCodes . ' activation code(s)';
+        }
+
+        // Check for uploaded patient files
+        $patientFiles = \App\Models\PatientFile::where('uploaded_by', $user->id)->count();
+        if ($patientFiles > 0) {
+            $relatedRecords[] = $patientFiles . ' patient file(s)';
+        }
+
+        // Check for created invoices
+        $invoices = \App\Models\Invoice::where('created_by', $user->id)->count();
+        if ($invoices > 0) {
+            $relatedRecords[] = $invoices . ' invoice(s)';
+        }
+
+        // Check for created expenses
+        $expenses = \App\Models\Expense::where('created_by', $user->id)->count();
+        if ($expenses > 0) {
+            $relatedRecords[] = $expenses . ' expense(s)';
+        }
+
+        // Check for communication logs
+        $communicationLogs = \App\Models\CommunicationLog::where('sent_by', $user->id)->count();
+        if ($communicationLogs > 0) {
+            $relatedRecords[] = $communicationLogs . ' communication log(s)';
+        }
+
+        // Check for diet plans created by this doctor
+        $dietPlans = \App\Models\DietPlan::where('doctor_id', $user->id)->count();
+        if ($dietPlans > 0) {
+            $relatedRecords[] = $dietPlans . ' diet plan(s)';
+        }
+
+        // Check for radiology requests created by this doctor
+        $radiologyRequests = \App\Models\RadiologyRequest::where('doctor_id', $user->id)->count();
+        if ($radiologyRequests > 0) {
+            $relatedRecords[] = $radiologyRequests . ' radiology request(s)';
+        }
+
+        // Check for weight records recorded by this user
+        $weightRecords = \App\Models\DietPlanWeightRecord::where('recorded_by', $user->id)->count();
+        if ($weightRecords > 0) {
+            $relatedRecords[] = $weightRecords . ' weight record(s)';
+        }
+
+        if (!empty($relatedRecords)) {
+            $message = 'Cannot delete this user because they have related records: ' . implode(', ', $relatedRecords) . '. ';
+            $message .= 'Please reassign or remove these records first, or deactivate the user instead.';
+            return back()->withErrors(['error' => $message]);
+        }
+
+        try {
+            $user->delete();
+            return redirect()->route('users.index')
+                            ->with('success', 'User deleted successfully.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to delete user: ' . $e->getMessage()]);
+        }
     }
 
     /**
