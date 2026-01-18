@@ -20,22 +20,54 @@ class PatientReportController extends Controller
     public function generateReport(Request $request, Patient $patient)
     {
         $this->authorizePatientAccess($patient);
-        
+
         // Get date range from request or default to last 6 months
         $dateFrom = $request->get('date_from', Carbon::now()->subMonths(6)->format('Y-m-d'));
         $dateTo = $request->get('date_to', Carbon::now()->format('Y-m-d'));
-        
+
         // Collect all patient data
         $reportData = $this->collectPatientData($patient, $dateFrom, $dateTo);
-        
+
         // Determine output format
         $format = $request->get('format', 'html');
-        
+
         if ($format === 'pdf') {
             return $this->generatePdfReport($patient, $reportData, $dateFrom, $dateTo);
         }
-        
+
         return $this->generateHtmlReport($patient, $reportData, $dateFrom, $dateTo);
+    }
+
+    /**
+     * Generate blank report with only patient and doctor info
+     */
+    public function generateBlankReport(Request $request, Patient $patient)
+    {
+        $this->authorizePatientAccess($patient);
+
+        $user = Auth::user();
+
+        $pdf = Pdf::loadView('reports.patient-blank-report-pdf', [
+            'patient' => $patient,
+            'doctor' => $user,
+            'clinic' => $user->clinic,
+        ]);
+
+        // Configure PDF settings
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => true,
+            'defaultFont' => 'Arial',
+            'margin_top' => 10,
+            'margin_right' => 10,
+            'margin_bottom' => 10,
+            'margin_left' => 10,
+        ]);
+
+        $filename = 'blank-report-' . $patient->patient_id . '-' . Carbon::now()->format('Y-m-d') . '.pdf';
+
+        return $pdf->download($filename);
     }
     
     /**

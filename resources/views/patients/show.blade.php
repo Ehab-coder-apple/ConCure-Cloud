@@ -46,6 +46,13 @@
                                     {{ __('Custom Date Range') }}
                                 </a>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('patient.blank-report', $patient) }}" target="_blank">
+                                    <i class="fas fa-file-alt me-2"></i>
+                                    {{ __('Blank Report') }}
+                                </a>
+                            </li>
                         </ul>
                     </div>
                     <a href="{{ route('patients.edit', $patient->id ?? 1) }}" class="btn btn-outline-primary btn-sm me-1">

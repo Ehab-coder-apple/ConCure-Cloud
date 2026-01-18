@@ -251,6 +251,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     // Patient Reports
     Route::get('/patients/{patient}/report', [App\Http\Controllers\PatientReportController::class, 'generateReport'])->name('patient.report');
+    Route::get('/patients/{patient}/blank-report', [App\Http\Controllers\PatientReportController::class, 'generateBlankReport'])->name('patient.blank-report');
 
 
     // Medical Image Bank (top-level)
