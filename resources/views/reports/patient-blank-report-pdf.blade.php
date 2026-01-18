@@ -148,9 +148,18 @@
             @php
                 $logoPath = public_path('storage/' . $clinic->logo);
                 $logoExists = file_exists($logoPath);
+                $logoBase64 = null;
+
+                if ($logoExists) {
+                    $imageData = file_get_contents($logoPath);
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mimeType = finfo_file($finfo, $logoPath);
+                    finfo_close($finfo);
+                    $logoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+                }
             @endphp
-            @if($logoExists)
-                <img src="{{ $logoPath }}" alt="Clinic Logo" style="max-height: 50px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;">
+            @if($logoBase64)
+                <img src="{{ $logoBase64 }}" alt="Clinic Logo" style="max-height: 50px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;">
             @endif
         @endif
         <h1 style="font-size: 20px; margin: 5px 0;">{{ $clinic->name ?? 'Medical Report' }}</h1>
