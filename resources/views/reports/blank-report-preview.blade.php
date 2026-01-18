@@ -246,214 +246,110 @@
 
 <style>
 @media print {
-    /* Hide all non-essential elements */
-    .no-print,
-    .card-header,
-    .col-lg-4,
-    nav,
-    .navbar,
-    footer,
-    .sidebar,
-    .btn,
-    button,
-    a.btn,
-    header,
-    .breadcrumb,
-    .alert,
-    .notification,
-    .top-bar,
-    .header-section,
-    [class*="notification"],
-    [class*="alert"],
-    [class*="breadcrumb"],
-    body > nav,
-    body > header,
-    .page-header,
-    .navbar-top,
-    .top-navigation,
-    .main-header,
-    .main-sidebar,
-    .content-header {
-        display: none !important;
-    }
-
-    /* Remove card styling */
-    .card {
-        border: none !important;
-        box-shadow: none !important;
-        margin: 0 !important;
-    }
-
-    .card-body {
-        padding: 0 !important;
-        background-color: white !important;
-    }
-
-    /* Full width for content */
-    .col-lg-8,
-    .container-fluid,
-    .row {
-        width: 100% !important;
-        max-width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    /* Fit to one page */
+    /* Page setup */
     @page {
         size: A4 portrait;
-        margin: 8mm 10mm;
+        margin: 10mm;
     }
 
     * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        color-adjust: exact !important;
     }
 
-    html, body {
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100%;
-        height: 100%;
-        background: white !important;
+    /* Hide everything first */
+    body * {
+        visibility: hidden;
     }
 
-    /* Scale content to fit */
+    /* Show only the printable area and its children */
     #printableArea,
-    .print-content,
-    .bg-white {
-        max-width: 100% !important;
-        width: 100% !important;
-        padding: 10px !important;
-        box-shadow: none !important;
-        min-height: auto !important;
-        margin: 0 !important;
-        background: white !important;
-        display: block !important;
-        visibility: visible !important;
+    #printableArea * {
+        visibility: visible;
     }
 
-    /* Ensure all content within printable area is visible */
-    #printableArea *,
-    .print-content * {
-        display: block !important;
-        visibility: visible !important;
+    /* Position printable area at top left */
+    #printableArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 0;
+        margin: 0;
     }
 
-    #printableArea table,
-    .print-content table {
-        display: table !important;
+    /* Ensure proper display for different elements */
+    #printableArea div {
+        display: block;
     }
 
-    #printableArea tr,
-    .print-content tr {
-        display: table-row !important;
+    #printableArea table {
+        display: table;
+        width: 100%;
+    }
+
+    #printableArea tr {
+        display: table-row;
     }
 
     #printableArea td,
-    #printableArea th,
-    .print-content td,
-    .print-content th {
-        display: table-cell !important;
+    #printableArea th {
+        display: table-cell;
     }
 
-    #printableArea img,
-    .print-content img {
-        display: block !important;
+    #printableArea img {
+        display: block;
     }
 
-    /* Reduce spacing for print */
-    h1 {
+    /* Font sizes */
+    #printableArea h1 {
         font-size: 18px !important;
-        margin: 3px 0 !important;
-        display: block !important;
     }
 
-    h2 {
+    #printableArea h2 {
         font-size: 14px !important;
-        margin: 3px 0 !important;
-        display: block !important;
     }
 
-    table {
+    #printableArea table {
         font-size: 10px !important;
-        width: 100% !important;
-        display: table !important;
     }
 
-    table td,
-    table th {
+    #printableArea td,
+    #printableArea th {
         padding: 3px 6px !important;
-        display: table-cell !important;
     }
 
-    /* Reduce section spacing */
-    div[style*="margin-bottom: 25px"],
-    div[style*="margin-bottom: 20px"],
-    div[style*="margin-bottom: 15px"] {
-        margin-bottom: 8px !important;
-    }
-
-    div[style*="margin-bottom: 30px"] {
-        margin-bottom: 10px !important;
-    }
-
-    div[style*="margin-top: 30px"],
-    div[style*="margin-top: 20px"] {
-        margin-top: 10px !important;
-    }
-
-    /* Ensure logo is visible */
-    img,
-    img[alt="Clinic Logo"] {
-        max-height: 45px !important;
-        display: block !important;
-        margin: 0 auto 5px !important;
-        page-break-inside: avoid !important;
-    }
-
-    /* Reduce notes section */
-    div[style*="min-height: 300px"],
-    div[style*="min-height: 200px"],
-    div[style*="min-height: 180px"] {
-        min-height: 140px !important;
-        padding: 8px !important;
-    }
-
-    /* Signature section */
-    div[style*="margin-top: 60px"],
-    div[style*="margin-top: 40px"] {
-        margin-top: 25px !important;
-    }
-
-    /* Footer text */
-    div[style*="font-size: 10px"],
-    div[style*="font-size: 9px"] {
-        font-size: 8px !important;
-        margin-top: 8px !important;
-    }
-
-    /* Section titles */
-    div[style*="background-color: #007bff"] {
+    /* Spacing adjustments */
+    #printableArea .section-header {
         padding: 4px 8px !important;
         font-size: 11px !important;
         margin-bottom: 6px !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+    }
+
+    #printableArea .patient-info-section,
+    #printableArea .doctor-info-section,
+    #printableArea .notes-section {
+        margin-bottom: 8px !important;
+    }
+
+    #printableArea .notes-content {
+        min-height: 120px !important;
+        padding: 8px !important;
+    }
+
+    #printableArea .signature-section {
+        margin-top: 10px !important;
+        padding-top: 8px !important;
+    }
+
+    #printableArea img {
+        max-height: 45px !important;
     }
 
     /* Prevent page breaks */
-    .bg-white,
-    table,
-    div[style*="background-color: #007bff"],
-    .signature-section {
+    #printableArea table,
+    #printableArea .signature-section {
         page-break-inside: avoid !important;
-    }
-
-    /* Force single page */
-    body {
-        overflow: hidden !important;
     }
 }
 
