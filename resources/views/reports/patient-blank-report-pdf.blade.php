@@ -20,10 +20,31 @@
         }
 
         .header {
-            text-align: center;
+            display: table;
+            width: 100%;
             border-bottom: 2px solid #007bff;
             padding-bottom: 8px;
             margin-bottom: 15px;
+        }
+
+        .header-logo {
+            display: table-cell;
+            width: 80px;
+            vertical-align: middle;
+            text-align: left;
+        }
+
+        .header-logo img {
+            max-height: 60px;
+            max-width: 75px;
+            display: block;
+        }
+
+        .header-content {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
+            padding-left: 10px;
         }
 
         .header h1 {
@@ -143,54 +164,61 @@
 </head>
 <body>
     <!-- Header -->
-    <div class="header">
-        @php
-            $logoBase64 = null;
+    @php
+        $logoBase64 = null;
 
-            // Get logo from settings table (not clinic->logo column)
-            $logoPath = DB::table('settings')
-                ->where('clinic_id', $clinic->id)
-                ->where('key', 'clinic_logo')
-                ->value('value');
+        // Get logo from settings table (not clinic->logo column)
+        $logoPath = DB::table('settings')
+            ->where('clinic_id', $clinic->id)
+            ->where('key', 'clinic_logo')
+            ->value('value');
 
-            if ($logoPath) {
-                // Try multiple possible paths
-                $possiblePaths = [
-                    storage_path('app/public/' . $logoPath),
-                    public_path('storage/' . $logoPath),
-                    storage_path('app/public/' . ltrim(str_replace(['storage/', 'public/'], '', $logoPath), '/')),
-                ];
+        if ($logoPath) {
+            // Try multiple possible paths
+            $possiblePaths = [
+                storage_path('app/public/' . $logoPath),
+                public_path('storage/' . $logoPath),
+                storage_path('app/public/' . ltrim(str_replace(['storage/', 'public/'], '', $logoPath), '/')),
+            ];
 
-                foreach ($possiblePaths as $fullPath) {
-                    if (file_exists($fullPath)) {
-                        try {
-                            $imageData = file_get_contents($fullPath);
-                            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                            $mimeType = finfo_file($finfo, $fullPath);
-                            finfo_close($finfo);
-                            $logoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
-                            break; // Found the logo, stop searching
-                        } catch (\Exception $e) {
-                            // Continue to next path
-                        }
+            foreach ($possiblePaths as $fullPath) {
+                if (file_exists($fullPath)) {
+                    try {
+                        $imageData = file_get_contents($fullPath);
+                        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                        $mimeType = finfo_file($finfo, $fullPath);
+                        finfo_close($finfo);
+                        $logoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+                        break; // Found the logo, stop searching
+                    } catch (\Exception $e) {
+                        // Continue to next path
                     }
                 }
             }
-        @endphp
+        }
+    @endphp
 
+    <div class="header">
+        <!-- Logo on the left -->
         @if($logoBase64)
-            <img src="{{ $logoBase64 }}" alt="Clinic Logo" style="max-height: 50px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;">
-        @endif
-        <h1 style="font-size: 20px; margin: 5px 0;">{{ $clinic->name ?? 'Medical Report' }}</h1>
-        @if($clinic->address || $clinic->phone || $clinic->email)
-        <div class="clinic-info" style="font-size: 10px;">
-            @if($clinic->address){{ $clinic->address }}@endif
-            @if($clinic->phone) | Tel: {{ $clinic->phone }}@endif
-            @if($clinic->email) | Email: {{ $clinic->email }}@endif
+        <div class="header-logo">
+            <img src="{{ $logoBase64 }}" alt="Clinic Logo">
         </div>
         @endif
-        <div class="clinic-info" style="font-size: 10px;">
-            <strong>Date:</strong> {{ isset($generated_date) ? $generated_date->format('F d, Y') : now()->format('F d, Y') }}
+
+        <!-- Clinic info in the center -->
+        <div class="header-content">
+            <h1 style="font-size: 20px; margin: 5px 0;">{{ $clinic->name ?? 'Medical Report' }}</h1>
+            @if($clinic->address || $clinic->phone || $clinic->email)
+            <div class="clinic-info" style="font-size: 10px;">
+                @if($clinic->address){{ $clinic->address }}@endif
+                @if($clinic->phone) | Tel: {{ $clinic->phone }}@endif
+                @if($clinic->email) | Email: {{ $clinic->email }}@endif
+            </div>
+            @endif
+            <div class="clinic-info" style="font-size: 10px;">
+                <strong>Date:</strong> {{ isset($generated_date) ? $generated_date->format('F d, Y') : now()->format('F d, Y') }}
+            </div>
         </div>
     </div>
 
