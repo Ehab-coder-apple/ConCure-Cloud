@@ -144,23 +144,42 @@
 <body>
     <!-- Header -->
     <div class="header">
-        @if($clinic->logo)
-            @php
-                $logoPath = public_path('storage/' . $clinic->logo);
-                $logoExists = file_exists($logoPath);
-                $logoBase64 = null;
+        @php
+            $logoBase64 = null;
 
-                if ($logoExists) {
-                    $imageData = file_get_contents($logoPath);
-                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                    $mimeType = finfo_file($finfo, $logoPath);
-                    finfo_close($finfo);
-                    $logoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+            // Get logo from settings table (not clinic->logo column)
+            $logoPath = DB::table('settings')
+                ->where('clinic_id', $clinic->id)
+                ->where('key', 'clinic_logo')
+                ->value('value');
+
+            if ($logoPath) {
+                // Try multiple possible paths
+                $possiblePaths = [
+                    storage_path('app/public/' . $logoPath),
+                    public_path('storage/' . $logoPath),
+                    storage_path('app/public/' . ltrim(str_replace(['storage/', 'public/'], '', $logoPath), '/')),
+                ];
+
+                foreach ($possiblePaths as $fullPath) {
+                    if (file_exists($fullPath)) {
+                        try {
+                            $imageData = file_get_contents($fullPath);
+                            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                            $mimeType = finfo_file($finfo, $fullPath);
+                            finfo_close($finfo);
+                            $logoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+                            break; // Found the logo, stop searching
+                        } catch (\Exception $e) {
+                            // Continue to next path
+                        }
+                    }
                 }
-            @endphp
-            @if($logoBase64)
-                <img src="{{ $logoBase64 }}" alt="Clinic Logo" style="max-height: 50px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;">
-            @endif
+            }
+        @endphp
+
+        @if($logoBase64)
+            <img src="{{ $logoBase64 }}" alt="Clinic Logo" style="max-height: 50px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;">
         @endif
         <h1 style="font-size: 20px; margin: 5px 0;">{{ $clinic->name ?? 'Medical Report' }}</h1>
         @if($clinic->address || $clinic->phone || $clinic->email)
