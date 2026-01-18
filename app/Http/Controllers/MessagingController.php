@@ -404,30 +404,42 @@ class MessagingController extends Controller
     public function deleteConversation(Request $request, Conversation $conversation)
     {
         $user = $request->user();
-        if ($conversation->clinic_id !== $user->clinic_id) abort(403);
+
+        if ($conversation->clinic_id !== $user->clinic_id) {
+            return response()->json(['success' => false, 'error' => 'This conversation does not belong to your clinic.'], 403);
+        }
+
         // Allow only conversation admins or clinic admins to delete
         $isConvAdmin = $conversation->participants()->where('user_id', $user->id)->where('role', 'admin')->exists();
-        if (!($isConvAdmin || $user->isClinicAdmin() || $user->hasAnyPermission(['users_permissions']))) abort(403);
 
-        DB::transaction(function() use ($request, $user, $conversation) {
-            $conversation->delete(); // cascades via FKs
+        if (!($isConvAdmin || $user->isClinicAdmin() || $user->hasAnyPermission(['users_permissions']))) {
+            return response()->json(['success' => false, 'error' => 'You do not have permission to delete this conversation. Only conversation admins or clinic admins can delete conversations.'], 403);
+        }
 
-            AuditLog::create([
-                'user_id' => $user->id,
-                'user_name' => $user->full_name ?? ($user->first_name.' '.$user->last_name),
-                'user_role' => $user->role,
-                'clinic_id' => $user->clinic_id,
-                'action' => 'delete_conversation',
-                'model_type' => Conversation::class,
-                'model_id' => $conversation->id,
-                'description' => 'Conversation deleted',
-                'performed_at' => now(),
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-            ]);
-        });
+        try {
+            DB::transaction(function() use ($request, $user, $conversation) {
+                $conversation->delete(); // cascades via FKs
 
-        return response()->json(['success' => true]);
+                AuditLog::create([
+                    'user_id' => $user->id,
+                    'user_name' => $user->full_name ?? ($user->first_name.' '.$user->last_name),
+                    'user_role' => $user->role,
+                    'clinic_id' => $user->clinic_id,
+                    'action' => 'delete_conversation',
+                    'model_type' => Conversation::class,
+                    'model_id' => $conversation->id,
+                    'description' => 'Conversation deleted',
+                    'performed_at' => now(),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            });
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete conversation: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Failed to delete conversation: ' . $e->getMessage()], 500);
+        }
     }
 
 

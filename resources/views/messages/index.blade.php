@@ -326,7 +326,9 @@
       await refreshConversations();
       await refreshUnread();
     } catch (e) {
-      alert('Delete failed');
+      console.error('Delete conversation error:', e);
+      const errorMsg = e.message || e.error || 'Delete failed. You may not have permission to delete this conversation.';
+      alert(errorMsg);
     }
   }
 
