@@ -245,33 +245,7 @@
 </div>
 
 <style>
-/* Hide elements that shouldn't print */
-.no-print {
-    display: block;
-}
-
 @media print {
-    /* Hide EVERYTHING except the printable content */
-    body * {
-        visibility: hidden !important;
-    }
-
-    /* Show only the printable area */
-    #printableArea,
-    #printableArea * {
-        visibility: visible !important;
-    }
-
-    /* Position printable area at top of page */
-    #printableArea {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
     /* Hide all non-essential elements */
     .no-print,
     .card-header,
@@ -296,26 +270,11 @@
     body > header,
     .page-header,
     .navbar-top,
-    .top-navigation {
+    .top-navigation,
+    .main-header,
+    .main-sidebar,
+    .content-header {
         display: none !important;
-        visibility: hidden !important;
-    }
-
-    /* Full width for content */
-    .col-lg-8 {
-        width: 100% !important;
-        max-width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    .container-fluid {
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    .row {
-        margin: 0 !important;
     }
 
     /* Remove card styling */
@@ -328,6 +287,16 @@
     .card-body {
         padding: 0 !important;
         background-color: white !important;
+    }
+
+    /* Full width for content */
+    .col-lg-8,
+    .container-fluid,
+    .row {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
 
     /* Fit to one page */
@@ -347,38 +316,76 @@
         padding: 0 !important;
         width: 100%;
         height: 100%;
+        background: white !important;
     }
 
     /* Scale content to fit */
+    #printableArea,
+    .print-content,
     .bg-white {
         max-width: 100% !important;
         width: 100% !important;
-        padding: 12px !important;
+        padding: 10px !important;
         box-shadow: none !important;
         min-height: auto !important;
         margin: 0 !important;
         background: white !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Ensure all content within printable area is visible */
+    #printableArea *,
+    .print-content * {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    #printableArea table,
+    .print-content table {
+        display: table !important;
+    }
+
+    #printableArea tr,
+    .print-content tr {
+        display: table-row !important;
+    }
+
+    #printableArea td,
+    #printableArea th,
+    .print-content td,
+    .print-content th {
+        display: table-cell !important;
+    }
+
+    #printableArea img,
+    .print-content img {
+        display: block !important;
     }
 
     /* Reduce spacing for print */
     h1 {
         font-size: 18px !important;
         margin: 3px 0 !important;
+        display: block !important;
     }
 
     h2 {
         font-size: 14px !important;
         margin: 3px 0 !important;
+        display: block !important;
     }
 
     table {
         font-size: 10px !important;
         width: 100% !important;
+        display: table !important;
     }
 
     table td,
     table th {
         padding: 3px 6px !important;
+        display: table-cell !important;
     }
 
     /* Reduce section spacing */
