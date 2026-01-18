@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid no-print">
     <div class="row">
         <!-- Preview Panel -->
         <div class="col-lg-8">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center no-print">
                     <h5 class="mb-0">
                         <i class="fas fa-eye me-2"></i>
                         {{ __('Report Preview') }}
@@ -14,56 +14,56 @@
                     <span class="badge bg-light text-dark">{{ __('Preview Mode') }}</span>
                 </div>
                 <div class="card-body p-4" style="background-color: #f5f5f5;">
-                    <!-- PDF-like Preview -->
-                    <div class="bg-white shadow-sm p-4" style="max-width: 800px; margin: 0 auto; min-height: auto;">
+                    <!-- PDF-like Preview - This is what gets printed -->
+                    <div class="bg-white shadow-sm p-4 print-content" id="printableArea" style="max-width: 800px; margin: 0 auto; min-height: auto;">
                         <!-- Header -->
-                        <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px;">
+                        <div class="report-header" style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 8px; margin-bottom: 12px;">
                             @if($clinic->logo)
                                 @php
                                     $logoPath = 'storage/' . $clinic->logo;
                                     $logoExists = file_exists(public_path($logoPath));
                                 @endphp
                                 @if($logoExists)
-                                    <img src="{{ asset($logoPath) }}" alt="Clinic Logo" style="max-height: 50px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;">
+                                    <img src="{{ asset($logoPath) }}" alt="Clinic Logo" class="clinic-logo" style="max-height: 45px; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto;">
                                 @endif
                             @endif
-                            <h1 style="color: #007bff; margin: 0 0 8px 0; font-size: 20px;">{{ $clinic->name ?? 'Medical Report' }}</h1>
+                            <h1 class="clinic-name" style="color: #007bff; margin: 0 0 5px 0; font-size: 18px;">{{ $clinic->name ?? 'Medical Report' }}</h1>
                             @if($clinic->address || $clinic->phone || $clinic->email)
-                            <div style="text-align: center; margin-bottom: 3px; color: #666; font-size: 10px;">
+                            <div class="clinic-info" style="text-align: center; margin-bottom: 2px; color: #666; font-size: 9px;">
                                 @if($clinic->address){{ $clinic->address }}@endif
                                 @if($clinic->phone) | Tel: {{ $clinic->phone }}@endif
                                 @if($clinic->email) | Email: {{ $clinic->email }}@endif
                             </div>
                             @endif
-                            <div style="text-align: center; margin-bottom: 3px; color: #666; font-size: 10px;">
+                            <div class="report-date" style="text-align: center; margin-bottom: 2px; color: #666; font-size: 9px;">
                                 <strong>Date:</strong> {{ $generated_date->format('F d, Y') }}
                             </div>
                         </div>
 
                         @if(isset($report_title))
                         <!-- Report Title -->
-                        <div style="text-align: center; margin-bottom: 15px; padding: 8px; background-color: #e3f2fd; border-left: 4px solid #2196F3;">
-                            <h2 style="margin: 0; color: #1976D2; font-size: 16px;">{{ $report_title }}</h2>
+                        <div class="report-title-section" style="text-align: center; margin-bottom: 10px; padding: 6px; background-color: #e3f2fd; border-left: 4px solid #2196F3;">
+                            <h2 style="margin: 0; color: #1976D2; font-size: 14px;">{{ $report_title }}</h2>
                         </div>
                         @endif
 
                         <!-- Patient Information -->
-                        <div style="margin-bottom: 15px;">
-                            <div style="background-color: #007bff; color: white; padding: 6px 10px; font-weight: bold; font-size: 12px; margin-bottom: 10px;">
+                        <div class="patient-info-section" style="margin-bottom: 10px;">
+                            <div class="section-header" style="background-color: #007bff; color: white; padding: 4px 8px; font-weight: bold; font-size: 11px; margin-bottom: 6px;">
                                 Patient Information
                             </div>
-                            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                            <table class="info-table" style="width: 100%; border-collapse: collapse; font-size: 10px;">
                                 <tr>
-                                    <td style="width: 30%; padding: 5px 8px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Patient ID:</td>
-                                    <td style="width: 70%; padding: 5px 8px; border: 1px solid #dee2e6;">{{ $patient->patient_id }}</td>
+                                    <td style="width: 30%; padding: 3px 6px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Patient ID:</td>
+                                    <td style="width: 70%; padding: 3px 6px; border: 1px solid #dee2e6;">{{ $patient->patient_id }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 5px 8px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Full Name:</td>
-                                    <td style="padding: 5px 8px; border: 1px solid #dee2e6;">{{ $patient->full_name }}</td>
+                                    <td style="padding: 3px 6px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Full Name:</td>
+                                    <td style="padding: 3px 6px; border: 1px solid #dee2e6;">{{ $patient->full_name }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 5px 8px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Date of Birth:</td>
-                                    <td style="padding: 5px 8px; border: 1px solid #dee2e6;">
+                                    <td style="padding: 3px 6px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Date of Birth:</td>
+                                    <td style="padding: 3px 6px; border: 1px solid #dee2e6;">
                                         @if($patient->date_of_birth)
                                             {{ $patient->date_of_birth->format('F d, Y') }} ({{ $patient->date_of_birth->age }} years old)
                                         @else
@@ -72,69 +72,69 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 5px 8px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Gender:</td>
-                                    <td style="padding: 5px 8px; border: 1px solid #dee2e6;">{{ ucfirst($patient->gender ?? 'N/A') }}</td>
+                                    <td style="padding: 3px 6px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Gender:</td>
+                                    <td style="padding: 3px 6px; border: 1px solid #dee2e6;">{{ ucfirst($patient->gender ?? 'N/A') }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 5px 8px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Phone:</td>
-                                    <td style="padding: 5px 8px; border: 1px solid #dee2e6;">{{ $patient->phone ?? 'N/A' }}</td>
+                                    <td style="padding: 3px 6px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Phone:</td>
+                                    <td style="padding: 3px 6px; border: 1px solid #dee2e6;">{{ $patient->phone ?? 'N/A' }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 5px 8px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Address:</td>
-                                    <td style="padding: 5px 8px; border: 1px solid #dee2e6;">{{ $patient->address ?? 'N/A' }}</td>
+                                    <td style="padding: 3px 6px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Address:</td>
+                                    <td style="padding: 3px 6px; border: 1px solid #dee2e6;">{{ $patient->address ?? 'N/A' }}</td>
                                 </tr>
                             </table>
                         </div>
 
                         <!-- Doctor Information -->
-                        <div style="margin-bottom: 15px;">
-                            <div style="background-color: #007bff; color: white; padding: 6px 10px; font-weight: bold; font-size: 12px; margin-bottom: 10px;">
+                        <div class="doctor-info-section" style="margin-bottom: 10px;">
+                            <div class="section-header" style="background-color: #007bff; color: white; padding: 4px 8px; font-weight: bold; font-size: 11px; margin-bottom: 6px;">
                                 Doctor Information
                             </div>
-                            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                            <table class="info-table" style="width: 100%; border-collapse: collapse; font-size: 10px;">
                                 <tr>
-                                    <td style="width: 30%; padding: 5px 8px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Doctor Name:</td>
-                                    <td style="width: 70%; padding: 5px 8px; border: 1px solid #dee2e6;">{{ $doctor->full_name ?? ($doctor->first_name . ' ' . $doctor->last_name) }}</td>
+                                    <td style="width: 30%; padding: 3px 6px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Doctor Name:</td>
+                                    <td style="width: 70%; padding: 3px 6px; border: 1px solid #dee2e6;">{{ $doctor->full_name ?? ($doctor->first_name . ' ' . $doctor->last_name) }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 5px 8px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Specialization:</td>
-                                    <td style="padding: 5px 8px; border: 1px solid #dee2e6;">{{ $doctor->specialization ?? 'N/A' }}</td>
+                                    <td style="padding: 3px 6px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">Specialization:</td>
+                                    <td style="padding: 3px 6px; border: 1px solid #dee2e6;">{{ $doctor->specialization ?? 'N/A' }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 5px 8px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">License Number:</td>
-                                    <td style="padding: 5px 8px; border: 1px solid #dee2e6;">{{ $doctor->license_number ?? 'N/A' }}</td>
+                                    <td style="padding: 3px 6px; font-weight: bold; background-color: #f8f9fa; border: 1px solid #dee2e6;">License Number:</td>
+                                    <td style="padding: 3px 6px; border: 1px solid #dee2e6;">{{ $doctor->license_number ?? 'N/A' }}</td>
                                 </tr>
                             </table>
                         </div>
 
                         <!-- Notes Section -->
-                        <div style="margin-bottom: 15px;">
-                            <div style="background-color: #007bff; color: white; padding: 6px 10px; font-weight: bold; font-size: 12px; margin-bottom: 10px;">
+                        <div class="notes-section" style="margin-bottom: 10px;">
+                            <div class="section-header" style="background-color: #007bff; color: white; padding: 4px 8px; font-weight: bold; font-size: 11px; margin-bottom: 6px;">
                                 Notes / Special Information
                             </div>
-                            <div style="border: 1px solid #dee2e6; min-height: 180px; padding: 12px; background-color: #fafafa;">
-                                <div style="white-space: pre-wrap; line-height: 1.6; color: #333; font-size: 11px;">{{ $notes }}</div>
+                            <div class="notes-content" style="border: 1px solid #dee2e6; min-height: 140px; padding: 8px; background-color: #fafafa;">
+                                <div style="white-space: pre-wrap; line-height: 1.5; color: #333; font-size: 10px;">{{ $notes }}</div>
                             </div>
                         </div>
 
                         <!-- Footer with Signatures -->
-                        <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #dee2e6;">
+                        <div class="signature-section" style="margin-top: 12px; padding-top: 10px; border-top: 2px solid #dee2e6;">
                             <div style="display: flex; justify-content: space-between;">
                                 <div style="width: 45%; text-align: center;">
-                                    <div style="border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; font-size: 11px;">
+                                    <div style="border-top: 1px solid #333; margin-top: 30px; padding-top: 4px; font-size: 10px;">
                                         <strong>Doctor's Signature</strong>
                                     </div>
                                 </div>
                                 <div style="width: 45%; text-align: center;">
-                                    <div style="border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; font-size: 11px;">
+                                    <div style="border-top: 1px solid #333; margin-top: 30px; padding-top: 4px; font-size: 10px;">
                                         <strong>Date</strong>
                                     </div>
                                 </div>
                             </div>
 
-                            <div style="margin-top: 15px; text-align: center; font-size: 9px; color: #666;">
-                                <p style="margin: 3px 0;">This medical report will be saved to patient records.</p>
-                                <p style="margin: 3px 0;">Generated on {{ $generated_date->format('F d, Y \a\t g:i A') }}</p>
+                            <div class="footer-info" style="margin-top: 10px; text-align: center; font-size: 8px; color: #666;">
+                                <p style="margin: 2px 0;">This medical report will be saved to patient records.</p>
+                                <p style="margin: 2px 0;">Generated on {{ $generated_date->format('F d, Y \a\t g:i A') }}</p>
                             </div>
                         </div>
                     </div>
@@ -143,10 +143,10 @@
         </div>
 
         <!-- Action Panel -->
-        <div class="col-lg-4">
+        <div class="col-lg-4 no-print">
             <!-- Report Details Card -->
-            <div class="card shadow-sm mb-3">
-                <div class="card-header bg-info text-white">
+            <div class="card shadow-sm mb-3 no-print">
+                <div class="card-header bg-info text-white no-print">
                     <h6 class="mb-0">
                         <i class="fas fa-info-circle me-2"></i>
                         {{ __('Report Details') }}
@@ -173,8 +173,8 @@
             </div>
 
             <!-- Actions Card -->
-            <div class="card shadow-sm mb-3">
-                <div class="card-header bg-success text-white">
+            <div class="card shadow-sm mb-3 no-print">
+                <div class="card-header bg-success text-white no-print">
                     <h6 class="mb-0">
                         <i class="fas fa-tasks me-2"></i>
                         {{ __('Actions') }}
@@ -212,8 +212,8 @@
             </div>
 
             <!-- Help Card -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-warning text-dark">
+            <div class="card shadow-sm no-print">
+                <div class="card-header bg-warning text-dark no-print">
                     <h6 class="mb-0">
                         <i class="fas fa-question-circle me-2"></i>
                         {{ __('What Happens Next?') }}
@@ -245,8 +245,35 @@
 </div>
 
 <style>
+/* Hide elements that shouldn't print */
+.no-print {
+    display: block;
+}
+
 @media print {
+    /* Hide EVERYTHING except the printable content */
+    body * {
+        visibility: hidden !important;
+    }
+
+    /* Show only the printable area */
+    #printableArea,
+    #printableArea * {
+        visibility: visible !important;
+    }
+
+    /* Position printable area at top of page */
+    #printableArea {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
     /* Hide all non-essential elements */
+    .no-print,
     .card-header,
     .col-lg-4,
     nav,
@@ -255,8 +282,23 @@
     .sidebar,
     .btn,
     button,
-    a.btn {
+    a.btn,
+    header,
+    .breadcrumb,
+    .alert,
+    .notification,
+    .top-bar,
+    .header-section,
+    [class*="notification"],
+    [class*="alert"],
+    [class*="breadcrumb"],
+    body > nav,
+    body > header,
+    .page-header,
+    .navbar-top,
+    .top-navigation {
         display: none !important;
+        visibility: hidden !important;
     }
 
     /* Full width for content */
@@ -264,10 +306,12 @@
         width: 100% !important;
         max-width: 100% !important;
         padding: 0 !important;
+        margin: 0 !important;
     }
 
     .container-fluid {
         padding: 0 !important;
+        margin: 0 !important;
     }
 
     .row {
@@ -288,87 +332,121 @@
 
     /* Fit to one page */
     @page {
-        size: A4;
-        margin: 10mm;
+        size: A4 portrait;
+        margin: 8mm 10mm;
     }
 
-    body {
-        margin: 0;
-        padding: 0;
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100%;
+        height: 100%;
     }
 
     /* Scale content to fit */
     .bg-white {
         max-width: 100% !important;
-        padding: 15px !important;
+        width: 100% !important;
+        padding: 12px !important;
         box-shadow: none !important;
         min-height: auto !important;
-        transform: scale(0.95);
-        transform-origin: top center;
+        margin: 0 !important;
+        background: white !important;
     }
 
     /* Reduce spacing for print */
     h1 {
-        font-size: 20px !important;
-        margin: 5px 0 !important;
+        font-size: 18px !important;
+        margin: 3px 0 !important;
     }
 
     h2 {
-        font-size: 16px !important;
-        margin: 5px 0 !important;
+        font-size: 14px !important;
+        margin: 3px 0 !important;
     }
 
     table {
-        font-size: 11px !important;
+        font-size: 10px !important;
+        width: 100% !important;
     }
 
     table td,
     table th {
-        padding: 4px !important;
+        padding: 3px 6px !important;
     }
 
     /* Reduce section spacing */
-    div[style*="margin-bottom: 25px"] {
-        margin-bottom: 10px !important;
+    div[style*="margin-bottom: 25px"],
+    div[style*="margin-bottom: 20px"],
+    div[style*="margin-bottom: 15px"] {
+        margin-bottom: 8px !important;
     }
 
     div[style*="margin-bottom: 30px"] {
         margin-bottom: 10px !important;
     }
 
-    div[style*="margin-top: 30px"] {
-        margin-top: 15px !important;
+    div[style*="margin-top: 30px"],
+    div[style*="margin-top: 20px"] {
+        margin-top: 10px !important;
     }
 
     /* Ensure logo is visible */
-    img {
-        max-height: 50px !important;
+    img,
+    img[alt="Clinic Logo"] {
+        max-height: 45px !important;
         display: block !important;
         margin: 0 auto 5px !important;
+        page-break-inside: avoid !important;
     }
 
-    /* Reduce notes section height */
-    div[style*="min-height: 300px"] {
-        min-height: 150px !important;
-        padding: 10px !important;
+    /* Reduce notes section */
+    div[style*="min-height: 300px"],
+    div[style*="min-height: 200px"],
+    div[style*="min-height: 180px"] {
+        min-height: 140px !important;
+        padding: 8px !important;
     }
 
     /* Signature section */
-    div[style*="margin-top: 60px"] {
-        margin-top: 30px !important;
+    div[style*="margin-top: 60px"],
+    div[style*="margin-top: 40px"] {
+        margin-top: 25px !important;
     }
 
     /* Footer text */
-    div[style*="font-size: 10px"] {
+    div[style*="font-size: 10px"],
+    div[style*="font-size: 9px"] {
         font-size: 8px !important;
-        margin-top: 10px !important;
+        margin-top: 8px !important;
+    }
+
+    /* Section titles */
+    div[style*="background-color: #007bff"] {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+        margin-bottom: 6px !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
     /* Prevent page breaks */
     .bg-white,
     table,
-    div[style*="background-color: #007bff"] {
-        page-break-inside: avoid;
+    div[style*="background-color: #007bff"],
+    .signature-section {
+        page-break-inside: avoid !important;
+    }
+
+    /* Force single page */
+    body {
+        overflow: hidden !important;
     }
 }
 
