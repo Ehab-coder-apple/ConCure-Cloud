@@ -256,12 +256,53 @@
                                             <div class="col-md-6">
                                                 <label for="timezone" class="form-label">{{ __('Timezone') }}</label>
                                                 <select class="form-select" id="timezone" name="timezone">
-                                                    <option value="UTC" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'UTC' ? 'selected' : '' }}>UTC</option>
-                                                    <option value="America/New_York" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'America/New_York' ? 'selected' : '' }}>Eastern Time</option>
-                                                    <option value="America/Chicago" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'America/Chicago' ? 'selected' : '' }}>Central Time</option>
-                                                    <option value="America/Denver" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'America/Denver' ? 'selected' : '' }}>Mountain Time</option>
-                                                    <option value="America/Los_Angeles" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'America/Los_Angeles' ? 'selected' : '' }}>Pacific Time</option>
+                                                    <option value="UTC" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'UTC' ? 'selected' : '' }}>UTC (Coordinated Universal Time)</option>
+
+                                                    <optgroup label="Middle East">
+                                                        <option value="Asia/Baghdad" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Baghdad' ? 'selected' : '' }}>Iraq (Baghdad) - GMT+3</option>
+                                                        <option value="Asia/Riyadh" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Riyadh' ? 'selected' : '' }}>Saudi Arabia (Riyadh) - GMT+3</option>
+                                                        <option value="Asia/Kuwait" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Kuwait' ? 'selected' : '' }}>Kuwait - GMT+3</option>
+                                                        <option value="Asia/Dubai" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Dubai' ? 'selected' : '' }}>UAE (Dubai) - GMT+4</option>
+                                                        <option value="Asia/Qatar" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Qatar' ? 'selected' : '' }}>Qatar - GMT+3</option>
+                                                        <option value="Asia/Bahrain" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Bahrain' ? 'selected' : '' }}>Bahrain - GMT+3</option>
+                                                        <option value="Asia/Amman" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Amman' ? 'selected' : '' }}>Jordan (Amman) - GMT+3</option>
+                                                        <option value="Asia/Beirut" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Beirut' ? 'selected' : '' }}>Lebanon (Beirut) - GMT+2</option>
+                                                        <option value="Asia/Damascus" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Damascus' ? 'selected' : '' }}>Syria (Damascus) - GMT+3</option>
+                                                        <option value="Asia/Jerusalem" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Jerusalem' ? 'selected' : '' }}>Palestine/Israel - GMT+2</option>
+                                                        <option value="Asia/Tehran" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Tehran' ? 'selected' : '' }}>Iran (Tehran) - GMT+3:30</option>
+                                                    </optgroup>
+
+                                                    <optgroup label="Africa">
+                                                        <option value="Africa/Cairo" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Africa/Cairo' ? 'selected' : '' }}>Egypt (Cairo) - GMT+2</option>
+                                                        <option value="Africa/Casablanca" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Africa/Casablanca' ? 'selected' : '' }}>Morocco (Casablanca) - GMT+1</option>
+                                                        <option value="Africa/Algiers" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Africa/Algiers' ? 'selected' : '' }}>Algeria (Algiers) - GMT+1</option>
+                                                        <option value="Africa/Tunis" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Africa/Tunis' ? 'selected' : '' }}>Tunisia - GMT+1</option>
+                                                        <option value="Africa/Tripoli" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Africa/Tripoli' ? 'selected' : '' }}>Libya (Tripoli) - GMT+2</option>
+                                                    </optgroup>
+
+                                                    <optgroup label="Europe">
+                                                        <option value="Europe/London" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Europe/London' ? 'selected' : '' }}>UK (London) - GMT+0</option>
+                                                        <option value="Europe/Paris" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Europe/Paris' ? 'selected' : '' }}>France (Paris) - GMT+1</option>
+                                                        <option value="Europe/Berlin" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Europe/Berlin' ? 'selected' : '' }}>Germany (Berlin) - GMT+1</option>
+                                                        <option value="Europe/Rome" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Europe/Rome' ? 'selected' : '' }}>Italy (Rome) - GMT+1</option>
+                                                        <option value="Europe/Istanbul" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Europe/Istanbul' ? 'selected' : '' }}>Turkey (Istanbul) - GMT+3</option>
+                                                    </optgroup>
+
+                                                    <optgroup label="Americas">
+                                                        <option value="America/New_York" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'America/New_York' ? 'selected' : '' }}>US Eastern Time - GMT-5</option>
+                                                        <option value="America/Chicago" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'America/Chicago' ? 'selected' : '' }}>US Central Time - GMT-6</option>
+                                                        <option value="America/Denver" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'America/Denver' ? 'selected' : '' }}>US Mountain Time - GMT-7</option>
+                                                        <option value="America/Los_Angeles" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'America/Los_Angeles' ? 'selected' : '' }}>US Pacific Time - GMT-8</option>
+                                                    </optgroup>
+
+                                                    <optgroup label="Asia">
+                                                        <option value="Asia/Karachi" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Karachi' ? 'selected' : '' }}>Pakistan (Karachi) - GMT+5</option>
+                                                        <option value="Asia/Kolkata" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Kolkata' ? 'selected' : '' }}>India (Kolkata) - GMT+5:30</option>
+                                                        <option value="Asia/Singapore" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Singapore' ? 'selected' : '' }}>Singapore - GMT+8</option>
+                                                        <option value="Asia/Tokyo" {{ ($clinicSettings['timezone'] ?? 'UTC') == 'Asia/Tokyo' ? 'selected' : '' }}>Japan (Tokyo) - GMT+9</option>
+                                                    </optgroup>
                                                 </select>
+                                                <div class="form-text">{{ __('Timezone affects how dates and times are displayed throughout the system.') }}</div>
                                             </div>
 
                                             <!-- Finance Settings -->
