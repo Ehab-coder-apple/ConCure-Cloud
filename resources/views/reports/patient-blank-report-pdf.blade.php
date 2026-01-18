@@ -5,37 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blank Report - {{ $patient->full_name }}</title>
     <style>
+        @page {
+            margin: 12mm;
+            size: A4;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.6;
+            font-size: 10px;
+            line-height: 1.4;
             color: #333;
             margin: 0;
-            padding: 20px;
+            padding: 0;
         }
 
         .header {
             text-align: center;
-            border-bottom: 3px solid #007bff;
-            padding-bottom: 15px;
-            margin-bottom: 30px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
         }
 
         .header h1 {
             color: #007bff;
-            margin: 0 0 10px 0;
-            font-size: 24px;
+            margin: 0 0 5px 0;
+            font-size: 18px;
         }
 
         .clinic-info {
             text-align: center;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             color: #666;
-            font-size: 11px;
+            font-size: 9px;
         }
 
         .info-section {
-            margin-bottom: 25px;
+            margin-bottom: 12px;
         }
 
         .info-grid {
@@ -51,76 +56,88 @@
         .info-label {
             display: table-cell;
             width: 30%;
-            padding: 8px;
+            padding: 5px 8px;
             font-weight: bold;
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
+            font-size: 9px;
         }
 
         .info-value {
             display: table-cell;
             width: 70%;
-            padding: 8px;
+            padding: 5px 8px;
             border: 1px solid #dee2e6;
+            font-size: 9px;
         }
 
         .section-title {
             background-color: #007bff;
             color: white;
-            padding: 10px;
+            padding: 5px 10px;
             font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 15px;
-            margin-top: 20px;
+            font-size: 11px;
+            margin-bottom: 8px;
+            margin-top: 12px;
         }
 
         .notes-area {
             border: 1px solid #dee2e6;
-            min-height: 400px;
-            padding: 15px;
+            min-height: 150px;
+            padding: 10px;
             background-color: #fafafa;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+            font-size: 9px;
+            line-height: 1.6;
         }
 
         .notes-lines {
-            line-height: 2;
+            line-height: 1.8;
         }
 
         .notes-line {
             border-bottom: 1px solid #ccc;
-            height: 30px;
-            margin-bottom: 5px;
+            height: 18px;
+            margin-bottom: 3px;
         }
 
         .footer {
-            margin-top: 40px;
-            padding-top: 20px;
+            margin-top: 15px;
+            padding-top: 12px;
             border-top: 2px solid #dee2e6;
         }
 
         .signature-section {
             display: table;
             width: 100%;
-            margin-top: 30px;
+            margin-top: 15px;
         }
 
         .signature-box {
             display: table-cell;
             width: 50%;
-            padding: 10px;
+            padding: 5px;
         }
 
         .signature-line {
             border-top: 1px solid #333;
-            margin-top: 60px;
+            margin-top: 35px;
             padding-top: 5px;
             text-align: center;
+            font-size: 9px;
         }
 
         .date-box {
-            margin-top: 20px;
-            padding: 10px;
+            margin-top: 12px;
+            padding: 8px;
             border: 1px solid #dee2e6;
+            font-size: 9px;
+        }
+
+        img {
+            max-height: 45px !important;
+            display: block;
+            margin: 0 auto 5px;
         }
     </style>
 </head>
@@ -128,17 +145,23 @@
     <!-- Header -->
     <div class="header">
         @if($clinic->logo)
-            <img src="{{ public_path('storage/' . $clinic->logo) }}" alt="Clinic Logo" style="max-height: 60px; margin-bottom: 10px;">
+            @php
+                $logoPath = public_path('storage/' . $clinic->logo);
+                $logoExists = file_exists($logoPath);
+            @endphp
+            @if($logoExists)
+                <img src="{{ $logoPath }}" alt="Clinic Logo" style="max-height: 50px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;">
+            @endif
         @endif
-        <h1>{{ $clinic->name ?? 'Medical Report' }}</h1>
+        <h1 style="font-size: 20px; margin: 5px 0;">{{ $clinic->name ?? 'Medical Report' }}</h1>
         @if($clinic->address || $clinic->phone || $clinic->email)
-        <div class="clinic-info">
+        <div class="clinic-info" style="font-size: 10px;">
             @if($clinic->address){{ $clinic->address }}@endif
             @if($clinic->phone) | Tel: {{ $clinic->phone }}@endif
             @if($clinic->email) | Email: {{ $clinic->email }}@endif
         </div>
         @endif
-        <div class="clinic-info">
+        <div class="clinic-info" style="font-size: 10px;">
             <strong>Date:</strong> {{ isset($generated_date) ? $generated_date->format('F d, Y') : now()->format('F d, Y') }}
         </div>
     </div>
@@ -211,10 +234,10 @@
     <div class="section-title">Notes / Special Information</div>
     <div class="notes-area">
         @if(isset($notes) && !empty($notes))
-            <div style="white-space: pre-wrap; line-height: 1.8; color: #333;">{{ $notes }}</div>
+            <div style="white-space: pre-wrap; line-height: 1.6; color: #333; font-size: 9px;">{{ $notes }}</div>
         @else
             <div class="notes-lines">
-                @for($i = 0; $i < 15; $i++)
+                @for($i = 0; $i < 8; $i++)
                     <div class="notes-line"></div>
                 @endfor
             </div>
