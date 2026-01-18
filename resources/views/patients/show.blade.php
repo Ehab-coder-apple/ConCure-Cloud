@@ -814,6 +814,86 @@
                         </div>
                     </div>
 
+                    <!-- Medical Reports -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-file-medical me-2"></i>
+                                {{ __('Medical Reports') }}
+                            </h6>
+                            <a href="{{ route('patient.blank-report', $patient) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-plus me-1"></i>
+                                {{ __('Create Report') }}
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            @php
+                                $medicalReports = \App\Models\PatientFile::byPatient($patient->id)->byCategory('medical_report')->latest()->get();
+                            @endphp
+
+                            @if($medicalReports->count() === 0)
+                                <div class="text-center py-4">
+                                    <i class="fas fa-file-medical fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">{{ __('No medical reports created yet.') }}</p>
+                                    <a href="{{ route('patient.blank-report', $patient) }}" class="btn btn-sm btn-primary mt-2">
+                                        <i class="fas fa-plus me-1"></i>
+                                        {{ __('Create First Report') }}
+                                    </a>
+                                </div>
+                            @else
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ __('Report') }}</th>
+                                                <th>{{ __('Description') }}</th>
+                                                <th>{{ __('Created') }}</th>
+                                                <th class="text-end">{{ __('Actions') }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($medicalReports as $report)
+                                            <tr>
+                                                <td>
+                                                    <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                    <a href="{{ $report->file_url }}" target="_blank">{{ $report->original_name }}</a>
+                                                    <div class="small text-muted">{{ $report->file_size_human }}</div>
+                                                </td>
+                                                <td>
+                                                    <span class="text-muted">{{ $report->description ?? '-' }}</span>
+                                                </td>
+                                                <td>
+                                                    <div>{{ $report->created_at?->format('M d, Y') }}</div>
+                                                    <div class="small text-muted">{{ $report->created_at?->format('h:i A') }}</div>
+                                                </td>
+                                                <td class="text-end">
+                                                    <div class="d-flex gap-1 justify-content-end flex-wrap">
+                                                        <a href="{{ $report->file_url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                                            <i class="fas fa-external-link-alt"></i> {{ __('Open') }}
+                                                        </a>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openAndPrint('{{ $report->file_url }}')">
+                                                            <i class="fas fa-print"></i> {{ __('Print') }}
+                                                        </button>
+                                                        @if($canEditPatients)
+                                                        <form action="{{ route('patients.files.destroy', [$patient, $report]) }}" method="POST" class="d-inline" onsubmit="return confirm('{{ __('Delete this report?') }}')">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button class="btn btn-sm btn-outline-danger" type="submit" title="{{ __('Delete') }}">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
                     <script>
                     function openAndPrint(url){
                         const w = window.open(url, '_blank');
