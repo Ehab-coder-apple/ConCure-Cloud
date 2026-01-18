@@ -39,19 +39,45 @@ class PatientReportController extends Controller
     }
 
     /**
-     * Generate blank report with only patient and doctor info
+     * Show blank report form
      */
-    public function generateBlankReport(Request $request, Patient $patient)
+    public function showBlankReportForm(Request $request, Patient $patient)
     {
         $this->authorizePatientAccess($patient);
 
         $user = Auth::user();
 
-        $pdf = Pdf::loadView('reports.patient-blank-report-pdf', [
+        return view('reports.blank-report-form', [
             'patient' => $patient,
             'doctor' => $user,
             'clinic' => $user->clinic,
         ]);
+    }
+
+    /**
+     * Generate and save blank report with notes
+     */
+    public function generateBlankReport(Request $request, Patient $patient)
+    {
+        $this->authorizePatientAccess($patient);
+
+        $request->validate([
+            'report_title' => 'nullable|string|max:255',
+            'notes' => 'required|string',
+        ]);
+
+        $user = Auth::user();
+
+        $reportData = [
+            'patient' => $patient,
+            'doctor' => $user,
+            'clinic' => $user->clinic,
+            'report_title' => $request->input('report_title', 'Medical Report'),
+            'notes' => $request->input('notes'),
+            'generated_date' => Carbon::now(),
+        ];
+
+        $pdf = Pdf::loadView('reports.patient-blank-report-pdf', $reportData);
 
         // Configure PDF settings
         $pdf->setPaper('A4', 'portrait');
@@ -65,8 +91,26 @@ class PatientReportController extends Controller
             'margin_left' => 10,
         ]);
 
-        $filename = 'blank-report-' . $patient->patient_id . '-' . Carbon::now()->format('Y-m-d') . '.pdf';
+        // Save PDF to patient files
+        $filename = 'blank-report-' . $patient->patient_id . '-' . Carbon::now()->format('Y-m-d-His') . '.pdf';
+        $path = 'patients/' . $patient->id . '/files/' . $filename;
 
+        \Storage::disk('public')->put($path, $pdf->output());
+
+        // Create patient file record
+        \App\Models\PatientFile::create([
+            'patient_id' => $patient->id,
+            'original_name' => $filename,
+            'file_name' => $filename,
+            'file_path' => $path,
+            'file_type' => 'application/pdf',
+            'file_size' => \Storage::disk('public')->size($path),
+            'category' => 'medical_report',
+            'description' => $request->input('report_title', 'Blank Medical Report'),
+            'uploaded_by' => $user->id,
+        ]);
+
+        // Return PDF for download
         return $pdf->download($filename);
     }
     

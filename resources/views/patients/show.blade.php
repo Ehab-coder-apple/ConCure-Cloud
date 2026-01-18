@@ -48,7 +48,7 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item" href="{{ route('patient.blank-report', $patient) }}" target="_blank">
+                                <a class="dropdown-item" href="{{ route('patient.blank-report', $patient) }}">
                                     <i class="fas fa-file-alt me-2"></i>
                                     {{ __('Blank Report') }}
                                 </a>

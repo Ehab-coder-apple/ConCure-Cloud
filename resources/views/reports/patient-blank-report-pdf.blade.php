@@ -139,9 +139,16 @@
         </div>
         @endif
         <div class="clinic-info">
-            <strong>Date:</strong> {{ now()->format('F d, Y') }}
+            <strong>Date:</strong> {{ isset($generated_date) ? $generated_date->format('F d, Y') : now()->format('F d, Y') }}
         </div>
     </div>
+
+    @if(isset($report_title))
+    <!-- Report Title -->
+    <div style="text-align: center; margin-bottom: 20px; padding: 10px; background-color: #e3f2fd; border-left: 4px solid #2196F3;">
+        <h2 style="margin: 0; color: #1976D2; font-size: 18px;">{{ $report_title }}</h2>
+    </div>
+    @endif
 
     <!-- Patient Information -->
     <div class="section-title">Patient Information</div>
@@ -203,11 +210,15 @@
     <!-- Notes Section -->
     <div class="section-title">Notes / Special Information</div>
     <div class="notes-area">
-        <div class="notes-lines">
-            @for($i = 0; $i < 15; $i++)
-                <div class="notes-line"></div>
-            @endfor
-        </div>
+        @if(isset($notes) && !empty($notes))
+            <div style="white-space: pre-wrap; line-height: 1.8; color: #333;">{{ $notes }}</div>
+        @else
+            <div class="notes-lines">
+                @for($i = 0; $i < 15; $i++)
+                    <div class="notes-line"></div>
+                @endfor
+            </div>
+        @endif
     </div>
 
     <!-- Footer with Signatures -->
@@ -226,8 +237,12 @@
         </div>
 
         <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #666;">
-            <p>This is a blank medical report form. Please fill in the required information.</p>
-            <p>Generated on {{ now()->format('F d, Y \a\t g:i A') }}</p>
+            @if(isset($notes) && !empty($notes))
+                <p>This medical report was generated and saved to patient records.</p>
+            @else
+                <p>This is a blank medical report form. Please fill in the required information.</p>
+            @endif
+            <p>Generated on {{ isset($generated_date) ? $generated_date->format('F d, Y \a\t g:i A') : now()->format('F d, Y \a\t g:i A') }}</p>
         </div>
     </div>
 </body>
