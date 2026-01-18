@@ -50,7 +50,7 @@
             </div>
 
             <!-- Report Form -->
-            <form action="{{ route('patient.blank-report.generate', $patient) }}" method="POST" id="blankReportForm">
+            <form action="{{ route('patient.blank-report.preview', $patient) }}" method="POST" id="blankReportForm">
                 @csrf
                 
                 <div class="card mb-4">
@@ -67,12 +67,12 @@
                                 <i class="fas fa-heading me-1"></i>
                                 {{ __('Report Title') }}
                             </label>
-                            <input type="text" 
-                                   class="form-control @error('report_title') is-invalid @enderror" 
-                                   id="report_title" 
-                                   name="report_title" 
+                            <input type="text"
+                                   class="form-control @error('report_title') is-invalid @enderror"
+                                   id="report_title"
+                                   name="report_title"
                                    placeholder="{{ __('e.g., Sick Leave Certificate, Medical Fitness Report, etc.') }}"
-                                   value="{{ old('report_title', 'Medical Report') }}">
+                                   value="{{ old('report_title', request('report_title', 'Medical Report')) }}">
                             @error('report_title')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -87,12 +87,12 @@
                                 <i class="fas fa-notes-medical me-1"></i>
                                 {{ __('Notes / Special Information') }} <span class="text-danger">*</span>
                             </label>
-                            <textarea class="form-control @error('notes') is-invalid @enderror" 
-                                      id="notes" 
-                                      name="notes" 
-                                      rows="15" 
+                            <textarea class="form-control @error('notes') is-invalid @enderror"
+                                      id="notes"
+                                      name="notes"
+                                      rows="15"
                                       placeholder="{{ __('Enter medical notes, observations, recommendations, sick leave details, or any special information...') }}"
-                                      required>{{ old('notes') }}</textarea>
+                                      required>{{ old('notes', request('notes')) }}</textarea>
                             @error('notes')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -139,7 +139,7 @@
                             <div>
                                 <p class="mb-0 text-muted">
                                     <i class="fas fa-info-circle me-1"></i>
-                                    {{ __('The report will be saved to patient files and downloaded as PDF') }}
+                                    {{ __('Preview the report before saving to patient files') }}
                                 </p>
                             </div>
                             <div>
@@ -147,9 +147,9 @@
                                     <i class="fas fa-times me-1"></i>
                                     {{ __('Cancel') }}
                                 </a>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-file-pdf me-1"></i>
-                                    {{ __('Generate & Save Report') }}
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-eye me-1"></i>
+                                    {{ __('Preview Report') }}
                                 </button>
                             </div>
                         </div>

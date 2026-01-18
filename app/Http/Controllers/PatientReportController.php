@@ -55,6 +55,32 @@ class PatientReportController extends Controller
     }
 
     /**
+     * Preview blank report before saving
+     */
+    public function previewBlankReport(Request $request, Patient $patient)
+    {
+        $this->authorizePatientAccess($patient);
+
+        $request->validate([
+            'report_title' => 'nullable|string|max:255',
+            'notes' => 'required|string',
+        ]);
+
+        $user = Auth::user();
+
+        $reportData = [
+            'patient' => $patient,
+            'doctor' => $user,
+            'clinic' => $user->clinic,
+            'report_title' => $request->input('report_title', 'Medical Report'),
+            'notes' => $request->input('notes'),
+            'generated_date' => Carbon::now(),
+        ];
+
+        return view('reports.blank-report-preview', $reportData);
+    }
+
+    /**
      * Generate and save blank report with notes
      */
     public function generateBlankReport(Request $request, Patient $patient)
