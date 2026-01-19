@@ -923,38 +923,42 @@ class FinanceController extends Controller
             $totalPaid = $currentPaidAmount + $newPayment;
             $newBalance = $totalAmount - $totalPaid;
 
-            // Update invoice with new totals and payment info
-            // Note: We update in a single call to avoid triggering the updating event multiple times
-            $invoice->subtotal = $subtotal;
-            $invoice->tax_amount = $taxAmount;
-            $invoice->total_amount = $totalAmount;
-            $invoice->paid_amount = $totalPaid;
+            // Calculate the new status based on payment
+            // We need to temporarily set the balance on the model to calculate status
             $invoice->balance = max(0, $newBalance);
+            $newStatus = $invoice->calculateNewStatus();
+
+            // Prepare update data
+            $updateData = [
+                'subtotal' => $subtotal,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'paid_amount' => $totalPaid,
+                'balance' => max(0, $newBalance),
+                'status' => $newStatus,
+                'updated_at' => now(),
+            ];
 
             // If a new payment was made, update payment method and date
             if ($newPayment > 0) {
-                $invoice->payment_method = $request->payment_method;
+                $updateData['payment_method'] = $request->payment_method;
                 if (!$invoice->paid_at) {
-                    $invoice->paid_at = $request->payment_date ?? now();
+                    $updateData['paid_at'] = $request->payment_date ?? now();
                 }
-            }
-
-            // Calculate and set the new status based on payment
-            $newStatus = $invoice->calculateNewStatus();
-            if ($newStatus !== $invoice->status) {
-                $invoice->status = $newStatus;
             }
 
             // Set paid_at if fully paid and not already set
             if ($newStatus === 'paid' && !$invoice->paid_at) {
-                $invoice->paid_at = now();
+                $updateData['paid_at'] = now();
             }
 
-            // Save the invoice without triggering events
-            // This prevents any model events from interfering with the update
-            Invoice::withoutEvents(function () use ($invoice) {
-                $invoice->save();
-            });
+            // Use raw DB update to avoid any Eloquent event issues
+            DB::table('invoices')
+                ->where('id', $invoice->id)
+                ->update($updateData);
+
+            // Refresh the model to get the updated values
+            $invoice->refresh();
 
             DB::commit();
 
