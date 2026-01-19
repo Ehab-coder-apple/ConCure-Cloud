@@ -937,7 +937,18 @@ class FinanceController extends Controller
                 }
             }
 
-            // Save the invoice - this will trigger the updating event which calls updateStatus()
+            // Calculate and set the new status based on payment
+            $newStatus = $invoice->calculateNewStatus();
+            if ($newStatus !== $invoice->status) {
+                $invoice->status = $newStatus;
+            }
+
+            // Set paid_at if fully paid and not already set
+            if ($newStatus === 'paid' && !$invoice->paid_at) {
+                $invoice->paid_at = now();
+            }
+
+            // Save the invoice
             $invoice->save();
 
             DB::commit();

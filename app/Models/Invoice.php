@@ -99,19 +99,6 @@ class Invoice extends Model
             if ($invoice->isDirty(['subtotal', 'tax_rate', 'discount_rate', 'discount_amount'])) {
                 $invoice->calculateTotals();
             }
-
-            // Update status before save if payment-related fields changed
-            if ($invoice->isDirty(['paid_amount', 'total_amount', 'balance'])) {
-                $newStatus = $invoice->calculateNewStatus();
-                if ($newStatus !== $invoice->status) {
-                    $invoice->status = $newStatus;
-                }
-
-                // Set paid_at if fully paid and not already set
-                if ($newStatus === 'paid' && !$invoice->paid_at) {
-                    $invoice->paid_at = now();
-                }
-            }
         });
     }
 
