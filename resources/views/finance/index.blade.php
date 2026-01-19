@@ -110,6 +110,23 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Partial Payments</h6>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($partialPaymentsBalance, 2), '0'), '.') }}</h2>
+                            <small>{{ $partialPaymentsCount }} {{ $partialPaymentsCount === 1 ? 'invoice' : 'invoices' }}</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-coins fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Quick Stats -->

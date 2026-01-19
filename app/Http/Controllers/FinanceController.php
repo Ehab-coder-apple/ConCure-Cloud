@@ -1078,6 +1078,15 @@ class FinanceController extends Controller
             ->whereIn('status', ['sent', 'overdue'])
             ->sum('balance');
 
+        // Partial payments balance
+        $stats['partialPaymentsBalance'] = $invoicesQuery->clone()
+            ->where('status', 'partial_paid')
+            ->sum('balance');
+
+        $stats['partialPaymentsCount'] = $invoicesQuery->clone()
+            ->where('status', 'partial_paid')
+            ->count();
+
         $stats['pendingReceipts'] = $receiptsQuery->clone()
             ->pending()
             ->sum('amount');
