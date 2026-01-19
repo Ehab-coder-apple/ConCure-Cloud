@@ -890,23 +890,25 @@ class FinanceController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            // Delete existing items
+            // Delete existing items (without events to avoid interference)
             $invoice->items()->delete();
 
-            // Add new items and calculate totals
+            // Add new items and calculate totals (without events)
             $subtotal = 0;
             foreach ($request->items as $itemData) {
                 $total = $itemData['quantity'] * $itemData['unit_price'];
                 $subtotal += $total;
 
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'description' => $itemData['description'],
-                    'quantity' => $itemData['quantity'],
-                    'unit_price' => $itemData['unit_price'],
-                    'total_price' => $total,
-                    'item_type' => $itemData['item_type'] ?? 'other', // Default to 'other' if not provided
-                ]);
+                InvoiceItem::withoutEvents(function () use ($invoice, $itemData, $total) {
+                    InvoiceItem::create([
+                        'invoice_id' => $invoice->id,
+                        'description' => $itemData['description'],
+                        'quantity' => $itemData['quantity'],
+                        'unit_price' => $itemData['unit_price'],
+                        'total_price' => $total,
+                        'item_type' => $itemData['item_type'] ?? 'other',
+                    ]);
+                });
             }
 
             // Update invoice totals (assuming no tax for now)
@@ -948,8 +950,11 @@ class FinanceController extends Controller
                 $invoice->paid_at = now();
             }
 
-            // Save the invoice
-            $invoice->save();
+            // Save the invoice without triggering events
+            // This prevents any model events from interfering with the update
+            Invoice::withoutEvents(function () use ($invoice) {
+                $invoice->save();
+            });
 
             DB::commit();
 
