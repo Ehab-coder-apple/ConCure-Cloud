@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Invoice extends Model
 {
@@ -107,20 +108,23 @@ class Invoice extends Model
 
             if ($newStatus !== $invoice->status) {
                 $updateData['status'] = $newStatus;
-                $invoice->status = $newStatus;
             }
 
             // Set paid_at if fully paid and not already set
             if ($newStatus === 'paid' && !$invoice->paid_at) {
                 $updateData['paid_at'] = now();
-                $invoice->paid_at = now();
             }
 
-            // Use query builder to update without triggering events
+            // Use direct DB update to completely bypass model events
             if (!empty($updateData)) {
-                $invoice->newQuery()
+                DB::table('invoices')
                     ->where('id', $invoice->id)
                     ->update($updateData);
+
+                // Update the model instance to reflect the changes
+                foreach ($updateData as $key => $value) {
+                    $invoice->$key = $value;
+                }
             }
         });
     }
