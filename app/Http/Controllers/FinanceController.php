@@ -26,13 +26,20 @@ class FinanceController extends Controller
     public function index()
     {
         $user = auth()->user();
-        
+
         if (!$user->canAccessFinance()) {
             abort(403, 'Access denied to finance module.');
         }
 
         // Get financial statistics
         $stats = $this->getFinancialStats($user);
+
+        // Get patients for the create invoice form
+        $stats['patients'] = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->orderBy('last_name')
+                          ->get();
 
         // Get clinic currency setting
         $currency = DB::table('settings')

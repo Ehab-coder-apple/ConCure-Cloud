@@ -335,7 +335,20 @@
                             <label for="patient_id" class="form-label">Patient *</label>
                             <select class="form-select" id="patient_id" name="patient_id" required>
                                 <option value="">Select Patient</option>
-                                <!-- Patients will be loaded via AJAX -->
+                                @if(isset($patients) && $patients->count() > 0)
+                                    @foreach($patients as $patient)
+                                        <option value="{{ $patient->id }}"
+                                                data-tokens="{{ $patient->first_name }} {{ $patient->last_name }} {{ $patient->patient_id }} {{ $patient->phone }}">
+                                            {{ $patient->first_name }} {{ $patient->last_name }}
+                                            @if($patient->patient_id)
+                                                (ID: {{ $patient->patient_id }})
+                                            @endif
+                                            @if($patient->phone)
+                                                - {{ $patient->phone }}
+                                            @endif
+                                        </option>
+                                    @endforeach
+                                @endif
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -424,20 +437,44 @@
 
 @push('scripts')
 <script>
+// Initialize Select2 for patient dropdown with smart search
+$(document).ready(function() {
+    $('#patient_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Select Patient',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#createInvoiceModal'),
+        language: {
+            noResults: function() {
+                return 'No patients found';
+            },
+            searching: function() {
+                return 'Searching...';
+            }
+        }
+    });
+
+    // Reset Select2 when modal is closed
+    $('#createInvoiceModal').on('hidden.bs.modal', function () {
+        $('#patient_id').val(null).trigger('change');
+    });
+});
+
 // Add/Remove invoice items
 let itemIndex = 1;
 
 document.getElementById('addItem').addEventListener('click', function() {
     const container = document.getElementById('invoiceItems');
     const newItem = document.querySelector('.invoice-item').cloneNode(true);
-    
+
     // Update input names
     newItem.querySelectorAll('input, select').forEach(input => {
         const name = input.name.replace(/\[\d+\]/, `[${itemIndex}]`);
         input.name = name;
         input.value = input.type === 'number' && input.placeholder === 'Qty' ? '1' : '';
     });
-    
+
     container.appendChild(newItem);
     itemIndex++;
 });

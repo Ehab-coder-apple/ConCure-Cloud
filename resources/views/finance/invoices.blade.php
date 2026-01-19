@@ -584,7 +584,50 @@ function formatAmount(value) {
 
 document.addEventListener('DOMContentLoaded', function() {
     let itemIndex = 1;
-    
+
+    // Initialize Select2 for patient dropdown with smart search
+    $('#patient_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select Patient") }}',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#createInvoiceModal'),
+        language: {
+            noResults: function() {
+                return '{{ __("No patients found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
+
+    // Initialize Select2 for edit patient dropdown
+    $('#edit_patient_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select Patient") }}',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#editInvoiceModal'),
+        language: {
+            noResults: function() {
+                return '{{ __("No patients found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
+
+    // Reset Select2 when modal is closed
+    $('#createInvoiceModal').on('hidden.bs.modal', function () {
+        $('#patient_id').val(null).trigger('change');
+    });
+
+    $('#editInvoiceModal').on('hidden.bs.modal', function () {
+        $('#edit_patient_id').val(null).trigger('change');
+    });
+
     // Add new invoice item
     document.getElementById('add-item').addEventListener('click', function() {
         const container = document.getElementById('invoice-items');
