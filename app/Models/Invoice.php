@@ -12,11 +12,6 @@ class Invoice extends Model
 {
     use HasFactory;
 
-    /**
-     * Flag to prevent recursive status updates
-     */
-    private static $updatingStatus = false;
-
     protected $fillable = [
         'invoice_number',
         'patient_id',
@@ -104,42 +99,17 @@ class Invoice extends Model
             if ($invoice->isDirty(['subtotal', 'tax_rate', 'discount_rate', 'discount_amount'])) {
                 $invoice->calculateTotals();
             }
-        });
 
-        static::saved(function ($invoice) {
-            // Prevent recursive status updates
-            if (self::$updatingStatus) {
-                return;
-            }
+            // Update status before save if payment-related fields changed
+            if ($invoice->isDirty(['paid_amount', 'total_amount', 'balance'])) {
+                $newStatus = $invoice->calculateNewStatus();
+                if ($newStatus !== $invoice->status) {
+                    $invoice->status = $newStatus;
+                }
 
-            // Update status after save to avoid conflicts
-            $newStatus = $invoice->calculateNewStatus();
-            $updateData = [];
-
-            if ($newStatus !== $invoice->status) {
-                $updateData['status'] = $newStatus;
-            }
-
-            // Set paid_at if fully paid and not already set
-            if ($newStatus === 'paid' && !$invoice->paid_at) {
-                $updateData['paid_at'] = now();
-            }
-
-            // Use direct DB update to completely bypass model events
-            if (!empty($updateData)) {
-                self::$updatingStatus = true;
-
-                try {
-                    DB::table('invoices')
-                        ->where('id', $invoice->id)
-                        ->update($updateData);
-
-                    // Update the model instance to reflect the changes
-                    foreach ($updateData as $key => $value) {
-                        $invoice->$key = $value;
-                    }
-                } finally {
-                    self::$updatingStatus = false;
+                // Set paid_at if fully paid and not already set
+                if ($newStatus === 'paid' && !$invoice->paid_at) {
+                    $invoice->paid_at = now();
                 }
             }
         });
