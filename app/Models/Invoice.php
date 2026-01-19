@@ -57,6 +57,7 @@ class Invoice extends Model
         'draft' => 'Draft',
         'sent' => 'Sent',
         'paid' => 'Paid',
+        'partial_paid' => 'Partially Paid',
         'overdue' => 'Overdue',
         'cancelled' => 'Cancelled',
     ];
@@ -168,6 +169,7 @@ class Invoice extends Model
             'draft' => 'badge bg-secondary',
             'sent' => 'badge bg-warning',
             'paid' => 'badge bg-success',
+            'partial_paid' => 'badge bg-info',
             'overdue' => 'badge bg-danger',
             'cancelled' => 'badge bg-dark',
             default => 'badge bg-secondary',
@@ -220,12 +222,20 @@ class Invoice extends Model
         }
 
         if ($this->balance <= 0) {
+            // Fully paid
             $this->status = 'paid';
             if (!$this->paid_at) {
                 $this->paid_at = now();
             }
+        } elseif ($this->paid_amount > 0 && $this->balance > 0) {
+            // Partially paid
+            $this->status = 'partial_paid';
         } elseif ($this->status === 'sent' && $this->due_date && $this->due_date->isPast()) {
+            // Overdue (only if not partially paid)
             $this->status = 'overdue';
+        } elseif ($this->paid_amount > 0 && $this->due_date && $this->due_date->isPast()) {
+            // Partially paid but overdue - keep as partial_paid (takes priority)
+            $this->status = 'partial_paid';
         }
     }
 

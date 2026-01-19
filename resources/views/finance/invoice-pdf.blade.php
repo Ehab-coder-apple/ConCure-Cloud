@@ -70,9 +70,11 @@
         }
         
         .status-paid { background-color: #d4edda; color: #155724; }
+        .status-partial_paid { background-color: #fff3cd; color: #856404; }
         .status-pending { background-color: #fff3cd; color: #856404; }
         .status-overdue { background-color: #f8d7da; color: #721c24; }
         .status-draft { background-color: #e2e3e5; color: #383d41; }
+        .status-sent { background-color: #d1ecf1; color: #0c5460; }
         
         .info-section {
             background-color: #f8f9fa;
@@ -216,7 +218,7 @@
                     <div style="background: #007bff; color: white; padding: 8px 16px; border-radius: 20px; font-size: 16px; font-weight: bold; display: inline-block; letter-spacing: 1px; margin-bottom: 8px;">{{ $invoice->invoice_number }}</div>
                     <div style="text-align: right;">
                         <span class="status-badge status-{{ $invoice->status }}">
-                            {{ ucfirst($invoice->status) }}
+                            {{ $invoice->status === 'partial_paid' ? 'Partially Paid' : ucfirst($invoice->status) }}
                         </span>
                     </div>
                 </td>

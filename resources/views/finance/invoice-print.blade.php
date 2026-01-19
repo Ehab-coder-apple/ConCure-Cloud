@@ -286,8 +286,18 @@
                 <div class="col-3 text-end">
                     <div style="background: #007bff; color: white; padding: 8px 16px; border-radius: 20px; font-size: 16px; font-weight: bold; display: inline-block; letter-spacing: 1px; margin-bottom: 8px;">{{ $invoice->invoice_number }}</div>
                     <div>
-                        <span class="badge status-badge bg-{{ $invoice->status === 'paid' ? 'success' : ($invoice->status === 'overdue' ? 'danger' : 'warning') }}">
-                            {{ ucfirst($invoice->status) }}
+                        @php
+                            $badgeColor = match($invoice->status) {
+                                'paid' => 'success',
+                                'partial_paid' => 'warning',
+                                'overdue' => 'danger',
+                                'cancelled' => 'dark',
+                                'sent' => 'info',
+                                default => 'secondary'
+                            };
+                        @endphp
+                        <span class="badge status-badge bg-{{ $badgeColor }}">
+                            {{ $invoice->status === 'partial_paid' ? 'Partially Paid' : ucfirst($invoice->status) }}
                         </span>
                     </div>
                 </div>

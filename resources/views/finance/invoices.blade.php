@@ -150,6 +150,7 @@
                                         <th>{{ __('Due Date') }}</th>
                                         <th>{{ __('Amount') }}</th>
                                         <th>{{ __('Status') }}</th>
+                                        <th>{{ __('Remaining') }}</th>
                                         <th>{{ __('Actions') }}</th>
                                     </tr>
                                 </thead>
@@ -177,14 +178,32 @@
                                                     'draft' => 'secondary',
                                                     'sent' => 'info',
                                                     'paid' => 'success',
+                                                    'partial_paid' => 'warning',
                                                     'overdue' => 'danger',
                                                     'cancelled' => 'dark'
                                                 ];
                                                 $color = $statusColors[$invoice->status] ?? 'secondary';
                                             @endphp
                                             <span class="badge bg-{{ $color }}">
-                                                {{ ucfirst($invoice->status) }}
+                                                {{ $invoice->status === 'partial_paid' ? 'Partially Paid' : ucfirst($invoice->status) }}
                                             </span>
+                                        </td>
+                                        <td>
+                                            @if($invoice->status === 'partial_paid' || ($invoice->paid_amount > 0 && $invoice->balance > 0))
+                                                <span class="text-danger fw-bold">
+                                                    {{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->balance ?? 0, 2), '0'), '.') }}
+                                                </span>
+                                                <br>
+                                                <small class="text-muted">
+                                                    Paid: {{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->paid_amount ?? 0, 2), '0'), '.') }}
+                                                </small>
+                                            @elseif($invoice->status === 'paid')
+                                                <span class="text-success">
+                                                    <i class="fas fa-check-circle"></i> {{ __('Fully Paid') }}
+                                                </span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
@@ -215,15 +234,15 @@
                                                     </form>
                                                 @endif
 
-                                                @if(in_array($invoice->status, ['draft', 'sent', 'overdue']))
+                                                @if(in_array($invoice->status, ['draft', 'sent', 'overdue', 'partial_paid']))
                                                     <button type="button" class="btn btn-xs btn-outline-success"
-                                                            title="{{ __('Mark as Paid') }}"
+                                                            title="{{ $invoice->status === 'partial_paid' ? __('Add Payment') : __('Mark as Paid') }}"
                                                             onclick="showMarkAsPaidModal({{ $invoice->id }}, '{{ $invoice->invoice_number }}', {{ $invoice->balance }})">
-                                                        <i class="fas fa-check-circle"></i>
+                                                        <i class="fas fa-{{ $invoice->status === 'partial_paid' ? 'plus-circle' : 'check-circle' }}"></i>
                                                     </button>
                                                 @endif
 
-                                                @if(in_array($invoice->status, ['draft', 'sent', 'overdue']))
+                                                @if(in_array($invoice->status, ['draft', 'sent', 'overdue', 'partial_paid']))
                                                     <form method="POST" action="{{ route('finance.invoices.mark-cancelled', $invoice) }}" class="d-inline">
                                                         @csrf
                                                         <button type="submit" class="btn btn-xs btn-outline-warning"
