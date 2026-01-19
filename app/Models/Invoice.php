@@ -98,9 +98,30 @@ class Invoice extends Model
             if ($invoice->isDirty(['subtotal', 'tax_rate', 'discount_rate', 'discount_amount'])) {
                 $invoice->calculateTotals();
             }
-            
-            // Update status based on payment
-            $invoice->updateStatus();
+        });
+
+        static::saved(function ($invoice) {
+            // Update status after save to avoid conflicts
+            $newStatus = $invoice->calculateNewStatus();
+            $updateData = [];
+
+            if ($newStatus !== $invoice->status) {
+                $updateData['status'] = $newStatus;
+                $invoice->status = $newStatus;
+            }
+
+            // Set paid_at if fully paid and not already set
+            if ($newStatus === 'paid' && !$invoice->paid_at) {
+                $updateData['paid_at'] = now();
+                $invoice->paid_at = now();
+            }
+
+            // Use query builder to update without triggering events
+            if (!empty($updateData)) {
+                $invoice->newQuery()
+                    ->where('id', $invoice->id)
+                    ->update($updateData);
+            }
         });
     }
 
@@ -213,29 +234,46 @@ class Invoice extends Model
     }
 
     /**
-     * Update invoice status based on payment and dates.
+     * Calculate what the new status should be based on payment and dates.
+     * Returns the new status without modifying the model.
      */
-    public function updateStatus(): void
+    public function calculateNewStatus(): string
     {
         if ($this->status === 'cancelled') {
-            return; // Don't change cancelled status
+            return 'cancelled'; // Don't change cancelled status
         }
 
         if ($this->balance <= 0) {
             // Fully paid
-            $this->status = 'paid';
-            if (!$this->paid_at) {
-                $this->paid_at = now();
-            }
+            return 'paid';
         } elseif ($this->paid_amount > 0 && $this->balance > 0) {
             // Partially paid
-            $this->status = 'partial_paid';
+            return 'partial_paid';
         } elseif ($this->status === 'sent' && $this->due_date && $this->due_date->isPast()) {
             // Overdue (only if not partially paid)
-            $this->status = 'overdue';
+            return 'overdue';
         } elseif ($this->paid_amount > 0 && $this->due_date && $this->due_date->isPast()) {
             // Partially paid but overdue - keep as partial_paid (takes priority)
-            $this->status = 'partial_paid';
+            return 'partial_paid';
+        }
+
+        return $this->status; // Keep current status if no conditions met
+    }
+
+    /**
+     * Update invoice status based on payment and dates.
+     */
+    public function updateStatus(): void
+    {
+        $newStatus = $this->calculateNewStatus();
+
+        if ($newStatus !== $this->status) {
+            $this->status = $newStatus;
+
+            // Set paid_at if fully paid and not already set
+            if ($newStatus === 'paid' && !$this->paid_at) {
+                $this->paid_at = now();
+            }
         }
     }
 

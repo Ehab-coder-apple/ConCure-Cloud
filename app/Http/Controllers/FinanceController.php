@@ -922,23 +922,23 @@ class FinanceController extends Controller
             $newBalance = $totalAmount - $totalPaid;
 
             // Update invoice with new totals and payment info
-            $updateData = [
-                'subtotal' => $subtotal,
-                'tax_amount' => $taxAmount,
-                'total_amount' => $totalAmount,
-                'paid_amount' => $totalPaid,
-                'balance' => max(0, $newBalance), // Ensure balance doesn't go negative
-            ];
+            // Note: We update in a single call to avoid triggering the updating event multiple times
+            $invoice->subtotal = $subtotal;
+            $invoice->tax_amount = $taxAmount;
+            $invoice->total_amount = $totalAmount;
+            $invoice->paid_amount = $totalPaid;
+            $invoice->balance = max(0, $newBalance);
 
             // If a new payment was made, update payment method and date
             if ($newPayment > 0) {
-                $updateData['payment_method'] = $request->payment_method;
+                $invoice->payment_method = $request->payment_method;
                 if (!$invoice->paid_at) {
-                    $updateData['paid_at'] = $request->payment_date ?? now();
+                    $invoice->paid_at = $request->payment_date ?? now();
                 }
             }
 
-            $invoice->update($updateData);
+            // Save the invoice - this will trigger the updating event which calls updateStatus()
+            $invoice->save();
 
             DB::commit();
 
