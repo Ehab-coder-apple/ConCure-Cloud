@@ -12,6 +12,11 @@ class Invoice extends Model
 {
     use HasFactory;
 
+    /**
+     * Flag to prevent recursive status updates
+     */
+    private static $updatingStatus = false;
+
     protected $fillable = [
         'invoice_number',
         'patient_id',
@@ -102,6 +107,11 @@ class Invoice extends Model
         });
 
         static::saved(function ($invoice) {
+            // Prevent recursive status updates
+            if (self::$updatingStatus) {
+                return;
+            }
+
             // Update status after save to avoid conflicts
             $newStatus = $invoice->calculateNewStatus();
             $updateData = [];
@@ -117,13 +127,19 @@ class Invoice extends Model
 
             // Use direct DB update to completely bypass model events
             if (!empty($updateData)) {
-                DB::table('invoices')
-                    ->where('id', $invoice->id)
-                    ->update($updateData);
+                self::$updatingStatus = true;
 
-                // Update the model instance to reflect the changes
-                foreach ($updateData as $key => $value) {
-                    $invoice->$key = $value;
+                try {
+                    DB::table('invoices')
+                        ->where('id', $invoice->id)
+                        ->update($updateData);
+
+                    // Update the model instance to reflect the changes
+                    foreach ($updateData as $key => $value) {
+                        $invoice->$key = $value;
+                    }
+                } finally {
+                    self::$updatingStatus = false;
                 }
             }
         });

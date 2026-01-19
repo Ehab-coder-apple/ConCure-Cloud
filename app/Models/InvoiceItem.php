@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class InvoiceItem extends Model
 {
@@ -89,7 +90,17 @@ class InvoiceItem extends Model
     {
         if ($this->invoice) {
             $subtotal = $this->invoice->items()->sum('total_price');
-            $this->invoice->update(['subtotal' => $subtotal]);
+
+            // Use DB::table() to avoid triggering invoice events
+            DB::table('invoices')
+                ->where('id', $this->invoice_id)
+                ->update([
+                    'subtotal' => $subtotal,
+                    'updated_at' => now(),
+                ]);
+
+            // Update the model instance
+            $this->invoice->subtotal = $subtotal;
         }
     }
 
