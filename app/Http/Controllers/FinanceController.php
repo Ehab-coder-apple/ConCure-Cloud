@@ -832,6 +832,8 @@ class FinanceController extends Controller
                 'patient_id' => $invoice->patient_id,
                 'due_date' => $invoice->due_date,
                 'notes' => $invoice->notes,
+                'total_amount' => $invoice->total_amount,
+                'balance' => $invoice->balance,
                 'items' => $invoice->items->map(function ($item) {
                     return [
                         'id' => $item->id,
@@ -870,10 +872,16 @@ class FinanceController extends Controller
             'items.*.quantity' => 'required|numeric|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.item_type' => 'nullable|in:consultation,procedure,medication,lab_test,other',
+            'payment_amount' => 'nullable|numeric|min:0',
+            'payment_method' => 'nullable|in:cash,card,bank_transfer,check,other',
+            'payment_date' => 'nullable|date',
         ]);
 
         try {
             DB::beginTransaction();
+
+            // Store current paid amount before updating
+            $currentPaidAmount = $invoice->paid_amount ?? 0;
 
             // Update invoice basic info
             $invoice->update([
@@ -905,18 +913,38 @@ class FinanceController extends Controller
             $taxAmount = 0; // You can implement tax calculation here
             $totalAmount = $subtotal + $taxAmount;
 
-            $invoice->update([
+            // Calculate new balance: total - (existing payments + new payment)
+            $newPayment = $request->filled('payment_amount') && $request->payment_amount > 0
+                ? floatval($request->payment_amount)
+                : 0;
+
+            $totalPaid = $currentPaidAmount + $newPayment;
+            $newBalance = $totalAmount - $totalPaid;
+
+            // Update invoice with new totals and payment info
+            $updateData = [
                 'subtotal' => $subtotal,
                 'tax_amount' => $taxAmount,
                 'total_amount' => $totalAmount,
-                'balance' => $totalAmount, // Assuming no payments made yet
-            ]);
+                'paid_amount' => $totalPaid,
+                'balance' => max(0, $newBalance), // Ensure balance doesn't go negative
+            ];
+
+            // If a new payment was made, update payment method and date
+            if ($newPayment > 0) {
+                $updateData['payment_method'] = $request->payment_method;
+                if (!$invoice->paid_at) {
+                    $updateData['paid_at'] = $request->payment_date ?? now();
+                }
+            }
+
+            $invoice->update($updateData);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Invoice updated successfully!'
+                'message' => 'Invoice updated successfully!' . ($newPayment > 0 ? ' Payment of ' . number_format($newPayment, 2) . ' recorded.' : '')
             ]);
 
         } catch (\Exception $e) {

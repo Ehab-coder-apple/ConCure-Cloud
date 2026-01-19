@@ -442,6 +442,58 @@
                         <textarea class="form-control" id="edit_notes" name="notes" rows="3"></textarea>
                     </div>
 
+                    <!-- Payment Tracking Section -->
+                    <div class="card mb-3 bg-light">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-money-bill-wave"></i> {{ __('Payment Information') }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="edit_payment_amount" class="form-label">{{ __('Payment Amount') }}</label>
+                                        <input type="number" class="form-control" id="edit_payment_amount" name="payment_amount"
+                                               step="0.01" min="0" placeholder="0.00">
+                                        <div class="form-text">{{ __('Enter amount to record a payment') }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="edit_payment_method" class="form-label">{{ __('Payment Method') }}</label>
+                                        <select class="form-select" id="edit_payment_method" name="payment_method">
+                                            <option value="">{{ __('Select Method') }}</option>
+                                            <option value="cash">{{ __('Cash') }}</option>
+                                            <option value="card">{{ __('Card') }}</option>
+                                            <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
+                                            <option value="check">{{ __('Check') }}</option>
+                                            <option value="other">{{ __('Other') }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="edit_payment_date" class="form-label">{{ __('Payment Date') }}</label>
+                                        <input type="date" class="form-control" id="edit_payment_date" name="payment_date"
+                                               value="{{ date('Y-m-d') }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="alert alert-info mb-0">
+                                        <small>
+                                            <i class="fas fa-info-circle"></i>
+                                            {{ __('Current Balance: ') }}<strong id="edit_current_balance">{{ $currencySymbol ?? '$' }}0.00</strong>
+                                            <span class="ms-3">{{ __('Total Paid: ') }}<strong id="edit_total_paid">{{ $currencySymbol ?? '$' }}0.00</strong></span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">{{ __('Invoice Items') }}</label>
                         <div id="edit-invoice-items">
@@ -689,9 +741,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Populate edit modal with invoice data
     function populateEditModal(invoice) {
         document.getElementById('edit_invoice_id').value = invoice.id;
-        document.getElementById('edit_patient_id').value = invoice.patient_id;
+
+        // Set patient using Select2
+        $('#edit_patient_id').val(invoice.patient_id).trigger('change');
+
         document.getElementById('edit_due_date').value = invoice.due_date;
         document.getElementById('edit_notes').value = invoice.notes || '';
+
+        // Update payment information
+        const totalAmount = parseFloat(invoice.total_amount) || 0;
+        const balance = parseFloat(invoice.balance) || 0;
+        const totalPaid = totalAmount - balance;
+
+        document.getElementById('edit_current_balance').textContent = currencySymbol + formatAmount(balance);
+        document.getElementById('edit_total_paid').textContent = currencySymbol + formatAmount(totalPaid);
+
+        // Clear payment fields
+        document.getElementById('edit_payment_amount').value = '';
+        document.getElementById('edit_payment_method').value = '';
+        document.getElementById('edit_payment_date').value = new Date().toISOString().split('T')[0];
 
         // Clear existing items
         const itemsContainer = document.getElementById('edit-invoice-items');
