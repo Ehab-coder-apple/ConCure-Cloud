@@ -117,8 +117,8 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title">Partial Payments</h6>
-                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($partialPaymentsBalance, 2), '0'), '.') }}</h2>
-                            <small>{{ $partialPaymentsCount }} {{ $partialPaymentsCount === 1 ? 'invoice' : 'invoices' }}</small>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($partialPaymentsBalance ?? 0, 2), '0'), '.') }}</h2>
+                            <small>{{ $partialPaymentsCount ?? 0 }} {{ ($partialPaymentsCount ?? 0) === 1 ? 'invoice' : 'invoices' }}</small>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-coins fa-2x opacity-75"></i>
