@@ -1157,25 +1157,31 @@ class FinanceController extends Controller
         $stats['pendingReceiptCount'] = $receiptsQuery->clone()->pending()->count();
         $stats['pendingExpenseCount'] = $expensesQuery->clone()->pending()->count();
 
-        // Cash flow calculation (all time)
-        // Total cash in = Invoice payments + Other receipts
-        $invoicePayments = $invoicesQuery->clone()
+        // Monthly Cash flow calculation (current month only)
+        // Total cash in = Invoice payments + Other receipts (current month)
+        $monthlyInvoicePayments = $invoicesQuery->clone()
+            ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('paid_amount');
 
-        $otherReceipts = $receiptsQuery->clone()
+        $monthlyOtherReceipts = $receiptsQuery->clone()
             ->approved()
+            ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('amount');
 
-        $totalCashIn = $invoicePayments + $otherReceipts;
+        $monthlyCashIn = $monthlyInvoicePayments + $monthlyOtherReceipts;
 
-        // Total cash out = Expenses
-        $totalCashOut = $expensesQuery->clone()
+        // Total cash out = Expenses (current month)
+        $monthlyCashOut = $expensesQuery->clone()
             ->approved()
+            ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('amount');
 
-        $stats['cashFlow'] = $totalCashIn - $totalCashOut;
-        $stats['totalCashIn'] = $totalCashIn;
-        $stats['totalCashOut'] = $totalCashOut;
+        $stats['monthlyCashFlow'] = $monthlyCashIn - $monthlyCashOut;
+        $stats['monthlyCashIn'] = $monthlyCashIn;
+        $stats['monthlyCashOut'] = $monthlyCashOut;
+
+        // Set cashFlow to monthly cash flow for dashboard display
+        $stats['cashFlow'] = $stats['monthlyCashFlow'];
 
         // Recent activity
         $stats['recentInvoices'] = $invoicesQuery->clone()

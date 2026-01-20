@@ -135,7 +135,7 @@
                         <div>
                             <h6 class="card-title">Cash Flow</h6>
                             <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($cashFlow ?? 0, 2), '0'), '.') }}</h2>
-                            <small>Net Cash on Hand</small>
+                            <small>{{ now()->format('F Y') }}</small>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-wallet fa-2x opacity-75"></i>
