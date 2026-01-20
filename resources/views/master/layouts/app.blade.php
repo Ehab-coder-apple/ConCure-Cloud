@@ -231,7 +231,7 @@
                     <i class="fas fa-shield-alt me-1"></i>
                     Master Access
                 </span>
-                <span class="text-muted">{{ now()->format('M d, Y H:i') }}</span>
+                <span class="text-muted" id="headerDateTime">{{ now()->format('M d, Y H:i') }}</span>
             </div>
         </div>
 
@@ -277,6 +277,37 @@
     @auth
     <script src="{{ asset('js/auto-logout.js') }}"></script>
     @endauth
+
+    <!-- Real-time Clock Update -->
+    <script>
+        // Get server time on page load
+        const serverTime = new Date('{{ now()->toIso8601String() }}');
+        const clientTime = new Date();
+        const timeDiff = serverTime - clientTime;
+
+        function updateHeaderDateTime() {
+            // Calculate current server time based on initial difference
+            const now = new Date(Date.now() + timeDiff);
+
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = months[now.getMonth()];
+            const day = String(now.getDate()).padStart(2, '0');
+            const year = now.getFullYear();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+
+            const formatted = `${month} ${day}, ${year} ${hours}:${minutes}`;
+
+            const element = document.getElementById('headerDateTime');
+            if (element) {
+                element.textContent = formatted;
+            }
+        }
+
+        // Update immediately and then every second
+        updateHeaderDateTime();
+        setInterval(updateHeaderDateTime, 1000);
+    </script>
 
     @stack('scripts')
 </body>
