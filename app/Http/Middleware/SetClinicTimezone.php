@@ -19,14 +19,27 @@ class SetClinicTimezone
     {
         if (Auth::check()) {
             $user = Auth::user();
-            
-            // Get clinic timezone from settings
-            if ($user->clinic_id) {
+
+            // For super admin, get global timezone setting
+            if ($user->isSuperAdmin()) {
+                $timezone = DB::table('settings')
+                    ->whereNull('clinic_id')
+                    ->where('key', 'master_timezone')
+                    ->value('value');
+
+                if ($timezone) {
+                    // Set the timezone for this request
+                    config(['app.timezone' => $timezone]);
+                    date_default_timezone_set($timezone);
+                }
+            }
+            // Get clinic timezone from settings for regular users
+            elseif ($user->clinic_id) {
                 $timezone = DB::table('settings')
                     ->where('clinic_id', $user->clinic_id)
                     ->where('key', 'timezone')
                     ->value('value');
-                
+
                 if ($timezone) {
                     // Set the timezone for this request
                     config(['app.timezone' => $timezone]);
@@ -34,7 +47,7 @@ class SetClinicTimezone
                 }
             }
         }
-        
+
         return $next($request);
     }
 }

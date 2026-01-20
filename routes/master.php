@@ -10,6 +10,7 @@ use App\Http\Controllers\Master\ReportController;
 use App\Http\Controllers\Master\PaymentsController;
 use App\Http\Controllers\Master\PlanController;
 use App\Http\Controllers\Master\MaintenanceController;
+use App\Http\Controllers\Master\SettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -77,9 +78,8 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::post('/maintenance/server-update', [MaintenanceController::class, 'runServerUpdate'])->name('maintenance.server-update');
 
     // System Settings
-    Route::get('/settings', function () {
-        return view('master.settings.index');
-    })->name('settings');
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::post('/settings/timezone', [SettingsController::class, 'updateTimezone'])->name('settings.update-timezone');
 
     // Features Documentation
     Route::get('/features', [DashboardController::class, 'features'])->name('features');

@@ -23,11 +23,45 @@
       <div class="card shadow-sm mb-4">
         <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">General</h6></div>
         <div class="card-body">
-          <p class="text-muted mb-2">This is a placeholder settings page. We can add editable settings here as needed.</p>
+          <p class="text-muted mb-3">Configure system-wide settings for the master admin interface.</p>
+
+          <!-- Timezone Setting -->
+          <form id="timezoneForm">
+            @csrf
+            <div class="row align-items-end">
+              <div class="col-md-8">
+                <label for="timezone" class="form-label">
+                  <i class="fas fa-globe me-1"></i>
+                  Master Admin Timezone
+                </label>
+                <select class="form-select" id="timezone" name="timezone" required>
+                  @foreach($timezones as $value => $label)
+                    <option value="{{ $value }}" {{ $masterTimezone == $value ? 'selected' : '' }}>
+                      {{ $label }}
+                    </option>
+                  @endforeach
+                </select>
+                <small class="text-muted">
+                  This timezone will be used for all super admin activities and timestamps.
+                  Current time: <span id="currentTime">{{ now()->format('Y-m-d H:i:s') }}</span>
+                </small>
+              </div>
+              <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="fas fa-save me-1"></i>
+                  Update Timezone
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <hr class="my-4">
+
+          <h6 class="text-muted mb-2">System Information</h6>
           <ul class="mb-0">
             <li>App Name: <span class="text-muted">{{ config('app.name') }}</span></li>
             <li>Environment: <span class="text-muted">{{ app()->environment() }}</span></li>
-            <li>Timezone: <span class="text-muted">{{ config('app.timezone') }}</span></li>
+            <li>Current Timezone: <span class="text-muted">{{ config('app.timezone') }}</span></li>
           </ul>
         </div>
       </div>
@@ -126,4 +160,99 @@
   </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update current time every second
+    function updateCurrentTime() {
+        const now = new Date();
+        const formatted = now.getFullYear() + '-' +
+                         String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                         String(now.getDate()).padStart(2, '0') + ' ' +
+                         String(now.getHours()).padStart(2, '0') + ':' +
+                         String(now.getMinutes()).padStart(2, '0') + ':' +
+                         String(now.getSeconds()).padStart(2, '0');
+        const timeElement = document.getElementById('currentTime');
+        if (timeElement) {
+            timeElement.textContent = formatted;
+        }
+    }
+
+    // Update time immediately and then every second
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 1000);
+
+    // Handle timezone form submission
+    const timezoneForm = document.getElementById('timezoneForm');
+    if (timezoneForm) {
+        timezoneForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+
+            // Disable button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Updating...';
+
+            fetch('{{ route("master.settings.update-timezone") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    timezoneForm.parentElement.insertBefore(alertDiv, timezoneForm);
+
+                    // Reload page after 1 second to apply new timezone
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    // Show error message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    timezoneForm.parentElement.insertBefore(alertDiv, timezoneForm);
+
+                    // Re-enable button
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    An error occurred while updating the timezone.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                timezoneForm.parentElement.insertBefore(alertDiv, timezoneForm);
+
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            });
+        });
+    }
+});
+</script>
+@endpush
 
