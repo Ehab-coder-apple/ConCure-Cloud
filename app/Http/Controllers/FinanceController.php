@@ -1157,6 +1157,26 @@ class FinanceController extends Controller
         $stats['pendingReceiptCount'] = $receiptsQuery->clone()->pending()->count();
         $stats['pendingExpenseCount'] = $expensesQuery->clone()->pending()->count();
 
+        // Cash flow calculation (all time)
+        // Total cash in = Invoice payments + Other receipts
+        $invoicePayments = $invoicesQuery->clone()
+            ->sum('paid_amount');
+
+        $otherReceipts = $receiptsQuery->clone()
+            ->approved()
+            ->sum('amount');
+
+        $totalCashIn = $invoicePayments + $otherReceipts;
+
+        // Total cash out = Expenses
+        $totalCashOut = $expensesQuery->clone()
+            ->approved()
+            ->sum('amount');
+
+        $stats['cashFlow'] = $totalCashIn - $totalCashOut;
+        $stats['totalCashIn'] = $totalCashIn;
+        $stats['totalCashOut'] = $totalCashOut;
+
         // Recent activity
         $stats['recentInvoices'] = $invoicesQuery->clone()
             ->with(['patient'])
