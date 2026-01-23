@@ -233,6 +233,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is a lab technician.
+     */
+    public function isLabTechnician(): bool
+    {
+        return $this->role === 'lab_dept';
+    }
+
+    /**
      * Check if user can access master dashboard.
      */
     public function canAccessMasterDashboard(): bool

@@ -25,6 +25,11 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
+        // Redirect lab technicians to their dedicated dashboard
+        if ($user->role === 'lab_dept') {
+            return redirect()->route('recommendations.lab-technician.dashboard');
+        }
+
         // DEBUG: Log assistant doctor assignments
         if ($user->role === 'assistant') {
             \Log::info('Assistant Dashboard Debug', [

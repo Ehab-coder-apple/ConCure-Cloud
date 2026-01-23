@@ -528,6 +528,22 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/lab-requests/{labRequest}/send-email', [App\Http\Controllers\LabRequestCommunicationController::class, 'sendViaEmail'])->name('lab-requests.send-email');
         Route::post('/lab-requests/{labRequest}/upload-result', [App\Http\Controllers\LabRequestCommunicationController::class, 'uploadResult'])->name('lab-requests.upload-result');
 
+        // Lab Technician Routes
+        Route::prefix('lab-technician')->name('lab-technician.')->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\LabTechnicianController::class, 'dashboard'])->name('dashboard');
+            Route::get('/patients', [App\Http\Controllers\LabTechnicianController::class, 'patients'])->name('patients');
+            Route::get('/patients/{patient}/files', [App\Http\Controllers\LabTechnicianController::class, 'showPatientFiles'])->name('patients.files');
+            Route::post('/patients/{patient}/upload', [App\Http\Controllers\LabTechnicianController::class, 'uploadPatientFile'])->name('patients.upload');
+        });
+
+        // Radiology Technician Routes
+        Route::prefix('radiology-technician')->name('radiology-technician.')->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\RadiologyTechnicianController::class, 'dashboard'])->name('dashboard');
+            Route::get('/patients', [App\Http\Controllers\RadiologyTechnicianController::class, 'patients'])->name('patients');
+            Route::get('/patients/{patient}/files', [App\Http\Controllers\RadiologyTechnicianController::class, 'showPatientFiles'])->name('patients.files');
+            Route::post('/patients/{patient}/upload', [App\Http\Controllers\RadiologyTechnicianController::class, 'uploadPatientFile'])->name('patients.upload');
+        });
+
         // Debug endpoint for testing AJAX
         Route::get('/lab-requests/test-ajax', function() {
             return response()->json([

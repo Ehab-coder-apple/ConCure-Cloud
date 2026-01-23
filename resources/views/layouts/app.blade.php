@@ -1428,6 +1428,53 @@
                 <!-- Navigation Menu -->
                 <nav class="sidebar-nav">
                     <ul class="nav-list">
+                        <!-- Lab Technician Menu (Only for lab_dept role) -->
+                        @if(Auth::user()->role === 'lab_dept')
+                        <li class="nav-item">
+                            <a href="{{ route('recommendations.lab-technician.dashboard') }}" class="nav-link {{ request()->routeIs('recommendations.lab-technician.dashboard') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-flask"></i>
+                                <span class="nav-text">{{ __('Lab Dashboard') }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('recommendations.lab-technician.patients') }}" class="nav-link {{ request()->routeIs('recommendations.lab-technician.patients*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-upload"></i>
+                                <span class="nav-text">{{ __('Upload Results') }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('recommendations.lab-requests') }}" class="nav-link {{ request()->routeIs('recommendations.lab-requests*') && !request()->routeIs('recommendations.lab-technician*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-list"></i>
+                                <span class="nav-text">{{ __('All Lab Requests') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        <!-- Radiology Technician Menu (Only for radiology_dept role) -->
+                        @if(Auth::user()->role === 'radiology_dept')
+                        <li class="nav-item">
+                            <a href="{{ route('recommendations.radiology-technician.dashboard') }}" class="nav-link {{ request()->routeIs('recommendations.radiology-technician.dashboard') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-x-ray"></i>
+                                <span class="nav-text">{{ __('Radiology Dashboard') }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('recommendations.radiology-technician.patients') }}" class="nav-link {{ request()->routeIs('recommendations.radiology-technician.patients*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-upload"></i>
+                                <span class="nav-text">{{ __('Upload Results') }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('recommendations.radiology.index') }}" class="nav-link {{ request()->routeIs('recommendations.radiology.*') && !request()->routeIs('recommendations.radiology-technician*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-list"></i>
+                                <span class="nav-text">{{ __('All Radiology Requests') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        <!-- Standard Menu (For all other roles) -->
+                        @if(Auth::user()->role !== 'lab_dept' && Auth::user()->role !== 'radiology_dept')
+
                         <!-- Dashboard -->
                         @if(Auth::user()->hasPermission('dashboard_view'))
                         <li class="nav-item">
@@ -1637,6 +1684,9 @@
                             </ul>
                         </li>
                         @endif
+
+                        @endif
+                        {{-- End of standard menu for non-lab/radiology roles --}}
                     </ul>
                 </nav>
 

@@ -142,6 +142,14 @@ class Patient extends Model
     }
 
     /**
+     * Get the radiology requests for the patient.
+     */
+    public function radiologyRequests(): HasMany
+    {
+        return $this->hasMany(RadiologyRequest::class);
+    }
+
+    /**
      * Get the diet plans for the patient.
      */
     public function dietPlans(): HasMany
