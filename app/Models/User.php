@@ -462,6 +462,11 @@ class User extends Authenticatable
      */
     public function canViewRadiologyRequests(): bool
     {
+        // Radiology technicians can view radiology requests
+        if ($this->role === 'radiology_dept') {
+            return true;
+        }
+
         return $this->hasAnyPermission(['radiology_view', 'radiology_create', 'radiology_edit', 'radiology_delete', 'radiology_manage']);
     }
 
