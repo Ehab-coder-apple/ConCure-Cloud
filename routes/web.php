@@ -544,46 +544,6 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::post('/patients/{patient}/upload', [App\Http\Controllers\RadiologyTechnicianController::class, 'uploadPatientFile'])->name('patients.upload');
         });
 
-        // Dental Module Routes
-        Route::prefix('dental')->name('dental.')->group(function () {
-            // Dental Charts
-            Route::prefix('patients/{patient}/charts')->name('charts.')->group(function () {
-                Route::get('/', [App\Http\Controllers\DentalChartController::class, 'index'])->name('index');
-                Route::get('/create', [App\Http\Controllers\DentalChartController::class, 'create'])->name('create');
-                Route::post('/', [App\Http\Controllers\DentalChartController::class, 'store'])->name('store');
-                Route::get('/{dentalChart}', [App\Http\Controllers\DentalChartController::class, 'show'])->name('show');
-                Route::get('/{dentalChart}/edit', [App\Http\Controllers\DentalChartController::class, 'edit'])->name('edit');
-                Route::put('/{dentalChart}', [App\Http\Controllers\DentalChartController::class, 'update'])->name('update');
-                Route::delete('/{dentalChart}', [App\Http\Controllers\DentalChartController::class, 'destroy'])->name('destroy');
-                Route::post('/{dentalChart}/tooth-record', [App\Http\Controllers\DentalChartController::class, 'updateToothRecord'])->name('update-tooth-record');
-            });
-            Route::get('/patients/{patient}/dental-history', [App\Http\Controllers\DentalChartController::class, 'history'])->name('history');
-
-            // Dental Treatments
-            Route::prefix('treatments')->name('treatments.')->group(function () {
-                Route::get('/', [App\Http\Controllers\DentalTreatmentController::class, 'index'])->name('index');
-                Route::get('/create', [App\Http\Controllers\DentalTreatmentController::class, 'create'])->name('create');
-                Route::post('/', [App\Http\Controllers\DentalTreatmentController::class, 'store'])->name('store');
-                Route::get('/{dentalTreatment}', [App\Http\Controllers\DentalTreatmentController::class, 'show'])->name('show');
-                Route::get('/{dentalTreatment}/edit', [App\Http\Controllers\DentalTreatmentController::class, 'edit'])->name('edit');
-                Route::put('/{dentalTreatment}', [App\Http\Controllers\DentalTreatmentController::class, 'update'])->name('update');
-                Route::delete('/{dentalTreatment}', [App\Http\Controllers\DentalTreatmentController::class, 'destroy'])->name('destroy');
-                Route::post('/{dentalTreatment}/complete', [App\Http\Controllers\DentalTreatmentController::class, 'markAsCompleted'])->name('complete');
-                Route::get('/{dentalTreatment}/pdf', [App\Http\Controllers\DentalTreatmentController::class, 'pdf'])->name('pdf');
-            });
-
-            // Dental Images
-            Route::prefix('patients/{patient}/images')->name('images.')->group(function () {
-                Route::get('/', [App\Http\Controllers\DentalImageController::class, 'index'])->name('index');
-                Route::get('/upload', [App\Http\Controllers\DentalImageController::class, 'upload'])->name('upload');
-                Route::post('/', [App\Http\Controllers\DentalImageController::class, 'store'])->name('store');
-                Route::get('/{dentalImage}', [App\Http\Controllers\DentalImageController::class, 'show'])->name('show');
-                Route::delete('/{dentalImage}', [App\Http\Controllers\DentalImageController::class, 'destroy'])->name('destroy');
-                Route::post('/{dentalImage}/link-tooth', [App\Http\Controllers\DentalImageController::class, 'linkToTooth'])->name('link-tooth');
-                Route::post('/{dentalImage}/update-metadata', [App\Http\Controllers\DentalImageController::class, 'updateMetadata'])->name('update-metadata');
-            });
-        });
-
         // Debug endpoint for testing AJAX
         Route::get('/lab-requests/test-ajax', function() {
             return response()->json([
@@ -781,6 +741,46 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/diet-plans', [RecommendationController::class, 'dietPlans'])->name('diet-plans');
         Route::post('/diet-plans', [RecommendationController::class, 'storeDietPlan'])->name('diet-plans.store');
         Route::get('/diet-plans/{dietPlan}/pdf', [RecommendationController::class, 'generateDietPlanPDF'])->name('diet-plans.pdf');
+    });
+
+    // Dental Module Routes
+    Route::prefix('dental')->name('dental.')->group(function () {
+        // Dental Charts
+        Route::prefix('patients/{patient}/charts')->name('charts.')->group(function () {
+            Route::get('/', [App\Http\Controllers\DentalChartController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\DentalChartController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\DentalChartController::class, 'store'])->name('store');
+            Route::get('/{dentalChart}', [App\Http\Controllers\DentalChartController::class, 'show'])->name('show');
+            Route::get('/{dentalChart}/edit', [App\Http\Controllers\DentalChartController::class, 'edit'])->name('edit');
+            Route::put('/{dentalChart}', [App\Http\Controllers\DentalChartController::class, 'update'])->name('update');
+            Route::delete('/{dentalChart}', [App\Http\Controllers\DentalChartController::class, 'destroy'])->name('destroy');
+            Route::post('/{dentalChart}/tooth-record', [App\Http\Controllers\DentalChartController::class, 'updateToothRecord'])->name('update-tooth-record');
+        });
+        Route::get('/patients/{patient}/dental-history', [App\Http\Controllers\DentalChartController::class, 'history'])->name('history');
+
+        // Dental Treatments
+        Route::prefix('treatments')->name('treatments.')->group(function () {
+            Route::get('/', [App\Http\Controllers\DentalTreatmentController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\DentalTreatmentController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\DentalTreatmentController::class, 'store'])->name('store');
+            Route::get('/{dentalTreatment}', [App\Http\Controllers\DentalTreatmentController::class, 'show'])->name('show');
+            Route::get('/{dentalTreatment}/edit', [App\Http\Controllers\DentalTreatmentController::class, 'edit'])->name('edit');
+            Route::put('/{dentalTreatment}', [App\Http\Controllers\DentalTreatmentController::class, 'update'])->name('update');
+            Route::delete('/{dentalTreatment}', [App\Http\Controllers\DentalTreatmentController::class, 'destroy'])->name('destroy');
+            Route::post('/{dentalTreatment}/complete', [App\Http\Controllers\DentalTreatmentController::class, 'markAsCompleted'])->name('complete');
+            Route::get('/{dentalTreatment}/pdf', [App\Http\Controllers\DentalTreatmentController::class, 'pdf'])->name('pdf');
+        });
+
+        // Dental Images
+        Route::prefix('patients/{patient}/images')->name('images.')->group(function () {
+            Route::get('/', [App\Http\Controllers\DentalImageController::class, 'index'])->name('index');
+            Route::get('/upload', [App\Http\Controllers\DentalImageController::class, 'upload'])->name('upload');
+            Route::post('/', [App\Http\Controllers\DentalImageController::class, 'store'])->name('store');
+            Route::get('/{dentalImage}', [App\Http\Controllers\DentalImageController::class, 'show'])->name('show');
+            Route::delete('/{dentalImage}', [App\Http\Controllers\DentalImageController::class, 'destroy'])->name('destroy');
+            Route::post('/{dentalImage}/link-tooth', [App\Http\Controllers\DentalImageController::class, 'linkToTooth'])->name('link-tooth');
+            Route::post('/{dentalImage}/update-metadata', [App\Http\Controllers\DentalImageController::class, 'updateMetadata'])->name('update-metadata');
+        });
     });
 
     // Food Composition
