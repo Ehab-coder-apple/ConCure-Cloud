@@ -1584,7 +1584,7 @@
                         <!-- Dental Module -->
                         @if(in_array(Auth::user()->role, ['doctor', 'assistant', 'admin', 'program_owner']))
                         <li class="nav-item">
-                            <a href="{{ url('/dental/treatments') }}" class="nav-link {{ request()->is('dental*') ? 'active' : '' }}">
+                            <a href="{{ route('dental.treatments.index') }}" class="nav-link {{ request()->is('dental*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-tooth"></i>
                                 <span class="nav-text">{{ __('Dental Module') }}</span>
                             </a>
