@@ -1581,6 +1581,37 @@
                         </li>
                         @endif
 
+                        <!-- Dental Module -->
+                        @if(in_array(Auth::user()->role, ['doctor', 'assistant', 'admin', 'program_owner']))
+                        <li class="nav-item has-submenu {{ request()->is('dental*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link submenu-toggle">
+                                <i class="nav-icon fas fa-tooth"></i>
+                                <span class="nav-text">{{ __('Dental Module') }}</span>
+                                <i class="submenu-arrow fas fa-chevron-right"></i>
+                            </a>
+                            <ul class="submenu">
+                                <li class="submenu-item">
+                                    <a href="{{ url('/dental/treatments') }}" class="submenu-link {{ request()->is('dental/treatments*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-procedures"></i>
+                                        <span class="submenu-text">{{ __('Treatment Plans') }}</span>
+                                    </a>
+                                </li>
+                                <li class="submenu-item">
+                                    <a href="{{ url('/dental/patients') }}" class="submenu-link {{ request()->is('dental/patients/*/charts*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-teeth"></i>
+                                        <span class="submenu-text">{{ __('Dental Charts') }}</span>
+                                    </a>
+                                </li>
+                                <li class="submenu-item">
+                                    <a href="{{ url('/dental/images') }}" class="submenu-link {{ request()->is('dental/patients/*/images*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-images"></i>
+                                        <span class="submenu-text">{{ __('Dental Images') }}</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        @endif
+
                             <!-- Forms -->
                             @if(Auth::user()->canAccessSection('forms'))
                             <li class="nav-item">
