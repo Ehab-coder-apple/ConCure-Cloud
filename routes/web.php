@@ -544,6 +544,46 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::post('/patients/{patient}/upload', [App\Http\Controllers\RadiologyTechnicianController::class, 'uploadPatientFile'])->name('patients.upload');
         });
 
+        // Dental Module Routes
+        Route::prefix('dental')->name('dental.')->group(function () {
+            // Dental Charts
+            Route::prefix('patients/{patient}/charts')->name('charts.')->group(function () {
+                Route::get('/', [App\Http\Controllers\DentalChartController::class, 'index'])->name('index');
+                Route::get('/create', [App\Http\Controllers\DentalChartController::class, 'create'])->name('create');
+                Route::post('/', [App\Http\Controllers\DentalChartController::class, 'store'])->name('store');
+                Route::get('/{dentalChart}', [App\Http\Controllers\DentalChartController::class, 'show'])->name('show');
+                Route::get('/{dentalChart}/edit', [App\Http\Controllers\DentalChartController::class, 'edit'])->name('edit');
+                Route::put('/{dentalChart}', [App\Http\Controllers\DentalChartController::class, 'update'])->name('update');
+                Route::delete('/{dentalChart}', [App\Http\Controllers\DentalChartController::class, 'destroy'])->name('destroy');
+                Route::post('/{dentalChart}/tooth-record', [App\Http\Controllers\DentalChartController::class, 'updateToothRecord'])->name('update-tooth-record');
+            });
+            Route::get('/patients/{patient}/dental-history', [App\Http\Controllers\DentalChartController::class, 'history'])->name('history');
+
+            // Dental Treatments
+            Route::prefix('treatments')->name('treatments.')->group(function () {
+                Route::get('/', [App\Http\Controllers\DentalTreatmentController::class, 'index'])->name('index');
+                Route::get('/create', [App\Http\Controllers\DentalTreatmentController::class, 'create'])->name('create');
+                Route::post('/', [App\Http\Controllers\DentalTreatmentController::class, 'store'])->name('store');
+                Route::get('/{dentalTreatment}', [App\Http\Controllers\DentalTreatmentController::class, 'show'])->name('show');
+                Route::get('/{dentalTreatment}/edit', [App\Http\Controllers\DentalTreatmentController::class, 'edit'])->name('edit');
+                Route::put('/{dentalTreatment}', [App\Http\Controllers\DentalTreatmentController::class, 'update'])->name('update');
+                Route::delete('/{dentalTreatment}', [App\Http\Controllers\DentalTreatmentController::class, 'destroy'])->name('destroy');
+                Route::post('/{dentalTreatment}/complete', [App\Http\Controllers\DentalTreatmentController::class, 'markAsCompleted'])->name('complete');
+                Route::get('/{dentalTreatment}/pdf', [App\Http\Controllers\DentalTreatmentController::class, 'pdf'])->name('pdf');
+            });
+
+            // Dental Images
+            Route::prefix('patients/{patient}/images')->name('images.')->group(function () {
+                Route::get('/', [App\Http\Controllers\DentalImageController::class, 'index'])->name('index');
+                Route::get('/upload', [App\Http\Controllers\DentalImageController::class, 'upload'])->name('upload');
+                Route::post('/', [App\Http\Controllers\DentalImageController::class, 'store'])->name('store');
+                Route::get('/{dentalImage}', [App\Http\Controllers\DentalImageController::class, 'show'])->name('show');
+                Route::delete('/{dentalImage}', [App\Http\Controllers\DentalImageController::class, 'destroy'])->name('destroy');
+                Route::post('/{dentalImage}/link-tooth', [App\Http\Controllers\DentalImageController::class, 'linkToTooth'])->name('link-tooth');
+                Route::post('/{dentalImage}/update-metadata', [App\Http\Controllers\DentalImageController::class, 'updateMetadata'])->name('update-metadata');
+            });
+        });
+
         // Debug endpoint for testing AJAX
         Route::get('/lab-requests/test-ajax', function() {
             return response()->json([
@@ -1461,6 +1501,164 @@ Route::get('/test-lab-request/{id}', function($id) {
 Route::get('/lab-requests', function() {
     return redirect('/recommendations/lab-requests');
 });
+
+// Dental Module Test Route
+Route::get('/test-dental', function() {
+    $user = auth()->user();
+
+    if (!$user) {
+        return response()->json([
+            'error' => 'Not authenticated. Please login first.',
+            'login_url' => route('login')
+        ]);
+    }
+
+    // Test database tables exist
+    $tables = [
+        'dental_charts' => \Illuminate\Support\Facades\Schema::hasTable('dental_charts'),
+        'dental_tooth_records' => \Illuminate\Support\Facades\Schema::hasTable('dental_tooth_records'),
+        'dental_treatments' => \Illuminate\Support\Facades\Schema::hasTable('dental_treatments'),
+        'dental_images' => \Illuminate\Support\Facades\Schema::hasTable('dental_images'),
+        'dental_procedures' => \Illuminate\Support\Facades\Schema::hasTable('dental_procedures'),
+    ];
+
+    // Test models can be instantiated
+    $models = [
+        'DentalChart' => class_exists('App\Models\DentalChart'),
+        'DentalToothRecord' => class_exists('App\Models\DentalToothRecord'),
+        'DentalTreatment' => class_exists('App\Models\DentalTreatment'),
+        'DentalImage' => class_exists('App\Models\DentalImage'),
+        'DentalProcedure' => class_exists('App\Models\DentalProcedure'),
+    ];
+
+    // Get counts
+    $counts = [
+        'dental_charts' => \App\Models\DentalChart::count(),
+        'dental_tooth_records' => \App\Models\DentalToothRecord::count(),
+        'dental_treatments' => \App\Models\DentalTreatment::count(),
+        'dental_images' => \App\Models\DentalImage::count(),
+        'dental_procedures' => \App\Models\DentalProcedure::count(),
+    ];
+
+    // Get a sample patient
+    $patient = \App\Models\Patient::when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+                                  ->first();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Dental Module Test',
+        'user' => [
+            'name' => $user->name,
+            'role' => $user->role,
+            'clinic_id' => $user->clinic_id,
+        ],
+        'tables_exist' => $tables,
+        'models_loaded' => $models,
+        'record_counts' => $counts,
+        'sample_patient' => $patient ? [
+            'id' => $patient->id,
+            'name' => $patient->full_name,
+            'patient_id' => $patient->patient_id,
+        ] : null,
+        'routes' => [
+            'dental_charts_index' => $patient ? url("/dental/patients/{$patient->id}/charts") : 'Need patient',
+            'dental_treatments_index' => url('/dental/treatments'),
+            'test_create_chart' => $patient ? url("/dental/patients/{$patient->id}/charts/create") : 'Need patient',
+        ],
+    ]);
+})->middleware('auth')->name('test-dental');
+
+// Create Sample Dental Chart
+Route::get('/test-dental/create-sample', function() {
+    $user = auth()->user();
+
+    if (!$user) {
+        return response()->json(['error' => 'Not authenticated']);
+    }
+
+    // Get first patient
+    $patient = \App\Models\Patient::when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+                                  ->first();
+
+    if (!$patient) {
+        return response()->json(['error' => 'No patient found. Please create a patient first.']);
+    }
+
+    // Create a dental chart
+    $chart = \App\Models\DentalChart::create([
+        'patient_id' => $patient->id,
+        'clinic_id' => $user->clinic_id,
+        'chart_type' => 'adult',
+        'general_notes' => 'Sample dental chart created for testing',
+        'created_by' => $user->id,
+    ]);
+
+    // Add some sample tooth records
+    $sampleTeeth = [
+        ['tooth_number' => '11', 'primary_condition' => 'healthy', 'conditions' => ['healthy']],
+        ['tooth_number' => '12', 'primary_condition' => 'healthy', 'conditions' => ['healthy']],
+        ['tooth_number' => '16', 'primary_condition' => 'caries', 'conditions' => ['caries'], 'surfaces_affected' => ['O', 'M'], 'severity' => 'moderate', 'notes' => 'Cavity on occlusal and mesial surfaces'],
+        ['tooth_number' => '21', 'primary_condition' => 'filling', 'conditions' => ['filling'], 'surfaces_affected' => ['O'], 'notes' => 'Composite filling in good condition'],
+        ['tooth_number' => '26', 'primary_condition' => 'crown', 'conditions' => ['crown'], 'notes' => 'Porcelain crown'],
+        ['tooth_number' => '36', 'primary_condition' => 'root_canal', 'conditions' => ['root_canal', 'crown'], 'notes' => 'Root canal with crown'],
+        ['tooth_number' => '46', 'primary_condition' => 'caries', 'conditions' => ['caries'], 'surfaces_affected' => ['D', 'O'], 'severity' => 'mild', 'notes' => 'Small cavity'],
+    ];
+
+    foreach ($sampleTeeth as $toothData) {
+        \App\Models\DentalToothRecord::create(array_merge($toothData, [
+            'dental_chart_id' => $chart->id,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]));
+    }
+
+    // Create a sample treatment plan
+    $treatment = \App\Models\DentalTreatment::create([
+        'patient_id' => $patient->id,
+        'clinic_id' => $user->clinic_id,
+        'dental_chart_id' => $chart->id,
+        'tooth_number' => '16',
+        'procedure_name' => 'Composite Filling - Two Surfaces',
+        'procedure_code' => 'D2331',
+        'diagnosis' => 'Dental caries on tooth #16',
+        'surfaces_affected' => ['O', 'M'],
+        'description' => 'Remove caries and place composite filling on occlusal and mesial surfaces',
+        'estimated_cost' => 210.00,
+        'currency' => 'USD',
+        'estimated_duration_minutes' => 45,
+        'status' => 'planned',
+        'priority' => 'medium',
+        'severity' => 'moderate',
+        'assigned_doctor_id' => $user->id,
+        'payment_status' => 'unpaid',
+        'paid_amount' => 0,
+        'notes' => 'Patient prefers tooth-colored filling',
+        'created_by' => $user->id,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Sample dental chart created successfully!',
+        'chart' => [
+            'id' => $chart->id,
+            'patient' => $patient->full_name,
+            'chart_type' => $chart->chart_type,
+            'tooth_records_count' => $chart->toothRecords()->count(),
+        ],
+        'treatment' => [
+            'id' => $treatment->id,
+            'treatment_number' => $treatment->treatment_number,
+            'procedure' => $treatment->procedure_name,
+            'status' => $treatment->status,
+            'cost' => '$' . number_format($treatment->estimated_cost, 2),
+        ],
+        'view_urls' => [
+            'chart' => url("/dental/patients/{$patient->id}/charts/{$chart->id}"),
+            'treatment' => url("/dental/treatments/{$treatment->id}"),
+            'all_treatments' => url("/dental/treatments"),
+        ],
+    ]);
+})->middleware('auth')->name('test-dental.create-sample');
 
 // Demo login routes (outside middleware groups for easy access)
 Route::get('/dev/login-admin', function() {
