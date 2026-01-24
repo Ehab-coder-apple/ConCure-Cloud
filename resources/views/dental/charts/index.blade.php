@@ -49,11 +49,11 @@
                         </div>
                         <div class="col-md-3">
                             <small class="text-muted">{{ __('Total Charts') }}</small>
-                            <p class="mb-0"><strong>{{ $dentalCharts->total() }}</strong></p>
+                            <p class="mb-0"><strong>{{ $charts->total() }}</strong></p>
                         </div>
                         <div class="col-md-3">
                             <small class="text-muted">{{ __('Latest Chart') }}</small>
-                            <p class="mb-0"><strong>{{ $dentalCharts->first()?->created_at?->format('M d, Y') ?? 'None' }}</strong></p>
+                            <p class="mb-0"><strong>{{ $charts->first()?->created_at?->format('M d, Y') ?? 'None' }}</strong></p>
                         </div>
                     </div>
                 </div>
@@ -72,7 +72,7 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    @if($dentalCharts->count() > 0)
+                    @if($charts->count() > 0)
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
@@ -86,7 +86,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($dentalCharts as $chart)
+                                    @foreach($charts as $chart)
                                         <tr>
                                             <td>
                                                 <strong>{{ $chart->created_at->format('M d, Y') }}</strong>
@@ -125,7 +125,7 @@
 
                         <!-- Pagination -->
                         <div class="mt-3">
-                            {{ $dentalCharts->links() }}
+                            {{ $charts->links() }}
                         </div>
                     @else
                         <div class="text-center py-5">
