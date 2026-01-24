@@ -150,6 +150,38 @@ class Patient extends Model
     }
 
     /**
+     * Get the dental charts for the patient.
+     */
+    public function dentalCharts(): HasMany
+    {
+        return $this->hasMany(DentalChart::class);
+    }
+
+    /**
+     * Get the dental treatments for the patient.
+     */
+    public function dentalTreatments(): HasMany
+    {
+        return $this->hasMany(DentalTreatment::class);
+    }
+
+    /**
+     * Get the dental images for the patient.
+     */
+    public function dentalImages(): HasMany
+    {
+        return $this->hasMany(DentalImage::class);
+    }
+
+    /**
+     * Get the latest dental chart for the patient.
+     */
+    public function getLatestDentalChartAttribute(): ?DentalChart
+    {
+        return $this->dentalCharts()->latest()->first();
+    }
+
+    /**
      * Get the diet plans for the patient.
      */
     public function dietPlans(): HasMany
