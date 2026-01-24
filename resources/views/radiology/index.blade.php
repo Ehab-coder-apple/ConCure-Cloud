@@ -14,6 +14,7 @@
                     </h1>
                     <p class="text-muted mb-0">{{ __('Manage patient radiology and imaging requests') }}</p>
                 </div>
+                @if(Auth::user()->role !== 'radiology_dept')
                 <div>
                     <a href="{{ route('recommendations.radiology.tests.manage') }}" class="btn btn-outline-primary me-2">
                         <i class="fas fa-cogs me-1"></i>
@@ -24,6 +25,7 @@
                         {{ __('New Request') }}
                     </a>
                 </div>
+                @endif
             </div>
         </div>
     </div>
@@ -226,20 +228,27 @@
                                                 <a href="{{ route('recommendations.radiology.show', $request) }}" class="btn btn-outline-primary" title="{{ __('View') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                @if($request->status === 'pending')
-                                                <a href="{{ route('recommendations.radiology.edit', $request) }}" class="btn btn-outline-warning" title="{{ __('Edit') }}">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                @endif
-                                                <a href="{{ route('recommendations.radiology.pdf', $request) }}" class="btn btn-outline-danger" title="{{ __('PDF') }}">
-                                                    <i class="fas fa-file-pdf"></i>
-                                                </a>
-                                                @if($request->status === 'pending')
-                                                <button type="button" class="btn btn-outline-danger" 
-                                                        onclick="deleteRequest({{ $request->id }}, '{{ $request->request_number }}')" 
-                                                        title="{{ __('Delete') }}">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
+                                                @if(Auth::user()->role === 'radiology_dept')
+                                                    {{-- Upload button for radiology technicians --}}
+                                                    <a href="{{ route('recommendations.radiology-technician.patients.files', $request->patient) }}" class="btn btn-outline-success" title="{{ __('Upload Results') }}">
+                                                        <i class="fas fa-upload"></i>
+                                                    </a>
+                                                @else
+                                                    @if($request->status === 'pending')
+                                                    <a href="{{ route('recommendations.radiology.edit', $request) }}" class="btn btn-outline-warning" title="{{ __('Edit') }}">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    @endif
+                                                    <a href="{{ route('recommendations.radiology.pdf', $request) }}" class="btn btn-outline-danger" title="{{ __('PDF') }}">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                    </a>
+                                                    @if($request->status === 'pending')
+                                                    <button type="button" class="btn btn-outline-danger"
+                                                            onclick="deleteRequest({{ $request->id }}, '{{ $request->request_number }}')"
+                                                            title="{{ __('Delete') }}">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    @endif
                                                 @endif
                                             </div>
                                         </td>
