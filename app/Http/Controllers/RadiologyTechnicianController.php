@@ -128,12 +128,18 @@ class RadiologyTechnicianController extends Controller
 
         // Ensure user is a radiology technician
         if ($user->role !== 'radiology_dept') {
-            abort(403, 'Access denied. This area is for radiology technicians only.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. This area is for radiology technicians only.'
+            ], 403);
         }
 
         // Ensure patient belongs to the same clinic
         if ($patient->clinic_id !== $user->clinic_id) {
-            abort(403, 'Access denied. This patient does not belong to your clinic.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. This patient does not belong to your clinic.'
+            ], 403);
         }
 
         $request->validate([
@@ -141,27 +147,44 @@ class RadiologyTechnicianController extends Controller
             'description' => 'nullable|string|max:500',
         ]);
 
-        // Handle file upload
-        $file = $request->file('file');
-        $fileName = time() . '_' . $file->getClientOriginalName();
-        $filePath = $file->storeAs('patient_files/' . $patient->id, $fileName, 'private');
+        try {
+            // Handle file upload
+            $file = $request->file('file');
+            $fileName = time() . '_' . $file->getClientOriginalName();
 
-        // Create file record
-        PatientFile::create([
-            'patient_id' => $patient->id,
-            'file_name' => $file->getClientOriginalName(),
-            'file_path' => $filePath,
-            'file_type' => 'radiology_result',
-            'file_size' => $file->getSize(),
-            'mime_type' => $file->getMimeType(),
-            'description' => $request->description,
-            'uploaded_by' => $user->id,
-        ]);
+            // Store in private disk
+            $filePath = $file->storeAs('patient_files/' . $patient->id, $fileName, 'private');
 
-        return response()->json([
-            'success' => true,
-            'message' => __('Radiology result uploaded successfully.'),
-        ]);
+            // Create file record
+            PatientFile::create([
+                'patient_id' => $patient->id,
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $filePath,
+                'file_type' => 'radiology_result',
+                'file_size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+                'description' => $request->description,
+                'uploaded_by' => $user->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => __('Radiology result uploaded successfully.'),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Radiology file upload failed', [
+                'patient_id' => $patient->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => __('Failed to upload file. Please try again or contact support.'),
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
     }
 }
 

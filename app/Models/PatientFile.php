@@ -18,6 +18,7 @@ class PatientFile extends Model
         'file_path',
         'file_type',
         'file_size',
+        'mime_type',
         'category',
         'description',
         'uploaded_by',
