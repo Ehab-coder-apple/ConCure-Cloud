@@ -90,13 +90,38 @@
                                                 $record = $toothRecords->get($toothNum);
                                                 $color = $record ? $record->primary_condition_color : '#FFFFFF';
                                                 $condition = $record ? $record->primary_condition : 'healthy';
+                                                $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
+                                                // Determine tooth type based on position (incisors, canines, premolars, molars)
+                                                $toothType = in_array($toothNum, ['11', '12', '21', '22', '31', '32', '41', '42']) ? 'incisor' :
+                                                            (in_array($toothNum, ['13', '23', '33', '43']) ? 'canine' :
+                                                            (in_array($toothNum, ['14', '15', '24', '25', '34', '35', '44', '45']) ? 'premolar' : 'molar'));
                                             @endphp
-                                            <div class="tooth-box m-1 text-center" style="background-color: {{ $color }}; border: 2px solid #333; border-radius: 8px; padding: 10px; min-width: 50px;">
-                                                <div class="tooth-number" style="font-weight: bold; font-size: 14px; color: {{ in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff' }};">
-                                                    {{ $toothNum }}
-                                                </div>
+                                            <div class="tooth-container m-1 text-center" style="position: relative; width: 60px;">
+                                                <svg viewBox="0 0 60 80" width="60" height="80" style="display: block;">
+                                                    @if($toothType === 'incisor')
+                                                        <!-- Incisor shape (flat, chisel-like) -->
+                                                        <path d="M 20 10 L 40 10 L 42 25 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 18 25 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @elseif($toothType === 'canine')
+                                                        <!-- Canine shape (pointed) -->
+                                                        <path d="M 25 5 L 35 5 L 38 20 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 22 20 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @elseif($toothType === 'premolar')
+                                                        <!-- Premolar shape (two cusps) -->
+                                                        <path d="M 18 15 Q 20 8 25 10 Q 30 5 35 10 Q 40 8 42 15 L 42 60 Q 30 75 30 75 Q 30 75 18 60 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @else
+                                                        <!-- Molar shape (multiple cusps, wider) -->
+                                                        <path d="M 15 15 Q 17 8 22 10 Q 27 5 30 8 Q 33 5 38 10 Q 43 8 45 15 L 45 60 Q 30 75 30 75 Q 30 75 15 60 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @endif
+                                                    <!-- Tooth number -->
+                                                    <text x="30" y="45" text-anchor="middle" font-size="14" font-weight="bold" fill="{{ $textColor }}">
+                                                        {{ $toothNum }}
+                                                    </text>
+                                                </svg>
                                                 @if($record)
-                                                    <div class="tooth-condition" style="font-size: 10px; color: {{ in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff' }};">
+                                                    <div class="tooth-condition" style="font-size: 9px; margin-top: 2px; color: #666;">
                                                         {{ \App\Models\DentalToothRecord::CONDITIONS[$record->primary_condition]['name'] ?? '' }}
                                                     </div>
                                                 @endif
@@ -114,13 +139,38 @@
                                                 $record = $toothRecords->get($toothNum);
                                                 $color = $record ? $record->primary_condition_color : '#FFFFFF';
                                                 $condition = $record ? $record->primary_condition : 'healthy';
+                                                $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
+                                                // Determine tooth type based on position
+                                                $toothType = in_array($toothNum, ['11', '12', '21', '22', '31', '32', '41', '42']) ? 'incisor' :
+                                                            (in_array($toothNum, ['13', '23', '33', '43']) ? 'canine' :
+                                                            (in_array($toothNum, ['14', '15', '24', '25', '34', '35', '44', '45']) ? 'premolar' : 'molar'));
                                             @endphp
-                                            <div class="tooth-box m-1 text-center" style="background-color: {{ $color }}; border: 2px solid #333; border-radius: 8px; padding: 10px; min-width: 50px;">
-                                                <div class="tooth-number" style="font-weight: bold; font-size: 14px; color: {{ in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff' }};">
-                                                    {{ $toothNum }}
-                                                </div>
+                                            <div class="tooth-container m-1 text-center" style="position: relative; width: 60px;">
+                                                <svg viewBox="0 0 60 80" width="60" height="80" style="display: block;">
+                                                    @if($toothType === 'incisor')
+                                                        <!-- Incisor shape -->
+                                                        <path d="M 20 10 L 40 10 L 42 25 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 18 25 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @elseif($toothType === 'canine')
+                                                        <!-- Canine shape -->
+                                                        <path d="M 25 5 L 35 5 L 38 20 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 22 20 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @elseif($toothType === 'premolar')
+                                                        <!-- Premolar shape -->
+                                                        <path d="M 18 15 Q 20 8 25 10 Q 30 5 35 10 Q 40 8 42 15 L 42 60 Q 30 75 30 75 Q 30 75 18 60 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @else
+                                                        <!-- Molar shape -->
+                                                        <path d="M 15 15 Q 17 8 22 10 Q 27 5 30 8 Q 33 5 38 10 Q 43 8 45 15 L 45 60 Q 30 75 30 75 Q 30 75 15 60 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @endif
+                                                    <!-- Tooth number -->
+                                                    <text x="30" y="45" text-anchor="middle" font-size="14" font-weight="bold" fill="{{ $textColor }}">
+                                                        {{ $toothNum }}
+                                                    </text>
+                                                </svg>
                                                 @if($record)
-                                                    <div class="tooth-condition" style="font-size: 10px; color: {{ in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff' }};">
+                                                    <div class="tooth-condition" style="font-size: 9px; margin-top: 2px; color: #666;">
                                                         {{ \App\Models\DentalToothRecord::CONDITIONS[$record->primary_condition]['name'] ?? '' }}
                                                     </div>
                                                 @endif
@@ -144,13 +194,38 @@
                                                 $record = $toothRecords->get($toothNum);
                                                 $color = $record ? $record->primary_condition_color : '#FFFFFF';
                                                 $condition = $record ? $record->primary_condition : 'healthy';
+                                                $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
+                                                // Determine tooth type
+                                                $toothType = in_array($toothNum, ['11', '12', '21', '22', '31', '32', '41', '42']) ? 'incisor' :
+                                                            (in_array($toothNum, ['13', '23', '33', '43']) ? 'canine' :
+                                                            (in_array($toothNum, ['14', '15', '24', '25', '34', '35', '44', '45']) ? 'premolar' : 'molar'));
                                             @endphp
-                                            <div class="tooth-box m-1 text-center" style="background-color: {{ $color }}; border: 2px solid #333; border-radius: 8px; padding: 10px; min-width: 50px;">
-                                                <div class="tooth-number" style="font-weight: bold; font-size: 14px; color: {{ in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff' }};">
-                                                    {{ $toothNum }}
-                                                </div>
+                                            <div class="tooth-container m-1 text-center" style="position: relative; width: 60px;">
+                                                <svg viewBox="0 0 60 80" width="60" height="80" style="display: block; transform: scaleY(-1);">
+                                                    @if($toothType === 'incisor')
+                                                        <!-- Incisor shape (flipped for lower jaw) -->
+                                                        <path d="M 20 10 L 40 10 L 42 25 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 18 25 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @elseif($toothType === 'canine')
+                                                        <!-- Canine shape -->
+                                                        <path d="M 25 5 L 35 5 L 38 20 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 22 20 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @elseif($toothType === 'premolar')
+                                                        <!-- Premolar shape -->
+                                                        <path d="M 18 15 Q 20 8 25 10 Q 30 5 35 10 Q 40 8 42 15 L 42 60 Q 30 75 30 75 Q 30 75 18 60 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @else
+                                                        <!-- Molar shape -->
+                                                        <path d="M 15 15 Q 17 8 22 10 Q 27 5 30 8 Q 33 5 38 10 Q 43 8 45 15 L 45 60 Q 30 75 30 75 Q 30 75 15 60 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @endif
+                                                    <!-- Tooth number (flipped back) -->
+                                                    <text x="30" y="45" text-anchor="middle" font-size="14" font-weight="bold" fill="{{ $textColor }}" transform="scale(1, -1) translate(0, -90)">
+                                                        {{ $toothNum }}
+                                                    </text>
+                                                </svg>
                                                 @if($record)
-                                                    <div class="tooth-condition" style="font-size: 10px; color: {{ in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff' }};">
+                                                    <div class="tooth-condition" style="font-size: 9px; margin-top: 2px; color: #666;">
                                                         {{ \App\Models\DentalToothRecord::CONDITIONS[$record->primary_condition]['name'] ?? '' }}
                                                     </div>
                                                 @endif
@@ -168,13 +243,38 @@
                                                 $record = $toothRecords->get($toothNum);
                                                 $color = $record ? $record->primary_condition_color : '#FFFFFF';
                                                 $condition = $record ? $record->primary_condition : 'healthy';
+                                                $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
+                                                // Determine tooth type
+                                                $toothType = in_array($toothNum, ['11', '12', '21', '22', '31', '32', '41', '42']) ? 'incisor' :
+                                                            (in_array($toothNum, ['13', '23', '33', '43']) ? 'canine' :
+                                                            (in_array($toothNum, ['14', '15', '24', '25', '34', '35', '44', '45']) ? 'premolar' : 'molar'));
                                             @endphp
-                                            <div class="tooth-box m-1 text-center" style="background-color: {{ $color }}; border: 2px solid #333; border-radius: 8px; padding: 10px; min-width: 50px;">
-                                                <div class="tooth-number" style="font-weight: bold; font-size: 14px; color: {{ in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff' }};">
-                                                    {{ $toothNum }}
-                                                </div>
+                                            <div class="tooth-container m-1 text-center" style="position: relative; width: 60px;">
+                                                <svg viewBox="0 0 60 80" width="60" height="80" style="display: block; transform: scaleY(-1);">
+                                                    @if($toothType === 'incisor')
+                                                        <!-- Incisor shape (flipped for lower jaw) -->
+                                                        <path d="M 20 10 L 40 10 L 42 25 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 18 25 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @elseif($toothType === 'canine')
+                                                        <!-- Canine shape -->
+                                                        <path d="M 25 5 L 35 5 L 38 20 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 22 20 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @elseif($toothType === 'premolar')
+                                                        <!-- Premolar shape -->
+                                                        <path d="M 18 15 Q 20 8 25 10 Q 30 5 35 10 Q 40 8 42 15 L 42 60 Q 30 75 30 75 Q 30 75 18 60 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @else
+                                                        <!-- Molar shape -->
+                                                        <path d="M 15 15 Q 17 8 22 10 Q 27 5 30 8 Q 33 5 38 10 Q 43 8 45 15 L 45 60 Q 30 75 30 75 Q 30 75 15 60 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                    @endif
+                                                    <!-- Tooth number (flipped back) -->
+                                                    <text x="30" y="45" text-anchor="middle" font-size="14" font-weight="bold" fill="{{ $textColor }}" transform="scale(1, -1) translate(0, -90)">
+                                                        {{ $toothNum }}
+                                                    </text>
+                                                </svg>
                                                 @if($record)
-                                                    <div class="tooth-condition" style="font-size: 10px; color: {{ in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff' }};">
+                                                    <div class="tooth-condition" style="font-size: 9px; margin-top: 2px; color: #666;">
                                                         {{ \App\Models\DentalToothRecord::CONDITIONS[$record->primary_condition]['name'] ?? '' }}
                                                     </div>
                                                 @endif
