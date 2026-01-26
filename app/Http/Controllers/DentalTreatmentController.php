@@ -93,7 +93,7 @@ class DentalTreatmentController extends Controller
         $doctors = User::where('role', 'doctor')
                       ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
                       ->where('is_active', true)
-                      ->orderBy('name')
+                      ->orderBy('first_name')
                       ->get();
 
         // Get dental procedures
@@ -229,7 +229,7 @@ class DentalTreatmentController extends Controller
         $doctors = User::where('role', 'doctor')
                       ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
                       ->where('is_active', true)
-                      ->orderBy('name')
+                      ->orderBy('first_name')
                       ->get();
 
         // Get dental procedures

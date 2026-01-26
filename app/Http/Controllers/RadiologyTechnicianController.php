@@ -158,6 +158,7 @@ class RadiologyTechnicianController extends Controller
             // Create file record
             PatientFile::create([
                 'patient_id' => $patient->id,
+                'original_name' => $file->getClientOriginalName(),
                 'file_name' => $file->getClientOriginalName(),
                 'file_path' => $filePath,
                 'file_type' => 'radiology_result',
