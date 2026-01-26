@@ -58,15 +58,21 @@
                         <!-- Dental Chart Selection (Optional) -->
                         <div class="mb-3">
                             <label for="dental_chart_id" class="form-label">{{ __('Dental Chart') }}</label>
-                            <select name="dental_chart_id" id="dental_chart_id" class="form-select">
-                                <option value="">{{ __('No Chart Selected') }}</option>
-                                @if($dentalChart)
-                                    <option value="{{ $dentalChart->id }}" selected>
-                                        {{ __('Chart') }} #{{ $dentalChart->id }} - {{ $dentalChart->chart_type }} ({{ $dentalChart->created_at->format('M d, Y') }})
-                                    </option>
-                                @endif
-                            </select>
-                            <small class="text-muted">{{ __('Link this treatment to a specific dental chart') }}</small>
+                            <div class="input-group">
+                                <select name="dental_chart_id" id="dental_chart_id" class="form-select">
+                                    <option value="">{{ __('No Chart Selected') }}</option>
+                                    @if($dentalChart)
+                                        <option value="{{ $dentalChart->id }}" selected>
+                                            {{ __('Chart') }} #{{ $dentalChart->id }} - {{ $dentalChart->chart_type }} ({{ $dentalChart->created_at->format('M d, Y') }})
+                                        </option>
+                                    @endif
+                                </select>
+                                <button type="button" class="btn btn-outline-primary" id="create-chart-btn" onclick="showCreateChartModal()">
+                                    <i class="fas fa-plus me-1"></i>
+                                    {{ __('Create New Chart') }}
+                                </button>
+                            </div>
+                            <small class="text-muted">{{ __('Link this treatment to a specific dental chart or create a new one') }}</small>
                         </div>
 
                         <!-- Procedure Selection -->
@@ -330,6 +336,121 @@ document.getElementById('patient_id').addEventListener('change', function() {
         window.location.href = '{{ url("/dental/treatments/create") }}?patient_id=' + patientId;
     }
 });
+
+// Show create chart modal
+function showCreateChartModal() {
+    const patientId = document.getElementById('patient_id').value;
+
+    if (!patientId) {
+        alert('{{ __("Please select a patient first") }}');
+        return;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('createChartModal'));
+    modal.show();
+}
+
+// Create dental chart via AJAX
+function createDentalChart() {
+    const patientId = document.getElementById('patient_id').value;
+    const chartType = document.getElementById('new_chart_type').value;
+    const generalNotes = document.getElementById('new_chart_notes').value;
+
+    if (!patientId) {
+        alert('{{ __("Please select a patient first") }}');
+        return;
+    }
+
+    // Show loading state
+    const submitBtn = document.getElementById('create-chart-submit-btn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> {{ __("Creating...") }}';
+
+    // Send AJAX request
+    fetch(`/dental/patients/${patientId}/charts`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            chart_type: chartType,
+            general_notes: generalNotes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add new chart to dropdown
+            const select = document.getElementById('dental_chart_id');
+            const option = document.createElement('option');
+            option.value = data.chart.id;
+            option.text = `Chart #${data.chart.id} - ${data.chart.chart_type} (${data.chart.created_at})`;
+            option.selected = true;
+            select.appendChild(option);
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('createChartModal')).hide();
+
+            // Reset form
+            document.getElementById('new_chart_type').value = 'adult';
+            document.getElementById('new_chart_notes').value = '';
+
+            // Show success message
+            alert('{{ __("Dental chart created successfully!") }}');
+        } else {
+            alert('{{ __("Error creating dental chart: ") }}' + (data.message || '{{ __("Unknown error") }}'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('{{ __("Error creating dental chart. Please try again.") }}');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+}
 </script>
 @endpush
+
+<!-- Create Dental Chart Modal -->
+<div class="modal fade" id="createChartModal" tabindex="-1" aria-labelledby="createChartModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createChartModalLabel">
+                    <i class="fas fa-tooth me-2"></i>
+                    {{ __('Create New Dental Chart') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="new_chart_type" class="form-label">{{ __('Chart Type') }} <span class="text-danger">*</span></label>
+                    <select id="new_chart_type" class="form-select" required>
+                        <option value="adult" selected>{{ __('Adult (Permanent Dentition)') }}</option>
+                        <option value="pediatric">{{ __('Pediatric (Primary Dentition)') }}</option>
+                    </select>
+                    <small class="text-muted">{{ __('Select adult for permanent teeth or pediatric for primary teeth') }}</small>
+                </div>
+                <div class="mb-3">
+                    <label for="new_chart_notes" class="form-label">{{ __('General Notes') }}</label>
+                    <textarea id="new_chart_notes" class="form-control" rows="3" placeholder="{{ __('Optional notes about this dental chart') }}"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    {{ __('Cancel') }}
+                </button>
+                <button type="button" class="btn btn-primary" id="create-chart-submit-btn" onclick="createDentalChart()">
+                    <i class="fas fa-save me-1"></i>
+                    {{ __('Create Chart') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 

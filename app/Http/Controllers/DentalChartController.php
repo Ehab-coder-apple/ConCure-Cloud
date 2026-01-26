@@ -77,8 +77,8 @@ class DentalChartController extends Controller
             'chart_type' => 'required|in:adult,pediatric',
             'general_notes' => 'nullable|string',
             'tooth_records' => 'nullable|array',
-            'tooth_records.*.tooth_number' => 'required|string',
-            'tooth_records.*.primary_condition' => 'required|string',
+            'tooth_records.*.tooth_number' => 'required_with:tooth_records|string',
+            'tooth_records.*.primary_condition' => 'required_with:tooth_records|string',
             'tooth_records.*.conditions' => 'nullable|array',
             'tooth_records.*.surfaces_affected' => 'nullable|array',
             'tooth_records.*.severity' => 'nullable|in:mild,moderate,severe',
@@ -115,11 +115,33 @@ class DentalChartController extends Controller
 
             DB::commit();
 
+            // Check if this is an AJAX request
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Dental chart created successfully.',
+                    'chart' => [
+                        'id' => $dentalChart->id,
+                        'chart_type' => $dentalChart->chart_type,
+                        'created_at' => $dentalChart->created_at->format('M d, Y'),
+                    ]
+                ]);
+            }
+
             return redirect()->route('dental.charts.show', ['patient' => $patient, 'dentalChart' => $dentalChart])
                            ->with('success', 'Dental chart created successfully.');
 
         } catch (\Exception $e) {
             DB::rollback();
+
+            // Check if this is an AJAX request
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create dental chart: ' . $e->getMessage()
+                ], 422);
+            }
+
             return back()->withInput()
                         ->with('error', 'Failed to create dental chart. Please try again.');
         }
