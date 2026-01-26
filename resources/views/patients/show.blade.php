@@ -71,6 +71,10 @@
                         <i class="fas fa-clipboard-list me-1"></i>
                         {{ __('Checkup') }}
                     </a>
+                    <a href="{{ url("/dental/patients/{$patient->id}/charts") }}" class="btn btn-info btn-sm me-1">
+                        <i class="fas fa-tooth me-1"></i>
+                        {{ __('Dental Chart') }}
+                    </a>
                     <a href="{{ route('patients.forms.index', $patient) }}" class="btn btn-secondary btn-sm me-1">
                         <i class="fas fa-file-alt me-1"></i>
                         {{ __('Forms') }}
