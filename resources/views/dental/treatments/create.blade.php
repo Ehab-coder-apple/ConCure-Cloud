@@ -372,14 +372,23 @@ function createDentalChart() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
         },
         body: JSON.stringify({
             chart_type: chartType,
             general_notes: generalNotes
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        // Check if response is ok
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.message || 'Server error');
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             // Add new chart to dropdown
@@ -405,7 +414,7 @@ function createDentalChart() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('{{ __("Error creating dental chart. Please try again.") }}');
+        alert('{{ __("Error creating dental chart: ") }}' + error.message);
     })
     .finally(() => {
         submitBtn.disabled = false;
