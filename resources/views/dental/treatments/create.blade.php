@@ -227,8 +227,8 @@
                             <select name="assigned_doctor_id" id="assigned_doctor_id" class="form-select">
                                 <option value="">{{ __('Not Assigned') }}</option>
                                 @foreach($doctors as $doctor)
-                                    <option value="{{ $doctor->id }}" {{ old('assigned_doctor_id', auth()->id()) == $doctor->id ? 'selected' : '' }}>
-                                        {{ $doctor->name }}
+                                    <option value="{{ $doctor->id }}" {{ old('assigned_doctor_id', auth()->user()->role == 'doctor' ? auth()->id() : '') == $doctor->id ? 'selected' : '' }}>
+                                        {{ $doctor->full_name }}
                                     </option>
                                 @endforeach
                             </select>
