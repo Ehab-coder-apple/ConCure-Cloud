@@ -198,6 +198,12 @@ class ClinicController extends Controller
                 'regex:/^[a-zA-Z0-9._-]+$/',
                 Rule::unique('users', 'username')->ignore($adminUser ? $adminUser->id : null)
             ],
+            'admin_email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($adminUser ? $adminUser->id : null)
+            ],
         ]);
 
         DB::beginTransaction();
@@ -227,6 +233,7 @@ class ClinicController extends Controller
                     'first_name' => $request->admin_first_name,
                     'last_name' => $request->admin_last_name,
                     'username' => $request->admin_username,
+                    'email' => $request->admin_email,
                 ]);
             }
 
