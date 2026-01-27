@@ -112,32 +112,19 @@ class DentalLabRequestController extends Controller
                                  ->ordered()
                                  ->get();
 
-        // If patient_id is provided, get their dental treatments
-        $patient = null;
-        $dentalTreatments = collect();
-        if ($request->filled('patient_id')) {
-            $patient = Patient::find($request->patient_id);
-            if ($patient) {
-                $dentalTreatments = $patient->dentalTreatments()
-                                           ->whereIn('status', ['planned', 'in_progress'])
-                                           ->orderBy('created_at', 'desc')
-                                           ->get();
-            }
-        }
-
-        // If dental_treatment_id is provided, get the treatment
-        $dentalTreatment = null;
-        if ($request->filled('dental_treatment_id')) {
-            $dentalTreatment = DentalTreatment::find($request->dental_treatment_id);
-        }
+        // Get all dental treatments for the clinic (or filtered by patient if provided)
+        $treatments = DentalTreatment::query()
+                                    ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+                                    ->when($request->filled('patient_id'), fn($q) => $q->where('patient_id', $request->patient_id))
+                                    ->whereIn('status', ['planned', 'in_progress', 'completed'])
+                                    ->orderBy('created_at', 'desc')
+                                    ->get();
 
         return view('dental.lab-requests.create', compact(
             'patients',
+            'treatments',
             'doctors',
-            'dentalLabs',
-            'patient',
-            'dentalTreatments',
-            'dentalTreatment'
+            'dentalLabs'
         ));
     }
 
@@ -266,18 +253,27 @@ class DentalLabRequestController extends Controller
                                  ->ordered()
                                  ->get();
 
-        // Get dental treatments for the patient
-        $dentalTreatments = $labRequest->patient->dentalTreatments()
-                                                ->whereIn('status', ['planned', 'in_progress'])
-                                                ->orderBy('created_at', 'desc')
-                                                ->get();
+        // Get dental treatments for the clinic
+        $treatments = DentalTreatment::query()
+                                    ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+                                    ->whereIn('status', ['planned', 'in_progress', 'completed'])
+                                    ->orderBy('created_at', 'desc')
+                                    ->get();
+
+        // Get users for received_by field
+        $users = User::query()
+                    ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+                    ->where('is_active', true)
+                    ->orderBy('first_name')
+                    ->get();
 
         return view('dental.lab-requests.edit', compact(
             'labRequest',
             'patients',
+            'treatments',
             'doctors',
             'dentalLabs',
-            'dentalTreatments'
+            'users'
         ));
     }
 
