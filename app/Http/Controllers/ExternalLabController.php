@@ -42,6 +42,11 @@ class ExternalLabController extends Controller
             }
         }
 
+        // Apply lab type filter
+        if ($request->filled('lab_type')) {
+            $query->byType($request->lab_type);
+        }
+
         $externalLabs = $query->ordered()->paginate(15);
 
         return view('external-labs.index', compact('externalLabs'));
@@ -83,6 +88,7 @@ class ExternalLabController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
+            'lab_type' => 'required|in:medical,dental',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
             'whatsapp' => 'nullable|string|max:50',
@@ -94,6 +100,7 @@ class ExternalLabController extends Controller
 
         ExternalLab::create([
             'name' => $request->name,
+            'lab_type' => $request->lab_type,
             'address' => $request->address,
             'phone' => $request->phone,
             'whatsapp' => $request->whatsapp,
@@ -127,6 +134,7 @@ class ExternalLabController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
+            'lab_type' => 'required|in:medical,dental',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
             'whatsapp' => 'nullable|string|max:50',
@@ -139,6 +147,7 @@ class ExternalLabController extends Controller
 
         $externalLab->update([
             'name' => $request->name,
+            'lab_type' => $request->lab_type,
             'address' => $request->address,
             'phone' => $request->phone,
             'whatsapp' => $request->whatsapp,

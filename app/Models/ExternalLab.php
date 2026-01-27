@@ -12,6 +12,7 @@ class ExternalLab extends Model
 
     protected $fillable = [
         'name',
+        'lab_type',
         'address',
         'phone',
         'whatsapp',
@@ -28,6 +29,12 @@ class ExternalLab extends Model
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
+
+    /**
+     * Lab type constants
+     */
+    const TYPE_MEDICAL = 'medical';
+    const TYPE_DENTAL = 'dental';
 
     /**
      * Get the clinic that owns this external lab.
@@ -59,6 +66,30 @@ class ExternalLab extends Model
     public function scopeByClinic($query, int $clinicId)
     {
         return $query->where('clinic_id', $clinicId);
+    }
+
+    /**
+     * Scope to filter medical labs.
+     */
+    public function scopeMedical($query)
+    {
+        return $query->where('lab_type', self::TYPE_MEDICAL);
+    }
+
+    /**
+     * Scope to filter dental labs.
+     */
+    public function scopeDental($query)
+    {
+        return $query->where('lab_type', self::TYPE_DENTAL);
+    }
+
+    /**
+     * Scope to filter by lab type.
+     */
+    public function scopeByType($query, string $type)
+    {
+        return $query->where('lab_type', $type);
     }
 
     /**

@@ -28,6 +28,14 @@
                                    value="{{ request('search') }}" placeholder="{{ __('Lab name, phone, email...') }}">
                         </div>
                         <div class="col-md-3">
+                            <label for="lab_type" class="form-label">{{ __('Lab Type') }}</label>
+                            <select class="form-select" id="lab_type" name="lab_type">
+                                <option value="">{{ __('All Types') }}</option>
+                                <option value="medical" {{ request('lab_type') == 'medical' ? 'selected' : '' }}>{{ __('Medical Lab') }}</option>
+                                <option value="dental" {{ request('lab_type') == 'dental' ? 'selected' : '' }}>{{ __('Dental Lab') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <label for="status" class="form-label">{{ __('Status') }}</label>
                             <select class="form-select" id="status" name="status">
                                 <option value="">{{ __('All Statuses') }}</option>
@@ -35,7 +43,7 @@
                                 <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>{{ __('Inactive') }}</option>
                             </select>
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
+                        <div class="col-md-2 d-flex align-items-end">
                             <button type="submit" class="btn btn-outline-primary me-2">
                                 <i class="fas fa-search me-1"></i>
                                 {{ __('Filter') }}
@@ -58,6 +66,7 @@
                                 <thead>
                                     <tr>
                                         <th>{{ __('Laboratory Name') }}</th>
+                                        <th>{{ __('Type') }}</th>
                                         <th>{{ __('Contact Information') }}</th>
                                         <th>{{ __('Status') }}</th>
                                         <th>{{ __('Sort Order') }}</th>
@@ -79,6 +88,19 @@
                                                     </a>
                                                 @endif
                                             </div>
+                                        </td>
+                                        <td>
+                                            @if($lab->lab_type === 'dental')
+                                                <span class="badge bg-info">
+                                                    <i class="fas fa-tooth me-1"></i>
+                                                    {{ __('Dental') }}
+                                                </span>
+                                            @else
+                                                <span class="badge bg-primary">
+                                                    <i class="fas fa-flask me-1"></i>
+                                                    {{ __('Medical') }}
+                                                </span>
+                                            @endif
                                         </td>
                                         <td>
                                             @if($lab->phone)
@@ -164,11 +186,18 @@
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <label for="name" class="form-label">{{ __('Laboratory Name') }} <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="name" name="name" required>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label for="lab_type" class="form-label">{{ __('Lab Type') }} <span class="text-danger">*</span></label>
+                            <select class="form-select" id="lab_type" name="lab_type" required>
+                                <option value="medical" selected>{{ __('Medical Lab') }}</option>
+                                <option value="dental">{{ __('Dental Lab') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label for="sort_order" class="form-label">{{ __('Sort Order') }}</label>
                             <input type="number" class="form-control" id="sort_order" name="sort_order" value="0" min="0">
                         </div>
@@ -231,11 +260,18 @@
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <label for="edit_name" class="form-label">{{ __('Laboratory Name') }} <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="edit_name" name="name" required>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label for="edit_lab_type" class="form-label">{{ __('Lab Type') }} <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_lab_type" name="lab_type" required>
+                                <option value="medical">{{ __('Medical Lab') }}</option>
+                                <option value="dental">{{ __('Dental Lab') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label for="edit_sort_order" class="form-label">{{ __('Sort Order') }}</label>
                             <input type="number" class="form-control" id="edit_sort_order" name="sort_order" min="0">
                         </div>
@@ -316,6 +352,7 @@ function editLab(labId) {
             if (data.success) {
                 const lab = data.lab;
                 document.getElementById('edit_name').value = lab.name || '';
+                document.getElementById('edit_lab_type').value = lab.lab_type || 'medical';
                 document.getElementById('edit_phone').value = lab.phone || '';
                 document.getElementById('edit_whatsapp').value = lab.whatsapp || '';
                 document.getElementById('edit_email').value = lab.email || '';
