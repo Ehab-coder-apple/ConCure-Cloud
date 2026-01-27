@@ -251,14 +251,18 @@
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <label for="admin_email" class="form-label">Admin Email</label>
+                                    <label for="admin_email" class="form-label">Admin Email *</label>
                                     <input type="email"
-                                           class="form-control"
+                                           class="form-control @error('admin_email') is-invalid @enderror"
                                            id="admin_email"
-                                           value="{{ $adminUser->email }}"
-                                           readonly
-                                           disabled>
-                                    <div class="form-text">Email cannot be changed from this form</div>
+                                           name="admin_email"
+                                           value="{{ old('admin_email', $adminUser->email) }}"
+                                           required
+                                           placeholder="Enter admin email">
+                                    @error('admin_email')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div class="form-text">Admin user's email address</div>
                                 </div>
                             </div>
                         @endif
