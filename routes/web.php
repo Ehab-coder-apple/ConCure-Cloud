@@ -784,6 +784,17 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::post('/{dentalImage}/link-tooth', [App\Http\Controllers\DentalImageController::class, 'linkToTooth'])->name('link-tooth');
             Route::post('/{dentalImage}/update-metadata', [App\Http\Controllers\DentalImageController::class, 'updateMetadata'])->name('update-metadata');
         });
+
+        // Dental Lab Requests
+        Route::prefix('lab-requests')->name('lab-requests.')->group(function () {
+            Route::get('/', [App\Http\Controllers\DentalLabRequestController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\DentalLabRequestController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\DentalLabRequestController::class, 'store'])->name('store');
+            Route::get('/{labRequest}', [App\Http\Controllers\DentalLabRequestController::class, 'show'])->name('show');
+            Route::get('/{labRequest}/edit', [App\Http\Controllers\DentalLabRequestController::class, 'edit'])->name('edit');
+            Route::put('/{labRequest}', [App\Http\Controllers\DentalLabRequestController::class, 'update'])->name('update');
+            Route::delete('/{labRequest}', [App\Http\Controllers\DentalLabRequestController::class, 'destroy'])->name('destroy');
+        });
     });
 
     // Food Composition

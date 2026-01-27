@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExternalLab extends Model
 {
@@ -23,11 +24,19 @@ class ExternalLab extends Model
         'sort_order',
         'clinic_id',
         'created_by',
+        // Dental-specific fields
+        'dental_specialties',
+        'turnaround_days',
+        'accepts_digital_impressions',
+        'equipment_capabilities',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'sort_order' => 'integer',
+        'dental_specialties' => 'array',
+        'turnaround_days' => 'integer',
+        'accepts_digital_impressions' => 'boolean',
     ];
 
     /**
@@ -50,6 +59,14 @@ class ExternalLab extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get dental lab requests for this lab.
+     */
+    public function dentalLabRequests(): HasMany
+    {
+        return $this->hasMany(DentalLabRequest::class);
     }
 
     /**
