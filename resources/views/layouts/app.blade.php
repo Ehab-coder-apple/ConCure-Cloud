@@ -1602,6 +1602,12 @@
                                         <span class="submenu-text">{{ __('All Dental Charts') }}</span>
                                     </a>
                                 </li>
+                                <li class="submenu-item">
+                                    <a href="{{ route('dental.lab-requests.index') }}" class="submenu-link {{ request()->routeIs('dental.lab-requests.*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-flask"></i>
+                                        <span class="submenu-text">{{ __('Dental Lab Requests') }}</span>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         @endif

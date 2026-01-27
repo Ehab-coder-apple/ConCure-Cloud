@@ -96,9 +96,13 @@ class ExternalLabController extends Controller
             'website' => 'nullable|url|max:255',
             'notes' => 'nullable|string',
             'sort_order' => 'nullable|integer|min:0',
+            // Dental-specific fields
+            'turnaround_days' => 'nullable|integer|min:1',
+            'accepts_digital_impressions' => 'nullable|boolean',
+            'equipment_capabilities' => 'nullable|string',
         ]);
 
-        ExternalLab::create([
+        $data = [
             'name' => $request->name,
             'lab_type' => $request->lab_type,
             'address' => $request->address,
@@ -110,7 +114,16 @@ class ExternalLabController extends Controller
             'sort_order' => $request->sort_order ?? 0,
             'clinic_id' => $user->clinic_id,
             'created_by' => $user->id,
-        ]);
+        ];
+
+        // Add dental-specific fields if lab type is dental
+        if ($request->lab_type === 'dental') {
+            $data['turnaround_days'] = $request->turnaround_days;
+            $data['accepts_digital_impressions'] = $request->has('accepts_digital_impressions');
+            $data['equipment_capabilities'] = $request->equipment_capabilities;
+        }
+
+        ExternalLab::create($data);
 
         return back()->with('success', 'External laboratory added successfully.');
     }
@@ -143,9 +156,13 @@ class ExternalLabController extends Controller
             'notes' => 'nullable|string',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
+            // Dental-specific fields
+            'turnaround_days' => 'nullable|integer|min:1',
+            'accepts_digital_impressions' => 'nullable|boolean',
+            'equipment_capabilities' => 'nullable|string',
         ]);
 
-        $externalLab->update([
+        $data = [
             'name' => $request->name,
             'lab_type' => $request->lab_type,
             'address' => $request->address,
@@ -156,7 +173,16 @@ class ExternalLabController extends Controller
             'notes' => $request->notes,
             'sort_order' => $request->sort_order ?? 0,
             'is_active' => $request->boolean('is_active'),
-        ]);
+        ];
+
+        // Add dental-specific fields if lab type is dental
+        if ($request->lab_type === 'dental') {
+            $data['turnaround_days'] = $request->turnaround_days;
+            $data['accepts_digital_impressions'] = $request->has('accepts_digital_impressions');
+            $data['equipment_capabilities'] = $request->equipment_capabilities;
+        }
+
+        $externalLab->update($data);
 
         return back()->with('success', 'External laboratory updated successfully.');
     }

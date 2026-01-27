@@ -201,7 +201,8 @@ class DentalTreatmentController extends Controller
             'dentalChart.toothRecords',
             'assignedDoctor',
             'performedBy',
-            'creator'
+            'creator',
+            'dentalLabRequests.externalLab'
         ]);
 
         return view('dental.treatments.show', compact('dentalTreatment'));

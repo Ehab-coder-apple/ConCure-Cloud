@@ -259,6 +259,81 @@
                     </div>
                 </div>
             @endif
+
+            <!-- Dental Lab Requests -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-flask me-2"></i>
+                        {{ __('Dental Lab Requests') }}
+                    </h6>
+                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner']))
+                        <a href="{{ route('dental.lab-requests.create', ['dental_treatment_id' => $dentalTreatment->id, 'patient_id' => $dentalTreatment->patient_id]) }}"
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            {{ __('Send to Lab') }}
+                        </a>
+                    @endif
+                </div>
+                <div class="card-body">
+                    @if($dentalTreatment->dentalLabRequests && $dentalTreatment->dentalLabRequests->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('Request #') }}</th>
+                                        <th>{{ __('Work Type') }}</th>
+                                        <th>{{ __('Lab') }}</th>
+                                        <th>{{ __('Status') }}</th>
+                                        <th>{{ __('Due Date') }}</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($dentalTreatment->dentalLabRequests as $labRequest)
+                                        <tr>
+                                            <td>
+                                                <small>{{ $labRequest->request_number }}</small>
+                                            </td>
+                                            <td>
+                                                <small>{{ $labRequest->work_type_display }}</small>
+                                            </td>
+                                            <td>
+                                                <small>{{ $labRequest->externalLab->name ?? __('Not assigned') }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="{{ $labRequest->status_badge_class }}">
+                                                    {{ $labRequest->status_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    @if($labRequest->due_date)
+                                                        {{ $labRequest->due_date->format('M d, Y') }}
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </small>
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{{ route('dental.lab-requests.show', $labRequest) }}"
+                                                   class="btn btn-xs btn-info" title="{{ __('View') }}">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            {{ __('No lab requests for this treatment yet.') }}
+                        </p>
+                    @endif
+                </div>
+            </div>
         </div>
 
         <!-- Sidebar -->

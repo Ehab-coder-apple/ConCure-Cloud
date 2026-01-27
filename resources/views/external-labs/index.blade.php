@@ -231,8 +231,41 @@
 
                     <div class="mt-3">
                         <label for="notes" class="form-label">{{ __('Notes') }}</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="2" 
+                        <textarea class="form-control" id="notes" name="notes" rows="2"
                                   placeholder="{{ __('Any additional notes about this laboratory...') }}"></textarea>
+                    </div>
+
+                    <!-- Dental-specific fields (shown only for dental labs) -->
+                    <div id="dental_fields" style="display: none;">
+                        <hr class="my-3">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-tooth me-2"></i>
+                            {{ __('Dental Lab Specific Information') }}
+                        </h6>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="turnaround_days" class="form-label">{{ __('Average Turnaround (Days)') }}</label>
+                                <input type="number" class="form-control" id="turnaround_days" name="turnaround_days" min="1">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mt-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="accepts_digital_impressions"
+                                               name="accepts_digital_impressions" value="1">
+                                        <label class="form-check-label" for="accepts_digital_impressions">
+                                            {{ __('Accepts Digital Impressions') }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label for="equipment_capabilities" class="form-label">{{ __('Equipment & Capabilities') }}</label>
+                            <textarea class="form-control" id="equipment_capabilities" name="equipment_capabilities"
+                                      rows="2" placeholder="{{ __('e.g., CAD/CAM, 3D Printing, Milling Machine...') }}"></textarea>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -308,6 +341,39 @@
                         <textarea class="form-control" id="edit_notes" name="notes" rows="2"></textarea>
                     </div>
 
+                    <!-- Dental-specific fields (shown only for dental labs) -->
+                    <div id="edit_dental_fields" style="display: none;">
+                        <hr class="my-3">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-tooth me-2"></i>
+                            {{ __('Dental Lab Specific Information') }}
+                        </h6>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="edit_turnaround_days" class="form-label">{{ __('Average Turnaround (Days)') }}</label>
+                                <input type="number" class="form-control" id="edit_turnaround_days" name="turnaround_days" min="1">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mt-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="edit_accepts_digital_impressions"
+                                               name="accepts_digital_impressions" value="1">
+                                        <label class="form-check-label" for="edit_accepts_digital_impressions">
+                                            {{ __('Accepts Digital Impressions') }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label for="edit_equipment_capabilities" class="form-label">{{ __('Equipment & Capabilities') }}</label>
+                            <textarea class="form-control" id="edit_equipment_capabilities" name="equipment_capabilities"
+                                      rows="2" placeholder="{{ __('e.g., CAD/CAM, 3D Printing, Milling Machine...') }}"></textarea>
+                        </div>
+                    </div>
+
                     <div class="mt-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="edit_is_active" name="is_active" value="1">
@@ -333,6 +399,26 @@
 
 @push('scripts')
 <script>
+// Show/hide dental fields in create modal based on lab type selection
+document.getElementById('lab_type').addEventListener('change', function() {
+    const dentalFields = document.getElementById('dental_fields');
+    if (this.value === 'dental') {
+        dentalFields.style.display = 'block';
+    } else {
+        dentalFields.style.display = 'none';
+    }
+});
+
+// Show/hide dental fields in edit modal based on lab type selection
+document.getElementById('edit_lab_type').addEventListener('change', function() {
+    const dentalFields = document.getElementById('edit_dental_fields');
+    if (this.value === 'dental') {
+        dentalFields.style.display = 'block';
+    } else {
+        dentalFields.style.display = 'none';
+    }
+});
+
 function editLab(labId) {
     // Fetch lab data and populate edit modal
     fetch(`/external-labs/${labId}`, {
@@ -361,6 +447,17 @@ function editLab(labId) {
                 document.getElementById('edit_notes').value = lab.notes || '';
                 document.getElementById('edit_sort_order').value = lab.sort_order || 0;
                 document.getElementById('edit_is_active').checked = lab.is_active;
+
+                // Populate dental-specific fields
+                const dentalFields = document.getElementById('edit_dental_fields');
+                if (lab.lab_type === 'dental') {
+                    dentalFields.style.display = 'block';
+                    document.getElementById('edit_turnaround_days').value = lab.turnaround_days || '';
+                    document.getElementById('edit_accepts_digital_impressions').checked = lab.accepts_digital_impressions || false;
+                    document.getElementById('edit_equipment_capabilities').value = lab.equipment_capabilities || '';
+                } else {
+                    dentalFields.style.display = 'none';
+                }
 
                 // Update form action
                 document.getElementById('editLabForm').action = `/external-labs/${labId}`;
