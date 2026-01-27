@@ -247,7 +247,7 @@
                                     @error('admin_username')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                    <div class="form-text">Username must contain only letters, numbers, dashes, and underscores</div>
+                                    <div class="form-text">Username must contain only letters, numbers, periods, dashes, and underscores</div>
                                 </div>
 
                                 <div class="col-md-6 mb-3">

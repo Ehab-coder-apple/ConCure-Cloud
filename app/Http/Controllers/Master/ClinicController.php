@@ -195,7 +195,7 @@ class ClinicController extends Controller
                 'required',
                 'string',
                 'max:255',
-                'alpha_dash',
+                'regex:/^[a-zA-Z0-9._-]+$/',
                 Rule::unique('users', 'username')->ignore($adminUser ? $adminUser->id : null)
             ],
         ]);
