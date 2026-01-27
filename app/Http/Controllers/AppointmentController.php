@@ -314,7 +314,7 @@ class AppointmentController extends Controller
                 ]);
             }
 
-            return redirect()->route('appointments.show', $appointmentId)
+            return redirect()->route('appointments.index')
                 ->with('success', __('Appointment scheduled successfully.'));
 
         } catch (\Exception $e) {
@@ -455,7 +455,7 @@ class AppointmentController extends Controller
         $updated = $query->update($data);
 
         if ($updated) {
-            return redirect()->route('appointments.show', $id)
+            return redirect()->route('appointments.index')
                 ->with('success', __('Appointment updated successfully.'));
         }
 
