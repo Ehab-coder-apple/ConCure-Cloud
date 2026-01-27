@@ -12,6 +12,46 @@ use Illuminate\Support\Facades\DB;
 class DentalChartController extends Controller
 {
     /**
+     * Display a listing of all dental charts across all patients.
+     */
+    public function allCharts(Request $request)
+    {
+        $user = Auth::user();
+
+        // Build query
+        $query = DentalChart::with(['patient', 'creator', 'toothRecords']);
+
+        // Filter by clinic if not super admin
+        if (!$user->isSuperAdmin()) {
+            $query->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id));
+        }
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('patient', function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('patient_id', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by chart type
+        if ($request->filled('chart_type')) {
+            $query->where('chart_type', $request->chart_type);
+        }
+
+        // Sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $charts = $query->paginate(20);
+
+        return view('dental.charts.all', compact('charts'));
+    }
+
+    /**
      * Display a listing of dental charts for a patient.
      */
     public function index(Request $request, Patient $patient)

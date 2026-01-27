@@ -1583,11 +1583,26 @@
 
                         <!-- Dental Module -->
                         @if(in_array(Auth::user()->role, ['doctor', 'assistant', 'admin', 'program_owner']))
-                        <li class="nav-item">
-                            <a href="{{ route('dental.treatments.index') }}" class="nav-link {{ request()->is('dental*') ? 'active' : '' }}">
+                        <li class="nav-item has-submenu {{ request()->is('dental*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link submenu-toggle">
                                 <i class="nav-icon fas fa-tooth"></i>
                                 <span class="nav-text">{{ __('Dental Module') }}</span>
+                                <i class="submenu-arrow fas fa-chevron-right"></i>
                             </a>
+                            <ul class="submenu">
+                                <li class="submenu-item">
+                                    <a href="{{ route('dental.treatments.index') }}" class="submenu-link {{ request()->routeIs('dental.treatments.*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-clipboard-list"></i>
+                                        <span class="submenu-text">{{ __('Treatment Plans') }}</span>
+                                    </a>
+                                </li>
+                                <li class="submenu-item">
+                                    <a href="{{ route('dental.charts.all') }}" class="submenu-link {{ request()->routeIs('dental.charts.all') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-tooth"></i>
+                                        <span class="submenu-text">{{ __('All Dental Charts') }}</span>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         @endif
 

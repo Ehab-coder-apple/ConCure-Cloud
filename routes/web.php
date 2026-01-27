@@ -745,6 +745,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     // Dental Module Routes
     Route::prefix('dental')->name('dental.')->group(function () {
+        // All Dental Charts (must be before patient-specific routes)
+        Route::get('/charts', [App\Http\Controllers\DentalChartController::class, 'allCharts'])->name('charts.all');
+
         // Dental Charts
         Route::prefix('patients/{patient}/charts')->name('charts.')->group(function () {
             Route::get('/', [App\Http\Controllers\DentalChartController::class, 'index'])->name('index');
