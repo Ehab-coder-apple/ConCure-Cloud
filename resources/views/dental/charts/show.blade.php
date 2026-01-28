@@ -99,21 +99,37 @@
                                             <div class="tooth-container m-1 text-center" style="position: relative; width: 60px;">
                                                 <svg viewBox="0 0 60 80" width="60" height="80" style="display: block;">
                                                     @if($toothType === 'incisor')
-                                                        <!-- Incisor shape (flat, chisel-like) -->
-                                                        <path d="M 20 10 L 40 10 L 42 25 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 18 25 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Incisor: Flat, chisel-shaped with thin rectangular crown -->
+                                                        <path d="M 22 8 L 38 8 L 39 12 L 40 22 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 L 20 22 L 21 12 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Incisal edge (cutting edge) -->
+                                                        <line x1="22" y1="8" x2="38" y2="8" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
                                                     @elseif($toothType === 'canine')
-                                                        <!-- Canine shape (pointed) -->
-                                                        <path d="M 25 5 L 35 5 L 38 20 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 22 20 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Canine: Pointed/triangular cusp for tearing -->
+                                                        <path d="M 30 5 L 36 12 L 38 18 L 39 25 L 39 55 Q 37 62 34 67 Q 31 72 30 74 Q 29 72 26 67 Q 23 62 21 55 L 21 25 L 22 18 L 24 12 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Prominent cusp point -->
+                                                        <path d="M 26 12 Q 28 6 30 5 Q 32 6 34 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
                                                     @elseif($toothType === 'premolar')
-                                                        <!-- Premolar shape (two cusps) -->
-                                                        <path d="M 18 15 Q 20 8 25 10 Q 30 5 35 10 Q 40 8 42 15 L 42 60 Q 30 75 30 75 Q 30 75 18 60 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Premolar: Two distinct cusps (bicuspid) -->
+                                                        <path d="M 20 18 Q 22 14 24 12 Q 26 10 28 11 L 30 13 L 32 11 Q 34 10 36 12 Q 38 14 40 18 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Two visible cusps -->
+                                                        <path d="M 24 12 Q 26 9 28 11" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M 32 11 Q 34 9 36 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <!-- Central groove between cusps -->
+                                                        <line x1="30" y1="13" x2="30" y2="20" stroke="#333" stroke-width="1" opacity="0.5"/>
                                                     @else
-                                                        <!-- Molar shape (multiple cusps, wider) -->
-                                                        <path d="M 15 15 Q 17 8 22 10 Q 27 5 30 8 Q 33 5 38 10 Q 43 8 45 15 L 45 60 Q 30 75 30 75 Q 30 75 15 60 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Molar: Wider with 4 cusps for grinding -->
+                                                        <path d="M 16 20 Q 18 16 20 14 Q 22 12 24 13 L 26 15 L 28 13 Q 30 12 32 13 L 34 15 L 36 13 Q 38 12 40 14 Q 42 16 44 20 L 44 55 Q 42 62 38 67 Q 34 72 30 74 Q 26 72 22 67 Q 18 62 16 55 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Four visible cusps -->
+                                                        <path d="M 20 14 Q 22 11 24 13" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M 26 15 Q 28 12 28 13" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                        <path d="M 32 13 Q 32 12 34 15" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                        <path d="M 36 13 Q 38 11 40 14" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <!-- Central fissure pattern -->
+                                                        <path d="M 24 15 Q 28 18 30 17 Q 32 18 36 15" fill="none" stroke="#333" stroke-width="1" opacity="0.4"/>
                                                     @endif
                                                     <!-- Tooth number -->
                                                     <text x="30" y="45" text-anchor="middle" font-size="14" font-weight="bold" fill="{{ $textColor }}">
@@ -148,21 +164,37 @@
                                             <div class="tooth-container m-1 text-center" style="position: relative; width: 60px;">
                                                 <svg viewBox="0 0 60 80" width="60" height="80" style="display: block;">
                                                     @if($toothType === 'incisor')
-                                                        <!-- Incisor shape -->
-                                                        <path d="M 20 10 L 40 10 L 42 25 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 18 25 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Incisor: Flat, chisel-shaped with thin rectangular crown -->
+                                                        <path d="M 22 8 L 38 8 L 39 12 L 40 22 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 L 20 22 L 21 12 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Incisal edge (cutting edge) -->
+                                                        <line x1="22" y1="8" x2="38" y2="8" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
                                                     @elseif($toothType === 'canine')
-                                                        <!-- Canine shape -->
-                                                        <path d="M 25 5 L 35 5 L 38 20 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 22 20 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Canine: Pointed/triangular cusp for tearing -->
+                                                        <path d="M 30 5 L 36 12 L 38 18 L 39 25 L 39 55 Q 37 62 34 67 Q 31 72 30 74 Q 29 72 26 67 Q 23 62 21 55 L 21 25 L 22 18 L 24 12 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Prominent cusp point -->
+                                                        <path d="M 26 12 Q 28 6 30 5 Q 32 6 34 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
                                                     @elseif($toothType === 'premolar')
-                                                        <!-- Premolar shape -->
-                                                        <path d="M 18 15 Q 20 8 25 10 Q 30 5 35 10 Q 40 8 42 15 L 42 60 Q 30 75 30 75 Q 30 75 18 60 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Premolar: Two distinct cusps (bicuspid) -->
+                                                        <path d="M 20 18 Q 22 14 24 12 Q 26 10 28 11 L 30 13 L 32 11 Q 34 10 36 12 Q 38 14 40 18 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Two visible cusps -->
+                                                        <path d="M 24 12 Q 26 9 28 11" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M 32 11 Q 34 9 36 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <!-- Central groove between cusps -->
+                                                        <line x1="30" y1="13" x2="30" y2="20" stroke="#333" stroke-width="1" opacity="0.5"/>
                                                     @else
-                                                        <!-- Molar shape -->
-                                                        <path d="M 15 15 Q 17 8 22 10 Q 27 5 30 8 Q 33 5 38 10 Q 43 8 45 15 L 45 60 Q 30 75 30 75 Q 30 75 15 60 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Molar: Wider with 4 cusps for grinding -->
+                                                        <path d="M 16 20 Q 18 16 20 14 Q 22 12 24 13 L 26 15 L 28 13 Q 30 12 32 13 L 34 15 L 36 13 Q 38 12 40 14 Q 42 16 44 20 L 44 55 Q 42 62 38 67 Q 34 72 30 74 Q 26 72 22 67 Q 18 62 16 55 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Four visible cusps -->
+                                                        <path d="M 20 14 Q 22 11 24 13" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M 26 15 Q 28 12 28 13" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                        <path d="M 32 13 Q 32 12 34 15" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                        <path d="M 36 13 Q 38 11 40 14" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <!-- Central fissure pattern -->
+                                                        <path d="M 24 15 Q 28 18 30 17 Q 32 18 36 15" fill="none" stroke="#333" stroke-width="1" opacity="0.4"/>
                                                     @endif
                                                     <!-- Tooth number -->
                                                     <text x="30" y="45" text-anchor="middle" font-size="14" font-weight="bold" fill="{{ $textColor }}">
@@ -203,21 +235,37 @@
                                             <div class="tooth-container m-1 text-center" style="position: relative; width: 60px;">
                                                 <svg viewBox="0 0 60 80" width="60" height="80" style="display: block; transform: scaleY(-1);">
                                                     @if($toothType === 'incisor')
-                                                        <!-- Incisor shape (flipped for lower jaw) -->
-                                                        <path d="M 20 10 L 40 10 L 42 25 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 18 25 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Incisor: Flat, chisel-shaped with thin rectangular crown -->
+                                                        <path d="M 22 8 L 38 8 L 39 12 L 40 22 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 L 20 22 L 21 12 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Incisal edge (cutting edge) -->
+                                                        <line x1="22" y1="8" x2="38" y2="8" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
                                                     @elseif($toothType === 'canine')
-                                                        <!-- Canine shape -->
-                                                        <path d="M 25 5 L 35 5 L 38 20 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 22 20 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Canine: Pointed/triangular cusp for tearing -->
+                                                        <path d="M 30 5 L 36 12 L 38 18 L 39 25 L 39 55 Q 37 62 34 67 Q 31 72 30 74 Q 29 72 26 67 Q 23 62 21 55 L 21 25 L 22 18 L 24 12 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Prominent cusp point -->
+                                                        <path d="M 26 12 Q 28 6 30 5 Q 32 6 34 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
                                                     @elseif($toothType === 'premolar')
-                                                        <!-- Premolar shape -->
-                                                        <path d="M 18 15 Q 20 8 25 10 Q 30 5 35 10 Q 40 8 42 15 L 42 60 Q 30 75 30 75 Q 30 75 18 60 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Premolar: Two distinct cusps (bicuspid) -->
+                                                        <path d="M 20 18 Q 22 14 24 12 Q 26 10 28 11 L 30 13 L 32 11 Q 34 10 36 12 Q 38 14 40 18 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Two visible cusps -->
+                                                        <path d="M 24 12 Q 26 9 28 11" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M 32 11 Q 34 9 36 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <!-- Central groove between cusps -->
+                                                        <line x1="30" y1="13" x2="30" y2="20" stroke="#333" stroke-width="1" opacity="0.5"/>
                                                     @else
-                                                        <!-- Molar shape -->
-                                                        <path d="M 15 15 Q 17 8 22 10 Q 27 5 30 8 Q 33 5 38 10 Q 43 8 45 15 L 45 60 Q 30 75 30 75 Q 30 75 15 60 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Molar: Wider with 4 cusps for grinding -->
+                                                        <path d="M 16 20 Q 18 16 20 14 Q 22 12 24 13 L 26 15 L 28 13 Q 30 12 32 13 L 34 15 L 36 13 Q 38 12 40 14 Q 42 16 44 20 L 44 55 Q 42 62 38 67 Q 34 72 30 74 Q 26 72 22 67 Q 18 62 16 55 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Four visible cusps -->
+                                                        <path d="M 20 14 Q 22 11 24 13" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M 26 15 Q 28 12 28 13" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                        <path d="M 32 13 Q 32 12 34 15" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                        <path d="M 36 13 Q 38 11 40 14" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <!-- Central fissure pattern -->
+                                                        <path d="M 24 15 Q 28 18 30 17 Q 32 18 36 15" fill="none" stroke="#333" stroke-width="1" opacity="0.4"/>
                                                     @endif
                                                     <!-- Tooth number (flipped back) -->
                                                     <text x="30" y="45" text-anchor="middle" font-size="14" font-weight="bold" fill="{{ $textColor }}" transform="scale(1, -1) translate(0, -90)">
@@ -252,21 +300,37 @@
                                             <div class="tooth-container m-1 text-center" style="position: relative; width: 60px;">
                                                 <svg viewBox="0 0 60 80" width="60" height="80" style="display: block; transform: scaleY(-1);">
                                                     @if($toothType === 'incisor')
-                                                        <!-- Incisor shape (flipped for lower jaw) -->
-                                                        <path d="M 20 10 L 40 10 L 42 25 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 18 25 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Incisor: Flat, chisel-shaped with thin rectangular crown -->
+                                                        <path d="M 22 8 L 38 8 L 39 12 L 40 22 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 L 20 22 L 21 12 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Incisal edge (cutting edge) -->
+                                                        <line x1="22" y1="8" x2="38" y2="8" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
                                                     @elseif($toothType === 'canine')
-                                                        <!-- Canine shape -->
-                                                        <path d="M 25 5 L 35 5 L 38 20 L 40 60 Q 30 75 30 75 Q 30 75 20 60 L 22 20 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Canine: Pointed/triangular cusp for tearing -->
+                                                        <path d="M 30 5 L 36 12 L 38 18 L 39 25 L 39 55 Q 37 62 34 67 Q 31 72 30 74 Q 29 72 26 67 Q 23 62 21 55 L 21 25 L 22 18 L 24 12 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Prominent cusp point -->
+                                                        <path d="M 26 12 Q 28 6 30 5 Q 32 6 34 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
                                                     @elseif($toothType === 'premolar')
-                                                        <!-- Premolar shape -->
-                                                        <path d="M 18 15 Q 20 8 25 10 Q 30 5 35 10 Q 40 8 42 15 L 42 60 Q 30 75 30 75 Q 30 75 18 60 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Premolar: Two distinct cusps (bicuspid) -->
+                                                        <path d="M 20 18 Q 22 14 24 12 Q 26 10 28 11 L 30 13 L 32 11 Q 34 10 36 12 Q 38 14 40 18 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Two visible cusps -->
+                                                        <path d="M 24 12 Q 26 9 28 11" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M 32 11 Q 34 9 36 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <!-- Central groove between cusps -->
+                                                        <line x1="30" y1="13" x2="30" y2="20" stroke="#333" stroke-width="1" opacity="0.5"/>
                                                     @else
-                                                        <!-- Molar shape -->
-                                                        <path d="M 15 15 Q 17 8 22 10 Q 27 5 30 8 Q 33 5 38 10 Q 43 8 45 15 L 45 60 Q 30 75 30 75 Q 30 75 15 60 Z"
-                                                              fill="{{ $color }}" stroke="#333" stroke-width="2"/>
+                                                        <!-- Molar: Wider with 4 cusps for grinding -->
+                                                        <path d="M 16 20 Q 18 16 20 14 Q 22 12 24 13 L 26 15 L 28 13 Q 30 12 32 13 L 34 15 L 36 13 Q 38 12 40 14 Q 42 16 44 20 L 44 55 Q 42 62 38 67 Q 34 72 30 74 Q 26 72 22 67 Q 18 62 16 55 Z"
+                                                              fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                        <!-- Four visible cusps -->
+                                                        <path d="M 20 14 Q 22 11 24 13" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M 26 15 Q 28 12 28 13" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                        <path d="M 32 13 Q 32 12 34 15" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                        <path d="M 36 13 Q 38 11 40 14" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                        <!-- Central fissure pattern -->
+                                                        <path d="M 24 15 Q 28 18 30 17 Q 32 18 36 15" fill="none" stroke="#333" stroke-width="1" opacity="0.4"/>
                                                     @endif
                                                     <!-- Tooth number (flipped back) -->
                                                     <text x="30" y="45" text-anchor="middle" font-size="14" font-weight="bold" fill="{{ $textColor }}" transform="scale(1, -1) translate(0, -90)">
