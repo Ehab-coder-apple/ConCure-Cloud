@@ -16,7 +16,7 @@ class SubscriptionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Clinic::with(['users']);
+        $query = Clinic::withCount('users')->with(['users']);
 
         // Search functionality
         if ($request->filled('search')) {

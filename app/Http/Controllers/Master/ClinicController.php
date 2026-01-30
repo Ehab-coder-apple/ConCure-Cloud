@@ -18,9 +18,10 @@ class ClinicController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Clinic::with(['users' => function($q) {
-            $q->where('role', 'admin');
-        }]);
+        $query = Clinic::withCount('users')
+            ->with(['users' => function($q) {
+                $q->where('role', 'admin');
+            }]);
 
         // Search functionality
         if ($request->filled('search')) {

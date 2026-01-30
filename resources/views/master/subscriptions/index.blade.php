@@ -218,7 +218,7 @@
                                     </td>
                                     <td>
                                         <div class="text-center">
-                                            <div class="font-weight-bold">{{ $clinic->users->count() }}</div>
+                                            <div class="font-weight-bold">{{ $clinic->users_count ?? $clinic->users->count() }}</div>
                                             <div class="text-muted small">/ {{ $clinic->max_users }} max</div>
                                         </div>
                                     </td>
