@@ -1033,6 +1033,8 @@ class User extends Authenticatable
                 'patients_view', 'patients_create', 'patients_edit', 'patients_files', 'patients_history',
                 'dental_view', 'dental_create', 'dental_edit', 'dental_manage',
                 'appointments_view', 'appointments_create', 'appointments_edit',
+                'prescriptions_view', 'prescriptions_create', 'prescriptions_edit', 'prescriptions_print',
+                'medicines_view', 'medicines_inventory',
                 'reports_view',
             ],
             'assistant' => [

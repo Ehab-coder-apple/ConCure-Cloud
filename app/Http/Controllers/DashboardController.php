@@ -150,6 +150,18 @@ class DashboardController extends Controller
                     });
                 });
             }
+            // Filter for dentists: show patients they created or have dental records for
+            elseif ($user->role === 'dental_dept') {
+                $patientsQuery->where(function($q) use ($user) {
+                    $q->where('created_by', $user->id)
+                    ->orWhereHas('dentalCharts', function($subQ) use ($user) {
+                        $subQ->where('created_by', $user->id);
+                    })
+                    ->orWhereHas('dentalTreatments', function($subQ) use ($user) {
+                        $subQ->where('created_by', $user->id);
+                    });
+                });
+            }
             // Filter for assistants: show patients who have any interaction with their assigned doctors
             // (appointments, prescriptions, lab requests, or diet plans)
             elseif ($user->role === 'assistant') {
@@ -190,6 +202,10 @@ class DashboardController extends Controller
             if ($user->role === 'doctor') {
                 $prescriptionsQuery->where('doctor_id', $user->id);
             }
+            // Filter for dentists: only show their own prescriptions
+            elseif ($user->role === 'dental_dept') {
+                $prescriptionsQuery->where('doctor_id', $user->id);
+            }
             // Filter for assistants: only show prescriptions from their assigned doctors
             elseif ($user->role === 'assistant') {
                 $doctorIds = $user->allowedDoctorIds();
@@ -209,6 +225,10 @@ class DashboardController extends Controller
 
                 // Filter for doctors
                 if ($user->role === 'doctor') {
+                    $spBase->where('doctor_id', $user->id);
+                }
+                // Filter for dentists
+                elseif ($user->role === 'dental_dept') {
                     $spBase->where('doctor_id', $user->id);
                 }
                 // Filter for assistants
@@ -358,8 +378,8 @@ class DashboardController extends Controller
             }
         }
 
-        // Nutrition plan statistics
-        if (class_exists('App\Models\DietPlan')) {
+        // Nutrition plan statistics (exclude dental_dept role)
+        if (class_exists('App\Models\DietPlan') && $user->role !== 'dental_dept') {
             $nutritionQuery = \App\Models\DietPlan::query();
             $nutritionQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
