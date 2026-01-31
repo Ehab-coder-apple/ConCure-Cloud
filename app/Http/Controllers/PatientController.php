@@ -47,6 +47,7 @@ class PatientController extends Controller
         // Only Super Admins and Clinic Admins can see all patients
         // Assistants see patients of their assigned doctors
         // Regular doctors can only see patients they have appointments or prescriptions with
+        // Dentists see only patients they created or have dental records for
         if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
             if ($user->role === 'assistant') {
                 // Assistants see patients who have any interaction with their assigned doctors
@@ -73,6 +74,17 @@ class PatientController extends Controller
                     // No assigned doctors = no patients
                     $query->whereRaw('1 = 0');
                 }
+            } elseif ($user->role === 'dental_dept') {
+                // Dentists see only patients they created or have dental records for
+                $query->where(function($q) use ($user) {
+                    $q->where('created_by', $user->id)
+                    ->orWhereHas('dentalCharts', function($subQ) use ($user) {
+                        $subQ->where('created_by', $user->id);
+                    })
+                    ->orWhereHas('dentalTreatments', function($subQ) use ($user) {
+                        $subQ->where('assigned_doctor_id', $user->id);
+                    });
+                });
             } else {
                 // Regular doctors see only their own patients
                 $query->where(function($q) use ($user) {
@@ -438,18 +450,32 @@ class PatientController extends Controller
 
         // Filter patients based on user role
         if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-            $query->where(function($q) use ($user) {
-                $q->where('created_by', $user->id)
-                ->orWhereHas('appointments', function($appointmentQuery) use ($user) {
-                    $appointmentQuery->where('doctor_id', $user->id);
-                })
-                ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
-                    $prescriptionQuery->where('doctor_id', $user->id);
-                })
-                ->orWhereHas('simplePrescriptions', function($simplePrescriptionQuery) use ($user) {
-                    $simplePrescriptionQuery->where('doctor_id', $user->id);
+            if ($user->role === 'dental_dept') {
+                // Dentists see only patients they created or have dental records for
+                $query->where(function($q) use ($user) {
+                    $q->where('created_by', $user->id)
+                    ->orWhereHas('dentalCharts', function($subQ) use ($user) {
+                        $subQ->where('created_by', $user->id);
+                    })
+                    ->orWhereHas('dentalTreatments', function($subQ) use ($user) {
+                        $subQ->where('assigned_doctor_id', $user->id);
+                    });
                 });
-            });
+            } else {
+                // Regular doctors and other roles
+                $query->where(function($q) use ($user) {
+                    $q->where('created_by', $user->id)
+                    ->orWhereHas('appointments', function($appointmentQuery) use ($user) {
+                        $appointmentQuery->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
+                        $prescriptionQuery->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('simplePrescriptions', function($simplePrescriptionQuery) use ($user) {
+                        $simplePrescriptionQuery->where('doctor_id', $user->id);
+                    });
+                });
+            }
         }
 
         $query->orderBy('first_name')

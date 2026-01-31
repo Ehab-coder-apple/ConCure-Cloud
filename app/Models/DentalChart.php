@@ -139,6 +139,14 @@ class DentalChart extends Model
     }
 
     /**
+     * Scope to filter by creator (doctor who created the chart).
+     */
+    public function scopeByCreator($query, int $creatorId)
+    {
+        return $query->where('created_by', $creatorId);
+    }
+
+    /**
      * Get the latest chart for a patient.
      */
     public static function getLatestForPatient(int $patientId): ?self

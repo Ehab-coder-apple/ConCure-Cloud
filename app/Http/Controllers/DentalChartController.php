@@ -26,6 +26,11 @@ class DentalChartController extends Controller
             $query->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id));
         }
 
+        // Filter by creator for dental_dept role - they only see their own charts
+        if ($user->role === 'dental_dept') {
+            $query->byCreator($user->id);
+        }
+
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;

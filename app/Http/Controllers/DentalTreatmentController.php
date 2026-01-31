@@ -28,8 +28,8 @@ class DentalTreatmentController extends Controller
             $query->byClinic($user->clinic_id);
         }
 
-        // Filter by doctor if user is a doctor
-        if ($user->role === 'doctor') {
+        // Filter by doctor if user is a doctor or dental_dept
+        if ($user->role === 'doctor' || $user->role === 'dental_dept') {
             $query->byDoctor($user->id);
         }
 
