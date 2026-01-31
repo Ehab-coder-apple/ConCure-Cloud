@@ -135,7 +135,8 @@ class DashboardController extends Controller
             // Filter for doctors: show only their own patients
             if ($user->role === 'doctor') {
                 $patientsQuery->where(function($q) use ($user) {
-                    $q->whereHas('appointments', function($subQ) use ($user) {
+                    $q->where('created_by', $user->id)
+                    ->orWhereHas('appointments', function($subQ) use ($user) {
                         $subQ->where('doctor_id', $user->id);
                     })
                     ->orWhereHas('prescriptions', function($subQ) use ($user) {
