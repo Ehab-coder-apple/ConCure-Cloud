@@ -34,8 +34,8 @@ class RadiologyController extends Controller
             $query->byClinic($user->clinic_id);
         }
 
-        // Filter by doctor if user is a doctor
-        if (in_array($user->role, ['doctor', 'nutritionist'])) {
+        // Filter by doctor if user is a doctor, nutritionist, or dentist
+        if (in_array($user->role, ['doctor', 'nutritionist', 'dental_dept'])) {
             $query->byDoctor($user->id);
         }
 
@@ -61,8 +61,8 @@ class RadiologyController extends Controller
         // Get statistics (avoid byClinic when clinic_id is null)
         $base = $user->clinic_id ? RadiologyRequest::byClinic($user->clinic_id) : RadiologyRequest::query();
 
-        // Filter statistics by doctor if user is a doctor
-        if (in_array($user->role, ['doctor', 'nutritionist'])) {
+        // Filter statistics by doctor if user is a doctor, nutritionist, or dentist
+        if (in_array($user->role, ['doctor', 'nutritionist', 'dental_dept'])) {
             $base = $base->byDoctor($user->id);
         }
 
