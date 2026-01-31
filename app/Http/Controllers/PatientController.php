@@ -76,7 +76,8 @@ class PatientController extends Controller
             } else {
                 // Regular doctors see only their own patients
                 $query->where(function($q) use ($user) {
-                    $q->whereHas('appointments', function($appointmentQuery) use ($user) {
+                    $q->where('created_by', $user->id)
+                    ->orWhereHas('appointments', function($appointmentQuery) use ($user) {
                         $appointmentQuery->where('doctor_id', $user->id);
                     })
                     ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
@@ -438,7 +439,8 @@ class PatientController extends Controller
         // Filter patients based on user role
         if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
             $query->where(function($q) use ($user) {
-                $q->whereHas('appointments', function($appointmentQuery) use ($user) {
+                $q->where('created_by', $user->id)
+                ->orWhereHas('appointments', function($appointmentQuery) use ($user) {
                     $appointmentQuery->where('doctor_id', $user->id);
                 })
                 ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
@@ -847,7 +849,8 @@ class PatientController extends Controller
             // Filter patients based on user role
             if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
                 $query->where(function($q) use ($user) {
-                    $q->whereHas('appointments', function($appointmentQuery) use ($user) {
+                    $q->where('created_by', $user->id)
+                    ->orWhereHas('appointments', function($appointmentQuery) use ($user) {
                         $appointmentQuery->where('doctor_id', $user->id);
                     })
                     ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
@@ -928,7 +931,8 @@ class PatientController extends Controller
             // Filter patients based on user role
             if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
                 $query->where(function($q) use ($user) {
-                    $q->whereHas('appointments', function($appointmentQuery) use ($user) {
+                    $q->where('created_by', $user->id)
+                    ->orWhereHas('appointments', function($appointmentQuery) use ($user) {
                         $appointmentQuery->where('doctor_id', $user->id);
                     })
                     ->orWhereHas('prescriptions', function($prescriptionQuery) use ($user) {
