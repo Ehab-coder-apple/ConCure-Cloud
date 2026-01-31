@@ -327,8 +327,8 @@ class DentalTreatmentController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can complete treatments.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can complete treatments.');
         }
 
         $request->validate([

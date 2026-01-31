@@ -25,7 +25,7 @@
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back to List') }}
                     </a>
-                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner']))
+                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept']))
                         <a href="{{ url("/dental/treatments/{$dentalTreatment->id}/edit") }}" class="btn btn-primary">
                             <i class="fas fa-edit me-1"></i>
                             {{ __('Edit') }}
@@ -418,7 +418,7 @@
             @endif
 
             <!-- Actions -->
-            @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner']))
+            @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept']))
                 <div class="card">
                     <div class="card-header">
                         <h6 class="mb-0">

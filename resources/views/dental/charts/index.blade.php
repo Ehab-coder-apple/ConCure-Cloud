@@ -110,8 +110,8 @@
                                                    class="btn btn-sm btn-outline-primary" title="{{ __('View Chart') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner']))
-                                                    <a href="{{ url("/dental/patients/{$patient->id}/charts/{$chart->id}/edit") }}" 
+                                                @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept']))
+                                                    <a href="{{ url("/dental/patients/{$patient->id}/charts/{$chart->id}/edit") }}"
                                                        class="btn btn-sm btn-outline-secondary" title="{{ __('Edit') }}">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
@@ -132,7 +132,7 @@
                             <i class="fas fa-tooth fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">{{ __('No Dental Charts Yet') }}</h5>
                             <p class="text-muted">{{ __('Create the first dental chart for this patient') }}</p>
-                            @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner']))
+                            @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept']))
                                 <a href="{{ url("/dental/patients/{$patient->id}/charts/create") }}" class="btn btn-primary mt-2">
                                     <i class="fas fa-plus me-1"></i>
                                     {{ __('Create First Chart') }}
