@@ -79,8 +79,8 @@ class RecommendationController extends Controller
             $q->where('clinic_id', $user->clinic_id);
         });
 
-        // Restrict by doctor visibility for doctor/assistant
-        if (in_array($user->role, ['doctor', 'assistant'])) {
+        // Restrict by doctor visibility for doctor/assistant/dentist
+        if (in_array($user->role, ['doctor', 'assistant', 'dental_dept'])) {
             $allowedDoctorIds = $user->allowedDoctorIds();
             if (!empty($allowedDoctorIds)) {
                 $query->whereIn('doctor_id', $allowedDoctorIds);
