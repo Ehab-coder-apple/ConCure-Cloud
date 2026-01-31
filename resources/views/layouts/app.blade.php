@@ -1559,7 +1559,44 @@
                         </li>
                         @endif
 
+                        <!-- Dental Module -->
+                        @if(Auth::user()->canAccessSection('dental'))
+                        <li class="nav-item has-submenu {{ request()->routeIs('dental.*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link submenu-toggle">
+                                <i class="nav-icon fas fa-tooth"></i>
+                                <span class="nav-text">{{ __('Dental Module') }}</span>
+                                <i class="submenu-arrow fas fa-chevron-right"></i>
+                            </a>
+                            <ul class="submenu">
+                                @if(Auth::user()->hasAnyPermission(['dental_view', 'dental_charts']))
+                                <li class="submenu-item">
+                                    <a href="{{ route('dental.charts.all') }}" class="submenu-link {{ request()->routeIs('dental.charts.*') ? 'active' : '' }}">
+                                        <i class="fas fa-tooth me-2"></i>
+                                        {{ __('Dental Charts') }}
+                                    </a>
+                                </li>
+                                @endif
 
+                                @if(Auth::user()->hasAnyPermission(['dental_view', 'dental_treatments']))
+                                <li class="submenu-item">
+                                    <a href="{{ route('dental.treatments.index') }}" class="submenu-link {{ request()->routeIs('dental.treatments.*') ? 'active' : '' }}">
+                                        <i class="fas fa-procedures me-2"></i>
+                                        {{ __('Treatments') }}
+                                    </a>
+                                </li>
+                                @endif
+
+                                @if(Auth::user()->hasAnyPermission(['dental_view', 'dental_lab']))
+                                <li class="submenu-item">
+                                    <a href="{{ route('dental.lab-requests.index') }}" class="submenu-link {{ request()->routeIs('dental.lab-requests.*') ? 'active' : '' }}">
+                                        <i class="fas fa-flask me-2"></i>
+                                        {{ __('Lab Requests') }}
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
+                        </li>
+                        @endif
 
                         <!-- Nutrition Plans -->
                         @if(Auth::user()->canAccessSection('nutrition'))
