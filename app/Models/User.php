@@ -824,7 +824,17 @@ class User extends Authenticatable
                 'lab_delete' => 'Delete Lab Requests',
                 'lab_manage' => 'Full Lab Management',
             ],
-
+            'dental' => [
+                'dental_view' => 'View Dental Records',
+                'dental_create' => 'Create Dental Records',
+                'dental_edit' => 'Edit Dental Records',
+                'dental_delete' => 'Delete Dental Records',
+                'dental_charts' => 'Manage Dental Charts',
+                'dental_treatments' => 'Manage Dental Treatments',
+                'dental_lab' => 'Manage Dental Lab Requests',
+                'dental_images' => 'Manage Dental Images',
+                'dental_manage' => 'Full Dental Management',
+            ],
             'radiology' => [
                 'radiology_view' => 'View Radiology Requests',
                 'radiology_create' => 'Create Radiology Requests',
@@ -925,6 +935,11 @@ class User extends Authenticatable
             'lab' => [
                 'name' => 'Laboratory',
                 'icon' => 'fas fa-vials',
+                'color' => 'info',
+            ],
+            'dental' => [
+                'name' => 'Dental Module',
+                'icon' => 'fas fa-tooth',
                 'color' => 'info',
             ],
             'radiology' => [
@@ -1031,7 +1046,7 @@ class User extends Authenticatable
                 // Dental operations
                 'dashboard_view',
                 'patients_view', 'patients_create', 'patients_edit', 'patients_files', 'patients_history',
-                'dental_view', 'dental_create', 'dental_edit', 'dental_manage',
+                'dental_view', 'dental_create', 'dental_edit', 'dental_delete', 'dental_charts', 'dental_treatments', 'dental_lab', 'dental_images', 'dental_manage',
                 'appointments_view', 'appointments_create', 'appointments_edit',
                 'prescriptions_view', 'prescriptions_create', 'prescriptions_edit', 'prescriptions_print',
                 'medicines_view', 'medicines_inventory',
