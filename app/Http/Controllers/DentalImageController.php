@@ -58,8 +58,8 @@ class DentalImageController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can upload dental images.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can upload dental images.');
         }
 
         // Get patient's dental charts
@@ -89,8 +89,8 @@ class DentalImageController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can upload dental images.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can upload dental images.');
         }
 
         $request->validate([
@@ -233,7 +233,7 @@ class DentalImageController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 

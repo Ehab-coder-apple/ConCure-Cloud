@@ -78,8 +78,8 @@ class DentalTreatmentController extends Controller
     {
         $user = Auth::user();
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can create treatment plans.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can create treatment plans.');
         }
 
         // Get patients for dropdown
@@ -120,8 +120,8 @@ class DentalTreatmentController extends Controller
     {
         $user = Auth::user();
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can create treatment plans.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can create treatment plans.');
         }
 
         $request->validate([
@@ -222,8 +222,8 @@ class DentalTreatmentController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can edit treatment plans.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can edit treatment plans.');
         }
 
         // Get doctors for assignment
@@ -254,8 +254,8 @@ class DentalTreatmentController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can update treatment plans.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can update treatment plans.');
         }
 
         $request->validate([

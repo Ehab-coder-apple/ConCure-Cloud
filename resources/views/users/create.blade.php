@@ -161,6 +161,9 @@
                                             @if(in_array('radiology_dept', $availableRoles ?? []))
                                                 <option value="radiology_dept" {{ old('role', request('assign_to') ? 'assistant' : '') == 'radiology_dept' ? 'selected' : '' }}>{{ __('Radiology Dept.') }}</option>
                                             @endif
+                                            @if(in_array('dental_dept', $availableRoles ?? []))
+                                                <option value="dental_dept" {{ old('role', request('assign_to') ? 'assistant' : '') == 'dental_dept' ? 'selected' : '' }}>{{ __('Dentist') }}</option>
+                                            @endif
                                             @if(in_array('assistant', $availableRoles ?? []))
                                                 <option value="assistant" {{ old('role', request('assign_to') ? 'assistant' : '') == 'assistant' ? 'selected' : '' }}>{{ __('Medical Assistant') }}</option>
                                             @endif

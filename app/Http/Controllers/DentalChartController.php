@@ -88,8 +88,8 @@ class DentalChartController extends Controller
         }
 
         // Check if user is doctor or dental assistant
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can create dental charts.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can create dental charts.');
         }
 
         return view('dental.charts.create', compact('patient'));
@@ -109,8 +109,8 @@ class DentalChartController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can create dental charts.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can create dental charts.');
         }
 
         $request->validate([
@@ -220,8 +220,8 @@ class DentalChartController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can edit dental charts.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can edit dental charts.');
         }
 
         $dentalChart->load(['toothRecords']);
@@ -243,8 +243,8 @@ class DentalChartController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can update dental charts.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can update dental charts.');
         }
 
         $request->validate([

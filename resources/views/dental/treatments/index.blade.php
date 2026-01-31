@@ -16,7 +16,7 @@
                     <p class="text-muted mb-0">{{ __('Manage treatment plans and procedures') }}</p>
                 </div>
                 <div>
-                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner']))
+                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept']))
                         <a href="{{ url('/dental/treatments/create') }}" class="btn btn-primary">
                             <i class="fas fa-plus me-1"></i>
                             {{ __('New Treatment Plan') }}

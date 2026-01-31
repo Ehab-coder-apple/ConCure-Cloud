@@ -1027,6 +1027,14 @@ class User extends Authenticatable
                 'radiology_view', 'radiology_edit',
                 'reports_view',
             ],
+            'dental_dept' => [
+                // Dental operations
+                'dashboard_view',
+                'patients_view', 'patients_create', 'patients_edit', 'patients_files', 'patients_history',
+                'dental_view', 'dental_create', 'dental_edit', 'dental_manage',
+                'appointments_view', 'appointments_create', 'appointments_edit',
+                'reports_view',
+            ],
             'assistant' => [
                 // Administrative support
                 'dashboard_view',

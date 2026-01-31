@@ -267,7 +267,7 @@
                         <i class="fas fa-flask me-2"></i>
                         {{ __('Dental Lab Requests') }}
                     </h6>
-                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner']))
+                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept']))
                         <a href="{{ route('dental.lab-requests.create', ['dental_treatment_id' => $dentalTreatment->id, 'patient_id' => $dentalTreatment->patient_id]) }}"
                            class="btn btn-sm btn-primary">
                             <i class="fas fa-plus me-1"></i>

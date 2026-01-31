@@ -87,8 +87,8 @@ class DentalLabRequestController extends Controller
     {
         $user = Auth::user();
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can create lab requests.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can create lab requests.');
         }
 
         // Get patients
@@ -135,8 +135,8 @@ class DentalLabRequestController extends Controller
     {
         $user = Auth::user();
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can create lab requests.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can create lab requests.');
         }
 
         $validated = $request->validate([
@@ -228,8 +228,8 @@ class DentalLabRequestController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
-            abort(403, 'Only doctors and dental assistants can edit lab requests.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, and dentists can edit lab requests.');
         }
 
         // Get patients
@@ -291,8 +291,8 @@ class DentalLabRequestController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'lab_dept'])) {
-            abort(403, 'Only doctors, dental assistants, and lab staff can update lab requests.');
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'lab_dept', 'dental_dept'])) {
+            abort(403, 'Only doctors, dental assistants, dentists, and lab staff can update lab requests.');
         }
 
         $validated = $request->validate([

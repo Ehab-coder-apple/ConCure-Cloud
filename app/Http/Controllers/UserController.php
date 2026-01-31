@@ -501,7 +501,7 @@ class UserController extends Controller
     private function getAvailableRoles(User $user): array
     {
         // Base roles supported by the application
-        $roles = ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'assistant', 'nurse', 'accountant', 'patient'];
+        $roles = ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'dental_dept', 'assistant', 'nurse', 'accountant', 'patient'];
 
         if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return $roles;

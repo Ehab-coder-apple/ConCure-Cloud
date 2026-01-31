@@ -22,7 +22,7 @@
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back to List') }}
                     </a>
-                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'lab_dept']))
+                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'lab_dept', 'dental_dept']))
                         <a href="{{ route('dental.lab-requests.edit', $labRequest) }}" class="btn btn-primary">
                             <i class="fas fa-edit me-1"></i>
                             {{ __('Edit') }}

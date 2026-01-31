@@ -23,7 +23,7 @@
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back to Charts') }}
                     </a>
-                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner']))
+                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept']))
                         <a href="{{ url("/dental/patients/{$patient->id}/charts/{$dentalChart->id}/edit") }}" class="btn btn-primary">
                             <i class="fas fa-edit me-1"></i>
                             {{ __('Edit Chart') }}
