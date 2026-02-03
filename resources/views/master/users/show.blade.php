@@ -111,6 +111,18 @@
                                 </span>
                             </td>
                         </tr>
+                        @if($user->title_prefix)
+                        <tr>
+                            <td class="font-weight-bold">Title/Prefix:</td>
+                            <td>{{ $user->title_prefix }}</td>
+                        </tr>
+                        @endif
+                        @if($user->scientific_degree)
+                        <tr>
+                            <td class="font-weight-bold">Scientific Degree:</td>
+                            <td>{{ $user->scientific_degree }}</td>
+                        </tr>
+                        @endif
                         <tr>
                             <td class="font-weight-bold">Status:</td>
                             <td>
