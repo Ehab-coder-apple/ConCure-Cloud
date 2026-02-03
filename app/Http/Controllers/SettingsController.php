@@ -508,6 +508,7 @@ class SettingsController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:20',
             'title_prefix' => 'nullable|string|max:50',
+            'scientific_degree' => 'nullable|string|max:100',
         ]);
 
         try {
@@ -517,6 +518,7 @@ class SettingsController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'title_prefix' => $request->title_prefix,
+                'scientific_degree' => $request->scientific_degree,
             ]);
 
             // Log the action

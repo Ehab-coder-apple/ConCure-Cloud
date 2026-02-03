@@ -28,6 +28,7 @@ class User extends Authenticatable
         'phone',
         'role',
         'title_prefix',
+        'scientific_degree',
         'is_active',
         'activation_code',
         'activated_at',
@@ -321,6 +322,7 @@ class User extends Authenticatable
             'pharmacist' => ['Pharmacist', 'RPh', 'PharmD'],
             'lab_dept' => ['Mr.', 'Ms.', 'Mrs.', 'Lab Tech'],
             'radiology_dept' => ['Mr.', 'Ms.', 'Mrs.', 'Radiology'],
+            'dental_dept' => ['Dr.', 'Prof.', 'Prof. Dr.', 'Assoc. Prof.', 'Asst. Prof.'],
             'nurse' => ['Nurse', 'RN', 'LPN', 'Nurse Practitioner', 'NP'],
             'admin' => ['Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Prof.'],
             'assistant' => ['Mr.', 'Ms.', 'Mrs.'],
@@ -329,6 +331,28 @@ class User extends Authenticatable
         ];
 
         return $prefixes[$this->role] ?? ['Mr.', 'Ms.', 'Mrs.'];
+    }
+
+    /**
+     * Get available scientific degrees.
+     */
+    public static function getAvailableScientificDegrees(): array
+    {
+        return [
+            'Bachelor',
+            'Master',
+            'PhD',
+            'MD',
+            'DDS',
+            'DMD',
+            'BDS',
+            'MDS',
+            'Consultant',
+            'Specialist',
+            'Fellow',
+            'Diploma',
+            'Board Certified',
+        ];
     }
 
     /**

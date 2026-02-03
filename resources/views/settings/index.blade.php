@@ -154,6 +154,26 @@
                                             </div>
                                         </div>
 
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="scientific_degree" class="form-label">{{ __('Scientific Degree / Educational Level') }}</label>
+                                                    <select class="form-select" id="scientific_degree" name="scientific_degree">
+                                                        <option value="">{{ __('Select Degree') }}</option>
+                                                        @foreach(\App\Models\User::getAvailableScientificDegrees() as $degree)
+                                                            <option value="{{ $degree }}"
+                                                                {{ auth()->user()->scientific_degree === $degree ? 'selected' : '' }}>
+                                                                {{ $degree }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    <div class="form-text">
+                                                        {{ __('Your educational qualification (e.g., Consultant, Master, PhD, etc.)') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div class="d-flex justify-content-end">
                                             <button type="submit" class="btn btn-primary">
                                                 <i class="fas fa-save me-1"></i>

@@ -118,6 +118,21 @@
                                         @enderror
                                     </div>
 
+                                    <div class="col-md-6">
+                                        <label for="scientific_degree" class="form-label">{{ __('Scientific Degree / Educational Level') }}</label>
+                                        <select class="form-select @error('scientific_degree') is-invalid @enderror" id="scientific_degree" name="scientific_degree">
+                                            <option value="">{{ __('Select Degree (Optional)') }}</option>
+                                            @foreach(\App\Models\User::getAvailableScientificDegrees() as $degree)
+                                                <option value="{{ $degree }}" {{ old('scientific_degree', $user->scientific_degree ?? '') === $degree ? 'selected' : '' }}>
+                                                    {{ $degree }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <div class="form-text">{{ __('Educational qualification (e.g., Consultant, Master, PhD, etc.)') }}</div>
+                                        @error('scientific_degree')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
 
                                     <div class="col-md-6">
                                         <label for="language" class="form-label">{{ __('Preferred Language') }}</label>
