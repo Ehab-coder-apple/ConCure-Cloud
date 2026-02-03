@@ -158,17 +158,20 @@
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label for="scientific_degree" class="form-label">{{ __('Scientific Degree / Educational Level') }}</label>
-                                                    <select class="form-select" id="scientific_degree" name="scientific_degree">
-                                                        <option value="">{{ __('Select Degree') }}</option>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           id="scientific_degree"
+                                                           name="scientific_degree"
+                                                           list="degree_options"
+                                                           value="{{ auth()->user()->scientific_degree }}"
+                                                           placeholder="{{ __('Select or type your degree') }}">
+                                                    <datalist id="degree_options">
                                                         @foreach(\App\Models\User::getAvailableScientificDegrees() as $degree)
-                                                            <option value="{{ $degree }}"
-                                                                {{ auth()->user()->scientific_degree === $degree ? 'selected' : '' }}>
-                                                                {{ $degree }}
-                                                            </option>
+                                                            <option value="{{ $degree }}">
                                                         @endforeach
-                                                    </select>
+                                                    </datalist>
                                                     <div class="form-text">
-                                                        {{ __('Your educational qualification (e.g., Consultant, Master, PhD, etc.)') }}
+                                                        {{ __('Select from the list or type your own educational qualification (e.g., Consultant, Master, PhD, etc.)') }}
                                                     </div>
                                                 </div>
                                             </div>
