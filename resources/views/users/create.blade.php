@@ -139,6 +139,20 @@
                                     </div>
 
                                     <div class="col-md-6">
+                                        <label for="educational_institution" class="form-label">{{ __('Educational Institution') }}</label>
+                                        <input type="text"
+                                               class="form-control @error('educational_institution') is-invalid @enderror"
+                                               id="educational_institution"
+                                               name="educational_institution"
+                                               value="{{ old('educational_institution') }}"
+                                               placeholder="{{ __('e.g., University of Baghdad, Harvard Medical School, etc.') }}">
+                                        <div class="form-text">{{ __('The institution where the degree was obtained (optional)') }}</div>
+                                        @error('educational_institution')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6">
                                         <label for="language" class="form-label">{{ __('Preferred Language') }}</label>
                                         <select class="form-select @error('language') is-invalid @enderror" id="language" name="language">
                                             <option value="en" {{ old('language', 'en') == 'en' ? 'selected' : '' }}>English</option>

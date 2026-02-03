@@ -509,6 +509,7 @@ class SettingsController extends Controller
             'phone' => 'nullable|string|max:20',
             'title_prefix' => 'nullable|string|max:50',
             'scientific_degree' => 'nullable|string|max:100',
+            'educational_institution' => 'nullable|string|max:255',
         ]);
 
         try {
@@ -519,6 +520,7 @@ class SettingsController extends Controller
                 'phone' => $request->phone,
                 'title_prefix' => $request->title_prefix,
                 'scientific_degree' => $request->scientific_degree,
+                'educational_institution' => $request->educational_institution,
             ]);
 
             // Log the action

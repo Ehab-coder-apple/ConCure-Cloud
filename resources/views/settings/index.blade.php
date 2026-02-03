@@ -175,6 +175,20 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="educational_institution" class="form-label">{{ __('Educational Institution') }}</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           id="educational_institution"
+                                                           name="educational_institution"
+                                                           value="{{ auth()->user()->educational_institution }}"
+                                                           placeholder="{{ __('e.g., University of Baghdad, Harvard Medical School, etc.') }}">
+                                                    <div class="form-text">
+                                                        {{ __('The institution where you obtained your degree (optional)') }}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div class="d-flex justify-content-end">

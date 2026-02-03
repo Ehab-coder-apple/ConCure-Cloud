@@ -29,6 +29,7 @@ class User extends Authenticatable
         'role',
         'title_prefix',
         'scientific_degree',
+        'educational_institution',
         'is_active',
         'activation_code',
         'activated_at',

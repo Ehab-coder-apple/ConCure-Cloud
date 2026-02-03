@@ -114,7 +114,7 @@
                                         @endswitch
                                     </div>
                                 </div>
-                                @if($user->title_prefix || $user->scientific_degree)
+                                @if($user->title_prefix || $user->scientific_degree || $user->educational_institution)
                                     <div class="col-12">
                                         <hr class="my-2">
                                     </div>
@@ -129,6 +129,12 @@
                                     <div class="col-12">
                                         <small class="text-muted">{{ __('Scientific Degree') }}</small>
                                         <div class="fw-bold">{{ $user->scientific_degree }}</div>
+                                    </div>
+                                @endif
+                                @if($user->educational_institution)
+                                    <div class="col-12">
+                                        <small class="text-muted">{{ __('Educational Institution') }}</small>
+                                        <div class="fw-bold">{{ $user->educational_institution }}</div>
                                     </div>
                                 @endif
                             </div>

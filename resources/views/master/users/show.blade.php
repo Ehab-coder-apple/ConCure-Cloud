@@ -123,6 +123,12 @@
                             <td>{{ $user->scientific_degree }}</td>
                         </tr>
                         @endif
+                        @if($user->educational_institution)
+                        <tr>
+                            <td class="font-weight-bold">Educational Institution:</td>
+                            <td>{{ $user->educational_institution }}</td>
+                        </tr>
+                        @endif
                         <tr>
                             <td class="font-weight-bold">Status:</td>
                             <td>
