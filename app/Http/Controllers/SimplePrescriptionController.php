@@ -6,6 +6,7 @@ use App\Models\SimplePrescription;
 use App\Models\SimplePrescriptionMedicine;
 use App\Models\Patient;
 use App\Models\Medicine;
+use App\Services\PdfKurdishFontService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -314,6 +315,23 @@ class SimplePrescriptionController extends Controller
             abort(403, 'You can only generate PDF for your own prescriptions.');
         }
 
+        // Process Arabic/Kurdish text for proper rendering
+        $fontService = new PdfKurdishFontService();
+
+        // Process medicine names and instructions
+        foreach ($prescription->medicines as $medicine) {
+            $medicine->medicine_name = $fontService->processKurdishText($medicine->medicine_name);
+            $medicine->strength = $fontService->processKurdishText($medicine->strength ?? '');
+            $medicine->dosage = $fontService->processKurdishText($medicine->dosage ?? '');
+            $medicine->frequency = $fontService->processKurdishText($medicine->frequency ?? '');
+            $medicine->duration = $fontService->processKurdishText($medicine->duration ?? '');
+            $medicine->instructions = $fontService->processKurdishText($medicine->instructions ?? '');
+        }
+
+        // Process notes and diagnosis
+        $prescription->notes = $fontService->processKurdishText($prescription->notes ?? '');
+        $prescription->diagnosis = $fontService->processKurdishText($prescription->diagnosis ?? '');
+
         $pdf = Pdf::loadView('simple-prescriptions.pdf', compact('prescription'));
 
         // Configure PDF options for Unicode/Arabic support
@@ -322,7 +340,7 @@ class SimplePrescriptionController extends Controller
             'isPhpEnabled' => true,
             'isRemoteEnabled' => true,
             'defaultFont' => 'DejaVu Sans',
-            'isFontSubsettingEnabled' => true,
+            'isFontSubsettingEnabled' => false, // Disable subsetting for better Arabic support
         ]);
 
         $filename = 'prescription-' . $prescription->prescription_number . '.pdf';
