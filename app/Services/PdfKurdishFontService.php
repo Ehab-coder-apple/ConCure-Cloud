@@ -66,31 +66,28 @@ class PdfKurdishFontService
         }
 
         try {
-            // Extract numbers (both Arabic and Western) and replace with placeholders
-            $numbers = [];
-            $placeholder_index = 0;
+            // Split text into segments (text and numbers)
+            $segments = preg_split('/([\x{0660}-\x{0669}0-9]+)/u', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
 
-            // Match Arabic numerals (٠-٩) and Western numerals (0-9)
-            $textWithPlaceholders = preg_replace_callback(
-                '/[\x{0660}-\x{0669}0-9]+/u',
-                function($matches) use (&$numbers, &$placeholder_index) {
-                    $placeholder = "##NUM{$placeholder_index}##";
-                    $numbers[$placeholder] = $matches[0];
-                    $placeholder_index++;
-                    return $placeholder;
-                },
-                $text
-            );
+            $processedSegments = [];
+            foreach ($segments as $segment) {
+                if (empty($segment)) {
+                    continue;
+                }
 
-            // Use Arabic processor for proper text shaping
-            $processedText = $this->arabic->utf8Glyphs($textWithPlaceholders);
-
-            // Restore numbers in their original order
-            foreach ($numbers as $placeholder => $number) {
-                $processedText = str_replace($placeholder, $number, $processedText);
+                // Check if segment is a number
+                if (preg_match('/^[\x{0660}-\x{0669}0-9]+$/u', $segment)) {
+                    // Keep numbers as-is (don't reverse them)
+                    $processedSegments[] = $segment;
+                } else {
+                    // Process Arabic text for proper shaping
+                    $processed = $this->arabic->utf8Glyphs($segment);
+                    $processedSegments[] = $processed ?: $segment;
+                }
             }
 
-            return $processedText ?: $text;
+            // Join segments back together
+            return implode('', $processedSegments);
         } catch (\Exception $e) {
             return $text;
         }
