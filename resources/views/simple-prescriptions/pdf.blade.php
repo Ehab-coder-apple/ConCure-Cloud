@@ -230,6 +230,8 @@
             color: #2c3e50;
             text-transform: capitalize;
             border-bottom: 1px solid #ecf0f1;
+            direction: rtl;
+            text-align: right;
         }
 
         .medicine-details {
@@ -308,6 +310,7 @@
             border-radius: 3px;
             border: 1px solid #e9ecef;
             margin-bottom: 2px;
+            direction: rtl;
         }
 
         .medicine-instructions {
@@ -320,6 +323,8 @@
             background: #f8f9fa;
             padding: 8px;
             border-radius: 4px;
+            direction: rtl;
+            text-align: right;
         }
         
         .diagnosis-box, .notes-box {
@@ -331,6 +336,8 @@
             font-size: 11px;
             line-height: 1.5;
             border-left: 4px solid #3498db;
+            direction: rtl;
+            text-align: right;
         }
 
         .footer {
