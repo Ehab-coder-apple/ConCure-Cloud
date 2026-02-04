@@ -66,8 +66,30 @@ class PdfKurdishFontService
         }
 
         try {
+            // Extract numbers (both Arabic and Western) and replace with placeholders
+            $numbers = [];
+            $placeholder_index = 0;
+
+            // Match Arabic numerals (٠-٩) and Western numerals (0-9)
+            $textWithPlaceholders = preg_replace_callback(
+                '/[\x{0660}-\x{0669}0-9]+/u',
+                function($matches) use (&$numbers, &$placeholder_index) {
+                    $placeholder = "##NUM{$placeholder_index}##";
+                    $numbers[$placeholder] = $matches[0];
+                    $placeholder_index++;
+                    return $placeholder;
+                },
+                $text
+            );
+
             // Use Arabic processor for proper text shaping
-            $processedText = $this->arabic->utf8Glyphs($text);
+            $processedText = $this->arabic->utf8Glyphs($textWithPlaceholders);
+
+            // Restore numbers in their original order
+            foreach ($numbers as $placeholder => $number) {
+                $processedText = str_replace($placeholder, $number, $processedText);
+            }
+
             return $processedText ?: $text;
         } catch (\Exception $e) {
             return $text;
