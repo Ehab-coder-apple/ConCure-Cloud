@@ -315,7 +315,22 @@ class SimplePrescriptionController extends Controller
             abort(403, 'You can only generate PDF for your own prescriptions.');
         }
 
-        // Don't process Arabic text - let CSS and font handle it naturally
+        // Process Arabic/Kurdish text for proper rendering
+        $fontService = new PdfKurdishFontService();
+
+        // Process medicine names and instructions
+        foreach ($prescription->medicines as $medicine) {
+            $medicine->medicine_name = $fontService->processKurdishText($medicine->medicine_name);
+            $medicine->strength = $fontService->processKurdishText($medicine->strength ?? '');
+            $medicine->dosage = $fontService->processKurdishText($medicine->dosage ?? '');
+            $medicine->frequency = $fontService->processKurdishText($medicine->frequency ?? '');
+            $medicine->duration = $fontService->processKurdishText($medicine->duration ?? '');
+            $medicine->instructions = $fontService->processKurdishText($medicine->instructions ?? '');
+        }
+
+        // Process notes and diagnosis
+        $prescription->notes = $fontService->processKurdishText($prescription->notes ?? '');
+        $prescription->diagnosis = $fontService->processKurdishText($prescription->diagnosis ?? '');
 
         $pdf = Pdf::loadView('simple-prescriptions.pdf', compact('prescription'));
 

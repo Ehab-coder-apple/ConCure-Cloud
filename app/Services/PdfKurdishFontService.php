@@ -66,9 +66,39 @@ class PdfKurdishFontService
         }
 
         try {
+            // Extract numbers first to preserve their order
+            $numbers = [];
+            $placeholder_index = 0;
+
+            // Replace numbers with unique placeholders
+            $textWithPlaceholders = preg_replace_callback(
+                '/[\x{0660}-\x{0669}0-9]+/u',
+                function($matches) use (&$numbers, &$placeholder_index) {
+                    $placeholder = "___NUM{$placeholder_index}___";
+                    $numbers[$placeholder_index] = $matches[0];
+                    $placeholder_index++;
+                    return $placeholder;
+                },
+                $text
+            );
+
             // Use utf8Glyphs with proper parameters
-            // Parameters: text, max_chars, hindo (convert to Hindi numerals), forcertl
-            $processedText = $this->arabic->utf8Glyphs($text, 1000, false, true);
+            // Parameters: text, max_chars, hindo (false = don't convert numerals), forcertl (true = force RTL)
+            $processedText = $this->arabic->utf8Glyphs($textWithPlaceholders, 1000, false, true);
+
+            // Restore numbers by replacing placeholders
+            // The placeholders will be reversed, so we need to find them in the processed text
+            for ($i = 0; $i < $placeholder_index; $i++) {
+                $placeholder = "___NUM{$i}___";
+                $reversedPlaceholder = strrev($placeholder);
+
+                // Try both forward and reversed placeholder
+                if (strpos($processedText, $placeholder) !== false) {
+                    $processedText = str_replace($placeholder, $numbers[$i], $processedText);
+                } elseif (strpos($processedText, $reversedPlaceholder) !== false) {
+                    $processedText = str_replace($reversedPlaceholder, $numbers[$i], $processedText);
+                }
+            }
 
             return $processedText ?: $text;
         } catch (\Exception $e) {
