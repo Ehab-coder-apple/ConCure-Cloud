@@ -61,34 +61,21 @@ class PdfKurdishFontService
      */
     public function processKurdishText($text)
     {
-        if (!$this->isRTLText($text)) {
+        if (empty($text) || !$this->isRTLText($text)) {
             return $text;
         }
 
         try {
-            // Split text into segments (text and numbers)
-            $segments = preg_split('/([\x{0660}-\x{0669}0-9]+)/u', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+            // Use utf8Glyphs with proper parameters
+            // Parameters: text, max_chars, hindo (convert to Hindi numerals), forcertl
+            $processedText = $this->arabic->utf8Glyphs($text, 1000, false, true);
 
-            $processedSegments = [];
-            foreach ($segments as $segment) {
-                if (empty($segment)) {
-                    continue;
-                }
-
-                // Check if segment is a number
-                if (preg_match('/^[\x{0660}-\x{0669}0-9]+$/u', $segment)) {
-                    // Keep numbers as-is (don't reverse them)
-                    $processedSegments[] = $segment;
-                } else {
-                    // Process Arabic text for proper shaping
-                    $processed = $this->arabic->utf8Glyphs($segment);
-                    $processedSegments[] = $processed ?: $segment;
-                }
-            }
-
-            // Join segments back together
-            return implode('', $processedSegments);
+            return $processedText ?: $text;
         } catch (\Exception $e) {
+            \Log::error('Arabic text processing error: ' . $e->getMessage(), [
+                'text' => $text,
+                'trace' => $e->getTraceAsString()
+            ]);
             return $text;
         }
     }
