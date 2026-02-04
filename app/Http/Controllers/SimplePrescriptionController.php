@@ -316,6 +316,15 @@ class SimplePrescriptionController extends Controller
 
         $pdf = Pdf::loadView('simple-prescriptions.pdf', compact('prescription'));
 
+        // Configure PDF options for Unicode/Arabic support
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'DejaVu Sans',
+            'isFontSubsettingEnabled' => true,
+        ]);
+
         $filename = 'prescription-' . $prescription->prescription_number . '.pdf';
 
         return $pdf->download($filename);
