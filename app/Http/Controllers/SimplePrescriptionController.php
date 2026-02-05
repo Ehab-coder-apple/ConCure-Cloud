@@ -325,7 +325,19 @@ class SimplePrescriptionController extends Controller
             $medicine->dosage = $fontService->processKurdishText($medicine->dosage ?? '');
             $medicine->frequency = $fontService->processKurdishText($medicine->frequency ?? '');
             $medicine->duration = $fontService->processKurdishText($medicine->duration ?? '');
-            $medicine->instructions = $fontService->processKurdishText($medicine->instructions ?? '');
+
+            // Log instructions before and after processing
+            $originalInstructions = $medicine->instructions ?? '';
+            $processedInstructions = $fontService->processKurdishText($originalInstructions);
+            \Log::info('Instructions processing', [
+                'original' => $originalInstructions,
+                'original_length' => mb_strlen($originalInstructions),
+                'processed' => $processedInstructions,
+                'processed_length' => mb_strlen($processedInstructions),
+                'original_hex' => bin2hex($originalInstructions),
+                'processed_hex' => bin2hex($processedInstructions),
+            ]);
+            $medicine->instructions = $processedInstructions;
         }
 
         // Process notes and diagnosis

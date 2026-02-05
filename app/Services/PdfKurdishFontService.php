@@ -61,7 +61,14 @@ class PdfKurdishFontService
      */
     public function processKurdishText($text)
     {
-        if (empty($text) || !$this->isRTLText($text)) {
+        if (empty($text)) {
+            return $text;
+        }
+
+        // Clean the text first
+        $text = trim($text);
+
+        if (!$this->isRTLText($text)) {
             return $text;
         }
 
@@ -86,6 +93,12 @@ class PdfKurdishFontService
             // Parameters: text, max_chars, hindo (false = don't convert numerals), forcertl (true = force RTL)
             $processedText = $this->arabic->utf8Glyphs($textWithPlaceholders, 1000, false, true);
 
+            // If processing failed or returned empty, return original text
+            if (empty($processedText)) {
+                \Log::warning('ArPHP returned empty result', ['original' => $text]);
+                return $text;
+            }
+
             // Restore numbers by replacing placeholders
             // The placeholders will be reversed, so we need to find them in the processed text
             for ($i = 0; $i < $placeholder_index; $i++) {
@@ -100,7 +113,7 @@ class PdfKurdishFontService
                 }
             }
 
-            return $processedText ?: $text;
+            return $processedText;
         } catch (\Exception $e) {
             \Log::error('Arabic text processing error: ' . $e->getMessage(), [
                 'text' => $text,
