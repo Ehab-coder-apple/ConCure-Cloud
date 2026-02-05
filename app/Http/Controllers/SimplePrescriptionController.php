@@ -315,34 +315,24 @@ class SimplePrescriptionController extends Controller
             abort(403, 'You can only generate PDF for your own prescriptions.');
         }
 
-        // Process Arabic/Kurdish text for proper rendering
-        $fontService = new PdfKurdishFontService();
+        // DON'T process Arabic text with ArPHP - it creates presentation forms
+        // that fonts don't support, causing boxes (□□□□□)
+        // Leave all text as-is with original Arabic characters
+        // Use CSS RTL for proper display
 
-        // Process medicine names and instructions
-        foreach ($prescription->medicines as $medicine) {
-            $medicine->medicine_name = $fontService->processKurdishText($medicine->medicine_name);
-            $medicine->strength = $fontService->processKurdishText($medicine->strength ?? '');
-            $medicine->dosage = $fontService->processKurdishText($medicine->dosage ?? '');
-            $medicine->frequency = $fontService->processKurdishText($medicine->frequency ?? '');
-            $medicine->duration = $fontService->processKurdishText($medicine->duration ?? '');
-
-            // Process instructions with ArPHP - Amiri font supports presentation forms
-            $medicine->instructions = $fontService->processKurdishText($medicine->instructions ?? '');
-        }
-
-        // Process notes and diagnosis
-        $prescription->notes = $fontService->processKurdishText($prescription->notes ?? '');
-        $prescription->diagnosis = $fontService->processKurdishText($prescription->diagnosis ?? '');
+        // $fontService = new PdfKurdishFontService();
+        // foreach ($prescription->medicines as $medicine) {
+        //     $medicine->medicine_name = $fontService->processKurdishText($medicine->medicine_name);
+        //     ... etc
+        // }
 
         $pdf = Pdf::loadView('simple-prescriptions.pdf', compact('prescription'));
 
         // Configure PDF options for Unicode/Arabic support
-        $pdf->getDomPDF()->getOptions()->set('fontDir', storage_path('fonts'));
-        $pdf->getDomPDF()->getOptions()->set('fontCache', storage_path('fonts'));
         $pdf->getDomPDF()->getOptions()->set('isHtml5ParserEnabled', true);
         $pdf->getDomPDF()->getOptions()->set('isPhpEnabled', true);
         $pdf->getDomPDF()->getOptions()->set('isRemoteEnabled', true);
-        $pdf->getDomPDF()->getOptions()->set('defaultFont', 'amiri-regular');
+        $pdf->getDomPDF()->getOptions()->set('defaultFont', 'dejavu sans');
         $pdf->getDomPDF()->getOptions()->set('isFontSubsettingEnabled', false);
 
         $filename = 'prescription-' . $prescription->prescription_number . '.pdf';

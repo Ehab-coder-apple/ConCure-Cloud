@@ -6,13 +6,14 @@
     <title>Prescription - {{ $prescription->prescription_number }}</title>
     <style>
         body {
-            font-family: 'amiri-regular', 'dejavu sans', sans-serif;
+            font-family: 'dejavu sans', sans-serif;
             font-size: 14px;
             line-height: 1.5;
             color: #1a1a1a;
             margin: 0;
             padding: 15px;
             background: white;
+            direction: rtl;
         }
 
         /* Professional Medical Prescription Styling */
@@ -230,6 +231,8 @@
             color: #2c3e50;
             text-transform: capitalize;
             border-bottom: 1px solid #ecf0f1;
+            direction: rtl;
+            text-align: right;
         }
 
         .medicine-details {
@@ -308,6 +311,7 @@
             border-radius: 3px;
             border: 1px solid #e9ecef;
             margin-bottom: 2px;
+            direction: rtl;
         }
 
         .medicine-instructions {
@@ -320,6 +324,9 @@
             background: #f8f9fa;
             padding: 8px;
             border-radius: 4px;
+            direction: rtl;
+            text-align: right;
+            unicode-bidi: bidi-override;
         }
         
         .diagnosis-box, .notes-box {
@@ -331,6 +338,8 @@
             font-size: 11px;
             line-height: 1.5;
             border-left: 4px solid #3498db;
+            direction: rtl;
+            text-align: right;
         }
 
         .footer {
