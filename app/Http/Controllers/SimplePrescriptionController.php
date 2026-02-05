@@ -336,13 +336,15 @@ class SimplePrescriptionController extends Controller
 
         $pdf = Pdf::loadView('simple-prescriptions.pdf', compact('prescription'));
 
-        // Configure PDF options for Unicode/Arabic support
+        // Configure PDF options for Unicode/Arabic support with Amiri font
         $pdf->setOptions([
             'isHtml5ParserEnabled' => true,
             'isPhpEnabled' => true,
             'isRemoteEnabled' => true,
-            'defaultFont' => 'DejaVu Sans',
+            'defaultFont' => 'Amiri',
             'isFontSubsettingEnabled' => false, // Disable subsetting for better Arabic support
+            'fontDir' => base_path('vendor/dompdf/dompdf/lib/fonts'),
+            'fontCache' => storage_path('fonts'),
         ]);
 
         $filename = 'prescription-' . $prescription->prescription_number . '.pdf';
