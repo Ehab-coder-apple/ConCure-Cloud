@@ -5,8 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prescription - {{ $prescription->prescription_number }}</title>
     <style>
+        @font-face {
+            font-family: 'Amiri';
+            src: url('{{ storage_path('fonts/Amiri-Regular.ttf') }}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
         body {
-            font-family: 'DejaVu Sans', 'Arial', sans-serif;
+            font-family: 'Amiri', 'DejaVu Sans', 'Arial', sans-serif;
             font-size: 14px;
             line-height: 1.5;
             color: #1a1a1a;
@@ -320,9 +327,6 @@
             background: #f8f9fa;
             padding: 8px;
             border-radius: 4px;
-            direction: rtl;
-            text-align: right;
-            unicode-bidi: embed;
         }
         
         .diagnosis-box, .notes-box {

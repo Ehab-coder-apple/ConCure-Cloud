@@ -326,9 +326,8 @@ class SimplePrescriptionController extends Controller
             $medicine->frequency = $fontService->processKurdishText($medicine->frequency ?? '');
             $medicine->duration = $fontService->processKurdishText($medicine->duration ?? '');
 
-            // Don't process instructions - leave as-is for CSS RTL handling
-            // ArPHP seems to produce presentation forms that DejaVu Sans doesn't support
-            // $medicine->instructions = $fontService->processKurdishText($medicine->instructions ?? '');
+            // Process instructions with ArPHP - Amiri font supports presentation forms
+            $medicine->instructions = $fontService->processKurdishText($medicine->instructions ?? '');
         }
 
         // Process notes and diagnosis
