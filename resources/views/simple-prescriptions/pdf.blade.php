@@ -320,6 +320,9 @@
             background: #f8f9fa;
             padding: 8px;
             border-radius: 4px;
+            direction: rtl;
+            text-align: right;
+            unicode-bidi: embed;
         }
         
         .diagnosis-box, .notes-box {
