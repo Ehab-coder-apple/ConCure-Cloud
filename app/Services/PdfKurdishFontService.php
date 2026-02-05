@@ -27,10 +27,10 @@ class PdfKurdishFontService
             mkdir($this->fontDir, 0755, true);
         }
 
-        // Copy Amiri font if it doesn't exist
+        // Copy Amiri font if it doesn't exist (lowercase name for DomPDF)
         $amiriSource = base_path('vendor/khaled.alshamaa/ar-php/examples/fonts/Amiri-Regular.ttf');
-        $amiriDest = $this->fontDir . '/Amiri-Regular.ttf';
-        
+        $amiriDest = $this->fontDir . '/amiri-regular.ttf';
+
         if (file_exists($amiriSource) && !file_exists($amiriDest)) {
             copy($amiriSource, $amiriDest);
         }
