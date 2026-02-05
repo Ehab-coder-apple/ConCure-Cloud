@@ -7,21 +7,21 @@
     <style>
         body {
             font-family: 'amiri', 'dejavu sans', sans-serif;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #1a1a1a;
+            font-size: 11px;
+            line-height: 1.6;
+            color: #2c3e50;
             margin: 0;
-            padding: 15px;
+            padding: 20px;
             background: white;
         }
 
         /* Professional Medical Prescription Styling */
         .prescription-document {
-            border: 2px solid #2c3e50;
-            border-radius: 10px;
-            padding: 20px;
+            border: 3px solid #2c3e50;
+            padding: 25px;
             background: #ffffff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         .medical-symbol {
@@ -49,24 +49,24 @@
         }
 
         .clinic-name {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             color: #2c3e50;
-            margin: 0 0 8px 0;
+            margin: 0 0 5px 0;
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
 
         .clinic-info {
-            font-size: 12px;
+            font-size: 9px;
             color: #555;
             margin: 0;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
         .header-divider {
-            border-bottom: 3px double #2c3e50;
-            margin-bottom: 12px;
+            border-bottom: 2px solid #2c3e50;
+            margin: 15px 0;
         }
 
 
@@ -74,7 +74,7 @@
         .info-grid {
             display: table;
             width: 100%;
-            margin-bottom: 8px;
+            margin-bottom: 20px;
         }
 
         .info-row {
@@ -83,161 +83,97 @@
 
         .info-cell {
             display: table-cell;
-            padding: 2px 8px 2px 0;
+            padding: 0 10px 0 0;
             vertical-align: top;
             width: 50%;
         }
 
         .info-label {
             font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 4px;
-            font-size: 13px;
+            color: #ffffff;
+            background: #34495e;
+            padding: 6px 10px;
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            margin-bottom: 0;
         }
 
         .info-value {
             color: #2c3e50;
-            font-size: 13px;
-            line-height: 1.4;
-            font-weight: 600;
-            text-align: center;
-            padding: 6px;
+            font-size: 10px;
+            line-height: 1.6;
+            padding: 10px;
             background: #f8f9fa;
-            border-radius: 4px;
-            border: 1px solid #e9ecef;
+            border: 1px solid #dee2e6;
+            border-top: none;
         }
         
         .section {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .section-title {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: bold;
-            color: #2c3e50;
-            border-bottom: 2px solid #34495e;
-            padding-bottom: 8px;
-            margin-bottom: 18px;
+            color: #ffffff;
+            background: #34495e;
+            padding: 8px 12px;
+            margin-bottom: 12px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .medicines-list {
-            margin-bottom: 10px;
-        }
-
-        /* Dynamic sizing based on number of medicines - increased spacing */
-        .medicines-list[data-count="1"] .medicine-item,
-        .medicines-list[data-count="2"] .medicine-item,
-        .medicines-list[data-count="3"] .medicine-item {
-            padding: 15px 18px;
-            margin-bottom: 12px;
-        }
-
-        .medicines-list[data-count="4"] .medicine-item,
-        .medicines-list[data-count="5"] .medicine-item {
-            padding: 12px 15px;
-            margin-bottom: 10px;
-        }
-
-        .medicines-list[data-count="6"] .medicine-item,
-        .medicines-list[data-count="7"] .medicine-item {
-            padding: 10px 12px;
-            margin-bottom: 8px;
-        }
-
-        .medicines-list[data-count="8"] .medicine-item,
-        .medicines-list[data-count="9"] .medicine-item,
-        .medicines-list[data-count="10"] .medicine-item {
-            padding: 8px 10px;
-            margin-bottom: 6px;
-        }
-
-        /* For 11+ medicines - more compact but still readable */
-        .medicines-list[data-count="11"] .medicine-item,
-        .medicines-list[data-count="12"] .medicine-item,
-        .medicines-list[data-count="13"] .medicine-item,
-        .medicines-list[data-count="14"] .medicine-item,
-        .medicines-list[data-count="15"] .medicine-item,
-        .medicines-list[data-count="16"] .medicine-item,
-        .medicines-list[data-count="17"] .medicine-item,
-        .medicines-list[data-count="18"] .medicine-item,
-        .medicines-list[data-count="19"] .medicine-item,
-        .medicines-list[data-count="20"] .medicine-item {
-            padding: 6px 8px;
-            margin-bottom: 4px;
+            margin-bottom: 0;
         }
 
         .medicine-item {
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
+            border: 1px solid #dee2e6;
             background: #ffffff;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-        }
-
-
-
-        /* Dynamic font sizing for medicine names - increased sizes */
-        .medicines-list[data-count="1"] .medicine-name,
-        .medicines-list[data-count="2"] .medicine-name,
-        .medicines-list[data-count="3"] .medicine-name {
-            font-size: 15px;
             margin-bottom: 10px;
-            padding-bottom: 6px;
+            padding: 12px 15px;
+            page-break-inside: avoid;
         }
 
-        .medicines-list[data-count="4"] .medicine-name,
-        .medicines-list[data-count="5"] .medicine-name {
-            font-size: 13px;
-            margin-bottom: 8px;
-            padding-bottom: 5px;
-        }
-
-        .medicines-list[data-count="6"] .medicine-name,
-        .medicines-list[data-count="7"] .medicine-name {
-            font-size: 12px;
-            margin-bottom: 6px;
-            padding-bottom: 4px;
-        }
-
-        .medicines-list[data-count="8"] .medicine-name,
-        .medicines-list[data-count="9"] .medicine-name,
-        .medicines-list[data-count="10"] .medicine-name {
-            font-size: 11px;
-            margin-bottom: 5px;
-            padding-bottom: 3px;
-        }
-
-        .medicines-list[data-count="11"] .medicine-name,
-        .medicines-list[data-count="12"] .medicine-name,
-        .medicines-list[data-count="13"] .medicine-name,
-        .medicines-list[data-count="14"] .medicine-name,
-        .medicines-list[data-count="15"] .medicine-name,
-        .medicines-list[data-count="16"] .medicine-name,
-        .medicines-list[data-count="17"] .medicine-name,
-        .medicines-list[data-count="18"] .medicine-name,
-        .medicines-list[data-count="19"] .medicine-name,
-        .medicines-list[data-count="20"] .medicine-name {
+        .medicine-number {
+            display: inline-block;
+            background: #34495e;
+            color: #ffffff;
+            width: 22px;
+            height: 22px;
+            line-height: 22px;
+            text-align: center;
+            border-radius: 50%;
             font-size: 10px;
-            margin-bottom: 4px;
-            padding-bottom: 2px;
+            font-weight: bold;
+            margin-right: 8px;
+            vertical-align: middle;
         }
 
         .medicine-name {
             font-weight: bold;
             color: #2c3e50;
-            text-transform: capitalize;
-            border-bottom: 1px solid #ecf0f1;
+            font-size: 12px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .medicine-name-arabic {
             direction: rtl;
             text-align: right;
+            display: block;
+            margin-top: 4px;
+            font-size: 11px;
+            color: #555;
         }
 
         .medicine-details {
             display: table;
             width: 100%;
-            margin-top: 3px;
+            margin-top: 0;
+            border-collapse: collapse;
         }
 
         .medicine-detail-row {
@@ -246,121 +182,93 @@
 
         .medicine-detail-cell {
             display: table-cell;
-            padding: 1px 8px 1px 0;
-            vertical-align: top;
+            padding: 8px;
+            vertical-align: middle;
             width: 33.33%;
+            border: 1px solid #dee2e6;
+            background: #f8f9fa;
         }
 
         .detail-label {
             font-weight: bold;
-            color: #7f8c8d;
-            font-size: 11px;
+            color: #34495e;
+            font-size: 9px;
             margin-bottom: 4px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Dynamic sizing for detail values - increased sizes */
-        .medicines-list[data-count="1"] .detail-value,
-        .medicines-list[data-count="2"] .detail-value,
-        .medicines-list[data-count="3"] .detail-value {
-            font-size: 13px;
-            padding: 6px 8px;
-        }
-
-        .medicines-list[data-count="4"] .detail-value,
-        .medicines-list[data-count="5"] .detail-value {
-            font-size: 11px;
-            padding: 5px 6px;
-        }
-
-        .medicines-list[data-count="6"] .detail-value,
-        .medicines-list[data-count="7"] .detail-value {
-            font-size: 10px;
-            padding: 4px 5px;
-        }
-
-        .medicines-list[data-count="8"] .detail-value,
-        .medicines-list[data-count="9"] .detail-value,
-        .medicines-list[data-count="10"] .detail-value {
-            font-size: 9px;
-            padding: 3px 4px;
-        }
-
-        .medicines-list[data-count="11"] .detail-value,
-        .medicines-list[data-count="12"] .detail-value,
-        .medicines-list[data-count="13"] .detail-value,
-        .medicines-list[data-count="14"] .detail-value,
-        .medicines-list[data-count="15"] .detail-value,
-        .medicines-list[data-count="16"] .detail-value,
-        .medicines-list[data-count="17"] .detail-value,
-        .medicines-list[data-count="18"] .detail-value,
-        .medicines-list[data-count="19"] .detail-value,
-        .medicines-list[data-count="20"] .detail-value {
-            font-size: 8px;
-            padding: 2px 3px;
+            letter-spacing: 0.3px;
+            display: block;
         }
 
         .detail-value {
             color: #2c3e50;
-            line-height: 1.2;
+            font-size: 10px;
+            line-height: 1.4;
             font-weight: 600;
-            text-align: center;
-            background: #f8f9fa;
-            border-radius: 3px;
-            border: 1px solid #e9ecef;
-            margin-bottom: 2px;
             direction: rtl;
+            text-align: right;
         }
 
         .medicine-instructions {
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px solid #bdc3c7;
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: #fff9e6;
+            border-left: 3px solid #f39c12;
             font-size: 10px;
-            color: #34495e;
-            font-style: italic;
-            background: #f8f9fa;
-            padding: 8px;
-            border-radius: 4px;
+            color: #2c3e50;
+            line-height: 1.6;
             direction: rtl;
             text-align: right;
-            unicode-bidi: bidi-override;
         }
-        
+
+        .instructions-label {
+            font-weight: bold;
+            color: #d68910;
+            margin-bottom: 4px;
+            display: block;
+        }
+
         .diagnosis-box, .notes-box {
-            background: #ffffff;
-            border: 1px solid #bdc3c7;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 12px 15px;
             font-size: 11px;
-            line-height: 1.5;
+            line-height: 1.7;
             border-left: 4px solid #3498db;
             direction: rtl;
             text-align: right;
         }
 
         .footer {
-            margin-top: 25px;
-            padding-top: 15px;
-            border-top: 2px solid #34495e;
+            margin-top: 30px;
+            padding-top: 12px;
+            border-top: 1px solid #dee2e6;
             text-align: center;
-            font-size: 9px;
-            color: #7f8c8d;
-            font-style: italic;
+            font-size: 8px;
+            color: #6c757d;
         }
 
         .doctor-signature {
-            margin-top: 30px;
+            margin-top: 25px;
             text-align: right;
-            padding: 15px 0;
+            padding: 0;
         }
 
         .signature-line {
             border-top: 2px solid #2c3e50;
-            width: 200px;
-            margin: 20px 0 8px auto;
+            width: 180px;
+            margin: 15px 0 5px auto;
+        }
+
+        .signature-name {
+            font-size: 10px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .signature-note {
+            font-size: 8px;
+            color: #6c757d;
+            font-style: italic;
         }
 
     </style>
@@ -450,28 +358,34 @@
     @if($prescription->medicines->count() > 0)
         <div class="section">
             <div class="section-title">Prescribed Medicines</div>
-            <div class="medicines-list" data-count="{{ $prescription->medicines->count() }}">
+            <div class="medicines-list">
                 @foreach($prescription->medicines as $index => $medicine)
                     <div class="medicine-item">
-                        <div class="medicine-name">{{ $index + 1 }}. {{ $medicine->medicine_name }}</div>
+                        <div class="medicine-name">
+                            <span class="medicine-number">{{ $index + 1 }}</span>
+                            {{ $medicine->medicine_name }}
+                        </div>
 
-                        {{-- Show values for all medicines without labels --}}
                         <div class="medicine-details">
                             <div class="medicine-detail-row">
                                 <div class="medicine-detail-cell">
+                                    <span class="detail-label">Dosage</span>
                                     <div class="detail-value">{{ $medicine->dosage ?? 'Not specified' }}</div>
                                 </div>
                                 <div class="medicine-detail-cell">
+                                    <span class="detail-label">Frequency</span>
                                     <div class="detail-value">{{ $medicine->frequency ?? 'Not specified' }}</div>
                                 </div>
                                 <div class="medicine-detail-cell">
+                                    <span class="detail-label">Duration</span>
                                     <div class="detail-value">{{ $medicine->duration ?? 'Not specified' }}</div>
                                 </div>
                             </div>
                         </div>
                         @if($medicine->instructions)
                             <div class="medicine-instructions">
-                                <strong>Instructions:</strong> {{ $medicine->instructions }}
+                                <span class="instructions-label">تعليمات:</span>
+                                {{ $medicine->instructions }}
                             </div>
                         @endif
                     </div>
@@ -495,8 +409,8 @@
     <!-- Doctor Signature -->
     <div class="doctor-signature">
         <div class="signature-line"></div>
-        <div style="font-size: 9px;">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</div>
-        <div style="font-size: 7px; color: #666;">Digital Signature</div>
+        <div class="signature-name">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</div>
+        <div class="signature-note">Digital Signature</div>
     </div>
 
     <!-- Footer -->
