@@ -6,14 +6,13 @@
     <title>Prescription - {{ $prescription->prescription_number }}</title>
     <style>
         body {
-            font-family: 'dejavu sans', sans-serif;
+            font-family: 'amiri', 'dejavu sans', sans-serif;
             font-size: 14px;
             line-height: 1.5;
             color: #1a1a1a;
             margin: 0;
             padding: 15px;
             background: white;
-            direction: rtl;
         }
 
         /* Professional Medical Prescription Styling */

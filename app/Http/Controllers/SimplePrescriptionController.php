@@ -315,29 +315,63 @@ class SimplePrescriptionController extends Controller
             abort(403, 'You can only generate PDF for your own prescriptions.');
         }
 
-        // DON'T process Arabic text with ArPHP - it creates presentation forms
-        // that fonts don't support, causing boxes (□□□□□)
-        // Leave all text as-is with original Arabic characters
-        // Use CSS RTL for proper display
+        // Use mPDF instead of DomPDF for proper Arabic support
+        // mPDF can properly shape Arabic text and handle bidirectional text
+        $fontService = new PdfKurdishFontService();
 
-        // $fontService = new PdfKurdishFontService();
-        // foreach ($prescription->medicines as $medicine) {
-        //     $medicine->medicine_name = $fontService->processKurdishText($medicine->medicine_name);
-        //     ... etc
-        // }
+        // Process Arabic text with ArPHP for proper text shaping
+        foreach ($prescription->medicines as $medicine) {
+            $medicine->medicine_name = $fontService->processKurdishText($medicine->medicine_name);
+            $medicine->strength = $fontService->processKurdishText($medicine->strength ?? '');
+            $medicine->dosage = $fontService->processKurdishText($medicine->dosage ?? '');
+            $medicine->frequency = $fontService->processKurdishText($medicine->frequency ?? '');
+            $medicine->duration = $fontService->processKurdishText($medicine->duration ?? '');
+            $medicine->instructions = $fontService->processKurdishText($medicine->instructions ?? '');
+        }
 
-        $pdf = Pdf::loadView('simple-prescriptions.pdf', compact('prescription'));
+        $prescription->notes = $fontService->processKurdishText($prescription->notes ?? '');
+        $prescription->diagnosis = $fontService->processKurdishText($prescription->diagnosis ?? '');
 
-        // Configure PDF options for Unicode/Arabic support
-        $pdf->getDomPDF()->getOptions()->set('isHtml5ParserEnabled', true);
-        $pdf->getDomPDF()->getOptions()->set('isPhpEnabled', true);
-        $pdf->getDomPDF()->getOptions()->set('isRemoteEnabled', true);
-        $pdf->getDomPDF()->getOptions()->set('defaultFont', 'dejavu sans');
-        $pdf->getDomPDF()->getOptions()->set('isFontSubsettingEnabled', false);
+        // Render the view to HTML
+        $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
+
+        // Create mPDF instance with Arabic support
+        $tempDir = storage_path('mpdf/temp');
+        if (!is_dir($tempDir)) {
+            @mkdir($tempDir, 0755, true);
+        }
+
+        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        $fontDirs = $defaultConfig['fontDir'];
+        $fontDirs[] = storage_path('fonts');
+
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
+
+        // Add Amiri font for Arabic
+        $fontData['amiri'] = ['R' => 'amiri-regular.ttf'];
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'tempDir' => $tempDir,
+            'fontDir' => $fontDirs,
+            'fontdata' => $fontData,
+            'default_font' => file_exists(storage_path('fonts/amiri-regular.ttf')) ? 'amiri' : 'dejavusans',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
+        ]);
+
+        // Don't set global RTL - let CSS handle it per element
+        // $mpdf->SetDirectionality('rtl');
+
+        $mpdf->WriteHTML($html);
 
         $filename = 'prescription-' . $prescription->prescription_number . '.pdf';
 
-        return $pdf->download($filename);
+        return response()->streamDownload(function() use ($mpdf) {
+            echo $mpdf->Output('', 'S');
+        }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
     public function print($id)
