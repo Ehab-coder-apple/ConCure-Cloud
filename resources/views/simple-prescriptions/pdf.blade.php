@@ -6,7 +6,7 @@
     <title>Prescription - {{ $prescription->prescription_number }}</title>
     <style>
         body {
-            font-family: 'Amiri', 'DejaVu Sans', 'Arial', sans-serif;
+            font-family: 'amiri-regular', 'dejavu sans', sans-serif;
             font-size: 14px;
             line-height: 1.5;
             color: #1a1a1a;
