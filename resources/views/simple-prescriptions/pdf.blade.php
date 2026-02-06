@@ -278,13 +278,13 @@
         <table class="clinic-header-table">
             <tr>
                 @if($clinicLogo && file_exists($clinicLogo))
-                    <td style="width: 80px; vertical-align: top; text-align: center;">
+                    <td style="width: 100px; vertical-align: middle; text-align: center;">
                         <img src="{{ $clinicLogo }}"
                              alt="Clinic Logo"
                              class="clinic-logo">
                     </td>
                 @endif
-                <td style="vertical-align: top; text-align: {{ $clinicLogo ? 'left' : 'center' }}; {{ $clinicLogo ? 'padding-left: 15px;' : '' }}">
+                <td style="vertical-align: middle; text-align: center;">
                     <div class="clinic-name">
                         <span class="medical-symbol">⚕</span>
                         {{ $prescription->clinic->name ?? 'ConCure Clinic' }}
@@ -294,14 +294,14 @@
                             {{ $prescription->clinic->address }}<br>
                         @endif
                         @if($prescription->clinic->phone ?? false)
-                            Phone: {{ $prescription->clinic->phone }} |
+                            Phone: {{ $prescription->clinic->phone }}
                         @endif
                         @if($prescription->clinic->email ?? false)
-                            Email: {{ $prescription->clinic->email }}
+                            @if($prescription->clinic->phone ?? false) | @endif Email: {{ $prescription->clinic->email }}
                         @endif
                     </div>
                 </td>
-                <td style="vertical-align: top; text-align: right; width: 250px; padding: 10px;">
+                <td style="vertical-align: middle; text-align: right; width: 200px; padding: 10px;">
                     <div style="font-size: 9px; color: #2c3e50; line-height: 1.6;">
                         <strong style="font-size: 10px;">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</strong><br>
                         @if($prescription->doctor->scientific_degree)
