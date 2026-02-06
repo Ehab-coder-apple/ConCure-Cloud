@@ -207,15 +207,19 @@
             font-size: 10px;
             color: #2c3e50;
             line-height: 1.6;
-            direction: rtl;
-            text-align: right;
+            direction: ltr;
+            text-align: left;
         }
 
         .instructions-label {
             font-weight: bold;
             color: #d68910;
-            margin-bottom: 4px;
-            display: block;
+            display: inline;
+        }
+
+        .instructions-text {
+            direction: rtl;
+            display: inline;
         }
 
         .diagnosis-box, .notes-box {
@@ -375,8 +379,7 @@
                         </table>
                         @if($medicine->instructions)
                             <div class="medicine-instructions">
-                                <span class="instructions-label">تعليمات:</span>
-                                {{ $medicine->instructions }}
+                                <span class="instructions-label">Instructions:</span> <span class="instructions-text">{{ $medicine->instructions }}</span>
                             </div>
                         @endif
                     </div>
