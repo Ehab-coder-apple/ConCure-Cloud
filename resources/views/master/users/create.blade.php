@@ -115,6 +115,44 @@
                                     @enderror
                                 </div>
                             </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="scientific_degree" class="form-label">{{ __('Scientific Degree / Educational Level') }}</label>
+                                    <input type="text"
+                                           class="form-control @error('scientific_degree') is-invalid @enderror"
+                                           id="scientific_degree"
+                                           name="scientific_degree"
+                                           list="degree_options_create"
+                                           value="{{ old('scientific_degree') }}"
+                                           placeholder="{{ __('Select or type degree (Optional)') }}">
+                                    <datalist id="degree_options_create">
+                                        @foreach(\App\Models\User::getAvailableScientificDegrees() as $degree)
+                                            <option value="{{ $degree }}">
+                                        @endforeach
+                                    </datalist>
+                                    <div class="form-text">{{ __('Select from the list or type your own educational qualification (e.g., Consultant, Master, PhD, etc.)') }}</div>
+                                    @error('scientific_degree')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="educational_institution" class="form-label">{{ __('Educational Institution') }}</label>
+                                    <input type="text"
+                                           class="form-control @error('educational_institution') is-invalid @enderror"
+                                           id="educational_institution"
+                                           name="educational_institution"
+                                           value="{{ old('educational_institution') }}"
+                                           placeholder="{{ __('e.g., University of Baghdad, Harvard Medical School, etc.') }}">
+                                    <div class="form-text">{{ __('The institution where the degree was obtained (optional)') }}</div>
+                                    @error('educational_institution')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Account Information -->
