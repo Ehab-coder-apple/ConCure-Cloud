@@ -334,14 +334,10 @@ class SimplePrescriptionController extends Controller
         $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
         $fontData = $defaultFontConfig['fontdata'];
 
-        // Add Amiri font for Arabic with OTL (OpenType Layout) support
-        // useOTL 0xFF enables OTL for all scripts (required for Arabic letter connection)
-        // useKashida 75 enables kashida for Arabic text justification
-        $fontData['amiri'] = [
-            'R' => 'amiri-regular.ttf',
-            'useOTL' => 0xFF,
-            'useKashida' => 75,
-        ];
+        // Use DejaVu Sans for Arabic support
+        // DejaVu Sans has built-in OTL (OpenType Layout) support in mPDF
+        // It properly connects Arabic letters and handles RTL text
+        // Note: Amiri font causes "GPOS Lookup Type 5, Format 3 not supported" error in mPDF v8.2.6
 
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',
@@ -349,7 +345,7 @@ class SimplePrescriptionController extends Controller
             'tempDir' => $tempDir,
             'fontDir' => $fontDirs,
             'fontdata' => $fontData,
-            'default_font' => file_exists(storage_path('fonts/amiri-regular.ttf')) ? 'amiri' : 'dejavusans',
+            'default_font' => 'dejavusans',  // DejaVu Sans has excellent Arabic support with OTL
             'autoScriptToLang' => true,
             'autoLangToFont' => true,
         ]);
