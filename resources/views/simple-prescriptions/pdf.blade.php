@@ -304,6 +304,12 @@
                 <td style="vertical-align: top; text-align: right; width: 250px; padding: 10px;">
                     <div style="font-size: 9px; color: #2c3e50; line-height: 1.6;">
                         <strong style="font-size: 10px;">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</strong><br>
+                        @if($prescription->doctor->scientific_degree)
+                            <span style="font-size: 8px; color: #555;">{{ $prescription->doctor->scientific_degree }}</span><br>
+                        @endif
+                        @if($prescription->doctor->educational_institution)
+                            <span style="font-size: 8px; color: #555;">{{ $prescription->doctor->educational_institution }}</span><br>
+                        @endif
                         @if($prescription->doctor->phone)
                             Phone: {{ $prescription->doctor->phone }}<br>
                         @endif
@@ -403,6 +409,12 @@
     <div class="doctor-signature">
         <div class="signature-line"></div>
         <div class="signature-name">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</div>
+        @if($prescription->doctor->scientific_degree)
+            <div style="font-size: 9px; color: #555; margin-top: 2px;">{{ $prescription->doctor->scientific_degree }}</div>
+        @endif
+        @if($prescription->doctor->educational_institution)
+            <div style="font-size: 8px; color: #777; margin-top: 1px;">{{ $prescription->doctor->educational_institution }}</div>
+        @endif
         <div class="signature-note">Digital Signature</div>
     </div>
 
