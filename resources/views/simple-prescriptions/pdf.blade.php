@@ -192,12 +192,10 @@
 
         .detail-value {
             color: #2c3e50;
-            font-size: 10px;
-            line-height: 1.4;
+            font-size: 11px;
+            line-height: 1.6;
             font-weight: 600;
-            direction: rtl;
-            text-align: center;
-            unicode-bidi: embed;
+            font-family: 'amiri', 'dejavusans', sans-serif;
         }
 
         .medicine-instructions {
@@ -366,15 +364,15 @@
                                 </td>
                                 <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Dosage</span>
-                                    <div class="detail-value" style="direction: rtl; text-align: center; unicode-bidi: embed;">{{ $medicine->dosage ?? 'Not specified' }}</div>
+                                    <div class="detail-value" dir="rtl" lang="ar" style="text-align: center;">{{ $medicine->dosage ?? 'Not specified' }}</div>
                                 </td>
                                 <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Frequency</span>
-                                    <div class="detail-value" style="direction: rtl; text-align: center; unicode-bidi: embed;">{{ $medicine->frequency ?? 'Not specified' }}</div>
+                                    <div class="detail-value" dir="rtl" lang="ar" style="text-align: center;">{{ $medicine->frequency ?? 'Not specified' }}</div>
                                 </td>
                                 <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Duration</span>
-                                    <div class="detail-value" style="direction: rtl; text-align: center; unicode-bidi: embed;">{{ $medicine->duration ?? 'Not specified' }}</div>
+                                    <div class="detail-value" dir="rtl" lang="ar" style="text-align: center;">{{ $medicine->duration ?? 'Not specified' }}</div>
                                 </td>
                             </tr>
                         </table>
