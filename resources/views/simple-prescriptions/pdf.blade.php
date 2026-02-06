@@ -72,28 +72,16 @@
 
         
         .info-grid {
-            display: table;
             width: 100%;
             margin-bottom: 20px;
-        }
-
-        .info-row {
-            display: table-row;
+            border-collapse: separate;
+            border-spacing: 10px 0;
         }
 
         .info-cell {
-            display: table-cell;
-            padding: 0 5px;
+            padding: 0;
             vertical-align: top;
             width: 50%;
-        }
-
-        .info-cell:first-child {
-            padding-left: 0;
-        }
-
-        .info-cell:last-child {
-            padding-right: 0;
         }
 
         .info-label {
@@ -178,25 +166,18 @@
         }
 
         .medicine-details {
-            display: table;
             width: 100%;
             margin-top: 8px;
             border-collapse: separate;
-            border-spacing: 5px;
-        }
-
-        .medicine-detail-row {
-            display: table-row;
+            border-spacing: 5px 0;
         }
 
         .medicine-detail-cell {
-            display: table-cell;
             padding: 8px 10px;
             vertical-align: top;
             width: 33.33%;
             border: 1px solid #dee2e6;
             background: #f8f9fa;
-            border-radius: 3px;
         }
 
         .detail-label {
@@ -325,9 +306,9 @@
 
 
     <!-- Patient and Doctor Information -->
-    <div class="info-grid">
-        <div class="info-row">
-            <div class="info-cell">
+    <table class="info-grid">
+        <tr class="info-row">
+            <td class="info-cell">
                 <div class="info-label">Patient Information</div>
                 <div class="info-value">
                     <strong>{{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}</strong><br>
@@ -337,8 +318,8 @@
                         Phone: {{ $prescription->patient->phone }}
                     @endif
                 </div>
-            </div>
-            <div class="info-cell">
+            </td>
+            <td class="info-cell">
                 <div class="info-label">Doctor Information</div>
                 <div class="info-value">
                     <strong>Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</strong><br>
@@ -350,9 +331,9 @@
                     @endif
                     <strong>Date: {{ $prescription->prescribed_date->format('F d, Y') }}</strong>
                 </div>
-            </div>
-        </div>
-    </div>
+            </td>
+        </tr>
+    </table>
 
     <!-- Diagnosis -->
     @if($prescription->diagnosis)
@@ -376,22 +357,22 @@
                             {{ $medicine->medicine_name }}
                         </div>
 
-                        <div class="medicine-details">
-                            <div class="medicine-detail-row">
-                                <div class="medicine-detail-cell">
+                        <table class="medicine-details">
+                            <tr class="medicine-detail-row">
+                                <td class="medicine-detail-cell">
                                     <span class="detail-label">Dosage</span>
                                     <div class="detail-value">{{ $medicine->dosage ?? 'Not specified' }}</div>
-                                </div>
-                                <div class="medicine-detail-cell">
+                                </td>
+                                <td class="medicine-detail-cell">
                                     <span class="detail-label">Frequency</span>
                                     <div class="detail-value">{{ $medicine->frequency ?? 'Not specified' }}</div>
-                                </div>
-                                <div class="medicine-detail-cell">
+                                </td>
+                                <td class="medicine-detail-cell">
                                     <span class="detail-label">Duration</span>
                                     <div class="detail-value">{{ $medicine->duration ?? 'Not specified' }}</div>
-                                </div>
-                            </div>
-                        </div>
+                                </td>
+                            </tr>
+                        </table>
                         @if($medicine->instructions)
                             <div class="medicine-instructions">
                                 <span class="instructions-label">تعليمات:</span>
