@@ -324,10 +324,17 @@
     <!-- Patient Information -->
     <div style="margin-bottom: 15px;">
         <div class="info-label">Patient Information</div>
-        <div class="info-value" style="padding: 8px 10px;">
-            <strong>Name:</strong> {{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }} &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Gender:</strong> {{ ucfirst($prescription->patient->gender ?? 'Not specified') }} &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Age:</strong> @if($prescription->patient->date_of_birth){{ \Carbon\Carbon::parse($prescription->patient->date_of_birth)->age }} years@else Not specified @endif
+        <div class="info-value" style="padding: 12px 15px;">
+            <strong>Name:</strong> {{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}
+            &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;
+            <strong>Gender:</strong> {{ ucfirst($prescription->patient->gender ?? 'Not specified') }}
+            &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;
+            <strong>Age:</strong>
+            @if($prescription->patient->date_of_birth)
+                {{ \Carbon\Carbon::parse($prescription->patient->date_of_birth)->age }} years
+            @else
+                Not specified
+            @endif
         </div>
     </div>
 
