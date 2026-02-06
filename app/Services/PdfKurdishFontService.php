@@ -89,9 +89,10 @@ class PdfKurdishFontService
                 $text
             );
 
-            // Use utf8Glyphs with proper parameters
-            // Parameters: text, max_chars, hindo (false = don't convert numerals), forcertl (true = force RTL)
-            $processedText = $this->arabic->utf8Glyphs($textWithPlaceholders, 1000, false, true);
+            // Use utf8Glyphs to convert to presentation forms (connected letters)
+            // Parameters: text, max_chars, hindo (false = don't convert numerals), forcertl (false = don't reverse)
+            // We don't reverse here because the text will be displayed with dir="rtl" in HTML
+            $processedText = $this->arabic->utf8Glyphs($textWithPlaceholders, 1000, false, false);
 
             // If processing failed or returned empty, return original text
             if (empty($processedText)) {

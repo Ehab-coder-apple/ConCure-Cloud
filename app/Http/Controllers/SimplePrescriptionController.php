@@ -316,9 +316,21 @@ class SimplePrescriptionController extends Controller
         }
 
         // Use mPDF instead of DomPDF for proper Arabic support
-        // mPDF has built-in Arabic text shaping - don't pre-process with ArPHP
+        // Process Arabic text with ArPHP for proper glyph shaping
+        $fontService = new PdfKurdishFontService();
 
-        // Render the view to HTML (without pre-processing Arabic text)
+        // Process Arabic text fields
+        foreach ($prescription->medicines as $medicine) {
+            $medicine->dosage = $fontService->processKurdishText($medicine->dosage ?? '');
+            $medicine->frequency = $fontService->processKurdishText($medicine->frequency ?? '');
+            $medicine->duration = $fontService->processKurdishText($medicine->duration ?? '');
+            $medicine->instructions = $fontService->processKurdishText($medicine->instructions ?? '');
+        }
+
+        $prescription->notes = $fontService->processKurdishText($prescription->notes ?? '');
+        $prescription->diagnosis = $fontService->processKurdishText($prescription->diagnosis ?? '');
+
+        // Render the view to HTML
         $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
 
         // Create mPDF instance with Arabic support
@@ -334,11 +346,9 @@ class SimplePrescriptionController extends Controller
         $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
         $fontData = $defaultFontConfig['fontdata'];
 
-        // Add Amiri font for Arabic with proper configuration
+        // Add Amiri font for Arabic
         $fontData['amiri'] = [
             'R' => 'amiri-regular.ttf',
-            'useOTL' => 0xFF,    // Use OpenType Layout features
-            'useKashida' => 75,  // Use kashida for justification
         ];
 
         $mpdf = new \Mpdf\Mpdf([
@@ -350,11 +360,7 @@ class SimplePrescriptionController extends Controller
             'default_font' => file_exists(storage_path('fonts/amiri-regular.ttf')) ? 'amiri' : 'dejavusans',
             'autoScriptToLang' => true,
             'autoLangToFont' => true,
-            'autoArabic' => true,  // Enable automatic Arabic text processing
         ]);
-
-        // Don't set global RTL - let CSS handle it per element
-        // $mpdf->SetDirectionality('rtl');
 
         $mpdf->WriteHTML($html);
 
