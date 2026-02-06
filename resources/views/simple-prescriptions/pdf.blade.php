@@ -355,22 +355,23 @@
             <div class="medicines-list">
                 @foreach($prescription->medicines as $index => $medicine)
                     <div class="medicine-item">
-                        <div class="medicine-name">
-                            <span class="medicine-number">{{ $index + 1 }}</span>
-                            {{ $medicine->medicine_name }}
-                        </div>
-
-                        <table class="medicine-details">
-                            <tr class="medicine-detail-row">
-                                <td class="medicine-detail-cell">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="width: 25%; vertical-align: top; padding: 8px;">
+                                    <div class="medicine-name">
+                                        <span class="medicine-number">{{ $index + 1 }}</span>
+                                        {{ $medicine->medicine_name }}
+                                    </div>
+                                </td>
+                                <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Dosage</span>
                                     <div class="detail-value">{{ $medicine->dosage ?? 'Not specified' }}</div>
                                 </td>
-                                <td class="medicine-detail-cell">
+                                <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Frequency</span>
                                     <div class="detail-value">{{ $medicine->frequency ?? 'Not specified' }}</div>
                                 </td>
-                                <td class="medicine-detail-cell">
+                                <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Duration</span>
                                     <div class="detail-value">{{ $medicine->duration ?? 'Not specified' }}</div>
                                 </td>
