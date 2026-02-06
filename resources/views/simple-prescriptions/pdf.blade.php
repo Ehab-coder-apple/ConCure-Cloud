@@ -302,7 +302,7 @@
                         @endif
                     </div>
                 </td>
-                <td style="vertical-align: top; text-align: right; width: 250px; padding: 10px; border: 2px solid #27ae60; border-radius: 8px;">
+                <td style="vertical-align: top; text-align: right; width: 250px; padding: 10px;">
                     <div style="font-size: 9px; color: #2c3e50; line-height: 1.6;">
                         <strong style="font-size: 10px;">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</strong><br>
                         @if($prescription->doctor->phone)
@@ -322,15 +322,12 @@
 
 
     <!-- Patient Information -->
-    <div style="margin-bottom: 20px;">
+    <div style="margin-bottom: 15px;">
         <div class="info-label">Patient Information</div>
-        <div class="info-value">
-            <strong>{{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}</strong><br>
-            Patient ID: {{ $prescription->patient->patient_id }}<br>
-            Gender: {{ ucfirst($prescription->patient->gender ?? 'Not specified') }}<br>
-            @if($prescription->patient->phone)
-                Phone: {{ $prescription->patient->phone }}
-            @endif
+        <div class="info-value" style="padding: 8px 10px;">
+            <strong>Name:</strong> {{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }} &nbsp;&nbsp;|&nbsp;&nbsp;
+            <strong>Gender:</strong> {{ ucfirst($prescription->patient->gender ?? 'Not specified') }} &nbsp;&nbsp;|&nbsp;&nbsp;
+            <strong>Age:</strong> @if($prescription->patient->date_of_birth){{ \Carbon\Carbon::parse($prescription->patient->date_of_birth)->age }} years@else Not specified @endif
         </div>
     </div>
 
