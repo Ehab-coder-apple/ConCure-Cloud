@@ -366,15 +366,15 @@
                                 </td>
                                 <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Dosage</span>
-                                    <div class="detail-value" style="direction: rtl; text-align: center; unicode-bidi: embed; font-family: 'amiri', 'dejavu sans', sans-serif;">{{ $medicine->dosage ?? 'Not specified' }}</div>
+                                    <div class="detail-value" style="direction: rtl; text-align: center; unicode-bidi: embed;">{{ $medicine->dosage ?? 'Not specified' }}</div>
                                 </td>
                                 <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Frequency</span>
-                                    <div class="detail-value" style="direction: rtl; text-align: center; unicode-bidi: embed; font-family: 'amiri', 'dejavu sans', sans-serif;">{{ $medicine->frequency ?? 'Not specified' }}</div>
+                                    <div class="detail-value" style="direction: rtl; text-align: center; unicode-bidi: embed;">{{ $medicine->frequency ?? 'Not specified' }}</div>
                                 </td>
                                 <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Duration</span>
-                                    <div class="detail-value" style="direction: rtl; text-align: center; unicode-bidi: embed; font-family: 'amiri', 'dejavu sans', sans-serif;">{{ $medicine->duration ?? 'Not specified' }}</div>
+                                    <div class="detail-value" style="direction: rtl; text-align: center; unicode-bidi: embed;">{{ $medicine->duration ?? 'Not specified' }}</div>
                                 </td>
                             </tr>
                         </table>
