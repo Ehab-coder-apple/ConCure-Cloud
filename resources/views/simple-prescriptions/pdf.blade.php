@@ -83,9 +83,17 @@
 
         .info-cell {
             display: table-cell;
-            padding: 0 10px 0 0;
+            padding: 0 5px;
             vertical-align: top;
             width: 50%;
+        }
+
+        .info-cell:first-child {
+            padding-left: 0;
+        }
+
+        .info-cell:last-child {
+            padding-right: 0;
         }
 
         .info-label {
@@ -172,8 +180,9 @@
         .medicine-details {
             display: table;
             width: 100%;
-            margin-top: 0;
-            border-collapse: collapse;
+            margin-top: 8px;
+            border-collapse: separate;
+            border-spacing: 5px;
         }
 
         .medicine-detail-row {
@@ -182,17 +191,18 @@
 
         .medicine-detail-cell {
             display: table-cell;
-            padding: 8px;
-            vertical-align: middle;
+            padding: 8px 10px;
+            vertical-align: top;
             width: 33.33%;
             border: 1px solid #dee2e6;
             background: #f8f9fa;
+            border-radius: 3px;
         }
 
         .detail-label {
             font-weight: bold;
             color: #34495e;
-            font-size: 9px;
+            font-size: 8px;
             margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 0.3px;
@@ -205,7 +215,7 @@
             line-height: 1.4;
             font-weight: 600;
             direction: rtl;
-            text-align: right;
+            text-align: center;
         }
 
         .medicine-instructions {
