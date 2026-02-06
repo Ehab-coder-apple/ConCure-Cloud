@@ -89,10 +89,11 @@ class PdfKurdishFontService
                 $text
             );
 
-            // Use utf8Glyphs to convert to presentation forms (connected letters)
-            // Parameters: text, max_chars, hindo (false = don't convert numerals), forcertl (false = don't reverse)
-            // We don't reverse here because the text will be displayed with dir="rtl" in HTML
-            $processedText = $this->arabic->utf8Glyphs($textWithPlaceholders, 1000, false, false);
+            // Use utf8Glyphs to convert to presentation forms (connected letters) AND reverse
+            // Parameters: text, max_chars, hindo (false = don't convert numerals), forcertl (true = reverse for RTL)
+            // mPDF v8+ doesn't respect dir="rtl" for Arabic presentation forms
+            // So we need ArPHP to reverse the string for us
+            $processedText = $this->arabic->utf8Glyphs($textWithPlaceholders, 1000, false, true);
 
             // If processing failed or returned empty, return original text
             if (empty($processedText)) {
