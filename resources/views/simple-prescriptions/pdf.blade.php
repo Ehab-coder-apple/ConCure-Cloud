@@ -300,6 +300,9 @@
                             @if($prescription->clinic->phone ?? false) | @endif Email: {{ $prescription->clinic->email }}
                         @endif
                     </div>
+                    <div style="margin-top: 8px;">
+                        <strong style="font-size: 9px; color: #2c3e50;">Date: {{ $prescription->prescribed_date->format('F d, Y') }}</strong>
+                    </div>
                 </td>
                 <td style="vertical-align: middle; text-align: right; width: 200px; padding: 10px;">
                     <div style="font-size: 9px; color: #2c3e50; line-height: 1.6;">
@@ -311,12 +314,8 @@
                             <span style="font-size: 8px; color: #555;">{{ $prescription->doctor->educational_institution }}</span><br>
                         @endif
                         @if($prescription->doctor->phone)
-                            Phone: {{ $prescription->doctor->phone }}<br>
+                            Phone: {{ $prescription->doctor->phone }}
                         @endif
-                        @if($prescription->doctor->email)
-                            Email: {{ $prescription->doctor->email }}<br>
-                        @endif
-                        <strong>Date: {{ $prescription->prescribed_date->format('F d, Y') }}</strong>
                     </div>
                 </td>
             </tr>
