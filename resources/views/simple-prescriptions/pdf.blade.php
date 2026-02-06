@@ -302,6 +302,18 @@
                         @endif
                     </div>
                 </td>
+                <td style="vertical-align: top; text-align: right; width: 250px; padding: 10px; border: 2px solid #27ae60; border-radius: 8px;">
+                    <div style="font-size: 9px; color: #2c3e50; line-height: 1.6;">
+                        <strong style="font-size: 10px;">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</strong><br>
+                        @if($prescription->doctor->phone)
+                            Phone: {{ $prescription->doctor->phone }}<br>
+                        @endif
+                        @if($prescription->doctor->email)
+                            Email: {{ $prescription->doctor->email }}<br>
+                        @endif
+                        <strong>Date: {{ $prescription->prescribed_date->format('F d, Y') }}</strong>
+                    </div>
+                </td>
             </tr>
         </table>
         <div class="header-divider"></div>
@@ -309,35 +321,18 @@
 
 
 
-    <!-- Patient and Doctor Information -->
-    <table class="info-grid">
-        <tr class="info-row">
-            <td class="info-cell">
-                <div class="info-label">Patient Information</div>
-                <div class="info-value">
-                    <strong>{{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}</strong><br>
-                    Patient ID: {{ $prescription->patient->patient_id }}<br>
-                    Gender: {{ ucfirst($prescription->patient->gender ?? 'Not specified') }}<br>
-                    @if($prescription->patient->phone)
-                        Phone: {{ $prescription->patient->phone }}
-                    @endif
-                </div>
-            </td>
-            <td class="info-cell">
-                <div class="info-label">Doctor Information</div>
-                <div class="info-value">
-                    <strong>Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</strong><br>
-                    @if($prescription->doctor->phone)
-                        Phone: {{ $prescription->doctor->phone }}<br>
-                    @endif
-                    @if($prescription->doctor->email)
-                        Email: {{ $prescription->doctor->email }}<br>
-                    @endif
-                    <strong>Date: {{ $prescription->prescribed_date->format('F d, Y') }}</strong>
-                </div>
-            </td>
-        </tr>
-    </table>
+    <!-- Patient Information -->
+    <div style="margin-bottom: 20px;">
+        <div class="info-label">Patient Information</div>
+        <div class="info-value">
+            <strong>{{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}</strong><br>
+            Patient ID: {{ $prescription->patient->patient_id }}<br>
+            Gender: {{ ucfirst($prescription->patient->gender ?? 'Not specified') }}<br>
+            @if($prescription->patient->phone)
+                Phone: {{ $prescription->patient->phone }}
+            @endif
+        </div>
+    </div>
 
     <!-- Diagnosis -->
     @if($prescription->diagnosis)
