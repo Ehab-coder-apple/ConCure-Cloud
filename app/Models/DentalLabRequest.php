@@ -203,7 +203,7 @@ class DentalLabRequest extends Model
      */
     public function getWorkTypeDisplayAttribute(): string
     {
-        return self::WORK_TYPES[$this->work_type] ?? $this->work_type;
+        return self::WORK_TYPES[$this->work_type] ?? $this->work_type ?? '';
     }
 
     /**
@@ -211,7 +211,7 @@ class DentalLabRequest extends Model
      */
     public function getMaterialDisplayAttribute(): string
     {
-        return self::MATERIALS[$this->material] ?? $this->material;
+        return self::MATERIALS[$this->material] ?? $this->material ?? '';
     }
 
     /**
@@ -219,7 +219,7 @@ class DentalLabRequest extends Model
      */
     public function getStatusDisplayAttribute(): string
     {
-        return self::STATUSES[$this->status] ?? $this->status;
+        return self::STATUSES[$this->status] ?? $this->status ?? '';
     }
 
     /**
@@ -227,7 +227,7 @@ class DentalLabRequest extends Model
      */
     public function getPriorityDisplayAttribute(): string
     {
-        return self::PRIORITIES[$this->priority] ?? $this->priority;
+        return self::PRIORITIES[$this->priority] ?? $this->priority ?? '';
     }
 
     /**
