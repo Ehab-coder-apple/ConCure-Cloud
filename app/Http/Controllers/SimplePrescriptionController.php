@@ -315,20 +315,8 @@ class SimplePrescriptionController extends Controller
             abort(403, 'You can only generate PDF for your own prescriptions.');
         }
 
-        // Use mPDF instead of DomPDF for proper Arabic support
-        // Process Arabic text with ArPHP for proper glyph shaping
-        $fontService = new PdfKurdishFontService();
-
-        // Process Arabic text fields
-        foreach ($prescription->medicines as $medicine) {
-            $medicine->dosage = $fontService->processKurdishText($medicine->dosage ?? '');
-            $medicine->frequency = $fontService->processKurdishText($medicine->frequency ?? '');
-            $medicine->duration = $fontService->processKurdishText($medicine->duration ?? '');
-            $medicine->instructions = $fontService->processKurdishText($medicine->instructions ?? '');
-        }
-
-        $prescription->notes = $fontService->processKurdishText($prescription->notes ?? '');
-        $prescription->diagnosis = $fontService->processKurdishText($prescription->diagnosis ?? '');
+        // Use mPDF with OTL (OpenType Layout) for proper Arabic support
+        // NO ArPHP preprocessing needed - mPDF with OTL handles Arabic natively
 
         // Render the view to HTML
         $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
@@ -346,9 +334,13 @@ class SimplePrescriptionController extends Controller
         $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
         $fontData = $defaultFontConfig['fontdata'];
 
-        // Add Amiri font for Arabic
+        // Add Amiri font for Arabic with OTL (OpenType Layout) support
+        // useOTL 0xFF enables OTL for all scripts (required for Arabic letter connection)
+        // useKashida 75 enables kashida for Arabic text justification
         $fontData['amiri'] = [
             'R' => 'amiri-regular.ttf',
+            'useOTL' => 0xFF,
+            'useKashida' => 75,
         ];
 
         $mpdf = new \Mpdf\Mpdf([

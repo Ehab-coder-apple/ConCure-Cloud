@@ -364,15 +364,15 @@
                                 </td>
                                 <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Dosage</span>
-                                    <div class="detail-value" style="text-align: center;">{{ $medicine->dosage ?? 'Not specified' }}</div>
+                                    <div class="detail-value" dir="rtl" lang="ar" style="text-align: center;">{{ $medicine->dosage ?? 'Not specified' }}</div>
                                 </td>
                                 <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Frequency</span>
-                                    <div class="detail-value" style="text-align: center;">{{ $medicine->frequency ?? 'Not specified' }}</div>
+                                    <div class="detail-value" dir="rtl" lang="ar" style="text-align: center;">{{ $medicine->frequency ?? 'Not specified' }}</div>
                                 </td>
                                 <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
                                     <span class="detail-label">Duration</span>
-                                    <div class="detail-value" style="text-align: center;">{{ $medicine->duration ?? 'Not specified' }}</div>
+                                    <div class="detail-value" dir="rtl" lang="ar" style="text-align: center;">{{ $medicine->duration ?? 'Not specified' }}</div>
                                 </td>
                             </tr>
                         </table>
