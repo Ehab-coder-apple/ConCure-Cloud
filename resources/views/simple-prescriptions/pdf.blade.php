@@ -359,33 +359,22 @@
             <div class="medicines-list">
                 @foreach($prescription->medicines as $index => $medicine)
                     <div class="medicine-item">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr>
-                                <td style="width: 25%; vertical-align: top; padding: 8px;">
-                                    <div class="medicine-name">
-                                        <span class="medicine-number">{{ $index + 1 }}</span>
-                                        {{ $medicine->medicine_name }}
-                                    </div>
-                                </td>
-                                <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
-                                    <span class="detail-label">Dosage</span>
-                                    <div class="detail-value" dir="rtl" lang="ar" style="text-align: center;">{{ $medicine->dosage ?? 'Not specified' }}</div>
-                                </td>
-                                <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
-                                    <span class="detail-label">Frequency</span>
-                                    <div class="detail-value" dir="rtl" lang="ar" style="text-align: center;">{{ $medicine->frequency ?? 'Not specified' }}</div>
-                                </td>
-                                <td style="width: 25%; vertical-align: top; padding: 8px; border: 1px solid #dee2e6; background: #f8f9fa;">
-                                    <span class="detail-label">Duration</span>
-                                    <div class="detail-value" dir="rtl" lang="ar" style="text-align: center;">{{ $medicine->duration ?? 'Not specified' }}</div>
-                                </td>
-                            </tr>
-                        </table>
-                        @if($medicine->instructions)
-                            <div class="medicine-instructions">
-                                <span class="instructions-label">Instructions:</span> <span class="instructions-text">{{ $medicine->instructions }}</span>
+                        <div style="padding: 10px; border-bottom: 1px solid #dee2e6;">
+                            <div class="medicine-name" style="margin-bottom: 8px;">
+                                <span class="medicine-number">{{ $index + 1 }}</span>
+                                {{ $medicine->medicine_name }}
                             </div>
-                        @endif
+                            <div style="font-size: 10px; color: #555; line-height: 1.6; padding-left: 25px;">
+                                <strong>Dose:</strong> {{ $medicine->dosage ?? 'Not specified' }} | 
+                                <strong>Frequency:</strong> {{ $medicine->frequency ?? 'Not specified' }} | 
+                                <strong>Duration:</strong> {{ $medicine->duration ?? 'Not specified' }}
+                            </div>
+                            @if($medicine->instructions)
+                                <div class="medicine-instructions">
+                                    <span class="instructions-label">Instructions:</span> <span class="instructions-text">{{ $medicine->instructions }}</span>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 @endforeach
             </div>
