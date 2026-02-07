@@ -87,12 +87,13 @@
         .info-label {
             font-weight: bold;
             color: #ffffff;
-            background: #34495e;
-            padding: 6px 10px;
-            font-size: 10px;
+            background-color: #34495e;
+            padding: 8px 12px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 0;
+            border: 1px solid #2c3e50;
         }
 
         .info-value {
@@ -113,11 +114,12 @@
             font-size: 12px;
             font-weight: bold;
             color: #ffffff;
-            background: #34495e;
+            background-color: #34495e;
             padding: 8px 12px;
             margin-bottom: 12px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            border: 1px solid #2c3e50;
         }
 
         .medicines-list {
