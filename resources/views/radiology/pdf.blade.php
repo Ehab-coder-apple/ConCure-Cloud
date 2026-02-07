@@ -319,15 +319,19 @@
 <body>
     <div class="prescription-document">
         <!-- Header Section - Table-based (Matching Prescription) -->
+        @php
+            $clinicLogo = \App\Helpers\ClinicHelper::getClinicLogoPdfPath($radiologyRequest->doctor->clinic_id);
+        @endphp
+
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">
             <tr>
-                <td style="vertical-align: middle; width: 100px;">
-                    @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->logo)
-                        <img src="{{ public_path($radiologyRequest->doctor->clinic->logo) }}" 
-                             alt="Clinic Logo" 
+                @if($clinicLogo && file_exists($clinicLogo))
+                    <td style="width: 100px; vertical-align: middle; text-align: center;">
+                        <img src="{{ $clinicLogo }}"
+                             alt="Clinic Logo"
                              class="clinic-logo">
-                    @endif
-                </td>
+                    </td>
+                @endif
                 <td style="vertical-align: middle; text-align: center;">
                     <div class="clinic-name">
                         {{ $radiologyRequest->doctor->clinic->name ?? 'Medical Clinic' }}
