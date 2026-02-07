@@ -319,7 +319,7 @@
         <div class="header">
             <div class="header-left">
                 @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->logo)
-                    <img src="{{ public_path('storage/' . $radiologyRequest->doctor->clinic->logo) }}" alt="Clinic Logo" class="logo">
+                    <img src="{{ public_path($radiologyRequest->doctor->clinic->logo) }}" alt="Clinic Logo" class="logo">
                 @endif
             </div>
             <div class="header-center">
@@ -391,45 +391,32 @@
         </div>
 
         <!-- Clinical Information -->
-        <div class="two-column">
-            <div class="column">
-                <div class="section">
-                    <div class="section-title">CLINICAL INFORMATION</div>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <strong>Priority:</strong> {{ ucfirst($radiologyRequest->priority) }}
-                            @if($radiologyRequest->priority === 'urgent')
-                                <span class="badge badge-urgent">URGENT</span>
-                            @elseif($radiologyRequest->priority === 'stat')
-                                <span class="badge badge-urgent">STAT</span>
-                            @else
-                                <span class="badge badge-normal">NORMAL</span>
-                            @endif
-                        </div>
-                        @if($radiologyRequest->suspected_diagnosis)
-                            <div class="info-item">
-                                <strong>Diagnosis:</strong> {{ $radiologyRequest->suspected_diagnosis }}
-                            </div>
-                        @endif
-                    </div>
+        <div class="section">
+            <div class="section-title">CLINICAL INFORMATION</div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Priority:</strong> {{ ucfirst($radiologyRequest->priority) }}
+                    @if($radiologyRequest->priority === 'urgent')
+                        <span class="badge badge-urgent">URGENT</span>
+                    @elseif($radiologyRequest->priority === 'stat')
+                        <span class="badge badge-urgent">STAT</span>
+                    @else
+                        <span class="badge badge-normal">NORMAL</span>
+                    @endif
                 </div>
-            </div>
-            <div class="column">
-                @if($radiologyRequest->clinical_notes || $radiologyRequest->clinical_history)
-                    <div class="section">
-                        <div class="section-title">CLINICAL NOTES</div>
-                        @if($radiologyRequest->clinical_notes)
-                            <div class="clinical-box">
-                                <strong>Notes:</strong>
-                                {{ $radiologyRequest->clinical_notes }}
-                            </div>
-                        @endif
-                        @if($radiologyRequest->clinical_history)
-                            <div class="clinical-box">
-                                <strong>History:</strong>
-                                {{ $radiologyRequest->clinical_history }}
-                            </div>
-                        @endif
+                @if($radiologyRequest->suspected_diagnosis)
+                    <div class="info-item">
+                        <strong>Diagnosis:</strong> {{ $radiologyRequest->suspected_diagnosis }}
+                    </div>
+                @endif
+                @if($radiologyRequest->clinical_notes)
+                    <div class="info-item">
+                        <strong>Clinical Notes:</strong> {{ $radiologyRequest->clinical_notes }}
+                    </div>
+                @endif
+                @if($radiologyRequest->clinical_history)
+                    <div class="info-item">
+                        <strong>Clinical History:</strong> {{ $radiologyRequest->clinical_history }}
                     </div>
                 @endif
             </div>
