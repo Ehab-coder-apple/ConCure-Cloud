@@ -305,16 +305,16 @@
                     </div>
                 </td>
                 <td style="vertical-align: middle; text-align: right; width: 200px; padding: 10px;">
-                    <div style="font-size: 9px; color: #2c3e50; line-height: 1.6;">
-                        <strong style="font-size: 10px;">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</strong><br>
+                    <div style="color: #2c3e50; line-height: 1.7;">
+                        <strong style="font-size: 11px; display: block; margin-bottom: 3px;">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</strong>
                         @if($prescription->doctor->scientific_degree)
-                            <span style="font-size: 8px; color: #555;">{{ $prescription->doctor->scientific_degree }}</span><br>
+                            <span style="font-size: 9px; color: #555; display: block; margin-bottom: 2px;">{{ $prescription->doctor->scientific_degree }}</span>
                         @endif
                         @if($prescription->doctor->educational_institution)
-                            <span style="font-size: 8px; color: #555;">{{ $prescription->doctor->educational_institution }}</span><br>
+                            <span style="font-size: 8px; color: #666; display: block; margin-bottom: 2px;">{{ $prescription->doctor->educational_institution }}</span>
                         @endif
                         @if($prescription->doctor->phone)
-                            Phone: {{ $prescription->doctor->phone }}
+                            <span style="font-size: 8px; color: #555; display: block;">Phone: {{ $prescription->doctor->phone }}</span>
                         @endif
                     </div>
                 </td>
@@ -407,12 +407,12 @@
     <!-- Doctor Signature -->
     <div class="doctor-signature">
         <div class="signature-line"></div>
-        <div class="signature-name">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</div>
+        <div class="signature-name" style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</div>
         @if($prescription->doctor->scientific_degree)
-            <div style="font-size: 9px; color: #555; margin-top: 2px;">{{ $prescription->doctor->scientific_degree }}</div>
+            <div style="font-size: 10px; color: #555; margin-top: 3px; margin-bottom: 2px;">{{ $prescription->doctor->scientific_degree }}</div>
         @endif
         @if($prescription->doctor->educational_institution)
-            <div style="font-size: 8px; color: #777; margin-top: 1px;">{{ $prescription->doctor->educational_institution }}</div>
+            <div style="font-size: 9px; color: #777; margin-top: 2px; margin-bottom: 3px;">{{ $prescription->doctor->educational_institution }}</div>
         @endif
         <div class="signature-note">Digital Signature</div>
     </div>
