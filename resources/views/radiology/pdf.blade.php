@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ __('Radiology Request') }} - {{ $radiologyRequest->request_number }}</title>
+    <title>Radiology Request - {{ $radiologyRequest->request_number }}</title>
     <style>
         * {
             margin: 0;
@@ -13,443 +13,520 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 11px;
-            line-height: 1.3;
+            font-size: 10px;
+            line-height: 1.4;
             color: #2c3e50;
-            margin: 0;
-            padding: 15px;
             background: white;
         }
 
+        .prescription-document {
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 15mm;
+            background: white;
+        }
+
+        /* Header Styles - Matching Prescription */
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 12px;
+            display: table;
+            width: 100%;
             margin-bottom: 15px;
+            border-bottom: 2px solid #34495e;
+            padding-bottom: 10px;
         }
 
-        .header-left h1 {
+        .header-left {
+            display: table-cell;
+            width: 25%;
+            vertical-align: middle;
+        }
+
+        .logo {
+            max-width: 80px;
+            max-height: 80px;
+        }
+
+        .header-center {
+            display: table-cell;
+            width: 50%;
+            text-align: center;
+            vertical-align: middle;
+            padding: 0 15px;
+        }
+
+        .clinic-name {
+            font-size: 16px;
+            font-weight: bold;
             color: #2c3e50;
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .header-left .subtitle {
-            color: #7f8c8d;
-            font-size: 10px;
-            font-weight: 500;
+        .clinic-info {
+            font-size: 8px;
+            color: #555;
+            line-height: 1.5;
         }
 
         .header-right {
+            display: table-cell;
+            width: 25%;
             text-align: right;
-            font-size: 10px;
+            vertical-align: middle;
         }
 
-        .header-right .request-number {
-            font-size: 14px;
+        .doctor-info div {
+            font-size: 12px;
             font-weight: bold;
-            color: #e74c3c;
+            margin-bottom: 4px;
+        }
+
+        .doctor-info div:nth-child(2) {
+            font-size: 10px;
+            margin-top: 3px;
             margin-bottom: 2px;
         }
 
-        .header-right .date {
-            color: #7f8c8d;
+        .doctor-info div:nth-child(3) {
+            font-size: 9px;
+            margin-top: 2px;
+            margin-bottom: 3px;
         }
 
+        .doctor-info div:nth-child(4) {
+            font-size: 9px;
+        }
+
+        /* Document Title */
+        .document-title {
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .document-title h2 {
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 3px;
+        }
+
+        .document-title .request-number {
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 3px;
+        }
+
+        .document-title .date {
+            font-size: 9px;
+            margin-top: 2px;
+        }
+
+        /* Section Styles - Matching Prescription */
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #2c3e50;
+            background-color: #e8eef3;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 2px solid #34495e;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        /* Patient Information */
+        .info-value {
+            color: #2c3e50;
+            font-size: 10px;
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border: 1px solid #dee2e6;
+        }
+
+        /* Two Column Layout */
         .two-column {
-            display: flex;
-            gap: 15px;
+            display: table;
+            width: 100%;
             margin-bottom: 12px;
         }
 
         .column {
-            flex: 1;
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding: 0 5px;
         }
 
-        .section {
-            border: 1px solid #ecf0f1;
-            border-radius: 4px;
-            margin-bottom: 12px;
-            overflow: hidden;
+        .column:first-child {
+            padding-left: 0;
         }
 
-        .section-header {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            padding: 6px 12px;
-            font-weight: 600;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .column:last-child {
+            padding-right: 0;
         }
 
-        .section-content {
-            padding: 10px 12px;
-        }
-
+        /* Info Grid */
         .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px 15px;
-            margin-bottom: 8px;
+            background: #f8f9fa;
+            padding: 10px 12px;
+            border: 1px solid #dee2e6;
         }
 
         .info-item {
-            display: flex;
-            align-items: baseline;
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: #34495e;
-            min-width: 70px;
+            margin-bottom: 6px;
             font-size: 10px;
         }
 
-        .info-value {
-            color: #2c3e50;
-            flex: 1;
+        .info-item:last-child {
+            margin-bottom: 0;
         }
 
-        .priority-badge, .status-badge {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 9px;
+        .info-item strong {
+            color: #34495e;
             font-weight: 600;
-            text-transform: uppercase;
+            min-width: 80px;
+            display: inline-block;
         }
 
-        .priority-normal { background: #95a5a6; color: white; }
-        .priority-urgent { background: #f39c12; color: white; }
-        .priority-stat { background: #e74c3c; color: white; }
+        /* Clinical Notes Box */
+        .clinical-box {
+            background: #f8f9fa;
+            border-left: 3px solid #3498db;
+            padding: 10px 12px;
+            margin: 8px 0;
+            font-size: 10px;
+            line-height: 1.5;
+        }
 
-        .test-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+        .clinical-box strong {
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Tests List */
+        .test-list {
+            margin-bottom: 0;
         }
 
         .test-item {
-            border: 1px solid #ecf0f1;
-            border-radius: 3px;
-            padding: 8px;
-            background: #fafbfc;
-            break-inside: avoid;
+            border: 1px solid #dee2e6;
+            background: #ffffff;
+            margin-bottom: 6px;
+            padding: 6px 10px;
+            page-break-inside: avoid;
         }
 
         .test-name {
-            font-weight: 600;
+            font-weight: bold;
             color: #2c3e50;
             font-size: 11px;
-            margin-bottom: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 3px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #ecf0f1;
         }
 
-        .test-badges {
-            display: flex;
-            gap: 3px;
+        .test-number {
+            display: inline-block;
+            background: #34495e;
+            color: #ffffff;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            border-radius: 50%;
+            font-size: 9px;
+            font-weight: bold;
+            margin-right: 6px;
+            vertical-align: middle;
         }
-
-        .test-badge {
-            padding: 1px 4px;
-            border-radius: 2px;
-            font-size: 8px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge-urgent { background: #e74c3c; color: white; }
-        .badge-contrast { background: #f39c12; color: white; }
 
         .test-details {
             font-size: 9px;
-            color: #7f8c8d;
-            line-height: 1.2;
+            color: #555;
+            line-height: 1.4;
+            padding-left: 26px;
         }
 
         .test-details strong {
             color: #34495e;
         }
 
-        .clinical-text {
-            background: #f8f9fa;
-            border-left: 3px solid #3498db;
-            padding: 8px 10px;
-            margin: 6px 0;
-            font-size: 10px;
-            line-height: 1.4;
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 5px;
         }
 
+        .badge-urgent {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .badge-contrast {
+            background: #f39c12;
+            color: white;
+        }
+
+        .badge-normal {
+            background: #95a5a6;
+            color: white;
+        }
+
+        /* Footer */
         .footer {
             margin-top: 20px;
             text-align: center;
-            font-size: 9px;
+            font-size: 8px;
             color: #95a5a6;
             border-top: 1px solid #ecf0f1;
-            padding-top: 10px;
+            padding-top: 8px;
         }
 
-        .urgent-text {
-            color: #e74c3c;
-            font-weight: 600;
+        @page {
+            margin: 10mm;
+            size: A4;
         }
 
         @media print {
             body {
                 margin: 0;
-                padding: 10px;
-                font-size: 10px;
+                padding: 0;
             }
-            .section {
-                break-inside: avoid;
-                margin-bottom: 8px;
+            .prescription-document {
+                padding: 10mm;
             }
-            .test-item {
-                break-inside: avoid;
-            }
-            .header {
-                margin-bottom: 10px;
-                padding-bottom: 8px;
-            }
-        }
-
-        @page {
-            margin: 0.5in;
-            size: A4;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <div class="header-left">
-            <h1>{{ __('RADIOLOGY REQUEST') }}</h1>
-            <div class="subtitle">{{ __('Imaging & Diagnostic Services') }}</div>
+    <div class="prescription-document">
+        <!-- Header Section - Matching Prescription -->
+        <div class="header">
+            <div class="header-left">
+                @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->logo)
+                    <img src="{{ public_path('storage/' . $radiologyRequest->doctor->clinic->logo) }}" alt="Clinic Logo" class="logo">
+                @endif
+            </div>
+            <div class="header-center">
+                <div class="clinic-name">
+                    {{ $radiologyRequest->doctor->clinic->name ?? 'Medical Clinic' }}
+                </div>
+                <div class="clinic-info">
+                    @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->address)
+                        {{ $radiologyRequest->doctor->clinic->address }}<br>
+                    @endif
+                    @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->phone)
+                        Phone: {{ $radiologyRequest->doctor->clinic->phone }}
+                    @endif
+                    @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->email)
+                        &nbsp;&nbsp;|&nbsp;&nbsp;Email: {{ $radiologyRequest->doctor->clinic->email }}
+                    @endif
+                    <br>
+                    <strong>Date:</strong> {{ $radiologyRequest->requested_date->format('F d, Y') }}
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="doctor-info">
+                    <div>Dr. {{ $radiologyRequest->doctor->first_name }} {{ $radiologyRequest->doctor->last_name }}</div>
+                    @if($radiologyRequest->doctor->scientific_degree)
+                        <div style="font-size: 10px; color: #555; margin-top: 3px; margin-bottom: 2px;">{{ $radiologyRequest->doctor->scientific_degree }}</div>
+                    @endif
+                    @if($radiologyRequest->doctor->educational_institution)
+                        <div style="font-size: 9px; color: #777; margin-top: 2px; margin-bottom: 3px;">{{ $radiologyRequest->doctor->educational_institution }}</div>
+                    @endif
+                    @if($radiologyRequest->doctor->phone)
+                        <div style="font-size: 9px; color: #555;">Phone: {{ $radiologyRequest->doctor->phone }}</div>
+                    @endif
+                </div>
+            </div>
         </div>
-        <div class="header-right">
+
+        <!-- Document Title -->
+        <div class="document-title">
+            <h2>RADIOLOGY REQUEST</h2>
             <div class="request-number">{{ $radiologyRequest->request_number }}</div>
-            <div class="date">{{ $radiologyRequest->requested_date->format('M d, Y') }}</div>
             @if($radiologyRequest->due_date)
-            <div class="date">{{ __('Due') }}: {{ $radiologyRequest->due_date->format('M d, Y') }}</div>
+                <div class="date">Due Date: {{ $radiologyRequest->due_date->format('F d, Y') }}</div>
             @endif
         </div>
-    </div>
 
-    <!-- Patient & Clinical Information -->
-    <div class="two-column">
-        <div class="column">
-            <div class="section">
-                <div class="section-header">{{ __('Patient Information') }}</div>
-                <div class="section-content">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">{{ __('Name') }}:</span>
-                            <span class="info-value">{{ $radiologyRequest->patient->full_name }}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">{{ __('ID') }}:</span>
-                            <span class="info-value">{{ $radiologyRequest->patient->patient_id }}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">{{ __('Age') }}:</span>
-                            <span class="info-value">{{ $radiologyRequest->patient->age }}y</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">{{ __('Gender') }}:</span>
-                            <span class="info-value">{{ ucfirst($radiologyRequest->patient->gender) }}</span>
-                        </div>
-                        @if($radiologyRequest->patient->phone)
-                        <div class="info-item">
-                            <span class="info-label">{{ __('Phone') }}:</span>
-                            <span class="info-value">{{ $radiologyRequest->patient->phone }}</span>
-                        </div>
-                        @endif
-                        @if($radiologyRequest->patient->email)
-                        <div class="info-item">
-                            <span class="info-label">{{ __('Email') }}:</span>
-                            <span class="info-value">{{ $radiologyRequest->patient->email }}</span>
-                        </div>
-                        @endif
-                    </div>
-                    @if($radiologyRequest->patient->allergies)
-                    <div class="info-item">
-                        <span class="info-label">{{ __('Allergies') }}:</span>
-                        <span class="info-value urgent-text">⚠️ {{ $radiologyRequest->patient->allergies }}</span>
-                    </div>
-                    @endif
-                </div>
+        <!-- Patient Information -->
+        <div style="margin-bottom: 15px;">
+            <div class="section-title">PATIENT INFORMATION</div>
+            <div class="info-value" style="padding: 12px 15px;">
+                <strong>Name:</strong> {{ $radiologyRequest->patient->first_name }} {{ $radiologyRequest->patient->last_name }}
+                &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;
+                <strong>Gender:</strong> {{ ucfirst($radiologyRequest->patient->gender ?? 'Not specified') }}
+                &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;
+                <strong>Age:</strong>
+                @if($radiologyRequest->patient->date_of_birth)
+                    {{ \Carbon\Carbon::parse($radiologyRequest->patient->date_of_birth)->age }} years
+                @else
+                    Not specified
+                @endif
+                &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;
+                <strong>ID:</strong> {{ $radiologyRequest->patient->patient_id ?? 'N/A' }}
+                @if($radiologyRequest->patient->phone)
+                    <br><strong>Phone:</strong> {{ $radiologyRequest->patient->phone }}
+                @endif
+                @if($radiologyRequest->patient->allergies)
+                    <br><strong style="color: #e74c3c;">⚠️ Allergies:</strong> <span style="color: #e74c3c;">{{ $radiologyRequest->patient->allergies }}</span>
+                @endif
             </div>
         </div>
 
-        <div class="column">
-            <div class="section">
-                <div class="section-header">{{ __('Clinical Information') }}</div>
-                <div class="section-content">
+        <!-- Clinical Information -->
+        <div class="two-column">
+            <div class="column">
+                <div class="section">
+                    <div class="section-title">CLINICAL INFORMATION</div>
                     <div class="info-grid">
                         <div class="info-item">
-                            <span class="info-label">{{ __('Doctor') }}:</span>
-                            <span class="info-value">{{ $radiologyRequest->doctor->full_name }}</span>
+                            <strong>Priority:</strong> {{ ucfirst($radiologyRequest->priority) }}
+                            @if($radiologyRequest->priority === 'urgent')
+                                <span class="badge badge-urgent">URGENT</span>
+                            @elseif($radiologyRequest->priority === 'stat')
+                                <span class="badge badge-urgent">STAT</span>
+                            @else
+                                <span class="badge badge-normal">NORMAL</span>
+                            @endif
                         </div>
-                        <div class="info-item">
-                            <span class="info-label">{{ __('Priority') }}:</span>
-                            <span class="info-value">{{ $radiologyRequest->priority_display }}</span>
-                        </div>
+                        @if($radiologyRequest->suspected_diagnosis)
+                            <div class="info-item">
+                                <strong>Diagnosis:</strong> {{ $radiologyRequest->suspected_diagnosis }}
+                            </div>
+                        @endif
                     </div>
-
-                    @if($radiologyRequest->suspected_diagnosis)
-                    <div class="info-item" style="margin-bottom: 6px;">
-                        <span class="info-label">{{ __('Diagnosis') }}:</span>
-                        <span class="info-value">{{ $radiologyRequest->suspected_diagnosis }}</span>
-                    </div>
-                    @endif
-
-                    @if($radiologyRequest->clinical_notes)
-                    <div class="clinical-text">
-                        <strong>{{ __('Clinical Notes') }}:</strong><br>
-                        {{ $radiologyRequest->clinical_notes }}
-                    </div>
-                    @endif
-
-                    @if($radiologyRequest->clinical_history)
-                    <div class="clinical-text">
-                        <strong>{{ __('Clinical History') }}:</strong><br>
-                        {{ $radiologyRequest->clinical_history }}
-                    </div>
-                    @endif
                 </div>
             </div>
+            <div class="column">
+                @if($radiologyRequest->clinical_notes || $radiologyRequest->clinical_history)
+                    <div class="section">
+                        <div class="section-title">CLINICAL NOTES</div>
+                        @if($radiologyRequest->clinical_notes)
+                            <div class="clinical-box">
+                                <strong>Notes:</strong>
+                                {{ $radiologyRequest->clinical_notes }}
+                            </div>
+                        @endif
+                        @if($radiologyRequest->clinical_history)
+                            <div class="clinical-box">
+                                <strong>History:</strong>
+                                {{ $radiologyRequest->clinical_history }}
+                            </div>
+                        @endif
+                    </div>
+                @endif
+            </div>
         </div>
-    </div>
 
-
-
-    <!-- Tests Required -->
-    <div class="section">
-        <div class="section-header">{{ __('Tests Required') }} ({{ $radiologyRequest->tests->count() }} {{ $radiologyRequest->tests->count() === 1 ? 'test' : 'tests' }})</div>
-        <div class="section-content">
-            <div class="test-grid">
+        <!-- Tests Required -->
+        <div class="section">
+            <div class="section-title">TESTS REQUIRED ({{ $radiologyRequest->tests->count() }} {{ $radiologyRequest->tests->count() === 1 ? 'Test' : 'Tests' }})</div>
+            <div class="test-list">
                 @foreach($radiologyRequest->tests as $index => $test)
-                <div class="test-item">
-                    <div class="test-name">
-                        <span>{{ $index + 1 }}. {{ $test->test_name_display }}</span>
-                        <div class="test-badges">
+                    <div class="test-item">
+                        <div class="test-name">
+                            <span class="test-number">{{ $index + 1 }}</span>
+                            {{ $test->test_name_display ?? $test->test_name }}
                             @if($test->urgent)
-                            <span class="test-badge badge-urgent">{{ __('URGENT') }}</span>
+                                <span class="badge badge-urgent">URGENT</span>
                             @endif
                             @if($test->with_contrast)
-                            <span class="test-badge badge-contrast">{{ __('CONTRAST') }}</span>
+                                <span class="badge badge-contrast">WITH CONTRAST</span>
+                            @endif
+                        </div>
+                        <div class="test-details">
+                            @if($test->test_category)
+                                <strong>Category:</strong> {{ ucwords(str_replace('_', ' ', $test->test_category)) }}
+                            @endif
+                            @if($test->radiologyTest && $test->radiologyTest->estimated_duration_minutes)
+                                &nbsp;&nbsp;|&nbsp;&nbsp;<strong>Duration:</strong> {{ $test->radiologyTest->estimated_duration_minutes }} min
+                            @endif
+                            @if($test->clinical_indication)
+                                <br><strong>Indication:</strong> {{ $test->clinical_indication }}
+                            @endif
+                            @if($test->instructions)
+                                <br><strong>Instructions:</strong> {{ $test->instructions }}
+                            @endif
+                            @if($test->special_requirements)
+                                <br><strong>Requirements:</strong> {{ $test->special_requirements }}
+                            @endif
+                            @if($test->radiologyTest && $test->radiologyTest->preparation_instructions)
+                                <br><strong>Preparation:</strong> {{ $test->radiologyTest->preparation_instructions }}
                             @endif
                         </div>
                     </div>
-
-                    @if($test->radiologyTest)
-                    <div class="test-details">
-                        <strong>{{ __('Category') }}:</strong> {{ ucwords(str_replace('_', ' ', $test->test_category)) }}
-                        @if($test->radiologyTest->estimated_duration_minutes)
-                        • <strong>{{ __('Duration') }}:</strong> {{ $test->estimated_duration }}
-                        @endif
-                    </div>
-                    @endif
-
-                    @if($test->clinical_indication)
-                    <div class="test-details">
-                        <strong>{{ __('Indication') }}:</strong> {{ $test->clinical_indication }}
-                    </div>
-                    @endif
-
-                    @if($test->instructions)
-                    <div class="test-details">
-                        <strong>{{ __('Instructions') }}:</strong> {{ $test->instructions }}
-                    </div>
-                    @endif
-
-                    @if($test->special_requirements)
-                    <div class="test-details">
-                        <strong>{{ __('Requirements') }}:</strong> {{ $test->special_requirements }}
-                    </div>
-                    @endif
-
-                    @if($test->radiologyTest && $test->radiologyTest->preparation_instructions)
-                    <div class="test-details">
-                        <strong>{{ __('Preparation') }}:</strong> {{ $test->radiologyTest->preparation_instructions }}
-                    </div>
-                    @endif
-                </div>
                 @endforeach
             </div>
         </div>
-    </div>
 
-    <!-- Bottom Section -->
-    @if($radiologyRequest->radiology_center_name || $radiologyRequest->radiology_center_phone || $radiologyRequest->radiology_center_email || $radiologyRequest->notes)
-    <div class="two-column">
-        @if($radiologyRequest->radiology_center_name || $radiologyRequest->radiology_center_phone || $radiologyRequest->radiology_center_email)
-        <div class="column">
-            <div class="section">
-                <div class="section-header">{{ __('Radiology Center') }}</div>
-                <div class="section-content">
-                    <div class="info-grid">
-                        @if($radiologyRequest->radiology_center_name)
-                        <div class="info-item">
-                            <span class="info-label">{{ __('Name') }}:</span>
-                            <span class="info-value">{{ $radiologyRequest->radiology_center_name }}</span>
+        <!-- Radiology Center & Additional Notes -->
+        @if($radiologyRequest->radiology_center_name || $radiologyRequest->notes)
+            <div class="two-column">
+                @if($radiologyRequest->radiology_center_name)
+                    <div class="column">
+                        <div class="section">
+                            <div class="section-title">RADIOLOGY CENTER</div>
+                            <div class="info-grid">
+                                @if($radiologyRequest->radiology_center_name)
+                                    <div class="info-item">
+                                        <strong>Name:</strong> {{ $radiologyRequest->radiology_center_name }}
+                                    </div>
+                                @endif
+                                @if($radiologyRequest->radiology_center_phone)
+                                    <div class="info-item">
+                                        <strong>Phone:</strong> {{ $radiologyRequest->radiology_center_phone }}
+                                    </div>
+                                @endif
+                                @if($radiologyRequest->radiology_center_email)
+                                    <div class="info-item">
+                                        <strong>Email:</strong> {{ $radiologyRequest->radiology_center_email }}
+                                    </div>
+                                @endif
+                                @if($radiologyRequest->radiology_center_address)
+                                    <div class="info-item">
+                                        <strong>Address:</strong> {{ $radiologyRequest->radiology_center_address }}
+                                    </div>
+                                @endif
+                            </div>
                         </div>
-                        @endif
-                        @if($radiologyRequest->radiology_center_phone)
-                        <div class="info-item">
-                            <span class="info-label">{{ __('Phone') }}:</span>
-                            <span class="info-value">{{ $radiologyRequest->radiology_center_phone }}</span>
-                        </div>
-                        @endif
-                        @if($radiologyRequest->radiology_center_whatsapp)
-                        <div class="info-item">
-                            <span class="info-label">{{ __('WhatsApp') }}:</span>
-                            <span class="info-value">{{ $radiologyRequest->radiology_center_whatsapp }}</span>
-                        </div>
-                        @endif
-                        @if($radiologyRequest->radiology_center_email)
-                        <div class="info-item">
-                            <span class="info-label">{{ __('Email') }}:</span>
-                            <span class="info-value">{{ $radiologyRequest->radiology_center_email }}</span>
-                        </div>
-                        @endif
                     </div>
-                    @if($radiologyRequest->radiology_center_address)
-                    <div class="info-item">
-                        <span class="info-label">{{ __('Address') }}:</span>
-                        <span class="info-value">{{ $radiologyRequest->radiology_center_address }}</span>
+                @endif
+
+                @if($radiologyRequest->notes)
+                    <div class="column">
+                        <div class="section">
+                            <div class="section-title">ADDITIONAL NOTES</div>
+                            <div class="clinical-box">
+                                {{ $radiologyRequest->notes }}
+                            </div>
+                        </div>
                     </div>
-                    @endif
-                </div>
+                @endif
             </div>
-        </div>
         @endif
 
-        @if($radiologyRequest->notes)
-        <div class="column">
-            <div class="section">
-                <div class="section-header">{{ __('Additional Notes') }}</div>
-                <div class="section-content">
-                    <div class="clinical-text">
-                        {{ $radiologyRequest->notes }}
-                    </div>
-                </div>
-            </div>
+        <!-- Footer -->
+        <div class="footer">
+            Generated by ConCure Clinic Management System on {{ now()->format('F d, Y 	 g:i A') }}<br>
+            This is a computer-generated document and is valid without physical signature.
         </div>
-        @endif
-    </div>
-    @endif
-
-    <!-- Footer -->
-    <div class="footer">
-        <div>{{ __('Generated by ConCure Clinic Management System') }} • {{ now()->format('M d, Y g:i A') }}</div>
-        <div style="margin-top: 3px;">{{ __('This is a computer-generated document and does not require a signature') }}</div>
     </div>
 </body>
 </html>
