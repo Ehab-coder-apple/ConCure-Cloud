@@ -41,9 +41,12 @@
             vertical-align: middle;
         }
 
-        .logo {
-            max-width: 80px;
+        .clinic-logo {
             max-height: 80px;
+            max-width: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
         }
 
         .header-center {
@@ -315,46 +318,50 @@
 </head>
 <body>
     <div class="prescription-document">
-        <!-- Header Section - Matching Prescription -->
-        <div class="header">
-            <div class="header-left">
-                @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->logo)
-                    <img src="{{ public_path($radiologyRequest->doctor->clinic->logo) }}" alt="Clinic Logo" class="logo">
-                @endif
-            </div>
-            <div class="header-center">
-                <div class="clinic-name">
-                    {{ $radiologyRequest->doctor->clinic->name ?? 'Medical Clinic' }}
-                </div>
-                <div class="clinic-info">
-                    @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->address)
-                        {{ $radiologyRequest->doctor->clinic->address }}<br>
+        <!-- Header Section - Table-based (Matching Prescription) -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">
+            <tr>
+                <td style="vertical-align: middle; width: 100px;">
+                    @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->logo)
+                        <img src="{{ public_path($radiologyRequest->doctor->clinic->logo) }}" 
+                             alt="Clinic Logo" 
+                             class="clinic-logo">
                     @endif
-                    @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->phone)
-                        Phone: {{ $radiologyRequest->doctor->clinic->phone }}
-                    @endif
-                    @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->email)
-                        &nbsp;&nbsp;|&nbsp;&nbsp;Email: {{ $radiologyRequest->doctor->clinic->email }}
-                    @endif
-                    <br>
-                    <strong>Date:</strong> {{ $radiologyRequest->requested_date->format('F d, Y') }}
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="doctor-info">
-                    <div>Dr. {{ $radiologyRequest->doctor->first_name }} {{ $radiologyRequest->doctor->last_name }}</div>
-                    @if($radiologyRequest->doctor->scientific_degree)
-                        <div style="font-size: 10px; color: #555; margin-top: 3px; margin-bottom: 2px;">{{ $radiologyRequest->doctor->scientific_degree }}</div>
-                    @endif
-                    @if($radiologyRequest->doctor->educational_institution)
-                        <div style="font-size: 9px; color: #777; margin-top: 2px; margin-bottom: 3px;">{{ $radiologyRequest->doctor->educational_institution }}</div>
-                    @endif
-                    @if($radiologyRequest->doctor->phone)
-                        <div style="font-size: 9px; color: #555;">Phone: {{ $radiologyRequest->doctor->phone }}</div>
-                    @endif
-                </div>
-            </div>
-        </div>
+                </td>
+                <td style="vertical-align: middle; text-align: center;">
+                    <div class="clinic-name">
+                        {{ $radiologyRequest->doctor->clinic->name ?? 'Medical Clinic' }}
+                    </div>
+                    <div class="clinic-info">
+                        @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->address)
+                            {{ $radiologyRequest->doctor->clinic->address }}<br>
+                        @endif
+                        @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->phone)
+                            Phone: {{ $radiologyRequest->doctor->clinic->phone }}
+                        @endif
+                        @if($radiologyRequest->doctor->clinic && $radiologyRequest->doctor->clinic->email)
+                            &nbsp;&nbsp;|&nbsp;&nbsp;Email: {{ $radiologyRequest->doctor->clinic->email }}
+                        @endif
+                        <br>
+                        <strong>Date:</strong> {{ $radiologyRequest->requested_date->format('F d, Y') }}
+                    </div>
+                </td>
+                <td style="vertical-align: middle; text-align: right; width: 220px;">
+                    <div class="doctor-info">
+                        <div>Dr. {{ $radiologyRequest->doctor->first_name }} {{ $radiologyRequest->doctor->last_name }}</div>
+                        @if($radiologyRequest->doctor->scientific_degree)
+                            <div style="font-size: 10px; color: #555; margin-top: 3px; margin-bottom: 2px;">{{ $radiologyRequest->doctor->scientific_degree }}</div>
+                        @endif
+                        @if($radiologyRequest->doctor->educational_institution)
+                            <div style="font-size: 9px; color: #777; margin-top: 2px; margin-bottom: 3px;">{{ $radiologyRequest->doctor->educational_institution }}</div>
+                        @endif
+                        @if($radiologyRequest->doctor->phone)
+                            <div style="font-size: 9px; color: #555;">Phone: {{ $radiologyRequest->doctor->phone }}</div>
+                        @endif
+                    </div>
+                </td>
+            </tr>
+        </table>
 
         <!-- Document Title -->
         <div class="document-title">
