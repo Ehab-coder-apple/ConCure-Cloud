@@ -129,8 +129,8 @@
         .medicine-item {
             border: 1px solid #dee2e6;
             background: #ffffff;
-            margin-bottom: 10px;
-            padding: 12px 15px;
+            margin-bottom: 6px;
+            padding: 6px 10px;
             page-break-inside: avoid;
         }
 
@@ -152,10 +152,10 @@
         .medicine-name {
             font-weight: bold;
             color: #2c3e50;
-            font-size: 12px;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #ecf0f1;
+            font-size: 11px;
+            margin-bottom: 4px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #ecf0f1;
         }
 
         .medicine-name-arabic {
@@ -361,12 +361,12 @@
             <div class="medicines-list">
                 @foreach($prescription->medicines as $index => $medicine)
                     <div class="medicine-item">
-                        <div style="padding: 10px; border-bottom: 1px solid #dee2e6;">
-                            <div class="medicine-name" style="margin-bottom: 8px;">
+                        <div style="padding: 4px 6px;">
+                            <div class="medicine-name" style="margin-bottom: 3px;">
                                 <span class="medicine-number">{{ $index + 1 }}</span>
                                 {{ $medicine->medicine_name }}
                             </div>
-                            <div style="font-size: 10px; color: #555; line-height: 1.6; padding-left: 25px;">
+                            <div style="font-size: 9px; color: #555; line-height: 1.4; padding-left: 25px;">
                                 <strong>Dose:</strong> {{ $medicine->dosage ?? 'Not specified' }} | 
                                 <strong>Frequency:</strong> {{ $medicine->frequency ?? 'Not specified' }} | 
                                 <strong>Duration:</strong> {{ $medicine->duration ?? 'Not specified' }}
