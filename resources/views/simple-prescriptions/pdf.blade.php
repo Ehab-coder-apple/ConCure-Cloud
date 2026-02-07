@@ -329,7 +329,7 @@
 
     <!-- Patient Information -->
     <div style="margin-bottom: 15px;">
-        <div class="info-label">Patient Information</div>
+        <div style="font-weight: bold; color: #2c3e50; background-color: #e8eef3; padding: 8px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0; border: 2px solid #34495e;">PATIENT INFORMATION</div>
         <div class="info-value" style="padding: 12px 15px;">
             <strong>Name:</strong> {{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}
             &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;
@@ -357,7 +357,7 @@
     <!-- Prescribed Medicines -->
     @if($prescription->medicines->count() > 0)
         <div class="section">
-            <div class="section-title">Prescribed Medicines</div>
+            <div style="font-size: 12px; font-weight: bold; color: #2c3e50; background-color: #e8eef3; padding: 8px 12px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; border: 2px solid #34495e;">PRESCRIBED MEDICINES</div>
             <div class="medicines-list">
                 @foreach($prescription->medicines as $index => $medicine)
                     <div class="medicine-item">
