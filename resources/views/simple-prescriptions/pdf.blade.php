@@ -304,17 +304,17 @@
                         <strong style="font-size: 9px; color: #2c3e50;">Date: {{ $prescription->prescribed_date->format('F d, Y') }}</strong>
                     </div>
                 </td>
-                <td style="vertical-align: middle; text-align: right; width: 200px; padding: 10px;">
-                    <div style="color: #2c3e50; line-height: 1.7;">
-                        <strong style="font-size: 11px; display: block; margin-bottom: 3px;">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</strong>
+                <td style="vertical-align: middle; text-align: right; width: 220px; padding: 10px;">
+                    <div style="color: #2c3e50; line-height: 1.8;">
+                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</div>
                         @if($prescription->doctor->scientific_degree)
-                            <span style="font-size: 9px; color: #555; display: block; margin-bottom: 2px;">{{ $prescription->doctor->scientific_degree }}</span>
+                            <div style="font-size: 10px; color: #555; margin-bottom: 3px;">{{ $prescription->doctor->scientific_degree }}</div>
                         @endif
                         @if($prescription->doctor->educational_institution)
-                            <span style="font-size: 8px; color: #666; display: block; margin-bottom: 2px;">{{ $prescription->doctor->educational_institution }}</span>
+                            <div style="font-size: 9px; color: #666; margin-bottom: 3px;">{{ $prescription->doctor->educational_institution }}</div>
                         @endif
                         @if($prescription->doctor->phone)
-                            <span style="font-size: 8px; color: #555; display: block;">Phone: {{ $prescription->doctor->phone }}</span>
+                            <div style="font-size: 9px; color: #555;">Phone: {{ $prescription->doctor->phone }}</div>
                         @endif
                     </div>
                 </td>
