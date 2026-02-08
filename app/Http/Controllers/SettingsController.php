@@ -126,7 +126,21 @@ class SettingsController extends Controller
             $globalSettings['session_lifetime'] = $sessionLifetime ?? 480; // Default 8 hours
         }
 
-        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups', 'clinicsAutoBackup', 'manualDocTypes', 'manualIncludeDb', 'globalSettings'));
+        // Get patient inactivity period for clinic admins
+        $patientInactivityDays = null;
+        if ($user->clinic_id) {
+            $clinic = \App\Models\Clinic::find($user->clinic_id);
+            $patientInactivityDays = $clinic ? $clinic->patient_inactivity_days : null;
+        }
+
+        // Get patient inactivity period for clinic admins
+        $patientInactivityDays = null;
+        if ($user->clinic_id) {
+            $clinic = \App\Models\Clinic::find($user->clinic_id);
+            $patientInactivityDays = $clinic ? $clinic->patient_inactivity_days : null;
+        }
+
+        return view('settings.index', compact('clinicSettings', 'clinicInfo', 'activeTab', 'lastBackup', 'recentBackups', 'clinicsAutoBackup', 'manualDocTypes', 'manualIncludeDb', 'globalSettings', 'patientInactivityDays'));
     }
 
     public function setClinicAutoBackup(Request $request)
@@ -508,6 +522,13 @@ class SettingsController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:20',
             'title_prefix' => 'nullable|string|max:50',
+            'doctor_name_font_size' => 'nullable|integer|min:6|max:20',
+            'specialization' => 'nullable|string|max:1000',
+            'specialization_font_size' => 'nullable|integer|min:6|max:20',
+            'medical_degrees' => 'nullable|string|max:2000',
+            'medical_degrees_font_size' => 'nullable|integer|min:6|max:20',
+            'professional_credentials' => 'nullable|string|max:2000',
+            'professional_credentials_font_size' => 'nullable|integer|min:6|max:20',
             'scientific_degree' => 'nullable|string|max:100',
             'educational_institution' => 'nullable|string|max:255',
         ]);
@@ -519,6 +540,13 @@ class SettingsController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'title_prefix' => $request->title_prefix,
+                'doctor_name_font_size' => $request->doctor_name_font_size ?? 12,
+                'specialization' => $request->specialization,
+                'specialization_font_size' => $request->specialization_font_size ?? 10,
+                'medical_degrees' => $request->medical_degrees,
+                'medical_degrees_font_size' => $request->medical_degrees_font_size ?? 9,
+                'professional_credentials' => $request->professional_credentials,
+                'professional_credentials_font_size' => $request->professional_credentials_font_size ?? 9,
                 'scientific_degree' => $request->scientific_degree,
                 'educational_institution' => $request->educational_institution,
             ]);
@@ -952,75 +980,68 @@ class SettingsController extends Controller
         }
     }
 
-    /**
-     * Create database backup file
-     */
-    private function createDatabaseBackup()
-    {
-        $backupDir = storage_path('app/backups');
-
-        // Create backup directory if it doesn't exist
-        if (!file_exists($backupDir)) {
-            mkdir($backupDir, 0755, true);
-        }
-
-        $timestamp = date('Y-m-d_H-i-s');
-        $backupFileName = "concure_backup_{$timestamp}.sqlite";
-        $backupPath = $backupDir . '/' . $backupFileName;
-
-        // Get database path
-        $databasePath = database_path('concure.sqlite');
-
-        if (!file_exists($databasePath)) {
-            throw new \Exception('Database file not found');
-        }
-
-        // Copy database file to backup location
-        if (!copy($databasePath, $backupPath)) {
-            throw new \Exception('Failed to create backup file');
-        }
-
-        return $backupPath;
-    }
 
     /**
-     * Download backup file
+     * Update patient inactivity period setting.
      */
-    public function downloadBackup($file)
+    public function updatePatientInactivityPeriod(Request $request)
     {
         $user = Auth::user();
 
-        // Only allow admins and super admins to download backups
-        if (!method_exists($user, 'isSuperAdmin') || (!$user->isSuperAdmin() && $user->role !== 'admin')) {
-            abort(403, 'Unauthorized to download backups.');
+        // Only allow clinic admins to update this setting
+        if (!$user->clinic_id || !in_array($user->role, ['admin', 'doctor'])) {
+            return response()->json([
+                'success' => false,
+                'message' => __('Unauthorized. Only clinic administrators can update this setting.')
+            ], 403);
         }
 
-        $backupPath = storage_path('app/backups/' . $file);
+        $validated = $request->validate([
+            'patient_inactivity_days' => 'nullable|integer|min:30|max:3650', // Min 30 days, Max 10 years
+        ]);
 
-        // Security check: ensure file exists and is in backup directory
-        if (!file_exists($backupPath) || !str_starts_with(realpath($backupPath), realpath(storage_path('app/backups')))) {
-            abort(404, 'Backup file not found.');
+        try {
+            $clinic = \App\Models\Clinic::findOrFail($user->clinic_id);
+            
+            // Update the clinic's patient_inactivity_days field
+            $clinic->update([
+                'patient_inactivity_days' => $validated['patient_inactivity_days']
+            ]);
+
+            // Log the update
+            DB::table('audit_logs')->insert([
+                'user_id' => $user->id,
+                'user_name' => $user->first_name . ' ' . $user->last_name,
+                'user_role' => $user->role,
+                'clinic_id' => $user->clinic_id,
+                'action' => 'patient_inactivity_period_updated',
+                'model_type' => 'Clinic',
+                'model_id' => $clinic->id,
+                'description' => 'Updated patient auto-deactivation period',
+                'new_values' => json_encode(['patient_inactivity_days' => $validated['patient_inactivity_days']]),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'performed_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $message = $validated['patient_inactivity_days'] 
+                ? __('Patient auto-deactivation period set to :days days.', ['days' => $validated['patient_inactivity_days']])
+                : __('Patient auto-deactivation disabled.');
+
+            return response()->json([
+                'success' => true,
+                'message' => $message
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => __('Failed to update patient inactivity period: :error', ['error' => $e->getMessage()])
+            ], 500);
         }
-
-        // Tenant isolation: Admins can only access their clinic's folder
-        if (!$user->isSuperAdmin()) {
-            $expected = 'clinic-' . (int) $user->clinic_id . DIRECTORY_SEPARATOR;
-            $relReal = trim(str_replace(realpath(storage_path('app/backups')) . DIRECTORY_SEPARATOR, '', realpath($backupPath)), DIRECTORY_SEPARATOR);
-            if (strpos($relReal, $expected) !== 0) {
-                abort(403, 'Unauthorized to access this backup.');
-            }
-        }
-
-        return response()->download($backupPath);
     }
 
-    /**
-     * Show user guide in fullscreen mode
-     */
-    public function userGuide()
-    {
-        return view('settings.user-guide');
-    }
 
     /**
      * Export user guide in different languages and formats

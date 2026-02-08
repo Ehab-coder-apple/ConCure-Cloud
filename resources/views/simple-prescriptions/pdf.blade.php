@@ -306,14 +306,23 @@
                         <strong style="font-size: 9px; color: #2c3e50;">Date: {{ $prescription->prescribed_date->format('F d, Y') }}</strong>
                     </div>
                 </td>
-                <td style="vertical-align: middle; text-align: right; width: 220px; padding: 10px;">
-                    <div style="color: #2c3e50; line-height: 1.8;">
-                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Dr. {{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}</div>
+                <td style="vertical-align: middle; text-align: center; width: 220px; padding: 10px;">
+                    <div style="color: #2c3e50; line-height: 1.8; direction: ltr; text-align: center;">
+                        <div dir="ltr" style="font-size: {{ $prescription->doctor->doctor_name_font_size ?? 12 }}px; font-weight: bold; margin-bottom: 4px;">Dr. &#x202A;&#x202A;{{ $prescription->doctor->first_name }} {{ $prescription->doctor->last_name }}&#x202C;&#x202C;</div>
+                        @if($prescription->doctor->specialization)
+                            <div dir="ltr" style="font-size: {{ $prescription->doctor->specialization_font_size ?? 10 }}px; color: #555; margin-bottom: 3px;">&#x202A;&#x202A;{{ $prescription->doctor->specialization }}&#x202C;&#x202C;</div>
+                        @endif
                         @if($prescription->doctor->scientific_degree)
-                            <div style="font-size: 10px; color: #555; margin-bottom: 3px;">{{ $prescription->doctor->scientific_degree }}</div>
+                            <div dir="ltr" style="font-size: 10px; color: #555; margin-bottom: 3px;">&#x202A;&#x202A;{{ $prescription->doctor->scientific_degree }}&#x202C;&#x202C;</div>
+                        @endif
+                        @if($prescription->doctor->medical_degrees)
+                            <div dir="ltr" style="font-size: {{ $prescription->doctor->medical_degrees_font_size ?? 9 }}px; color: #666; margin-bottom: 3px;">&#x202A;&#x202A;{{ $prescription->doctor->medical_degrees }}&#x202C;&#x202C;</div>
                         @endif
                         @if($prescription->doctor->educational_institution)
-                            <div style="font-size: 9px; color: #666; margin-bottom: 3px;">{{ $prescription->doctor->educational_institution }}</div>
+                            <div dir="ltr" style="font-size: 9px; color: #666; margin-bottom: 3px;">&#x202A;&#x202A;{{ $prescription->doctor->educational_institution }}&#x202C;&#x202C;</div>
+                        @endif
+                        @if($prescription->doctor->professional_credentials)
+                            <div dir="ltr" style="font-size: {{ $prescription->doctor->professional_credentials_font_size ?? 9 }}px; color: #666; margin-bottom: 3px;">&#x202A;&#x202A;{{ $prescription->doctor->professional_credentials }}&#x202C;&#x202C;</div>
                         @endif
                         @if($prescription->doctor->phone)
                             <div style="font-size: 9px; color: #555;">Phone: {{ $prescription->doctor->phone }}</div>

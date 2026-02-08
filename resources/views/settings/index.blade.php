@@ -3,7 +3,8 @@
 @section('title', __('Settings'))
 
 @section('content')
-<div class="container-fluid" style="margin-top: 80px;">
+<div style="margin-left: 250px; padding: 20px; width: calc(100% - 250px); box-sizing: border-box;">
+<div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -154,6 +155,39 @@
                                             </div>
                                         </div>
 
+                                        <!-- Doctor Name Font Size Control -->
+                                        <div class="row">
+                                            <div class="col-md-9">
+                                                <div class="mb-3">
+                                                    <label class="form-label">{{ __('Doctor Name Preview') }}</label>
+                                                    <div class="form-control font-size-preview" 
+                                                         id="doctor_name_preview"
+                                                         style="font-size: {{ auth()->user()->doctor_name_font_size ?? 12 }}px; font-weight: bold; background-color: #f8f9fa;">
+                                                        Dr. {{ auth()->user()->first_name }} {{ auth()->user()->last_name }}
+                                                    </div>
+                                                    <div class="form-text">
+                                                        {{ __('Preview of how your name will appear on prescription PDFs') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="mb-3">
+                                                    <label for="doctor_name_font_size" class="form-label">{{ __('Font Size') }}</label>
+                                                    <div class="input-group">
+                                                        <input type="range"
+                                                               class="form-range font-size-slider"
+                                                               id="doctor_name_font_size"
+                                                               name="doctor_name_font_size"
+                                                               min="6"
+                                                               max="20"
+                                                               value="{{ auth()->user()->doctor_name_font_size ?? 12 }}"
+                                                               data-target="doctor_name_preview">
+                                                        <span class="input-group-text font-size-display" id="doctor_name_size_display">{{ auth()->user()->doctor_name_font_size ?? 12 }}px</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="mb-3">
@@ -190,6 +224,118 @@
                                                 </div>
                                             </div>
                                         </div>
+
+                                        @if(in_array(auth()->user()->role, ['doctor', 'admin', 'super_admin']))
+                                        <!-- Professional Credentials Section -->
+                                        <div class="row mt-4">
+                                            <div class="col-12">
+                                                <h6 class="text-primary mb-3">
+                                                    <i class="fas fa-certificate me-2"></i>
+                                                    {{ __('Professional Credentials') }}
+                                                </h6>
+                                                <p class="text-muted small">{{ __('This information will be displayed on prescription PDFs and official documents') }}</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-9">
+                                                <div class="mb-3">
+                                                    <label for="specialization" class="form-label">{{ __('Specialization') }}</label>
+                                                    <textarea class="form-control font-size-preview"
+                                                              id="specialization"
+                                                              name="specialization"
+                                                              rows="2"
+                                                              style="font-size: {{ auth()->user()->specialization_font_size ?? 10 }}px;"
+                                                              placeholder="{{ __('e.g., Specialist in Oral and Maxillofacial Surgery - Dental Implants and Cosmetic Dentistry') }}">{{ auth()->user()->specialization }}</textarea>
+                                                    <div class="form-text">
+                                                        {{ __('Your medical specialization and areas of expertise') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="mb-3">
+                                                    <label for="specialization_font_size" class="form-label">{{ __('Font Size') }}</label>
+                                                    <div class="input-group">
+                                                        <input type="range"
+                                                               class="form-range font-size-slider"
+                                                               id="specialization_font_size"
+                                                               name="specialization_font_size"
+                                                               min="6"
+                                                               max="20"
+                                                               value="{{ auth()->user()->specialization_font_size ?? 10 }}"
+                                                               data-target="specialization">
+                                                        <span class="input-group-text font-size-display" id="specialization_size_display">{{ auth()->user()->specialization_font_size ?? 10 }}px</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-9">
+                                                <div class="mb-3">
+                                                    <label for="medical_degrees" class="form-label">{{ __('Medical Degrees & Certifications') }}</label>
+                                                    <textarea class="form-control font-size-preview"
+                                                              id="medical_degrees"
+                                                              name="medical_degrees"
+                                                              rows="3"
+                                                              style="font-size: {{ auth()->user()->medical_degrees_font_size ?? 9 }}px;"
+                                                              placeholder="{{ __('e.g., B.D.S - Bachelor of Dental Surgery&#10;D.I.D - Diploma in Implant Dentistry&#10;Fellowship in Cosmetic Dentistry') }}">{{ auth()->user()->medical_degrees }}</textarea>
+                                                    <div class="form-text">
+                                                        {{ __('List your degrees, diplomas, and certifications (one per line)') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="mb-3">
+                                                    <label for="medical_degrees_font_size" class="form-label">{{ __('Font Size') }}</label>
+                                                    <div class="input-group">
+                                                        <input type="range"
+                                                               class="form-range font-size-slider"
+                                                               id="medical_degrees_font_size"
+                                                               name="medical_degrees_font_size"
+                                                               min="6"
+                                                               max="20"
+                                                               value="{{ auth()->user()->medical_degrees_font_size ?? 9 }}"
+                                                               data-target="medical_degrees">
+                                                        <span class="input-group-text font-size-display" id="medical_degrees_size_display">{{ auth()->user()->medical_degrees_font_size ?? 9 }}px</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-9">
+                                                <div class="mb-3">
+                                                    <label for="professional_credentials" class="form-label">{{ __('Professional Credentials & Memberships') }}</label>
+                                                    <textarea class="form-control font-size-preview"
+                                                              id="professional_credentials"
+                                                              name="professional_credentials"
+                                                              rows="3"
+                                                              style="font-size: {{ auth()->user()->professional_credentials_font_size ?? 9 }}px;"
+                                                              placeholder="{{ __('e.g., Member of Iraqi Dental Association&#10;Certified Implantologist&#10;Board Certified in Oral Surgery') }}">{{ auth()->user()->professional_credentials }}</textarea>
+                                                    <div class="form-text">
+                                                        {{ __('Professional memberships, board certifications, and other credentials') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="mb-3">
+                                                    <label for="professional_credentials_font_size" class="form-label">{{ __('Font Size') }}</label>
+                                                    <div class="input-group">
+                                                        <input type="range"
+                                                               class="form-range font-size-slider"
+                                                               id="professional_credentials_font_size"
+                                                               name="professional_credentials_font_size"
+                                                               min="6"
+                                                               max="20"
+                                                               value="{{ auth()->user()->professional_credentials_font_size ?? 9 }}"
+                                                               data-target="professional_credentials">
+                                                        <span class="input-group-text font-size-display" id="professional_credentials_size_display">{{ auth()->user()->professional_credentials_font_size ?? 9 }}px</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
 
                                         <div class="d-flex justify-content-end">
                                             <button type="submit" class="btn btn-primary">
@@ -699,69 +845,61 @@
                                         </div>
                                         @endif
 
-                                            @if(auth()->user()->isSuperAdmin())
-                                            <div class="col-12 mt-4">
-                                                <h6 class="text-primary">{{ __('Automatic Backups (Per Clinic)') }}</h6>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm align-middle">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>{{ __('Clinic') }}</th>
-                                                                <th class="text-center" style="width:180px;">{{ __('Auto Backup') }}</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @forelse(($clinicsAutoBackup ?? collect()) as $c)
-                                                                <tr>
-                                                                    <td>{{ $c->name }} <span class="text-muted small">(#{{ $c->id }})</span></td>
-                                                                    <td class="text-center">
-                                                                        <div class="form-check form-switch d-inline-block">
-                                                                            <input class="form-check-input" type="checkbox" id="auto_backup_{{ $c->id }}" {{ $c->enabled ? 'checked' : '' }} onchange="toggleClinicAutoBackup({{ $c->id }}, this)">
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            @empty
-                                                                <tr><td colspan="2" class="text-muted">{{ __('No clinics found or insufficient permissions.') }}</td></tr>
-                                                            @endforelse
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                                <small class="text-muted">{{ __('Only clinics enabled here will be included in the weekly backup job (Sunday 02:30). Manual backup remains available to each clinic admin regardless of this setting.') }}</small>
-                                            </div>
-                                            @endif
-
-
-                                        @if(auth()->user()->isSuperAdmin() || auth()->user()->role === 'admin')
+                                        @if(auth()->user()->clinic_id && in_array(auth()->user()->role, ['admin', 'doctor']))
                                         <div class="col-12 mt-4">
-                                            <h6 class="text-primary">{{ __('User Management Statistics') }}</h6>
+                                            <h6 class="text-primary">{{ __('Patient Management') }}</h6>
                                         </div>
-                                        @php
-                                            $userStats = [
-                                                'total' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->count(),
-                                                'active' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->where('is_active', true)->count(),
-                                                'inactive' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->where('is_active', false)->count(),
-                                                'admins' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->where('role', 'admin')->count(),
-                                                'doctors' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->where('role', 'doctor')->count(),
-                                                'staff' => \App\Models\User::where('clinic_id', auth()->user()->clinic_id)->whereIn('role', ['assistant', 'nurse', 'pharmacist', 'lab_dept', 'radiology_dept'])->count(),
-                                            ];
-                                        @endphp
-                                        <div class="col-md-4">
-                                            <div class="text-center p-3 bg-light rounded">
-                                                <h4 class="text-primary mb-1">{{ $userStats['total'] }}</h4>
-                                                <small class="text-muted">{{ __('Total Users') }}</small>
+                                        <div class="col-12">
+                                            <div class="card bg-light border-0">
+                                                <div class="card-body">
+                                                    <form id="patientInactivityForm">
+                                                        @csrf
+                                                        <div class="row align-items-end">
+                                                            <div class="col-md-6">
+                                                                <label for="patient_inactivity_days" class="form-label">
+                                                                    <i class="fas fa-user-clock me-1"></i>
+                                                                    {{ __('Patient Auto-Deactivation Period (days)') }}
+                                                                </label>
+                                                                <input type="number"
+                                                                       class="form-control"
+                                                                       id="patient_inactivity_days"
+                                                                       name="patient_inactivity_days"
+                                                                       value="{{ $patientInactivityDays ?? '' }}"
+                                                                       min="30"
+                                                                       max="3650"
+                                                                       placeholder="{{ __('Leave empty to disable') }}">
+                                                                <small class="text-muted">
+                                                                    {{ __('Automatically deactivate patients after this many days of inactivity. Activity includes: appointments, visits, prescriptions, lab tests, radiology requests, or any patient record updates. Minimum: 30 days. Leave empty to disable auto-deactivation.') }}
+                                                                </small>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="text-muted small">
+                                                                    <strong>{{ __('Current:') }}</strong>
+                                                                    <span id="currentInactivityDisplay">
+                                                                        @if($patientInactivityDays)
+                                                                            {{ $patientInactivityDays }} {{ __('days') }}
+                                                                            ({{ round($patientInactivityDays / 30, 1) }} {{ __('months') }})
+                                                                        @else
+                                                                            {{ __('Disabled') }}
+                                                                        @endif
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <button type="submit" class="btn btn-primary w-100">
+                                                                    <i class="fas fa-save me-1"></i>
+                                                                    {{ __('Update Setting') }}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <div class="text-center p-3 bg-light rounded">
-                                                <h4 class="text-success mb-1">{{ $userStats['active'] }}</h4>
-                                                <small class="text-muted">{{ __('Active Users') }}</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="text-center p-3 bg-light rounded">
-                                                <h4 class="text-warning mb-1">{{ $userStats['doctors'] }}</h4>
+                                        @endif
+
+                                        @if(auth()->user()->clinic_id && in_array(auth()->user()->role, ['admin', 'doctor']))
+                                        <div class="col-12 mt-4">
                                                 <small class="text-muted">{{ __('Doctors') }}</small>
                                             </div>
                                         </div>
@@ -1616,9 +1754,92 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // Handle patient inactivity period form submission
+    const patientInactivityForm = document.getElementById('patientInactivityForm');
+    const inactivityInput = document.getElementById('patient_inactivity_days');
+    const inactivityDisplay = document.getElementById('currentInactivityDisplay');
+
+    if (patientInactivityForm) {
+        // Update display when input changes
+        if (inactivityInput) {
+            inactivityInput.addEventListener('input', function() {
+                const days = parseInt(this.value) || 0;
+                if (days > 0) {
+                    const months = (days / 30).toFixed(1);
+                    inactivityDisplay.textContent = days + ' {{ __('days') }} (' + months + ' {{ __('months') }})';
+                } else {
+                    inactivityDisplay.textContent = '{{ __('Disabled') }}';
+                }
+            });
+        }
+
+        patientInactivityForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> {{ __("Updating...") }}';
+            submitBtn.disabled = true;
+
+            const formData = new FormData(this);
+
+            fetch('{{ route("settings.update-patient-inactivity-period") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${data.success ? 'success' : 'danger'} alert-dismissible fade show mt-3`;
+                alertDiv.innerHTML = `
+                    ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                patientInactivityForm.parentElement.appendChild(alertDiv);
+
+                if (data.success) {
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 5000);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                alertDiv.innerHTML = `
+                    {{ __("An error occurred. Please try again.") }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                patientInactivityForm.parentElement.appendChild(alertDiv);
+            })
+            .finally(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+    }
+
+
+    // Font size slider live preview
+    document.querySelectorAll('.font-size-slider').forEach(slider => {
+        slider.addEventListener('input', function() {
+            const targetId = this.dataset.target;
+            const fontSize = this.value;
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                targetElement.style.fontSize = fontSize + 'px';
+            }
+        });
+    });
 });
-
 </script>
-@endpush
-
+</div>
+</div>
 @endsection
