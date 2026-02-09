@@ -203,7 +203,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('patients.store') }}" method="POST" class="needs-validation" novalidate>
+            <form action="{{ route('patients.store') }}" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
                 @csrf
                 <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                     <div class="row g-3">
@@ -350,6 +350,15 @@
                         <div class="col-12">
                             <label for="diet_history" class="form-label">{{ __('Diet History') }}</label>
                             <textarea class="form-control" id="diet_history" name="diet_history" rows="2" placeholder="{{ __('Previous diets and nutritional information') }}"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="medical_files" class="form-label">
+                                <i class="fas fa-file-medical me-1"></i>
+                                {{ __('Medical History Files') }}
+                            </label>
+                            <input type="file" class="form-control" id="medical_files" name="medical_files[]" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                            <small class="text-muted">{{ __('Upload medical reports, lab results, or other relevant documents (PDF, Images, Word documents)') }}</small>
                         </div>
 
                         <!-- Special Conditions -->

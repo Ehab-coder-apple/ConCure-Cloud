@@ -209,6 +209,7 @@ class PatientController extends Controller
             'notes' => 'nullable|string',
             'emergency_contact_name' => 'nullable|string|max:255',
             'emergency_contact_phone' => 'nullable|string|max:20',
+            'medical_files.*' => 'nullable|file|max:10240|mimes:pdf,jpg,jpeg,png,doc,docx',
         ];
 
         try {
@@ -251,6 +252,27 @@ class PatientController extends Controller
             'created_by' => $user->id,
             'is_active' => true,
         ]);
+
+        // Handle medical history file uploads
+        if ($request->hasFile('medical_files')) {
+            foreach ($request->file('medical_files') as $file) {
+                $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs("patients/{$patient->id}/files", $filename, 'public');
+
+                PatientFile::create([
+                    'patient_id' => $patient->id,
+                    'original_name' => $file->getClientOriginalName(),
+                    'file_name' => $filename,
+                    'file_path' => $path,
+                    'file_type' => $file->getClientOriginalExtension(),
+                    'file_size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
+                    'category' => 'medical_report',
+                    'description' => 'Uploaded during patient registration',
+                    'uploaded_by' => auth()->id(),
+                ]);
+            }
+        }
 
         // Return JSON response for AJAX requests
         if ($isQuickAdd) {

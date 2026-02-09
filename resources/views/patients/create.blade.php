@@ -36,7 +36,7 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <form action="{{ route('patients.store') }}" method="POST" class="needs-validation" novalidate>
+                            <form action="{{ route('patients.store') }}" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
                                 @csrf
 
                                 <div class="row g-3">
@@ -268,6 +268,20 @@
                                                   id="diet_history" name="diet_history" rows="2"
                                                   placeholder="{{ __('Previous diets and nutritional information') }}">{{ old('diet_history') }}</textarea>
                                         @error('diet_history')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label for="medical_files" class="form-label">
+                                            <i class="fas fa-file-medical me-1"></i>
+                                            {{ __('Medical History Files') }}
+                                        </label>
+                                        <input type="file" class="form-control @error('medical_files.*') is-invalid @enderror"
+                                               id="medical_files" name="medical_files[]" multiple
+                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                        <small class="text-muted">{{ __('Upload medical reports, lab results, or other relevant documents (PDF, Images, Word documents)') }}</small>
+                                        @error('medical_files.*')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
