@@ -194,7 +194,7 @@
 
 <!-- Add Patient Modal -->
 <div class="modal fade" id="addPatientModal" tabindex="-1" aria-labelledby="addPatientModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addPatientModalLabel">
@@ -205,32 +205,54 @@
             </div>
             <form action="{{ route('patients.store') }}" method="POST" class="needs-validation" novalidate>
                 @csrf
-                <div class="modal-body">
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                     <div class="row g-3">
+                        <!-- Basic Information -->
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-user me-2"></i>
+                                {{ __('Basic Information') }}
+                            </h6>
+                        </div>
+
                         <div class="col-md-6">
                             <label for="first_name" class="form-label">{{ __('First Name') }} <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="first_name" name="first_name" required>
                         </div>
+
                         <div class="col-md-6">
                             <label for="last_name" class="form-label">{{ __('Last Name') }} <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="last_name" name="last_name" required>
                         </div>
+
                         <div class="col-md-6">
                             <label for="date_of_birth" class="form-label">{{ __('Date of Birth') }} <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
                         </div>
+
                         <div class="col-md-6">
                             <label for="gender" class="form-label">{{ __('Gender') }} <span class="text-danger">*</span></label>
                             <select class="form-select" id="gender" name="gender" required>
                                 <option value="">{{ __('Select Gender') }}</option>
                                 <option value="male">{{ __('Male') }}</option>
                                 <option value="female">{{ __('Female') }}</option>
+                                <option value="other">{{ __('Other') }}</option>
                             </select>
                         </div>
+
+                        <!-- Contact Information -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-phone me-2"></i>
+                                {{ __('Contact Information') }}
+                            </h6>
+                        </div>
+
                         <div class="col-md-6">
                             <label for="phone" class="form-label">{{ __('Phone Number') }}</label>
-                            <input type="tel" class="form-control" id="phone" name="phone">
+                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="{{ __('Phone number') }}">
                         </div>
+
                         <div class="col-md-6">
                             <label for="whatsapp_phone" class="form-label">
                                 <i class="fab fa-whatsapp text-success me-1"></i>
@@ -239,25 +261,154 @@
                             <input type="tel" class="form-control" id="whatsapp_phone" name="whatsapp_phone"
                                    placeholder="{{ __('WhatsApp number for communication') }}">
                         </div>
+
                         <div class="col-md-6">
-                            <label for="email" class="form-label">{{ __('Email') }}</label>
-                            <input type="email" class="form-control" id="email" name="email">
+                            <label for="email" class="form-label">{{ __('Email Address') }}</label>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="{{ __('Email address') }}">
                         </div>
-                        <div class="col-12">
+
+                        <div class="col-md-6">
                             <label for="address" class="form-label">{{ __('Address') }}</label>
-                            <textarea class="form-control" id="address" name="address" rows="2"></textarea>
+                            <textarea class="form-control" id="address" name="address" rows="2" placeholder="{{ __('Home address') }}"></textarea>
                         </div>
+
+                        <!-- Personal Information -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                {{ __('Personal Information') }}
+                            </h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="job" class="form-label">{{ __('Occupation') }}</label>
+                            <input type="text" class="form-control" id="job" name="job" placeholder="{{ __('Job/Occupation') }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="education" class="form-label">{{ __('Education Level') }}</label>
+                            <input type="text" class="form-control" id="education" name="education" placeholder="{{ __('Education level') }}">
+                        </div>
+
+                        <!-- Physical Information -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-weight me-2"></i>
+                                {{ __('Physical Information') }}
+                            </h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="height" class="form-label">{{ __('Height (cm)') }}</label>
+                            <input type="number" class="form-control" id="height" name="height" min="50" max="300" step="0.1" placeholder="{{ __('Height in centimeters') }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="weight" class="form-label">{{ __('Weight (kg)') }}</label>
+                            <input type="number" class="form-control" id="weight" name="weight" min="1" max="500" step="0.1" placeholder="{{ __('Weight in kilograms') }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="blood_type" class="form-label">{{ __('Blood Type') }}</label>
+                            <select class="form-select" id="blood_type" name="blood_type">
+                                <option value="">{{ __('Select Blood Type') }}</option>
+                                <option value="NA">{{ __('NA - Not available') }}</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+
+                        <!-- Medical Information -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-heartbeat me-2"></i>
+                                {{ __('Medical Information') }}
+                            </h6>
+                        </div>
+
                         <div class="col-12">
-                            <label for="medical_history" class="form-label">{{ __('Medical History') }}</label>
-                            <textarea class="form-control" id="medical_history" name="medical_history" rows="3" placeholder="{{ __('Any relevant medical history, allergies, or conditions...') }}"></textarea>
+                            <label for="allergies" class="form-label">{{ __('Allergies') }}</label>
+                            <textarea class="form-control" id="allergies" name="allergies" rows="2" placeholder="{{ __('Known allergies and reactions') }}"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="chronic_illnesses" class="form-label">{{ __('Chronic Illnesses') }}</label>
+                            <textarea class="form-control" id="chronic_illnesses" name="chronic_illnesses" rows="2" placeholder="{{ __('Chronic conditions and ongoing health issues') }}"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="surgeries_history" class="form-label">{{ __('Surgery History') }}</label>
+                            <textarea class="form-control" id="surgeries_history" name="surgeries_history" rows="2" placeholder="{{ __('Previous surgeries and procedures') }}"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="diet_history" class="form-label">{{ __('Diet History') }}</label>
+                            <textarea class="form-control" id="diet_history" name="diet_history" rows="2" placeholder="{{ __('Previous diets and nutritional information') }}"></textarea>
+                        </div>
+
+                        <!-- Special Conditions -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                {{ __('Special Conditions') }}
+                            </h6>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_pregnant" name="is_pregnant" value="1">
+                                <label class="form-check-label" for="is_pregnant">
+                                    {{ __('Currently Pregnant') }}
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Emergency Contact -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-phone-alt me-2"></i>
+                                {{ __('Emergency Contact') }}
+                            </h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="emergency_contact_name" class="form-label">{{ __('Emergency Contact Name') }}</label>
+                            <input type="text" class="form-control" id="emergency_contact_name" name="emergency_contact_name" placeholder="{{ __('Full name of emergency contact') }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="emergency_contact_phone" class="form-label">{{ __('Emergency Contact Phone') }}</label>
+                            <input type="tel" class="form-control" id="emergency_contact_phone" name="emergency_contact_phone" placeholder="{{ __('Emergency contact phone number') }}">
+                        </div>
+
+                        <!-- Additional Notes -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-sticky-note me-2"></i>
+                                {{ __('Additional Notes') }}
+                            </h6>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="notes" class="form-label">{{ __('Notes') }}</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="{{ __('Additional notes about the patient') }}"></textarea>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        {{ __('Cancel') }}
+                    </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>
-                        {{ __('Add Patient') }}
+                        <i class="fas fa-save me-1"></i>
+                        {{ __('Create Patient') }}
                     </button>
                 </div>
             </form>
