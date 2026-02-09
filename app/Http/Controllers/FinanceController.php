@@ -1,0 +1,1521 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\Expense;
+use App\Models\Receipt;
+use App\Models\Patient;
+use App\Models\User;
+use App\Mail\InvoiceMail;
+use App\Notifications\ExpenseNeedsApprovalNotification;
+use App\Notifications\ReceiptNeedsApprovalNotification;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+
+class FinanceController extends Controller
+{
+    /**
+     * Display the finance dashboard.
+     */
+    public function index()
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to finance module.');
+        }
+
+        // Get financial statistics
+        $stats = $this->getFinancialStats($user);
+
+        // Get patients for the create invoice form
+        $stats['patients'] = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->orderBy('last_name')
+                          ->get();
+
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+        $stats['currency'] = $currency;
+        $stats['currencySymbol'] = $currencySymbol;
+
+        return view('finance.index', $stats);
+    }
+
+    /**
+     * Display invoices.
+     */
+    public function invoices(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to invoices.');
+        }
+
+        $query = Invoice::with(['patient', 'clinic', 'creator']);
+
+        // Filter by clinic for all users
+        $query->where('clinic_id', $user->clinic_id);
+
+        // Apply filters
+        if ($request->filled('status')) {
+            $query->byStatus($request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhereHas('patient', function ($pq) use ($search) {
+                      $pq->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('patient_id', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->byDateRange($request->date_from, $request->date_to);
+        }
+
+        $invoices = $query->latest()->paginate(15);
+
+        // Get patients for the create invoice form
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->orderBy('last_name')
+                          ->get();
+
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.invoices', compact('invoices', 'patients', 'currency', 'currencySymbol'));
+    }
+
+    /**
+     * Store a new invoice.
+     */
+    public function storeInvoice(Request $request)
+    {
+        $user = auth()->user();
+        
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to create invoices.');
+        }
+
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'due_date' => 'nullable|date|after_or_equal:today',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'discount_rate' => 'nullable|numeric|min:0|max:100',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string',
+            'terms' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.description' => 'required|string|max:255',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.item_type' => 'required|in:consultation,procedure,medication,lab_test,other',
+        ]);
+
+        DB::transaction(function () use ($request, $user) {
+            $invoice = Invoice::create([
+                'patient_id' => $request->patient_id,
+                'clinic_id' => $user->clinic_id,
+                'due_date' => $request->due_date,
+                'tax_rate' => $request->tax_rate ?? 0,
+                'discount_rate' => $request->discount_rate ?? 0,
+                'discount_amount' => $request->discount_amount ?? 0,
+                'notes' => $request->notes,
+                'terms' => $request->terms,
+                'created_by' => $user->id,
+                'status' => 'draft',
+                'subtotal' => 0, // Will be calculated when items are added
+            ]);
+
+            foreach ($request->items as $itemData) {
+                $invoice->addItem([
+                    'description' => $itemData['description'],
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => $itemData['unit_price'],
+                    'item_type' => $itemData['item_type'],
+                ]);
+            }
+        });
+
+        return back()->with('success', 'Invoice created successfully.');
+    }
+
+    /**
+     * Display expenses.
+     */
+    public function expenses(Request $request)
+    {
+        try {
+            $user = auth()->user();
+
+            if (!$user) {
+                \Log::error('Expenses page accessed without authenticated user');
+                return redirect()->route('login')->withErrors(['error' => 'Please log in to access expenses.']);
+            }
+
+            if (!$user->canAccessFinance()) {
+                \Log::warning('User attempted to access expenses without permission', ['user_id' => $user->id]);
+                abort(403, 'Access denied to expenses.');
+            }
+
+            // Verify user has a valid clinic
+            if (!$user->clinic_id) {
+                \Log::error('User without clinic_id attempted to access expenses', ['user_id' => $user->id]);
+                abort(403, 'User must be associated with a clinic to access expenses.');
+            }
+            $query = Expense::with(['clinic', 'creator', 'approver']);
+
+            // Filter by clinic for all users
+            $query->where('clinic_id', $user->clinic_id);
+
+            // Apply filters
+            if ($request->filled('status')) {
+                $query->byStatus($request->status);
+            }
+
+            if ($request->filled('category')) {
+                $query->byCategory($request->category);
+            }
+
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('expense_number', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%")
+                      ->orWhere('vendor_name', 'like', "%{$search}%");
+                });
+            }
+
+            if ($request->filled('date_from') && $request->filled('date_to')) {
+                $query->byDateRange($request->date_from, $request->date_to);
+            }
+
+            $expenses = $query->latest()->paginate(15);
+
+            // Get clinic currency setting
+            $currency = DB::table('settings')
+                ->where('clinic_id', $user->clinic_id)
+                ->where('key', 'currency')
+                ->value('value') ?? 'USD';
+
+            $currencySymbol = $this->getCurrencySymbol($currency);
+
+            return view('finance.expenses', compact('expenses', 'currency', 'currencySymbol'));
+        } catch (\Exception $e) {
+            $userId = isset($user) ? $user->id : 'unknown';
+            $clinicId = isset($user) ? $user->clinic_id : 'unknown';
+
+            \Log::error('Error loading expenses page: ' . $e->getMessage(), [
+                'user_id' => $userId,
+                'clinic_id' => $clinicId,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Return to finance dashboard with error message
+            return redirect()->route('finance.index')
+                ->withErrors(['error' => 'Failed to load expenses: ' . $e->getMessage() . '. Please contact support if this persists.']);
+        }
+    }
+
+    /**
+     * Store a new expense.
+     */
+    public function storeExpense(Request $request)
+    {
+        $user = auth()->user();
+        
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to create expenses.');
+        }
+
+        $request->validate([
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'category' => 'required|in:salary,rent,utilities,equipment,supplies,marketing,insurance,taxes,maintenance,other',
+            'expense_date' => 'required|date',
+            'payment_method' => 'required|in:cash,card,bank_transfer,check,other',
+            'vendor_name' => 'nullable|string|max:255',
+            'receipt_number' => 'nullable|string|max:255',
+            'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'notes' => 'nullable|string',
+            'is_recurring' => 'boolean',
+            'recurring_frequency' => 'nullable|in:monthly,quarterly,yearly',
+        ]);
+
+        $expenseData = [
+            'description' => $request->description,
+            'amount' => $request->amount,
+            'category' => $request->category,
+            'expense_date' => $request->expense_date,
+            'payment_method' => $request->payment_method,
+            'vendor_name' => $request->vendor_name,
+            'receipt_number' => $request->receipt_number,
+            'notes' => $request->notes,
+            'is_recurring' => $request->boolean('is_recurring'),
+            'recurring_frequency' => $request->recurring_frequency,
+            'clinic_id' => $user->clinic_id,
+            'created_by' => $user->id,
+            'status' => 'pending',
+        ];
+
+        // Handle receipt file upload
+        if ($request->hasFile('receipt_file')) {
+            $file = $request->file('receipt_file');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs("expenses/{$user->clinic_id}/receipts", $filename, 'public');
+            $expenseData['receipt_file'] = $path;
+        }
+
+        $expense = Expense::create($expenseData);
+
+        // Notify admins about the new expense that needs approval
+        $this->notifyAdminsForExpenseApproval($expense, $user, false);
+
+        return back()->with('success', 'Expense created successfully and sent for approval.');
+    }
+
+    /**
+     * Approve an expense.
+     */
+    public function approveExpense(Expense $expense)
+    {
+        $user = auth()->user();
+        
+        if (!$user->hasPermission('finance_approve')) {
+            abort(403, 'Insufficient permission to approve expenses.');
+        }
+
+        if (!$expense->canBeApproved()) {
+            return back()->withErrors(['error' => 'Expense cannot be approved in its current status.']);
+        }
+
+        $expense->markAsApproved($user);
+
+        return back()->with('success', 'Expense approved successfully.');
+    }
+
+    /**
+     * Reject an expense.
+     */
+    public function rejectExpense(Expense $expense)
+    {
+        $user = auth()->user();
+        
+        if (!$user->hasPermission('finance_approve')) {
+            abort(403, 'Insufficient permission to reject expenses.');
+        }
+
+        if (!$expense->canBeApproved()) {
+            return back()->withErrors(['error' => 'Expense cannot be rejected in its current status.']);
+        }
+
+        $expense->markAsRejected($user);
+
+        return back()->with('success', 'Expense rejected.');
+    }
+
+    /**
+     * Delete an expense.
+     */
+    public function destroyExpense(Expense $expense)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to delete expenses.');
+        }
+
+        // Check if user can delete this expense (admin or creator)
+        if (!$user->hasPermission('finance_delete') && $expense->created_by !== $user->id) {
+            abort(403, 'You can only delete your own expenses.');
+        }
+
+        // Don't allow deletion of approved expenses
+        if ($expense->status === 'approved') {
+            return redirect()->route('finance.expenses')->with('error', 'Cannot delete approved expenses.');
+        }
+
+        // Delete the receipt file if it exists
+        if ($expense->receipt_file && Storage::disk('public')->exists($expense->receipt_file)) {
+            Storage::disk('public')->delete($expense->receipt_file);
+        }
+
+        $expense->delete();
+
+        return redirect()->route('finance.expenses')->with('success', 'Expense deleted successfully.');
+    }
+
+    /**
+     * Update an expense.
+     * Note: Status is reset to 'pending' for admin re-approval when edited.
+     */
+    public function updateExpense(Request $request, Expense $expense)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to update expenses.');
+        }
+
+        // Check if user can edit this expense (admin or creator)
+        if (!$user->hasPermission('finance_edit') && $expense->created_by !== $user->id) {
+            abort(403, 'You can only edit your own expenses.');
+        }
+
+        // Don't allow editing of approved expenses
+        if ($expense->status === 'approved') {
+            return redirect()->route('finance.expenses')->with('error', 'Cannot edit approved expenses.');
+        }
+
+        $request->validate([
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'category' => 'required|in:salary,rent,utilities,equipment,supplies,marketing,insurance,taxes,maintenance,other',
+            'expense_date' => 'required|date',
+            'payment_method' => 'required|in:cash,card,bank_transfer,check,other',
+            'vendor_name' => 'nullable|string|max:255',
+            'receipt_number' => 'nullable|string|max:255',
+            'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Handle file upload
+        if ($request->hasFile('receipt_file')) {
+            // Delete old file if exists
+            if ($expense->receipt_file && Storage::disk('public')->exists($expense->receipt_file)) {
+                Storage::disk('public')->delete($expense->receipt_file);
+            }
+
+            // Store new file
+            $receiptPath = $request->file('receipt_file')->store('expense-receipts', 'public');
+            $expense->receipt_file = $receiptPath;
+        }
+
+        // Update expense data and reset status to pending for re-approval
+        $expense->update([
+            'description' => $request->description,
+            'amount' => $request->amount,
+            'category' => $request->category,
+            'expense_date' => $request->expense_date,
+            'payment_method' => $request->payment_method,
+            'vendor_name' => $request->vendor_name,
+            'receipt_number' => $request->receipt_number,
+            'notes' => $request->notes,
+            'status' => 'pending', // Reset status to pending for admin re-approval
+        ]);
+
+        // Notify admins about the updated expense that needs approval
+        $this->notifyAdminsForExpenseApproval($expense, $user, true);
+
+        return redirect()->route('finance.expenses')->with('success', 'Expense updated successfully and sent for re-approval.');
+    }
+
+    /**
+     * Delete an invoice.
+     */
+    public function destroyInvoice(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to delete invoices.');
+        }
+
+        // Check if user can delete this invoice (admin or creator)
+        if (!$user->hasPermission('finance_delete') && $invoice->created_by !== $user->id) {
+            abort(403, 'You can only delete your own invoices.');
+        }
+
+        // Don't allow deletion of paid invoices
+        if ($invoice->status === 'paid') {
+            return redirect()->route('finance.invoices')->with('error', 'Cannot delete paid invoices.');
+        }
+
+        // Delete related invoice items first
+        $invoice->items()->delete();
+
+        // Delete the invoice
+        $invoice->delete();
+
+        return redirect()->route('finance.invoices')->with('success', 'Invoice deleted successfully.');
+    }
+
+    /**
+     * Mark invoice as paid.
+     */
+    public function markInvoiceAsPaid(Request $request, Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance() || ($invoice->clinic_id !== $user->clinic_id)) {
+            abort(403, 'Unauthorized access to invoice.');
+        }
+
+        $request->validate([
+            'paid_amount' => 'required|numeric|min:0|max:' . $invoice->balance,
+            'payment_method' => 'required|in:cash,card,bank_transfer,check,other',
+        ]);
+
+        $invoice->markAsPaid($request->paid_amount, $request->payment_method);
+
+        return redirect()->route('finance.invoices')->with('success', 'Invoice marked as paid successfully.');
+    }
+
+    /**
+     * Mark invoice as sent.
+     */
+    public function markInvoiceAsSent(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance() || ($invoice->clinic_id !== $user->clinic_id)) {
+            abort(403, 'Unauthorized access to invoice.');
+        }
+
+        if ($invoice->status !== 'draft') {
+            return redirect()->route('finance.invoices')->with('error', 'Only draft invoices can be marked as sent.');
+        }
+
+        $invoice->markAsSent();
+
+        return redirect()->route('finance.invoices')->with('success', 'Invoice marked as sent successfully.');
+    }
+
+    /**
+     * Mark invoice as cancelled.
+     */
+    public function markInvoiceAsCancelled(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance() || ($invoice->clinic_id !== $user->clinic_id)) {
+            abort(403, 'Unauthorized access to invoice.');
+        }
+
+        if ($invoice->status === 'paid') {
+            return redirect()->route('finance.invoices')->with('error', 'Cannot cancel paid invoices.');
+        }
+
+        $invoice->markAsCancelled();
+
+        return redirect()->route('finance.invoices')->with('success', 'Invoice cancelled successfully.');
+    }
+
+    /**
+     * Display receipts.
+     */
+    public function receipts(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to receipts.');
+        }
+
+        $query = Receipt::with(['clinic', 'creator', 'approver']);
+
+        // Filter by clinic for all users
+        $query->where('clinic_id', $user->clinic_id);
+
+        // Apply filters
+        if ($request->filled('status')) {
+            $query->byStatus($request->status);
+        }
+
+        if ($request->filled('category')) {
+            $query->byCategory($request->category);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('receipt_number', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('payer_name', 'like', "%{$search}%")
+                  ->orWhere('reference_number', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->byDateRange($request->date_from, $request->date_to);
+        }
+
+        $receipts = $query->latest()->paginate(15);
+
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.receipts', compact('receipts', 'currency', 'currencySymbol'));
+    }
+
+    /**
+     * Store a new receipt.
+     */
+    public function storeReceipt(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to create receipts.');
+        }
+
+        $request->validate([
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'category' => 'required|in:consultation_fee,procedure_fee,medication_sale,lab_test_fee,equipment_rental,insurance_reimbursement,donation,refund,other',
+            'receipt_date' => 'required|date',
+            'payment_method' => 'required|in:cash,card,bank_transfer,check,other',
+            'payer_name' => 'nullable|string|max:255',
+            'reference_number' => 'nullable|string|max:255',
+            'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'notes' => 'nullable|string',
+        ]);
+
+        $receiptData = [
+            'clinic_id' => $user->clinic_id,
+            'description' => $request->description,
+            'amount' => $request->amount,
+            'category' => $request->category,
+            'receipt_date' => $request->receipt_date,
+            'payment_method' => $request->payment_method,
+            'payer_name' => $request->payer_name,
+            'reference_number' => $request->reference_number,
+            'notes' => $request->notes,
+            'created_by' => $user->id,
+            'status' => 'pending', // All receipts start as pending for approval
+        ];
+
+        // Handle receipt file upload
+        if ($request->hasFile('receipt_file')) {
+            $file = $request->file('receipt_file');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs("receipts/{$user->clinic_id}/files", $filename, 'public');
+            $receiptData['receipt_file'] = $path;
+        }
+
+        $receipt = Receipt::create($receiptData);
+
+        // Notify admins about the new receipt that needs approval
+        $this->notifyAdminsForReceiptApproval($receipt, $user, false);
+
+        return back()->with('success', 'Receipt created successfully and sent for approval.');
+    }
+
+    /**
+     * Update an existing receipt.
+     * Note: Status is reset to 'pending' for admin re-approval when edited.
+     */
+    public function updateReceipt(Request $request, Receipt $receipt)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to update receipts.');
+        }
+
+        // Check if user can edit this receipt (admin or creator)
+        if (!$user->hasPermission('finance_edit') && $receipt->created_by !== $user->id) {
+            abort(403, 'You can only edit your own receipts.');
+        }
+
+        // Don't allow editing of approved receipts
+        if ($receipt->status === 'approved') {
+            return redirect()->route('finance.receipts')->with('error', 'Cannot edit approved receipts.');
+        }
+
+        $request->validate([
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'category' => 'required|in:consultation_fee,procedure_fee,medication_sale,lab_test_fee,equipment_rental,insurance_reimbursement,donation,refund,other',
+            'receipt_date' => 'required|date',
+            'payment_method' => 'required|in:cash,card,bank_transfer,check,other',
+            'payer_name' => 'nullable|string|max:255',
+            'reference_number' => 'nullable|string|max:255',
+            'receipt_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Handle receipt file upload
+        if ($request->hasFile('receipt_file')) {
+            // Delete old file if exists
+            if ($receipt->receipt_file && Storage::exists($receipt->receipt_file)) {
+                Storage::delete($receipt->receipt_file);
+            }
+
+            $file = $request->file('receipt_file');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs("receipts/{$user->clinic_id}/files", $filename, 'public');
+            $receipt->receipt_file = $path;
+        }
+
+        // Update receipt data and reset status to pending for re-approval
+        $receipt->update([
+            'description' => $request->description,
+            'amount' => $request->amount,
+            'category' => $request->category,
+            'receipt_date' => $request->receipt_date,
+            'payment_method' => $request->payment_method,
+            'payer_name' => $request->payer_name,
+            'reference_number' => $request->reference_number,
+            'notes' => $request->notes,
+            'status' => 'pending', // Reset status to pending for admin re-approval
+        ]);
+
+        // Notify admins about the updated receipt that needs approval
+        $this->notifyAdminsForReceiptApproval($receipt, $user, true);
+
+        return redirect()->route('finance.receipts')->with('success', 'Receipt updated successfully and sent for re-approval.');
+    }
+
+    /**
+     * Delete a receipt.
+     */
+    public function destroyReceipt(Receipt $receipt)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to delete receipts.');
+        }
+
+        // Check if user can delete this receipt (admin or creator)
+        if (!$user->hasPermission('finance_delete') && $receipt->created_by !== $user->id) {
+            abort(403, 'You can only delete your own receipts.');
+        }
+
+        // Don't allow deletion of approved receipts
+        if ($receipt->status === 'approved') {
+            return redirect()->route('finance.receipts')->with('error', 'Cannot delete approved receipts.');
+        }
+
+        $receipt->delete();
+
+        return redirect()->route('finance.receipts')->with('success', 'Receipt deleted successfully.');
+    }
+
+    /**
+     * Generate invoice PDF.
+     */
+    public function generateInvoicePDF(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+            abort(403, 'Unauthorized access to invoice.');
+        }
+
+        $invoice->load(['patient', 'clinic', 'items']);
+
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $invoice->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        $pdf = Pdf::loadView('finance.invoice-pdf', compact('invoice', 'currency', 'currencySymbol'));
+
+        return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
+    }
+
+    /**
+     * Display invoice for printing.
+     */
+    public function printInvoice(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+            abort(403, 'Unauthorized access to invoice.');
+        }
+
+        $invoice->load(['patient', 'clinic', 'items']);
+
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $invoice->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.invoice-print', compact('invoice', 'currency', 'currencySymbol'));
+    }
+
+    /**
+     * Generate public PDF access for invoice (no authentication required).
+     */
+    public function publicInvoicePDF(Invoice $invoice, $token)
+    {
+        // Verify the token
+        $expectedToken = $this->generateInvoiceToken($invoice);
+        if (!hash_equals($expectedToken, $token)) {
+            abort(403, 'Invalid access token for invoice.');
+        }
+
+        $invoice->load(['patient', 'clinic', 'items']);
+
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $invoice->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        $pdf = Pdf::loadView('finance.invoice-pdf', compact('invoice', 'currency', 'currencySymbol'));
+
+        return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
+    }
+
+    /**
+     * Get invoice data for editing.
+     */
+    public function getInvoiceForEdit(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to invoice.'
+            ], 403);
+        }
+
+        // Load invoice with relationships
+        $invoice->load(['patient', 'items']);
+
+        return response()->json([
+            'success' => true,
+            'invoice' => [
+                'id' => $invoice->id,
+                'patient_id' => $invoice->patient_id,
+                'due_date' => $invoice->due_date,
+                'notes' => $invoice->notes,
+                'total_amount' => $invoice->total_amount,
+                'balance' => $invoice->balance,
+                'items' => $invoice->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'description' => $item->description,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->unit_price,
+                        'item_type' => $item->item_type,
+                    ];
+                })
+            ]
+        ]);
+    }
+
+    /**
+     * Update an existing invoice.
+     */
+    public function updateInvoice(Request $request, Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to invoice.'
+            ], 403);
+        }
+
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'due_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:1000',
+            'items' => 'required|array|min:1',
+            'items.*.description' => 'required|string|max:255',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.item_type' => 'nullable|in:consultation,procedure,medication,lab_test,other',
+            'payment_amount' => 'nullable|numeric|min:0',
+            'payment_method' => 'nullable|in:cash,card,bank_transfer,check,other',
+            'payment_date' => 'nullable|date',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Store current paid amount before updating
+            $currentPaidAmount = $invoice->paid_amount ?? 0;
+
+            // Update invoice basic info
+            $invoice->update([
+                'patient_id' => $request->patient_id,
+                'due_date' => $request->due_date,
+                'notes' => $request->notes,
+            ]);
+
+            // Delete existing items (without events to avoid interference)
+            $invoice->items()->delete();
+
+            // Add new items and calculate totals (without events)
+            $subtotal = 0;
+            foreach ($request->items as $itemData) {
+                $total = $itemData['quantity'] * $itemData['unit_price'];
+                $subtotal += $total;
+
+                InvoiceItem::withoutEvents(function () use ($invoice, $itemData, $total) {
+                    InvoiceItem::create([
+                        'invoice_id' => $invoice->id,
+                        'description' => $itemData['description'],
+                        'quantity' => $itemData['quantity'],
+                        'unit_price' => $itemData['unit_price'],
+                        'total_price' => $total,
+                        'item_type' => $itemData['item_type'] ?? 'other',
+                    ]);
+                });
+            }
+
+            // Update invoice totals (assuming no tax for now)
+            $taxAmount = 0; // You can implement tax calculation here
+            $totalAmount = $subtotal + $taxAmount;
+
+            // Calculate new balance: total - (existing payments + new payment)
+            $newPayment = $request->filled('payment_amount') && $request->payment_amount > 0
+                ? floatval($request->payment_amount)
+                : 0;
+
+            $totalPaid = $currentPaidAmount + $newPayment;
+            $newBalance = $totalAmount - $totalPaid;
+
+            // Calculate the new status based on payment
+            // We need to temporarily set the balance on the model to calculate status
+            $invoice->balance = max(0, $newBalance);
+            $newStatus = $invoice->calculateNewStatus();
+
+            // Prepare update data
+            $updateData = [
+                'subtotal' => $subtotal,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'paid_amount' => $totalPaid,
+                'balance' => max(0, $newBalance),
+                'status' => $newStatus,
+                'updated_at' => now(),
+            ];
+
+            // If a new payment was made, update payment method and date
+            if ($newPayment > 0) {
+                $updateData['payment_method'] = $request->payment_method;
+                if (!$invoice->paid_at) {
+                    $updateData['paid_at'] = $request->payment_date ?? now();
+                }
+            }
+
+            // Set paid_at if fully paid and not already set
+            if ($newStatus === 'paid' && !$invoice->paid_at) {
+                $updateData['paid_at'] = now();
+            }
+
+            // Use raw DB update to avoid any Eloquent event issues
+            DB::table('invoices')
+                ->where('id', $invoice->id)
+                ->update($updateData);
+
+            // Refresh the model to get the updated values
+            $invoice->refresh();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice updated successfully!' . ($newPayment > 0 ? ' Payment of ' . number_format($newPayment, 2) . ' recorded.' : '')
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating invoice: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate secure token for invoice public access.
+     */
+    private function generateInvoiceToken(Invoice $invoice)
+    {
+        // Create a secure token based on invoice data and app key
+        return hash('sha256', $invoice->id . $invoice->invoice_number . $invoice->created_at . config('app.key'));
+    }
+
+    /**
+     * Get public PDF URL for invoice (for WhatsApp sharing).
+     */
+    public function getPublicPdfUrl(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to invoice.'
+            ], 403);
+        }
+
+        // Generate secure token
+        $token = $this->generateInvoiceToken($invoice);
+
+        // Create public URL
+        $publicUrl = route('invoice.public.pdf', [
+            'invoice' => $invoice->id,
+            'token' => $token
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'public_url' => $publicUrl,
+            'invoice_number' => $invoice->invoice_number
+        ]);
+    }
+
+
+
+    /**
+     * Display financial reports dashboard.
+     */
+    public function reports()
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to financial reports.');
+        }
+
+        // Get basic report data
+        $reportData = $this->getReportData($user);
+
+        return view('finance.reports', $reportData);
+    }
+
+    /**
+     * Generate cash flow report.
+     */
+    public function cashFlowReport(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to cash flow reports.');
+        }
+
+        $request->validate([
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+        ]);
+
+        $dateFrom = $request->date_from ? \Carbon\Carbon::parse($request->date_from) : now()->startOfMonth();
+        $dateTo = $request->date_to ? \Carbon\Carbon::parse($request->date_to) : now()->endOfMonth();
+
+        // Get cash flow data
+        $cashFlowData = $this->getCashFlowData($user, $dateFrom, $dateTo);
+
+        if ($request->wantsJson()) {
+            return response()->json($cashFlowData);
+        }
+
+        return view('finance.reports.cash-flow', compact('cashFlowData', 'dateFrom', 'dateTo'));
+    }
+
+    /**
+     * Generate profit and loss report.
+     */
+    public function profitLossReport(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to profit and loss reports.');
+        }
+
+        $request->validate([
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+        ]);
+
+        $dateFrom = $request->date_from ? \Carbon\Carbon::parse($request->date_from) : now()->startOfMonth();
+        $dateTo = $request->date_to ? \Carbon\Carbon::parse($request->date_to) : now()->endOfMonth();
+
+        // Get profit and loss data
+        $profitLossData = $this->getProfitLossData($user, $dateFrom, $dateTo);
+
+        if ($request->wantsJson()) {
+            return response()->json($profitLossData);
+        }
+
+        return view('finance.reports.profit-loss', compact('profitLossData', 'dateFrom', 'dateTo'));
+    }
+
+    /**
+     * Get financial statistics.
+     */
+    private function getFinancialStats($user): array
+    {
+        $stats = [];
+
+        // Base queries - FILTER BY CLINIC
+        $invoicesQuery = Invoice::where('clinic_id', $user->clinic_id);
+        $expensesQuery = Expense::where('clinic_id', $user->clinic_id);
+        $receiptsQuery = Receipt::where('clinic_id', $user->clinic_id);
+
+
+
+        // Current month stats
+        $currentMonth = now()->startOfMonth();
+        $currentMonthEnd = now()->endOfMonth();
+
+        $stats['monthlyRevenue'] = $invoicesQuery->clone()
+            ->byDateRange($currentMonth, $currentMonthEnd)
+            ->sum('total_amount');
+
+        $stats['monthlyReceipts'] = $receiptsQuery->clone()
+            ->approved()
+            ->byDateRange($currentMonth, $currentMonthEnd)
+            ->sum('amount');
+
+        $stats['monthlyExpenses'] = $expensesQuery->clone()
+            ->approved()
+            ->byDateRange($currentMonth, $currentMonthEnd)
+            ->sum('amount');
+
+        $stats['monthlyProfit'] = ($stats['monthlyRevenue'] + $stats['monthlyReceipts']) - $stats['monthlyExpenses'];
+
+        // Outstanding amounts
+        $stats['outstandingInvoices'] = $invoicesQuery->clone()
+            ->whereIn('status', ['sent', 'overdue'])
+            ->sum('balance');
+
+        // Partial payments balance
+        $stats['partialPaymentsBalance'] = $invoicesQuery->clone()
+            ->where('status', 'partial_paid')
+            ->sum('balance');
+
+        $stats['partialPaymentsCount'] = $invoicesQuery->clone()
+            ->where('status', 'partial_paid')
+            ->count();
+
+        $stats['pendingReceipts'] = $receiptsQuery->clone()
+            ->pending()
+            ->sum('amount');
+
+        $stats['pendingExpenses'] = $expensesQuery->clone()
+            ->pending()
+            ->sum('amount');
+
+        // Counts
+        $stats['totalInvoices'] = $invoicesQuery->clone()->count();
+        $stats['overdueInvoices'] = $invoicesQuery->clone()->overdue()->count();
+        $stats['totalReceipts'] = $receiptsQuery->clone()->count();
+        $stats['pendingReceiptCount'] = $receiptsQuery->clone()->pending()->count();
+        $stats['pendingExpenseCount'] = $expensesQuery->clone()->pending()->count();
+
+        // Monthly Cash flow calculation (current month only)
+        // Total cash in = Invoice payments + Other receipts (current month)
+        $monthlyInvoicePayments = $invoicesQuery->clone()
+            ->byDateRange($currentMonth, $currentMonthEnd)
+            ->sum('paid_amount');
+
+        $monthlyOtherReceipts = $receiptsQuery->clone()
+            ->approved()
+            ->byDateRange($currentMonth, $currentMonthEnd)
+            ->sum('amount');
+
+        $monthlyCashIn = $monthlyInvoicePayments + $monthlyOtherReceipts;
+
+        // Total cash out = Expenses (current month)
+        $monthlyCashOut = $expensesQuery->clone()
+            ->approved()
+            ->byDateRange($currentMonth, $currentMonthEnd)
+            ->sum('amount');
+
+        $stats['monthlyCashFlow'] = $monthlyCashIn - $monthlyCashOut;
+        $stats['monthlyCashIn'] = $monthlyCashIn;
+        $stats['monthlyCashOut'] = $monthlyCashOut;
+
+        // Set cashFlow to monthly cash flow for dashboard display
+        $stats['cashFlow'] = $stats['monthlyCashFlow'];
+
+        // Recent activity
+        $stats['recentInvoices'] = $invoicesQuery->clone()
+            ->with(['patient'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $stats['recentReceipts'] = $receiptsQuery->clone()
+            ->with(['creator'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $stats['recentExpenses'] = $expensesQuery->clone()
+            ->with(['creator'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        return $stats;
+    }
+
+    /**
+     * Get currency symbol for a given currency code
+     */
+    private function getCurrencySymbol($currencyCode): string
+    {
+        $symbols = [
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            'IQD' => 'د.ع',
+            'JOD' => 'د.أ',
+            'EGP' => 'ج.م',
+        ];
+
+        return $symbols[$currencyCode] ?? '$';
+    }
+
+    /**
+     * Get report data for reports dashboard.
+     */
+    private function getReportData($user): array
+    {
+        $data = [];
+
+        // Base queries filtered by clinic
+        $invoicesQuery = Invoice::where('clinic_id', $user->clinic_id);
+        $expensesQuery = Expense::where('clinic_id', $user->clinic_id);
+
+        // Current month data
+        $currentMonth = now()->startOfMonth();
+        $currentMonthEnd = now()->endOfMonth();
+
+        $data['currentMonth'] = [
+            'revenue' => $invoicesQuery->clone()->byDateRange($currentMonth, $currentMonthEnd)->sum('total_amount'),
+            'expenses' => $expensesQuery->clone()->approved()->byDateRange($currentMonth, $currentMonthEnd)->sum('amount'),
+        ];
+        $data['currentMonth']['profit'] = $data['currentMonth']['revenue'] - $data['currentMonth']['expenses'];
+
+        // Previous month data for comparison
+        $previousMonth = now()->subMonth()->startOfMonth();
+        $previousMonthEnd = now()->subMonth()->endOfMonth();
+
+        $data['previousMonth'] = [
+            'revenue' => $invoicesQuery->clone()->byDateRange($previousMonth, $previousMonthEnd)->sum('total_amount'),
+            'expenses' => $expensesQuery->clone()->approved()->byDateRange($previousMonth, $previousMonthEnd)->sum('amount'),
+        ];
+        $data['previousMonth']['profit'] = $data['previousMonth']['revenue'] - $data['previousMonth']['expenses'];
+
+        // Year to date
+        $yearStart = now()->startOfYear();
+        $data['yearToDate'] = [
+            'revenue' => $invoicesQuery->clone()->byDateRange($yearStart, now())->sum('total_amount'),
+            'expenses' => $expensesQuery->clone()->approved()->byDateRange($yearStart, now())->sum('amount'),
+        ];
+        $data['yearToDate']['profit'] = $data['yearToDate']['revenue'] - $data['yearToDate']['expenses'];
+
+        return $data;
+    }
+
+    /**
+     * Get cash flow data for specified period.
+     */
+    private function getCashFlowData($user, $dateFrom, $dateTo): array
+    {
+        $data = [];
+
+        // Cash inflows (invoices)
+        $inflows = Invoice::where('clinic_id', $user->clinic_id)
+            ->byDateRange($dateFrom, $dateTo)
+            ->selectRaw('DATE(created_at) as date, SUM(total_amount) as amount')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // Cash outflows (expenses)
+        $outflows = Expense::where('clinic_id', $user->clinic_id)
+            ->approved()
+            ->byDateRange($dateFrom, $dateTo)
+            ->selectRaw('DATE(expense_date) as date, SUM(amount) as amount')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $data['inflows'] = $inflows;
+        $data['outflows'] = $outflows;
+        $data['totalInflows'] = $inflows->sum('amount');
+        $data['totalOutflows'] = $outflows->sum('amount');
+        $data['netCashFlow'] = $data['totalInflows'] - $data['totalOutflows'];
+
+        return $data;
+    }
+
+    /**
+     * Get profit and loss data for specified period.
+     */
+    private function getProfitLossData($user, $dateFrom, $dateTo): array
+    {
+        $data = [];
+
+        // Revenue breakdown
+        $revenue = Invoice::where('clinic_id', $user->clinic_id)
+            ->byDateRange($dateFrom, $dateTo)
+            ->with('items')
+            ->get();
+
+        $revenueByType = $revenue->flatMap->items
+            ->groupBy('item_type')
+            ->map(function ($items) {
+                return $items->sum(function ($item) {
+                    return $item->quantity * $item->unit_price;
+                });
+            });
+
+        // Expense breakdown
+        $expenses = Expense::where('clinic_id', $user->clinic_id)
+            ->approved()
+            ->byDateRange($dateFrom, $dateTo)
+            ->get();
+
+        $expensesByCategory = $expenses->groupBy('category')
+            ->map(function ($expenses) {
+                return $expenses->sum('amount');
+            });
+
+        $data['revenue'] = [
+            'total' => $revenue->sum('total_amount'),
+            'byType' => $revenueByType,
+        ];
+
+        $data['expenses'] = [
+            'total' => $expenses->sum('amount'),
+            'byCategory' => $expensesByCategory,
+        ];
+
+        $data['grossProfit'] = $data['revenue']['total'] - $data['expenses']['total'];
+        $data['profitMargin'] = $data['revenue']['total'] > 0
+            ? ($data['grossProfit'] / $data['revenue']['total']) * 100
+            : 0;
+
+        return $data;
+    }
+
+    /**
+     * Send invoice via email.
+     */
+    public function emailInvoice(Request $request, Invoice $invoice)
+    {
+        $user = auth()->user();
+
+
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to invoice.'
+            ], 403);
+        }
+
+        try {
+            $validated = $request->validate([
+                'email' => 'required|email',
+                'subject' => 'nullable|string|max:255',
+                'message' => 'nullable|string|max:1000',
+            ]);
+
+
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Invoice email validation failed', [
+                'invoice_id' => $invoice->id,
+                'errors' => $e->errors()
+            ]);
+
+            $errorMessages = [];
+            foreach ($e->errors() as $field => $messages) {
+                $errorMessages = array_merge($errorMessages, $messages);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . implode(', ', $errorMessages)
+            ], 422);
+        }
+
+        $recipientEmail = $request->email;
+        $customMessage = $request->message;
+        // Handle checkbox value properly - "on" means checked, null/empty means unchecked
+        $attachPdf = $request->has('attach_pdf') && in_array($request->attach_pdf, ['on', 'true', '1', true]);
+
+        try {
+            $invoice->load(['patient', 'clinic', 'items']);
+
+            // Send the email
+            Mail::to($recipientEmail)->send(new InvoiceMail($invoice, $attachPdf, $customMessage));
+
+            // Update invoice status to 'sent' if it was draft
+            if ($invoice->status === 'draft') {
+                $invoice->markAsSent();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice sent successfully to ' . $recipientEmail
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Invoice email failed', [
+                'invoice_id' => $invoice->id,
+                'recipient' => $recipientEmail,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send invoice email. Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Show email invoice form.
+     */
+    public function showEmailForm(Invoice $invoice)
+    {
+        $user = auth()->user();
+
+        // Check access
+        if (!$user->canAccessFinance() ||
+            ($invoice->clinic_id !== $user->clinic_id)) {
+            abort(403, 'Unauthorized access to invoice.');
+        }
+
+        $invoice->load(['patient', 'clinic']);
+
+        return response()->json([
+            'success' => true,
+            'invoice' => [
+                'id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'patient_name' => $invoice->patient->first_name . ' ' . $invoice->patient->last_name,
+                'patient_email' => $invoice->patient->email,
+                'total_amount' => $invoice->total_amount,
+                'status' => $invoice->status,
+            ]
+        ]);
+    }
+
+    /**
+     * Public invoice view (no authentication required).
+     */
+    public function publicInvoiceView(Invoice $invoice, $token)
+    {
+        // Verify the token
+        $expectedToken = $this->generateInvoiceToken($invoice);
+        if (!hash_equals($expectedToken, $token)) {
+            abort(403, 'Invalid access token for invoice.');
+        }
+
+        $invoice->load(['patient', 'clinic', 'items']);
+
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $invoice->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.invoice-print', compact('invoice', 'currency', 'currencySymbol'));
+    }
+
+    /**
+     * Notify admins about expenses that need approval.
+     */
+    private function notifyAdminsForExpenseApproval(Expense $expense, User $submittedBy, bool $isUpdate = false)
+    {
+        // Get all users with finance approval permissions in the same clinic
+        $admins = User::where('clinic_id', $expense->clinic_id)
+            ->where('id', '!=', $submittedBy->id) // Don't notify the person who submitted/updated
+            ->get()
+            ->filter(function ($user) {
+                return $user->hasPermission('finance_approve');
+            });
+
+        // Send notification to each admin
+        foreach ($admins as $admin) {
+            $admin->notify(new ExpenseNeedsApprovalNotification($expense, $submittedBy, $isUpdate));
+        }
+    }
+
+    /**
+     * Notify admins about receipts that need approval.
+     */
+    private function notifyAdminsForReceiptApproval(Receipt $receipt, User $submittedBy, bool $isUpdate = false)
+    {
+        // Get all users with finance approval permissions in the same clinic
+        $admins = User::where('clinic_id', $receipt->clinic_id)
+            ->where('id', '!=', $submittedBy->id) // Don't notify the person who submitted/updated
+            ->get()
+            ->filter(function ($user) {
+                return $user->hasPermission('finance_approve');
+            });
+
+        // Send notification to each admin
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\ReceiptNeedsApprovalNotification($receipt, $submittedBy, $isUpdate));
+        }
+    }
+}

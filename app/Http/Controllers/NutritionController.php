@@ -1,0 +1,2579 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\DietPlan;
+use App\Models\DietPlanMeal;
+use App\Models\DietPlanMealFood;
+use App\Models\DietPlanWeightRecord;
+use App\Models\Food;
+use App\Models\FoodGroup;
+use App\Models\Patient;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\KurdishFontService;
+use App\Services\PdfKurdishFontService;
+use App\Services\DomPdfFontLoader;
+use App\Services\WordDocumentService;
+use App\Services\MealPlanAutoGenerator;
+
+
+class NutritionController extends Controller
+{
+    /**
+     * Display a listing of nutrition plans.
+     */
+    public function index(Request $request)
+    {
+        $user = Auth::user();
+
+        // Check if user can view nutrition plans
+        if (!$user->canViewNutritionPlans()) {
+            abort(403, 'You do not have permission to view nutrition plans.');
+        }
+
+        $query = DietPlan::with(['patient', 'doctor']);
+
+        // Filter by clinic
+        $query->whereHas('patient', function ($q) use ($user) {
+            $q->where('clinic_id', $user->clinic_id);
+        });
+
+        // Filter by doctor if user is a doctor or nutritionist
+        if (in_array($user->role, ['doctor', 'nutritionist'])) {
+            $query->where('doctor_id', $user->id);
+        }
+
+        // Apply filters
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('goal')) {
+            $query->where('goal', $request->goal);
+        }
+
+        if ($request->filled('patient_id')) {
+            $query->where('patient_id', $request->patient_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('plan_number', 'like', "%{$search}%")
+                  ->orWhereHas('patient', function ($pq) use ($search) {
+                      $pq->where('first_name', 'like', "%{$search}%")
+                         ->orWhere('last_name', 'like', "%{$search}%")
+                         ->orWhere('patient_id', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $nutritionPlans = $query->latest()->paginate(15);
+
+        // Get statistics
+        $statsQuery = DietPlan::whereHas('patient', function ($q) use ($user) {
+            $q->where('clinic_id', $user->clinic_id);
+        });
+
+        // Filter statistics by doctor if user is a doctor or nutritionist
+        if (in_array($user->role, ['doctor', 'nutritionist'])) {
+            $statsQuery->where('doctor_id', $user->id);
+        }
+
+        $stats = [
+            'total' => (clone $statsQuery)->count(),
+            'active' => (clone $statsQuery)->where('status', 'active')->count(),
+            'completed' => (clone $statsQuery)->where('status', 'completed')->count(),
+        ];
+
+        // Get patients for filter dropdown
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
+        return view('nutrition.index', compact('nutritionPlans', 'stats', 'patients'));
+    }
+
+    /**
+     * Show the form for creating a new nutrition plan.
+     */
+    public function create(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->canCreateNutritionPlans()) {
+            abort(403, 'You do not have permission to create nutrition plans.');
+        }
+
+        // Get patients for dropdown
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
+        // Get food groups and foods
+        $foodGroups = FoodGroup::with(['foods' => function ($query) use ($user) {
+            $query->where(function ($q) use ($user) {
+                $q->where('is_custom', false)
+                  ->orWhere('clinic_id', $user->clinic_id);
+            })->where('is_active', true);
+        }])->get();
+
+        // Pre-select patient if provided
+        $selectedPatient = null;
+        if ($request->filled('patient_id')) {
+            $selectedPatient = Patient::where('id', $request->patient_id)
+                                    ->where('clinic_id', $user->clinic_id)
+                                    ->first();
+        }
+
+        return view('nutrition.create', compact('patients', 'foodGroups', 'selectedPatient'));
+    }
+
+    /**
+     * Show the enhanced form for creating a new nutrition plan with detailed meal planning.
+     */
+    public function createEnhanced(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->canCreateNutritionPlans()) {
+            abort(403, 'You do not have permission to create nutrition plans.');
+        }
+
+        // Check if editing existing plan
+        $dietPlan = null;
+        if ($request->filled('edit')) {
+            $editId = $request->edit;
+
+            // First check if the diet plan exists at all
+            $planExists = DietPlan::where('id', $editId)->exists();
+            if (!$planExists) {
+                return redirect()->route('nutrition.index')->with('error', "Nutrition plan with ID {$editId} not found.");
+            }
+
+            // Then check if user has access to it
+            $dietPlan = DietPlan::with(['patient', 'meals.foods.food'])
+                              ->where('id', $editId)
+                              ->whereHas('patient', function($query) use ($user) {
+                                  $query->where('clinic_id', $user->clinic_id);
+                              })
+                              ->first();
+
+            if (!$dietPlan) {
+                return redirect()->route('nutrition.index')->with('error', 'You do not have permission to edit this nutrition plan.');
+            }
+        }
+
+        // Get patients for dropdown
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
+        // Get food groups for the food selection modal
+        $foodGroups = FoodGroup::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+
+        // Pre-select patient if provided or from existing plan
+        $selectedPatient = null;
+        if ($dietPlan) {
+            $selectedPatient = $dietPlan->patient;
+        } elseif ($request->filled('patient_id')) {
+            $selectedPatient = Patient::where('id', $request->patient_id)
+                                    ->where('clinic_id', $user->clinic_id)
+                                    ->first();
+        }
+
+        return view('nutrition.create-enhanced', compact('patients', 'foodGroups', 'selectedPatient', 'dietPlan'));
+    }
+
+    /**
+     * Store a newly created nutrition plan.
+     */
+    public function store(Request $request)
+    {
+        \Log::info('NutritionController::store method called');
+        $user = Auth::user();
+
+        if (!$user->canCreateNutritionPlans()) {
+            abort(403, 'You do not have permission to create nutrition plans.');
+        }
+
+
+
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'goal' => 'required|in:weight_loss,weight_gain,maintenance,muscle_gain,diabetic,health_improvement,other',
+            'goal_description' => 'nullable|string',
+            'duration_days' => 'nullable|integer|min:1|max:365',
+            'target_calories' => 'nullable|numeric|min:500|max:5000',
+            'target_protein' => 'nullable|numeric|min:0|max:500',
+            'target_carbs' => 'nullable|numeric|min:0|max:1000',
+            'target_fat' => 'nullable|numeric|min:0|max:300',
+            'initial_weight' => 'nullable|numeric|min:20|max:500',
+            'target_weight' => 'nullable|numeric|min:20|max:500',
+            'initial_height' => 'nullable|numeric|min:100|max:250',
+            'weekly_weight_goal' => 'nullable|numeric|min:-2|max:2',
+            'instructions' => 'nullable|string',
+            'restrictions' => 'nullable|string',
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after:start_date',
+            'meal_data' => 'nullable|string', // JSON string of meal data (legacy)
+            'meal_options' => 'nullable|string', // JSON string of meal options data
+            'weekly_meal_data' => 'nullable|string', // JSON string of weekly meal data
+            'meals' => 'nullable|array',
+            'meals.*.name' => 'required_with:meals|string|max:255',
+            'meals.*.time' => 'required_with:meals|string|max:10',
+            'meals.*.day_number' => 'required_with:meals|integer|min:1',
+            'meals.*.foods' => 'nullable|array',
+            'meals.*.foods.*.food_id' => 'required_with:meals.*.foods|exists:foods,id',
+            'meals.*.foods.*.quantity' => 'required_with:meals.*.foods|numeric|min:0.1',
+            'meals.*.foods.*.unit' => 'required_with:meals.*.foods|string|max:50',
+        ]);
+
+        // Verify patient belongs to clinic
+        $patient = Patient::where('id', $request->patient_id)
+                         ->where('clinic_id', $user->clinic_id)
+                         ->firstOrFail();
+
+        DB::beginTransaction();
+
+        try {
+            // Create nutrition plan
+            $nutritionPlan = DietPlan::create([
+                'patient_id' => $request->patient_id,
+                'doctor_id' => $user->id,
+                'title' => $request->title,
+                'description' => $request->description,
+                'goal' => $request->goal,
+                'goal_description' => $request->goal_description,
+                'duration_days' => $request->duration_days,
+                'target_calories' => $request->target_calories,
+                'target_protein' => $request->target_protein,
+                'target_carbs' => $request->target_carbs,
+                'target_fat' => $request->target_fat,
+                'initial_weight' => $request->initial_weight,
+                'target_weight' => $request->target_weight,
+                'initial_height' => $request->initial_height,
+                'weekly_weight_goal' => $request->weekly_weight_goal,
+                'instructions' => $request->instructions,
+                'restrictions' => $request->restrictions,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+                'status' => 'active',
+            ]);
+
+            // Initialize weight tracking from patient data if not provided
+            $nutritionPlan->initializeWeightTracking();
+
+            // Calculate initial BMI and other weight-related fields
+            if ($nutritionPlan->initial_weight && $nutritionPlan->initial_height) {
+                $initialBmi = Patient::calculateBMI($nutritionPlan->initial_weight, $nutritionPlan->initial_height);
+                $updateData = [
+                    'initial_bmi' => $initialBmi,
+                    'current_weight' => $nutritionPlan->initial_weight,
+                    'current_bmi' => $initialBmi,
+                ];
+
+                // Calculate target BMI if target weight is set
+                if ($nutritionPlan->target_weight) {
+                    $updateData['target_bmi'] = Patient::calculateBMI($nutritionPlan->target_weight, $nutritionPlan->initial_height);
+                    $updateData['weight_goal_kg'] = $nutritionPlan->target_weight - $nutritionPlan->initial_weight;
+                }
+
+                $nutritionPlan->update($updateData);
+            }
+
+            // Create initial weight record
+            if ($nutritionPlan->initial_weight) {
+                $nutritionPlan->addWeightRecord([
+                    'weight' => $nutritionPlan->initial_weight,
+                    'height' => $nutritionPlan->initial_height,
+                    'notes' => 'Initial weight record at plan start',
+                    'record_date' => $nutritionPlan->start_date,
+                    'recorded_by' => $user->id,
+                ]);
+            }
+
+
+
+            // Handle enhanced meal data from detailed form (single day)
+            if ($request->filled('meal_data')) {
+                $mealData = json_decode($request->meal_data, true);
+
+                // Debug: Log the received meal data (can be removed in production)
+                \Log::info('Received meal data:', [
+                    'raw_meal_data' => $request->meal_data,
+                    'decoded_meal_data' => $mealData
+                ]);
+
+                if ($mealData && is_array($mealData)) {
+                    $mealTypes = [
+                        'breakfast' => ['name' => 'Breakfast', 'time' => '08:00'],
+                        'lunch' => ['name' => 'Lunch', 'time' => '12:00'],
+                        'dinner' => ['name' => 'Dinner', 'time' => '18:00'],
+                        'snacks' => ['name' => 'Snacks', 'time' => '15:00']
+                    ];
+
+                    foreach ($mealData as $mealType => $foods) {
+                        \Log::info("Processing meal type: {$mealType}", ['foods_count' => count($foods)]);
+
+                        if (!empty($foods) && isset($mealTypes[$mealType])) {
+                            $meal = $nutritionPlan->meals()->create([
+                                'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
+                                'meal_name' => $mealTypes[$mealType]['name'],
+                                'suggested_time' => $mealTypes[$mealType]['time'],
+                                'day_number' => 1, // Default to day 1
+                            ]);
+
+                            \Log::info("Created meal: {$meal->id}", [
+                                'meal_type' => $meal->meal_type,
+                                'meal_name' => $meal->meal_name
+                            ]);
+
+                            // Add foods to meal
+                            foreach ($foods as $foodData) {
+                                $food = Food::find($foodData['id']);
+                                // Use displayName if available (translated name), otherwise fall back to name
+                                $foodName = $foodData['displayName'] ?? $foodData['name'] ?? ($food ? $food->name : '');
+                                $mealFood = $meal->foods()->create([
+                                    'food_id' => $foodData['id'],
+                                    'food_name' => $foodName,
+                                    'quantity' => $foodData['quantity'],
+                                    'unit' => $foodData['unit'],
+                                    'preparation_notes' => $foodData['notes'] ?? null,
+                                ]);
+
+                                \Log::info("Added food to meal: {$mealFood->id}", [
+                                    'food_name' => $foodName,
+                                    'quantity' => $foodData['quantity'],
+                                    'unit' => $foodData['unit']
+                                ]);
+                            }
+                        } else {
+                            \Log::warning("Skipped meal type: {$mealType}", [
+                                'foods_empty' => empty($foods),
+                                'meal_type_exists' => isset($mealTypes[$mealType])
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Handle enhanced meal options data (multiple options per meal type)
+            if ($request->filled('meal_options')) {
+                $mealOptionsData = json_decode($request->meal_options, true);
+
+                // Debug: Log the received meal options data
+                \Log::info('Received meal options data:', [
+                    'raw_meal_options' => $request->meal_options,
+                    'decoded_meal_options' => $mealOptionsData
+                ]);
+
+                // Additional debug: Check the structure of each meal type
+                foreach ($mealOptionsData as $mealType => $options) {
+                    \Log::info("Meal type {$mealType} structure:", [
+                        'options_count' => count($options),
+                        'first_option_structure' => !empty($options[0]) ? array_keys($options[0]) : 'No options',
+                        'first_option_foods' => !empty($options[0]['foods']) ? count($options[0]['foods']) : 0,
+                        'first_food_structure' => !empty($options[0]['foods'][0]) ? array_keys($options[0]['foods'][0]) : 'No foods'
+                    ]);
+                }
+
+                if ($mealOptionsData && is_array($mealOptionsData)) {
+                    foreach ($mealOptionsData as $mealType => $options) {
+                        \Log::info("Processing meal type: {$mealType}", ['options_count' => count($options)]);
+
+                        if (!empty($options) && is_array($options)) {
+                            foreach ($options as $option) {
+                                // Create meal option
+                                $meal = $nutritionPlan->meals()->create([
+                                    'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
+                                    'option_number' => $option['option_number'] ?? 1,
+                                    'is_option_based' => true,
+                                    'option_description' => $option['option_description'] ?? "Option {$option['option_number']}",
+                                    'meal_name' => $option['option_description'] ?? "Option {$option['option_number']}",
+                                    'day_number' => null, // Not used in option-based system
+                                ]);
+
+                                \Log::info("Created meal option: {$meal->id}", [
+                                    'meal_type' => $meal->meal_type,
+                                    'option_number' => $meal->option_number,
+                                    'option_description' => $meal->option_description
+                                ]);
+
+                                // Add foods to the meal option
+                                if (!empty($option['foods']) && is_array($option['foods'])) {
+                                    foreach ($option['foods'] as $foodData) {
+                                        // Debug: Log the food data structure
+                                        \Log::info('Processing food data:', $foodData);
+
+                                        try {
+                                            $mealFood = $meal->foods()->create([
+                                                'food_id' => $foodData['food_id'] ?? null,
+                                                'food_name' => $foodData['food_name'] ?? $foodData['displayName'] ?? 'Unknown Food',
+                                                'quantity' => $foodData['quantity'] ?? 0,
+                                                'unit' => $foodData['unit'] ?? 'g',
+                                                'preparation_notes' => $foodData['preparation_notes'] ?? null,
+                                            ]);
+                                        } catch (\Exception $e) {
+                                            \Log::error('Error creating meal food:', [
+                                                'error' => $e->getMessage(),
+                                                'food_data' => $foodData,
+                                                'available_keys' => array_keys($foodData)
+                                            ]);
+                                            throw $e;
+                                        }
+
+                                        \Log::info("Added food to meal option: {$mealFood->id}", [
+                                            'food_name' => $mealFood->food_name,
+                                            'quantity' => $foodData['quantity'],
+                                            'unit' => $foodData['unit']
+                                        ]);
+                                    }
+                                }
+                            }
+                        } else {
+                            \Log::warning("Skipped meal type: {$mealType}", [
+                                'options_empty' => empty($options)
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Add meals if provided (legacy format)
+            if ($request->filled('meals')) {
+                foreach ($request->meals as $mealData) {
+                    $meal = $nutritionPlan->meals()->create([
+                        'meal_name' => $mealData['name'],
+                        'suggested_time' => $mealData['time'],
+                        'day_number' => $mealData['day_number'],
+                        'instructions' => $mealData['instructions'] ?? null,
+                    ]);
+
+                    // Add foods to meal if provided
+                    if (!empty($mealData['foods'])) {
+                        foreach ($mealData['foods'] as $foodData) {
+                            $food = Food::find($foodData['food_id']);
+                            // Use displayName if available (translated name), otherwise fall back to name
+                            $foodName = $foodData['displayName'] ?? $foodData['name'] ?? ($food ? $food->name : '');
+                            $meal->foods()->create([
+                                'food_id' => $foodData['food_id'],
+                                'food_name' => $foodName,
+                                'quantity' => $foodData['quantity'],
+                                'unit' => $foodData['unit'],
+                                'preparation_notes' => $foodData['notes'] ?? null,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('nutrition.show', $nutritionPlan)
+                           ->with('success', 'Nutrition plan created successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Failed to create nutrition plan', [
+                'error' => $e->getMessage(),
+                'code' => method_exists($e, 'getCode') ? $e->getCode() : null,
+                'trace' => substr($e->getTraceAsString(), 0, 2000),
+                'request' => request()->except(['_token']),
+            ]);
+            $msg = config('app.debug') ? $e->getMessage() : 'Failed to create nutrition plan. Please try again.';
+            return back()->withInput()->with('error', $msg);
+        }
+    }
+
+    /**
+     * Display the specified nutrition plan.
+     */
+    public function show(DietPlan $dietPlan)
+    {
+        // Debug mode for troubleshooting
+        if (request()->query('debug') === 'connection') {
+            return response()->json([
+                'status' => 'connected',
+                'timestamp' => now()->toDateTimeString(),
+                'app_env' => config('app.env'),
+                'app_debug' => config('app.debug'),
+                'diet_plan_id' => $dietPlan->id,
+                'plan_number' => $dietPlan->plan_number,
+                'route_working' => true,
+                'user_authenticated' => Auth::check(),
+                'user_id' => Auth::id()
+            ]);
+        }
+
+        $user = Auth::user();
+
+        // Ensure related patient exists and user has access
+        $dietPlan->load([
+            'patient',
+            'doctor',
+            // Order meals and foods in DB to avoid PHP collection sorts in Blade
+            'meals' => function ($q) {
+                $q->orderBy('day_number')->orderBy('suggested_time')->orderBy('option_number');
+            },
+            'meals.foods' => function ($q) {
+                $q->orderBy('id');
+            },
+            'meals.foods.food',
+        ]);
+        if (!$dietPlan->patient) {
+            return redirect()->route('nutrition.index')
+                ->with('error', __('The patient record for this nutrition plan was not found.'));
+        }
+        if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to nutrition plan.');
+        }
+
+        // Precompute flags used repeatedly in Blade to avoid extra queries
+        $isFlexiblePlan = $dietPlan->meals->contains(function ($m) { return (bool)($m->is_option_based ?? false); });
+
+        // Calculate nutritional totals
+        $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
+
+        return view('nutrition.show', compact('dietPlan', 'nutritionalTotals', 'isFlexiblePlan'));
+    }
+
+    /**
+     * Show the form for editing the specified nutrition plan.
+     */
+    public function edit(DietPlan $dietPlan)
+    {
+        $user = Auth::user();
+
+        // Check access and permissions
+        if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to nutrition plan.');
+        }
+
+        if (!$user->canEditNutritionPlans()) {
+            abort(403, 'You do not have permission to edit nutrition plans.');
+        }
+
+        if (!$dietPlan->canBeModified()) {
+            return back()->with('error', 'This nutrition plan cannot be modified.');
+        }
+
+        // Get patients for dropdown
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
+        // Get food groups and foods
+        $foodGroups = FoodGroup::with(['foods' => function ($query) use ($user) {
+            $query->where(function ($q) use ($user) {
+                $q->where('is_custom', false)
+                  ->orWhere('clinic_id', $user->clinic_id);
+            })->where('is_active', true);
+        }])->get();
+
+        $dietPlan->load(['meals.foods.food']);
+
+        return view('nutrition.edit', compact('dietPlan', 'patients', 'foodGroups'));
+    }
+
+    /**
+     * Show the enhanced form for editing the specified nutrition plan.
+     */
+    public function editEnhanced(DietPlan $dietPlan)
+    {
+        $user = Auth::user();
+
+        // Check access and permissions
+        if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to nutrition plan.');
+        }
+
+        if (!$user->canEditNutritionPlans()) {
+            abort(403, 'You do not have permission to edit nutrition plans.');
+        }
+
+        if (!$dietPlan->canBeModified()) {
+            return back()->with('error', 'This nutrition plan cannot be modified.');
+        }
+
+        // Get patients for dropdown
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
+        // Get food groups and foods
+        $foodGroups = FoodGroup::with(['foods' => function ($query) use ($user) {
+            $query->where(function ($q) use ($user) {
+                $q->where('is_custom', false)
+                  ->orWhere('clinic_id', $user->clinic_id);
+            })->where('is_active', true);
+        }])->get();
+
+        // Load the diet plan with all related data
+        $dietPlan->load(['patient', 'meals.foods.food']);
+
+        // Set selected patient for the form
+        $selectedPatient = $dietPlan->patient;
+
+        return view('nutrition.create-enhanced', compact('dietPlan', 'patients', 'foodGroups', 'selectedPatient'));
+    }
+
+    /**
+     * Update the specified nutrition plan.
+     */
+    public function update(Request $request, DietPlan $dietPlan)
+    {
+        $user = Auth::user();
+
+        // Check access and permissions
+        if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to nutrition plan.');
+        }
+
+        if (!$user->canEditNutritionPlans()) {
+            abort(403, 'You do not have permission to update nutrition plans.');
+        }
+
+        if (!$dietPlan->canBeModified()) {
+            return back()->with('error', 'This nutrition plan cannot be modified.');
+        }
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'goal' => 'required|in:weight_loss,weight_gain,maintenance,muscle_gain,diabetic,health_improvement,other',
+            'goal_description' => 'nullable|string',
+            'duration_days' => 'nullable|integer|min:1|max:365',
+            'target_calories' => 'nullable|numeric|min:500|max:5000',
+            'target_protein' => 'nullable|numeric|min:0|max:500',
+            'target_carbs' => 'nullable|numeric|min:0|max:1000',
+            'target_fat' => 'nullable|numeric|min:0|max:300',
+            'instructions' => 'nullable|string',
+            'restrictions' => 'nullable|string',
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after:start_date',
+            'status' => 'required|in:active,completed,cancelled',
+            'meal_options' => 'nullable|string', // JSON string of meal options data
+        ]);
+        // Save-as-new flow: when requested from Enhanced editor, clone into a new plan with today's date
+        if ($request->boolean('save_as_new')) {
+            try {
+                DB::beginTransaction();
+
+                $createData = [
+                    'patient_id' => $dietPlan->patient_id,
+                    'doctor_id' => $user->id,
+                    'title' => $request->input('title', $dietPlan->title),
+                    'description' => $request->input('description', $dietPlan->description),
+                    'goal' => $request->input('goal', $dietPlan->goal),
+                    'goal_description' => $request->input('goal_description', $dietPlan->goal_description),
+                    'duration_days' => $request->input('duration_days', $dietPlan->duration_days),
+                    'target_calories' => $request->input('target_calories', $dietPlan->target_calories),
+                    'target_protein' => $request->input('target_protein', $dietPlan->target_protein),
+                    'target_carbs' => $request->input('target_carbs', $dietPlan->target_carbs),
+                    'target_fat' => $request->input('target_fat', $dietPlan->target_fat),
+                    'target_weight' => $request->input('target_weight', $dietPlan->target_weight),
+                    'instructions' => $request->input('instructions', $dietPlan->instructions),
+                    'restrictions' => $request->input('restrictions', $dietPlan->restrictions),
+                    'start_date' => now()->toDateString(),
+                    'end_date' => $request->input('end_date'),
+                    'status' => $request->input('status', 'active'),
+                ];
+
+                $newPlan = DietPlan::create($createData);
+
+                if ($request->filled('meal_options')) {
+                    $mealOptionsData = json_decode($request->meal_options, true);
+                    if ($mealOptionsData && is_array($mealOptionsData)) {
+                        foreach ($mealOptionsData as $mealType => $options) {
+                            if (!empty($options) && is_array($options)) {
+                                foreach ($options as $optionIndex => $option) {
+                                    if (!empty($option['foods']) && is_array($option['foods'])) {
+                                        $meal = $newPlan->meals()->create([
+                                            'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
+                                            'day_number' => null,
+                                            'option_number' => $option['option_number'] ?? ($optionIndex + 1),
+                                            'is_option_based' => true,
+                                            'option_description' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1)))),
+                                            'meal_name' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1))))
+                                        ]);
+                                        foreach ($option['foods'] as $food) {
+                                            $meal->foods()->create([
+                                                'food_id' => $food['food_id'] ?? null,
+                                                'food_name' => $food['food_name'] ?? $food['displayName'] ?? 'Unknown Food',
+                                                'quantity' => $food['quantity'] ?? 100,
+                                                'unit' => $food['unit'] ?? 'g',
+                                                'preparation_notes' => $food['preparation_notes'] ?? $food['notes'] ?? null,
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                DB::commit();
+
+                return redirect()->route('nutrition.show', $newPlan)
+                    ->with('success', 'Saved as a new nutrition plan dated today. Original plan unchanged.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                \Log::error('Save-as-new in update() failed', ['diet_plan_id' => $dietPlan->id, 'error' => $e->getMessage()]);
+                return back()->withInput()->withErrors(['error' => 'Failed to save as new: ' . $e->getMessage()]);
+            }
+        }
+
+
+        $dietPlan->update($request->only([
+            'title', 'description', 'goal', 'goal_description', 'duration_days',
+            'target_calories', 'target_protein', 'target_carbs', 'target_fat',
+            'target_weight',
+            'instructions', 'restrictions', 'start_date', 'end_date', 'status'
+        ]));
+
+        // Recalculate derived BMI/weight goal fields when relevant values change
+        if ($dietPlan->initial_height) {
+            $updateData = [];
+            if (!is_null($dietPlan->initial_weight)) {
+                $initialBmi = Patient::calculateBMI($dietPlan->initial_weight, $dietPlan->initial_height);
+                $updateData['initial_bmi'] = $initialBmi;
+                $updateData['current_bmi'] = $initialBmi;
+            }
+            if (!is_null($dietPlan->target_weight)) {
+                $updateData['target_bmi'] = Patient::calculateBMI($dietPlan->target_weight, $dietPlan->initial_height);
+                if (!is_null($dietPlan->initial_weight)) {
+                    $updateData['weight_goal_kg'] = $dietPlan->target_weight - $dietPlan->initial_weight;
+                }
+            }
+            if (!empty($updateData)) {
+                $dietPlan->update($updateData);
+            }
+        }
+
+        // Debug: Check if meal_options is present in request
+        \Log::info('Update request debug:', [
+            'diet_plan_id' => $dietPlan->id,
+            'has_meal_options' => $request->has('meal_options'),
+            'meal_options_filled' => $request->filled('meal_options'),
+            'meal_options_length' => $request->has('meal_options') ? strlen($request->meal_options) : 0,
+            'all_request_keys' => array_keys($request->all())
+        ]);
+
+        // Handle meal options data update
+        if ($request->filled('meal_options')) {
+            $mealOptionsData = json_decode($request->meal_options, true);
+
+            // Debug: Log the received meal options data
+            \Log::info('Updating meal options data:', [
+                'diet_plan_id' => $dietPlan->id,
+                'raw_meal_options' => $request->meal_options,
+                'decoded_meal_options' => $mealOptionsData,
+                'json_decode_error' => json_last_error_msg()
+            ]);
+
+            if ($mealOptionsData && is_array($mealOptionsData)) {
+                // Safety check: ensure at least one food exists before wiping existing meals
+                $hasFoods = false;
+                foreach ($mealOptionsData as $mt => $opts) {
+                    if (is_array($opts)) {
+                        foreach ($opts as $opt) {
+                            if (!empty($opt['foods']) && is_array($opt['foods']) && count($opt['foods']) > 0) {
+                                $hasFoods = true;
+                                break 2;
+                            }
+                        }
+                    }
+                }
+
+                if (!$hasFoods) {
+                    $existingMealsCount = $dietPlan->meals()->count();
+                    \Log::warning('Attempted update with empty meal_options; preserving existing meals', [
+                        'diet_plan_id' => $dietPlan->id,
+                        'existing_meals_count' => $existingMealsCount,
+                    ]);
+                    if ($existingMealsCount > 0) {
+                        return back()->withInput()->withErrors([
+                            'error' => 'No meal data received. Existing meals were preserved. Please add foods to at least one meal before saving.'
+                        ]);
+                    }
+                    // No existing meals to preserve; do nothing
+                } else {
+                    // Delete existing meals for this diet plan and recreate from payload
+                    $dietPlan->meals()->delete();
+
+                    // Process each meal type and its options
+                    foreach ($mealOptionsData as $mealType => $options) {
+                        if (!empty($options) && is_array($options)) {
+                            foreach ($options as $optionIndex => $option) {
+                                if (!empty($option['foods']) && is_array($option['foods'])) {
+                                    // Create a meal for this option
+                                    $meal = $dietPlan->meals()->create([
+                                        'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
+                                        'day_number' => null, // Option-based: no day number
+                                        'option_number' => $option['option_number'] ?? ($optionIndex + 1),
+                                        'is_option_based' => true,
+                                        'option_description' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1)))),
+                                        'meal_name' => $option['option_description'] ?? ('Option ' . (($option['option_number'] ?? ($optionIndex + 1))))
+                                    ]);
+
+                                    // Add foods to this meal
+                                    foreach ($option['foods'] as $food) {
+                                        $meal->foods()->create([
+                                            'food_id' => $food['food_id'] ?? null,
+                                            'food_name' => $food['food_name'] ?? $food['displayName'] ?? 'Unknown Food',
+                                            'quantity' => $food['quantity'] ?? 100,
+                                            'unit' => $food['unit'] ?? 'g',
+                                            'preparation_notes' => $food['preparation_notes'] ?? $food['notes'] ?? null,
+                                        ]);
+                                    }
+
+                                    \Log::info("Created meal option for {$mealType}", [
+                                        'meal_id' => $meal->id,
+                                        'option_number' => $optionIndex + 1,
+                                        'foods_count' => count($option['foods'])
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            \Log::warning('No meal options data received in update request', [
+                'diet_plan_id' => $dietPlan->id,
+                'request_has_meal_options' => $request->has('meal_options'),
+                'meal_options_value' => $request->get('meal_options', 'NOT_SET')
+            ]);
+        }
+
+        return redirect()->route('nutrition.show', $dietPlan)
+                       ->with('success', 'Nutrition plan updated successfully.');
+    }
+
+    /**
+     * Remove the specified nutrition plan.
+     */
+    public function destroy(DietPlan $dietPlan)
+    {
+        $user = Auth::user();
+
+        // Check access and permissions
+        if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to nutrition plan.');
+        }
+
+        if (!$user->canDeleteNutritionPlans()) {
+            abort(403, 'You do not have permission to delete nutrition plans.');
+        }
+
+        $dietPlan->delete();
+
+        return redirect()->route('nutrition.index')
+                       ->with('success', 'Nutrition plan deleted successfully.');
+    }
+
+    /**
+     * Generate PDF for nutrition plan.
+     */
+    public function pdf(DietPlan $dietPlan)
+    {
+        $user = Auth::user();
+
+        // Check access
+        if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to nutrition plan.');
+        }
+
+        $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
+
+        // Optional food-only language override for PDF export (headings stay in UI language)
+        $outputLang = request()->query('lang');
+        $supportedOutputLangs = array_keys(Food::getSupportedLanguages());
+
+        // Diagnostics: quick environment check if requested
+        if (request()->query('diag') === 'true') {
+            $amiriPath = storage_path('fonts/amiri-regular.ttf');
+            $vendorAmiri = base_path('vendor/khaled.alshamaa/ar-php/examples/fonts/Amiri-Regular.ttf');
+            return response()->json([
+                'diag' => true,
+                'arphp_installed' => class_exists('\\ArPHP\\I18N\\Arabic'),
+                'intl_extension' => function_exists('normalizer_normalize'),
+                'amiri_in_storage' => file_exists($amiriPath),
+                'amiri_in_vendor' => file_exists($vendorAmiri),
+                'amiri_storage_path' => $amiriPath,
+                'vendor_amiri_path' => $vendorAmiri,
+                'requested_lang' => $outputLang,
+                'server' => [
+                    'php_version' => PHP_VERSION,
+                    'app_env' => config('app.env'),
+                ],
+            ]);
+        }
+        // Minimal mPDF smoke test (isolates environment vs. template issues)
+        if (request()->query('mpdf_test') === '1') {
+            $tempDir = storage_path('mpdf/temp');
+            if (!is_dir($tempDir)) { @mkdir($tempDir, 0755, true); }
+            $mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'tempDir' => $tempDir,
+                'default_font' => 'dejavusans',
+                'autoScriptToLang' => true,
+                'autoLangToFont' => true,
+            ]);
+            $htmlTest = '<!doctype html><html><head><meta charset="utf-8"></head><body>' .
+                        '<div dir="rtl" style="font-family: DejaVu Sans, Amiri; font-size:18pt;">مرحبا – اختبار mPDF</div>' .
+                        '<div style="font-size:12pt;">English line below</div>' .
+                        '<div>Hello mPDF</div>' .
+                        '</body></html>';
+            $mpdf->WriteHTML($htmlTest);
+            $outDir = storage_path('app/tmp');
+            if (!is_dir($outDir)) { @mkdir($outDir, 0755, true); }
+            $outPath = $outDir . '/mpdf-test-' . time() . '.pdf';
+            $mpdf->Output($outPath, 'F');
+            return response()->file($outPath, [
+                'Content-Type' => 'application/pdf',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+            ]);
+        }
+        // Save-to-file test to check temp/fonts/permissions
+        if (request()->query('mpdf_save') === '1') {
+            $tempDir = storage_path('mpdf/temp');
+            if (!is_dir($tempDir)) { @mkdir($tempDir, 0755, true); }
+            $outPath = storage_path('app/public/mpdf-test.pdf');
+            @mkdir(dirname($outPath), 0755, true);
+            $mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'tempDir' => $tempDir,
+                'default_font' => 'dejavusans',
+                'autoScriptToLang' => true,
+                'autoLangToFont' => true,
+            ]);
+            $mpdf->WriteHTML('<div style="font-family: DejaVu Sans; font-size: 18pt;">Hello mPDF save test</div>');
+            $mpdf->Output($outPath, 'F');
+            if (request()->query('stream') === '1') {
+                return response()->file($outPath, [
+                    'Content-Type' => 'application/pdf',
+                    'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                    'Pragma' => 'no-cache',
+                ]);
+            }
+            $info = [
+                'temp_writable' => is_writable($tempDir),
+                'out_exists' => file_exists($outPath),
+                'out_size' => file_exists($outPath) ? filesize($outPath) : 0,
+                'out_path' => $outPath,
+            ];
+            return response()->json($info);
+        }
+
+
+
+        // Debug logging
+        \Log::info('PDF Export Debug', [
+            'requested_lang' => $outputLang,
+            'supported_langs' => $supportedOutputLangs,
+            'is_supported' => $outputLang && in_array($outputLang, $supportedOutputLangs, true),
+            'all_query_params' => request()->query()
+        ]);
+
+        if ($outputLang && in_array($outputLang, $supportedOutputLangs, true)) {
+            // Translate food display names in-memory for rendering (do not change app locale)
+            foreach ($dietPlan->meals as $meal) {
+                foreach ($meal->foods as $mealFood) {
+                    if ($mealFood->food) {
+                        $translated = $mealFood->food->getNameInLanguage($outputLang);
+                        if (!empty($translated)) {
+        // Render a minimal/simple HTML version to rule out template/CSS issues
+        if (request()->query('mpdf_simple') === '1') {
+            $isArabicOutput = (request()->query('lang') === 'ar');
+            $dir = $isArabicOutput ? 'rtl' : 'ltr';
+            $simple = '<!doctype html><html><head><meta charset="utf-8"><style>body{font-family: DejaVu Sans, Amiri; font-size:12pt;}</style></head><body dir="' . $dir . '">';
+            $simple .= '<h2 style="margin:0 0 10px">Nutrition Plan #' . e($dietPlan->plan_number) . '</h2>';
+            if ($dietPlan->patient && $dietPlan->patient->name) {
+                $simple .= '<div style="margin:0 0 10px">' . e($dietPlan->patient->name) . '</div>';
+            }
+            foreach ($dietPlan->meals as $meal) {
+                $simple .= '<div style="margin:12px 0; page-break-inside: avoid;">';
+                $simple .= '<div style="font-weight:bold; font-size:14pt; margin-bottom:6px;">' . e($meal->meal_name ?? ucfirst($meal->meal_type)) . '</div>';
+                $simple .= '<ul style="margin:0; padding-' . ($dir==='rtl'?'right':'left') . ':16px;">';
+                foreach ($meal->foods as $mf) {
+                    $line = trim(($mf->food_name ?? '') . ' ' . ($mf->quantity ?? '') . ' ' . ($mf->unit ?? ''));
+                    if ($line === '') { continue; }
+                    $simple .= '<li style="margin:2px 0">' . e($line) . '</li>';
+                }
+                $simple .= '</ul></div>';
+            }
+            $simple .= '</body></html>';
+
+            $tempDir = storage_path('mpdf/temp');
+            if (!is_dir($tempDir)) { @mkdir($tempDir, 0755, true); }
+            $mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'tempDir' => $tempDir,
+                'default_font' => file_exists(storage_path('fonts/amiri-regular.ttf')) ? 'amiri' : 'dejavusans',
+                'autoScriptToLang' => true,
+                'autoLangToFont' => true,
+            ]);
+            if ($isArabicOutput) { $mpdf->SetDirectionality('rtl'); }
+            $mpdf->WriteHTML($simple);
+            $outDir = storage_path('app/tmp'); if (!is_dir($outDir)) { @mkdir($outDir, 0755, true); }
+            $outPath = $outDir . '/nutrition-simple-' . ($dietPlan->plan_number) . '-' . time() . '.pdf';
+            $mpdf->Output($outPath, 'F');
+            return response()->file($outPath, [
+                'Content-Type' => 'application/pdf',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+            ]);
+        }
+
+                            $mealFood->food_name = $translated;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Debug: Log meal data for PDF generation
+        \Log::info("PDF Generation - Diet Plan {$dietPlan->id}", [
+            'meals_count' => $dietPlan->meals->count(),
+            'meals' => $dietPlan->meals->map(function($meal) {
+                return [
+                    'id' => $meal->id,
+                    'meal_type' => $meal->meal_type,
+                    'meal_name' => $meal->meal_name,
+                    'foods_count' => $meal->foods->count(),
+                    'foods' => $meal->foods->map(function($food) {
+                        return [
+                            'food_name' => $food->food_name,
+                            'quantity' => $food->quantity,
+                            'unit' => $food->unit
+                        ];
+                    })
+                ];
+            })
+        ]);
+
+        $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
+
+        // If requested, dump a preview of the generated HTML for debugging (no PDF render)
+
+
+        // Determine if Arabic output language is requested
+        $isArabicOutput = ($outputLang === 'ar');
+
+        // IMPORTANT: With mPDF we do NOT pre-shape Arabic; mPDF handles shaping/RTL internally
+        // $this->processArabicLikeTextWithShaping($dietPlan, $isArabicOutput);
+
+        // Check if this is a flexible meal plan (option-based)
+        $isFlexiblePlan = $dietPlan->meals()->where('is_option_based', true)->exists();
+
+        // For Arabic output, build grouped simple HTML with meal type headers and options (bypasses Blade)
+        if ($isArabicOutput) { // PDF styling: professional theme + clinic branding
+            $dir = 'rtl';
+            $html = '<!doctype html><html><head><meta charset="utf-8">'
+                  . '<style>body{font-family: DejaVu Sans, Amiri; font-size:12pt; direction:rtl;}'
+                  . '.header{width:100%; margin:0 0 12px 0;}'
+                  . '.plan-title{margin:0; font-size:16pt; color:#20B2AA; font-weight:700;}'
+                  . '.clinic-name{color:#20B2AA; font-weight:600; font-size:11pt;}'
+                  . '.meta{font-size:10pt; color:#666; margin:2px 0 0;}'
+                  . 'ul{margin:0; padding-right:16px;} li{margin:2px 0}'
+                  . '.serving{font-size:10pt; color:#555;}'
+                  . '.meal{margin:12px 0; page-break-inside: avoid; border:1px solid #e9ecef; background:#fff; border-radius:6px; padding:10px 12px;}'
+                  . '.title{font-weight:bold; font-size:13pt; margin:0 0 6px 0; display:inline-block;}'
+                  . '.badge{background:#20B2AA; color:#fff; padding:2px 8px; border-radius:10px; font-size:10pt; display:inline-block; margin:0 0 0 6px;}'
+                  . '</style></head><body dir="' . $dir . '">';
+            // Build header: logo and plan title on the same row
+            $patient = $dietPlan->patient;
+            $patientName = $patient ? ($patient->full_name ?? ($patient->name ?? '')) : '';
+            $genderRaw = $patient->gender ?? '';
+            $genderMap = ['male' => 'Male', 'm' => 'Male', 'female' => 'Female', 'f' => 'Female'];
+            $gender = $genderMap[strtolower((string)$genderRaw)] ?? ucfirst((string)$genderRaw);
+            $age = $patient->age ?? null;
+            $dateStr = now()->toDateString();
+            $infoParts = [];
+            if (!empty($patientName)) { $infoParts[] = 'Name: ' . e($patientName); }
+            if (!empty($gender)) { $infoParts[] = 'Gender: ' . e($gender); }
+            if ($age !== null) { $infoParts[] = 'Age: ' . e((string)$age); }
+            if (!empty($dateStr)) { $infoParts[] = 'Date: ' . e($dateStr); }
+            $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($user->clinic_id);
+            $html .= '<table class="header"><tr>';
+            // In RTL, first cell appears on the right (logo)
+            $logoCell = '';
+            if (!empty($clinicInfo['logo_pdf_path'])) {
+                $logoCell = '<td style="width:80px; vertical-align:middle; text-align:center;"><img src="' . e($clinicInfo['logo_pdf_path']) . '" style="max-height:60px; max-width:60px; border:1px solid #e9ecef; border-radius:6px; padding:2px;"></td>';
+            } else {
+                $logoCell = '<td style="width:80px;"></td>';
+            }
+            $html .= $logoCell;
+            $html .= '<td style="vertical-align:middle;">'
+                  . '<div class="plan-title">Nutrition Plan #' . e($dietPlan->plan_number) . '</div>'
+                  . (!empty($clinicInfo['name']) ? '<div class="clinic-name">' . e($clinicInfo['name']) . '</div>' : '')
+                  . (!empty($infoParts) ? '<div class="meta">' . implode(' • ', $infoParts) . '</div>' : '')
+                  . '</td>';
+            $html .= '</tr></table>';
+
+            // Group meals by normalized meal_type and detected option number (robust to Eloquent/dynamic props)
+            $groups = [];
+            foreach ($dietPlan->meals as $m) {
+                $typeRaw = $m->meal_type ?? 'meal';
+                // Normalize: snack_1 -> snack, lunch_2 -> lunch
+                $type = preg_replace('/_(\d+)$/', '', (string) $typeRaw);
+
+                // Detect option number from multiple possible fields or meal_name text
+                $opt = null;
+                if (isset($m->option_number) && $m->option_number) {
+                    $opt = $m->option_number;
+                } elseif (isset($m->option) && $m->option) {
+                    $opt = $m->option;
+                } elseif (!empty($m->meal_name)) {
+                    if (preg_match('/(?:Option|الخيار)\s*(\d+)/iu', (string) $m->meal_name, $mm)) {
+                        $opt = $mm[1];
+                    }
+                }
+
+                $key = $type . '|' . ($opt ?? '1');
+                if (!isset($groups[$key])) { $groups[$key] = ['type' => $type, 'option' => $opt, 'meals' => []]; }
+                $groups[$key]['meals'][] = $m;
+            }
+
+            // Build per-meal-type map of options to render options in a single row
+            $byType = [];
+            foreach ($groups as $g) {
+                $t = $g['type'] ?? 'meal';
+                $o = $g['option'] ?? '1';
+                if (!isset($byType[$t])) { $byType[$t] = []; }
+                if (!isset($byType[$t][$o])) { $byType[$t][$o] = []; }
+                // Merge meals for the same type/option
+                $byType[$t][$o] = array_merge($byType[$t][$o], $g['meals']);
+            }
+
+            foreach ($byType as $type => $optMeals) {
+                // Localized meal-type label
+                $label = $type;
+                if ($type === 'breakfast') { $label = 'الفطور'; }
+                elseif ($type === 'lunch') { $label = 'الغداء'; }
+                elseif ($type === 'dinner') { $label = 'العشاء'; }
+                elseif (strpos($type, 'snack') === 0) {
+                    $suffix = trim(str_replace(['snack', '_'], ['', ' '], $type));
+                    $label = 'وجبة خفيفة' . ($suffix !== '' ? ' ' . $suffix : '');
+                } else { $label = ucfirst($type); }
+
+                $html .= '<div class="meal">';
+                $labelText = e($label);
+                $html .= '<div class="title">' . $labelText . '</div>';
+
+                // Render options horizontally in a single row
+                $opts = array_keys($optMeals);
+                sort($opts, SORT_NATURAL);
+                $colWidth = max(1, floor(100 / max(1, count($opts))));
+                $html .= '<table style="width:100%; border-collapse:collapse;"><tr>';
+                foreach ($opts as $optNo) {
+                    $html .= '<td style="vertical-align:top; width:' . $colWidth . '%; border:1px solid #e9ecef; padding:8px;">';
+                    $html .= '<div class="badge">' . 'الخيار ' . e($optNo) . '</div>';
+                    $html .= '<ul style="margin:6px 0 0 0; padding-right:14px;">';
+                    foreach ($optMeals[$optNo] as $meal) {
+                        foreach ($meal->foods as $mf) {
+                            $name = trim((string)($mf->food_name ?? ''));
+                            $qtyeq = trim((string)($mf->quantity_with_equivalent ?? ''));
+                            if ($name === '' && $qtyeq === '') { continue; }
+                            $notes = trim((string)($mf->preparation_notes ?? ''));
+                            $item = '<li>' . e($name);
+                            if ($qtyeq !== '') { $item .= ' <span class="serving">' . e($qtyeq) . '</span>'; }
+                            if ($notes !== '') {
+                                $item .= '<div style="color:#7f8c8d; font-size:10pt; margin-top:2px;">' . e($notes) . '</div>';
+                            }
+                            $item .= '</li>';
+                            $html .= $item;
+                        }
+                    }
+                    $html .= '</ul>';
+                    $html .= '</td>';
+                }
+                $html .= '</tr></table>';
+                $html .= '</div>';
+            }
+
+            // Append Instructions & Dietary Restrictions if provided
+            $instructions = trim((string)($dietPlan->instructions ?? ''));
+            $restrictions = trim((string)($dietPlan->restrictions ?? ''));
+            if ($instructions !== '' || $restrictions !== '') {
+                $html .= '<div style="margin:12px 0; padding:8px 10px; border:1px solid #e9ecef; border-radius:6px; background:#fff;">';
+                if ($instructions !== '') {
+                    $html .= '<div style="color:#20B2AA; font-weight:bold; margin:0 0 6px;">Instructions</div>';
+                    $html .= '<div style="white-space:pre-line; line-height:1.5; unicode-bidi:plaintext;">' . e($instructions) . '</div>';
+                }
+                if ($restrictions !== '') {
+                    $html .= '<div style="color:#20B2AA; font-weight:bold; margin:10px 0 6px;">Dietary Restrictions</div>';
+                    $html .= '<div style="white-space:pre-line; line-height:1.5; unicode-bidi:plaintext;">' . e($restrictions) . '</div>';
+                }
+                $html .= '</div>';
+            }
+
+            $html .= '</body></html>';
+        } else {
+            // Non-Arabic: build the same ultra-simple, mPDF-safe HTML to avoid blank pages (with professional styling + branding)
+            $isKurdish = in_array($outputLang, ['ku_bahdini', 'ku_sorani'], true);
+            $dir = $isKurdish ? 'rtl' : 'ltr';
+            $html = '<!doctype html><html><head><meta charset="utf-8">'
+                  . '<style>body{font-family: DejaVu Sans, Amiri; font-size:12pt; direction:' . $dir . ';}'
+                  . '.header{width:100%; margin:0 0 12px 0;}'
+                  . '.plan-title{margin:0; font-size:16pt; color:#20B2AA; font-weight:700;}'
+                  . '.clinic-name{color:#20B2AA; font-weight:600; font-size:11pt;}'
+                  . '.meta{font-size:10pt; color:#666; margin:2px 0 0;}'
+                  . 'ul{margin:0; padding-' . ($dir==='rtl'?'right':'left') . ':16px;} li{margin:2px 0}'
+                  . '.serving{font-size:10pt; color:#555;}'
+                  . '.meal{margin:12px 0; page-break-inside: avoid; border:1px solid #e9ecef; background:#fff; border-radius:6px; padding:10px 12px;}'
+                  . '.title{font-weight:bold; font-size:13pt; margin:0 0 6px 0; display:inline-block;}'
+                  . '.badge{background:#20B2AA; color:#fff; padding:2px 8px; border-radius:10px; font-size:10pt; display:inline-block; margin:0 0 0 6px;}'
+                  . '</style></head><body dir="' . $dir . '">';
+            // Header row with logo and title
+            $patient = $dietPlan->patient;
+            $patientName = $patient ? ($patient->full_name ?? ($patient->name ?? '')) : '';
+            $genderRaw = $patient->gender ?? '';
+            $genderMap = ['male' => 'Male', 'm' => 'Male', 'female' => 'Female', 'f' => 'Female'];
+            $gender = $genderMap[strtolower((string)$genderRaw)] ?? ucfirst((string)$genderRaw);
+            $age = $patient->age ?? null;
+            $dateStr = now()->toDateString();
+            $infoParts = [];
+            if (!empty($patientName)) { $infoParts[] = 'Name: ' . e($patientName); }
+            if (!empty($gender)) { $infoParts[] = 'Gender: ' . e($gender); }
+            if ($age !== null) { $infoParts[] = 'Age: ' . e((string)$age); }
+            if (!empty($dateStr)) { $infoParts[] = 'Date: ' . e($dateStr); }
+            $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($user->clinic_id);
+            $html .= '<table class="header"><tr>';
+            // In LTR/RTL handle automatically by dir; place logo cell opposite to text
+            $logoCell = '';
+            if (!empty($clinicInfo['logo_pdf_path'])) {
+                $logoCell = '<td style="width:80px; vertical-align:middle; text-align:center;"><img src="' . e($clinicInfo['logo_pdf_path']) . '" style="max-height:60px; max-width:60px; border:1px solid #e9ecef; border-radius:6px; padding:2px;"></td>';
+            } else { $logoCell = '<td style="width:80px;"></td>'; }
+            if ($dir === 'rtl') { $html .= $logoCell; }
+            $html .= '<td style="vertical-align:middle;">'
+                  . '<div class="plan-title">Nutrition Plan #' . e($dietPlan->plan_number) . '</div>'
+                  . (!empty($clinicInfo['name']) ? '<div class="clinic-name">' . e($clinicInfo['name']) . '</div>' : '')
+                  . (!empty($infoParts) ? '<div class="meta">' . implode(' • ', $infoParts) . '</div>' : '')
+                  . '</td>';
+            if ($dir !== 'rtl') { $html .= $logoCell; }
+            $html .= '</tr></table>';
+
+            // Group meals by normalized meal_type and detected option number (robust)
+            $groups = [];
+            foreach ($dietPlan->meals as $m) {
+                $typeRaw = $m->meal_type ?? 'meal';
+                $type = preg_replace('/_(\d+)$/', '', (string) $typeRaw);
+                $opt = null;
+                if (isset($m->option_number) && $m->option_number) { $opt = $m->option_number; }
+                elseif (isset($m->option) && $m->option) { $opt = $m->option; }
+                elseif (!empty($m->meal_name)) {
+                    if (preg_match('/(?:Option|الخيار)\s*(\d+)/iu', (string) $m->meal_name, $mm)) { $opt = $mm[1]; }
+                }
+                $key = $type . '|' . ($opt ?? '1');
+                if (!isset($groups[$key])) { $groups[$key] = ['type' => $type, 'option' => $opt, 'meals' => []]; }
+                $groups[$key]['meals'][] = $m;
+            }
+
+            // Build per-meal-type map to render options in a single horizontal row
+            $byType = [];
+            foreach ($groups as $g) {
+                $t = $g['type'] ?? 'meal';
+                $o = $g['option'] ?? '1';
+                if (!isset($byType[$t])) { $byType[$t] = []; }
+                if (!isset($byType[$t][$o])) { $byType[$t][$o] = []; }
+                $byType[$t][$o] = array_merge($byType[$t][$o], $g['meals']);
+            }
+
+            foreach ($byType as $type => $optMeals) {
+                // Meal type labels per language (basic set)
+                if ($isKurdish) {
+                    // Default to Sorani/Bahdini generic words
+                    if ($type === 'breakfast') { $label = 'بەیانی'; /* Sorani */ }
+                    elseif ($type === 'lunch') { $label = 'نانی نیوەڕۆ'; }
+                    elseif ($type === 'dinner') { $label = 'شێوان'; }
+                    elseif (strpos($type, 'snack') === 0) {
+                        $suffix = trim(str_replace(['snack', '_'], ['', ' '], $type));
+                        $label = 'خواردنی سووک' . ($suffix !== '' ? ' ' . $suffix : '');
+                    } else { $label = ucfirst($type); }
+                } else {
+                    if ($type === 'breakfast') { $label = 'Breakfast'; }
+                    elseif ($type === 'lunch') { $label = 'Lunch'; }
+                    elseif ($type === 'dinner') { $label = 'Dinner'; }
+                    elseif (strpos($type, 'snack') === 0) {
+                        $suffix = trim(str_replace(['snack', '_'], ['', ' '], $type));
+                        $label = 'Snack' . ($suffix !== '' ? ' ' . $suffix : '');
+                    } else { $label = ucfirst($type); }
+                }
+
+                $html .= '<div class="meal">';
+                $labelText = e($label);
+                $html .= '<div class="title">' . $labelText . '</div>';
+
+                $opts = array_keys($optMeals);
+                sort($opts, SORT_NATURAL);
+                $colWidth = max(1, floor(100 / max(1, count($opts))));
+                $html .= '<table style="width:100%; border-collapse:collapse;"><tr>';
+                foreach ($opts as $optNo) {
+                    $html .= '<td style="vertical-align:top; width:' . $colWidth . '%; border:1px solid #e9ecef; padding:8px;">';
+                    $html .= '<div class="badge">' . 'Option ' . e($optNo) . '</div>';
+                    $padSide = ($dir === 'rtl') ? 'padding-right' : 'padding-left';
+                    $html .= '<ul style="margin:6px 0 0 0; ' . $padSide . ':14px;">';
+                    foreach ($optMeals[$optNo] as $meal) {
+                        foreach ($meal->foods as $mf) {
+                            $name = trim((string)($mf->food_name ?? ''));
+                            $qtyeq = trim((string)($mf->quantity_with_equivalent ?? ''));
+                            if ($name === '' && $qtyeq === '') { continue; }
+                            $notes = trim((string)($mf->preparation_notes ?? ''));
+                            $item = '<li>' . e($name);
+                            if ($qtyeq !== '') { $item .= ' <span class="serving">' . e($qtyeq) . '</span>'; }
+                            if ($notes !== '') {
+                                $item .= '<div style="color:#7f8c8d; font-size:10pt; margin-top:2px;">' . e($notes) . '</div>';
+                            }
+                            $item .= '</li>';
+                            $html .= $item;
+                        }
+                    }
+                    $html .= '</ul>';
+                    $html .= '</td>';
+                }
+                $html .= '</tr></table>';
+                $html .= '</div>';
+            }
+
+            // Append Instructions & Dietary Restrictions if provided
+            $instructions = trim((string)($dietPlan->instructions ?? ''));
+            $restrictions = trim((string)($dietPlan->restrictions ?? ''));
+            if ($instructions !== '' || $restrictions !== '') {
+                $html .= '<div style="margin:12px 0; padding:8px 10px; border:1px solid #e9ecef; border-radius:6px; background:#fff;">';
+                if ($instructions !== '') {
+                    $html .= '<div style="color:#20B2AA; font-weight:bold; margin:0 0 6px;">Instructions</div>';
+                    $html .= '<div style="white-space:pre-line; line-height:1.5; unicode-bidi:plaintext;">' . e($instructions) . '</div>';
+                }
+                if ($restrictions !== '') {
+                    $html .= '<div style="color:#20B2AA; font-weight:bold; margin:10px 0 6px;">Dietary Restrictions</div>';
+                    $html .= '<div style="white-space:pre-line; line-height:1.5; unicode-bidi:plaintext;">' . e($restrictions) . '</div>';
+                }
+                $html .= '</div>';
+            }
+
+            $html .= '</body></html>';
+        }
+
+        // Create mPDF instance with Arabic/RTL support
+        $tempDir = storage_path('mpdf/temp');
+        if (!is_dir($tempDir)) { @mkdir($tempDir, 0755, true); }
+
+        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        // If requested, dump a preview of the generated HTML for debugging (no PDF render)
+        if (request()->query('mpdf_dump') === '1') {
+            return response()->json([
+                'length' => strlen($html),
+                'preview' => substr($html, 0, 1200),
+            ]);
+        }
+
+        $fontDirs = $defaultConfig['fontDir'];
+        $fontDirs[] = storage_path('fonts');
+
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
+        $fontData['amiri'] = [ 'R' => 'amiri-regular.ttf' ];
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'tempDir' => $tempDir,
+            'fontDir' => $fontDirs,
+            'fontdata' => $fontData,
+            'default_font' => file_exists(storage_path('fonts/amiri-regular.ttf')) ? 'amiri' : 'dejavusans',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
+        ]);
+
+        if ($isArabicOutput) {
+            $mpdf->SetDirectionality('rtl');
+        }
+
+        // Write HTML and save to file, then stream (inline by default). Add alternate download mode.
+        $mpdf->WriteHTML($html);
+        $outDir = storage_path('app/tmp');
+        if (!is_dir($outDir)) { @mkdir($outDir, 0755, true); }
+        $outPath = $outDir . '/nutrition-plan-' . $dietPlan->plan_number . '-' . time() . '.pdf';
+        $mpdf->Output($outPath, 'F');
+
+        $headers = [
+            'Content-Type' => 'application/pdf',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+            'Content-Length' => @filesize($outPath) ?: null,
+        ];
+
+        // Default: force download. Allow inline preview only when explicitly requested.
+        if (!request()->boolean('inline') && !request()->boolean('preview')) {
+            return response()->download($outPath, 'nutrition-plan-' . $dietPlan->plan_number . '.pdf', $headers);
+        }
+
+        // Inline preview (opt-in)
+        $headers['Content-Disposition'] = 'inline; filename="nutrition-plan-' . $dietPlan->plan_number . '.pdf"';
+        return response()->file($outPath, $headers);
+    }
+
+    /**
+     * Download nutrition plan as Word document with proper Kurdish font support
+     */
+    public function downloadWord(DietPlan $dietPlan)
+    {
+        // Debug mode - return diagnostic info instead of download
+        if (request()->query('debug') === 'true') {
+            try {
+                $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
+
+                $wordService = new WordDocumentService();
+                $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
+                $htmlContent = $wordService->generateNutritionPlan($dietPlan, $nutritionalTotals);
+
+                return response()->json([
+                    'success' => true,
+                    'diet_plan_id' => $dietPlan->id,
+                    'plan_number' => $dietPlan->plan_number,
+                    'patient_name' => $dietPlan->patient->name ?? 'Unknown',
+                    'doctor_name' => $dietPlan->doctor->name ?? 'Unknown',
+                    'meals_count' => $dietPlan->meals->count(),
+                    'content_length' => strlen($htmlContent),
+                    'content_preview' => substr($htmlContent, 0, 300) . '...',
+                    'is_flexible_plan' => $dietPlan->meals()->where('is_option_based', true)->exists(),
+                    'language_requested' => request()->query('lang'),
+                    'user_id' => Auth::id(),
+                    'clinic_id' => Auth::user()->clinic_id ?? 'unknown'
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'diet_plan_id' => $dietPlan->id,
+                    'trace' => explode("\n", $e->getTraceAsString())
+                ], 500);
+            }
+        }
+
+        try {
+            $user = Auth::user();
+
+            // Check if diet plan exists and has required relationships
+            if (!$dietPlan) {
+                abort(404, 'Nutrition plan not found.');
+            }
+
+            if (!$dietPlan->patient) {
+                abort(404, 'Patient not found for this nutrition plan.');
+            }
+
+            // Check access and permissions
+            if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to nutrition plan.');
+            }
+
+            $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
+
+            // Optional food-only language override for Word export (headings stay in UI language)
+            $outputLang = request()->query('lang');
+            $supportedOutputLangs = array_keys(Food::getSupportedLanguages());
+
+
+
+        if ($outputLang && in_array($outputLang, $supportedOutputLangs, true)) {
+            // Translate food display names in-memory for rendering (do not change app locale)
+            foreach ($dietPlan->meals as $meal) {
+                foreach ($meal->foods as $mealFood) {
+                    if ($mealFood->food) {
+                        $originalName = $mealFood->food_name;
+                        $translated = $mealFood->food->getNameInLanguage($outputLang);
+
+                        if (!empty($translated)) {
+                            $mealFood->food_name = $translated;
+                        }
+                    }
+                }
+            }
+        }
+
+        $nutritionalTotals = $this->calculateNutritionalTotals($dietPlan);
+
+        // Use Word document service
+        $wordService = new WordDocumentService();
+        $htmlContent = $wordService->generateNutritionPlan($dietPlan, $nutritionalTotals);
+
+        // Ensure content was generated successfully
+        if (empty($htmlContent)) {
+            throw new \Exception('Generated Word content is empty');
+        }
+
+        $filename = "nutrition-plan-{$dietPlan->plan_number}.doc";
+
+        // Create a temporary file and use Laravel's download response
+        $tempFile = tempnam(sys_get_temp_dir(), 'nutrition_plan_');
+        file_put_contents($tempFile, $htmlContent);
+
+        return response()->download($tempFile, $filename, [
+            'Content-Type' => 'application/msword',
+        ])->deleteFileAfterSend(true);
+
+        } catch (\Exception $e) {
+            // Log the error with full context
+            \Log::error('Word Export Error', [
+                'diet_plan_id' => $dietPlan->id ?? 'unknown',
+                'plan_number' => $dietPlan->plan_number ?? 'unknown',
+                'user_id' => Auth::id(),
+                'language' => request()->query('lang'),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+
+            // For debugging, return JSON error in development
+            if (config('app.debug')) {
+                return response()->json([
+                    'error' => 'Word Export Error',
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'diet_plan_id' => $dietPlan->id ?? 'unknown',
+                    'trace' => explode("\n", $e->getTraceAsString())
+                ], 500);
+            }
+
+            // Return a user-friendly error response for production
+            return response()->view('errors.word-export', [
+                'error' => $e->getMessage(),
+                'dietPlan' => $dietPlan ?? null
+            ], 500);
+        }
+    }
+
+
+
+    /**
+     * Show the form for creating a flexible nutrition plan with meal options.
+     */
+    public function createFlexible(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->canCreateNutritionPlans()) {
+            abort(403, 'You do not have permission to create nutrition plans.');
+        }
+
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
+        // Pre-select patient if provided
+        $selectedPatient = null;
+        if ($request->filled('patient_id')) {
+            $selectedPatient = Patient::where('id', $request->patient_id)
+                                    ->where('clinic_id', $user->clinic_id)
+                                    ->first();
+        }
+
+        return view('nutrition.create-flexible', compact('patients', 'selectedPatient'));
+    }
+
+    /**
+     * Store a flexible nutrition plan with meal options.
+     */
+    public function storeFlexible(Request $request)
+    {
+        \Log::info('NutritionController::storeFlexible method called');
+        $user = Auth::user();
+
+        if (!$user->canCreateNutritionPlans()) {
+            abort(403, 'You do not have permission to create nutrition plans.');
+        }
+
+        // Validate basic plan data
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'title' => 'required|string|max:255',
+            'goal' => 'required|in:' . implode(',', array_keys(DietPlan::GOALS)),
+            'target_calories' => 'nullable|numeric|min:500|max:5000',
+            'duration_days' => 'nullable|integer|min:1|max:365',
+            'instructions' => 'nullable|string',
+            'restrictions' => 'nullable|string',
+            'meal_options' => 'required|json',
+        ]);
+
+        // Verify patient belongs to user's clinic
+        $patient = Patient::where('id', $request->patient_id)
+                         ->where('clinic_id', $user->clinic_id)
+                         ->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+
+            // Create nutrition plan
+            $nutritionPlan = DietPlan::create([
+                'patient_id' => $request->patient_id,
+                'doctor_id' => $user->id,
+                'title' => $request->title,
+                'description' => 'Flexible meal plan with multiple options for each meal type',
+                'goal' => $request->goal,
+                'duration_days' => $request->duration_days,
+                'target_calories' => $request->target_calories,
+                'instructions' => $request->instructions,
+                'restrictions' => $request->restrictions,
+                'start_date' => now()->toDateString(),
+            ]);
+
+            // Parse meal options data
+            $mealOptionsData = json_decode($request->meal_options, true);
+
+            if ($mealOptionsData && is_array($mealOptionsData)) {
+                foreach ($mealOptionsData as $mealType => $options) {
+                    if (!empty($options) && is_array($options)) {
+                        foreach ($options as $option) {
+                            // Create meal option
+                            $meal = $nutritionPlan->meals()->create([
+                                'meal_type' => $mealType === 'snacks' ? 'snack_1' : $mealType,
+                                'option_number' => $option['option_number'] ?? 1,
+                                'is_option_based' => true,
+                                'option_description' => $option['option_description'] ?? "Option {$option['option_number']}",
+                                'meal_name' => $option['option_description'] ?? "Option {$option['option_number']}",
+                                'day_number' => null, // Not used in option-based system
+                            ]);
+
+                            // Add foods to the meal option
+                            if (!empty($option['foods']) && is_array($option['foods'])) {
+                                foreach ($option['foods'] as $foodData) {
+                                    $meal->foods()->create([
+                                        'food_id' => $foodData['food_id'] ?? null,
+                                        'food_name' => $foodData['food_name'] ?? $foodData['displayName'] ?? 'Unknown Food',
+                                        'quantity' => $foodData['quantity'] ?? 0,
+                                        'unit' => $foodData['unit'] ?? 'g',
+                                        'preparation_notes' => $foodData['preparation_notes'] ?? null,
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('nutrition.show', $nutritionPlan)
+                           ->with('success', 'Flexible nutrition plan created successfully! Patients can choose from the meal options you\'ve provided.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return back()->withInput()
+                        ->withErrors(['error' => 'Failed to create nutrition plan: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Process Kurdish text in meals for proper PDF rendering
+     */
+    private function processKurdishTextInMeals($dietPlan, KurdishFontService $fontService)
+    {
+        foreach ($dietPlan->meals as $meal) {
+            foreach ($meal->foods as $mealFood) {
+                $foodName = $mealFood->food_name;
+                $processedText = $fontService->processText($foodName);
+                $mealFood->food_name = $processedText;
+            }
+        }
+    }
+
+    /**
+     * Process Kurdish text for enhanced PDF rendering
+     */
+    private function processKurdishTextForPdf($dietPlan, PdfKurdishFontService $pdfService)
+    {
+        foreach ($dietPlan->meals as $meal) {
+            foreach ($meal->foods as $mealFood) {
+                $foodName = $mealFood->food_name;
+                $processedText = $pdfService->processKurdishText($foodName);
+                $mealFood->food_name = $processedText;
+            }
+        }
+    }
+
+    /**
+     * Process Kurdish text with advanced Arabic shaping for PDF
+     */
+    private function processKurdishTextWithShaping($dietPlan)
+    {
+        // Check if ArPHP library is available
+        if (!class_exists('\ArPHP\I18N\Arabic')) {
+            // Skip Arabic processing if library is not installed
+            return;
+        }
+
+        try {
+            $arabic = new \ArPHP\I18N\Arabic();
+
+        foreach ($dietPlan->meals as $meal) {
+            foreach ($meal->foods as $mealFood) {
+                $foodName = $mealFood->food_name;
+
+                // Check if text contains Kurdish/Arabic characters
+                if (preg_match('/[\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u', $foodName)) {
+                    try {
+                        // Use multiple Arabic processing methods for better shaping
+
+                        // Method 1: Standard glyph shaping
+                        $processedText = $arabic->utf8Glyphs($foodName);
+
+                        // Method 2: Try Arabic string processing for better connection
+                        if ($processedText === $foodName || empty($processedText)) {
+                            // Alternative processing method
+                            $arabic->setInputCharset('UTF-8');
+                            $arabic->setOutputCharset('UTF-8');
+                            $processedText = $arabic->utf8Glyphs($foodName, 50, false);
+                        }
+
+                        // Method 3: Manual Unicode normalization if still not working
+                        if ($processedText === $foodName || empty($processedText)) {
+                            // Normalize Unicode and try again
+                            $normalizedText = \Normalizer::normalize($foodName, \Normalizer::FORM_C);
+                            $processedText = $arabic->utf8Glyphs($normalizedText);
+                        }
+
+                        // Use the best result
+                        if ($processedText && $processedText !== $foodName && strlen($processedText) > 0) {
+                            $mealFood->food_name = $processedText;
+                        } else {
+                            // If all processing fails, keep original
+                            $mealFood->food_name = $foodName;
+                        }
+
+                    } catch (\Exception $e) {
+                        // Keep original text if processing fails
+                        $mealFood->food_name = $foodName;
+                    }
+                } else {
+                    // For non-Kurdish text, keep as is
+                    $mealFood->food_name = $foodName;
+                }
+                }
+            }
+
+        } catch (\Exception $e) {
+            // Log error but don't fail the export
+            \Log::warning('Arabic text processing failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Process Arabic/Kurdish strings to ensure proper glyph shaping and joining for DomPDF
+     * This pre-shapes text for scripts that DomPDF can't shape natively (Arabic family)
+     */
+    private function processArabicLikeTextWithShaping($dietPlan, bool $isArabicOutput)
+    {
+        // Use Ar-PHP if available; otherwise, gracefully skip
+        if (!class_exists('\\ArPHP\\I18N\\Arabic')) {
+            return;
+        }
+
+        try {
+            $arabic = new \ArPHP\I18N\Arabic();
+            $shapeIfArabic = function ($text) use ($arabic) {
+                if (!is_string($text) || $text === '') { return $text; }
+                // Contains Arabic block characters?
+                if (!preg_match('/[\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u', $text)) {
+                    return $text;
+                }
+                try {
+                    $arabic->setInputCharset('UTF-8');
+                    $arabic->setOutputCharset('UTF-8');
+                    $processed = $arabic->utf8Glyphs($text);
+                    if (!$processed || $processed === $text) {
+                        $processed = $arabic->utf8Glyphs(\Normalizer::normalize($text, \Normalizer::FORM_C));
+                    }
+                    return $processed ?: $text;
+                } catch (\Throwable $t) {
+                    return $text; // Fail open
+                }
+            };
+
+            // Patient and doctor names
+            if ($dietPlan->patient) {
+                $dietPlan->patient->first_name = $shapeIfArabic($dietPlan->patient->first_name ?? '');
+                $dietPlan->patient->last_name  = $shapeIfArabic($dietPlan->patient->last_name ?? '');
+                $dietPlan->patient->name       = $shapeIfArabic($dietPlan->patient->name ?? ($dietPlan->patient->first_name . ' ' . $dietPlan->patient->last_name));
+            }
+            if ($dietPlan->doctor) {
+                $dietPlan->doctor->name = $shapeIfArabic($dietPlan->doctor->name ?? '');
+                if (property_exists($dietPlan->doctor, 'full_name_with_title')) {
+                    $dietPlan->doctor->full_name_with_title = $shapeIfArabic($dietPlan->doctor->full_name_with_title);
+                }
+            }
+
+            // Plan free-text fields
+            $dietPlan->instructions = $shapeIfArabic($dietPlan->instructions ?? '');
+            $dietPlan->restrictions = $shapeIfArabic($dietPlan->restrictions ?? '');
+
+            // Meals: names and food names
+            foreach ($dietPlan->meals as $meal) {
+                $meal->meal_name = $shapeIfArabic($meal->meal_name ?? '');
+                foreach ($meal->foods as $mealFood) {
+                    $mealFood->food_name = $shapeIfArabic($mealFood->food_name ?? '');
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Arabic glyph shaping failed: ' . $e->getMessage());
+        }
+    }
+
+
+
+    /**
+     * Create specialized nutrition plan templates.
+     */
+    public function templates()
+    {
+        $user = Auth::user();
+
+        if (!$user->canViewNutritionPlans()) {
+            abort(403, 'You do not have permission to view nutrition templates.');
+        }
+
+        return view('nutrition.templates');
+    }
+
+    /**
+     * Calculate target calories for a patient based on their goals.
+     */
+    public function calculateTargetCalories(Request $request)
+    {
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            // Allow additional goals; unknown goals will be treated as maintenance in the model
+            'goal' => 'required|in:weight_loss,weight_gain,maintenance,muscle_gain,diabetic,health_improvement,other',
+            // Accept negatives/zero from UI (e.g., -0.5 for loss, 0 for maintain) and clamp in logic
+            'weekly_weight_goal' => 'nullable|numeric|between:-2.0,2.0',
+            'activity_level' => 'required|in:sedentary,light,moderate,active,very_active',
+            // Align with other weight validations in the app (e.g., store(), weight tracking)
+            'target_weight' => 'nullable|numeric|min:0|max:1000'
+        ]);
+
+        $user = Auth::user();
+        $patient = Patient::where('clinic_id', $user->clinic_id)->findOrFail($request->patient_id);
+
+        // Determine weekly weight goal (signed): negative = loss, positive = gain
+        $weeklyWeightGoal = null;
+        if ($request->filled('weekly_weight_goal') && is_numeric($request->weekly_weight_goal)) {
+            $weeklyWeightGoal = (float) $request->weekly_weight_goal; // keep sign from UI
+        }
+        if ($weeklyWeightGoal === null) {
+            switch ($request->goal) {
+                case 'weight_loss':
+                    $weeklyWeightGoal = -0.5; // -0.5 kg/week (safe loss)
+                    break;
+                case 'weight_gain':
+                case 'muscle_gain':
+                    $weeklyWeightGoal = 0.3; // +0.3 kg/week
+                    break;
+                default: // maintenance, diabetic, health_improvement, other
+                    $weeklyWeightGoal = 0;
+                    break;
+            }
+        }
+
+        // Calculate target calories
+        $calorieData = $patient->calculateTargetCalories(
+            $request->goal,
+            $weeklyWeightGoal,
+            $request->activity_level
+        );
+
+        if (!$calorieData) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to calculate calories. Please ensure patient has complete data (weight, height, age, gender).'
+            ], 422);
+        }
+
+        // Calculate macronutrient distribution
+        $macros = $this->calculateMacronutrients($calorieData['target_calories'], $request->goal);
+
+        // Calculate time to reach target weight if provided
+        $timeToGoal = null;
+        if ($request->target_weight && $weeklyWeightGoal > 0) {
+            $weightDifference = abs($request->target_weight - $patient->weight);
+            $weeksToGoal = $weightDifference / $weeklyWeightGoal;
+            $timeToGoal = [
+                'weeks' => round($weeksToGoal, 1),
+                'months' => round($weeksToGoal / 4.33, 1),
+                'weight_difference' => round($weightDifference, 1)
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'patient' => [
+                'name' => $patient->full_name,
+                'current_weight' => $patient->weight,
+                'height' => $patient->height,
+                'age' => $patient->age,
+                'gender' => $patient->gender,
+                'bmi' => $patient->bmi,
+                'bmi_category' => $patient->bmi_category
+            ],
+            'calories' => $calorieData,
+            'macronutrients' => $macros,
+            'time_to_goal' => $timeToGoal,
+            'recommendations' => $this->getCalorieRecommendations($request->goal, $calorieData)
+        ]);
+    }
+    /**
+     * Auto-generate a daily meal plan suggestion based on targets and language.
+     */
+    public function autoGeneratePlan(Request $request)
+    {
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'language' => 'nullable|string',
+            'goal' => 'nullable|string',
+            'activity_level' => 'nullable|string',
+            'weekly_weight_goal' => 'nullable|numeric|between:-2.0,2.0',
+            'target_calories' => 'nullable|numeric|min:500|max:5000',
+            'target_protein' => 'nullable|numeric|min:0|max:500',
+            'target_carbs' => 'nullable|numeric|min:0|max:1000',
+            'target_fat' => 'nullable|numeric|min:0|max:300',
+            'restrictions' => 'nullable|array',
+            'restrictions.*' => 'string',
+            'report_missing' => 'nullable|boolean',
+        ]);
+
+        $language = $request->language ?: 'default';
+        $reportMissing = filter_var($request->report_missing, FILTER_VALIDATE_BOOLEAN);
+
+        // Prefer provided targets; otherwise compute from patient + goal
+        $calories = $request->target_calories;
+        $protein  = $request->target_protein;
+        $carbs    = $request->target_carbs;
+        $fat      = $request->target_fat;
+
+        if (!$calories || !$protein || !$carbs || !$fat) {
+            $user = Auth::user();
+            $patient = Patient::where('clinic_id', $user->clinic_id)->findOrFail($request->patient_id);
+
+            // If the client asked to report missing instead of silently defaulting,
+            // build the missing list and return a helpful 422 response.
+            $missing = [];
+            if (!$request->goal) { $missing[] = 'goal'; }
+            if (!$request->activity_level) { $missing[] = 'activity_level'; }
+
+            // Patient attributes required for BMR/TDEE
+            if (!$patient->weight) { $missing[] = 'patient.weight'; }
+            if (!$patient->height) { $missing[] = 'patient.height'; }
+            if (!$patient->date_of_birth) { $missing[] = 'patient.date_of_birth'; }
+            if (!$patient->gender) { $missing[] = 'patient.gender'; }
+
+            if ($reportMissing && !empty($missing)) {
+                return response()->json([
+                    'success' => false,
+                    'code' => 'MISSING_DATA',
+                    'message' => __('Some information is missing to auto-generate the meal plan.'),
+                    'missing' => $missing,
+                    'missing_human' => $this->humanizeMissing($missing),
+                    'suggestions' => [
+                        __('Select a Goal and Activity Level, or enter calories/macros manually'),
+                        __('Complete patient profile with Weight, Height, Date of Birth, and Gender'),
+                    ],
+                ], 422);
+            }
+
+            // Default gently when report_missing is false (backward compatible)
+            $goal = $request->goal ?: 'maintenance';
+            $activity = $request->activity_level ?: 'light';
+            $weekly = is_numeric($request->weekly_weight_goal) ? (float)$request->weekly_weight_goal : 0;
+
+            $calData = $patient->calculateTargetCalories($goal, $weekly, $activity);
+            if (!$calData) {
+                $missing = [];
+                if (!$patient->weight) { $missing[] = 'patient.weight'; }
+                if (!$patient->height) { $missing[] = 'patient.height'; }
+                if (!$patient->date_of_birth) { $missing[] = 'patient.date_of_birth'; }
+                if (!$patient->gender) { $missing[] = 'patient.gender'; }
+
+                return response()->json([
+                    'success'=>false,
+                    'code' => 'MISSING_DATA',
+                    'message'=> __('Unable to compute targets for this patient.'),
+                    'missing' => $missing,
+                    'missing_human' => $this->humanizeMissing($missing),
+                    'suggestions' => [
+                        __('Complete patient profile with Weight, Height, Date of Birth, and Gender'),
+                    ],
+                ], 422);
+            }
+            $macros = $this->calculateMacronutrients($calData['target_calories'], $goal);
+            $calories = $calories ?: $calData['target_calories'];
+            $protein  = $protein  ?: $macros['protein']['grams'];
+            $carbs    = $carbs    ?: $macros['carbs']['grams'];
+            $fat      = $fat      ?: $macros['fat']['grams'];
+        }
+
+        $generator = new MealPlanAutoGenerator();
+        $result = $generator->generate([
+            'calories' => (float)$calories,
+            'protein'  => (float)$protein,
+            'carbs'    => (float)$carbs,
+            'fat'      => (float)$fat,
+        ], $language, $request->restrictions ?? []);
+
+        return response()->json($result);
+    }
+
+    /**
+     * Convert internal missing keys into human-friendly messages.
+     */
+    private function humanizeMissing(array $missing): array
+    {
+        $map = [
+            'goal' => __('Select a Goal'),
+            'activity_level' => __('Select an Activity Level'),
+            'patient.weight' => __('Patient weight is required'),
+            'patient.height' => __('Patient height is required'),
+            'patient.date_of_birth' => __('Patient date of birth is required'),
+            'patient.gender' => __('Patient gender is required'),
+        ];
+        $out = [];
+        foreach ($missing as $k) {
+            $out[] = $map[$k] ?? $k;
+        }
+        // Remove duplicates while preserving order
+        return array_values(array_unique($out));
+    }
+
+
+
+    /**
+     * Calculate macronutrient distribution based on goal.
+     */
+    private function calculateMacronutrients(float $targetCalories, string $goal): array
+    {
+        // Macronutrient ratios based on goal
+        $ratios = [
+            'weight_loss' => ['protein' => 0.30, 'carbs' => 0.35, 'fat' => 0.35],
+            'weight_gain' => ['protein' => 0.25, 'carbs' => 0.45, 'fat' => 0.30],
+            'muscle_gain' => ['protein' => 0.35, 'carbs' => 0.40, 'fat' => 0.25],
+            'maintenance' => ['protein' => 0.25, 'carbs' => 0.45, 'fat' => 0.30]
+        ];
+
+        $ratio = $ratios[$goal] ?? $ratios['maintenance'];
+
+        // Calculate grams (protein: 4 cal/g, carbs: 4 cal/g, fat: 9 cal/g)
+        $proteinCalories = $targetCalories * $ratio['protein'];
+        $carbsCalories = $targetCalories * $ratio['carbs'];
+        $fatCalories = $targetCalories * $ratio['fat'];
+
+        return [
+            'protein' => [
+                'grams' => round($proteinCalories / 4, 0),
+                'calories' => round($proteinCalories, 0),
+                'percentage' => round($ratio['protein'] * 100, 0)
+            ],
+            'carbs' => [
+                'grams' => round($carbsCalories / 4, 0),
+                'calories' => round($carbsCalories, 0),
+                'percentage' => round($ratio['carbs'] * 100, 0)
+            ],
+            'fat' => [
+                'grams' => round($fatCalories / 9, 0),
+                'calories' => round($fatCalories, 0),
+                'percentage' => round($ratio['fat'] * 100, 0)
+            ]
+        ];
+    }
+
+    /**
+     * Get recommendations based on calorie calculation.
+     */
+    private function getCalorieRecommendations(string $goal, array $calorieData): array
+    {
+        $recommendations = [];
+
+        // Safety recommendations
+        if ($goal === 'weight_loss' && $calorieData['target_calories'] <= 1200) {
+            $recommendations[] = 'This is a very low-calorie plan. Consider medical supervision.';
+        }
+
+        if ($calorieData['daily_calorie_adjustment'] > 500) {
+            $recommendations[] = 'Large calorie deficit detected. Consider a more gradual approach.';
+        }
+
+        // Activity recommendations
+        $activityAdvice = [
+            'sedentary' => 'Consider adding light physical activity to boost metabolism.',
+            'light' => 'Good activity level. Try to maintain consistency.',
+            'moderate' => 'Excellent activity level for your goals.',
+            'active' => 'Very good activity level. Monitor recovery.',
+            'very_active' => 'High activity level. Ensure adequate nutrition and rest.'
+        ];
+
+        $recommendations[] = $activityAdvice[$calorieData['activity_level']] ?? '';
+
+        return array_filter($recommendations);
+    }
+
+
+
+    /**
+     * Create muscle gain nutrition plan.
+     */
+    public function createMuscleGain(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->canCreateNutritionPlans()) {
+            abort(403, 'You do not have permission to create nutrition plans.');
+        }
+
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
+        $template = $this->getMuscleGainTemplate();
+
+        return view('nutrition.create-muscle-gain', compact('patients', 'template'));
+    }
+
+    /**
+     * Create diabetic nutrition plan.
+     */
+    public function createDiabetic(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->canCreateNutritionPlans()) {
+            abort(403, 'You do not have permission to create nutrition plans.');
+        }
+
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
+        $template = $this->getDiabeticTemplate();
+
+        return view('nutrition.create-diabetic', compact('patients', 'template'));
+    }
+
+    /**
+     * Calculate nutritional totals for a nutrition plan.
+     */
+    private function calculateNutritionalTotals(DietPlan $nutrition): array
+    {
+        $totals = [
+            'calories' => 0,
+            'protein' => 0,
+            'carbs' => 0,
+            'fat' => 0,
+            'fiber' => 0,
+        ];
+
+        foreach ($nutrition->meals as $meal) {
+            foreach ($meal->foods as $mealFood) {
+                $food = $mealFood->food;
+                $quantity = $mealFood->quantity;
+
+                // Skip if food record doesn't exist (might have been deleted)
+                if (!$food) {
+                    \Log::warning('Food record not found for meal food', [
+                        'meal_food_id' => $mealFood->id,
+                        'food_id' => $mealFood->food_id,
+                        'food_name' => $mealFood->food_name
+                    ]);
+                    continue;
+                }
+
+                // Calculate based on grams equivalent of the specified unit (nutrition is per 100g)
+                $unit = $mealFood->unit ?: 'g';
+                $grams = (float) $food->convertToGrams((float) $quantity, (string) $unit);
+                $multiplier = $grams / 100.0;
+
+                $totals['calories'] += ($food->calories ?? 0) * $multiplier;
+                $totals['protein'] += ($food->protein ?? 0) * $multiplier;
+                $totals['carbs'] += ($food->carbohydrates ?? 0) * $multiplier;
+                $totals['fat'] += ($food->fat ?? 0) * $multiplier;
+                $totals['fiber'] += ($food->fiber ?? 0) * $multiplier;
+            }
+        }
+
+        return $totals;
+    }
+
+
+
+    /**
+     * Get muscle gain template.
+     */
+    private function getMuscleGainTemplate(): array
+    {
+        return [
+            'title' => 'Muscle Gain Nutrition Plan',
+            'goal' => 'muscle_gain',
+            'description' => 'A high-protein nutrition plan designed to support muscle growth and recovery.',
+            'target_calories' => 2500,
+            'target_protein' => 180,
+            'target_carbs' => 300,
+            'target_fat' => 80,
+            'duration_days' => 60,
+            'instructions' => 'Eat protein with every meal. Time carbohydrates around workouts. Stay hydrated and get adequate rest.',
+            'restrictions' => 'Limit processed foods and empty calories. Focus on whole foods and lean proteins.',
+            'sample_meals' => [
+                [
+                    'name' => 'Breakfast',
+                    'time' => '07:00',
+                    'foods' => ['Protein smoothie', 'Whole grain toast', 'Banana']
+                ],
+                [
+                    'name' => 'Pre-workout',
+                    'time' => '10:00',
+                    'foods' => ['Apple', 'Almonds']
+                ],
+                [
+                    'name' => 'Post-workout',
+                    'time' => '12:00',
+                    'foods' => ['Protein shake', 'Sweet potato']
+                ],
+                [
+                    'name' => 'Lunch',
+                    'time' => '14:00',
+                    'foods' => ['Lean beef', 'Brown rice', 'Vegetables']
+                ],
+                [
+                    'name' => 'Dinner',
+                    'time' => '19:00',
+                    'foods' => ['Salmon', 'Quinoa', 'Broccoli']
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Get diabetic template.
+     */
+    private function getDiabeticTemplate(): array
+    {
+        return [
+            'title' => 'Diabetic Nutrition Plan',
+            'goal' => 'diabetic',
+            'description' => 'A carefully balanced nutrition plan for managing blood sugar levels and maintaining stable glucose.',
+            'target_calories' => 1800,
+            'target_protein' => 100,
+            'target_carbs' => 180,
+            'target_fat' => 60,
+            'duration_days' => 90,
+            'instructions' => 'Monitor blood sugar regularly. Eat at consistent times. Choose complex carbohydrates over simple sugars.',
+            'restrictions' => 'Avoid sugary foods, refined carbohydrates, and high-glycemic foods. Limit saturated fats.',
+            'sample_meals' => [
+                [
+                    'name' => 'Breakfast',
+                    'time' => '08:00',
+                    'foods' => ['Steel-cut oats', 'Berries', 'Nuts']
+                ],
+                [
+                    'name' => 'Mid-morning',
+                    'time' => '10:30',
+                    'foods' => ['Apple slices', 'Almond butter']
+                ],
+                [
+                    'name' => 'Lunch',
+                    'time' => '13:00',
+                    'foods' => ['Grilled chicken', 'Quinoa', 'Green vegetables']
+                ],
+                [
+                    'name' => 'Afternoon snack',
+                    'time' => '16:00',
+                    'foods' => ['Greek yogurt', 'Cucumber']
+                ],
+                [
+                    'name' => 'Dinner',
+                    'time' => '19:00',
+                    'foods' => ['Baked fish', 'Sweet potato', 'Spinach salad']
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Show weight tracking for a nutrition plan.
+     */
+    public function weightTracking(DietPlan $dietPlan)
+    {
+        $user = Auth::user();
+
+        // Check access
+        if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to nutrition plan.');
+        }
+
+        $dietPlan->load(['patient', 'doctor', 'weightRecords.recorder']);
+
+        // Get weight records ordered by date
+        $weightRecords = $dietPlan->weightRecords()->latest('record_date')->get();
+
+        // Calculate weight progress statistics
+        $stats = $this->calculateWeightProgressStats($dietPlan);
+
+        return view('nutrition.weight-tracking', compact('dietPlan', 'weightRecords', 'stats'));
+    }
+
+    /**
+     * Store a new weight record.
+     */
+    public function storeWeightRecord(Request $request, DietPlan $dietPlan)
+    {
+        $user = Auth::user();
+
+        // Check access
+        if ($dietPlan->patient->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to nutrition plan.');
+        }
+
+        if (!$user->canCreateNutritionPlans()) {
+            abort(403, 'You do not have permission to add weight records.');
+        }
+
+        $request->validate([
+            'weight' => 'required|numeric|min:20|max:500',
+            'target_weight' => 'nullable|numeric|min:20|max:500',
+            'target_bmi' => 'nullable|numeric|min:10|max:50',
+            'height' => 'nullable|numeric|min:100|max:250',
+            'record_date' => 'required|date|before_or_equal:today',
+            'notes' => 'nullable|string|max:1000',
+            'measurements' => 'nullable|array',
+            'measurements.waist' => 'nullable|numeric|min:30|max:200',
+            'measurements.chest' => 'nullable|numeric|min:50|max:200',
+            'measurements.hips' => 'nullable|numeric|min:50|max:200',
+            'measurements.arm' => 'nullable|numeric|min:15|max:100',
+            'measurements.thigh' => 'nullable|numeric|min:30|max:150',
+        ]);
+
+        // Check for duplicate record on same date
+        $existingRecord = $dietPlan->weightRecords()
+                                  ->where('record_date', $request->record_date)
+                                  ->first();
+
+        if ($existingRecord) {
+            return back()->withErrors(['record_date' => 'A weight record already exists for this date.']);
+        }
+
+        $recordData = [
+            'weight' => $request->weight,
+            'height' => $request->height ?: $dietPlan->initial_height,
+            'record_date' => $request->record_date,
+            'notes' => $request->notes,
+            'recorded_by' => $user->id,
+        ];
+
+        // Add measurements if provided
+        if ($request->filled('measurements')) {
+            $measurements = array_filter($request->measurements, function($value) {
+                return !is_null($value) && $value !== '';
+            });
+
+            if (!empty($measurements)) {
+                $recordData['measurements'] = $measurements;
+            }
+        }
+
+        $dietPlan->addWeightRecord($recordData);
+
+        // Recalculate series to ensure BMI/changes and sync current values
+        $dietPlan->recalculateWeightSeries();
+
+        // Update target weight and BMI if provided
+        $updateData = [];
+        if ($request->filled('target_weight')) {
+            $updateData['target_weight'] = $request->target_weight;
+        }
+        if ($request->filled('target_bmi')) {
+            $updateData['target_bmi'] = $request->target_bmi;
+        }
+
+        if (!empty($updateData)) {
+            $dietPlan->update($updateData);
+            // Weight goal depends on target_weight
+            if (isset($updateData['target_weight']) && $dietPlan->initial_weight !== null) {
+                $dietPlan->update(['weight_goal_kg' => $dietPlan->target_weight - $dietPlan->initial_weight]);
+            }
+        }
+
+        return back()->with('success', 'Weight record added successfully.');
+    }
+
+    /**
+     * Update a weight record.
+     */
+    public function updateWeightRecord(Request $request, DietPlan $dietPlan, DietPlanWeightRecord $weightRecord)
+    {
+        $user = Auth::user();
+
+        // Check access
+        if ($dietPlan->patient->clinic_id !== $user->clinic_id || $weightRecord->diet_plan_id !== $dietPlan->id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        if (!$user->canEditNutritionPlans()) {
+            abort(403, 'You do not have permission to edit weight records.');
+        }
+
+        $request->validate([
+            'weight' => 'required|numeric|min:20|max:500',
+            'target_weight' => 'nullable|numeric|min:20|max:500',
+            'target_bmi' => 'nullable|numeric|min:10|max:50',
+            'height' => 'nullable|numeric|min:100|max:250',
+            'record_date' => 'required|date|before_or_equal:today',
+            'notes' => 'nullable|string|max:1000',
+            'measurements' => 'nullable|array',
+        ]);
+
+        // Check for duplicate record on same date (excluding current record)
+        $existingRecord = $dietPlan->weightRecords()
+                                  ->where('record_date', $request->record_date)
+                                  ->where('id', '!=', $weightRecord->id)
+                                  ->first();
+
+        if ($existingRecord) {
+            return back()->withErrors(['record_date' => 'A weight record already exists for this date.']);
+        }
+
+        $updateData = [
+            'weight' => $request->weight,
+            'height' => $request->height ?: $weightRecord->height,
+            'record_date' => $request->record_date,
+            'notes' => $request->notes,
+        ];
+
+        // Add measurements if provided
+        if ($request->filled('measurements')) {
+            $measurements = array_filter($request->measurements, function($value) {
+                return !is_null($value) && $value !== '';
+            });
+
+            $updateData['measurements'] = !empty($measurements) ? $measurements : null;
+        }
+
+        $weightRecord->update($updateData);
+
+        // Recalculate series to ensure BMI/changes and sync current values
+        $dietPlan->recalculateWeightSeries();
+
+        // Update target weight and BMI if provided
+        $dietPlanUpdateData = [];
+        if ($request->filled('target_weight')) {
+            $dietPlanUpdateData['target_weight'] = $request->target_weight;
+        }
+        if ($request->filled('target_bmi')) {
+            $dietPlanUpdateData['target_bmi'] = $request->target_bmi;
+        }
+
+        if (!empty($dietPlanUpdateData)) {
+            $dietPlan->update($dietPlanUpdateData);
+            if (isset($dietPlanUpdateData['target_weight']) && $dietPlan->initial_weight !== null) {
+                $dietPlan->update(['weight_goal_kg' => $dietPlan->target_weight - $dietPlan->initial_weight]);
+            }
+        }
+
+        return back()->with('success', 'Weight record updated successfully.');
+    }
+
+    /**
+     * Delete a weight record.
+     */
+    public function deleteWeightRecord(DietPlan $dietPlan, DietPlanWeightRecord $weightRecord)
+    {
+        $user = Auth::user();
+
+        // Check access
+        if ($dietPlan->patient->clinic_id !== $user->clinic_id || $weightRecord->diet_plan_id !== $dietPlan->id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        if (!$user->canEditNutritionPlans()) {
+            abort(403, 'You do not have permission to delete weight records.');
+        }
+
+        // Don't allow deletion of initial weight record
+        $firstRecord = $dietPlan->weightRecords()->oldest('record_date')->first();
+        if ($firstRecord && $firstRecord->id === $weightRecord->id) {
+            return back()->withErrors(['error' => 'Cannot delete the initial weight record.']);
+        }
+
+        $weightRecord->delete();
+
+        // Recalculate series after deletion
+        $dietPlan->recalculateWeightSeries();
+
+        return back()->with('success', 'Weight record deleted successfully.');
+    }
+
+    /**
+     * Calculate weight progress statistics.
+     */
+    private function calculateWeightProgressStats(DietPlan $dietPlan): array
+    {
+        $stats = [
+            'total_records' => $dietPlan->weightRecords()->count(),
+            'total_weight_change' => $dietPlan->total_weight_change,
+            'weight_change_percentage' => $dietPlan->weight_change_percentage,
+            'progress_percentage' => $dietPlan->weight_progress_percentage,
+            'bmi_change' => $dietPlan->bmi_change,
+            'goal_achieved' => $dietPlan->isWeightGoalAchieved(),
+            'average_weekly_change' => null,
+            'projected_completion' => null,
+        ];
+
+        // Calculate average weekly weight change
+        $records = $dietPlan->weightRecords()->oldest('record_date')->get();
+        if ($records->count() >= 2) {
+            $firstRecord = $records->first();
+            $lastRecord = $records->last();
+
+            $daysDiff = $firstRecord->record_date->diffInDays($lastRecord->record_date);
+            if ($daysDiff > 0) {
+                $weeksDiff = $daysDiff / 7;
+                $totalChange = $lastRecord->weight - $firstRecord->weight;
+                $stats['average_weekly_change'] = $totalChange / $weeksDiff;
+            }
+        }
+
+        // Project completion date if target weight is set
+        if ($dietPlan->target_weight && $dietPlan->current_weight && $stats['average_weekly_change']) {
+            $remainingWeight = abs($dietPlan->target_weight - $dietPlan->current_weight);
+            $weeklyProgress = abs($stats['average_weekly_change']);
+
+            if ($weeklyProgress > 0) {
+                $weeksToGoal = $remainingWeight / $weeklyProgress;
+                $stats['projected_completion'] = now()->addWeeks($weeksToGoal);
+            }
+        }
+
+        return $stats;
+    }
+}

@@ -1,0 +1,343 @@
+<?php
+
+namespace App\Http\Controllers\Master;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Clinic;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Schema;
+
+class ClinicController extends Controller
+{
+    /**
+     * Display a listing of clinics.
+     */
+    public function index(Request $request)
+    {
+        $query = Clinic::withCount('users')
+            ->with(['users' => function($q) {
+                $q->where('role', 'admin');
+            }]);
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        $clinics = $query->latest()->paginate(15);
+
+        return view('master.clinics.index', compact('clinics'));
+    }
+
+    /**
+     * Show the form for creating a new clinic.
+     */
+    public function create()
+    {
+        return view('master.clinics.create');
+    }
+
+    /**
+     * Store a newly created clinic.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:clinics,email',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string',
+            'max_users' => 'required|integer|min:1|max:1000',
+            'clinic_type' => 'nullable|in:tenant,demo',
+            // Billing fields
+            'billing_user_price' => 'nullable|numeric|min:0|max:1000000',
+            'billing_user_count' => 'nullable|integer|min:1|max:100000',
+            'service_charge_amount' => 'nullable|numeric|min:0|max:10000000',
+            'service_charge_date' => 'nullable|date',
+            'service_charge_note' => 'nullable|string|max:500',
+            // Admin
+            'admin_first_name' => 'required|string|max:255',
+            'admin_last_name' => 'required|string|max:255',
+            'admin_email' => 'required|email|unique:users,email',
+            'admin_password' => 'required|string|min:8',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Create clinic
+            $clinicData = [
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'max_users' => $request->max_users,
+                'is_active' => true,
+                'activated_at' => now(),
+            ];
+            if (Schema::hasColumn('clinics', 'is_demo')) {
+                $clinicData['is_demo'] = $request->input('clinic_type') === 'demo';
+            }
+            // Optional billing fields
+            if (Schema::hasColumn('clinics', 'billing_user_price')) { $clinicData['billing_user_price'] = $request->input('billing_user_price'); }
+            if (Schema::hasColumn('clinics', 'billing_user_count')) { $clinicData['billing_user_count'] = $request->input('billing_user_count'); }
+            if (Schema::hasColumn('clinics', 'service_charge_amount')) { $clinicData['service_charge_amount'] = $request->input('service_charge_amount'); }
+            if (Schema::hasColumn('clinics', 'service_charge_date')) { $clinicData['service_charge_date'] = $request->input('service_charge_date'); }
+            if (Schema::hasColumn('clinics', 'service_charge_note')) { $clinicData['service_charge_note'] = $request->input('service_charge_note'); }
+            $clinic = Clinic::create($clinicData);
+
+            // Create admin user for the clinic
+            $adminUsername = strtolower(str_replace(' ', '', $request->admin_first_name . $request->admin_last_name));
+            $originalUsername = $adminUsername;
+            $counter = 1;
+            
+            while (User::where('username', $adminUsername)->exists()) {
+                $adminUsername = $originalUsername . $counter;
+                $counter++;
+            }
+
+            User::create([
+                'first_name' => $request->admin_first_name,
+                'last_name' => $request->admin_last_name,
+                'email' => $request->admin_email,
+                'username' => $adminUsername,
+                'password' => Hash::make($request->admin_password),
+                'role' => 'admin',
+                'clinic_id' => $clinic->id,
+                'is_active' => true,
+                'activated_at' => now(),
+                'created_by' => auth()->id(),
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('master.clinics.index')
+                ->with('success', 'Clinic created successfully with admin user.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to create clinic: ' . $e->getMessage()])
+                ->withInput();
+        }
+    }
+
+    /**
+     * Display the specified clinic.
+     */
+    public function show(Clinic $clinic)
+    {
+        $clinic->load(['users', 'patients', 'prescriptions', 'appointments']);
+        
+        $stats = [
+            'total_users' => $clinic->users()->count(),
+            'active_users' => $clinic->users()->where('is_active', true)->count(),
+            'total_patients' => $clinic->patients()->count(),
+            'total_prescriptions' => $clinic->prescriptions()->count(),
+            'total_appointments' => $clinic->appointments()->count(),
+            'monthly_patients' => $clinic->patients()->whereMonth('created_at', now()->month)->count(),
+        ];
+
+        return view('master.clinics.show', compact('clinic', 'stats'));
+    }
+
+    /**
+     * Show the form for editing the specified clinic.
+     */
+    public function edit(Clinic $clinic)
+    {
+        // Get the clinic admin user
+        $adminUser = $clinic->users()->where('role', 'admin')->first();
+
+        return view('master.clinics.edit', compact('clinic', 'adminUser'));
+    }
+
+    /**
+     * Update the specified clinic.
+     */
+    public function update(Request $request, Clinic $clinic)
+    {
+        // Get the admin user for validation
+        $adminUser = $clinic->users()->where('role', 'admin')->first();
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', Rule::unique('clinics')->ignore($clinic->id)],
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string',
+            'max_users' => 'required|integer|min:1|max:1000',
+            'clinic_type' => 'nullable|in:tenant,demo',
+            // Billing fields
+            'billing_user_price' => 'nullable|numeric|min:0|max:1000000',
+            'billing_user_count' => 'nullable|integer|min:1|max:100000',
+            'service_charge_amount' => 'nullable|numeric|min:0|max:10000000',
+            'service_charge_date' => 'nullable|date',
+            'service_charge_note' => 'nullable|string|max:500',
+            // Admin user validation
+            'admin_first_name' => 'required|string|max:255',
+            'admin_last_name' => 'required|string|max:255',
+            'admin_username' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-zA-Z0-9._-]+$/',
+                Rule::unique('users', 'username')->ignore($adminUser ? $adminUser->id : null)
+            ],
+            'admin_email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($adminUser ? $adminUser->id : null)
+            ],
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Update clinic information
+            $updateData = [
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'max_users' => $request->max_users,
+            ];
+            if (Schema::hasColumn('clinics', 'is_demo')) {
+                $updateData['is_demo'] = $request->input('clinic_type') === 'demo';
+            }
+            // Optional billing fields
+            if (Schema::hasColumn('clinics', 'billing_user_price')) { $updateData['billing_user_price'] = $request->input('billing_user_price'); }
+            if (Schema::hasColumn('clinics', 'billing_user_count')) { $updateData['billing_user_count'] = $request->input('billing_user_count'); }
+            if (Schema::hasColumn('clinics', 'service_charge_amount')) { $updateData['service_charge_amount'] = $request->input('service_charge_amount'); }
+            if (Schema::hasColumn('clinics', 'service_charge_date')) { $updateData['service_charge_date'] = $request->input('service_charge_date'); }
+            if (Schema::hasColumn('clinics', 'service_charge_note')) { $updateData['service_charge_note'] = $request->input('service_charge_note'); }
+            $clinic->update($updateData);
+
+            // Update admin user information if admin exists
+            if ($adminUser) {
+                $adminUser->update([
+                    'first_name' => $request->admin_first_name,
+                    'last_name' => $request->admin_last_name,
+                    'username' => $request->admin_username,
+                    'email' => $request->admin_email,
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->route('master.clinics.show', $clinic)
+                ->with('success', 'Clinic and admin information updated successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to update clinic: ' . $e->getMessage()])
+                ->withInput();
+        }
+    }
+
+    /**
+     * Activate a clinic.
+     */
+    public function activate(Clinic $clinic)
+    {
+        $clinic->update([
+            'is_active' => true,
+            'activated_at' => now(),
+        ]);
+
+        return back()->with('success', 'Clinic activated successfully.');
+    }
+
+    /**
+     * Deactivate a clinic.
+     */
+    public function deactivate(Clinic $clinic)
+    {
+        $clinic->update([
+            'is_active' => false,
+        ]);
+
+        return back()->with('success', 'Clinic deactivated successfully.');
+    }
+
+    /**
+     * Reset admin password for a clinic.
+     */
+    public function resetAdminPassword(Request $request, Clinic $clinic)
+    {
+        $request->validate([
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $admin = $clinic->users()->where('role', 'admin')->first();
+        
+        if (!$admin) {
+            return back()->withErrors(['error' => 'No admin user found for this clinic.']);
+        }
+
+        $admin->update([
+            'password' => Hash::make($request->new_password),
+        ]);
+
+        return back()->with('success', 'Admin password reset successfully.');
+    }
+
+    /**
+     * Remove the specified clinic.
+     */
+    public function destroy(Clinic $clinic)
+    {
+        // Check if clinic has any data that would prevent deletion
+        $hasData = $clinic->patients()->exists() ||
+                   $clinic->prescriptions()->exists() ||
+                   $clinic->appointments()->exists() ||
+                   $clinic->medicines()->exists() ||
+                   $clinic->labTests()->exists() ||
+                   $clinic->invoices()->exists() ||
+                   $clinic->expenses()->exists() ||
+                   $clinic->advertisements()->exists();
+
+        if ($hasData) {
+            return back()->withErrors(['error' => 'Cannot delete clinic with existing data (patients, prescriptions, appointments, medicines, lab tests, invoices, expenses, or advertisements). Deactivate the clinic instead.']);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Delete related data that can be safely removed
+            $clinic->auditLogs()->delete();
+            $clinic->activationCodes()->delete();
+            $clinic->clinicSettings()->delete();
+            $clinic->communicationLogs()->delete();
+
+            // Delete all users
+            $clinic->users()->delete();
+
+            // Delete the clinic
+            $clinic->delete();
+
+            DB::commit();
+
+            return redirect()->route('master.clinics.index')
+                ->with('success', 'Clinic deleted successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to delete clinic: ' . $e->getMessage()]);
+        }
+    }
+}

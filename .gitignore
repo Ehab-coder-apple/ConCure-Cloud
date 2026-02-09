@@ -1,0 +1,62 @@
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.phpunit.result.cache
+docker-compose.override.yml
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/.idea
+/.vscode
+
+# Database files
+/database/*.sqlite
+/database/*.sqlite-journal
+
+# Log files
+/storage/logs/*.log
+
+# Cache files
+/bootstrap/cache/*.php
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+
+# Uploaded files
+/storage/app/public/uploads/*
+/storage/app/public/logos/*
+/storage/app/public/medicines/*
+/storage/app/public/foods/*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+
+# Node/NPM and Puppeteer
+node_modules
+whatsapp-server/node_modules/
+whatsapp-server/.wwebjs_auth/
+whatsapp-server/.local-chromium/
+whatsapp-server/.env.bak
+
+
+# Backup files
+*.bak
