@@ -128,7 +128,7 @@ class DentalTreatmentController extends Controller
             'patient_id' => 'required|exists:patients,id',
             'dental_chart_id' => 'nullable|exists:dental_charts,id',
             'tooth_number' => 'nullable|string',
-            'tooth_numbers' => 'nullable|array',
+            'tooth_numbers' => 'nullable', // Accept both string and array
             'procedure_name' => 'required|string|max:255',
             'procedure_code' => 'nullable|string|max:50',
             'diagnosis' => 'nullable|string',
@@ -146,13 +146,20 @@ class DentalTreatmentController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        // Convert comma-separated tooth_numbers string to array if needed
+        $toothNumbers = $request->tooth_numbers;
+        if (is_string($toothNumbers) && !empty($toothNumbers)) {
+            $toothNumbers = array_map('trim', explode(',', $toothNumbers));
+            $toothNumbers = array_filter($toothNumbers); // Remove empty values
+        }
+
         try {
             $treatment = DentalTreatment::create([
                 'patient_id' => $request->patient_id,
                 'clinic_id' => $user->clinic_id,
                 'dental_chart_id' => $request->dental_chart_id,
                 'tooth_number' => $request->tooth_number,
-                'tooth_numbers' => $request->tooth_numbers,
+                'tooth_numbers' => $toothNumbers,
                 'procedure_name' => $request->procedure_name,
                 'procedure_code' => $request->procedure_code,
                 'diagnosis' => $request->diagnosis,
@@ -260,7 +267,7 @@ class DentalTreatmentController extends Controller
 
         $request->validate([
             'tooth_number' => 'nullable|string',
-            'tooth_numbers' => 'nullable|array',
+            'tooth_numbers' => 'nullable', // Accept both string and array
             'procedure_name' => 'required|string|max:255',
             'procedure_code' => 'nullable|string|max:50',
             'diagnosis' => 'nullable|string',
@@ -282,7 +289,14 @@ class DentalTreatmentController extends Controller
             'post_treatment_notes' => 'nullable|string',
         ]);
 
-        $dentalTreatment->update($request->except(['patient_id', 'clinic_id', 'treatment_number']));
+        // Convert comma-separated tooth_numbers string to array if needed
+        $data = $request->except(['patient_id', 'clinic_id', 'treatment_number']);
+        if (isset($data['tooth_numbers']) && is_string($data['tooth_numbers']) && !empty($data['tooth_numbers'])) {
+            $data['tooth_numbers'] = array_map('trim', explode(',', $data['tooth_numbers']));
+            $data['tooth_numbers'] = array_filter($data['tooth_numbers']); // Remove empty values
+        }
+
+        $dentalTreatment->update($data);
 
         return redirect()->route('dental.treatments.show', $dentalTreatment)
                        ->with('success', 'Treatment plan updated successfully.');

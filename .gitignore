@@ -27,6 +27,12 @@ yarn-error.log
 /storage/framework/sessions/*
 /storage/framework/views/*
 
+# mPDF temp files
+/storage/mpdf/temp/*
+
+# Font data files
+/storage/fonts/*.ttf
+
 # Uploaded files
 /storage/app/public/uploads/*
 /storage/app/public/logos/*
