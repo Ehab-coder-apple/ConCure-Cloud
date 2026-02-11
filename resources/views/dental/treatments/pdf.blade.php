@@ -158,9 +158,16 @@
                 <div class="info-row">
                     <div class="info-label">Gender/Age:</div>
                     <div class="info-value">
-                        @if($dentalTreatment->patient->gender){{ ucfirst($dentalTreatment->patient->gender) }}@endif
-                        @if($dentalTreatment->patient->gender && $dentalTreatment->patient->date_of_birth), @endif
-                        @if($dentalTreatment->patient->date_of_birth){{ \Carbon\Carbon::parse($dentalTreatment->patient->date_of_birth)->age }} yrs@endif
+                        @php
+                            $genderAge = [];
+                            if($dentalTreatment->patient->gender) {
+                                $genderAge[] = ucfirst($dentalTreatment->patient->gender);
+                            }
+                            if($dentalTreatment->patient->date_of_birth) {
+                                $genderAge[] = \Carbon\Carbon::parse($dentalTreatment->patient->date_of_birth)->age . ' yrs';
+                            }
+                            echo implode(', ', $genderAge);
+                        @endphp
                     </div>
                 </div>
 @endif {{-- End gender/age check --}}
