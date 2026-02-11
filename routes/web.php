@@ -855,6 +855,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/clear-cache', [SettingsController::class, 'clearCache'])->name('clear-cache')->middleware('can:access-settings');
         Route::post('/update-system', [SettingsController::class, 'updateSystem'])->name('update-system')->middleware('can:access-settings');
         Route::post('/session-lifetime', [SettingsController::class, 'updateSessionLifetime'])->name('update-session-lifetime')->middleware('can:access-settings');
+        Route::post('/patient-inactivity-period', [SettingsController::class, 'updatePatientInactivityPeriod'])->name('update-patient-inactivity-period')->middleware('can:access-settings');
 
         // Audit logs (permission-gated)
         Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs')->middleware('can:view-audit-logs');
