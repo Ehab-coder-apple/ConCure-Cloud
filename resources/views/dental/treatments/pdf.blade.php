@@ -148,13 +148,13 @@
                     <div class="info-label">Patient ID:</div>
                     <div class="info-value">{{ $dentalTreatment->patient->patient_id ?? 'N/A' }}</div>
                 </div>
-                @if($dentalTreatment->patient->phone)
+@if($dentalTreatment->patient->phone)
                 <div class="info-row">
                     <div class="info-label">Phone:</div>
                     <div class="info-value">{{ $dentalTreatment->patient->phone }}</div>
                 </div>
-                @endif
-                @if($dentalTreatment->patient->gender || $dentalTreatment->patient->date_of_birth)
+@endif
+@if($dentalTreatment->patient->gender || $dentalTreatment->patient->date_of_birth)
                 <div class="info-row">
                     <div class="info-label">Gender/Age:</div>
                     <div class="info-value">
@@ -163,7 +163,7 @@
                         @if($dentalTreatment->patient->date_of_birth){{ \Carbon\Carbon::parse($dentalTreatment->patient->date_of_birth)->age }} yrs@endif
                     </div>
                 </div>
-                @endif
+@endif
             </div>
         </div>
         <div class="column">
