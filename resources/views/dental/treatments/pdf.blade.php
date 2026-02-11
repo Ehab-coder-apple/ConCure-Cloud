@@ -153,7 +153,7 @@
                     <div class="info-label">Phone:</div>
                     <div class="info-value">{{ $dentalTreatment->patient->phone }}</div>
                 </div>
-@endif
+@endif {{-- End phone check --}}
 @if($dentalTreatment->patient->gender || $dentalTreatment->patient->date_of_birth)
                 <div class="info-row">
                     <div class="info-label">Gender/Age:</div>
@@ -163,7 +163,7 @@
                         @if($dentalTreatment->patient->date_of_birth){{ \Carbon\Carbon::parse($dentalTreatment->patient->date_of_birth)->age }} yrs@endif
                     </div>
                 </div>
-@endif
+@endif {{-- End gender/age check --}}
             </div>
         </div>
         <div class="column">
