@@ -176,7 +176,8 @@ class ClinicController extends Controller
         // Get the admin user for validation
         $adminUser = $clinic->users()->where('role', 'admin')->first();
 
-        $request->validate([
+        // Build validation rules
+        $validationRules = [
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('clinics')->ignore($clinic->id)],
             'phone' => 'nullable|string|max:20',
@@ -189,23 +190,28 @@ class ClinicController extends Controller
             'service_charge_amount' => 'nullable|numeric|min:0|max:10000000',
             'service_charge_date' => 'nullable|date',
             'service_charge_note' => 'nullable|string|max:500',
-            // Admin user validation
-            'admin_first_name' => 'required|string|max:255',
-            'admin_last_name' => 'required|string|max:255',
-            'admin_username' => [
+        ];
+
+        // Only validate admin fields if admin user exists
+        if ($adminUser) {
+            $validationRules['admin_first_name'] = 'required|string|max:255';
+            $validationRules['admin_last_name'] = 'required|string|max:255';
+            $validationRules['admin_username'] = [
                 'required',
                 'string',
                 'max:255',
                 'regex:/^[a-zA-Z0-9._-]+$/',
-                Rule::unique('users', 'username')->ignore($adminUser ? $adminUser->id : null)
-            ],
-            'admin_email' => [
+                Rule::unique('users', 'username')->ignore($adminUser->id)
+            ];
+            $validationRules['admin_email'] = [
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->ignore($adminUser ? $adminUser->id : null)
-            ],
-        ]);
+                Rule::unique('users', 'email')->ignore($adminUser->id)
+            ];
+        }
+
+        $request->validate($validationRules);
 
         DB::beginTransaction();
         try {
