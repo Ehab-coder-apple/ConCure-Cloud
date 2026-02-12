@@ -66,6 +66,28 @@
         </div>
         @endif
 
+        @if(isset($newPatientsToday))
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between no-divider">
+                        <div>
+                            <h6 class="card-title">New Patients Today</h6>
+                            <h2 class="mb-0">{{ number_format($newPatientsToday) }}</h2>
+                            <small>
+                                <i class="fas fa-calendar-day me-1"></i>
+                                {{ now()->format('M d, Y') }}
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user-plus fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         @if(isset($activePrescriptions))
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-success text-white h-100">

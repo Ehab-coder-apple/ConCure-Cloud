@@ -189,6 +189,12 @@ class DashboardController extends Controller
             $data['totalPatients'] = (clone $patientsQuery)->active()->count();
             $data['newPatientsThisMonth'] = (clone $patientsQuery)->active();
             $data['newPatientsThisMonth'] = $applyPeriod($data['newPatientsThisMonth'], 'created_at')->count();
+
+            // New patients added today
+            $data['newPatientsToday'] = (clone $patientsQuery)
+                ->active()
+                ->whereDate('created_at', now()->toDateString())
+                ->count();
         }
 
         // Prescription statistics (include Simple Prescriptions if available)
