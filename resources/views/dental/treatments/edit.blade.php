@@ -176,10 +176,11 @@
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">{{ __('Currency') }}</label>
                                 <select name="currency" class="form-select">
-                                    <option value="USD" {{ old('currency', $dentalTreatment->currency) === 'USD' ? 'selected' : '' }}>USD</option>
-                                    <option value="EUR" {{ old('currency', $dentalTreatment->currency) === 'EUR' ? 'selected' : '' }}>EUR</option>
-                                    <option value="GBP" {{ old('currency', $dentalTreatment->currency) === 'GBP' ? 'selected' : '' }}>GBP</option>
-                                    <option value="EGP" {{ old('currency', $dentalTreatment->currency) === 'EGP' ? 'selected' : '' }}>EGP</option>
+                                    <option value="USD" {{ old('currency', $dentalTreatment->currency) === 'USD' ? 'selected' : '' }}>USD ($)</option>
+                                    <option value="EUR" {{ old('currency', $dentalTreatment->currency) === 'EUR' ? 'selected' : '' }}>EUR (€)</option>
+                                    <option value="GBP" {{ old('currency', $dentalTreatment->currency) === 'GBP' ? 'selected' : '' }}>GBP (£)</option>
+                                    <option value="IQD" {{ old('currency', $dentalTreatment->currency) === 'IQD' ? 'selected' : '' }}>IQD (د.ع)</option>
+                                    <option value="EGP" {{ old('currency', $dentalTreatment->currency) === 'EGP' ? 'selected' : '' }}>EGP (£E)</option>
                                 </select>
                                 @error('currency')
                                     <div class="text-danger small mt-1">{{ $message }}</div>
