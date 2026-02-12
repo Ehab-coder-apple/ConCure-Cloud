@@ -35,6 +35,9 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
 
     // Authentication
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/logout', function () {
+        return redirect()->route('master.login')->with('info', 'Please use the logout button in the sidebar.');
+    });
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
