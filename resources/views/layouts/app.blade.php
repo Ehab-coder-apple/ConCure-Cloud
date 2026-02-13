@@ -2071,21 +2071,22 @@
                 if (submenu) {
                     submenu.style.maxHeight = submenu.scrollHeight + 'px';
                 }
+            }
 
-	            // Sidebar unread badge for Messages
-	            async function refreshSidebarUnread() {
-	                try {
-	                    const badge = document.getElementById('sidebarUnread');
-	                    if (!badge) return;
-	                    const res = await fetch('/messages/unread-count', { headers: { 'Accept': 'application/json' } });
-	                    if (!res.ok) return;
-	                    const data = await res.json();
-	                    const count = data.unread ?? 0;
-	                    badge.textContent = count;
-	                } catch (_) {}
-	            }
-	            refreshSidebarUnread();
-	            setInterval(refreshSidebarUnread, 20000);
+            // Sidebar unread badge for Messages
+            async function refreshSidebarUnread() {
+                try {
+                    const badge = document.getElementById('sidebarUnread');
+                    if (!badge) return;
+                    const res = await fetch('/messages/unread-count', { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    const count = data.unread ?? 0;
+                    badge.textContent = count;
+                } catch (_) {}
+            }
+            refreshSidebarUnread();
+            setInterval(refreshSidebarUnread, 20000);
 
             // Sidebar pending appointments badge for doctor
             async function refreshSidebarAppointmentsPending() {
