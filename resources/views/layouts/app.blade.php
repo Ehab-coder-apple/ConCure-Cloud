@@ -1513,7 +1513,7 @@
                                 <a href="{{ route('messages.index') }}" class="nav-link {{ request()->routeIs('messages.*') ? 'active' : '' }}">
                                     <i class="nav-icon fas fa-inbox"></i>
                                     <span class="nav-text">{{ __('Messages') }}</span>
-                                    <span class="badge bg-danger ms-auto" id="sidebarUnread" style="display: none;">0</span>
+                                    <span class="badge bg-danger ms-auto" id="sidebarUnread">0</span>
                                 </a>
                             </li>
 
@@ -2082,12 +2082,6 @@
 	                    const data = await res.json();
 	                    const count = data.unread ?? 0;
 	                    badge.textContent = count;
-	                    // Show badge only when there are unread messages
-	                    if (count > 0) {
-	                        badge.style.display = 'inline-block';
-	                    } else {
-	                        badge.style.display = 'none';
-	                    }
 	                } catch (_) {}
 	            }
 	            refreshSidebarUnread();
