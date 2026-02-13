@@ -235,10 +235,27 @@ class MessagingController extends Controller
     public function unreadCount(Request $request)
     {
         $user = $request->user();
-        $count = MessageRecipient::where('user_id', $user->id)
+
+        // Get all unread message recipients for this user
+        $unreadRecipients = MessageRecipient::where('user_id', $user->id)
             ->whereNull('read_at')
-            ->count();
-        return response()->json(['success' => true, 'unread' => $count]);
+            ->get();
+
+        $count = $unreadRecipients->count();
+
+        // Debug info (will be removed after testing)
+        $debug = [
+            'user_id' => $user->id,
+            'total_recipients' => MessageRecipient::where('user_id', $user->id)->count(),
+            'unread_count' => $count,
+            'unread_message_ids' => $unreadRecipients->pluck('message_id')->toArray(),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'unread' => $count,
+            'debug' => $debug  // Temporary debug info
+        ]);
     }
 
     /**
