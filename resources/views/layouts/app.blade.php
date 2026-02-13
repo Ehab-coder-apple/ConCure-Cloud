@@ -2076,21 +2076,34 @@
             // Sidebar unread badge for Messages
             // Make function globally accessible so Messages page can also call it
             window.refreshSidebarUnread = async function() {
+                console.log('🔵 refreshSidebarUnread called');
                 try {
                     const badge = document.getElementById('sidebarUnread');
-                    if (!badge) return;
+                    console.log('🔵 Badge element:', badge);
+                    if (!badge) {
+                        console.log('❌ Badge element not found!');
+                        return;
+                    }
+                    console.log('🔵 Fetching /messages/unread-count...');
                     const res = await fetch('/messages/unread-count', { headers: { 'Accept': 'application/json' } });
-                    if (!res.ok) return;
+                    console.log('🔵 Response status:', res.status);
+                    if (!res.ok) {
+                        console.log('❌ Response not OK:', res.status);
+                        return;
+                    }
                     const data = await res.json();
+                    console.log('🔵 Response data:', data);
                     const count = data.unread ?? 0;
+                    console.log('✅ Setting badge to:', count);
                     badge.textContent = count;
                     badge.style.display = 'inline-block'; // Always visible
                 } catch (e) {
-                    console.error('Error refreshing sidebar unread badge:', e);
+                    console.error('❌ Error refreshing sidebar unread badge:', e);
                 }
             };
 
             // Initial call and set up polling
+            console.log('🔵 Initializing sidebar unread badge refresh...');
             window.refreshSidebarUnread();
             setInterval(window.refreshSidebarUnread, 20000);
 
