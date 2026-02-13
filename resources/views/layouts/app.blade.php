@@ -2077,13 +2077,22 @@
             async function refreshSidebarUnread() {
                 try {
                     const badge = document.getElementById('sidebarUnread');
-                    if (!badge) return;
+                    if (!badge) {
+                        console.log('❌ sidebarUnread badge not found');
+                        return;
+                    }
                     const res = await fetch('/messages/unread-count', { headers: { 'Accept': 'application/json' } });
-                    if (!res.ok) return;
+                    if (!res.ok) {
+                        console.log('❌ Failed to fetch unread count:', res.status);
+                        return;
+                    }
                     const data = await res.json();
                     const count = data.unread ?? 0;
+                    console.log('✅ Updated sidebar badge to:', count);
                     badge.textContent = count;
-                } catch (_) {}
+                } catch (e) {
+                    console.error('❌ Error in refreshSidebarUnread:', e);
+                }
             }
             refreshSidebarUnread();
             setInterval(refreshSidebarUnread, 20000);
