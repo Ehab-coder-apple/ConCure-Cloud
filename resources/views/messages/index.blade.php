@@ -225,9 +225,20 @@
     try {
       const data = await getJSON('/messages/unread-count');
       const count = data.unread ?? 0;
+
+      // Update page badge
       el.unreadBadge.textContent = count;
-      const sidebarBadge = document.getElementById('sidebarUnread');
-      if (sidebarBadge) sidebarBadge.textContent = count;
+
+      // Update sidebar badge using global function if available
+      if (typeof window.refreshSidebarUnread === 'function') {
+        window.refreshSidebarUnread();
+      } else {
+        // Fallback: update sidebar badge directly
+        const sidebarBadge = document.getElementById('sidebarUnread');
+        if (sidebarBadge) sidebarBadge.textContent = count;
+      }
+
+      // Handle notifications for new messages
       if (typeof window.__lastUnread === 'undefined') window.__lastUnread = 0;
       if (count > window.__lastUnread && window.__lastUnread !== 0) {
         if ('Notification' in window && Notification.permission === 'granted') {

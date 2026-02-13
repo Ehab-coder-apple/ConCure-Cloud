@@ -2074,36 +2074,25 @@
             }
 
             // Sidebar unread badge for Messages
-            console.log('🔵 Initializing sidebar unread badge refresh...');
-            async function refreshSidebarUnread() {
-                console.log('🔵 refreshSidebarUnread() called');
+            // Make function globally accessible so Messages page can also call it
+            window.refreshSidebarUnread = async function() {
                 try {
                     const badge = document.getElementById('sidebarUnread');
-                    console.log('🔵 Badge element:', badge);
-                    if (!badge) {
-                        console.log('❌ sidebarUnread badge not found');
-                        return;
-                    }
-                    console.log('🔵 Fetching unread count from /messages/unread-count');
+                    if (!badge) return;
                     const res = await fetch('/messages/unread-count', { headers: { 'Accept': 'application/json' } });
-                    console.log('🔵 Response status:', res.status);
-                    if (!res.ok) {
-                        console.log('❌ Failed to fetch unread count:', res.status);
-                        return;
-                    }
+                    if (!res.ok) return;
                     const data = await res.json();
-                    console.log('🔵 Response data:', data);
                     const count = data.unread ?? 0;
-                    console.log('✅ Updated sidebar badge to:', count);
                     badge.textContent = count;
+                    badge.style.display = 'inline-block'; // Always visible
                 } catch (e) {
-                    console.error('❌ Error in refreshSidebarUnread:', e);
+                    console.error('Error refreshing sidebar unread badge:', e);
                 }
-            }
-            console.log('🔵 Calling refreshSidebarUnread() for the first time...');
-            refreshSidebarUnread();
-            console.log('🔵 Setting up interval to refresh every 20 seconds...');
-            setInterval(refreshSidebarUnread, 20000);
+            };
+
+            // Initial call and set up polling
+            window.refreshSidebarUnread();
+            setInterval(window.refreshSidebarUnread, 20000);
 
             // Sidebar pending appointments badge for doctor
             async function refreshSidebarAppointmentsPending() {
