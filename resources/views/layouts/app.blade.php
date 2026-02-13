@@ -2074,19 +2074,25 @@
             }
 
             // Sidebar unread badge for Messages
+            console.log('🔵 Initializing sidebar unread badge refresh...');
             async function refreshSidebarUnread() {
+                console.log('🔵 refreshSidebarUnread() called');
                 try {
                     const badge = document.getElementById('sidebarUnread');
+                    console.log('🔵 Badge element:', badge);
                     if (!badge) {
                         console.log('❌ sidebarUnread badge not found');
                         return;
                     }
+                    console.log('🔵 Fetching unread count from /messages/unread-count');
                     const res = await fetch('/messages/unread-count', { headers: { 'Accept': 'application/json' } });
+                    console.log('🔵 Response status:', res.status);
                     if (!res.ok) {
                         console.log('❌ Failed to fetch unread count:', res.status);
                         return;
                     }
                     const data = await res.json();
+                    console.log('🔵 Response data:', data);
                     const count = data.unread ?? 0;
                     console.log('✅ Updated sidebar badge to:', count);
                     badge.textContent = count;
@@ -2094,7 +2100,9 @@
                     console.error('❌ Error in refreshSidebarUnread:', e);
                 }
             }
+            console.log('🔵 Calling refreshSidebarUnread() for the first time...');
             refreshSidebarUnread();
+            console.log('🔵 Setting up interval to refresh every 20 seconds...');
             setInterval(refreshSidebarUnread, 20000);
 
             // Sidebar pending appointments badge for doctor
