@@ -2046,24 +2046,32 @@
             }
 
             // Submenu toggles
+            console.log('🔧 Submenu toggles found:', submenuToggles.length);
             submenuToggles.forEach(function(toggle) {
+                console.log('🔧 Adding click listener to:', toggle);
                 toggle.addEventListener('click', function(e) {
+                    console.log('🔧 Submenu toggle clicked!', this);
                     e.preventDefault();
                     e.stopPropagation();
 
                     const parent = this.parentElement;
                     const submenu = parent.querySelector('.submenu');
 
+                    console.log('🔧 Parent:', parent);
+                    console.log('🔧 Submenu:', submenu);
+
                     // Add null check
                     if (!submenu) {
-                        console.error('Submenu not found for toggle:', this);
+                        console.error('❌ Submenu not found for toggle:', this);
                         return;
                     }
 
                     if (parent.classList.contains('open')) {
+                        console.log('🔧 Closing submenu');
                         parent.classList.remove('open');
                         submenu.style.maxHeight = '0';
                     } else {
+                        console.log('🔧 Opening submenu');
                         // Close other open submenus
                         document.querySelectorAll('.nav-item.has-submenu.open').forEach(function(item) {
                             if (item !== parent) {
@@ -2077,6 +2085,7 @@
 
                         parent.classList.add('open');
                         submenu.style.maxHeight = submenu.scrollHeight + 'px';
+                        console.log('🔧 Submenu max-height set to:', submenu.scrollHeight + 'px');
                     }
                 });
             });
