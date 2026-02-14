@@ -2182,7 +2182,10 @@
                                     <a class="btn btn-sm btn-outline-primary" href="/appointments/${r.id}">Open</a>
                                 </li>`).join('') + '</ul></div>';
                         }
-                        if (clinic.length > 0 && {{ Auth::check() && Auth::user() && in_array(Auth::user()->role, ['admin', 'program_owner']) ? 'true' : 'false' }}) {
+                        @php
+                            $canSeeClinicAppointments = Auth::check() && Auth::user() && in_array(Auth::user()->role, ['admin', 'program_owner']);
+                        @endphp
+                        if (clinic.length > 0 && {{ $canSeeClinicAppointments ? 'true' : 'false' }}) {
                             html += '<div class="mt-2"><div class="small text-muted">Clinic upcoming</div><ul class="list-group list-group-flush">' +
                                 clinic.map(r => `<li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
