@@ -1729,6 +1729,7 @@
                         </li>
                         @endif
 
+                        @endif
                         {{-- End of standard menu for non-lab/radiology roles --}}
                     </ul>
                 </nav>
