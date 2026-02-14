@@ -1729,7 +1729,6 @@
                         </li>
                         @endif
 
-                        @endif
                         {{-- End of standard menu for non-lab/radiology roles --}}
                     </ul>
                 </nav>
@@ -1759,9 +1758,7 @@
                         <x-back-button class="btn btn-outline-secondary btn-sm me-2" />
 
                     <div class="page-title">
-                        @hasSection('page-title')
-                            @yield('page-title')
-                        @endif
+                        @yield('page-title')
                     </div>
                 </div>
                 <div class="topbar-right">
