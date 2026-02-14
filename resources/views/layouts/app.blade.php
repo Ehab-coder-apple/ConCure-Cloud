@@ -287,6 +287,7 @@
         /* Submenu Styles */
         .has-submenu > .nav-link {
             position: relative;
+            cursor: pointer;
         }
 
         .submenu-arrow {
@@ -303,7 +304,13 @@
             overflow: hidden;
             transition: max-height 0.3s ease;
             background: rgba(0, 0, 0, 0.2);
-            margin-bottom: 1rem; /* Add margin to prevent footer overlap */
+            margin-bottom: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .has-submenu.open .submenu {
+            margin-bottom: 1rem;
         }
 
         .submenu-item {
@@ -2042,8 +2049,16 @@
             submenuToggles.forEach(function(toggle) {
                 toggle.addEventListener('click', function(e) {
                     e.preventDefault();
+                    e.stopPropagation();
+
                     const parent = this.parentElement;
                     const submenu = parent.querySelector('.submenu');
+
+                    // Add null check
+                    if (!submenu) {
+                        console.error('Submenu not found for toggle:', this);
+                        return;
+                    }
 
                     if (parent.classList.contains('open')) {
                         parent.classList.remove('open');
@@ -2053,7 +2068,10 @@
                         document.querySelectorAll('.nav-item.has-submenu.open').forEach(function(item) {
                             if (item !== parent) {
                                 item.classList.remove('open');
-                                item.querySelector('.submenu').style.maxHeight = '0';
+                                const otherSubmenu = item.querySelector('.submenu');
+                                if (otherSubmenu) {
+                                    otherSubmenu.style.maxHeight = '0';
+                                }
                             }
                         });
 
