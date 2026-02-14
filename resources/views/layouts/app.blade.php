@@ -99,12 +99,15 @@
             left: 0;
             width: var(--sidebar-width);
             height: 100vh;
+            max-height: 100vh;
             background: var(--sidebar-bg);
             color: var(--sidebar-text);
             z-index: 1000;
             transition: all 0.3s ease;
             overflow-y: auto;
             overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar::-webkit-scrollbar {
@@ -121,6 +124,7 @@
         }
 
         .sidebar-header {
+            flex-shrink: 0;
             padding: 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
@@ -225,9 +229,10 @@
 
         /* Navigation Styles */
         .sidebar-nav {
+            flex: 1;
             padding: 1rem 0;
-            padding-bottom: 120px; /* Add space for footer */
-            min-height: calc(100vh - 200px);
+            padding-bottom: 80px; /* Add space for footer */
+            overflow-y: auto;
         }
 
         .nav-list {
@@ -310,6 +315,7 @@
         }
 
         .has-submenu.open .submenu {
+            max-height: 500px;
             margin-bottom: 1rem;
         }
 
@@ -347,10 +353,11 @@
 
         /* Sidebar Footer */
         .sidebar-footer {
-            position: fixed;
+            flex-shrink: 0;
+            position: absolute;
             bottom: 0;
             left: 0;
-            width: var(--sidebar-width);
+            width: 100%;
             padding: 1rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             background: var(--sidebar-bg);
@@ -2150,60 +2157,68 @@
             }
             refreshSidebarAppointmentsPending();
             setInterval(refreshSidebarAppointmentsPending, 20000);
-            // Topbar bell: upcoming appointments dropdown
-            async function refreshAppointmentsBell() {
+
+            // Topbar appointments bell notification
+            window.refreshAppointmentsBell = async function() {
+                console.log('🔔 refreshAppointmentsBell called');
                 try {
                     const badge = document.getElementById('appointmentsBellBadge');
-                    const wrap = document.getElementById('appointmentsBellWrap');
                     const content = document.getElementById('appointmentsBellContent');
-                    if (!wrap || !content) return;
-                    const res = await fetch('/appointments/upcoming-summary', { headers: { 'Accept': 'application/json' } });
-                    if (!res.ok) return;
+                    console.log('🔔 Badge element:', badge);
+                    console.log('🔔 Content element:', content);
+                    if (!badge || !content) {
+                        console.log('❌ Badge or content element not found!');
+                        return;
+                    }
+                    console.log('🔔 Fetching /appointments/upcoming-bell...');
+                    const res = await fetch('/appointments/upcoming-bell', { headers: { 'Accept': 'application/json' } });
+                    console.log('🔔 Response status:', res.status);
+                    if (!res.ok) {
+                        console.log('❌ Response not OK:', res.status);
+                        return;
+                    }
                     const data = await res.json();
-                    const myCount = data.my_count ?? 0;
-                    if (badge) {
-                        badge.textContent = myCount;
-                        badge.style.display = myCount > 0 ? 'inline-block' : 'none';
-                    }
+                    console.log('🔔 Response data:', data);
+                    const count = data.count ?? 0;
+                    const appointments = data.appointments ?? [];
+                    console.log('✅ Setting badge to:', count);
+                    badge.textContent = count;
+                    badge.style.display = count > 0 ? 'inline-block' : 'none';
 
-                    const my = Array.isArray(data.my) ? data.my : [];
-                    const clinic = Array.isArray(data.clinic) ? data.clinic : [];
-                    let html = '';
-                    if (my.length === 0 && clinic.length === 0) {
-                        html = '<div class="text-center text-muted small py-3">No upcoming appointments</div>';
+                    // Update content
+                    if (appointments.length > 0) {
+                        const timeOpts = { hour: 'numeric', minute: '2-digit' };
+                        const dateOpts = { month: 'short', day: 'numeric' };
+                        let html = '';
+                        appointments.forEach(function(apt) {
+                            const dt = new Date(apt.appointment_datetime);
+                            const time = dt.toLocaleTimeString('en-US', timeOpts);
+                            const date = dt.toLocaleDateString('en-US', dateOpts);
+                            html += '<div class="border-bottom p-2">' +
+                                '<div class="d-flex align-items-center">' +
+                                '<div class="flex-shrink-0 me-2">' +
+                                '<i class="fas fa-clock text-primary"></i>' +
+                                '</div>' +
+                                '<div class="flex-grow-1">' +
+                                '<div class="fw-bold small">' + apt.patient_name + '</div>' +
+                                '<div class="text-muted" style="font-size: 0.75rem;">' + date + ' at ' + time + '</div>' +
+                                '</div>' +
+                                '</div>' +
+                                '</div>';
+                        });
+                        content.innerHTML = html;
                     } else {
-                        if (my.length > 0) {
-                            html += '<div class="mb-2"><div class="small text-muted">My upcoming</div><ul class="list-group list-group-flush">' +
-                                my.map(r => `<li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="fw-semibold">#${r.appointment_number || r.id} - ${r.patient || ''}</div>
-                                        <div class="small text-muted">${r.when || ''}</div>
-                                    </div>
-                                    <a class="btn btn-sm btn-outline-primary" href="/appointments/${r.id}">Open</a>
-                                </li>`).join('') + '</ul></div>';
-                        }
-                        @php
-                            $canSeeClinicAppointments = Auth::check() && Auth::user() && in_array(Auth::user()->role, ['admin', 'program_owner']);
-                        @endphp
-                        if (clinic.length > 0 && {{ $canSeeClinicAppointments ? 'true' : 'false' }}) {
-                            html += '<div class="mt-2"><div class="small text-muted">Clinic upcoming</div><ul class="list-group list-group-flush">' +
-                                clinic.map(r => `<li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="fw-semibold">#${r.appointment_number || r.id} - ${r.patient || ''}</div>
-                                        <div class="small text-muted">${r.when || ''} · ${r.doctor || ''}</div>
-                                    </div>
-                                    <a class="btn btn-sm btn-outline-secondary" href="/appointments/${r.id}">Open</a>
-                                </li>`).join('') + '</ul></div>';
-                        }
+                        content.innerHTML = '<div class="text-center text-muted small py-3">No upcoming appointments</div>';
                     }
-                    content.innerHTML = html;
-                } catch (_) {}
-            }
-            refreshAppointmentsBell();
-            setInterval(refreshAppointmentsBell, 30000);
+                } catch (e) {
+                    console.error('❌ Error refreshing appointments bell:', e);
+                }
+            };
 
-
-            }
+            // Initial call and set up polling
+            console.log('🔔 Initializing appointments bell refresh...');
+            window.refreshAppointmentsBell();
+            setInterval(window.refreshAppointmentsBell, 30000); // Every 30 seconds
 
             // Close sidebar on window resize for desktop
             window.addEventListener('resize', function() {
