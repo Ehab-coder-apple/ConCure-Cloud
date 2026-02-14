@@ -1785,7 +1785,9 @@
                             <i class="fas fa-user-circle"></i>
                         </div>
                     </div>
-                        @php($__layoutDebug = request()->boolean('layout-debug'))
+                        @php
+                            $__layoutDebug = request()->boolean('layout-debug');
+                        @endphp
                         @if(config('app.debug') || $__layoutDebug)
                             <button id="layoutDebugToggle" class="btn btn-sm {{ $__layoutDebug ? 'btn-warning' : 'btn-outline-secondary' }} ms-3" title="Toggle layout debug">
                                 <i class="fas fa-ruler-combined me-1"></i>{{ $__layoutDebug ? 'Debug ON' : 'Debug OFF' }}
