@@ -155,6 +155,56 @@
                                             </div>
                                         </div>
 
+                                        <!-- Password Change Section -->
+                                        <div class="row mt-4">
+                                            <div class="col-12">
+                                                <h6 class="mb-3">
+                                                    <i class="fas fa-lock me-2"></i>
+                                                    {{ __('Change Password') }}
+                                                </h6>
+                                                <div class="alert alert-info">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    {{ __('Leave password fields empty if you don\'t want to change your password.') }}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="current_password" class="form-label">{{ __('Current Password') }}</label>
+                                                    <input type="password" class="form-control" id="current_password" name="current_password"
+                                                           autocomplete="current-password">
+                                                    <div class="form-text">
+                                                        {{ __('Required to change password') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="new_password" class="form-label">{{ __('New Password') }}</label>
+                                                    <input type="password" class="form-control" id="new_password" name="new_password"
+                                                           autocomplete="new-password">
+                                                    <div class="form-text">
+                                                        {{ __('Minimum 8 characters') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="new_password_confirmation" class="form-label">{{ __('Confirm New Password') }}</label>
+                                                    <input type="password" class="form-control" id="new_password_confirmation" name="new_password_confirmation"
+                                                           autocomplete="new-password">
+                                                    <div class="form-text">
+                                                        {{ __('Re-enter your new password') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <!-- Doctor Name Font Size Control -->
                                         <div class="row">
                                             <div class="col-md-9">

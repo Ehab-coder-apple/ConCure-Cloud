@@ -516,7 +516,8 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
 
-        $request->validate([
+        // Validation rules
+        $rules = [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
@@ -531,10 +532,29 @@ class SettingsController extends Controller
             'professional_credentials_font_size' => 'nullable|integer|min:6|max:20',
             'scientific_degree' => 'nullable|string|max:100',
             'educational_institution' => 'nullable|string|max:255',
-        ]);
+        ];
+
+        // Add password validation if user wants to change password
+        if ($request->filled('current_password') || $request->filled('new_password')) {
+            $rules['current_password'] = 'required|string';
+            $rules['new_password'] = 'required|string|min:8|confirmed';
+        }
+
+        $request->validate($rules);
 
         try {
-            $user->update([
+            // Verify current password if changing password
+            if ($request->filled('current_password')) {
+                if (!\Hash::check($request->current_password, $user->password)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => __('Current password is incorrect.')
+                    ], 422);
+                }
+            }
+
+            // Update profile data
+            $updateData = [
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'email' => $request->email,
@@ -549,7 +569,29 @@ class SettingsController extends Controller
                 'professional_credentials_font_size' => $request->professional_credentials_font_size ?? 9,
                 'scientific_degree' => $request->scientific_degree,
                 'educational_institution' => $request->educational_institution,
-            ]);
+            ];
+
+            // Add password to update if provided
+            if ($request->filled('new_password')) {
+                $updateData['password'] = \Hash::make($request->new_password);
+            }
+
+            $user->update($updateData);
+
+            // Prepare audit log description
+            $description = 'Updated personal profile information';
+            $changes = [
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'title_prefix' => $request->title_prefix,
+            ];
+
+            if ($request->filled('new_password')) {
+                $description .= ' and changed password';
+                $changes['password_changed'] = true;
+            }
 
             // Log the action
             DB::table('audit_logs')->insert([
@@ -560,14 +602,8 @@ class SettingsController extends Controller
                 'action' => 'profile_updated',
                 'model_type' => 'User',
                 'model_id' => $user->id,
-                'description' => 'Updated personal profile information',
-                'changes' => json_encode([
-                    'first_name' => $request->first_name,
-                    'last_name' => $request->last_name,
-                    'email' => $request->email,
-                    'phone' => $request->phone,
-                    'title_prefix' => $request->title_prefix,
-                ]),
+                'description' => $description,
+                'changes' => json_encode($changes),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
                 'performed_at' => now(),
@@ -575,9 +611,14 @@ class SettingsController extends Controller
                 'updated_at' => now(),
             ]);
 
+            $message = __('Profile updated successfully.');
+            if ($request->filled('new_password')) {
+                $message = __('Profile and password updated successfully. Please use your new password on next login.');
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => __('Profile updated successfully.')
+                'message' => $message
             ]);
 
         } catch (\Exception $e) {
