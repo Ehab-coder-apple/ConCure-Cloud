@@ -20,10 +20,22 @@
                         </ol>
                     </nav>
                 </div>
-                <a href="{{ route('patients.show', $patient->id ?? 1) }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i>
-                    {{ __('Back to Patient') }}
-                </a>
+				    <div class="d-flex align-items-center gap-2">
+				        <a href="{{ route('patients.show', $patient->id) }}" class="btn btn-outline-secondary">
+	                        <i class="fas fa-arrow-left me-1"></i>
+	                        {{ __('Back to Patient') }}
+	                    </a>
+				        <form action="{{ route('patients.destroy', $patient->id) }}" method="POST"
+				              onsubmit="return confirm(@json(__('Are you sure you want to delete this patient? This action cannot be undone.')));"
+	                          class="d-inline">
+	                        @csrf
+	                        @method('DELETE')
+	                        <button type="submit" class="btn btn-outline-danger">
+	                            <i class="fas fa-trash-alt me-1"></i>
+	                            {{ __('Delete Patient') }}
+	                        </button>
+	                    </form>
+	                </div>
             </div>
 
             <div class="row">
@@ -36,7 +48,7 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <form action="{{ route('patients.update', $patient->id ?? 1) }}" method="POST" class="needs-validation" novalidate>
+				            <form action="{{ route('patients.update', $patient->id) }}" method="POST" class="needs-validation" novalidate>
                                 @csrf
                                 @method('PUT')
                                 
