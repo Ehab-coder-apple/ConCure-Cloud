@@ -98,8 +98,8 @@ class DentalLabRequestController extends Controller
                           ->orderBy('first_name')
                           ->get();
 
-        // Get doctors
-        $doctors = User::where('role', 'doctor')
+        // Get doctors (include dentists)
+        $doctors = User::whereIn('role', ['doctor', 'dental_dept'])
                       ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
                       ->where('is_active', true)
                       ->orderBy('first_name')
@@ -239,8 +239,8 @@ class DentalLabRequestController extends Controller
                           ->orderBy('first_name')
                           ->get();
 
-        // Get doctors
-        $doctors = User::where('role', 'doctor')
+        // Get doctors (include dentists)
+        $doctors = User::whereIn('role', ['doctor', 'dental_dept'])
                       ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
                       ->where('is_active', true)
                       ->orderBy('first_name')

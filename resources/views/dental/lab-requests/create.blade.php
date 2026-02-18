@@ -72,7 +72,7 @@
                                 <select class="form-select @error('doctor_id') is-invalid @enderror" id="doctor_id" name="doctor_id" required>
                                     <option value="">{{ __('Select Doctor') }}</option>
                                     @foreach($doctors as $doctor)
-                                        <option value="{{ $doctor->id }}" {{ old('doctor_id', auth()->user()->role === 'doctor' ? auth()->id() : '') == $doctor->id ? 'selected' : '' }}>
+                                        <option value="{{ $doctor->id }}" {{ old('doctor_id', in_array(auth()->user()->role, ['doctor', 'dental_dept']) ? auth()->id() : '') == $doctor->id ? 'selected' : '' }}>
                                             {{ $doctor->full_name }}
                                         </option>
                                     @endforeach
