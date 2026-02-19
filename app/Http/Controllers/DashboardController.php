@@ -8,6 +8,7 @@ use App\Models\LabRequest;
 use App\Models\DietPlan;
 use App\Models\Appointment;
 use App\Models\Invoice;
+use App\Models\Receipt;
 use App\Models\User;
 use App\Models\AuditLog;
 use App\Models\Clinic;
@@ -312,7 +313,13 @@ class DashboardController extends Controller
             $invoicesQuery = Invoice::query();
             $invoicesQuery->where('clinic_id', $user->clinic_id);
 
-            $data['totalRevenue'] = $applyPeriod((clone $invoicesQuery), 'invoice_date')->sum('total_amount');
+            $receiptsQuery = Receipt::query();
+            $receiptsQuery->where('clinic_id', $user->clinic_id);
+
+            // Total revenue includes both invoices and approved receipts
+            $invoiceRevenue = $applyPeriod((clone $invoicesQuery), 'invoice_date')->sum('total_amount');
+            $receiptRevenue = $applyPeriod((clone $receiptsQuery)->where('status', 'approved'), 'receipt_date')->sum('amount');
+            $data['totalRevenue'] = $invoiceRevenue + $receiptRevenue;
 
             $data['pendingInvoices'] = (clone $invoicesQuery)
                 ->whereIn('status', ['draft', 'sent'])
@@ -671,9 +678,14 @@ class DashboardController extends Controller
                     $stats[$key]['prescriptions'] = $rxCount;
                 }
                 if ($user->canAccessFinance()) {
-                    $stats[$key]['revenue'] = Invoice::where('clinic_id', $user->clinic_id)
+                    $invoiceRevenue = Invoice::where('clinic_id', $user->clinic_id)
                         ->whereDate('invoice_date', $day->toDateString())
                         ->sum('total_amount');
+                    $receiptRevenue = Receipt::where('clinic_id', $user->clinic_id)
+                        ->where('status', 'approved')
+                        ->whereDate('receipt_date', $day->toDateString())
+                        ->sum('amount');
+                    $stats[$key]['revenue'] = $invoiceRevenue + $receiptRevenue;
                 }
             }
         } elseif ($period === 'year') {
@@ -726,9 +738,14 @@ class DashboardController extends Controller
                     $stats[$key]['prescriptions'] = $rxCount;
                 }
                 if ($user->canAccessFinance()) {
-                    $stats[$key]['revenue'] = Invoice::where('clinic_id', $user->clinic_id)
+                    $invoiceRevenue = Invoice::where('clinic_id', $user->clinic_id)
                         ->whereYear('invoice_date', $year)
                         ->sum('total_amount');
+                    $receiptRevenue = Receipt::where('clinic_id', $user->clinic_id)
+                        ->where('status', 'approved')
+                        ->whereYear('receipt_date', $year)
+                        ->sum('amount');
+                    $stats[$key]['revenue'] = $invoiceRevenue + $receiptRevenue;
                 }
             }
         } else {
@@ -784,10 +801,16 @@ class DashboardController extends Controller
                     $stats[$key]['prescriptions'] = $rxCount;
                 }
                 if ($user->canAccessFinance()) {
-                    $stats[$key]['revenue'] = Invoice::where('clinic_id', $user->clinic_id)
+                    $invoiceRevenue = Invoice::where('clinic_id', $user->clinic_id)
                         ->whereMonth('invoice_date', $month->month)
                         ->whereYear('invoice_date', $month->year)
                         ->sum('total_amount');
+                    $receiptRevenue = Receipt::where('clinic_id', $user->clinic_id)
+                        ->where('status', 'approved')
+                        ->whereMonth('receipt_date', $month->month)
+                        ->whereYear('receipt_date', $month->year)
+                        ->sum('amount');
+                    $stats[$key]['revenue'] = $invoiceRevenue + $receiptRevenue;
                 }
             }
         }
