@@ -1271,13 +1271,25 @@ class FinanceController extends Controller
     {
         $data = [];
 
-        // Cash inflows (invoices)
-        $inflows = Invoice::where('clinic_id', $user->clinic_id)
+        // Cash inflows (invoices + receipts)
+        $invoiceInflows = Invoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($dateFrom, $dateTo)
             ->selectRaw('DATE(created_at) as date, SUM(total_amount) as amount')
             ->groupBy('date')
             ->orderBy('date')
             ->get();
+
+        // Cash inflows from receipts (approved only)
+        $receiptInflows = Receipt::where('clinic_id', $user->clinic_id)
+            ->approved()
+            ->byDateRange($dateFrom, $dateTo)
+            ->selectRaw('DATE(receipt_date) as date, SUM(amount) as amount')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // Merge inflows from both invoices and receipts
+        $inflows = $this->mergeInflowsByDate($invoiceInflows, $receiptInflows);
 
         // Cash outflows (expenses)
         $outflows = Expense::where('clinic_id', $user->clinic_id)
@@ -1345,6 +1357,40 @@ class FinanceController extends Controller
             : 0;
 
         return $data;
+    }
+
+    /**
+     * Merge inflows from invoices and receipts by date.
+     */
+    private function mergeInflowsByDate($invoiceInflows, $receiptInflows)
+    {
+        $merged = [];
+
+        // Add invoice inflows
+        foreach ($invoiceInflows as $inflow) {
+            $date = $inflow->date;
+            if (!isset($merged[$date])) {
+                $merged[$date] = 0;
+            }
+            $merged[$date] += $inflow->amount;
+        }
+
+        // Add receipt inflows
+        foreach ($receiptInflows as $inflow) {
+            $date = $inflow->date;
+            if (!isset($merged[$date])) {
+                $merged[$date] = 0;
+            }
+            $merged[$date] += $inflow->amount;
+        }
+
+        // Convert back to collection format
+        $result = collect();
+        foreach ($merged as $date => $amount) {
+            $result->push((object) ['date' => $date, 'amount' => $amount]);
+        }
+
+        return $result->sortBy('date')->values();
     }
 
     /**
