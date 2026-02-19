@@ -367,6 +367,7 @@ class PatientController extends Controller
             'emergency_contact_name' => 'nullable|string|max:255',
             'emergency_contact_phone' => 'nullable|string|max:20',
             'is_active' => 'boolean',
+            'medical_files.*' => 'nullable|file|max:10240|mimes:pdf,jpg,jpeg,png,doc,docx',
         ]);
 
         $patient->update([
@@ -387,13 +388,36 @@ class PatientController extends Controller
             'chronic_illnesses' => $request->chronic_illnesses,
             'surgeries_history' => $request->surgeries_history,
             'diet_history' => $request->diet_history,
-            'medical_history' => $request->medical_history,
+            // Keep existing medical_history unless it is explicitly provided.
+            // (Create/Edit forms currently don't include this field.)
+            'medical_history' => $request->input('medical_history', $patient->medical_history),
             'blood_type' => $request->blood_type,
             'notes' => $request->notes,
             'emergency_contact_name' => $request->emergency_contact_name,
             'emergency_contact_phone' => $request->emergency_contact_phone,
             'is_active' => $request->boolean('is_active', true),
         ]);
+
+        // Handle medical history file uploads (same behavior as store())
+        if ($request->hasFile('medical_files')) {
+            foreach ($request->file('medical_files') as $file) {
+                $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs("patients/{$patient->id}/files", $filename, 'public');
+
+                PatientFile::create([
+                    'patient_id' => $patient->id,
+                    'original_name' => $file->getClientOriginalName(),
+                    'file_name' => $filename,
+                    'file_path' => $path,
+                    'file_type' => $file->getClientOriginalExtension(),
+                    'file_size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
+                    'category' => 'medical_report',
+                    'description' => 'Uploaded during patient update',
+                    'uploaded_by' => auth()->id(),
+                ]);
+            }
+        }
 
         return redirect()->route('patients.show', $patient)
                         ->with('success', 'Patient updated successfully.');

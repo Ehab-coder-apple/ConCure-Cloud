@@ -48,7 +48,7 @@
                             </h6>
                         </div>
                         <div class="card-body">
-				            <form action="{{ route('patients.update', $patient->id) }}" method="POST" class="needs-validation" novalidate>
+			            <form action="{{ route('patients.update', $patient->id) }}" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
                                 @csrf
                                 @method('PUT')
                                 
@@ -65,7 +65,7 @@
                                         <label for="first_name" class="form-label">{{ __('First Name') }} <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control @error('first_name') is-invalid @enderror" 
                                                id="first_name" name="first_name" 
-                                               value="{{ old('first_name', $patient->first_name ?? 'Demo') }}" required>
+                                               value="{{ old('first_name', $patient->first_name) }}" required>
                                         @error('first_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -75,28 +75,29 @@
                                         <label for="last_name" class="form-label">{{ __('Last Name') }} <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control @error('last_name') is-invalid @enderror" 
                                                id="last_name" name="last_name" 
-                                               value="{{ old('last_name', $patient->last_name ?? 'Patient') }}" required>
+                                               value="{{ old('last_name', $patient->last_name) }}" required>
                                         @error('last_name')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <label for="date_of_birth" class="form-label">{{ __('Date of Birth') }}</label>
+                                        <label for="date_of_birth" class="form-label">{{ __('Date of Birth') }} <span class="text-danger">*</span></label>
                                         <input type="date" class="form-control @error('date_of_birth') is-invalid @enderror" 
                                                id="date_of_birth" name="date_of_birth" 
-                                               value="{{ old('date_of_birth', $patient->date_of_birth ? $patient->date_of_birth->format('Y-m-d') : '') }}">
+                                               value="{{ old('date_of_birth', $patient->date_of_birth ? $patient->date_of_birth->format('Y-m-d') : '') }}" required>
                                         @error('date_of_birth')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <label for="gender" class="form-label">{{ __('Gender') }}</label>
-                                        <select class="form-select @error('gender') is-invalid @enderror" id="gender" name="gender">
+                                        <label for="gender" class="form-label">{{ __('Gender') }} <span class="text-danger">*</span></label>
+                                        <select class="form-select @error('gender') is-invalid @enderror" id="gender" name="gender" required>
                                             <option value="">{{ __('Select Gender') }}</option>
-                                            <option value="male" {{ old('gender', $patient->gender ?? 'male') == 'male' ? 'selected' : '' }}>{{ __('Male') }}</option>
-                                            <option value="female" {{ old('gender', $patient->gender ?? '') == 'female' ? 'selected' : '' }}>{{ __('Female') }}</option>
+                                            <option value="male" {{ old('gender', $patient->gender) == 'male' ? 'selected' : '' }}>{{ __('Male') }}</option>
+                                            <option value="female" {{ old('gender', $patient->gender) == 'female' ? 'selected' : '' }}>{{ __('Female') }}</option>
+                                            <option value="other" {{ old('gender', $patient->gender) == 'other' ? 'selected' : '' }}>{{ __('Other') }}</option>
                                         </select>
                                         @error('gender')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -115,7 +116,8 @@
                                         <label for="phone" class="form-label">{{ __('Phone Number') }}</label>
                                         <input type="tel" class="form-control @error('phone') is-invalid @enderror"
                                                id="phone" name="phone"
-                                               value="{{ old('phone', $patient->phone ?? '+1-555-0123') }}">
+                                               value="{{ old('phone', $patient->phone) }}"
+                                               placeholder="{{ __('Phone number') }}">
                                         @error('phone')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -136,20 +138,101 @@
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label for="email" class="form-label">{{ __('Email') }}</label>
+                                        <label for="email" class="form-label">{{ __('Email Address') }}</label>
                                         <input type="email" class="form-control @error('email') is-invalid @enderror"
                                                id="email" name="email"
-                                               value="{{ old('email', $patient->email ?? 'demo@patient.com') }}">
+                                               value="{{ old('email', $patient->email) }}"
+                                               placeholder="{{ __('Email address') }}">
                                         @error('email')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
-                                    <div class="col-12">
+
+                                    <div class="col-md-6">
                                         <label for="address" class="form-label">{{ __('Address') }}</label>
-                                        <textarea class="form-control @error('address') is-invalid @enderror" 
-                                                  id="address" name="address" rows="2">{{ old('address', $patient->address ?? '123 Main Street, City, State') }}</textarea>
+                                        <textarea class="form-control @error('address') is-invalid @enderror"
+                                                  id="address" name="address" rows="2"
+                                                  placeholder="{{ __('Home address') }}">{{ old('address', $patient->address) }}</textarea>
                                         @error('address')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Personal Information -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            {{ __('Personal Information') }}
+                                        </h6>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="job" class="form-label">{{ __('Occupation') }}</label>
+                                        <input type="text" class="form-control @error('job') is-invalid @enderror"
+                                               id="job" name="job"
+                                               value="{{ old('job', $patient->job) }}"
+                                               placeholder="{{ __('Job/Occupation') }}">
+                                        @error('job')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="education" class="form-label">{{ __('Education Level') }}</label>
+                                        <input type="text" class="form-control @error('education') is-invalid @enderror"
+                                               id="education" name="education"
+                                               value="{{ old('education', $patient->education) }}"
+                                               placeholder="{{ __('Education level') }}">
+                                        @error('education')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Physical Information -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                                            <i class="fas fa-weight me-2"></i>
+                                            {{ __('Physical Information') }}
+                                        </h6>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="height" class="form-label">{{ __('Height (cm)') }}</label>
+                                        <input type="number" class="form-control @error('height') is-invalid @enderror"
+                                               id="height" name="height" min="50" max="300" step="0.1"
+                                               value="{{ old('height', $patient->height) }}"
+                                               placeholder="{{ __('Height in centimeters') }}">
+                                        @error('height')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="weight" class="form-label">{{ __('Weight (kg)') }}</label>
+                                        <input type="number" class="form-control @error('weight') is-invalid @enderror"
+                                               id="weight" name="weight" min="1" max="500" step="0.1"
+                                               value="{{ old('weight', $patient->weight) }}"
+                                               placeholder="{{ __('Weight in kilograms') }}">
+                                        @error('weight')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="blood_type" class="form-label">{{ __('Blood Type') }}</label>
+                                        <select class="form-select @error('blood_type') is-invalid @enderror" id="blood_type" name="blood_type">
+                                            <option value="">{{ __('Select Blood Type') }}</option>
+                                            <option value="NA" {{ old('blood_type', $patient->blood_type) == 'NA' ? 'selected' : '' }}>{{ __('NA - Not available') }}</option>
+                                            <option value="A+" {{ old('blood_type', $patient->blood_type) == 'A+' ? 'selected' : '' }}>A+</option>
+                                            <option value="A-" {{ old('blood_type', $patient->blood_type) == 'A-' ? 'selected' : '' }}>A-</option>
+                                            <option value="B+" {{ old('blood_type', $patient->blood_type) == 'B+' ? 'selected' : '' }}>B+</option>
+                                            <option value="B-" {{ old('blood_type', $patient->blood_type) == 'B-' ? 'selected' : '' }}>B-</option>
+                                            <option value="AB+" {{ old('blood_type', $patient->blood_type) == 'AB+' ? 'selected' : '' }}>AB+</option>
+                                            <option value="AB-" {{ old('blood_type', $patient->blood_type) == 'AB-' ? 'selected' : '' }}>AB-</option>
+                                            <option value="O+" {{ old('blood_type', $patient->blood_type) == 'O+' ? 'selected' : '' }}>O+</option>
+                                            <option value="O-" {{ old('blood_type', $patient->blood_type) == 'O-' ? 'selected' : '' }}>O-</option>
+                                        </select>
+                                        @error('blood_type')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -161,63 +244,146 @@
                                             {{ __('Medical Information') }}
                                         </h6>
                                     </div>
-                                    
-                                    <div class="col-md-3">
-                                        <label for="height" class="form-label">{{ __('Height (cm)') }}</label>
-                                        <input type="number" class="form-control @error('height') is-invalid @enderror" 
-                                               id="height" name="height" step="0.1" 
-                                               value="{{ old('height', $patient->height ?? '170') }}">
-                                        @error('height')
+
+                                    <div class="col-12">
+                                        <label for="allergies" class="form-label">{{ __('Allergies') }}</label>
+                                        <textarea class="form-control @error('allergies') is-invalid @enderror"
+                                                  id="allergies" name="allergies" rows="2"
+                                                  placeholder="{{ __('Known allergies and reactions') }}">{{ old('allergies', $patient->allergies) }}</textarea>
+                                        @error('allergies')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
-                                    <div class="col-md-3">
-                                        <label for="weight" class="form-label">{{ __('Weight (kg)') }}</label>
-                                        <input type="number" class="form-control @error('weight') is-invalid @enderror" 
-                                               id="weight" name="weight" step="0.1" 
-                                               value="{{ old('weight', $patient->weight ?? '70') }}">
-                                        @error('weight')
+
+                                    <div class="col-12">
+                                        <label for="chronic_illnesses" class="form-label">{{ __('Chronic Illnesses') }}</label>
+                                        <textarea class="form-control @error('chronic_illnesses') is-invalid @enderror"
+                                                  id="chronic_illnesses" name="chronic_illnesses" rows="2"
+                                                  placeholder="{{ __('Chronic conditions and ongoing health issues') }}">{{ old('chronic_illnesses', $patient->chronic_illnesses) }}</textarea>
+                                        @error('chronic_illnesses')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
-                                    <div class="col-md-3">
-                                        <label for="blood_type" class="form-label">{{ __('Blood Type') }}</label>
-                                        <select class="form-select @error('blood_type') is-invalid @enderror" id="blood_type" name="blood_type">
-                                            <option value="">{{ __('Select Blood Type') }}</option>
-                                            <option value="NA" {{ old('blood_type', $patient->blood_type ?? '') == 'NA' ? 'selected' : '' }}>{{ __('NA - Not available') }}</option>
-                                            <option value="A+" {{ old('blood_type', $patient->blood_type ?? '') == 'A+' ? 'selected' : '' }}>A+</option>
-                                            <option value="A-" {{ old('blood_type', $patient->blood_type ?? '') == 'A-' ? 'selected' : '' }}>A-</option>
-                                            <option value="B+" {{ old('blood_type', $patient->blood_type ?? '') == 'B+' ? 'selected' : '' }}>B+</option>
-                                            <option value="B-" {{ old('blood_type', $patient->blood_type ?? '') == 'B-' ? 'selected' : '' }}>B-</option>
-                                            <option value="AB+" {{ old('blood_type', $patient->blood_type ?? '') == 'AB+' ? 'selected' : '' }}>AB+</option>
-                                            <option value="AB-" {{ old('blood_type', $patient->blood_type ?? '') == 'AB-' ? 'selected' : '' }}>AB-</option>
-                                            <option value="O+" {{ old('blood_type', $patient->blood_type ?? '') == 'O+' ? 'selected' : '' }}>O+</option>
-                                            <option value="O-" {{ old('blood_type', $patient->blood_type ?? '') == 'O-' ? 'selected' : '' }}>O-</option>
-                                        </select>
-                                        @error('blood_type')
+
+                                    <div class="col-12">
+                                        <label for="surgeries_history" class="form-label">{{ __('Surgery History') }}</label>
+                                        <textarea class="form-control @error('surgeries_history') is-invalid @enderror"
+                                                  id="surgeries_history" name="surgeries_history" rows="2"
+                                                  placeholder="{{ __('Previous surgeries and procedures') }}">{{ old('surgeries_history', $patient->surgeries_history) }}</textarea>
+                                        @error('surgeries_history')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    
-                                    <div class="col-md-3">
+
+                                    <div class="col-12">
+                                        <label for="diet_history" class="form-label">{{ __('Diet History') }}</label>
+                                        <textarea class="form-control @error('diet_history') is-invalid @enderror"
+                                                  id="diet_history" name="diet_history" rows="2"
+                                                  placeholder="{{ __('Previous diets and nutritional information') }}">{{ old('diet_history', $patient->diet_history) }}</textarea>
+                                        @error('diet_history')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label for="medical_files" class="form-label">
+                                            <i class="fas fa-file-medical me-1"></i>
+                                            {{ __('Medical History Files') }}
+                                        </label>
+                                        <input type="file" class="form-control @error('medical_files.*') is-invalid @enderror"
+                                               id="medical_files" name="medical_files[]" multiple
+                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                        <small class="text-muted">{{ __('Upload medical reports, lab results, or other relevant documents (PDF, Images, Word documents)') }}</small>
+                                        @error('medical_files.*')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Special Conditions -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            {{ __('Special Conditions') }}
+                                        </h6>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input @error('is_pregnant') is-invalid @enderror"
+                                                   type="checkbox" id="is_pregnant" name="is_pregnant" value="1"
+                                                   {{ old('is_pregnant', $patient->is_pregnant) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="is_pregnant">
+                                                {{ __('Currently Pregnant') }}
+                                            </label>
+                                            @error('is_pregnant')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+
+                                    <!-- Emergency Contact -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                                            <i class="fas fa-phone-alt me-2"></i>
+                                            {{ __('Emergency Contact') }}
+                                        </h6>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="emergency_contact_name" class="form-label">{{ __('Emergency Contact Name') }}</label>
+                                        <input type="text" class="form-control @error('emergency_contact_name') is-invalid @enderror"
+                                               id="emergency_contact_name" name="emergency_contact_name"
+                                               value="{{ old('emergency_contact_name', $patient->emergency_contact_name) }}"
+                                               placeholder="{{ __('Full name of emergency contact') }}">
+                                        @error('emergency_contact_name')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="emergency_contact_phone" class="form-label">{{ __('Emergency Contact Phone') }}</label>
+                                        <input type="tel" class="form-control @error('emergency_contact_phone') is-invalid @enderror"
+                                               id="emergency_contact_phone" name="emergency_contact_phone"
+                                               value="{{ old('emergency_contact_phone', $patient->emergency_contact_phone) }}"
+                                               placeholder="{{ __('Emergency contact phone number') }}">
+                                        @error('emergency_contact_phone')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Additional Notes -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                                            <i class="fas fa-sticky-note me-2"></i>
+                                            {{ __('Additional Notes') }}
+                                        </h6>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label for="notes" class="form-label">{{ __('Notes') }}</label>
+                                        <textarea class="form-control @error('notes') is-invalid @enderror"
+                                                  id="notes" name="notes" rows="3"
+                                                  placeholder="{{ __('Additional notes about the patient') }}">{{ old('notes', $patient->notes) }}</textarea>
+                                        @error('notes')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Status (edit-only) -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                                            <i class="fas fa-toggle-on me-2"></i>
+                                            {{ __('Status') }}
+                                        </h6>
+                                    </div>
+
+                                    <div class="col-md-6">
                                         <label for="is_active" class="form-label">{{ __('Status') }}</label>
                                         <select class="form-select @error('is_active') is-invalid @enderror" id="is_active" name="is_active">
-                                            <option value="1" {{ old('is_active', $patient->is_active ?? '1') == '1' ? 'selected' : '' }}>{{ __('Active') }}</option>
-                                            <option value="0" {{ old('is_active', $patient->is_active ?? '1') == '0' ? 'selected' : '' }}>{{ __('Inactive') }}</option>
+                                            <option value="1" {{ old('is_active', $patient->is_active ? '1' : '0') == '1' ? 'selected' : '' }}>{{ __('Active') }}</option>
+                                            <option value="0" {{ old('is_active', $patient->is_active ? '1' : '0') == '0' ? 'selected' : '' }}>{{ __('Inactive') }}</option>
                                         </select>
                                         @error('is_active')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    
-                                    <div class="col-12">
-                                        <label for="medical_history" class="form-label">{{ __('Medical History') }}</label>
-                                        <textarea class="form-control @error('medical_history') is-invalid @enderror" 
-                                                  id="medical_history" name="medical_history" rows="4" 
-                                                  placeholder="{{ __('Any relevant medical history, allergies, or conditions...') }}">{{ old('medical_history', $patient->medical_history ?? '') }}</textarea>
-                                        @error('medical_history')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -226,7 +392,7 @@
                                 <div class="row mt-4">
                                     <div class="col-12">
                                         <div class="d-flex justify-content-end gap-2">
-                                            <a href="{{ route('patients.show', $patient->id ?? 1) }}" class="btn btn-secondary">
+			                    <a href="{{ route('patients.show', $patient->id) }}" class="btn btn-secondary">
                                                 <i class="fas fa-times me-1"></i>
                                                 {{ __('Cancel') }}
                                             </a>
