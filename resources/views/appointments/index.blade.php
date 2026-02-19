@@ -235,6 +235,48 @@
                             <label for="notes" class="form-label">{{ __('Notes') }}</label>
                             <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="{{ __('Appointment notes or special instructions...') }}"></textarea>
                         </div>
+
+                        <!-- Payment Collection (Optional) -->
+                        <div class="col-12">
+                            <hr class="my-3">
+                            <h6 class="mb-3">
+                                <i class="fas fa-receipt me-2"></i>
+                                {{ __('Payment Collection') }} <span class="text-muted">({{ __('Optional') }})</span>
+                            </h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="modal_fees_collected" class="form-label">{{ __('Fees Collected') }}</label>
+                            <input type="number"
+                                   step="0.01"
+                                   min="0"
+                                   class="form-control"
+                                   id="modal_fees_collected"
+                                   name="fees_collected"
+                                   value="0.00"
+                                   placeholder="0.00">
+                        </div>
+
+                        <div class="col-md-6" id="modal_payment_method_wrapper" style="display:none;">
+                            <label for="modal_payment_method" class="form-label">{{ __('Payment Method') }}</label>
+                            <select class="form-select" id="modal_payment_method" name="payment_method">
+                                <option value="">{{ __('Select method...') }}</option>
+                                <option value="cash">{{ __('Cash') }}</option>
+                                <option value="card">{{ __('Card') }}</option>
+                                <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
+                                <option value="check">{{ __('Check') }}</option>
+                                <option value="other">{{ __('Other') }}</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12" id="modal_payment_notes_wrapper" style="display:none;">
+                            <label for="modal_payment_notes" class="form-label">{{ __('Payment Notes') }}</label>
+                            <textarea class="form-control"
+                                      id="modal_payment_notes"
+                                      name="payment_notes"
+                                      rows="2"
+                                      placeholder="{{ __('Additional payment details (optional)...') }}"></textarea>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -451,6 +493,26 @@ $(document).on('select2:open', function(e) {
             el.style.display = 'none';
         });
     }
+});
+
+// Toggle payment method and notes fields based on fees collected
+document.addEventListener('DOMContentLoaded', function() {
+    const feesInput = document.getElementById('modal_fees_collected');
+    const paymentMethodWrapper = document.getElementById('modal_payment_method_wrapper');
+    const paymentNotesWrapper = document.getElementById('modal_payment_notes_wrapper');
+
+    function togglePaymentFields() {
+        const fees = parseFloat(feesInput.value) || 0;
+        if (fees > 0) {
+            paymentMethodWrapper.style.display = '';
+            paymentNotesWrapper.style.display = '';
+        } else {
+            paymentMethodWrapper.style.display = 'none';
+            paymentNotesWrapper.style.display = 'none';
+        }
+    }
+
+    feesInput.addEventListener('input', togglePaymentFields);
 });
 
 </script>
