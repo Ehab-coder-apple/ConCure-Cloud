@@ -290,5 +290,29 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    // Initialize Select2 for patient dropdown with search enabled
+    $('#patient_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select Patient") }}',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $(document.body),
+        language: {
+            noResults: function() {
+                return '{{ __("No patients found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
+});
+</script>
+@endpush
+
 @endsection
 
