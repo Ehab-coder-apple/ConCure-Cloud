@@ -293,6 +293,23 @@
                             <p>{{ $patient->medical_history ?? __('No medical history recorded yet.') }}</p>
                         </div>
                     </div>
+
+	                    <!-- Notes -->
+	                    <div class="card mb-4">
+	                        <div class="card-header">
+	                            <h6 class="mb-0">
+	                                <i class="fas fa-sticky-note me-2"></i>
+	                                {{ __('Notes') }}
+	                            </h6>
+	                        </div>
+	                        <div class="card-body">
+	                            @if(!empty($patient->notes))
+	                                <div class="text-break">{!! nl2br(e($patient->notes)) !!}</div>
+	                            @else
+	                                <p class="text-muted mb-0">{{ __('No notes recorded yet.') }}</p>
+	                            @endif
+	                        </div>
+	                    </div>
                     <!-- Forms Summary -->
                     <div class="card mb-4">
                         <div class="card-header d-flex justify-content-between align-items-center">
