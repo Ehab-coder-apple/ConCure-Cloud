@@ -607,7 +607,8 @@ class RecommendationController extends Controller
                   ->orWhereHas('patient', function ($pq) use ($searchTerm) {
                       $pq->where('first_name', 'like', "%{$searchTerm}%")
                         ->orWhere('last_name', 'like', "%{$searchTerm}%")
-                        ->orWhere('patient_id', 'like', "%{$searchTerm}%");
+                        ->orWhere('patient_id', 'like', "%{$searchTerm}%")
+                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$searchTerm}%"]);
                   });
             });
         }
@@ -699,7 +700,8 @@ class RecommendationController extends Controller
                   ->orWhereHas('patient', function ($pq) use ($searchTerm) {
                       $pq->where('first_name', 'like', "%{$searchTerm}%")
                         ->orWhere('last_name', 'like', "%{$searchTerm}%")
-                        ->orWhere('patient_id', 'like', "%{$searchTerm}%");
+                        ->orWhere('patient_id', 'like', "%{$searchTerm}%")
+                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$searchTerm}%"]);
                   });
             });
         }

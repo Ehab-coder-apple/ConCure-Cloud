@@ -314,7 +314,8 @@ class DentalTreatment extends Model
               ->orWhereHas('patient', function ($patientQuery) use ($search) {
                   $patientQuery->where('first_name', 'like', "%{$search}%")
                               ->orWhere('last_name', 'like', "%{$search}%")
-                              ->orWhere('patient_id', 'like', "%{$search}%");
+                              ->orWhere('patient_id', 'like', "%{$search}%")
+                              ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"]);
               });
         });
     }

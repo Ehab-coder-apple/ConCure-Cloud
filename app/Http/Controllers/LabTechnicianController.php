@@ -80,7 +80,8 @@ class LabTechnicianController extends Controller
                       ->orWhere('last_name', 'like', "%{$search}%")
                       ->orWhere('patient_id', 'like', "%{$search}%")
                       ->orWhere('phone', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"]);
                 })
                 ->orderBy('first_name', 'asc')
                 ->orderBy('last_name', 'asc')
