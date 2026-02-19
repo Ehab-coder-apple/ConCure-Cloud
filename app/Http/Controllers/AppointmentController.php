@@ -549,7 +549,19 @@ class AppointmentController extends Controller
             ->select('id', 'first_name', 'last_name', 'role')
             ->get();
 
-        return view('appointments.edit', compact('appointment', 'patients', 'doctors'));
+        // Load receipt if exists
+        $receipt = Receipt::where('clinic_id', $user->clinic_id)
+            ->where('reference_number', (string) $appointment->id)
+            ->first();
+
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('appointments.edit', compact('appointment', 'patients', 'doctors', 'receipt', 'currency', 'currencySymbol'));
     }
 
     /**
@@ -557,7 +569,8 @@ class AppointmentController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $request->validate([
+        // Use Validator for conditional validation
+        $validator = Validator::make($request->all(), [
             'patient_id' => 'required|exists:patients,id',
             'doctor_id' => 'required|exists:users,id',
             'appointment_date' => 'required|date',
@@ -566,7 +579,19 @@ class AppointmentController extends Controller
             'duration' => 'nullable|integer|min:15|max:240',
             'status' => 'required|in:scheduled,confirmed,completed,cancelled',
             'notes' => 'nullable|string|max:1000',
+            'fees_collected' => 'nullable|numeric|min:0',
+            'payment_method' => 'nullable|in:cash,card,bank_transfer,check,other',
+            'payment_notes' => 'nullable|string|max:500',
         ]);
+
+        // Add conditional validation for payment_method
+        $validator->sometimes('payment_method', 'required', function ($input) {
+            return (float) ($input->fees_collected ?? 0) > 0;
+        });
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
 
         // Combine date and time into datetime
         $appointmentDateTime = Carbon::parse($request->appointment_date . ' ' . $request->appointment_time);
@@ -600,14 +625,63 @@ class AppointmentController extends Controller
             $query->where('doctor_id', $user->id);
         }
 
-        $updated = $query->update($data);
+        // Use transaction for atomic operations
+        DB::beginTransaction();
+        try {
+            $updated = $query->update($data);
 
-        if ($updated) {
-            return redirect()->route('appointments.index')
-                ->with('success', __('Appointment updated successfully.'));
+            if ($updated) {
+                // Handle receipt creation/update
+                $feesCollected = (float) ($request->fees_collected ?? 0);
+
+                if ($feesCollected > 0) {
+                    // Check if receipt already exists
+                    $receipt = Receipt::where('clinic_id', $user->clinic_id)
+                        ->where('reference_number', (string) $id)
+                        ->first();
+
+                    if ($receipt) {
+                        // Update existing receipt
+                        $receipt->update([
+                            'amount' => $feesCollected,
+                            'payment_method' => $request->payment_method,
+                            'notes' => $request->payment_notes,
+                        ]);
+                    } else {
+                        // Create new receipt
+                        Receipt::create([
+                            'clinic_id' => $user->clinic_id,
+                            'description' => 'Appointment Payment',
+                            'amount' => $feesCollected,
+                            'category' => 'consultation_fee',
+                            'receipt_date' => now()->toDateString(),
+                            'payment_method' => $request->payment_method,
+                            'reference_number' => (string) $id,
+                            'notes' => $request->payment_notes,
+                            'created_by' => $user->id,
+                            'status' => 'approved',
+                            'approved_by' => $user->id,
+                            'approved_at' => now(),
+                        ]);
+                    }
+                } else {
+                    // If fees are 0, delete any existing receipt
+                    Receipt::where('clinic_id', $user->clinic_id)
+                        ->where('reference_number', (string) $id)
+                        ->delete();
+                }
+
+                DB::commit();
+                return redirect()->route('appointments.index')
+                    ->with('success', __('Appointment updated successfully.'));
+            }
+
+            DB::rollBack();
+            return back()->with('error', __('Appointment not found or access denied.'));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', __('Error updating appointment: ') . $e->getMessage());
         }
-
-        return back()->with('error', __('Appointment not found or access denied.'));
     }
 
     /**
