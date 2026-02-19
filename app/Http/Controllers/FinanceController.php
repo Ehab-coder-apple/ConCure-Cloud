@@ -1112,21 +1112,25 @@ class FinanceController extends Controller
         $currentMonth = now()->startOfMonth();
         $currentMonthEnd = now()->endOfMonth();
 
-        $stats['monthlyRevenue'] = $invoicesQuery->clone()
+        $monthlyInvoiceRevenue = $invoicesQuery->clone()
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('total_amount');
 
-        $stats['monthlyReceipts'] = $receiptsQuery->clone()
+        $monthlyReceiptRevenue = $receiptsQuery->clone()
             ->approved()
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('amount');
+
+        // Total revenue includes both invoices and receipts
+        $stats['monthlyRevenue'] = $monthlyInvoiceRevenue + $monthlyReceiptRevenue;
+        $stats['monthlyReceipts'] = $monthlyReceiptRevenue;
 
         $stats['monthlyExpenses'] = $expensesQuery->clone()
             ->approved()
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('amount');
 
-        $stats['monthlyProfit'] = ($stats['monthlyRevenue'] + $stats['monthlyReceipts']) - $stats['monthlyExpenses'];
+        $stats['monthlyProfit'] = $stats['monthlyRevenue'] - $stats['monthlyExpenses'];
 
         // Outstanding amounts
         $stats['outstandingInvoices'] = $invoicesQuery->clone()
@@ -1232,13 +1236,17 @@ class FinanceController extends Controller
         // Base queries filtered by clinic
         $invoicesQuery = Invoice::where('clinic_id', $user->clinic_id);
         $expensesQuery = Expense::where('clinic_id', $user->clinic_id);
+        $receiptsQuery = Receipt::where('clinic_id', $user->clinic_id);
 
         // Current month data
         $currentMonth = now()->startOfMonth();
         $currentMonthEnd = now()->endOfMonth();
 
+        $currentMonthInvoiceRevenue = $invoicesQuery->clone()->byDateRange($currentMonth, $currentMonthEnd)->sum('total_amount');
+        $currentMonthReceiptRevenue = $receiptsQuery->clone()->approved()->byDateRange($currentMonth, $currentMonthEnd)->sum('amount');
+
         $data['currentMonth'] = [
-            'revenue' => $invoicesQuery->clone()->byDateRange($currentMonth, $currentMonthEnd)->sum('total_amount'),
+            'revenue' => $currentMonthInvoiceRevenue + $currentMonthReceiptRevenue,
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($currentMonth, $currentMonthEnd)->sum('amount'),
         ];
         $data['currentMonth']['profit'] = $data['currentMonth']['revenue'] - $data['currentMonth']['expenses'];
@@ -1247,16 +1255,22 @@ class FinanceController extends Controller
         $previousMonth = now()->subMonth()->startOfMonth();
         $previousMonthEnd = now()->subMonth()->endOfMonth();
 
+        $previousMonthInvoiceRevenue = $invoicesQuery->clone()->byDateRange($previousMonth, $previousMonthEnd)->sum('total_amount');
+        $previousMonthReceiptRevenue = $receiptsQuery->clone()->approved()->byDateRange($previousMonth, $previousMonthEnd)->sum('amount');
+
         $data['previousMonth'] = [
-            'revenue' => $invoicesQuery->clone()->byDateRange($previousMonth, $previousMonthEnd)->sum('total_amount'),
+            'revenue' => $previousMonthInvoiceRevenue + $previousMonthReceiptRevenue,
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($previousMonth, $previousMonthEnd)->sum('amount'),
         ];
         $data['previousMonth']['profit'] = $data['previousMonth']['revenue'] - $data['previousMonth']['expenses'];
 
         // Year to date
         $yearStart = now()->startOfYear();
+        $yearToDateInvoiceRevenue = $invoicesQuery->clone()->byDateRange($yearStart, now())->sum('total_amount');
+        $yearToDateReceiptRevenue = $receiptsQuery->clone()->approved()->byDateRange($yearStart, now())->sum('amount');
+
         $data['yearToDate'] = [
-            'revenue' => $invoicesQuery->clone()->byDateRange($yearStart, now())->sum('total_amount'),
+            'revenue' => $yearToDateInvoiceRevenue + $yearToDateReceiptRevenue,
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($yearStart, now())->sum('amount'),
         ];
         $data['yearToDate']['profit'] = $data['yearToDate']['revenue'] - $data['yearToDate']['expenses'];
@@ -1316,7 +1330,7 @@ class FinanceController extends Controller
     {
         $data = [];
 
-        // Revenue breakdown
+        // Revenue breakdown from invoices
         $revenue = Invoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($dateFrom, $dateTo)
             ->with('items')
@@ -1330,6 +1344,25 @@ class FinanceController extends Controller
                 });
             });
 
+        // Add receipts to revenue
+        $receipts = Receipt::where('clinic_id', $user->clinic_id)
+            ->approved()
+            ->byDateRange($dateFrom, $dateTo)
+            ->get();
+
+        $receiptsByCategory = $receipts->groupBy('category')
+            ->map(function ($receipts) {
+                return $receipts->sum('amount');
+            });
+
+        // Merge receipt categories into revenue by type
+        foreach ($receiptsByCategory as $category => $amount) {
+            if (!isset($revenueByType[$category])) {
+                $revenueByType[$category] = 0;
+            }
+            $revenueByType[$category] += $amount;
+        }
+
         // Expense breakdown
         $expenses = Expense::where('clinic_id', $user->clinic_id)
             ->approved()
@@ -1341,8 +1374,11 @@ class FinanceController extends Controller
                 return $expenses->sum('amount');
             });
 
+        $invoiceTotal = $revenue->sum('total_amount');
+        $receiptTotal = $receipts->sum('amount');
+
         $data['revenue'] = [
-            'total' => $revenue->sum('total_amount'),
+            'total' => $invoiceTotal + $receiptTotal,
             'byType' => $revenueByType,
         ];
 
