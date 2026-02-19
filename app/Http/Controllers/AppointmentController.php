@@ -7,9 +7,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\QueryException;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\User;
+use App\Models\Receipt;
 use App\Notifications\NewAppointmentNotification;
 
 class AppointmentController extends Controller
@@ -199,7 +202,7 @@ class AppointmentController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'patient_id' => 'required|exists:patients,id',
             'doctor_id' => 'required|exists:users,id',
             'appointment_date' => 'required|date|after_or_equal:today',
@@ -207,7 +210,18 @@ class AppointmentController extends Controller
             'appointment_type' => 'nullable|string|max:100',
             'duration' => 'nullable|integer|min:15|max:240',
             'notes' => 'nullable|string|max:1000',
+
+            // Payment collection (optional)
+            'fees_collected' => 'nullable|numeric|min:0',
+            'payment_method' => 'nullable|in:cash,card,bank_transfer,check,other',
+            'payment_notes' => 'nullable|string|max:1000',
         ]);
+
+        $validator->sometimes('payment_method', 'required', function ($input) {
+            return isset($input->fees_collected) && (float) $input->fees_collected > 0;
+        });
+
+        $validated = $validator->validate();
 
         // Check for conflicts (support legacy schema)
         $appointmentDateTime = Carbon::parse($request->appointment_date . ' ' . $request->appointment_time);
@@ -249,20 +263,25 @@ class AppointmentController extends Controller
         // Generate appointment number
         $appointmentNumber = 'APT-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
+        $user = Auth::user();
+        $feesCollected = (float) ($validated['fees_collected'] ?? 0);
+
         try {
+            DB::beginTransaction();
+
             if ($legacy) {
                 $appointmentId = DB::table('appointments')->insertGetId([
                     'appointment_number' => $appointmentNumber,
                     'patient_id' => $request->patient_id,
                     'doctor_id' => $request->doctor_id,
-                    'clinic_id' => Auth::user()->clinic_id,
+                    'clinic_id' => $user->clinic_id,
                     'appointment_date' => $appointmentDateTime->toDateString(),
                     'appointment_time' => $appointmentDateTime->format('H:i:s'),
                     'duration' => $duration,
                     'type' => $request->appointment_type ?? 'consultation',
                     'status' => 'scheduled',
                     'notes' => $request->notes,
-                    'created_by' => Auth::id(),
+                    'created_by' => $user->id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -271,22 +290,51 @@ class AppointmentController extends Controller
                     'appointment_number' => $appointmentNumber,
                     'patient_id' => $request->patient_id,
                     'doctor_id' => $request->doctor_id,
-                    'clinic_id' => Auth::user()->clinic_id,
+                    'clinic_id' => $user->clinic_id,
                     'appointment_datetime' => $appointmentDateTime,
                     'duration_minutes' => $duration,
                     'type' => $request->appointment_type ?? 'consultation',
                     'status' => 'scheduled',
                     'notes' => $request->notes,
-                    'created_by' => Auth::id(),
+                    'created_by' => $user->id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
             }
 
+            // Create finance receipt if payment collected now
+            if ($feesCollected > 0) {
+                $patient = DB::table('patients')
+                    ->where('id', $request->patient_id)
+                    ->select('first_name', 'last_name')
+                    ->first();
+
+                $payerName = $patient ? trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? '')) : null;
+
+                Receipt::create([
+                    'clinic_id' => $user->clinic_id,
+					'description' => 'Consultation Fee - ' . $appointmentNumber,
+                    'amount' => $feesCollected,
+                    'category' => 'consultation_fee',
+                    'receipt_date' => now()->toDateString(),
+                    'payment_method' => $validated['payment_method'],
+                    'payer_name' => $payerName,
+                    // Reference the appointment ID (string field)
+                    'reference_number' => (string) $appointmentId,
+                    'notes' => $validated['payment_notes'] ?? null,
+                    'created_by' => $user->id,
+                    'status' => 'approved',
+                    'approved_by' => $user->id,
+                    'approved_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+
             // Notify the assigned doctor about the new appointment (includes appointment number)
             try {
                 $doctor = User::where('id', $request->doctor_id)
-                    ->where('clinic_id', Auth::user()->clinic_id)
+                    ->where('clinic_id', $user->clinic_id)
                     ->first();
 
                 if ($doctor) {
@@ -305,7 +353,7 @@ class AppointmentController extends Controller
                         $patientName ?: null,
                         $patientCode ?: null,
                         $scheduledAt,
-                        Auth::user()->clinic_id
+                        $user->clinic_id
                     ));
                 }
             } catch (\Throwable $e) {
@@ -317,7 +365,8 @@ class AppointmentController extends Controller
             return redirect()->route('appointments.index')
                 ->with('success', __('Appointment scheduled successfully.'));
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            try { DB::rollBack(); } catch (\Throwable $ignored) {}
             return back()->withInput()
                 ->with('error', __('Error scheduling appointment: ') . $e->getMessage());
         }
@@ -363,7 +412,106 @@ class AppointmentController extends Controller
             abort(404, 'Appointment not found');
         }
 
-        return view('appointments.show', compact('appointment'));
+        $receipt = Receipt::where('clinic_id', $user->clinic_id)
+            ->where('reference_number', (string) $appointment->id)
+            ->first();
+
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('appointments.show', compact('appointment', 'receipt', 'currency', 'currencySymbol'));
+    }
+
+    /**
+     * Generate a PDF receipt for an appointment payment (if collected).
+     */
+    public function generateReceiptPDF($id)
+    {
+        $user = Auth::user();
+
+        $query = DB::table('appointments')
+            ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
+            ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
+            ->select(
+                'appointments.*',
+                'patients.first_name as patient_first_name',
+                'patients.last_name as patient_last_name',
+                'patients.patient_id',
+                'patients.phone as patient_phone',
+                'patients.email as patient_email',
+                'doctors.first_name as doctor_first_name',
+                'doctors.last_name as doctor_last_name'
+            )
+            ->where('appointments.id', $id)
+            ->where('appointments.clinic_id', $user->clinic_id);
+
+        // Apply role-based filtering
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            $query->where('appointments.doctor_id', $user->id);
+        }
+
+        $appointment = $query->first();
+        if (!$appointment) {
+            abort(404, 'Appointment not found');
+        }
+
+        $receipt = Receipt::where('clinic_id', $user->clinic_id)
+            ->where('reference_number', (string) $appointment->id)
+            ->first();
+
+        if (!$receipt) {
+            abort(404, 'Receipt not found for this appointment');
+        }
+
+        $clinic = DB::table('clinics')
+            ->where('id', $user->clinic_id)
+            ->first();
+
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        $appointmentDateTime = null;
+        if (!empty($appointment->appointment_datetime)) {
+            $appointmentDateTime = Carbon::parse($appointment->appointment_datetime);
+        } elseif (!empty($appointment->appointment_date)) {
+            $appointmentDateTime = Carbon::parse($appointment->appointment_date . ' ' . ($appointment->appointment_time ?? '00:00:00'));
+        }
+
+        $serviceDescription = ucfirst(str_replace('_', ' ', $appointment->type ?? 'consultation'));
+
+        $pdf = Pdf::loadView('appointments.receipt-pdf', compact(
+            'appointment',
+            'receipt',
+            'clinic',
+            'currency',
+            'currencySymbol',
+            'appointmentDateTime',
+            'serviceDescription'
+        ));
+
+        return $pdf->download("receipt-{$receipt->receipt_number}.pdf");
+    }
+
+    private function getCurrencySymbol($currencyCode): string
+    {
+        $symbols = [
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            'IQD' => 'د.ع',
+            'JOD' => 'د.أ',
+            'EGP' => 'ج.م',
+        ];
+
+        return $symbols[$currencyCode] ?? '$';
     }
 
     /**

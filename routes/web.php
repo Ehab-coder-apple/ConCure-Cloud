@@ -414,6 +414,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/create', [AppointmentController::class, 'create'])->name('create');
         Route::post('/', [AppointmentController::class, 'store'])->name('store');
         Route::get('/{appointment}', [AppointmentController::class, 'show'])->name('show');
+	    Route::get('/{appointment}/receipt/pdf', [AppointmentController::class, 'generateReceiptPDF'])->name('receipt-pdf');
         Route::get('/{appointment}/edit', [AppointmentController::class, 'edit'])->name('edit');
         Route::put('/{appointment}', [AppointmentController::class, 'update'])->name('update');
         Route::delete('/{appointment}', [AppointmentController::class, 'destroy'])->name('destroy');

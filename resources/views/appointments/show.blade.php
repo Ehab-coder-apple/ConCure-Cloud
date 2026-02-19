@@ -29,6 +29,19 @@
             <div class="row">
                 <!-- Appointment Information -->
                 <div class="col-lg-8">
+	                    @php
+	                        $apptDateTime = null;
+	                        if (!empty($appointment->appointment_datetime)) {
+	                            $apptDateTime = \Carbon\Carbon::parse($appointment->appointment_datetime);
+	                        } elseif (!empty($appointment->appointment_date)) {
+	                            $apptDateTime = \Carbon\Carbon::parse(trim($appointment->appointment_date . ' ' . ($appointment->appointment_time ?? '00:00:00')));
+	                        }
+
+	                        $apptDateStr = $apptDateTime ? $apptDateTime->format('F d, Y') : '-';
+	                        $apptTimeStr = $apptDateTime ? $apptDateTime->format('g:i A') : '-';
+	                        $durationMinutes = $appointment->duration_minutes ?? $appointment->duration ?? null;
+	                    @endphp
+
                     <!-- Appointment Header -->
                     <div class="card shadow-sm mb-4">
                         <div class="card-header bg-light">
@@ -60,14 +73,14 @@
                                 <div class="col-md-6 mb-3">
                                     <small class="text-muted d-block">{{ __('Date & Time') }}</small>
                                     <div class="fw-bold">
-                                        {{ \Carbon\Carbon::parse($appointment->appointment_datetime)->format('F d, Y') }}
-                                        <span class="text-primary">{{ \Carbon\Carbon::parse($appointment->appointment_datetime)->format('g:i A') }}</span>
+	                                        {{ $apptDateStr }}
+	                                        <span class="text-primary">{{ $apptTimeStr }}</span>
                                     </div>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
                                     <small class="text-muted d-block">{{ __('Duration') }}</small>
-                                    <div class="fw-bold">{{ $appointment->duration_minutes }} {{ __('minutes') }}</div>
+	                                    <div class="fw-bold">{{ $durationMinutes ?? '-' }} {{ __('minutes') }}</div>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
@@ -77,6 +90,53 @@
                             </div>
                         </div>
                     </div>
+
+	                    @if($receipt)
+	                    <!-- Payment Information -->
+	                    <div class="card shadow-sm mb-4">
+	                        <div class="card-header bg-light">
+	                            <div class="d-flex justify-content-between align-items-center">
+	                                <h6 class="mb-0">
+	                                    <i class="fas fa-receipt me-2"></i>
+	                                    {{ __('Payment Information') }}
+	                                </h6>
+	                                <span class="badge bg-success">{{ __('Paid') }}</span>
+	                            </div>
+	                        </div>
+	                        <div class="card-body">
+	                            <div class="row">
+	                                <div class="col-md-6 mb-3">
+	                                    <small class="text-muted d-block">{{ __('Amount Collected') }}</small>
+	                                    <h5 class="mb-0">{{ $currencySymbol ?? '$' }}{{ number_format((float) $receipt->amount, 2) }}</h5>
+	                                </div>
+
+	                                <div class="col-md-6 mb-3">
+	                                    <small class="text-muted d-block">{{ __('Payment Method') }}</small>
+	                                    <div class="fw-bold">{{ ucfirst(str_replace('_', ' ', $receipt->payment_method)) }}</div>
+	                                </div>
+
+	                                <div class="col-md-6 mb-3">
+	                                    <small class="text-muted d-block">{{ __('Receipt Number') }}</small>
+	                                    <div class="fw-bold">{{ $receipt->receipt_number }}</div>
+	                                </div>
+
+	                                @if(!empty($receipt->notes))
+	                                <div class="col-12 mb-0">
+	                                    <small class="text-muted d-block">{{ __('Payment Notes') }}</small>
+	                                    <div class="text-break">{{ $receipt->notes }}</div>
+	                                </div>
+	                                @endif
+	                            </div>
+
+	                            <div class="mt-3">
+	                                <a href="{{ route('appointments.receipt-pdf', $appointment->id) }}" class="btn btn-primary" target="_blank">
+	                                    <i class="fas fa-print me-2"></i>
+	                                    {{ __('Print Receipt') }}
+	                                </a>
+	                            </div>
+	                        </div>
+	                    </div>
+	                    @endif
 
                     <!-- Patient Information -->
                     <div class="card shadow-sm mb-4">
@@ -326,8 +386,8 @@ function deleteAppointment() {
 function shareAppointmentWhatsApp() {
   const patientName = "{{ trim(($appointment->patient_first_name ?? '') . ' ' . ($appointment->patient_last_name ?? '')) }}";
   const apptNumber = "{{ $appointment->appointment_number }}";
-  const dateStr = "{{ \Carbon\Carbon::parse($appointment->appointment_datetime)->format('F d, Y') }}";
-  const timeStr = "{{ \Carbon\Carbon::parse($appointment->appointment_datetime)->format('g:i A') }}";
+	  const dateStr = "{{ $apptDateStr }}";
+	  const timeStr = "{{ $apptTimeStr }}";
   const doctorName = "{{ trim('Dr. ' . ($appointment->doctor_first_name ?? '') . ' ' . ($appointment->doctor_last_name ?? '')) }}";
 
   const message = `📅 {{ __('Appointment Reminder') }}\n\n` +

@@ -138,6 +138,57 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
+
+	                                    <!-- Payment Collection (Optional) -->
+	                                    <div class="col-12">
+	                                        <hr class="my-4">
+	                                        <h6 class="mb-3">
+	                                            <i class="fas fa-receipt me-2"></i>
+	                                            {{ __('Payment Collection') }} <span class="text-muted">({{ __('Optional') }})</span>
+	                                        </h6>
+	                                    </div>
+
+	                                    <div class="col-md-4 mb-3">
+	                                        <label for="fees_collected" class="form-label">{{ __('Fees Collected') }}</label>
+	                                        <input type="number"
+	                                               step="0.01"
+	                                               min="0"
+	                                               class="form-control @error('fees_collected') is-invalid @enderror"
+	                                               id="fees_collected"
+	                                               name="fees_collected"
+	                                               value="{{ old('fees_collected') }}"
+	                                               placeholder="0.00">
+	                                        @error('fees_collected')
+	                                            <div class="invalid-feedback">{{ $message }}</div>
+	                                        @enderror
+	                                    </div>
+
+	                                    <div class="col-md-4 mb-3" id="payment_method_wrapper" style="{{ ((float) old('fees_collected', 0) > 0) ? '' : 'display:none;' }}">
+	                                        <label for="payment_method" class="form-label">{{ __('Payment Method') }}</label>
+	                                        <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method">
+	                                            <option value="">{{ __('Select method...') }}</option>
+	                                            <option value="cash" {{ old('payment_method') === 'cash' ? 'selected' : '' }}>{{ __('Cash') }}</option>
+	                                            <option value="card" {{ old('payment_method') === 'card' ? 'selected' : '' }}>{{ __('Card') }}</option>
+	                                            <option value="bank_transfer" {{ old('payment_method') === 'bank_transfer' ? 'selected' : '' }}>{{ __('Bank Transfer') }}</option>
+	                                            <option value="check" {{ old('payment_method') === 'check' ? 'selected' : '' }}>{{ __('Check') }}</option>
+	                                            <option value="other" {{ old('payment_method') === 'other' ? 'selected' : '' }}>{{ __('Other') }}</option>
+	                                        </select>
+	                                        @error('payment_method')
+	                                            <div class="invalid-feedback">{{ $message }}</div>
+	                                        @enderror
+	                                    </div>
+
+	                                    <div class="col-12 mb-3" id="payment_notes_wrapper" style="{{ ((float) old('fees_collected', 0) > 0) ? '' : 'display:none;' }}">
+	                                        <label for="payment_notes" class="form-label">{{ __('Payment Notes') }}</label>
+	                                        <textarea class="form-control @error('payment_notes') is-invalid @enderror"
+	                                                  id="payment_notes"
+	                                                  name="payment_notes"
+	                                                  rows="2"
+	                                                  placeholder="{{ __('Additional payment details (optional)...') }}">{{ old('payment_notes') }}</textarea>
+	                                        @error('payment_notes')
+	                                            <div class="invalid-feedback">{{ $message }}</div>
+	                                        @enderror
+	                                    </div>
                                 </div>
 
                                 <!-- Action Buttons -->
@@ -331,6 +382,33 @@ $(document).ready(function() {
     $('#doctor_id').on('change', function() {
         // You can add AJAX call here to check doctor availability if needed
     });
+
+	    // Payment fields: show method/notes only if fees > 0
+	    function togglePaymentFields() {
+	        const feesEl = document.getElementById('fees_collected');
+	        const methodWrapper = document.getElementById('payment_method_wrapper');
+	        const notesWrapper = document.getElementById('payment_notes_wrapper');
+	        const methodEl = document.getElementById('payment_method');
+
+	        if (!feesEl || !methodWrapper || !notesWrapper) return;
+
+	        const fees = parseFloat((feesEl.value || '').toString().replace(',', '.'));
+	        const show = !isNaN(fees) && fees > 0;
+
+	        methodWrapper.style.display = show ? '' : 'none';
+	        notesWrapper.style.display = show ? '' : 'none';
+
+	        if (!show && methodEl) {
+	            methodEl.value = '';
+	        }
+	    }
+
+	    togglePaymentFields();
+	    const feesInput = document.getElementById('fees_collected');
+	    if (feesInput) {
+	        feesInput.addEventListener('input', togglePaymentFields);
+	        feesInput.addEventListener('change', togglePaymentFields);
+	    }
 
     // Load today's appointment count
     // You can add AJAX call here to get today's appointment count
