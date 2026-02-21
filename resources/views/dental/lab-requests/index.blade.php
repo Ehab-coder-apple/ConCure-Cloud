@@ -43,6 +43,9 @@
                             <label for="status" class="form-label">{{ __('Status') }}</label>
                             <select class="form-select" id="status" name="status">
                                 <option value="">{{ __('All Statuses') }}</option>
+                                <option value="uploaded" {{ request('status') == 'uploaded' ? 'selected' : '' }}>
+                                    {{ __('Uploaded (Results Ready)') }}
+                                </option>
                                 @foreach(\App\Models\DentalLabRequest::STATUSES as $key => $label)
                                     <option value="{{ $key }}" {{ request('status') == $key ? 'selected' : '' }}>
                                         {{ __($label) }}

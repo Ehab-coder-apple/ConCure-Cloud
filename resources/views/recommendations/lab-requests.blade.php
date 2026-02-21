@@ -37,6 +37,7 @@
                             <label for="status" class="form-label">{{ __('Status') }}</label>
                             <select class="form-select" id="status" name="status">
                                 <option value="">{{ __('All Statuses') }}</option>
+                                <option value="uploaded" {{ request('status') == 'uploaded' ? 'selected' : '' }}>{{ __('Uploaded (Results Ready)') }}</option>
                                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>{{ __('Pending') }}</option>
                                 <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>{{ __('Completed') }}</option>
                                 <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>{{ __('Cancelled') }}</option>

@@ -34,7 +34,12 @@ class DentalLabRequestController extends Controller
 
         // Apply filters
         if ($request->filled('status')) {
-            $query->byStatus($request->status);
+            if ($request->status === 'uploaded') {
+                // Filter for requests with uploaded results
+                $query->whereNotNull('result_file_path');
+            } else {
+                $query->byStatus($request->status);
+            }
         }
 
         if ($request->filled('priority')) {
