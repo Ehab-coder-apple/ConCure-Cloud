@@ -130,18 +130,18 @@
         </div>
         @endif
 
-        @if(isset($completedDentalLabRequests) && $completedDentalLabRequests > 0)
+        @if(isset($completedLabRequests) && $completedLabRequests > 0)
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card text-white h-100" style="background-color: #1e3a5f;">
                 <div class="card-body">
                     <div class="d-flex justify-content-between no-divider">
                         <div>
                             <h6 class="card-title">Completed Lab Results</h6>
-                            <h2 class="mb-0">{{ number_format($completedDentalLabRequests) }}</h2>
+                            <h2 class="mb-0">{{ number_format($completedLabRequests) }}</h2>
                             <small>Ready for review</small>
                         </div>
                         <div class="align-self-center">
-                            <i class="fas fa-tooth fa-2x opacity-75"></i>
+                            <i class="fas fa-flask fa-2x opacity-75"></i>
                         </div>
                     </div>
                 </div>

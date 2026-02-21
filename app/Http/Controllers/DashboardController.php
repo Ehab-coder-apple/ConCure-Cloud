@@ -284,8 +284,11 @@ class DashboardController extends Controller
                 ->count();
         }
 
-        // Dental lab request statistics (completed with results uploaded)
+        // Lab request statistics (completed with results uploaded) - includes both dental and regular lab requests
         if ($user->canPrescribe() || $user->canManagePatients() ) {
+            $completedLabCount = 0;
+
+            // Count completed dental lab requests with results uploaded
             $dentalLabRequestsQuery = DentalLabRequest::query();
             $dentalLabRequestsQuery->where('clinic_id', $user->clinic_id);
 
@@ -307,11 +310,38 @@ class DashboardController extends Controller
                 }
             }
 
-            // Count completed dental lab requests with results uploaded
-            $data['completedDentalLabRequests'] = (clone $dentalLabRequestsQuery)
+            $completedDentalLab = (clone $dentalLabRequestsQuery)
                 ->where('status', 'completed')
                 ->whereNotNull('result_file_path')
                 ->count();
+
+            // Count completed regular lab requests with results uploaded
+            $labRequestsQuery = LabRequest::query();
+            $labRequestsQuery->whereHas('patient', function ($q) use ($user) {
+                $q->where('clinic_id', $user->clinic_id);
+            });
+
+            // Filter for doctors: only show their own lab requests
+            if ($user->role === 'doctor') {
+                $labRequestsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for assistants: only show lab requests from their assigned doctors
+            elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $labRequestsQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $labRequestsQuery->whereRaw('1 = 0');
+                }
+            }
+
+            $completedRegularLab = (clone $labRequestsQuery)
+                ->where('status', 'completed')
+                ->whereNotNull('result_file_path')
+                ->count();
+
+            // Total completed lab requests (both dental and regular)
+            $data['completedLabRequests'] = $completedDentalLab + $completedRegularLab;
         }
 
         // Diet plan statistics
