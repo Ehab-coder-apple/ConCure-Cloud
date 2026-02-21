@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Patient;
 use App\Models\Prescription;
 use App\Models\LabRequest;
+use App\Models\DentalLabRequest;
 use App\Models\DietPlan;
 use App\Models\Appointment;
 use App\Models\Invoice;
@@ -280,6 +281,36 @@ class DashboardController extends Controller
             $data['pendingLabRequests'] = (clone $labRequestsQuery)->pending()->count();
             $data['urgentLabRequests'] = (clone $labRequestsQuery)->pending()
                 ->where('priority', 'urgent')
+                ->count();
+        }
+
+        // Dental lab request statistics (completed with results uploaded)
+        if ($user->canPrescribe() || $user->canManagePatients() ) {
+            $dentalLabRequestsQuery = DentalLabRequest::query();
+            $dentalLabRequestsQuery->where('clinic_id', $user->clinic_id);
+
+            // Filter for doctors: only show their own dental lab requests
+            if ($user->role === 'doctor') {
+                $dentalLabRequestsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for dentists: only show their own dental lab requests
+            elseif ($user->role === 'dental_dept') {
+                $dentalLabRequestsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for assistants: only show dental lab requests from their assigned doctors
+            elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $dentalLabRequestsQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $dentalLabRequestsQuery->whereRaw('1 = 0');
+                }
+            }
+
+            // Count completed dental lab requests with results uploaded
+            $data['completedDentalLabRequests'] = (clone $dentalLabRequestsQuery)
+                ->where('status', 'completed')
+                ->whereNotNull('result_file_path')
                 ->count();
         }
 
