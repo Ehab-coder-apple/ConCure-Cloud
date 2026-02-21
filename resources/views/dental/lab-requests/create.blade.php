@@ -36,18 +36,21 @@
                         <!-- Patient & Treatment Selection -->
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
-                                <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id" required>
-                                    <option value="">{{ __('Select Patient') }}</option>
-                                    @foreach($patients as $patient)
-                                        <option value="{{ $patient->id }}" {{ old('patient_id', request('patient_id')) == $patient->id ? 'selected' : '' }}>
-                                            {{ $patient->full_name }} ({{ $patient->patient_id }})
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <label for="patient_search" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
+                                <div class="position-relative">
+                                    <input type="text" class="form-control @error('patient_id') is-invalid @enderror"
+                                           id="patient_search" name="patient_search"
+                                           placeholder="{{ __('Search by name, ID, phone, email...') }}"
+                                           autocomplete="off">
+                                    <input type="hidden" id="patient_id" name="patient_id" required>
+                                    <div id="patient_results" class="position-absolute w-100 bg-white border rounded mt-1"
+                                         style="display: none; max-height: 300px; overflow-y: auto; z-index: 1000; top: 100%;">
+                                    </div>
+                                </div>
                                 @error('patient_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
+                                <small class="text-muted">{{ __('Type to search for a patient') }}</small>
                             </div>
                             <div class="col-md-6">
                                 <label for="dental_treatment_id" class="form-label">{{ __('Dental Treatment') }}</label>
@@ -294,20 +297,100 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Initialize Select2 for patient dropdown with search enabled
-    $('#patient_id').select2({
-        theme: 'bootstrap-5',
-        placeholder: '{{ __("Select Patient") }}',
-        allowClear: true,
-        width: '100%',
-        dropdownParent: $(document.body),
-        language: {
-            noResults: function() {
-                return '{{ __("No patients found") }}';
-            },
-            searching: function() {
-                return '{{ __("Searching...") }}';
+    const patientSearch = document.getElementById('patient_search');
+    const patientIdInput = document.getElementById('patient_id');
+    const patientResults = document.getElementById('patient_results');
+    let searchTimeout;
+
+    // Handle patient search input
+    patientSearch.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const searchTerm = this.value.trim();
+
+        // Clear patient_id when user modifies search
+        patientIdInput.value = '';
+
+        // Show results container only if there's input
+        if (searchTerm.length < 1) {
+            patientResults.style.display = 'none';
+            return;
+        }
+
+        // Debounce the search
+        searchTimeout = setTimeout(() => {
+            performPatientSearch(searchTerm);
+        }, 300);
+    });
+
+    // Perform AJAX search
+    function performPatientSearch(searchTerm) {
+        fetch(`{{ route('patients.api') }}?search=${encodeURIComponent(searchTerm)}`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             }
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayPatientResults(data.data || []);
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            patientResults.innerHTML = '<div class="p-2 text-danger">{{ __("Error searching patients") }}</div>';
+            patientResults.style.display = 'block';
+        });
+    }
+
+    // Display search results
+    function displayPatientResults(patients) {
+        if (patients.length === 0) {
+            patientResults.innerHTML = '<div class="p-2 text-muted">{{ __("No patients found") }}</div>';
+            patientResults.style.display = 'block';
+            return;
+        }
+
+        let html = '';
+        patients.forEach(patient => {
+            const fullName = `${patient.first_name} ${patient.last_name}`;
+            const patientId = patient.patient_id || '';
+            html += `
+                <div class="p-2 border-bottom cursor-pointer patient-result"
+                     data-id="${patient.id}"
+                     data-name="${fullName}"
+                     style="cursor: pointer; padding: 8px 12px;">
+                    <strong>${fullName}</strong>
+                    ${patientId ? `<br><small class="text-muted">ID: ${patientId}</small>` : ''}
+                </div>
+            `;
+        });
+
+        patientResults.innerHTML = html;
+        patientResults.style.display = 'block';
+
+        // Add click handlers to results
+        document.querySelectorAll('.patient-result').forEach(item => {
+            item.addEventListener('click', function() {
+                const patientId = this.getAttribute('data-id');
+                const patientName = this.getAttribute('data-name');
+
+                patientIdInput.value = patientId;
+                patientSearch.value = patientName;
+                patientResults.style.display = 'none';
+            });
+        });
+    }
+
+    // Hide results when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('#patient_search') && !event.target.closest('#patient_results')) {
+            patientResults.style.display = 'none';
+        }
+    });
+
+    // Show results on focus if there's a search term
+    patientSearch.addEventListener('focus', function() {
+        if (this.value.trim().length > 0 && patientResults.innerHTML) {
+            patientResults.style.display = 'block';
         }
     });
 });
