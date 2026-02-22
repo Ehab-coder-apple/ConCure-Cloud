@@ -284,7 +284,7 @@ class DashboardController extends Controller
                 ->count();
         }
 
-        // Dental lab request statistics (completed)
+        // Dental lab request statistics (completed and pending)
         if ($user->canPrescribe() || $user->canManagePatients() ) {
             $dentalLabRequestsQuery = DentalLabRequest::query();
             $dentalLabRequestsQuery->where('clinic_id', $user->clinic_id);
@@ -309,6 +309,9 @@ class DashboardController extends Controller
 
             $data['completedDentalLabRequests'] = (clone $dentalLabRequestsQuery)
                 ->where('status', 'completed')
+                ->count();
+            $data['pendingDentalLabRequests'] = (clone $dentalLabRequestsQuery)
+                ->where('status', 'pending')
                 ->count();
         }
 

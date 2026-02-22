@@ -123,6 +123,17 @@
                             <i class="fas fa-tooth fa-2x opacity-75"></i>
                         </div>
                     </div>
+
+                    <!-- Divider -->
+                    <hr style="border-color: rgba(255,255,255,0.3); margin: 1rem 0;">
+
+                    <!-- Pending Section -->
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <small class="text-white-50">Pending Requests</small>
+                            <h4 class="mb-0">{{ number_format($pendingDentalLabRequests ?? 0) }}</h4>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
