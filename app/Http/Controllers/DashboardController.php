@@ -284,6 +284,38 @@ class DashboardController extends Controller
                 ->count();
         }
 
+        // Dental lab request statistics (pending only)
+        if ($user->canPrescribe() || $user->canManagePatients() ) {
+            $dentalLabRequestsQuery = DentalLabRequest::query();
+            $dentalLabRequestsQuery->where('clinic_id', $user->clinic_id);
+
+            // Filter for doctors: only show their own dental lab requests
+            if ($user->role === 'doctor') {
+                $dentalLabRequestsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for dentists: only show their own dental lab requests
+            elseif ($user->role === 'dental_dept') {
+                $dentalLabRequestsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for assistants: only show dental lab requests from their assigned doctors
+            elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $dentalLabRequestsQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $dentalLabRequestsQuery->whereRaw('1 = 0');
+                }
+            }
+
+            $data['pendingDentalLabRequests'] = (clone $dentalLabRequestsQuery)
+                ->where('status', 'pending')
+                ->count();
+            $data['urgentDentalLabRequests'] = (clone $dentalLabRequestsQuery)
+                ->where('status', 'pending')
+                ->where('priority', 'urgent')
+                ->count();
+        }
+
         // Lab request statistics (completed with results uploaded) - includes both dental and regular lab requests
         if ($user->canPrescribe() || $user->canManagePatients() ) {
             $completedLabCount = 0;
