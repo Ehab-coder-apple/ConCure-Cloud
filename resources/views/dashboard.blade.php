@@ -112,26 +112,20 @@
         @if(isset($completedDentalLabRequests))
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card text-white h-100" style="background-color: #27ae60;">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between no-divider">
-                        <div>
-                            <h6 class="card-title">Completed Dental Lab Requests</h6>
-                            <h2 class="mb-0">{{ number_format($completedDentalLabRequests) }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-tooth fa-2x opacity-75"></i>
-                        </div>
+                <div class="card-body p-0">
+                    <!-- Completed Section -->
+                    <div style="padding: 1rem;">
+                        <h6 class="card-title">Completed Dental Lab Requests</h6>
+                        <h2 class="mb-0">{{ number_format($completedDentalLabRequests) }}</h2>
                     </div>
 
                     <!-- Divider -->
-                    <hr style="border-color: rgba(255,255,255,0.3); margin: 1rem 0;">
+                    <hr style="border-color: rgba(255,255,255,0.3); margin: 0;">
 
                     <!-- Pending Section -->
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <small class="text-white-50">Pending Requests</small>
-                            <h4 class="mb-0">{{ number_format($pendingDentalLabRequests ?? 0) }}</h4>
-                        </div>
+                    <div style="padding: 1rem;">
+                        <small class="text-white-50">Pending Requests</small>
+                        <h4 class="mb-0">{{ number_format($pendingDentalLabRequests ?? 0) }}</h4>
                     </div>
                 </div>
             </div>
