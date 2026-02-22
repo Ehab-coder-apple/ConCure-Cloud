@@ -117,11 +117,7 @@
 	                        <div>
 	                            <h6 class="card-title">Completed Dental Lab Requests</h6>
 	                            <h2 class="mb-0">{{ number_format($completedDentalLabRequests) }}</h2>
-	
-	                            <div class="my-3" style="height: 2px; width: 85%; background-color: rgba(255,255,255,0.55);"></div>
-	
-	                            <h4 class="mb-0">{{ number_format($pendingDentalLabRequests ?? 0) }}</h4>
-	                            <small class="text-white-50">Pending Requests</small>
+	                            <small>{{ number_format($pendingDentalLabRequests ?? 0) }} pending requests</small>
 	                        </div>
 	                        <div class="align-self-center">
 	                            <i class="fas fa-tooth fa-2x opacity-75"></i>
