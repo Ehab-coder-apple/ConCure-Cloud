@@ -117,7 +117,6 @@
                         <div>
                             <h6 class="card-title">Completed Dental Lab Requests</h6>
                             <h2 class="mb-0">{{ number_format($completedDentalLabRequests) }}</h2>
-                            <small>{{ $completedDentalLabRequests > 0 ? 'Ready for delivery' : 'No completed requests' }}</small>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-tooth fa-2x opacity-75"></i>
