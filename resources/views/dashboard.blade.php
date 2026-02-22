@@ -109,15 +109,15 @@
         </div>
         @endif
 
-        @if(isset($pendingDentalLabRequests))
+        @if(isset($completedDentalLabRequests))
         <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card text-white h-100" style="background-color: #f39c12;">
+            <div class="card text-white h-100" style="background-color: #27ae60;">
                 <div class="card-body">
                     <div class="d-flex justify-content-between no-divider">
                         <div>
-                            <h6 class="card-title">Pending Dental Lab Requests</h6>
-                            <h2 class="mb-0">{{ number_format($pendingDentalLabRequests) }}</h2>
-                            <small>{{ $pendingDentalLabRequests > 0 ? ($urgentDentalLabRequests > 0 ? $urgentDentalLabRequests . ' urgent' : 'Awaiting lab work') : 'No pending requests' }}</small>
+                            <h6 class="card-title">Completed Dental Lab Requests</h6>
+                            <h2 class="mb-0">{{ number_format($completedDentalLabRequests) }}</h2>
+                            <small>{{ $completedDentalLabRequests > 0 ? 'Ready for delivery' : 'No completed requests' }}</small>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-tooth fa-2x opacity-75"></i>
