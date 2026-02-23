@@ -444,11 +444,16 @@ class DashboardController extends Controller
                     $base->where('doctor_id', $user->id);
                 } elseif ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
-                    if (!empty($doctorIds)) {
-                        $base->whereIn('doctor_id', $doctorIds);
-                    } else {
-                        $base->whereRaw('1 = 0');
-                    }
+	                    if (!empty($doctorIds)) {
+	                        // Assistants can see appointments for assigned doctors OR ones they created
+	                        $base->where(function ($q) use ($doctorIds, $user) {
+	                            $q->whereIn('doctor_id', $doctorIds)
+	                              ->orWhere('created_by', $user->id);
+	                        });
+	                    } else {
+	                        // No assigned doctors yet; still allow showing appointments the assistant created
+	                        $base->where('created_by', $user->id);
+	                    }
                 }
                 $now = Carbon::now();
                 $data['totalAppointments'] = (clone $base)->count();
@@ -466,11 +471,16 @@ class DashboardController extends Controller
                     $appointmentsQuery->where('doctor_id', $user->id);
                 } elseif ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
-                    if (!empty($doctorIds)) {
-                        $appointmentsQuery->whereIn('doctor_id', $doctorIds);
-                    } else {
-                        $appointmentsQuery->whereRaw('1 = 0');
-                    }
+	                    if (!empty($doctorIds)) {
+	                        // Assistants can see appointments for assigned doctors OR ones they created
+	                        $appointmentsQuery->where(function ($q) use ($doctorIds, $user) {
+	                            $q->whereIn('doctor_id', $doctorIds)
+	                              ->orWhere('created_by', $user->id);
+	                        });
+	                    } else {
+	                        // No assigned doctors yet; still allow showing appointments the assistant created
+	                        $appointmentsQuery->where('created_by', $user->id);
+	                    }
                 }
                 $data['totalAppointments'] = (clone $appointmentsQuery)->count();
                 $data['todayAppointments'] = (clone $appointmentsQuery)
@@ -576,11 +586,14 @@ class DashboardController extends Controller
                 $q->where('appointments.doctor_id', $user->id);
             } elseif ($user->role === 'assistant') {
                 $doctorIds = $user->allowedDoctorIds();
-                if (!empty($doctorIds)) {
-                    $q->whereIn('appointments.doctor_id', $doctorIds);
-                } else {
-                    $q->whereRaw('1 = 0');
-                }
+	                if (!empty($doctorIds)) {
+	                    $q->where(function ($sub) use ($doctorIds, $user) {
+	                        $sub->whereIn('appointments.doctor_id', $doctorIds)
+	                            ->orWhere('appointments.created_by', $user->id);
+	                    });
+	                } else {
+	                    $q->where('appointments.created_by', $user->id);
+	                }
             }
             $rows = $q->whereRaw("STR_TO_DATE(CONCAT(appointment_date,' ', appointment_time), '%Y-%m-%d %H:%i:%s') >= ?", [$now->format('Y-m-d H:i:s')])
                 ->orderBy('appointment_date')->orderBy('appointment_time')
@@ -610,11 +623,14 @@ class DashboardController extends Controller
                 $query->where('doctor_id', $user->id);
             } elseif ($user->role === 'assistant') {
                 $doctorIds = $user->allowedDoctorIds();
-                if (!empty($doctorIds)) {
-                    $query->whereIn('doctor_id', $doctorIds);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
+	                if (!empty($doctorIds)) {
+	                    $query->where(function ($sub) use ($doctorIds, $user) {
+	                        $sub->whereIn('doctor_id', $doctorIds)
+	                            ->orWhere('created_by', $user->id);
+	                    });
+	                } else {
+	                    $query->where('created_by', $user->id);
+	                }
             }
         }
         return $query->where('appointment_datetime', '>=', now())
@@ -655,11 +671,14 @@ class DashboardController extends Controller
                     $q->where('appointments.doctor_id', $user->id);
                 } elseif ($user->role === 'assistant') {
                     $doctorIds = $user->allowedDoctorIds();
-                    if (!empty($doctorIds)) {
-                        $q->whereIn('appointments.doctor_id', $doctorIds);
-                    } else {
-                        $q->whereRaw('1 = 0');
-                    }
+	                    if (!empty($doctorIds)) {
+	                        $q->where(function ($sub) use ($doctorIds, $user) {
+	                            $sub->whereIn('appointments.doctor_id', $doctorIds)
+	                                ->orWhere('appointments.created_by', $user->id);
+	                        });
+	                    } else {
+	                        $q->where('appointments.created_by', $user->id);
+	                    }
                 }
                 $rows = $q->orderBy('appointments.appointment_time')
                     ->get([
@@ -686,11 +705,14 @@ class DashboardController extends Controller
                         $query->where('doctor_id', $user->id);
                     } elseif ($user->role === 'assistant') {
                         $doctorIds = $user->allowedDoctorIds();
-                        if (!empty($doctorIds)) {
-                            $query->whereIn('doctor_id', $doctorIds);
-                        } else {
-                            $query->whereRaw('1 = 0');
-                        }
+	                        if (!empty($doctorIds)) {
+	                            $query->where(function ($sub) use ($doctorIds, $user) {
+	                                $sub->whereIn('doctor_id', $doctorIds)
+	                                    ->orWhere('created_by', $user->id);
+	                            });
+	                        } else {
+	                            $query->where('created_by', $user->id);
+	                        }
                     }
                 }
                 $dayAppointments = $query->whereDate('appointment_datetime', $dateKey)

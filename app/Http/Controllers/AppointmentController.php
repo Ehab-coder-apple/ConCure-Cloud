@@ -18,6 +18,45 @@ use App\Notifications\NewAppointmentNotification;
 class AppointmentController extends Controller
 {
     /**
+     * Apply role-based appointment visibility filtering.
+     *
+     * - Super/Clinic admins: no restriction
+     * - Doctor: only own appointments
+     * - Assistant: appointments for assigned doctors; also include appointments they created
+     * - Others: default to old behavior (doctor_id = user id)
+     */
+    private function applyAppointmentVisibilityFilter($query, $user, string $doctorColumn, string $createdByColumn): void
+    {
+        if ($user->isSuperAdmin() || $user->isClinicAdmin()) {
+            return;
+        }
+
+        if ($user->role === 'doctor') {
+            $query->where($doctorColumn, $user->id);
+            return;
+        }
+
+        if ($user->role === 'assistant') {
+            $doctorIds = $user->allowedDoctorIds();
+
+            // Assistants can see appointments for assigned doctors, plus any appointment they created.
+            // This fixes cases where an assistant can create appointments without being assigned to a doctor.
+            $query->where(function ($q) use ($doctorIds, $doctorColumn, $createdByColumn, $user) {
+                if (!empty($doctorIds)) {
+                    $q->whereIn($doctorColumn, $doctorIds)
+                        ->orWhere($createdByColumn, $user->id);
+                } else {
+                    $q->where($createdByColumn, $user->id);
+                }
+            });
+            return;
+        }
+
+        // Fallback to previous behavior for any other non-admin roles.
+        $query->where($doctorColumn, $user->id);
+    }
+
+    /**
      * Display a listing of appointments.
      */
     public function index(Request $request)
@@ -38,12 +77,8 @@ class AppointmentController extends Controller
             )
             ->where('appointments.clinic_id', $user->clinic_id);
 
-        // Filter by doctor for non-admin users
-        // Only Super Admins and Clinic Admins can see all appointments
-        // Regular doctors and other users can only see their own appointments
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-            $query->where('appointments.doctor_id', $user->id);
-        }
+        // Apply role-based visibility (assistants: assigned doctors + created_by)
+        $this->applyAppointmentVisibilityFilter($query, $user, 'appointments.doctor_id', 'appointments.created_by');
 
         // Apply filters
         if ($request->filled('status')) {
@@ -117,10 +152,8 @@ class AppointmentController extends Controller
                     )
                     ->where('appointments.clinic_id', $user->clinic_id);
 
-                // Apply same role-based filtering for calendar view
-                if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-                    $calendarQuery->where('appointments.doctor_id', $user->id);
-                }
+	                // Apply same role-based filtering for calendar view
+	                $this->applyAppointmentVisibilityFilter($calendarQuery, $user, 'appointments.doctor_id', 'appointments.created_by');
 
                 if ($legacy) {
                     $calendarQuery = $calendarQuery
@@ -401,10 +434,8 @@ class AppointmentController extends Controller
             ->where('appointments.id', $id)
             ->where('appointments.clinic_id', $user->clinic_id);
 
-        // Apply role-based filtering
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-            $query->where('appointments.doctor_id', $user->id);
-        }
+	    // Apply role-based visibility
+	    $this->applyAppointmentVisibilityFilter($query, $user, 'appointments.doctor_id', 'appointments.created_by');
 
         $appointment = $query->first();
 
@@ -449,10 +480,8 @@ class AppointmentController extends Controller
             ->where('appointments.id', $id)
             ->where('appointments.clinic_id', $user->clinic_id);
 
-        // Apply role-based filtering
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-            $query->where('appointments.doctor_id', $user->id);
-        }
+	    // Apply role-based visibility
+	    $this->applyAppointmentVisibilityFilter($query, $user, 'appointments.doctor_id', 'appointments.created_by');
 
         $appointment = $query->first();
         if (!$appointment) {
@@ -525,10 +554,8 @@ class AppointmentController extends Controller
             ->where('id', $id)
             ->where('clinic_id', $user->clinic_id);
 
-        // Apply role-based filtering
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-            $query->where('doctor_id', $user->id);
-        }
+	    // Apply role-based visibility
+	    $this->applyAppointmentVisibilityFilter($query, $user, 'doctor_id', 'created_by');
 
         $appointment = $query->first();
 
@@ -620,10 +647,8 @@ class AppointmentController extends Controller
             ->where('id', $id)
             ->where('clinic_id', $user->clinic_id);
 
-        // Apply role-based filtering
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-            $query->where('doctor_id', $user->id);
-        }
+	    // Apply role-based visibility
+	    $this->applyAppointmentVisibilityFilter($query, $user, 'doctor_id', 'created_by');
 
         // Use transaction for atomic operations
         DB::beginTransaction();
@@ -695,10 +720,8 @@ class AppointmentController extends Controller
             ->where('id', $id)
             ->where('clinic_id', $user->clinic_id);
 
-        // Apply role-based filtering
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-            $query->where('doctor_id', $user->id);
-        }
+	    // Apply role-based visibility
+	    $this->applyAppointmentVisibilityFilter($query, $user, 'doctor_id', 'created_by');
 
         $deleted = $query->delete();
 
@@ -725,10 +748,8 @@ class AppointmentController extends Controller
             ->where('id', $id)
             ->where('clinic_id', $user->clinic_id);
 
-        // Apply role-based filtering
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-            $query->where('doctor_id', $user->id);
-        }
+	    // Apply role-based visibility
+	    $this->applyAppointmentVisibilityFilter($query, $user, 'doctor_id', 'created_by');
 
         $updated = $query->update([
             'status' => $request->status,
@@ -811,10 +832,10 @@ class AppointmentController extends Controller
         $now = Carbon::now();
         $legacy = $this->isLegacyAppointments();
 
-        $query = DB::table('appointments')
-            ->where('clinic_id', $user->clinic_id)
-            ->where('doctor_id', $user->id)
-            ->whereIn('status', ['scheduled', 'confirmed']);
+	    $query = DB::table('appointments')
+	        ->where('clinic_id', $user->clinic_id)
+	        ->whereIn('status', ['scheduled', 'confirmed']);
+	    $this->applyAppointmentVisibilityFilter($query, $user, 'doctor_id', 'created_by');
 
         if ($legacy) {
             $query->whereRaw("STR_TO_DATE(CONCAT(appointment_date,' ', appointment_time), '%Y-%m-%d %H:%i:%s') >= ?", [$now->format('Y-m-d H:i:s')]);
@@ -866,10 +887,10 @@ class AppointmentController extends Controller
         };
 
         // Personal (doctor) upcoming
-        $myQuery = $buildBase()
-            ->where('appointments.clinic_id', $user->clinic_id)
-            ->where('appointments.doctor_id', $user->id)
-            ->whereIn('appointments.status', $statuses);
+	    $myQuery = $buildBase()
+	        ->where('appointments.clinic_id', $user->clinic_id)
+	        ->whereIn('appointments.status', $statuses);
+	    $this->applyAppointmentVisibilityFilter($myQuery, $user, 'appointments.doctor_id', 'appointments.created_by');
         $myCount = (int) $myQuery->count();
         $myList = $myQuery->limit(10)->get()->map(function($r) use ($legacy) {
             $patient = trim(($r->patient_first_name ?? '') . ' ' . ($r->patient_last_name ?? ''));

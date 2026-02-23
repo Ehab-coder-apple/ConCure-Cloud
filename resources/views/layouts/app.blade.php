@@ -2170,8 +2170,8 @@
                         console.log('❌ Badge or content element not found!');
                         return;
                     }
-                    console.log('🔔 Fetching /appointments/upcoming-bell...');
-                    const res = await fetch('/appointments/upcoming-bell', { headers: { 'Accept': 'application/json' } });
+	                    console.log('🔔 Fetching /appointments/upcoming-summary...');
+	                    const res = await fetch('/appointments/upcoming-summary', { headers: { 'Accept': 'application/json' } });
                     console.log('🔔 Response status:', res.status);
                     if (!res.ok) {
                         console.log('❌ Response not OK:', res.status);
@@ -2179,29 +2179,33 @@
                     }
                     const data = await res.json();
                     console.log('🔔 Response data:', data);
-                    const count = data.count ?? 0;
-                    const appointments = data.appointments ?? [];
+	                    // upcomingSummary returns: { my_count, clinic_count, my: [], clinic: [] }
+	                    const count = data.my_count ?? 0;
+	                    const appointments = data.my ?? [];
                     console.log('✅ Setting badge to:', count);
                     badge.textContent = count;
                     badge.style.display = count > 0 ? 'inline-block' : 'none';
 
                     // Update content
-                    if (appointments.length > 0) {
+	                    if (appointments.length > 0) {
                         const timeOpts = { hour: 'numeric', minute: '2-digit' };
                         const dateOpts = { month: 'short', day: 'numeric' };
                         let html = '';
                         appointments.forEach(function(apt) {
-                            const dt = new Date(apt.appointment_datetime);
-                            const time = dt.toLocaleTimeString('en-US', timeOpts);
-                            const date = dt.toLocaleDateString('en-US', dateOpts);
+	                            // apt.when is a string like "YYYY-MM-DD HH:mm" (or legacy string)
+	                            // Convert to ISO-ish for better Date parsing; fall back to raw string.
+	                            const whenStr = apt.when ?? '';
+	                            const dt = whenStr ? new Date(String(whenStr).replace(' ', 'T')) : null;
+	                            const time = (dt && !isNaN(dt)) ? dt.toLocaleTimeString('en-US', timeOpts) : '';
+	                            const date = (dt && !isNaN(dt)) ? dt.toLocaleDateString('en-US', dateOpts) : String(whenStr);
                             html += '<div class="border-bottom p-2">' +
                                 '<div class="d-flex align-items-center">' +
                                 '<div class="flex-shrink-0 me-2">' +
                                 '<i class="fas fa-clock text-primary"></i>' +
                                 '</div>' +
                                 '<div class="flex-grow-1">' +
-                                '<div class="fw-bold small">' + apt.patient_name + '</div>' +
-                                '<div class="text-muted" style="font-size: 0.75rem;">' + date + ' at ' + time + '</div>' +
+	                                '<div class="fw-bold small">' + (apt.patient ?? '') + '</div>' +
+	                                '<div class="text-muted" style="font-size: 0.75rem;">' + (time ? (date + ' at ' + time) : date) + '</div>' +
                                 '</div>' +
                                 '</div>' +
                                 '</div>';
