@@ -295,7 +295,7 @@ class DashboardController extends Controller
                 ->where('status', 'completed')
                 ->count();
             $data['pendingDentalLabRequests'] = (clone $dentalLabRequestsQuery)
-                ->where('status', 'pending')
+	                ->whereIn('status', ['pending', 'in_progress'])
                 ->count();
         }
 
