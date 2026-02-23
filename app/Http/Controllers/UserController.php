@@ -489,7 +489,7 @@ class UserController extends Controller
         $request->validate([
             'type' => 'required|in:clinic,user',
             'clinic_id' => 'required_if:type,user|exists:clinics,id',
-            'role' => 'required_if:type,user|in:admin,doctor,assistant,nurse,accountant,patient,nutritionist,pharmacist,lab_dept,radiology_dept',
+            'role' => 'required_if:type,user|in:admin,doctor,assistant,nurse,accountant,patient,nutritionist,pharmacist,lab_dept,radiology_dept,dental_dept,dental_technician,cad_cam_designer',
             'notes' => 'nullable|string|max:500',
         ]);
 
@@ -509,7 +509,7 @@ class UserController extends Controller
     private function getAvailableRoles(User $user): array
     {
         // Base roles supported by the application
-        $roles = ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'dental_dept', 'assistant', 'nurse', 'accountant', 'patient'];
+        $roles = ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'dental_dept', 'dental_technician', 'cad_cam_designer', 'assistant', 'nurse', 'accountant', 'patient'];
 
         if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return $roles;

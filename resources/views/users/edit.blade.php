@@ -197,6 +197,12 @@
                                             @if(in_array('dental_dept', $availableRoles ?? []))
                                                 <option value="dental_dept" {{ old('role', $user->role ?? '') == 'dental_dept' ? 'selected' : '' }}>{{ __('Dentist') }}</option>
                                             @endif
+                                            @if(in_array('dental_technician', $availableRoles ?? []))
+                                                <option value="dental_technician" {{ old('role', $user->role ?? '') == 'dental_technician' ? 'selected' : '' }}>{{ __('Dental Technician') }}</option>
+                                            @endif
+                                            @if(in_array('cad_cam_designer', $availableRoles ?? []))
+                                                <option value="cad_cam_designer" {{ old('role', $user->role ?? '') == 'cad_cam_designer' ? 'selected' : '' }}>{{ __('CAD/CAM Designer') }}</option>
+                                            @endif
                                             @if(in_array('assistant', $availableRoles ?? []))
                                                 <option value="assistant" {{ old('role', $user->role ?? '') == 'assistant' ? 'selected' : '' }}>{{ __('Medical Assistant') }}</option>
                                             @endif
@@ -246,6 +252,15 @@
                                                     @case('radiology_dept')
                                                         {{ __('Radiology operations: process imaging requests and record results.') }}
                                                         @break
+												@case('dental_dept')
+												    {{ __('Dental operations: manage dental charts, treatments, and dental lab requests.') }}
+												    @break
+												@case('dental_technician')
+												    {{ __('Dental laboratory operations: fabricate dental prosthetics and appliances.') }}
+												    @break
+												@case('cad_cam_designer')
+												    {{ __('CAD/CAM operations: design and manufacture dental restorations using computer-aided technology.') }}
+												    @break
                                                     @case('assistant')
                                                         {{ __('Patient management, appointment scheduling, and basic medical record access.') }}
                                                         @break
@@ -525,6 +540,9 @@ function updateRoleDescription() {
         'pharmacist': '{{ __("Pharmacy operations: manage and verify prescriptions, and handle medicine inventory.") }}',
         'lab_dept': '{{ __("Laboratory operations: process lab requests and record results.") }}',
         'radiology_dept': '{{ __("Radiology operations: process imaging requests and record results.") }}',
+	        'dental_dept': '{{ __("Dental operations: manage dental charts, treatments, and dental lab requests.") }}',
+	        'dental_technician': '{{ __("Dental laboratory operations: fabricate dental prosthetics and appliances.") }}',
+	        'cad_cam_designer': '{{ __("CAD/CAM operations: design and manufacture dental restorations using computer-aided technology.") }}',
         'assistant': '{{ __("Patient management, appointment scheduling, and basic medical record access.") }}',
         'nurse': '{{ __("Patient care features, vital signs recording, and medication administration.") }}',
         'accountant': '{{ __("Financial management, invoicing, expense tracking, and reporting features.") }}'
