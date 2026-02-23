@@ -377,6 +377,48 @@ class DentalLabRequestController extends Controller
     }
 
     /**
+     * Mark a dental lab request as completed (quick action).
+     */
+    public function markAsCompleted(DentalLabRequest $labRequest)
+    {
+        $user = Auth::user();
+
+        // Check access
+        if (!$user->isSuperAdmin() && !$user->isMasterAdmin()) {
+            if ($user->clinic_id && $labRequest->clinic_id !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to update lab request.');
+            }
+        }
+
+        // Only lab staff (and admins) should be able to mark it completed
+        if (!in_array($user->role, ['lab_dept', 'admin', 'master_admin', 'super_admin'])) {
+            abort(403, 'Only lab staff can mark lab requests as completed.');
+        }
+
+        if ($labRequest->status === 'completed') {
+            return back()->with('success', 'Lab request is already completed.');
+        }
+
+        if ($labRequest->status === 'cancelled') {
+            return back()->with('error', 'Cannot complete a cancelled lab request.');
+        }
+
+        $labRequest->status = 'completed';
+
+        // Track completion date/user if not already set
+        if (!$labRequest->received_date) {
+            $labRequest->received_date = now()->toDateString();
+        }
+        if (!$labRequest->received_by) {
+            $labRequest->received_by = $user->id;
+        }
+
+        $labRequest->save();
+
+        return back()->with('success', 'Lab request marked as completed.');
+    }
+
+    /**
      * Remove the specified dental lab request.
      */
     public function destroy(DentalLabRequest $labRequest)

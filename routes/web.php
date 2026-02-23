@@ -639,6 +639,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::post('/', [App\Http\Controllers\DentalLabRequestController::class, 'store'])->name('store');
             Route::get('/{labRequest}', [App\Http\Controllers\DentalLabRequestController::class, 'show'])->name('show');
             Route::get('/{labRequest}/edit', [App\Http\Controllers\DentalLabRequestController::class, 'edit'])->name('edit');
+	            Route::post('/{labRequest}/complete', [App\Http\Controllers\DentalLabRequestController::class, 'markAsCompleted'])->name('complete');
             Route::put('/{labRequest}', [App\Http\Controllers\DentalLabRequestController::class, 'update'])->name('update');
             Route::delete('/{labRequest}', [App\Http\Controllers\DentalLabRequestController::class, 'destroy'])->name('destroy');
         });

@@ -185,12 +185,21 @@
                                                    class="btn btn-sm btn-info" title="{{ __('View') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'lab_dept']))
+	                                                @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'master_admin', 'super_admin', 'lab_dept']))
                                                     <a href="{{ route('dental.lab-requests.edit', $request) }}"
                                                        class="btn btn-sm btn-primary" title="{{ __('Edit') }}">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                 @endif
+	                                                @if(in_array(auth()->user()->role, ['lab_dept', 'admin', 'master_admin', 'super_admin']) && !in_array($request->status, ['completed', 'cancelled']))
+	                                                    <form method="POST" action="{{ route('dental.lab-requests.complete', $request) }}" class="d-inline"
+	                                                          onsubmit="return confirm('{{ __('Mark this lab request as completed?') }}');">
+	                                                        @csrf
+	                                                        <button type="submit" class="btn btn-sm btn-success" title="{{ __('Mark Completed') }}">
+	                                                            <i class="fas fa-check"></i>
+	                                                        </button>
+	                                                    </form>
+	                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
