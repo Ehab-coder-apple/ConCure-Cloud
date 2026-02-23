@@ -50,30 +50,36 @@ class PatientController extends Controller
         // Dentists see only patients they created or have dental records for
         if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
             if ($user->role === 'assistant') {
-                // Assistants see patients who have any interaction with their assigned doctors
-                $doctorIds = $user->allowedDoctorIds();
-                if (!empty($doctorIds)) {
-                    $query->where(function($q) use ($doctorIds) {
-                        $q->whereHas('appointments', function($subQ) use ($doctorIds) {
-                            $subQ->whereIn('doctor_id', $doctorIds);
-                        })
-                        ->orWhereHas('prescriptions', function($subQ) use ($doctorIds) {
-                            $subQ->whereIn('doctor_id', $doctorIds);
-                        })
-                        ->orWhereHas('simplePrescriptions', function($subQ) use ($doctorIds) {
-                            $subQ->whereIn('doctor_id', $doctorIds);
-                        })
-                        ->orWhereHas('labRequests', function($subQ) use ($doctorIds) {
-                            $subQ->whereIn('doctor_id', $doctorIds);
-                        })
-                        ->orWhereHas('dietPlans', function($subQ) use ($doctorIds) {
-                            $subQ->whereIn('doctor_id', $doctorIds);
-                        });
-                    });
-                } else {
-                    // No assigned doctors = no patients
-                    $query->whereRaw('1 = 0');
-                }
+	            // If assistants have patient access permissions, they should be able to view
+	            // all clinic patients (matches how the UI/permissions are expected to work).
+	            // If they don't, fallback to showing patients linked to their assigned doctors
+	            // (or patients they created).
+	            if (!$user->hasAnyPermission(['patients_view', 'patients_create', 'patients_edit', 'patients_delete', 'patients_files', 'patients_history'])) {
+	                $doctorIds = $user->allowedDoctorIds();
+	                if (!empty($doctorIds)) {
+	                    $query->where(function($q) use ($doctorIds, $user) {
+	                        $q->whereHas('appointments', function($subQ) use ($doctorIds) {
+	                            $subQ->whereIn('doctor_id', $doctorIds);
+	                        })
+	                        ->orWhereHas('prescriptions', function($subQ) use ($doctorIds) {
+	                            $subQ->whereIn('doctor_id', $doctorIds);
+	                        })
+	                        ->orWhereHas('simplePrescriptions', function($subQ) use ($doctorIds) {
+	                            $subQ->whereIn('doctor_id', $doctorIds);
+	                        })
+	                        ->orWhereHas('labRequests', function($subQ) use ($doctorIds) {
+	                            $subQ->whereIn('doctor_id', $doctorIds);
+	                        })
+	                        ->orWhereHas('dietPlans', function($subQ) use ($doctorIds) {
+	                            $subQ->whereIn('doctor_id', $doctorIds);
+	                        })
+	                        ->orWhere('created_by', $user->id);
+	                    });
+	                } else {
+	                    // No assigned doctors: still show patients created by the assistant
+	                    $query->where('created_by', $user->id);
+	                }
+	            }
             } elseif ($user->role === 'dental_dept') {
                 // Dentists see only patients they created or have dental records for
                 $query->where(function($q) use ($user) {
@@ -496,7 +502,36 @@ class PatientController extends Controller
 
         // Filter patients based on user role
         if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-            if ($user->role === 'dental_dept') {
+	        if ($user->role === 'assistant') {
+	            // Assistants with patient permissions should be able to search all clinic patients.
+	            // If the assistant does not have patient permissions, scope to assigned doctors'
+	            // interactions (or patients they created).
+	            if (!$user->hasAnyPermission(['patients_view', 'patients_create', 'patients_edit', 'patients_delete', 'patients_files', 'patients_history'])) {
+	                $doctorIds = $user->allowedDoctorIds();
+	                if (!empty($doctorIds)) {
+	                    $query->where(function($q) use ($doctorIds, $user) {
+	                        $q->whereHas('appointments', function($subQ) use ($doctorIds) {
+	                            $subQ->whereIn('doctor_id', $doctorIds);
+	                        })
+	                        ->orWhereHas('prescriptions', function($subQ) use ($doctorIds) {
+	                            $subQ->whereIn('doctor_id', $doctorIds);
+	                        })
+	                        ->orWhereHas('simplePrescriptions', function($subQ) use ($doctorIds) {
+	                            $subQ->whereIn('doctor_id', $doctorIds);
+	                        })
+	                        ->orWhereHas('labRequests', function($subQ) use ($doctorIds) {
+	                            $subQ->whereIn('doctor_id', $doctorIds);
+	                        })
+	                        ->orWhereHas('dietPlans', function($subQ) use ($doctorIds) {
+	                            $subQ->whereIn('doctor_id', $doctorIds);
+	                        })
+	                        ->orWhere('created_by', $user->id);
+	                    });
+	                } else {
+	                    $query->where('created_by', $user->id);
+	                }
+	            }
+	        } elseif ($user->role === 'dental_dept') {
                 // Dentists see only patients they created or have dental records for
                 $query->where(function($q) use ($user) {
                     $q->where('created_by', $user->id)

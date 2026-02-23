@@ -167,25 +167,9 @@ class DashboardController extends Controller
             // Filter for assistants: show patients who have any interaction with their assigned doctors
             // (appointments, prescriptions, lab requests, or diet plans)
             elseif ($user->role === 'assistant') {
-                $doctorIds = $user->allowedDoctorIds();
-                if (!empty($doctorIds)) {
-                    $patientsQuery->where(function($q) use ($doctorIds) {
-                        $q->whereHas('appointments', function($subQ) use ($doctorIds) {
-                            $subQ->whereIn('doctor_id', $doctorIds);
-                        })
-                        ->orWhereHas('prescriptions', function($subQ) use ($doctorIds) {
-                            $subQ->whereIn('doctor_id', $doctorIds);
-                        })
-                        ->orWhereHas('labRequests', function($subQ) use ($doctorIds) {
-                            $subQ->whereIn('doctor_id', $doctorIds);
-                        })
-                        ->orWhereHas('dietPlans', function($subQ) use ($doctorIds) {
-                            $subQ->whereIn('doctor_id', $doctorIds);
-                        });
-                    });
-                } else {
-                    $patientsQuery->whereRaw('1 = 0');
-                }
+	                // Assistants that can access Patient Management should see clinic patient stats.
+	                // (Avoid zeroing out the query when no doctors are assigned.)
+	                // No additional filtering needed here.
             }
 
             $data['totalPatients'] = (clone $patientsQuery)->active()->count();
