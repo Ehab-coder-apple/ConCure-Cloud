@@ -90,7 +90,14 @@ class RadiologyTest extends Model
      */
     public function getCategoryDisplayAttribute(): string
     {
-        return self::CATEGORIES[$this->category] ?? $this->category;
+        $category = $this->category;
+
+        // Defensive: some legacy/custom tests may have NULL/empty category.
+        if (empty($category)) {
+            return self::CATEGORIES['other'] ?? 'Other';
+        }
+
+        return self::CATEGORIES[$category] ?? (string) $category;
     }
 
     /**
@@ -98,7 +105,14 @@ class RadiologyTest extends Model
      */
     public function getBodyPartDisplayAttribute(): string
     {
-        return self::BODY_PARTS[$this->body_part] ?? $this->body_part;
+        $bodyPart = $this->body_part;
+
+        // Defensive: some legacy/custom tests may have NULL/empty body_part.
+        if (empty($bodyPart)) {
+            return 'Not specified';
+        }
+
+        return self::BODY_PARTS[$bodyPart] ?? (string) $bodyPart;
     }
 
     /**
@@ -106,7 +120,8 @@ class RadiologyTest extends Model
      */
     public function getFullNameAttribute(): string
     {
-        $name = $this->name;
+        // Defensive: a malformed/legacy record may have NULL name.
+        $name = $this->name ?: 'Unnamed Test';
         if ($this->code) {
             $name .= ' (' . $this->code . ')';
         }

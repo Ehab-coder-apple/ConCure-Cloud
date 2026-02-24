@@ -47,7 +47,12 @@ class RadiologyRequestTest extends Model
      */
     public function getTestNameDisplayAttribute(): string
     {
-        return $this->radiologyTest ? $this->radiologyTest->full_name : $this->test_name;
+        if ($this->radiologyTest) {
+            return $this->radiologyTest->full_name;
+        }
+
+        // Defensive: ensure we never return null (PHP return type is string).
+        return $this->test_name ?: 'Custom Test';
     }
 
     /**
@@ -55,7 +60,11 @@ class RadiologyRequestTest extends Model
      */
     public function getTestDescriptionAttribute(): string
     {
-        return $this->radiologyTest ? $this->radiologyTest->description : '';
+        if ($this->radiologyTest) {
+            return (string) ($this->radiologyTest->description ?? '');
+        }
+
+        return '';
     }
 
     /**
@@ -63,7 +72,11 @@ class RadiologyRequestTest extends Model
      */
     public function getTestCategoryAttribute(): string
     {
-        return $this->radiologyTest ? $this->radiologyTest->category_display : 'Custom';
+        if ($this->radiologyTest) {
+            return (string) ($this->radiologyTest->category_display ?? 'Other');
+        }
+
+        return 'Custom';
     }
 
     /**
@@ -71,7 +84,11 @@ class RadiologyRequestTest extends Model
      */
     public function getBodyPartAttribute(): string
     {
-        return $this->radiologyTest ? $this->radiologyTest->body_part_display : 'Not specified';
+        if ($this->radiologyTest) {
+            return (string) ($this->radiologyTest->body_part_display ?? 'Not specified');
+        }
+
+        return 'Not specified';
     }
 
     /**
@@ -79,7 +96,11 @@ class RadiologyRequestTest extends Model
      */
     public function getPreparationInstructionsAttribute(): string
     {
-        return $this->radiologyTest ? $this->radiologyTest->preparation_instructions : 'No special preparation';
+        if ($this->radiologyTest) {
+            return (string) ($this->radiologyTest->preparation_instructions ?: 'No special preparation');
+        }
+
+        return 'No special preparation';
     }
 
     /**
