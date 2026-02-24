@@ -110,6 +110,13 @@ class DentalLabRequestController extends Controller
                       ->orderBy('first_name')
                       ->get();
 
+        // Get technicians (Dental Technician / CAD-CAM Designer)
+        $technicians = User::whereIn('role', ['dental_technician', 'cad_cam_designer'])
+                          ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
         // Get dental labs
         $dentalLabs = ExternalLab::dental()
                                  ->active()
@@ -129,6 +136,7 @@ class DentalLabRequestController extends Controller
             'patients',
             'treatments',
             'doctors',
+            'technicians',
             'dentalLabs'
         ));
     }
@@ -148,6 +156,7 @@ class DentalLabRequestController extends Controller
             'patient_id' => 'required|exists:patients,id',
             'dental_treatment_id' => 'nullable|exists:dental_treatments,id',
             'doctor_id' => 'required|exists:users,id',
+            'assigned_technician_id' => 'nullable|exists:users,id',
             'external_lab_id' => 'nullable|exists:external_labs,id',
             'work_type' => 'required|in:crown,bridge,denture_full,denture_partial,implant_crown,implant_bridge,veneer,inlay_onlay,orthodontic_appliance,night_guard,sports_guard,temporary_crown,other',
             'tooth_number' => 'nullable|string',
@@ -251,6 +260,13 @@ class DentalLabRequestController extends Controller
                       ->orderBy('first_name')
                       ->get();
 
+        // Get technicians (Dental Technician / CAD-CAM Designer)
+        $technicians = User::whereIn('role', ['dental_technician', 'cad_cam_designer'])
+                          ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+                          ->where('is_active', true)
+                          ->orderBy('first_name')
+                          ->get();
+
         // Get dental labs
         $dentalLabs = ExternalLab::dental()
                                  ->active()
@@ -277,6 +293,7 @@ class DentalLabRequestController extends Controller
             'patients',
             'treatments',
             'doctors',
+            'technicians',
             'dentalLabs',
             'users'
         ));
@@ -304,6 +321,7 @@ class DentalLabRequestController extends Controller
             'patient_id' => 'required|exists:patients,id',
             'dental_treatment_id' => 'nullable|exists:dental_treatments,id',
             'doctor_id' => 'required|exists:users,id',
+            'assigned_technician_id' => 'nullable|exists:users,id',
             'external_lab_id' => 'nullable|exists:external_labs,id',
             'work_type' => 'required|in:crown,bridge,denture_full,denture_partial,implant_crown,implant_bridge,veneer,inlay_onlay,orthodontic_appliance,night_guard,sports_guard,temporary_crown,other',
             'tooth_number' => 'nullable|string',

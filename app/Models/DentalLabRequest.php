@@ -15,6 +15,7 @@ class DentalLabRequest extends Model
         'patient_id',
         'dental_treatment_id',
         'doctor_id',
+	    'assigned_technician_id',
         'clinic_id',
         'external_lab_id',
         'work_type',
@@ -173,6 +174,14 @@ class DentalLabRequest extends Model
     {
         return $this->belongsTo(User::class, 'doctor_id');
     }
+
+	/**
+	 * Get the assigned technician (Dental Technician / CAD-CAM Designer).
+	 */
+	public function assignedTechnician(): BelongsTo
+	{
+	    return $this->belongsTo(User::class, 'assigned_technician_id');
+	}
 
     /**
      * Get the clinic.

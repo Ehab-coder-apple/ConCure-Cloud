@@ -70,7 +70,7 @@
 
                         <!-- Doctor & Lab Selection -->
                         <div class="row mb-3">
-                            <div class="col-md-6">
+	                        <div class="col-md-4">
                                 <label for="doctor_id" class="form-label">{{ __('Requesting Doctor') }} <span class="text-danger">*</span></label>
                                 <select class="form-select @error('doctor_id') is-invalid @enderror" id="doctor_id" name="doctor_id" required>
                                     <option value="">{{ __('Select Doctor') }}</option>
@@ -84,7 +84,22 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-6">
+	                        <div class="col-md-4">
+	                            <label for="assigned_technician_id" class="form-label">{{ __('Assigned Technician') }}</label>
+	                            <select class="form-select @error('assigned_technician_id') is-invalid @enderror" id="assigned_technician_id" name="assigned_technician_id">
+	                                <option value="">{{ __('Select Technician (Optional)') }}</option>
+	                                @foreach($technicians as $technician)
+	                                    <option value="{{ $technician->id }}" {{ old('assigned_technician_id') == $technician->id ? 'selected' : '' }}>
+	                                        {{ $technician->full_name }}
+	                                    </option>
+	                                @endforeach
+	                            </select>
+	                            @error('assigned_technician_id')
+	                                <div class="invalid-feedback">{{ $message }}</div>
+	                            @enderror
+	                            <small class="text-muted">{{ __('Optional') }}</small>
+	                        </div>
+	                        <div class="col-md-4">
                                 <label for="external_lab_id" class="form-label">{{ __('Dental Lab') }}</label>
                                 <select class="form-select @error('external_lab_id') is-invalid @enderror" id="external_lab_id" name="external_lab_id">
                                     <option value="">{{ __('Select Lab (Optional)') }}</option>
