@@ -324,4 +324,28 @@ class DentalLabRequest extends Model
               });
         });
     }
+
+    /**
+     * Scope to restrict visibility based on assignment.
+     *
+     * Rules:
+     * - Admin-like users (super/master/admin/program_owner) can see all.
+     * - Dental technicians / CAD-CAM designers can see only requests assigned to them.
+     * - All other roles can see only unassigned requests.
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        // Admin-like roles can see all requests in whatever base query is already applied.
+        if ($user->isSuperAdmin() || $user->isMasterAdmin() || in_array($user->role, ['admin', 'program_owner'])) {
+            return $query;
+        }
+
+        // Assigned technicians see only their assigned requests.
+        if (in_array($user->role, ['dental_technician', 'cad_cam_designer'])) {
+            return $query->where('assigned_technician_id', $user->id);
+        }
+
+        // Everyone else cannot see assigned requests.
+        return $query->whereNull('assigned_technician_id');
+    }
 }

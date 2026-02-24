@@ -291,6 +291,9 @@ class DashboardController extends Controller
                 }
             }
 
+	            // Apply assignment visibility rules (assigned requests only visible to assigned technician + admins)
+	            $dentalLabRequestsQuery->visibleTo($user);
+
             $data['completedDentalLabRequests'] = (clone $dentalLabRequestsQuery)
                 ->where('status', 'completed')
                 ->count();
@@ -324,6 +327,9 @@ class DashboardController extends Controller
                     $dentalLabRequestsQuery->whereRaw('1 = 0');
                 }
             }
+
+	            // Apply assignment visibility rules
+	            $dentalLabRequestsQuery->visibleTo($user);
 
             $completedDentalLab = (clone $dentalLabRequestsQuery)
                 ->where('status', 'completed')

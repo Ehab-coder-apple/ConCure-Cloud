@@ -10,9 +10,34 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class DentalLabRequestController extends Controller
 {
+    /**
+     * Enforce that assigned requests are only visible to the assigned technician and admin-like roles.
+     */
+    protected function enforceAssignedVisibility(User $user, DentalLabRequest $labRequest): void
+    {
+        // Admin-like roles can see everything.
+        if ($user->isSuperAdmin() || $user->isMasterAdmin() || in_array($user->role, ['admin', 'program_owner'])) {
+            return;
+        }
+
+        // Assigned technicians/designers can only access their assigned requests.
+        if (in_array($user->role, ['dental_technician', 'cad_cam_designer'])) {
+            if ((int) $labRequest->assigned_technician_id !== (int) $user->id) {
+                abort(403, 'Unauthorized access to lab request.');
+            }
+            return;
+        }
+
+        // Other roles cannot access assigned requests.
+        if (!is_null($labRequest->assigned_technician_id)) {
+            abort(403, 'Unauthorized access to lab request.');
+        }
+    }
+
     /**
      * Display a listing of dental lab requests.
      */
@@ -31,6 +56,9 @@ class DentalLabRequestController extends Controller
         if ($user->role === 'doctor' || $user->role === 'dental_dept') {
             $query->byDoctor($user->id);
         }
+
+        // Apply assignment visibility rules (assigned requests only visible to assigned technician + admins)
+        $query->visibleTo($user);
 
         // Apply filters
         if ($request->filled('status')) {
@@ -156,7 +184,18 @@ class DentalLabRequestController extends Controller
             'patient_id' => 'required|exists:patients,id',
             'dental_treatment_id' => 'nullable|exists:dental_treatments,id',
             'doctor_id' => 'required|exists:users,id',
-            'assigned_technician_id' => 'nullable|exists:users,id',
+            'assigned_technician_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(function ($q) use ($user) {
+                    $q->whereIn('role', ['dental_technician', 'cad_cam_designer'])
+                      ->where('is_active', true);
+
+                    // If the current user belongs to a clinic, only allow assigning within that clinic.
+                    if ($user->clinic_id) {
+                        $q->where('clinic_id', $user->clinic_id);
+                    }
+                }),
+            ],
             'external_lab_id' => 'nullable|exists:external_labs,id',
             'work_type' => 'required|in:crown,bridge,denture_full,denture_partial,implant_crown,implant_bridge,veneer,inlay_onlay,orthodontic_appliance,night_guard,sports_guard,temporary_crown,other',
             'tooth_number' => 'nullable|string',
@@ -217,6 +256,8 @@ class DentalLabRequestController extends Controller
             }
         }
 
+        $this->enforceAssignedVisibility($user, $labRequest);
+
         $labRequest->load([
             'patient',
             'dentalTreatment',
@@ -242,9 +283,11 @@ class DentalLabRequestController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
-            abort(403, 'Only doctors, dental assistants, and dentists can edit lab requests.');
-        }
+        $this->enforceAssignedVisibility($user, $labRequest);
+
+		if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept', 'dental_technician', 'cad_cam_designer'])) {
+			abort(403, 'You are not authorized to edit this lab request.');
+		}
 
         // Get patients
         $patients = Patient::query()
@@ -313,7 +356,9 @@ class DentalLabRequestController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'lab_dept', 'dental_dept'])) {
+        $this->enforceAssignedVisibility($user, $labRequest);
+
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'lab_dept', 'dental_dept', 'dental_technician', 'cad_cam_designer'])) {
             abort(403, 'Only doctors, dental assistants, dentists, and lab staff can update lab requests.');
         }
 
@@ -321,7 +366,14 @@ class DentalLabRequestController extends Controller
             'patient_id' => 'required|exists:patients,id',
             'dental_treatment_id' => 'nullable|exists:dental_treatments,id',
             'doctor_id' => 'required|exists:users,id',
-            'assigned_technician_id' => 'nullable|exists:users,id',
+            'assigned_technician_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(function ($q) use ($labRequest) {
+                    $q->whereIn('role', ['dental_technician', 'cad_cam_designer'])
+                      ->where('is_active', true)
+                      ->where('clinic_id', $labRequest->clinic_id);
+                }),
+            ],
             'external_lab_id' => 'nullable|exists:external_labs,id',
             'work_type' => 'required|in:crown,bridge,denture_full,denture_partial,implant_crown,implant_bridge,veneer,inlay_onlay,orthodontic_appliance,night_guard,sports_guard,temporary_crown,other',
             'tooth_number' => 'nullable|string',
@@ -408,8 +460,10 @@ class DentalLabRequestController extends Controller
             }
         }
 
+        $this->enforceAssignedVisibility($user, $labRequest);
+
         // Only lab staff (and admins) should be able to mark it completed
-        if (!in_array($user->role, ['lab_dept', 'admin', 'master_admin', 'super_admin'])) {
+        if (!in_array($user->role, ['lab_dept', 'dental_technician', 'cad_cam_designer', 'admin', 'master_admin', 'super_admin'])) {
             abort(403, 'Only lab staff can mark lab requests as completed.');
         }
 
@@ -449,6 +503,8 @@ class DentalLabRequestController extends Controller
                 abort(403, 'Unauthorized access to delete lab request.');
             }
         }
+
+        $this->enforceAssignedVisibility($user, $labRequest);
 
         if (!in_array($user->role, ['admin', 'program_owner'])) {
             abort(403, 'Only administrators can delete lab requests.');
