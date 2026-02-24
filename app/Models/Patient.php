@@ -276,7 +276,17 @@ class Patient extends Model
     public static function generatePatientId(?int $clinicId = null): string
     {
         $clinic = $clinicId ? Clinic::find($clinicId) : null;
-        $prefix = $clinic ? strtoupper(substr($clinic->name, 0, 3)) : 'PAT';
+        // Use multibyte-safe substring to avoid producing invalid UTF-8 prefixes
+        // (e.g., clinics with Arabic names). Invalid UTF-8 here can crash inserts/logging.
+        $prefix = $clinic && $clinic->name
+            ? Str::upper(Str::substr((string) $clinic->name, 0, 3))
+            : 'PAT';
+
+        // If the name starts with whitespace/symbols and yields an empty prefix, fall back.
+        $prefix = trim((string) $prefix);
+        if ($prefix === '') {
+            $prefix = $clinic ? ('CL' . $clinic->id) : 'PAT';
+        }
 
         do {
             $number = str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
