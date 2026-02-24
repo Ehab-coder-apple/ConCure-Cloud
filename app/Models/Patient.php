@@ -226,7 +226,21 @@ class Patient extends Model
      */
     public function getAgeAttribute(): int
     {
-        return $this->date_of_birth ? $this->date_of_birth->age : 0;
+        // NOTE: Some legacy/imported records may contain invalid dates like "0000-00-00".
+        // Accessing $this->date_of_birth would trigger Eloquent's date casting and can throw,
+        // causing 500s in views that display age. Use the raw value and parse defensively.
+        // Prefer the *current* raw attribute value (without casting). Fallback to original.
+        $rawDob = $this->getAttributes()['date_of_birth'] ?? $this->getRawOriginal('date_of_birth');
+
+        if (empty($rawDob) || $rawDob === '0000-00-00' || $rawDob === '0000-00-00 00:00:00') {
+            return 0;
+        }
+
+        try {
+            return \Illuminate\Support\Carbon::parse($rawDob)->age;
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     /**
