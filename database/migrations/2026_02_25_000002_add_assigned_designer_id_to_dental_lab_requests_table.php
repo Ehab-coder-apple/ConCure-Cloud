@@ -12,22 +12,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('dental_lab_requests', function (Blueprint $table) {
-            $table->foreignId('assigned_designer_id')
-                ->nullable()
-                ->after('assigned_technician_id')
-                ->constrained('users')
-                ->onDelete('set null');
-        });
+        // Note: this migration may have been partially applied if it previously failed mid-run.
+        // Make it safe to re-run by only adding the column if it doesn't exist.
+        if (!Schema::hasColumn('dental_lab_requests', 'assigned_designer_id')) {
+            Schema::table('dental_lab_requests', function (Blueprint $table) {
+                $table->foreignId('assigned_designer_id')
+                    ->nullable()
+                    ->after('assigned_technician_id')
+                    ->constrained('users')
+                    ->onDelete('set null');
+            });
+        }
 
         // Backfill: previously CAD/CAM designers were stored in assigned_technician_id.
         // Move those assignments to assigned_designer_id to preserve visibility/history.
-        DB::statement("\
-            UPDATE dental_lab_requests
-            SET assigned_designer_id = assigned_technician_id,
-                assigned_technician_id = NULL
-            WHERE assigned_technician_id IN (SELECT id FROM users WHERE role = 'cad_cam_designer')
-        ");
+        DB::table('dental_lab_requests')
+            ->whereIn('assigned_technician_id', function ($q) {
+                $q->select('id')->from('users')->where('role', 'cad_cam_designer');
+            })
+            ->update([
+                'assigned_designer_id' => DB::raw('assigned_technician_id'),
+                'assigned_technician_id' => null,
+            ]);
     }
 
     /**
@@ -36,16 +42,27 @@ return new class extends Migration
     public function down(): void
     {
         // Revert backfill (best-effort)
-        DB::statement("\
-            UPDATE dental_lab_requests
-            SET assigned_technician_id = assigned_designer_id
-            WHERE assigned_technician_id IS NULL
-              AND assigned_designer_id IS NOT NULL
-        ");
+        DB::table('dental_lab_requests')
+            ->whereNull('assigned_technician_id')
+            ->whereNotNull('assigned_designer_id')
+            ->update([
+                'assigned_technician_id' => DB::raw('assigned_designer_id'),
+            ]);
 
-        Schema::table('dental_lab_requests', function (Blueprint $table) {
-            $table->dropForeign(['assigned_designer_id']);
-            $table->dropColumn('assigned_designer_id');
-        });
+        if (Schema::hasColumn('dental_lab_requests', 'assigned_designer_id')) {
+            // dropForeign will fail if the FK doesn't exist (e.g., partial/manual schema changes).
+            // Try to drop it, but don't block rollback if it isn't present.
+            try {
+                Schema::table('dental_lab_requests', function (Blueprint $table) {
+                    $table->dropForeign(['assigned_designer_id']);
+                });
+            } catch (Throwable $e) {
+                // ignore
+            }
+
+            Schema::table('dental_lab_requests', function (Blueprint $table) {
+                $table->dropColumn('assigned_designer_id');
+            });
+        }
     }
 };
