@@ -139,16 +139,18 @@ class DentalLabRequestController extends Controller
             abort(403, 'Only doctors, dental assistants, and dentists can create lab requests.');
         }
 
-	        // Get patients
-	        $patients = Patient::query()
-	                          ->when($labRequest->clinic_id, fn($q) => $q->where('clinic_id', $labRequest->clinic_id))
+
+        // Get patients
+        $patients = Patient::query()
+                          ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
                           ->where('is_active', true)
                           ->orderBy('first_name')
                           ->get();
 
+
         // Get doctors (include dentists)
-	        $doctors = User::whereIn('role', ['doctor', 'dental_dept'])
-	                      ->when($labRequest->clinic_id, fn($q) => $q->where('clinic_id', $labRequest->clinic_id))
+        $doctors = User::whereIn('role', ['doctor', 'dental_dept'])
+                      ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
                       ->where('is_active', true)
                       ->orderBy('first_name')
                       ->get();
