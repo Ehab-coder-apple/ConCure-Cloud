@@ -122,6 +122,7 @@
                                         <th>{{ __('Patient') }}</th>
                                         <th>{{ __('Work Type') }}</th>
                                         <th>{{ __('Dental Lab') }}</th>
+	                                        <th>{{ __('Assigned') }}</th>
                                         <th>{{ __('Status') }}</th>
                                         <th>{{ __('Priority') }}</th>
                                         <th>{{ __('Requested') }}</th>
@@ -155,6 +156,21 @@
                                                     <span class="text-muted">{{ __('Not assigned') }}</span>
                                                 @endif
                                             </td>
+	                                            <td>
+	                                                @if($request->assignedTechnician || $request->assignedDesigner)
+	                                                    @if($request->assignedTechnician)
+	                                                        <small class="text-muted">{{ __('Tech') }}:</small>
+	                                                        {{ $request->assignedTechnician->full_name }}
+	                                                    @endif
+	                                                    @if($request->assignedDesigner)
+	                                                        <br>
+	                                                        <small class="text-muted">{{ __('Designer') }}:</small>
+	                                                        {{ $request->assignedDesigner->full_name }}
+	                                                    @endif
+	                                                @else
+	                                                    <span class="text-muted">-</span>
+	                                                @endif
+	                                            </td>
                                             <td>
                                                 <span class="{{ $request->status_badge_class }}">
                                                     {{ $request->status_display }}

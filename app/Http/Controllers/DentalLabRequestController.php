@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
 class DentalLabRequestController extends Controller
 {
     /**
-     * Enforce that assigned requests are only visible to the assigned technician and admin-like roles.
+	 * Enforce that assigned requests are only visible to the assigned technician/designer and admin-like roles.
      */
     protected function enforceAssignedVisibility(User $user, DentalLabRequest $labRequest): void
     {
@@ -24,18 +24,26 @@ class DentalLabRequestController extends Controller
             return;
         }
 
-        // Assigned technicians/designers can only access their assigned requests.
-        if (in_array($user->role, ['dental_technician', 'cad_cam_designer'])) {
-            if ((int) $labRequest->assigned_technician_id !== (int) $user->id) {
-                abort(403, 'Unauthorized access to lab request.');
-            }
-            return;
-        }
+	    // Assigned technician can only access requests assigned to them.
+	    if ($user->role === 'dental_technician') {
+	        if ((int) $labRequest->assigned_technician_id !== (int) $user->id) {
+	            abort(403, 'Unauthorized access to lab request.');
+	        }
+	        return;
+	    }
 
-        // Other roles cannot access assigned requests.
-        if (!is_null($labRequest->assigned_technician_id)) {
-            abort(403, 'Unauthorized access to lab request.');
-        }
+	    // Assigned designer can only access requests assigned to them.
+	    if ($user->role === 'cad_cam_designer') {
+	        if ((int) $labRequest->assigned_designer_id !== (int) $user->id) {
+	            abort(403, 'Unauthorized access to lab request.');
+	        }
+	        return;
+	    }
+
+	    // Other roles cannot access individually assigned requests.
+	    if (!is_null($labRequest->assigned_technician_id) || !is_null($labRequest->assigned_designer_id)) {
+	        abort(403, 'Unauthorized access to lab request.');
+	    }
     }
 
     /**
@@ -45,7 +53,14 @@ class DentalLabRequestController extends Controller
     {
         $user = Auth::user();
 
-        $query = DentalLabRequest::with(['patient', 'externalLab', 'doctor', 'dentalTreatment']);
+	    $query = DentalLabRequest::with([
+	        'patient',
+	        'externalLab',
+	        'doctor',
+	        'dentalTreatment',
+	        'assignedTechnician',
+	        'assignedDesigner',
+	    ]);
 
         // Filter by clinic
         if ($user->clinic_id) {
@@ -124,26 +139,33 @@ class DentalLabRequestController extends Controller
             abort(403, 'Only doctors, dental assistants, and dentists can create lab requests.');
         }
 
-        // Get patients
-        $patients = Patient::query()
-                          ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+	        // Get patients
+	        $patients = Patient::query()
+	                          ->when($labRequest->clinic_id, fn($q) => $q->where('clinic_id', $labRequest->clinic_id))
                           ->where('is_active', true)
                           ->orderBy('first_name')
                           ->get();
 
         // Get doctors (include dentists)
-        $doctors = User::whereIn('role', ['doctor', 'dental_dept'])
-                      ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+	        $doctors = User::whereIn('role', ['doctor', 'dental_dept'])
+	                      ->when($labRequest->clinic_id, fn($q) => $q->where('clinic_id', $labRequest->clinic_id))
                       ->where('is_active', true)
                       ->orderBy('first_name')
                       ->get();
 
-        // Get technicians (Dental Technician / CAD-CAM Designer)
-        $technicians = User::whereIn('role', ['dental_technician', 'cad_cam_designer'])
-                          ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
-                          ->where('is_active', true)
-                          ->orderBy('first_name')
-                          ->get();
+	    // Get technicians (Dental Technician)
+	    $technicians = User::where('role', 'dental_technician')
+	                      ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+	                      ->where('is_active', true)
+	                      ->orderBy('first_name')
+	                      ->get();
+
+	    // Get designers (CAD/CAM Designer)
+	    $designers = User::where('role', 'cad_cam_designer')
+	                    ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+	                    ->where('is_active', true)
+	                    ->orderBy('first_name')
+	                    ->get();
 
         // Get dental labs
         $dentalLabs = ExternalLab::dental()
@@ -160,13 +182,14 @@ class DentalLabRequestController extends Controller
                                     ->orderBy('created_at', 'desc')
                                     ->get();
 
-        return view('dental.lab-requests.create', compact(
-            'patients',
-            'treatments',
-            'doctors',
-            'technicians',
-            'dentalLabs'
-        ));
+	    return view('dental.lab-requests.create', compact(
+	        'patients',
+	        'treatments',
+	        'doctors',
+	        'technicians',
+	        'designers',
+	        'dentalLabs'
+	    ));
     }
 
     /**
@@ -180,14 +203,14 @@ class DentalLabRequestController extends Controller
             abort(403, 'Only doctors, dental assistants, and dentists can create lab requests.');
         }
 
-        $validated = $request->validate([
+	        $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'dental_treatment_id' => 'nullable|exists:dental_treatments,id',
             'doctor_id' => 'required|exists:users,id',
             'assigned_technician_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($q) use ($user) {
-                    $q->whereIn('role', ['dental_technician', 'cad_cam_designer'])
+	                    $q->where('role', 'dental_technician')
                       ->where('is_active', true);
 
                     // If the current user belongs to a clinic, only allow assigning within that clinic.
@@ -196,6 +219,18 @@ class DentalLabRequestController extends Controller
                     }
                 }),
             ],
+	            'assigned_designer_id' => [
+	                'nullable',
+	                Rule::exists('users', 'id')->where(function ($q) use ($user) {
+	                    $q->where('role', 'cad_cam_designer')
+	                      ->where('is_active', true);
+
+	                    // If the current user belongs to a clinic, only allow assigning within that clinic.
+	                    if ($user->clinic_id) {
+	                        $q->where('clinic_id', $user->clinic_id);
+	                    }
+	                }),
+	            ],
             'external_lab_id' => 'nullable|exists:external_labs,id',
             'work_type' => 'required|in:crown,bridge,denture_full,denture_partial,implant_crown,implant_bridge,veneer,inlay_onlay,orthodontic_appliance,night_guard,sports_guard,temporary_crown,other',
             'tooth_number' => 'nullable|string',
@@ -259,12 +294,14 @@ class DentalLabRequestController extends Controller
 
         $this->enforceAssignedVisibility($user, $labRequest);
 
-        $labRequest->load([
+	        $labRequest->load([
             'patient',
             'dentalTreatment',
             'doctor',
             'externalLab',
-            'receivedBy'
+	            'receivedBy',
+	            'assignedTechnician',
+	            'assignedDesigner',
         ]);
 
         return view('dental.lab-requests.show', compact('labRequest'));
@@ -304,40 +341,48 @@ class DentalLabRequestController extends Controller
                       ->orderBy('first_name')
                       ->get();
 
-        // Get technicians (Dental Technician / CAD-CAM Designer)
-        $technicians = User::whereIn('role', ['dental_technician', 'cad_cam_designer'])
-                          ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
-                          ->where('is_active', true)
-                          ->orderBy('first_name')
-                          ->get();
+	        // Get technicians (Dental Technician)
+	        $technicians = User::where('role', 'dental_technician')
+	                          ->when($labRequest->clinic_id, fn($q) => $q->where('clinic_id', $labRequest->clinic_id))
+	                          ->where('is_active', true)
+	                          ->orderBy('first_name')
+	                          ->get();
+
+	        // Get designers (CAD/CAM Designer)
+	        $designers = User::where('role', 'cad_cam_designer')
+	                        ->when($labRequest->clinic_id, fn($q) => $q->where('clinic_id', $labRequest->clinic_id))
+	                        ->where('is_active', true)
+	                        ->orderBy('first_name')
+	                        ->get();
 
         // Get dental labs
         $dentalLabs = ExternalLab::dental()
                                  ->active()
-                                 ->when($user->clinic_id, fn($q) => $q->byClinic($user->clinic_id))
+	                                 ->when($labRequest->clinic_id, fn($q) => $q->byClinic($labRequest->clinic_id))
                                  ->ordered()
                                  ->get();
 
         // Get dental treatments for the clinic
-        $treatments = DentalTreatment::query()
-                                    ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+	        $treatments = DentalTreatment::query()
+	                                    ->when($labRequest->clinic_id, fn($q) => $q->where('clinic_id', $labRequest->clinic_id))
                                     ->whereIn('status', ['planned', 'in_progress', 'completed'])
                                     ->orderBy('created_at', 'desc')
                                     ->get();
 
         // Get users for received_by field
-        $users = User::query()
-                    ->when($user->clinic_id, fn($q) => $q->where('clinic_id', $user->clinic_id))
+	        $users = User::query()
+	                    ->when($labRequest->clinic_id, fn($q) => $q->where('clinic_id', $labRequest->clinic_id))
                     ->where('is_active', true)
                     ->orderBy('first_name')
                     ->get();
 
-        return view('dental.lab-requests.edit', compact(
+	        return view('dental.lab-requests.edit', compact(
             'labRequest',
             'patients',
             'treatments',
             'doctors',
             'technicians',
+	            'designers',
             'dentalLabs',
             'users'
         ));
@@ -363,18 +408,26 @@ class DentalLabRequestController extends Controller
             abort(403, 'Only doctors, dental assistants, dentists, and lab staff can update lab requests.');
         }
 
-        $validated = $request->validate([
+	        $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'dental_treatment_id' => 'nullable|exists:dental_treatments,id',
             'doctor_id' => 'required|exists:users,id',
             'assigned_technician_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($q) use ($labRequest) {
-                    $q->whereIn('role', ['dental_technician', 'cad_cam_designer'])
+	                    $q->where('role', 'dental_technician')
                       ->where('is_active', true)
                       ->where('clinic_id', $labRequest->clinic_id);
                 }),
             ],
+	            'assigned_designer_id' => [
+	                'nullable',
+	                Rule::exists('users', 'id')->where(function ($q) use ($labRequest) {
+	                    $q->where('role', 'cad_cam_designer')
+	                      ->where('is_active', true)
+	                      ->where('clinic_id', $labRequest->clinic_id);
+	                }),
+	            ],
             'external_lab_id' => 'nullable|exists:external_labs,id',
             'work_type' => 'required|in:crown,bridge,denture_full,denture_partial,implant_crown,implant_bridge,veneer,inlay_onlay,orthodontic_appliance,night_guard,sports_guard,temporary_crown,other',
             'tooth_number' => 'nullable|string',

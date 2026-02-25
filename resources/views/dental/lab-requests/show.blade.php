@@ -293,6 +293,14 @@
                             {{ $labRequest->priority_display }}
                         </span>
                     </p>
+	                    <p class="mb-3">
+	                        <strong>{{ __('Assigned Technician') }}:</strong><br>
+	                        {{ optional($labRequest->assignedTechnician)->full_name ?? '-' }}
+	                    </p>
+	                    <p class="mb-0">
+	                        <strong>{{ __('Assigned CAD/CAM Designer') }}:</strong><br>
+	                        {{ optional($labRequest->assignedDesigner)->full_name ?? '-' }}
+	                    </p>
                 </div>
             </div>
 

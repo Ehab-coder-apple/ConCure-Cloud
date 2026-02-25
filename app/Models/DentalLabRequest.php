@@ -15,7 +15,8 @@ class DentalLabRequest extends Model
         'patient_id',
         'dental_treatment_id',
         'doctor_id',
-	    'assigned_technician_id',
+		    'assigned_technician_id',
+		    'assigned_designer_id',
         'clinic_id',
         'external_lab_id',
         'work_type',
@@ -178,11 +179,19 @@ class DentalLabRequest extends Model
     }
 
 	/**
-	 * Get the assigned technician (Dental Technician / CAD-CAM Designer).
+	 * Get the assigned technician (Dental Technician).
 	 */
 	public function assignedTechnician(): BelongsTo
 	{
 	    return $this->belongsTo(User::class, 'assigned_technician_id');
+	}
+
+	/**
+	 * Get the assigned CAD/CAM designer.
+	 */
+	public function assignedDesigner(): BelongsTo
+	{
+	    return $this->belongsTo(User::class, 'assigned_designer_id');
 	}
 
     /**
@@ -330,10 +339,11 @@ class DentalLabRequest extends Model
     /**
      * Scope to restrict visibility based on assignment.
      *
-     * Rules:
-     * - Admin-like users (super/master/admin/program_owner) can see all.
-     * - Dental technicians / CAD-CAM designers can see only requests assigned to them.
-     * - All other roles can see only unassigned requests.
+	 * Rules:
+	 * - Admin-like users (super/master/admin/program_owner) can see all.
+	 * - Dental technicians can see only requests assigned to them (assigned_technician_id).
+	 * - CAD/CAM designers can see only requests assigned to them (assigned_designer_id).
+	 * - All other roles can see only unassigned requests (both assignment fields are null).
      */
     public function scopeVisibleTo($query, User $user)
     {
@@ -342,12 +352,18 @@ class DentalLabRequest extends Model
             return $query;
         }
 
-        // Assigned technicians see only their assigned requests.
-        if (in_array($user->role, ['dental_technician', 'cad_cam_designer'])) {
-            return $query->where('assigned_technician_id', $user->id);
-        }
+	    // Assigned technicians see only their assigned requests.
+	    if ($user->role === 'dental_technician') {
+	        return $query->where('assigned_technician_id', $user->id);
+	    }
 
-        // Everyone else cannot see assigned requests.
-        return $query->whereNull('assigned_technician_id');
+	    // Assigned designers see only their assigned requests.
+	    if ($user->role === 'cad_cam_designer') {
+	        return $query->where('assigned_designer_id', $user->id);
+	    }
+
+	    // Everyone else cannot see assigned requests.
+	    return $query->whereNull('assigned_technician_id')
+	                 ->whereNull('assigned_designer_id');
     }
 }
