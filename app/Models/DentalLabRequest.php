@@ -21,6 +21,7 @@ class DentalLabRequest extends Model
         'work_type',
         'tooth_number',
         'tooth_numbers',
+	    'quantity',
         'shade',
         'material',
         'specifications',
@@ -46,6 +47,7 @@ class DentalLabRequest extends Model
 
     protected $casts = [
         'tooth_numbers' => 'array',
+	    'quantity' => 'integer',
         'requested_date' => 'date',
         'due_date' => 'date',
         'received_date' => 'date',

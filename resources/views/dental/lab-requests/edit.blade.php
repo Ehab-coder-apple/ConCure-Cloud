@@ -118,9 +118,9 @@
                             </div>
                         </div>
 
-                        <!-- Work Details -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+	                        <!-- Work Details -->
+	                        <div class="row mb-3">
+	                            <div class="col-md-4">
                                 <label for="work_type" class="form-label">{{ __('Work Type') }} <span class="text-danger">*</span></label>
                                 <select class="form-select @error('work_type') is-invalid @enderror" id="work_type" name="work_type" required>
                                     <option value="">{{ __('Select Work Type') }}</option>
@@ -134,7 +134,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-6">
+	                            <div class="col-md-4">
                                 <label for="tooth_number" class="form-label">{{ __('Tooth Number(s)') }}</label>
                                 <input type="text" class="form-control @error('tooth_number') is-invalid @enderror" 
                                        id="tooth_number" name="tooth_number" value="{{ old('tooth_number', $labRequest->tooth_number) }}"
@@ -143,11 +143,21 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+	                            <div class="col-md-4">
+	                                <label for="quantity" class="form-label">{{ __('Total Quantity') }}</label>
+	                                <input type="number" class="form-control @error('quantity') is-invalid @enderror"
+	                                       id="quantity" name="quantity" value="{{ old('quantity', $labRequest->quantity) }}"
+	                                       min="1" step="1" placeholder="{{ __('e.g., 2') }}">
+	                                @error('quantity')
+	                                    <div class="invalid-feedback">{{ $message }}</div>
+	                                @enderror
+	                                <small class="text-muted">{{ __('Optional') }}</small>
+	                            </div>
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="shade" class="form-label">{{ __('Shade') }}</label>
+	                        <div class="row mb-3">
+	                            <div class="col-md-6">
+	                                <label for="shade" class="form-label">{{ __('Color') }}</label>
                                 <input type="text" class="form-control @error('shade') is-invalid @enderror" 
                                        id="shade" name="shade" value="{{ old('shade', $labRequest->shade) }}"
                                        placeholder="{{ __('e.g., A2, B1') }}">
