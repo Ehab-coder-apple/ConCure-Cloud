@@ -179,6 +179,20 @@
                             <td class="font-weight-bold">Name:</td>
                             <td>{{ $clinic->name }}</td>
                         </tr>
+	                        <tr>
+	                            <td class="font-weight-bold">Clinic Type:</td>
+	                            <td>
+	                                @if($clinic->is_demo)
+	                                    <span class="badge bg-secondary">Demo</span>
+	                                @else
+	                                    <span class="badge bg-primary">Tenant</span>
+	                                @endif
+	                            </td>
+	                        </tr>
+	                        <tr>
+	                            <td class="font-weight-bold">Speciality:</td>
+	                            <td>{{ $clinic->speciality ?? 'Not provided' }}</td>
+	                        </tr>
                         <tr>
                             <td class="font-weight-bold">Email:</td>
                             <td>{{ $clinic->email ?? 'Not provided' }}</td>
@@ -189,7 +203,16 @@
                         </tr>
                         <tr>
                             <td class="font-weight-bold">Address:</td>
-                            <td>{{ $clinic->address ?? 'Not provided' }}</td>
+	                            <td>
+	                                {{ $clinic->formatted_address ?? ($clinic->address ?? 'Not provided') }}
+	                                @if($clinic->city || $clinic->area || $clinic->street)
+	                                    <div class="text-muted small mt-1">
+	                                        <div><strong>City:</strong> {{ $clinic->city ?? '-' }}</div>
+	                                        <div><strong>Area:</strong> {{ $clinic->area ?? '-' }}</div>
+	                                        <div><strong>Street:</strong> {{ $clinic->street ?? '-' }}</div>
+	                                    </div>
+	                                @endif
+	                            </td>
                         </tr>
                         <tr>
                             <td class="font-weight-bold">Max Users:</td>

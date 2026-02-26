@@ -28,40 +28,69 @@
     <!-- Filters -->
     <div class="card mb-4">
         <div class="card-body">
-            <form method="GET" action="{{ route('master.clinics.index') }}">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label for="search" class="form-label">Search</label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="search" 
-                               name="search" 
-                               value="{{ request('search') }}" 
-                               placeholder="Search by name, email, or phone">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="status" class="form-label">Status</label>
-                        <select class="form-select" id="status" name="status">
-                            <option value="">All Statuses</option>
-                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">&nbsp;</label>
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-outline-primary">
-                                <i class="fas fa-search me-1"></i>
-                                Filter
-                            </button>
-                            <a href="{{ route('master.clinics.index') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-times me-1"></i>
-                                Clear
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </form>
+	            <form method="GET" action="{{ route('master.clinics.index') }}">
+	                <div class="row g-3">
+	                    <div class="col-md-4">
+	                        <label for="search" class="form-label">Search</label>
+	                        <input type="text" 
+	                               class="form-control" 
+	                               id="search" 
+	                               name="search" 
+	                               value="{{ request('search') }}" 
+	                               placeholder="Search by name, email, or phone">
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="status" class="form-label">Status</label>
+	                        <select class="form-select" id="status" name="status">
+	                            <option value="">All Statuses</option>
+	                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+	                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+	                        </select>
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="clinic_type" class="form-label">Clinic Type</label>
+	                        <select class="form-select" id="clinic_type" name="clinic_type">
+	                            <option value="">All Clinics</option>
+	                            <option value="tenant" {{ request('clinic_type') === 'tenant' ? 'selected' : '' }}>Tenant Clinics Only</option>
+	                            <option value="demo" {{ request('clinic_type') === 'demo' ? 'selected' : '' }}>Demo Clinics Only</option>
+	                        </select>
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="speciality" class="form-label">Speciality</label>
+	                        <select class="form-select" id="speciality" name="speciality">
+	                            <option value="">All Specialities</option>
+	                            @foreach(($specialities ?? []) as $sp)
+	                                <option value="{{ $sp }}" {{ request('speciality') === $sp ? 'selected' : '' }}>{{ $sp }}</option>
+	                            @endforeach
+	                        </select>
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="city" class="form-label">City</label>
+	                        <input type="text" class="form-control" id="city" name="city" value="{{ request('city') }}" placeholder="City">
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="area" class="form-label">Area</label>
+	                        <input type="text" class="form-control" id="area" name="area" value="{{ request('area') }}" placeholder="Area">
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="street" class="form-label">Street</label>
+	                        <input type="text" class="form-control" id="street" name="street" value="{{ request('street') }}" placeholder="Street">
+	                    </div>
+	                    <div class="col-md-4">
+	                        <label class="form-label">&nbsp;</label>
+	                        <div class="d-flex gap-2">
+	                            <button type="submit" class="btn btn-outline-primary">
+	                                <i class="fas fa-search me-1"></i>
+	                                Filter
+	                            </button>
+	                            <a href="{{ route('master.clinics.index') }}" class="btn btn-outline-secondary">
+	                                <i class="fas fa-times me-1"></i>
+	                                Clear
+	                            </a>
+	                        </div>
+	                    </div>
+	                </div>
+	            </form>
         </div>
     </div>
 
@@ -77,14 +106,16 @@
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
-                            <tr>
-                                <th>Clinic</th>
-                                <th>Contact</th>
-                                <th>Users</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                                <th>Actions</th>
-                            </tr>
+	                            <tr>
+	                                <th>Clinic</th>
+	                                <th>Speciality</th>
+	                                <th>Contact</th>
+	                                <th>Address</th>
+	                                <th>Users</th>
+	                                <th>Status</th>
+	                                <th>Created</th>
+	                                <th>Actions</th>
+	                            </tr>
                         </thead>
                         <tbody>
                             @foreach($clinics as $clinic)
@@ -105,6 +136,9 @@
                                             </div>
                                         </div>
                                     </td>
+	                                    <td>
+	                                        {{ $clinic->speciality ?? '-' }}
+	                                    </td>
                                     <td>
                                         <div>
                                             @if($clinic->email)
@@ -115,6 +149,11 @@
                                             @endif
                                         </div>
                                     </td>
+	                                    <td>
+	                                        <div class="text-muted small">
+	                                            {{ $clinic->formatted_address ?? 'Not provided' }}
+	                                        </div>
+	                                    </td>
                                     <td>
                                         <div class="text-center">
                                             <div class="font-weight-bold">{{ $clinic->users_count ?? $clinic->users->count() }}</div>
@@ -193,14 +232,14 @@
                 <div class="text-center py-5">
                     <i class="fas fa-hospital fa-3x text-muted mb-3"></i>
                     <h5 class="text-muted">No clinics found</h5>
-                    <p class="text-muted">
-                        @if(request()->hasAny(['search', 'status']))
+	                    <p class="text-muted">
+	                        @if(request()->hasAny(['search', 'status', 'clinic_type', 'speciality', 'city', 'area', 'street']))
                             No clinics match your current filters.
                         @else
                             No clinics have been registered yet.
                         @endif
                     </p>
-                    @if(!request()->hasAny(['search', 'status']))
+	                    @if(!request()->hasAny(['search', 'status', 'clinic_type', 'speciality', 'city', 'area', 'street']))
                         <a href="{{ route('master.clinics.create') }}" class="btn btn-primary">
                             <i class="fas fa-plus me-2"></i>
                             Add First Clinic

@@ -100,6 +100,21 @@
                                 <div class="form-text">Maximum number of users allowed for this clinic</div>
                             </div>
                         </div>
+
+	                        <div class="row">
+	                            <div class="col-md-6 mb-3">
+	                                <label for="speciality" class="form-label">Speciality</label>
+	                                <select class="form-select @error('speciality') is-invalid @enderror" id="speciality" name="speciality">
+	                                    <option value="">Select speciality</option>
+	                                    @foreach(($specialities ?? []) as $sp)
+	                                        <option value="{{ $sp }}" {{ old('speciality', $clinic->speciality) === $sp ? 'selected' : '' }}>{{ $sp }}</option>
+	                                    @endforeach
+	                                </select>
+	                                @error('speciality')
+	                                    <div class="invalid-feedback">{{ $message }}</div>
+	                                @enderror
+	                            </div>
+	                        </div>
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label class="form-label d-block">Clinic Type</label>
@@ -119,17 +134,32 @@
                         </div>
 
 
-                        <div class="mb-4">
-                            <label for="address" class="form-label">Address</label>
-                            <textarea class="form-control @error('address') is-invalid @enderror"
-                                      id="address"
-                                      name="address"
-                                      rows="3"
-                                      placeholder="Enter clinic address">{{ old('address', $clinic->address) }}</textarea>
-                            @error('address')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+	                        <div class="mb-2 text-muted small">
+	                            Current Address: {{ $clinic->formatted_address ?? ($clinic->address ?? 'Not provided') }}
+	                        </div>
+	                        <div class="row">
+	                            <div class="col-md-4 mb-4">
+	                                <label for="city" class="form-label">City</label>
+	                                <input type="text" class="form-control @error('city') is-invalid @enderror" id="city" name="city" value="{{ old('city', $clinic->city) }}" placeholder="City">
+	                                @error('city')
+	                                    <div class="invalid-feedback">{{ $message }}</div>
+	                                @enderror
+	                            </div>
+	                            <div class="col-md-4 mb-4">
+	                                <label for="area" class="form-label">Area</label>
+	                                <input type="text" class="form-control @error('area') is-invalid @enderror" id="area" name="area" value="{{ old('area', $clinic->area) }}" placeholder="Area">
+	                                @error('area')
+	                                    <div class="invalid-feedback">{{ $message }}</div>
+	                                @enderror
+	                            </div>
+	                            <div class="col-md-4 mb-4">
+	                                <label for="street" class="form-label">Street</label>
+	                                <input type="text" class="form-control @error('street') is-invalid @enderror" id="street" name="street" value="{{ old('street', $clinic->street) }}" placeholder="Street">
+	                                @error('street')
+	                                    <div class="invalid-feedback">{{ $message }}</div>
+	                                @enderror
+	                            </div>
+	                        </div>
 
                         <!-- Billing & Fees -->
                         <div class="card mb-4" id="billingCard">
@@ -311,6 +341,15 @@
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-warning">
                                 <i class="fas fa-key me-2"></i>
+                                Reset Admin Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @push('scripts')
 <script>
@@ -332,15 +371,5 @@
     });
 </script>
 @endpush
-
-                                Reset Admin Password
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 

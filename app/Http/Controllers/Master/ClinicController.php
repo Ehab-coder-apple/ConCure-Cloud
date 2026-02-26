@@ -14,10 +14,39 @@ use Illuminate\Support\Facades\Schema;
 class ClinicController extends Controller
 {
     /**
+     * Common clinic specialties for Master forms/filters.
+     */
+    protected function specialityOptions(): array
+    {
+        return [
+            'General Medicine',
+            'Dental',
+            'Pediatrics',
+            'Dermatology',
+            'Cardiology',
+            'Orthopedics',
+            'ENT',
+            'Ophthalmology',
+            'Gynecology',
+            'Psychiatry',
+            'Radiology',
+            'Laboratory',
+            'Pharmacy',
+            'Other',
+        ];
+    }
+
+    /**
      * Display a listing of clinics.
      */
     public function index(Request $request)
     {
+        $hasIsDemo = Schema::hasColumn('clinics', 'is_demo');
+        $hasSpeciality = Schema::hasColumn('clinics', 'speciality');
+        $hasCity = Schema::hasColumn('clinics', 'city');
+        $hasArea = Schema::hasColumn('clinics', 'area');
+        $hasStreet = Schema::hasColumn('clinics', 'street');
+
         $query = Clinic::withCount('users')
             ->with(['users' => function($q) {
                 $q->where('role', 'admin');
@@ -42,9 +71,64 @@ class ClinicController extends Controller
             }
         }
 
-        $clinics = $query->latest()->paginate(15);
+        // Clinic type filter (Tenant vs Demo)
+        if ($hasIsDemo && $request->filled('clinic_type')) {
+            if ($request->clinic_type === 'tenant') {
+                $query->where('is_demo', false);
+            } elseif ($request->clinic_type === 'demo') {
+                $query->where('is_demo', true);
+            }
+        }
 
-        return view('master.clinics.index', compact('clinics'));
+        // Speciality filter
+        if ($hasSpeciality && $request->filled('speciality')) {
+            $query->where('speciality', $request->speciality);
+        }
+
+        // Location filters (fallback to legacy address for older records)
+        if ($request->filled('city')) {
+            $city = $request->city;
+	    	    $query->where(function ($q) use ($city, $hasCity) {
+	    	        if ($hasCity) {
+	    	            $q->where('city', 'like', "%{$city}%")
+	    	              ->orWhere('address', 'like', "%{$city}%");
+	    	            return;
+	    	        }
+
+	    	        // If column doesn't exist yet (deployment window), filter using legacy address only.
+	    	        $q->where('address', 'like', "%{$city}%");
+	    	    });
+        }
+        if ($request->filled('area')) {
+            $area = $request->area;
+	    	    $query->where(function ($q) use ($area, $hasArea) {
+	    	        if ($hasArea) {
+	    	            $q->where('area', 'like', "%{$area}%")
+	    	              ->orWhere('address', 'like', "%{$area}%");
+	    	            return;
+	    	        }
+
+	    	        $q->where('address', 'like', "%{$area}%");
+	    	    });
+        }
+        if ($request->filled('street')) {
+            $street = $request->street;
+	    	    $query->where(function ($q) use ($street, $hasStreet) {
+	    	        if ($hasStreet) {
+	    	            $q->where('street', 'like', "%{$street}%")
+	    	              ->orWhere('address', 'like', "%{$street}%");
+	    	            return;
+	    	        }
+
+	    	        $q->where('address', 'like', "%{$street}%");
+	    	    });
+        }
+
+        $clinics = $query->latest()->paginate(15)->withQueryString();
+
+        $specialities = $this->specialityOptions();
+
+        return view('master.clinics.index', compact('clinics', 'specialities'));
     }
 
     /**
@@ -52,7 +136,8 @@ class ClinicController extends Controller
      */
     public function create()
     {
-        return view('master.clinics.create');
+        $specialities = $this->specialityOptions();
+        return view('master.clinics.create', compact('specialities'));
     }
 
     /**
@@ -65,6 +150,10 @@ class ClinicController extends Controller
             'email' => 'required|email|unique:clinics,email',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
+            'speciality' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'area' => 'nullable|string|max:255',
+            'street' => 'nullable|string|max:255',
             'max_users' => 'required|integer|min:1|max:1000',
             'clinic_type' => 'nullable|in:tenant,demo',
             // Billing fields
@@ -82,16 +171,34 @@ class ClinicController extends Controller
 
         DB::beginTransaction();
         try {
+            $addressParts = collect([
+                $request->input('street'),
+                $request->input('area'),
+                $request->input('city'),
+            ])
+                ->map(fn ($v) => is_string($v) ? trim($v) : $v)
+                ->filter(fn ($v) => !empty($v));
+
+            $computedAddress = $addressParts->implode(', ');
+
             // Create clinic
             $clinicData = [
                 'name' => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
-                'address' => $request->address,
+                // keep legacy address populated for backward compatibility
+                'address' => $request->filled('address') ? $request->address : ($computedAddress !== '' ? $computedAddress : null),
                 'max_users' => $request->max_users,
                 'is_active' => true,
                 'activated_at' => now(),
             ];
+
+            // Optional structured fields (guarded for safe deployments)
+            if (Schema::hasColumn('clinics', 'speciality')) { $clinicData['speciality'] = $request->input('speciality'); }
+            if (Schema::hasColumn('clinics', 'city')) { $clinicData['city'] = $request->input('city'); }
+            if (Schema::hasColumn('clinics', 'area')) { $clinicData['area'] = $request->input('area'); }
+            if (Schema::hasColumn('clinics', 'street')) { $clinicData['street'] = $request->input('street'); }
+
             if (Schema::hasColumn('clinics', 'is_demo')) {
                 $clinicData['is_demo'] = $request->input('clinic_type') === 'demo';
             }
@@ -165,7 +272,9 @@ class ClinicController extends Controller
         // Get the clinic admin user
         $adminUser = $clinic->users()->where('role', 'admin')->first();
 
-        return view('master.clinics.edit', compact('clinic', 'adminUser'));
+        $specialities = $this->specialityOptions();
+
+        return view('master.clinics.edit', compact('clinic', 'adminUser', 'specialities'));
     }
 
     /**
@@ -182,6 +291,10 @@ class ClinicController extends Controller
             'email' => ['required', 'email', Rule::unique('clinics')->ignore($clinic->id)],
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
+            'speciality' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'area' => 'nullable|string|max:255',
+            'street' => 'nullable|string|max:255',
             'max_users' => 'required|integer|min:1|max:1000',
             'clinic_type' => 'nullable|in:tenant,demo',
             // Billing fields
@@ -215,14 +328,32 @@ class ClinicController extends Controller
 
         DB::beginTransaction();
         try {
+            $addressParts = collect([
+                $request->input('street'),
+                $request->input('area'),
+                $request->input('city'),
+            ])
+                ->map(fn ($v) => is_string($v) ? trim($v) : $v)
+                ->filter(fn ($v) => !empty($v));
+
+            $computedAddress = $addressParts->implode(', ');
+
             // Update clinic information
             $updateData = [
                 'name' => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
-                'address' => $request->address,
+                // if address textarea exists (older UI), prefer it; otherwise compute from structured fields
+                'address' => $request->filled('address') ? $request->address : ($computedAddress !== '' ? $computedAddress : $clinic->address),
                 'max_users' => $request->max_users,
             ];
+
+            // Optional structured fields (guarded for safe deployments)
+            if (Schema::hasColumn('clinics', 'speciality')) { $updateData['speciality'] = $request->input('speciality'); }
+            if (Schema::hasColumn('clinics', 'city')) { $updateData['city'] = $request->input('city'); }
+            if (Schema::hasColumn('clinics', 'area')) { $updateData['area'] = $request->input('area'); }
+            if (Schema::hasColumn('clinics', 'street')) { $updateData['street'] = $request->input('street'); }
+
             if (Schema::hasColumn('clinics', 'is_demo')) {
                 $updateData['is_demo'] = $request->input('clinic_type') === 'demo';
             }

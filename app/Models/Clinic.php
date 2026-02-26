@@ -16,6 +16,10 @@ class Clinic extends Model
         'email',
         'phone',
         'address',
+        'speciality',
+        'city',
+        'area',
+        'street',
         'logo',
         'settings',
         'is_active',
@@ -217,6 +221,27 @@ class Clinic extends Model
         $settings[$key] = $value;
         $this->settings = $settings;
         $this->save();
+    }
+
+    /**
+     * Display-friendly address using the structured fields when present.
+     * Falls back to legacy `address`.
+     */
+    public function getFormattedAddressAttribute(): ?string
+    {
+        $parts = collect([
+            $this->street,
+            $this->area,
+            $this->city,
+        ])
+            ->map(fn ($v) => is_string($v) ? trim($v) : $v)
+            ->filter(fn ($v) => !empty($v));
+
+        if ($parts->isNotEmpty()) {
+            return $parts->implode(', ');
+        }
+
+        return $this->address;
     }
 
     /**
