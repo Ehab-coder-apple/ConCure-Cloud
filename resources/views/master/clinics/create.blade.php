@@ -103,12 +103,12 @@
 	                        <div class="row">
 	                            <div class="col-md-6 mb-3">
 	                                <label for="speciality" class="form-label">Speciality</label>
-	                                <select class="form-select @error('speciality') is-invalid @enderror" id="speciality" name="speciality">
-	                                    <option value="">Select speciality</option>
+	                                <input type="text" list="speciality-list" class="form-control @error('speciality') is-invalid @enderror" id="speciality" name="speciality" value="{{ old('speciality') }}" placeholder="Select or type a speciality">
+	                                <datalist id="speciality-list">
 	                                    @foreach(($specialities ?? []) as $sp)
-	                                        <option value="{{ $sp }}" {{ old('speciality') === $sp ? 'selected' : '' }}>{{ $sp }}</option>
+	                                        <option value="{{ $sp }}">
 	                                    @endforeach
-	                                </select>
+	                                </datalist>
 	                                @error('speciality')
 	                                    <div class="invalid-feedback">{{ $message }}</div>
 	                                @enderror

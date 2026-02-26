@@ -57,12 +57,12 @@
 	                    </div>
 	                    <div class="col-md-2">
 	                        <label for="speciality" class="form-label">Speciality</label>
-	                        <select class="form-select" id="speciality" name="speciality">
-	                            <option value="">All Specialities</option>
+	                        <input type="text" list="speciality-list" class="form-control" id="speciality" name="speciality" value="{{ request('speciality') }}" placeholder="All Specialities">
+	                        <datalist id="speciality-list">
 	                            @foreach(($specialities ?? []) as $sp)
-	                                <option value="{{ $sp }}" {{ request('speciality') === $sp ? 'selected' : '' }}>{{ $sp }}</option>
+	                                <option value="{{ $sp }}">
 	                            @endforeach
-	                        </select>
+	                        </datalist>
 	                    </div>
 	                    <div class="col-md-2">
 	                        <label for="city" class="form-label">City</label>
