@@ -33,24 +33,42 @@
                     <form action="{{ route('dental.lab-requests.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
-                        <!-- Patient & Treatment Selection -->
+                        <!-- Patient & Treatment Selection (Phase 35) -->
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="patient_search" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
-                                <div class="position-relative">
-                                    <input type="text" class="form-control @error('patient_id') is-invalid @enderror"
-                                           id="patient_search" name="patient_search"
-                                           placeholder="{{ __('Search by name, ID, phone, email...') }}"
-                                           autocomplete="off">
-                                    <input type="hidden" id="patient_id" name="patient_id" required>
-                                    <div id="patient_results" class="position-absolute w-100 bg-white border rounded mt-1"
-                                         style="display: none; max-height: 300px; overflow-y: auto; z-index: 1000; top: 100%;">
+                                <label class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
+                                <div class="mb-2">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="patient_type" id="patient_type_registered" value="registered" {{ old('patient_type', old('external_patient_name') ? 'external' : 'registered') == 'registered' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="patient_type_registered">{{ __('Registered Patient') }}</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="patient_type" id="patient_type_external" value="external" {{ old('patient_type') == 'external' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="patient_type_external">{{ __('External Patient') }}</label>
                                     </div>
                                 </div>
-                                @error('patient_id')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">{{ __('Type to search for a patient') }}</small>
+                                <div id="registered_patient_wrapper">
+                                    <div class="position-relative">
+                                        <input type="text" class="form-control @error('patient_id') is-invalid @enderror"
+                                               id="patient_search" name="patient_search"
+                                               placeholder="{{ __('Search by name, ID, phone, email...') }}"
+                                               autocomplete="off">
+                                        <input type="hidden" id="patient_id" name="patient_id">
+                                        <div id="patient_results" class="position-absolute w-100 bg-white border rounded mt-1"
+                                             style="display: none; max-height: 300px; overflow-y: auto; z-index: 1000; top: 100%;">
+                                        </div>
+                                    </div>
+                                    @error('patient_id')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                    <small class="text-muted">{{ __('Type to search for a patient') }}</small>
+                                </div>
+                                <div id="external_patient_wrapper" style="display: none;">
+                                    <input type="text" class="form-control @error('external_patient_name') is-invalid @enderror" id="external_patient_name" name="external_patient_name" value="{{ old('external_patient_name') }}" placeholder="{{ __('Enter external patient name') }}">
+                                    @error('external_patient_name')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <label for="dental_treatment_id" class="form-label">{{ __('Dental Treatment') }}</label>
@@ -328,7 +346,7 @@
                 <div class="card-body">
                     <p class="mb-2"><strong>{{ __('Required Fields:') }}</strong></p>
                     <ul class="small mb-3">
-                        <li>{{ __('Patient') }}</li>
+                        <li>{{ __('Patient (registered or external)') }}</li>
                         <li>{{ __('Requesting Doctor (clinic or external)') }}</li>
                         <li>{{ __('Work Type') }}</li>
                         <li>{{ __('Requested Date') }}</li>
@@ -451,6 +469,30 @@ $(document).ready(function() {
             patientResults.style.display = 'block';
         }
     });
+
+    // Patient type toggle (registered vs external)
+    const registeredPatientWrapper = document.getElementById('registered_patient_wrapper');
+    const externalPatientWrapper = document.getElementById('external_patient_wrapper');
+    const patientTypeRadios = document.querySelectorAll('input[name="patient_type"]');
+    const externalPatientInput = document.getElementById('external_patient_name');
+
+    function togglePatientType() {
+        const selected = document.querySelector('input[name="patient_type"]:checked').value;
+        if (selected === 'registered') {
+            registeredPatientWrapper.style.display = '';
+            externalPatientWrapper.style.display = 'none';
+            externalPatientInput.value = '';
+        } else {
+            registeredPatientWrapper.style.display = 'none';
+            externalPatientWrapper.style.display = '';
+            patientIdInput.value = '';
+            patientSearch.value = '';
+        }
+    }
+
+    patientTypeRadios.forEach(radio => radio.addEventListener('change', togglePatientType));
+    togglePatientType(); // Initialize on page load
+
     // Doctor type toggle (clinic vs external)
     const clinicDoctorWrapper = document.getElementById('clinic_doctor_wrapper');
     const externalDoctorWrapper = document.getElementById('external_doctor_wrapper');

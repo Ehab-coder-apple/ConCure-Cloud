@@ -206,7 +206,8 @@ class DentalLabRequestController extends Controller
         }
 
 	        $validated = $request->validate([
-            'patient_id' => 'required|exists:patients,id',
+            'patient_id' => 'nullable|exists:patients,id', // Phase 35
+            'external_patient_name' => 'nullable|string|max:255',
             'dental_treatment_id' => 'nullable|exists:dental_treatments,id',
             'doctor_id' => 'nullable|exists:users,id',
             'external_doctor_name' => 'nullable|string|max:255',
@@ -253,6 +254,20 @@ class DentalLabRequestController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        // Require at least one: patient_id or external_patient_name
+        if (empty($validated['patient_id']) && empty($validated['external_patient_name'])) {
+            return back()->withInput()->withErrors([
+                'patient_id' => __('Please select a registered patient or enter an external patient name.'),
+            ]);
+        }
+
+        // Clear the other patient field when one is chosen
+        if (!empty($validated['patient_id'])) {
+            $validated['external_patient_name'] = null;
+        } else {
+            $validated['patient_id'] = null;
+        }
+
         // Require at least one: doctor_id or external_doctor_name
         if (empty($validated['doctor_id']) && empty($validated['external_doctor_name'])) {
             return back()->withInput()->withErrors([
@@ -260,7 +275,7 @@ class DentalLabRequestController extends Controller
             ]);
         }
 
-        // Clear the other field when one is chosen
+        // Clear the other doctor field when one is chosen
         if (!empty($validated['doctor_id'])) {
             $validated['external_doctor_name'] = null;
         } else {
@@ -426,7 +441,8 @@ class DentalLabRequestController extends Controller
         }
 
 	        $validated = $request->validate([
-            'patient_id' => 'required|exists:patients,id',
+            'patient_id' => 'nullable|exists:patients,id',
+            'external_patient_name' => 'nullable|string|max:255',
             'dental_treatment_id' => 'nullable|exists:dental_treatments,id',
             'doctor_id' => 'nullable|exists:users,id',
             'external_doctor_name' => 'nullable|string|max:255',
@@ -473,6 +489,20 @@ class DentalLabRequestController extends Controller
             'quality_notes' => 'nullable|string',
         ]);
 
+        // Require at least one: patient_id or external_patient_name
+        if (empty($validated['patient_id']) && empty($validated['external_patient_name'])) {
+            return back()->withInput()->withErrors([
+                'patient_id' => __('Please select a registered patient or enter an external patient name.'),
+            ]);
+        }
+
+        // Clear the other patient field when one is chosen
+        if (!empty($validated['patient_id'])) {
+            $validated['external_patient_name'] = null;
+        } else {
+            $validated['patient_id'] = null;
+        }
+
         // Require at least one: doctor_id or external_doctor_name
         if (empty($validated['doctor_id']) && empty($validated['external_doctor_name'])) {
             return back()->withInput()->withErrors([
@@ -480,7 +510,7 @@ class DentalLabRequestController extends Controller
             ]);
         }
 
-        // Clear the other field when one is chosen
+        // Clear the other doctor field when one is chosen
         if (!empty($validated['doctor_id'])) {
             $validated['external_doctor_name'] = null;
         } else {

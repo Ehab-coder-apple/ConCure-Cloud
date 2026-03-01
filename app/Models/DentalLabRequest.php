@@ -13,6 +13,7 @@ class DentalLabRequest extends Model
     protected $fillable = [
         'request_number',
         'patient_id',
+        'external_patient_name', // external patient support
         'dental_treatment_id',
         'doctor_id',
         'external_doctor_name',

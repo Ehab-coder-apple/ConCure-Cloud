@@ -136,12 +136,20 @@
                                             <td>
                                                 <strong>{{ $request->request_number }}</strong>
                                             </td>
-                                            <td>
-                                                <a href="{{ route('patients.show', $request->patient) }}" class="text-decoration-none">
-                                                    {{ $request->patient->full_name }}
-                                                </a>
-                                                <br>
-                                                <small class="text-muted">{{ $request->patient->patient_id }}</small>
+                                            <td>{{-- Phase 35: external patient support --}}
+                                                @if($request->patient_id && $request->patient)
+                                                    <a href="{{ route('patients.show', $request->patient) }}" class="text-decoration-none">
+                                                        {{ $request->patient->full_name }}
+                                                    </a>
+                                                    <br>
+                                                    <small class="text-muted">{{ $request->patient->patient_id }}</small>
+                                                @elseif($request->external_patient_name)
+                                                    {{ $request->external_patient_name }}
+                                                    <br>
+                                                    <small class="badge bg-secondary">{{ __('External') }}</small>
+                                                @else
+                                                    <span class="text-muted">{{ __('N/A') }}</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <strong>{{ $request->work_type_display }}</strong>

@@ -49,18 +49,27 @@
                         <div class="col-md-6">
                             <p class="mb-2">
                                 <strong>{{ __('Patient') }}:</strong><br>
-                                <a href="{{ route('patients.show', $labRequest->patient) }}" class="text-decoration-none">
-                                    {{ $labRequest->patient->full_name }}
-                                </a>
-                                <br>
-                                <small class="text-muted">{{ $labRequest->patient->patient_id }}</small>
+                                @if($labRequest->patient_id && $labRequest->patient)
+                                    <a href="{{ route('patients.show', $labRequest->patient) }}" class="text-decoration-none">
+                                        {{ $labRequest->patient->full_name }}
+                                    </a>
+                                    <br>
+                                    <small class="text-muted">{{ $labRequest->patient->patient_id }}</small>
+                                @elseif($labRequest->external_patient_name)
+                                    {{ $labRequest->external_patient_name }}
+                                    <span class="badge bg-secondary ms-1">{{ __('External') }}</span>
+                                @else
+                                    <span class="text-muted">{{ __('N/A') }}</span>
+                                @endif
                             </p>
+                            @if($labRequest->patient_id && $labRequest->patient)
                             <p class="mb-2">
                                 <strong>{{ __('Age') }}:</strong> {{ $labRequest->patient->age }} {{ __('years') }}
                             </p>
                             <p class="mb-2">
                                 <strong>{{ __('Phone') }}:</strong> {{ $labRequest->patient->phone ?? '-' }}
                             </p>
+                            @endif
                         </div>
                         <div class="col-md-6">
                             <p class="mb-2">
