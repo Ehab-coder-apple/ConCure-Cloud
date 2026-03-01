@@ -116,9 +116,13 @@ class DentalLabRequestController extends Controller
             });
         }
 
-        // Filter by material
+        // Filter by material (predefined + custom)
         if ($request->filled('material')) {
-            $query->where('material', $request->material);
+            $materialFilter = $request->material;
+            $query->where(function ($q) use ($materialFilter) {
+                $q->where('material', $materialFilter)
+                  ->orWhere('custom_material', 'like', "%{$materialFilter}%");
+            });
         }
 
         // Filter by assigned person (technician + designer)
@@ -266,12 +270,14 @@ class DentalLabRequestController extends Controller
 	                }),
 	            ],
             'external_lab_id' => 'nullable|exists:external_labs,id',
-            'work_type' => 'required|in:crown,bridge,denture_full,denture_partial,implant_crown,implant_bridge,veneer,inlay_onlay,orthodontic_appliance,night_guard,sports_guard,temporary_crown,other',
+            'work_type' => 'nullable|in:crown,bridge,denture_full,denture_partial,implant_crown,implant_bridge,veneer,inlay_onlay,orthodontic_appliance,night_guard,sports_guard,temporary_crown,other',
+            'custom_work_type' => 'nullable|string|max:255',
             'tooth_number' => 'nullable|string',
             'tooth_numbers' => 'nullable|array',
 	            'quantity' => 'nullable|integer|min:1',
             'shade' => 'nullable|string|max:50',
             'material' => 'nullable|in:porcelain,zirconia,emax,metal,pfm,acrylic,composite,gold,other',
+            'custom_material' => 'nullable|string|max:255',
             'specifications' => 'nullable|string',
             'special_instructions' => 'nullable|string',
             'requested_date' => 'required|date',
@@ -310,6 +316,27 @@ class DentalLabRequestController extends Controller
             $validated['external_doctor_name'] = null;
         } else {
             $validated['doctor_id'] = null;
+        }
+
+        // Require at least one: work_type or custom_work_type
+        if (empty($validated['work_type']) && empty($validated['custom_work_type'])) {
+            return back()->withInput()->withErrors([
+                'work_type' => __('Please select a work type from the list or enter a custom work type.'),
+            ]);
+        }
+
+        // Clear the other work type field when one is chosen
+        if (!empty($validated['work_type'])) {
+            $validated['custom_work_type'] = null;
+        } else {
+            $validated['work_type'] = null;
+        }
+
+        // Clear the other material field when one is chosen
+        if (!empty($validated['material'])) {
+            $validated['custom_material'] = null;
+        } elseif (!empty($validated['custom_material'])) {
+            $validated['material'] = null;
         }
 
         try {
@@ -493,12 +520,14 @@ class DentalLabRequestController extends Controller
 	                }),
 	            ],
             'external_lab_id' => 'nullable|exists:external_labs,id',
-            'work_type' => 'required|in:crown,bridge,denture_full,denture_partial,implant_crown,implant_bridge,veneer,inlay_onlay,orthodontic_appliance,night_guard,sports_guard,temporary_crown,other',
+            'work_type' => 'nullable|in:crown,bridge,denture_full,denture_partial,implant_crown,implant_bridge,veneer,inlay_onlay,orthodontic_appliance,night_guard,sports_guard,temporary_crown,other',
+            'custom_work_type' => 'nullable|string|max:255',
             'tooth_number' => 'nullable|string',
             'tooth_numbers' => 'nullable|array',
 	            'quantity' => 'nullable|integer|min:1',
             'shade' => 'nullable|string|max:50',
             'material' => 'nullable|in:porcelain,zirconia,emax,metal,pfm,acrylic,composite,gold,other',
+            'custom_material' => 'nullable|string|max:255',
             'specifications' => 'nullable|string',
             'special_instructions' => 'nullable|string',
             'requested_date' => 'required|date',
@@ -545,6 +574,27 @@ class DentalLabRequestController extends Controller
             $validated['external_doctor_name'] = null;
         } else {
             $validated['doctor_id'] = null;
+        }
+
+        // Require at least one: work_type or custom_work_type
+        if (empty($validated['work_type']) && empty($validated['custom_work_type'])) {
+            return back()->withInput()->withErrors([
+                'work_type' => __('Please select a work type from the list or enter a custom work type.'),
+            ]);
+        }
+
+        // Clear the other work type field when one is chosen
+        if (!empty($validated['work_type'])) {
+            $validated['custom_work_type'] = null;
+        } else {
+            $validated['work_type'] = null;
+        }
+
+        // Clear the other material field when one is chosen
+        if (!empty($validated['material'])) {
+            $validated['custom_material'] = null;
+        } elseif (!empty($validated['custom_material'])) {
+            $validated['material'] = null;
         }
 
         try {

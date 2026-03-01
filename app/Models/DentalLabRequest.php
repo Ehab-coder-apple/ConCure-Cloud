@@ -22,11 +22,13 @@ class DentalLabRequest extends Model
         'clinic_id',
         'external_lab_id',
         'work_type',
+        'custom_work_type',
         'tooth_number',
         'tooth_numbers',
 	    'quantity',
         'shade',
         'material',
+        'custom_material',
         'specifications',
         'special_instructions',
         'requested_date',
@@ -225,6 +227,9 @@ class DentalLabRequest extends Model
      */
     public function getWorkTypeDisplayAttribute(): string
     {
+        if ($this->custom_work_type) {
+            return $this->custom_work_type;
+        }
         return self::WORK_TYPES[$this->work_type] ?? $this->work_type ?? '';
     }
 
@@ -233,6 +238,9 @@ class DentalLabRequest extends Model
      */
     public function getMaterialDisplayAttribute(): string
     {
+        if ($this->custom_material) {
+            return $this->custom_material;
+        }
         return self::MATERIALS[$this->material] ?? $this->material ?? '';
     }
 

@@ -110,6 +110,9 @@
                             <p class="mb-2">
                                 <strong>{{ __('Work Type') }}:</strong><br>
                                 <span class="fs-5">{{ $labRequest->work_type_display }}</span>
+                                @if($labRequest->custom_work_type)
+                                    <span class="badge bg-secondary">{{ __('Custom') }}</span>
+                                @endif
                             </p>
                         </div>
                         <div class="col-md-6">
@@ -128,7 +131,10 @@
                         </div>
                         <div class="col-md-6">
                             <p class="mb-2">
-                                <strong>{{ __('Material') }}:</strong> {{ $labRequest->material_display ?? '-' }}
+                                <strong>{{ __('Material') }}:</strong> {{ $labRequest->material_display ?: '-' }}
+                                @if($labRequest->custom_material)
+                                    <span class="badge bg-secondary">{{ __('Custom') }}</span>
+                                @endif
                             </p>
                         </div>
                     </div>

@@ -176,6 +176,9 @@
                                             </td>
                                             <td>
                                                 <strong>{{ $request->work_type_display }}</strong>
+                                                @if($request->custom_work_type)
+                                                    <span class="badge bg-secondary">{{ __('Custom') }}</span>
+                                                @endif
                                                 @if($request->tooth_number)
                                                     <br><small class="text-muted">Tooth #{{ $request->tooth_number }}</small>
                                                 @endif

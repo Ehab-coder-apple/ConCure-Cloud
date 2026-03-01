@@ -172,18 +172,36 @@
 	                        <!-- Work Details -->
 	                        <div class="row mb-3">
 	                            <div class="col-md-4">
-                                <label for="work_type" class="form-label">{{ __('Work Type') }} <span class="text-danger">*</span></label>
-                                <select class="form-select @error('work_type') is-invalid @enderror" id="work_type" name="work_type" required>
-                                    <option value="">{{ __('Select Work Type') }}</option>
-                                    @foreach(\App\Models\DentalLabRequest::WORK_TYPES as $key => $label)
-                                        <option value="{{ $key }}" {{ old('work_type', $labRequest->work_type) == $key ? 'selected' : '' }}>
-                                            {{ __($label) }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('work_type')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <label class="form-label">{{ __('Work Type') }} <span class="text-danger">*</span></label>
+                                <div class="mb-2">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="work_type_mode" id="work_type_mode_list" value="list" {{ old('work_type_mode', $labRequest->custom_work_type ? 'custom' : 'list') == 'list' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="work_type_mode_list">{{ __('From List') }}</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="work_type_mode" id="work_type_mode_custom" value="custom" {{ old('work_type_mode', $labRequest->custom_work_type ? 'custom' : 'list') == 'custom' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="work_type_mode_custom">{{ __('Custom') }}</label>
+                                    </div>
+                                </div>
+                                <div id="work_type_list_wrapper">
+                                    <select class="form-select @error('work_type') is-invalid @enderror" id="work_type" name="work_type">
+                                        <option value="">{{ __('Select Work Type') }}</option>
+                                        @foreach(\App\Models\DentalLabRequest::WORK_TYPES as $key => $label)
+                                            <option value="{{ $key }}" {{ old('work_type', $labRequest->work_type) == $key ? 'selected' : '' }}>
+                                                {{ __($label) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('work_type')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div id="work_type_custom_wrapper" style="display: none;">
+                                    <input type="text" class="form-control @error('custom_work_type') is-invalid @enderror" id="custom_work_type" name="custom_work_type" value="{{ old('custom_work_type', $labRequest->custom_work_type) }}" placeholder="{{ __('Enter custom work type') }}">
+                                    @error('custom_work_type')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             </div>
 	                            <div class="col-md-4">
                                 <label for="tooth_number" class="form-label">{{ __('Tooth Number(s)') }}</label>
@@ -217,18 +235,36 @@
                                 @enderror
                             </div>
                             <div class="col-md-6">
-                                <label for="material" class="form-label">{{ __('Material') }}</label>
-                                <select class="form-select @error('material') is-invalid @enderror" id="material" name="material">
-                                    <option value="">{{ __('Select Material') }}</option>
-                                    @foreach(\App\Models\DentalLabRequest::MATERIALS as $key => $label)
-                                        <option value="{{ $key }}" {{ old('material', $labRequest->material) == $key ? 'selected' : '' }}>
-                                            {{ __($label) }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('material')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <label class="form-label">{{ __('Material') }}</label>
+                                <div class="mb-2">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="material_mode" id="material_mode_list" value="list" {{ old('material_mode', $labRequest->custom_material ? 'custom' : 'list') == 'list' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="material_mode_list">{{ __('From List') }}</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="material_mode" id="material_mode_custom" value="custom" {{ old('material_mode', $labRequest->custom_material ? 'custom' : 'list') == 'custom' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="material_mode_custom">{{ __('Custom') }}</label>
+                                    </div>
+                                </div>
+                                <div id="material_list_wrapper">
+                                    <select class="form-select @error('material') is-invalid @enderror" id="material" name="material">
+                                        <option value="">{{ __('Select Material') }}</option>
+                                        @foreach(\App\Models\DentalLabRequest::MATERIALS as $key => $label)
+                                            <option value="{{ $key }}" {{ old('material', $labRequest->material) == $key ? 'selected' : '' }}>
+                                                {{ __($label) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('material')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div id="material_custom_wrapper" style="display: none;">
+                                    <input type="text" class="form-control @error('custom_material') is-invalid @enderror" id="custom_material" name="custom_material" value="{{ old('custom_material', $labRequest->custom_material) }}" placeholder="{{ __('Enter custom material') }}">
+                                    @error('custom_material')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             </div>
                         </div>
 
@@ -675,6 +711,52 @@ $(document).ready(function() {
 
     doctorTypeRadios.forEach(radio => radio.addEventListener('change', toggleDoctorType));
     toggleDoctorType(); // Initialize on page load
+
+    // Work type mode toggle (list vs custom)
+    const workTypeListWrapper = document.getElementById('work_type_list_wrapper');
+    const workTypeCustomWrapper = document.getElementById('work_type_custom_wrapper');
+    const workTypeModeRadios = document.querySelectorAll('input[name="work_type_mode"]');
+    const workTypeSelect = document.getElementById('work_type');
+    const customWorkTypeInput = document.getElementById('custom_work_type');
+
+    function toggleWorkTypeMode() {
+        const selected = document.querySelector('input[name="work_type_mode"]:checked').value;
+        if (selected === 'list') {
+            workTypeListWrapper.style.display = '';
+            workTypeCustomWrapper.style.display = 'none';
+            customWorkTypeInput.value = '';
+        } else {
+            workTypeListWrapper.style.display = 'none';
+            workTypeCustomWrapper.style.display = '';
+            workTypeSelect.value = '';
+        }
+    }
+
+    workTypeModeRadios.forEach(radio => radio.addEventListener('change', toggleWorkTypeMode));
+    toggleWorkTypeMode();
+
+    // Material mode toggle (list vs custom)
+    const materialListWrapper = document.getElementById('material_list_wrapper');
+    const materialCustomWrapper = document.getElementById('material_custom_wrapper');
+    const materialModeRadios = document.querySelectorAll('input[name="material_mode"]');
+    const materialSelect = document.getElementById('material');
+    const customMaterialInput = document.getElementById('custom_material');
+
+    function toggleMaterialMode() {
+        const selected = document.querySelector('input[name="material_mode"]:checked').value;
+        if (selected === 'list') {
+            materialListWrapper.style.display = '';
+            materialCustomWrapper.style.display = 'none';
+            customMaterialInput.value = '';
+        } else {
+            materialListWrapper.style.display = 'none';
+            materialCustomWrapper.style.display = '';
+            materialSelect.value = '';
+        }
+    }
+
+    materialModeRadios.forEach(radio => radio.addEventListener('change', toggleMaterialMode));
+    toggleMaterialMode();
 });
 </script>
 @endpush
