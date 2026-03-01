@@ -86,6 +86,29 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="col-md-3">
+                            <label for="doctor_name" class="form-label">{{ __('Doctor Name') }}</label>
+                            <input type="text" class="form-control" id="doctor_name" name="doctor_name"
+                                   value="{{ request('doctor_name') }}"
+                                   placeholder="{{ __('Search doctor...') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="material" class="form-label">{{ __('Material') }}</label>
+                            <select class="form-select" id="material" name="material">
+                                <option value="">{{ __('All Materials') }}</option>
+                                @foreach(\App\Models\DentalLabRequest::MATERIALS as $key => $label)
+                                    <option value="{{ $key }}" {{ request('material') == $key ? 'selected' : '' }}>
+                                        {{ __($label) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="assigned_person" class="form-label">{{ __('Assigned Person') }}</label>
+                            <input type="text" class="form-control" id="assigned_person" name="assigned_person"
+                                   value="{{ request('assigned_person') }}"
+                                   placeholder="{{ __('Search technician/designer...') }}">
+                        </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-filter me-1"></i>

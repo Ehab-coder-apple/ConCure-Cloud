@@ -105,6 +105,36 @@ class DentalLabRequestController extends Controller
             $query->search($request->search);
         }
 
+        // Filter by doctor name (internal + external)
+        if ($request->filled('doctor_name')) {
+            $doctorName = $request->doctor_name;
+            $query->where(function ($q) use ($doctorName) {
+                $q->whereHas('doctor', function ($q2) use ($doctorName) {
+                    $q2->where('first_name', 'like', "%{$doctorName}%")
+                       ->orWhere('last_name', 'like', "%{$doctorName}%");
+                })->orWhere('external_doctor_name', 'like', "%{$doctorName}%");
+            });
+        }
+
+        // Filter by material
+        if ($request->filled('material')) {
+            $query->where('material', $request->material);
+        }
+
+        // Filter by assigned person (technician + designer)
+        if ($request->filled('assigned_person')) {
+            $assignedPerson = $request->assigned_person;
+            $query->where(function ($q) use ($assignedPerson) {
+                $q->whereHas('assignedTechnician', function ($q2) use ($assignedPerson) {
+                    $q2->where('first_name', 'like', "%{$assignedPerson}%")
+                       ->orWhere('last_name', 'like', "%{$assignedPerson}%");
+                })->orWhereHas('assignedDesigner', function ($q2) use ($assignedPerson) {
+                    $q2->where('first_name', 'like', "%{$assignedPerson}%")
+                       ->orWhere('last_name', 'like', "%{$assignedPerson}%");
+                });
+            });
+        }
+
         // Sort
         $sortBy = $request->get('sort_by', 'requested_date');
         $sortOrder = $request->get('sort_order', 'desc');
