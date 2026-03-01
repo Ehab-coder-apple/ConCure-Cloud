@@ -184,7 +184,13 @@
                                             <td>
                                                 {{ $request->requested_date->format('M d, Y') }}
                                                 <br>
-                                                <small class="text-muted">{{ $request->doctor->full_name }}</small>
+                                                <small class="text-muted">
+                                                    @if($request->doctor_id && $request->doctor)
+                                                        {{ $request->doctor->full_name }}
+                                                    @elseif($request->external_doctor_name)
+                                                        {{ $request->external_doctor_name }} <span class="badge bg-secondary">{{ __('Ext') }}</span>
+                                                    @endif
+                                                </small>
                                             </td>
                                             <td>
                                                 @if($request->due_date)

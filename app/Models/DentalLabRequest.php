@@ -15,6 +15,7 @@ class DentalLabRequest extends Model
         'patient_id',
         'dental_treatment_id',
         'doctor_id',
+        'external_doctor_name',
 		    'assigned_technician_id',
 		    'assigned_designer_id',
         'clinic_id',

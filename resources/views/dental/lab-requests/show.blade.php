@@ -65,7 +65,14 @@
                         <div class="col-md-6">
                             <p class="mb-2">
                                 <strong>{{ __('Requesting Doctor') }}:</strong><br>
-                                {{ $labRequest->doctor->full_name }}
+                                @if($labRequest->doctor_id && $labRequest->doctor)
+                                    {{ $labRequest->doctor->full_name }}
+                                @elseif($labRequest->external_doctor_name)
+                                    {{ $labRequest->external_doctor_name }}
+                                    <span class="badge bg-secondary ms-1">{{ __('External') }}</span>
+                                @else
+                                    <span class="text-muted">{{ __('N/A') }}</span>
+                                @endif
                             </p>
                             @if($labRequest->dentalTreatment)
                                 <p class="mb-2">

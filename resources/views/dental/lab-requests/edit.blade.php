@@ -74,18 +74,36 @@
                         <!-- Doctor & Lab Selection -->
                         <div class="row mb-3">
 		                        <div class="col-md-3">
-                                <label for="doctor_id" class="form-label">{{ __('Requesting Doctor') }} <span class="text-danger">*</span></label>
-                                <select class="form-select @error('doctor_id') is-invalid @enderror" id="doctor_id" name="doctor_id" required>
-                                    <option value="">{{ __('Select Doctor') }}</option>
-                                    @foreach($doctors as $doctor)
-                                        <option value="{{ $doctor->id }}" {{ old('doctor_id', $labRequest->doctor_id) == $doctor->id ? 'selected' : '' }}>
-                                            {{ $doctor->full_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('doctor_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <label class="form-label">{{ __('Requesting Doctor') }} <span class="text-danger">*</span></label>
+                                <div class="mb-2">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="doctor_type" id="doctor_type_clinic" value="clinic" {{ old('doctor_type', $labRequest->external_doctor_name ? 'external' : 'clinic') == 'clinic' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="doctor_type_clinic">{{ __('Clinic Doctor') }}</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="doctor_type" id="doctor_type_external" value="external" {{ old('doctor_type', $labRequest->external_doctor_name ? 'external' : 'clinic') == 'external' ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="doctor_type_external">{{ __('External Doctor') }}</label>
+                                    </div>
+                                </div>
+                                <div id="clinic_doctor_wrapper">
+                                    <select class="form-select @error('doctor_id') is-invalid @enderror" id="doctor_id" name="doctor_id">
+                                        <option value="">{{ __('Select Doctor') }}</option>
+                                        @foreach($doctors as $doctor)
+                                            <option value="{{ $doctor->id }}" {{ old('doctor_id', $labRequest->doctor_id) == $doctor->id ? 'selected' : '' }}>
+                                                {{ $doctor->full_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('doctor_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div id="external_doctor_wrapper" style="display: none;">
+                                    <input type="text" class="form-control @error('external_doctor_name') is-invalid @enderror" id="external_doctor_name" name="external_doctor_name" value="{{ old('external_doctor_name', $labRequest->external_doctor_name) }}" placeholder="{{ __('Enter external doctor name') }}">
+                                    @error('external_doctor_name')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             </div>
 		                        <div class="col-md-3">
 	                            <label for="assigned_technician_id" class="form-label">{{ __('Assigned Technician') }}</label>
@@ -593,6 +611,28 @@ $(document).ready(function() {
             patientResults.style.display = 'block';
         }
     });
+    // Doctor type toggle (clinic vs external)
+    const clinicDoctorWrapper = document.getElementById('clinic_doctor_wrapper');
+    const externalDoctorWrapper = document.getElementById('external_doctor_wrapper');
+    const doctorTypeRadios = document.querySelectorAll('input[name="doctor_type"]');
+    const doctorSelect = document.getElementById('doctor_id');
+    const externalDoctorInput = document.getElementById('external_doctor_name');
+
+    function toggleDoctorType() {
+        const selected = document.querySelector('input[name="doctor_type"]:checked').value;
+        if (selected === 'clinic') {
+            clinicDoctorWrapper.style.display = '';
+            externalDoctorWrapper.style.display = 'none';
+            externalDoctorInput.value = '';
+        } else {
+            clinicDoctorWrapper.style.display = 'none';
+            externalDoctorWrapper.style.display = '';
+            doctorSelect.value = '';
+        }
+    }
+
+    doctorTypeRadios.forEach(radio => radio.addEventListener('change', toggleDoctorType));
+    toggleDoctorType(); // Initialize on page load
 });
 </script>
 @endpush

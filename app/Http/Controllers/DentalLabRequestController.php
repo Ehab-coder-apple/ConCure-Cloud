@@ -208,7 +208,8 @@ class DentalLabRequestController extends Controller
 	        $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'dental_treatment_id' => 'nullable|exists:dental_treatments,id',
-            'doctor_id' => 'required|exists:users,id',
+            'doctor_id' => 'nullable|exists:users,id',
+            'external_doctor_name' => 'nullable|string|max:255',
             'assigned_technician_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($q) use ($user) {
@@ -251,6 +252,20 @@ class DentalLabRequestController extends Controller
             'impression_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,stl,obj|max:10240',
             'notes' => 'nullable|string',
         ]);
+
+        // Require at least one: doctor_id or external_doctor_name
+        if (empty($validated['doctor_id']) && empty($validated['external_doctor_name'])) {
+            return back()->withInput()->withErrors([
+                'doctor_id' => __('Please select a clinic doctor or enter an external doctor name.'),
+            ]);
+        }
+
+        // Clear the other field when one is chosen
+        if (!empty($validated['doctor_id'])) {
+            $validated['external_doctor_name'] = null;
+        } else {
+            $validated['doctor_id'] = null;
+        }
 
         try {
             // Handle file uploads
@@ -413,7 +428,8 @@ class DentalLabRequestController extends Controller
 	        $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'dental_treatment_id' => 'nullable|exists:dental_treatments,id',
-            'doctor_id' => 'required|exists:users,id',
+            'doctor_id' => 'nullable|exists:users,id',
+            'external_doctor_name' => 'nullable|string|max:255',
             'assigned_technician_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($q) use ($labRequest) {
@@ -456,6 +472,20 @@ class DentalLabRequestController extends Controller
             'notes' => 'nullable|string',
             'quality_notes' => 'nullable|string',
         ]);
+
+        // Require at least one: doctor_id or external_doctor_name
+        if (empty($validated['doctor_id']) && empty($validated['external_doctor_name'])) {
+            return back()->withInput()->withErrors([
+                'doctor_id' => __('Please select a clinic doctor or enter an external doctor name.'),
+            ]);
+        }
+
+        // Clear the other field when one is chosen
+        if (!empty($validated['doctor_id'])) {
+            $validated['external_doctor_name'] = null;
+        } else {
+            $validated['doctor_id'] = null;
+        }
 
         try {
             // Handle file uploads
