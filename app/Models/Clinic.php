@@ -24,6 +24,7 @@ class Clinic extends Model
         'settings',
         'is_active',
         'is_demo',
+        'enabled_modules',
         'max_users',
         'activated_at',
         'activation_code',
@@ -43,6 +44,7 @@ class Clinic extends Model
         'settings' => 'array',
         'is_active' => 'boolean',
         'is_demo' => 'boolean',
+        'enabled_modules' => 'array',
         'activated_at' => 'datetime',
         'next_billing_at' => 'datetime',
         'custom_monthly_price' => 'decimal:2',
@@ -242,6 +244,41 @@ class Clinic extends Model
         }
 
         return $this->address;
+    }
+
+    /**
+     * Available modules that can be toggled per clinic.
+     */
+    public const AVAILABLE_MODULES = [
+        'dashboard'     => 'Dashboard',
+        'patients'      => 'Patient Management',
+        'prescriptions' => 'Prescriptions',
+        'appointments'  => 'Appointments',
+        'medicines'     => 'Medicine Inventory',
+        'nutrition'     => 'Nutrition Plans',
+        'food_database' => 'Food Database',
+        'forms'         => 'Forms',
+        'lab'           => 'Laboratory',
+        'radiology'     => 'Radiology',
+        'dental'        => 'Dental Module',
+        'finance'       => 'Financial Management',
+        'ai_assistant'  => 'AI Medical Assistant',
+        'image_bank'    => 'Medical Image Bank',
+        'messages'      => 'Messages',
+    ];
+
+    /**
+     * Check if a specific module is enabled for this clinic.
+     * If enabled_modules is null (not yet configured), all modules are enabled by default.
+     */
+    public function hasModule(string $module): bool
+    {
+        // If not configured yet, allow everything (backward compatible)
+        if ($this->enabled_modules === null) {
+            return true;
+        }
+
+        return in_array($module, $this->enabled_modules);
     }
 
     /**

@@ -233,6 +233,34 @@
             </div>
         </div>
 
+        <!-- Module Access -->
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cubes me-2"></i>Enabled Modules
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if($clinic->enabled_modules === null)
+                        <span class="text-muted"><i class="fas fa-check-circle text-success me-1"></i> All modules enabled (default)</span>
+                    @else
+                        <div class="row">
+                            @foreach(\App\Models\Clinic::AVAILABLE_MODULES as $key => $label)
+                            <div class="col-md-4 col-lg-3 mb-2">
+                                @if(in_array($key, $clinic->enabled_modules ?? []))
+                                    <span class="text-success"><i class="fas fa-check-circle me-1"></i> {{ $label }}</span>
+                                @else
+                                    <span class="text-muted"><i class="fas fa-times-circle me-1"></i> <s>{{ $label }}</s></span>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
         <div class="col-lg-6 mb-4">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">

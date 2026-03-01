@@ -226,6 +226,42 @@
                             </div>
                         </div>
 
+                        <!-- Module Access Control -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-cubes me-2"></i>
+                                    Module Access Control
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info small mb-3">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Select the modules this clinic can access. If none are selected, all modules will be enabled by default.
+                                </div>
+                                <div class="row">
+                                    @foreach($availableModules as $key => $label)
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input module-checkbox" type="checkbox"
+                                                   name="enabled_modules[]"
+                                                   value="{{ $key }}"
+                                                   id="module_{{ $key }}"
+                                                   {{ in_array($key, old('enabled_modules', $clinic->enabled_modules ?? [])) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="module_{{ $key }}">
+                                                {{ $label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllModules">Select All</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllModules">Deselect All</button>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Admin User Information -->
                         @if($adminUser)
                             <hr class="my-4">
@@ -368,6 +404,20 @@
             r.addEventListener('change', updateBillingVisibility);
         });
         updateBillingVisibility();
+
+        // Module select/deselect all
+        const selectAll = document.getElementById('selectAllModules');
+        const deselectAll = document.getElementById('deselectAllModules');
+        if (selectAll) {
+            selectAll.addEventListener('click', function() {
+                document.querySelectorAll('.module-checkbox').forEach(cb => cb.checked = true);
+            });
+        }
+        if (deselectAll) {
+            deselectAll.addEventListener('click', function() {
+                document.querySelectorAll('.module-checkbox').forEach(cb => cb.checked = false);
+            });
+        }
     });
 </script>
 @endpush

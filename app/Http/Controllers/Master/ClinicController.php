@@ -137,7 +137,8 @@ class ClinicController extends Controller
     public function create()
     {
         $specialities = $this->specialityOptions();
-        return view('master.clinics.create', compact('specialities'));
+        $availableModules = \App\Models\Clinic::AVAILABLE_MODULES;
+        return view('master.clinics.create', compact('specialities', 'availableModules'));
     }
 
     /**
@@ -208,6 +209,12 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'service_charge_amount')) { $clinicData['service_charge_amount'] = $request->input('service_charge_amount'); }
             if (Schema::hasColumn('clinics', 'service_charge_date')) { $clinicData['service_charge_date'] = $request->input('service_charge_date'); }
             if (Schema::hasColumn('clinics', 'service_charge_note')) { $clinicData['service_charge_note'] = $request->input('service_charge_note'); }
+
+            // Module access control
+            if (Schema::hasColumn('clinics', 'enabled_modules')) {
+                $clinicData['enabled_modules'] = $request->input('enabled_modules', null);
+            }
+
             $clinic = Clinic::create($clinicData);
 
             // Create admin user for the clinic
@@ -273,8 +280,9 @@ class ClinicController extends Controller
         $adminUser = $clinic->users()->where('role', 'admin')->first();
 
         $specialities = $this->specialityOptions();
+        $availableModules = \App\Models\Clinic::AVAILABLE_MODULES;
 
-        return view('master.clinics.edit', compact('clinic', 'adminUser', 'specialities'));
+        return view('master.clinics.edit', compact('clinic', 'adminUser', 'specialities', 'availableModules'));
     }
 
     /**
@@ -363,6 +371,13 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'service_charge_amount')) { $updateData['service_charge_amount'] = $request->input('service_charge_amount'); }
             if (Schema::hasColumn('clinics', 'service_charge_date')) { $updateData['service_charge_date'] = $request->input('service_charge_date'); }
             if (Schema::hasColumn('clinics', 'service_charge_note')) { $updateData['service_charge_note'] = $request->input('service_charge_note'); }
+
+            // Module access control
+            if (Schema::hasColumn('clinics', 'enabled_modules')) {
+                // If no checkboxes checked, store null (= all modules enabled by default)
+                $updateData['enabled_modules'] = $request->input('enabled_modules', null);
+            }
+
             $clinic->update($updateData);
 
             // Update admin user information if admin exists

@@ -38,6 +38,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\SetClinicTimezone::class, // Set timezone based on clinic settings
             \App\Http\Middleware\AuditMiddleware::class,
+            \App\Http\Middleware\CheckModuleAccess::class, // Block disabled modules via URL
             // \App\Http\Middleware\CheckInactivity::class, // Disabled for development
         ],
 
@@ -72,5 +73,6 @@ class Kernel extends HttpKernel
         'audit' => \App\Http\Middleware\AuditMiddleware::class,
         'super.admin' => \App\Http\Middleware\SuperAdminAuth::class,
         'super.guest' => \App\Http\Middleware\SuperAdminGuest::class,
+        'module' => \App\Http\Middleware\CheckModuleAccess::class,
     ];
 }

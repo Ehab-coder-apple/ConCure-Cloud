@@ -221,6 +221,30 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if the user's clinic has a specific module enabled.
+     * Master-level users (super_admin, master_admin) always have access.
+     */
+    public function canAccessModule(string $module): bool
+    {
+        // Master-level users bypass module checks
+        if ($this->isSuperAdmin() || $this->isMasterAdmin()) {
+            return true;
+        }
+
+        // If user has no clinic, deny (shouldn't happen normally)
+        if (!$this->clinic_id) {
+            return false;
+        }
+
+        $clinic = $this->clinic;
+        if (!$clinic) {
+            return false;
+        }
+
+        return $clinic->hasModule($module);
+    }
+
+    /**
      * Check if user is a super admin.
      */
     public function isSuperAdmin(): bool
