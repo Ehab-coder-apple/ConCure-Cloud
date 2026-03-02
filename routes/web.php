@@ -255,6 +255,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
     Route::post('/patients/{patient}/blank-report/preview', [App\Http\Controllers\PatientReportController::class, 'previewBlankReport'])->name('patient.blank-report.preview');
     Route::post('/patients/{patient}/blank-report', [App\Http\Controllers\PatientReportController::class, 'generateBlankReport'])->name('patient.blank-report.generate');
 
+    // Report Templates (AJAX)
+    Route::post('/report-templates', [App\Http\Controllers\PatientReportController::class, 'storeTemplate'])->name('report-templates.store');
+    Route::put('/report-templates/{report_template}', [App\Http\Controllers\PatientReportController::class, 'updateTemplate'])->name('report-templates.update');
+    Route::delete('/report-templates/{report_template}', [App\Http\Controllers\PatientReportController::class, 'destroyTemplate'])->name('report-templates.destroy');
+
 
     // Medical Image Bank (top-level)
     Route::get('/image-bank', [App\Http\Controllers\ImageBankController::class, 'index'])->name('image-bank.index');

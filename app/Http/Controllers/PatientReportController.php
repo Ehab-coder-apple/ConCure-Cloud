@@ -7,6 +7,7 @@ use App\Models\PatientCheckup;
 use App\Models\Prescription;
 use App\Models\Appointment;
 use App\Models\PatientImage;
+use App\Models\ReportTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -47,10 +48,18 @@ class PatientReportController extends Controller
 
         $user = Auth::user();
 
+        // Load custom templates for this clinic
+        $customTemplates = ReportTemplate::byClinic($user->clinic_id)
+            ->active()
+            ->orderBy('name')
+            ->get();
+
         return view('reports.blank-report-form', [
             'patient' => $patient,
             'doctor' => $user,
             'clinic' => $user->clinic,
+            'customTemplates' => $customTemplates,
+            'templateIcons' => ReportTemplate::ICONS,
         ]);
     }
 
@@ -305,6 +314,90 @@ class PatientReportController extends Controller
         return $bmiHistory;
     }
     
+    /**
+     * Store a new report template (AJAX).
+     */
+    public function storeTemplate(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'title' => 'nullable|string|max:255',
+            'content' => 'required|string',
+            'icon' => 'nullable|string|max:100',
+        ]);
+
+        $user = Auth::user();
+
+        $template = ReportTemplate::create([
+            'clinic_id' => $user->clinic_id,
+            'created_by' => $user->id,
+            'name' => $request->input('name'),
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'icon' => $request->input('icon', 'fas fa-file-alt'),
+            'is_active' => true,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Template saved successfully.',
+            'template' => $template,
+        ]);
+    }
+
+    /**
+     * Update a report template (AJAX).
+     */
+    public function updateTemplate(Request $request, ReportTemplate $reportTemplate)
+    {
+        $user = Auth::user();
+
+        // Ensure same clinic
+        if ($reportTemplate->clinic_id !== $user->clinic_id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'title' => 'nullable|string|max:255',
+            'content' => 'required|string',
+            'icon' => 'nullable|string|max:100',
+        ]);
+
+        $reportTemplate->update([
+            'name' => $request->input('name'),
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'icon' => $request->input('icon', $reportTemplate->icon),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Template updated successfully.',
+            'template' => $reportTemplate,
+        ]);
+    }
+
+    /**
+     * Delete a report template (AJAX).
+     */
+    public function destroyTemplate(ReportTemplate $reportTemplate)
+    {
+        $user = Auth::user();
+
+        // Ensure same clinic
+        if ($reportTemplate->clinic_id !== $user->clinic_id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $reportTemplate->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Template deleted successfully.',
+        ]);
+    }
+
     /**
      * Authorize access to patient
      */

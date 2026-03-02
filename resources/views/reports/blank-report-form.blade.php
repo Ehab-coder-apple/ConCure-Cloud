@@ -107,7 +107,8 @@
                                 <i class="fas fa-magic me-1"></i>
                                 {{ __('Quick Templates') }}
                             </label>
-                            <div class="btn-group flex-wrap" role="group">
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                {{-- Built-in templates --}}
                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="insertTemplate('sick_leave')">
                                     <i class="fas fa-bed me-1"></i>
                                     {{ __('Sick Leave') }}
@@ -124,9 +125,30 @@
                                     <i class="fas fa-share me-1"></i>
                                     {{ __('Referral') }}
                                 </button>
+
+                                {{-- Custom templates from DB --}}
+                                @foreach($customTemplates as $tpl)
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="insertCustomTemplate({{ $tpl->id }})">
+                                    <i class="{{ $tpl->icon ?? 'fas fa-file-alt' }} me-1"></i>
+                                    {{ $tpl->name }}
+                                </button>
+                                @endforeach
+
+                                {{-- Divider + management buttons --}}
+                                <span class="border-start ps-2 ms-1"></span>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="openSaveTemplateModal()">
+                                    <i class="fas fa-plus me-1"></i>
+                                    {{ __('Save as Template') }}
+                                </button>
+                                @if($customTemplates->count() > 0)
+                                <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#manageTemplatesModal">
+                                    <i class="fas fa-cog me-1"></i>
+                                    {{ __('Manage') }}
+                                </button>
+                                @endif
                             </div>
                             <small class="form-text text-muted d-block mt-2">
-                                {{ __('Click a template to insert pre-formatted text into the notes field') }}
+                                {{ __('Click a template to insert pre-formatted text. Use "Save as Template" to create your own.') }}
                             </small>
                         </div>
                     </div>
@@ -160,8 +182,107 @@
     </div>
 </div>
 
+{{-- Save Template Modal --}}
+<div class="modal fade" id="saveTemplateModal" tabindex="-1" aria-labelledby="saveTemplateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="saveTemplateModalLabel">
+                    <i class="fas fa-save me-2"></i>{{ __('Save as Template') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="tpl_edit_id" value="">
+                <div class="mb-3">
+                    <label for="tpl_name" class="form-label">{{ __('Template Name') }} <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="tpl_name" placeholder="{{ __('e.g., My Sick Leave') }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="tpl_title" class="form-label">{{ __('Report Title (auto-filled when used)') }}</label>
+                    <input type="text" class="form-control" id="tpl_title" placeholder="{{ __('e.g., Sick Leave Certificate') }}">
+                </div>
+                <div class="mb-3">
+                    <label for="tpl_icon" class="form-label">{{ __('Icon') }}</label>
+                    <select class="form-select" id="tpl_icon">
+                        @foreach($templateIcons as $iconClass => $iconLabel)
+                        <option value="{{ $iconClass }}">{{ $iconLabel }} ({{ $iconClass }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="tpl_content" class="form-label">{{ __('Template Content') }} <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="tpl_content" rows="10" required></textarea>
+                    <small class="form-text text-muted">{{ __('This will be inserted into the Notes field when you use the template.') }}</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                <button type="button" class="btn btn-success" onclick="saveTemplate()">
+                    <i class="fas fa-save me-1"></i>{{ __('Save Template') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Manage Templates Modal --}}
+<div class="modal fade" id="manageTemplatesModal" tabindex="-1" aria-labelledby="manageTemplatesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="manageTemplatesModalLabel">
+                    <i class="fas fa-cog me-2"></i>{{ __('Manage My Templates') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                @if($customTemplates->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>{{ __('Icon') }}</th>
+                                <th>{{ __('Name') }}</th>
+                                <th>{{ __('Report Title') }}</th>
+                                <th class="text-end">{{ __('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($customTemplates as $tpl)
+                            <tr id="tpl-row-{{ $tpl->id }}">
+                                <td><i class="{{ $tpl->icon ?? 'fas fa-file-alt' }} fa-lg text-primary"></i></td>
+                                <td>{{ $tpl->name }}</td>
+                                <td>{{ $tpl->title ?? '-' }}</td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editTemplate({{ $tpl->id }}, {{ json_encode($tpl->name) }}, {{ json_encode($tpl->title) }}, {{ json_encode($tpl->content) }}, {{ json_encode($tpl->icon) }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTemplate({{ $tpl->id }}, {{ json_encode($tpl->name) }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @else
+                <p class="text-muted text-center py-4">{{ __('No custom templates yet.') }}</p>
+                @endif
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-// Quick template insertion
+// Custom templates data
+const customTemplatesData = @json($customTemplates->keyBy('id'));
+
+// Insert built-in template
 function insertTemplate(type) {
     const notesField = document.getElementById('notes');
     const titleField = document.getElementById('report_title');
@@ -263,6 +384,100 @@ Thank you for your consultation.`;
         notesField.value = template;
         titleField.value = title;
     }
+}
+
+// Insert custom template from DB
+function insertCustomTemplate(id) {
+    const tpl = customTemplatesData[id];
+    if (!tpl) return;
+    document.getElementById('notes').value = tpl.content;
+    if (tpl.title) document.getElementById('report_title').value = tpl.title;
+}
+
+// Open save-template modal (pre-fill from current notes)
+function openSaveTemplateModal() {
+    document.getElementById('tpl_edit_id').value = '';
+    document.getElementById('tpl_name').value = '';
+    document.getElementById('tpl_title').value = document.getElementById('report_title').value || '';
+    document.getElementById('tpl_content').value = document.getElementById('notes').value || '';
+    document.getElementById('tpl_icon').value = 'fas fa-file-alt';
+    document.getElementById('saveTemplateModalLabel').innerHTML = '<i class="fas fa-save me-2"></i>{{ __("Save as Template") }}';
+    new bootstrap.Modal(document.getElementById('saveTemplateModal')).show();
+}
+
+// Edit existing template
+function editTemplate(id, name, title, content, icon) {
+    bootstrap.Modal.getInstance(document.getElementById('manageTemplatesModal'))?.hide();
+    setTimeout(() => {
+        document.getElementById('tpl_edit_id').value = id;
+        document.getElementById('tpl_name').value = name || '';
+        document.getElementById('tpl_title').value = title || '';
+        document.getElementById('tpl_content').value = content || '';
+        document.getElementById('tpl_icon').value = icon || 'fas fa-file-alt';
+        document.getElementById('saveTemplateModalLabel').innerHTML = '<i class="fas fa-edit me-2"></i>{{ __("Edit Template") }}';
+        new bootstrap.Modal(document.getElementById('saveTemplateModal')).show();
+    }, 400);
+}
+
+// Save or update template via AJAX
+function saveTemplate() {
+    const editId = document.getElementById('tpl_edit_id').value;
+    const name = document.getElementById('tpl_name').value.trim();
+    const title = document.getElementById('tpl_title').value.trim();
+    const content = document.getElementById('tpl_content').value.trim();
+    const icon = document.getElementById('tpl_icon').value;
+
+    if (!name || !content) {
+        alert('{{ __("Name and Content are required.") }}');
+        return;
+    }
+
+    const url = editId
+        ? '{{ url("/report-templates") }}/' + editId
+        : '{{ route("report-templates.store") }}';
+    const method = editId ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({ name, title, content, icon }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('saveTemplateModal'))?.hide();
+            location.reload();
+        } else {
+            alert(data.message || '{{ __("Failed to save template.") }}');
+        }
+    })
+    .catch(() => alert('{{ __("Failed to save template.") }}'));
+}
+
+// Delete template
+function deleteTemplate(id, name) {
+    if (!confirm('{{ __("Are you sure you want to delete template:") }} ' + name + '?')) return;
+
+    fetch('{{ url("/report-templates") }}/' + id, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || '{{ __("Failed to delete template.") }}');
+        }
+    })
+    .catch(() => alert('{{ __("Failed to delete template.") }}'));
 }
 </script>
 @endsection
