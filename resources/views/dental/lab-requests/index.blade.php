@@ -66,14 +66,15 @@
                         </div>
                         <div class="col-md-2">
                             <label for="work_type" class="form-label">{{ __('Work Type') }}</label>
-                            <select class="form-select" id="work_type" name="work_type">
-                                <option value="">{{ __('All Types') }}</option>
+                            <input type="text" class="form-control" id="work_type" name="work_type"
+                                   value="{{ request('work_type') }}"
+                                   placeholder="{{ __('Search work type...') }}"
+                                   list="work_type_options">
+                            <datalist id="work_type_options">
                                 @foreach(\App\Models\DentalLabRequest::WORK_TYPES as $key => $label)
-                                    <option value="{{ $key }}" {{ request('work_type') == $key ? 'selected' : '' }}>
-                                        {{ __($label) }}
-                                    </option>
+                                    <option value="{{ $key }}">{{ __($label) }}</option>
                                 @endforeach
-                            </select>
+                            </datalist>
                         </div>
                         <div class="col-md-3">
                             <label for="external_lab_id" class="form-label">{{ __('Dental Lab') }}</label>
@@ -94,14 +95,15 @@
                         </div>
                         <div class="col-md-2">
                             <label for="material" class="form-label">{{ __('Material') }}</label>
-                            <select class="form-select" id="material" name="material">
-                                <option value="">{{ __('All Materials') }}</option>
+                            <input type="text" class="form-control" id="material" name="material"
+                                   value="{{ request('material') }}"
+                                   placeholder="{{ __('Search material...') }}"
+                                   list="material_options">
+                            <datalist id="material_options">
                                 @foreach(\App\Models\DentalLabRequest::MATERIALS as $key => $label)
-                                    <option value="{{ $key }}" {{ request('material') == $key ? 'selected' : '' }}>
-                                        {{ __($label) }}
-                                    </option>
+                                    <option value="{{ $key }}">{{ __($label) }}</option>
                                 @endforeach
-                            </select>
+                            </datalist>
                         </div>
                         <div class="col-md-3">
                             <label for="assigned_person" class="form-label">{{ __('Assigned Person') }}</label>

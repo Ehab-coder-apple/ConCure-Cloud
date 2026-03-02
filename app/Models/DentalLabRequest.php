@@ -340,6 +340,15 @@ class DentalLabRequest extends Model
                               ->orWhere('patient_id', 'like', "%{$search}%")
                               ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"]);
               })
+              ->orWhere('external_patient_name', 'like', "%{$search}%")
+              ->orWhereHas('doctor', function ($doctorQuery) use ($search) {
+                  $doctorQuery->where('first_name', 'like', "%{$search}%")
+                              ->orWhere('last_name', 'like', "%{$search}%")
+                              ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"]);
+              })
+              ->orWhere('external_doctor_name', 'like', "%{$search}%")
+              ->orWhere('custom_work_type', 'like', "%{$search}%")
+              ->orWhere('custom_material', 'like', "%{$search}%")
               ->orWhereHas('externalLab', function ($labQuery) use ($search) {
                   $labQuery->where('name', 'like', "%{$search}%");
               });

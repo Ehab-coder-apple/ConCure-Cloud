@@ -97,8 +97,13 @@ class DentalLabRequestController extends Controller
             $query->where('external_lab_id', $request->external_lab_id);
         }
 
+        // Filter by work type (predefined + custom)
         if ($request->filled('work_type')) {
-            $query->where('work_type', $request->work_type);
+            $workTypeFilter = $request->work_type;
+            $query->where(function ($q) use ($workTypeFilter) {
+                $q->where('work_type', $workTypeFilter)
+                  ->orWhere('custom_work_type', 'like', "%{$workTypeFilter}%");
+            });
         }
 
         if ($request->filled('search')) {
