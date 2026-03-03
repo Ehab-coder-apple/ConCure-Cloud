@@ -36,6 +36,7 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\SetLocale::class, // Restore user's preferred language
             \App\Http\Middleware\SetClinicTimezone::class, // Set timezone based on clinic settings
             \App\Http\Middleware\AuditMiddleware::class,
             \App\Http\Middleware\CheckModuleAccess::class, // Block disabled modules via URL

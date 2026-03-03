@@ -11,9 +11,9 @@ class LanguageController extends Controller
      */
     public function switch(Request $request, string $language)
     {
-        // Validate language
-        $supportedLanguages = config('app.concure.supported_languages', ['en', 'ar', 'ku']);
-        
+        // Validate language against supported languages
+        $supportedLanguages = array_keys(config('concure.supported_languages', ['en' => 'English', 'ar' => 'العربية', 'ku' => 'کوردی']));
+
         if (!in_array($language, $supportedLanguages)) {
             abort(404, 'Language not supported');
         }
