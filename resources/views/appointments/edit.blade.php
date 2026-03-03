@@ -105,6 +105,8 @@
                                             <option value="follow_up" {{ old('appointment_type', $appointment->type) == 'follow_up' ? 'selected' : '' }}>{{ __('Follow Up') }}</option>
                                             <option value="checkup" {{ old('appointment_type', $appointment->type) == 'checkup' ? 'selected' : '' }}>{{ __('Checkup') }}</option>
                                             <option value="procedure" {{ old('appointment_type', $appointment->type) == 'procedure' ? 'selected' : '' }}>{{ __('Procedure') }}</option>
+                                            <option value="emergency" {{ old('appointment_type', $appointment->type) == 'emergency' ? 'selected' : '' }}>{{ __('Emergency') }}</option>
+                                            <option value="routine_checkup" {{ old('appointment_type', $appointment->type) == 'routine_checkup' ? 'selected' : '' }}>{{ __('Routine Checkup') }}</option>
                                             <option value="other" {{ old('appointment_type', $appointment->type) == 'other' ? 'selected' : '' }}>{{ __('Other') }}</option>
                                         </select>
                                         @error('appointment_type')

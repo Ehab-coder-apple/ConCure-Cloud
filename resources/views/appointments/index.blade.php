@@ -218,8 +218,11 @@
                             <select class="form-select" id="appointment_type" name="appointment_type">
                                 <option value="consultation">{{ __('Consultation') }}</option>
                                 <option value="follow_up">{{ __('Follow-up') }}</option>
+                                <option value="checkup">{{ __('Checkup') }}</option>
+                                <option value="procedure">{{ __('Procedure') }}</option>
                                 <option value="emergency">{{ __('Emergency') }}</option>
                                 <option value="routine_checkup">{{ __('Routine Checkup') }}</option>
+                                <option value="other">{{ __('Other') }}</option>
                             </select>
                         </div>
                         <div class="col-md-6">
