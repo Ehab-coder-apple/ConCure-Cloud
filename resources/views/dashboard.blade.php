@@ -486,7 +486,12 @@
         </div>
     </div>
 
-
+    <!-- Storage Widget -->
+    <div class="row mb-4">
+        <div class="col-lg-6 col-md-8">
+            @include('components.storage-widget')
+        </div>
+    </div>
 
     <!-- Charts Row -->
     @if(isset($monthlyStats) && count($monthlyStats) > 0)

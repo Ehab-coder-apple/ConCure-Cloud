@@ -11,6 +11,7 @@ use App\Http\Controllers\Master\PaymentsController;
 use App\Http\Controllers\Master\PlanController;
 use App\Http\Controllers\Master\MaintenanceController;
 use App\Http\Controllers\Master\SettingsController;
+use App\Http\Controllers\StorageQuotaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +54,11 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::patch('/clinics/{clinic}/activate', [ClinicController::class, 'activate'])->name('clinics.activate');
     Route::patch('/clinics/{clinic}/deactivate', [ClinicController::class, 'deactivate'])->name('clinics.deactivate');
     Route::post('/clinics/{clinic}/reset-admin-password', [ClinicController::class, 'resetAdminPassword'])->name('clinics.reset-admin-password');
+
+    // Storage Quota Management
+    Route::post('/clinics/{clinic}/update-storage-limit', [StorageQuotaController::class, 'updateStorageLimit'])->name('clinics.update-storage-limit');
+    Route::post('/clinics/{clinic}/sync-storage', [StorageQuotaController::class, 'syncStorage'])->name('clinics.sync-storage');
+    Route::get('/clinics/{clinic}/storage-info', [StorageQuotaController::class, 'getClinicStorageInfo'])->name('clinics.storage-info');
 
     // User Management
     Route::get('/users', [UserController::class, 'index'])->name('users.index');

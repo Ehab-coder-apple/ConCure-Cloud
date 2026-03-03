@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Patient;
 use App\Models\PatientFile;
 use App\Models\RadiologyRequest;
+use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -157,17 +158,21 @@ class RadiologyTechnicianController extends Controller
             $filePath = $file->storeAs('patient_files/' . $patient->id, $fileName, 'private');
 
             // Create file record
+            $fileSize = $file->getSize();
             PatientFile::create([
                 'patient_id' => $patient->id,
                 'original_name' => $file->getClientOriginalName(),
                 'file_name' => $file->getClientOriginalName(),
                 'file_path' => $filePath,
                 'file_type' => 'radiology_result',
-                'file_size' => $file->getSize(),
+                'file_size' => $fileSize,
                 'mime_type' => $file->getMimeType(),
                 'description' => $request->description,
                 'uploaded_by' => $user->id,
             ]);
+
+            // Increment storage usage
+            app(StorageQuotaService::class)->incrementUsage($user->clinic_id, $fileSize);
 
             return response()->json([
                 'success' => true,

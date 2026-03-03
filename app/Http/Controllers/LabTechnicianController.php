@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Patient;
 use App\Models\PatientFile;
 use App\Models\LabRequest;
+use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -155,17 +156,21 @@ class LabTechnicianController extends Controller
             $path = $file->storeAs("patients/{$patient->id}/lab_results", $filename, 'public');
 
             // Create patient file record
+            $fileSize = $file->getSize();
             $patientFile = PatientFile::create([
                 'patient_id' => $patient->id,
                 'original_name' => $file->getClientOriginalName(),
                 'file_name' => $filename,
                 'file_path' => $path,
                 'file_type' => $file->getMimeType(),
-                'file_size' => $file->getSize(),
+                'file_size' => $fileSize,
                 'category' => 'lab_result',
                 'description' => $request->description ?: ($request->test_name ? "Lab result: {$request->test_name}" : "Lab result uploaded by lab technician"),
                 'uploaded_by' => $user->id,
             ]);
+
+            // Increment storage usage
+            app(StorageQuotaService::class)->incrementUsage($user->clinic_id, $fileSize);
 
             Log::info('Lab result uploaded directly by lab technician', [
                 'patient_id' => $patient->id,

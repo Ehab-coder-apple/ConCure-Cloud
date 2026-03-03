@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Clinic extends Model
@@ -38,6 +39,8 @@ class Clinic extends Model
         'service_charge_amount',
         'service_charge_date',
         'service_charge_note',
+        'storage_limit',
+        'storage_used',
     ];
 
     protected $casts = [
@@ -52,6 +55,8 @@ class Clinic extends Model
         'billing_user_price' => 'decimal:2',
         'service_charge_amount' => 'decimal:2',
         'service_charge_date' => 'date',
+        'storage_limit' => 'integer',
+        'storage_used' => 'integer',
     ];
 
     /**
@@ -132,6 +137,14 @@ class Clinic extends Model
     public function advertisements(): HasMany
     {
         return $this->hasMany(Advertisement::class);
+    }
+
+    /**
+     * Get patient files through patients (for storage calculation).
+     */
+    public function patientFiles(): HasManyThrough
+    {
+        return $this->hasManyThrough(PatientFile::class, Patient::class);
     }
 
     /**
@@ -298,4 +311,30 @@ class Clinic extends Model
     }
 
     // Subscription scope removed - no longer needed
+
+    /**
+     * Get storage info for this clinic.
+     */
+    public function getStorageInfoAttribute(): array
+    {
+        return app(\App\Services\StorageQuotaService::class)->getStorageInfo($this->id);
+    }
+
+    /**
+     * Check if clinic has available storage space for a given file size (bytes).
+     */
+    public function hasStorageSpace(int $fileSize = 0): bool
+    {
+        return app(\App\Services\StorageQuotaService::class)->canUpload($this->id, $fileSize);
+    }
+
+    /**
+     * Get storage usage percentage.
+     */
+    public function getStoragePercentageAttribute(): float
+    {
+        $limit = $this->storage_limit ?: \App\Services\StorageQuotaService::DEFAULT_LIMIT;
+        $used = app(\App\Services\StorageQuotaService::class)->getStorageUsed($this->id);
+        return $limit > 0 ? round(($used / $limit) * 100, 2) : 0;
+    }
 }

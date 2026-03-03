@@ -10,6 +10,7 @@ use App\Exports\PatientsExport;
 use App\Models\Clinic;
 use App\Http\Traits\SmartSearch;
 
+use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -265,18 +266,22 @@ class PatientController extends Controller
                 $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
                 $path = $file->storeAs("patients/{$patient->id}/files", $filename, 'public');
 
+                $fileSize = $file->getSize();
                 PatientFile::create([
                     'patient_id' => $patient->id,
                     'original_name' => $file->getClientOriginalName(),
                     'file_name' => $filename,
                     'file_path' => $path,
                     'file_type' => $file->getClientOriginalExtension(),
-                    'file_size' => $file->getSize(),
+                    'file_size' => $fileSize,
                     'mime_type' => $file->getMimeType(),
                     'category' => 'medical_report',
                     'description' => 'Uploaded during patient registration',
                     'uploaded_by' => auth()->id(),
                 ]);
+
+                // Increment storage usage
+                app(StorageQuotaService::class)->incrementUsage(auth()->user()->clinic_id, $fileSize);
             }
         }
 
@@ -410,18 +415,22 @@ class PatientController extends Controller
                 $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
                 $path = $file->storeAs("patients/{$patient->id}/files", $filename, 'public');
 
+                $fileSize = $file->getSize();
                 PatientFile::create([
                     'patient_id' => $patient->id,
                     'original_name' => $file->getClientOriginalName(),
                     'file_name' => $filename,
                     'file_path' => $path,
                     'file_type' => $file->getClientOriginalExtension(),
-                    'file_size' => $file->getSize(),
+                    'file_size' => $fileSize,
                     'mime_type' => $file->getMimeType(),
                     'category' => 'medical_report',
                     'description' => 'Uploaded during patient update',
                     'uploaded_by' => auth()->id(),
                 ]);
+
+                // Increment storage usage
+                app(StorageQuotaService::class)->incrementUsage(auth()->user()->clinic_id, $fileSize);
             }
         }
 
@@ -679,17 +688,21 @@ class PatientController extends Controller
         $filename = time() . '_' . $file->getClientOriginalName();
         $path = $file->storeAs("patients/{$patient->id}/files", $filename, 'public');
 
+        $fileSize = $file->getSize();
         PatientFile::create([
             'patient_id' => $patient->id,
             'original_name' => $file->getClientOriginalName(),
             'file_name' => $filename,
             'file_path' => $path,
             'file_type' => $file->getMimeType(),
-            'file_size' => $file->getSize(),
+            'file_size' => $fileSize,
             'category' => $request->category,
             'description' => $request->description,
             'uploaded_by' => auth()->id(),
         ]);
+
+        // Increment storage usage
+        app(StorageQuotaService::class)->incrementUsage(auth()->user()->clinic_id, $fileSize);
 
         return back()->with('success', 'File uploaded successfully.');
     }

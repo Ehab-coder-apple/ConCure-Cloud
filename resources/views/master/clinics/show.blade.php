@@ -166,6 +166,84 @@
         </div>
     </div>
 
+    <!-- Storage Usage Card -->
+    @php
+        $storageInfo = app(\App\Services\StorageQuotaService::class)->getStorageInfo($clinic->id);
+        $barColor = $storageInfo['critical'] ? 'bg-danger' : ($storageInfo['warning'] ? 'bg-warning' : 'bg-success');
+        $pct = min($storageInfo['percentage_used'], 100);
+    @endphp
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-hdd me-2"></i>Storage Usage
+                    </h6>
+                    <div class="d-flex gap-2">
+                        <form method="POST" action="{{ route('master.clinics.sync-storage', $clinic) }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Recalculate storage">
+                                <i class="fas fa-sync-alt me-1"></i> Recalculate
+                            </button>
+                        </form>
+                        <span class="badge {{ $storageInfo['critical'] ? 'bg-danger' : ($storageInfo['warning'] ? 'bg-warning text-dark' : 'bg-success') }} fs-6 align-self-center">
+                            {{ $storageInfo['percentage_used'] }}% used
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if($storageInfo['critical'])
+                    <div class="alert alert-danger py-2 mb-3">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Critical:</strong> Storage is almost full for this clinic!
+                    </div>
+                    @elseif($storageInfo['warning'])
+                    <div class="alert alert-warning py-2 mb-3">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        <strong>Warning:</strong> Storage usage is above 80%.
+                    </div>
+                    @endif
+
+                    <div class="progress mb-3" style="height: 24px;">
+                        <div class="progress-bar {{ $barColor }} progress-bar-striped {{ $storageInfo['critical'] ? 'progress-bar-animated' : '' }}"
+                             role="progressbar"
+                             style="width: {{ $pct }}%"
+                             aria-valuenow="{{ $pct }}"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            {{ $storageInfo['used_gb'] }} GB / {{ $storageInfo['limit_gb'] }} GB
+                        </div>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <div class="text-muted small">Used</div>
+                            <div class="h5 font-weight-bold">{{ $storageInfo['used_gb'] }} GB</div>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-muted small">Remaining</div>
+                            <div class="h5 font-weight-bold text-success">{{ $storageInfo['remaining_gb'] }} GB</div>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-muted small">Limit</div>
+                            <div class="h5 font-weight-bold">{{ $storageInfo['limit_gb'] }} GB</div>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-muted small">Quick Change Limit</div>
+                            <form method="POST" action="{{ route('master.clinics.update-storage-limit', $clinic) }}" class="input-group input-group-sm">
+                                @csrf
+                                <input type="number" name="storage_limit_gb" step="0.5" min="0.1" max="10000"
+                                       class="form-control" value="{{ $storageInfo['limit_gb'] }}" style="max-width:80px;">
+                                <span class="input-group-text">GB</span>
+                                <button class="btn btn-primary btn-sm" type="submit">Set</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Clinic Information and Users -->
     <div class="row">
         <div class="col-lg-6 mb-4">

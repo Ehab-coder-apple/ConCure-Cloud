@@ -305,6 +305,7 @@ class ClinicController extends Controller
             'street' => 'nullable|string|max:255',
             'max_users' => 'required|integer|min:1|max:1000',
             'clinic_type' => 'nullable|in:tenant,demo',
+            'storage_limit_gb' => 'nullable|numeric|min:0.1|max:10000',
             // Billing fields
             'billing_user_price' => 'nullable|numeric|min:0|max:1000000',
             'billing_user_count' => 'nullable|integer|min:1|max:100000',
@@ -371,6 +372,11 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'service_charge_amount')) { $updateData['service_charge_amount'] = $request->input('service_charge_amount'); }
             if (Schema::hasColumn('clinics', 'service_charge_date')) { $updateData['service_charge_date'] = $request->input('service_charge_date'); }
             if (Schema::hasColumn('clinics', 'service_charge_note')) { $updateData['service_charge_note'] = $request->input('service_charge_note'); }
+
+            // Storage limit
+            if (Schema::hasColumn('clinics', 'storage_limit') && $request->filled('storage_limit_gb')) {
+                $updateData['storage_limit'] = (int) ($request->storage_limit_gb * 1024 * 1024 * 1024);
+            }
 
             // Module access control
             if (Schema::hasColumn('clinics', 'enabled_modules')) {

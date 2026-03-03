@@ -164,6 +164,13 @@ class PatientFile extends Model
         static::deleting(function ($file) {
             // Delete the actual file when the model is deleted
             $file->deleteFile();
+
+            // Decrement clinic storage usage
+            $patient = $file->patient;
+            if ($patient && $patient->clinic_id && $file->file_size > 0) {
+                app(\App\Services\StorageQuotaService::class)
+                    ->decrementUsage($patient->clinic_id, $file->file_size);
+            }
         });
     }
 

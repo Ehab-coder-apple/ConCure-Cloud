@@ -22,6 +22,7 @@ use App\Http\Controllers\MessagingController;
 
 use App\Http\Controllers\FormTemplateController;
 use App\Http\Controllers\AssistantController;
+use App\Http\Controllers\StorageQuotaController;
 
 
 
@@ -196,6 +197,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     // Tenant Dashboard (Clinic Users Only)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Storage Quota (JSON API for AJAX calls)
+    Route::get('/storage/info', [StorageQuotaController::class, 'getStorageInfo'])->name('storage.info');
 
     // Patient Management
     Route::prefix('patients')->name('patients.')->group(function () {

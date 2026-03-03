@@ -99,6 +99,27 @@
                                 @enderror
                                 <div class="form-text">Maximum number of users allowed for this clinic</div>
                             </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="storage_limit_gb" class="form-label">
+                                    <i class="fas fa-hdd me-1"></i> Storage Limit (GB)
+                                </label>
+                                @php
+                                    $currentLimitGb = round(($clinic->storage_limit ?? \App\Services\StorageQuotaService::DEFAULT_LIMIT) / (1024 * 1024 * 1024), 2);
+                                @endphp
+                                <input type="number"
+                                       class="form-control @error('storage_limit_gb') is-invalid @enderror"
+                                       id="storage_limit_gb"
+                                       name="storage_limit_gb"
+                                       value="{{ old('storage_limit_gb', $currentLimitGb) }}"
+                                       step="0.5"
+                                       min="0.1"
+                                       max="10000">
+                                @error('storage_limit_gb')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">Maximum storage space in GB for file uploads (default: 5 GB)</div>
+                            </div>
                         </div>
 
 	                        <div class="row">
