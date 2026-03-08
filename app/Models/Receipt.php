@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
+use App\Services\StorageQuotaService;
 
 class Receipt extends Model
 {
@@ -89,9 +90,7 @@ class Receipt extends Model
 
         static::deleting(function ($receipt) {
             // Delete receipt file when receipt is deleted
-            if ($receipt->receipt_file && Storage::exists($receipt->receipt_file)) {
-                Storage::delete($receipt->receipt_file);
-            }
+            StorageQuotaService::deleteFromDisk($receipt->receipt_file);
         });
     }
 
@@ -164,7 +163,7 @@ class Receipt extends Model
      */
     public function getReceiptFileUrlAttribute(): ?string
     {
-        return $this->receipt_file ? Storage::url($this->receipt_file) : null;
+        return $this->receipt_file ? StorageQuotaService::getSecureUrl($this->receipt_file) : null;
     }
 
     /**
@@ -172,7 +171,7 @@ class Receipt extends Model
      */
     public function hasReceiptFile(): bool
     {
-        return $this->receipt_file && Storage::exists($this->receipt_file);
+        return $this->receipt_file && StorageQuotaService::fileExistsOnDisk($this->receipt_file);
     }
 
     /**

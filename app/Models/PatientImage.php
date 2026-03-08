@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
+use App\Services\StorageQuotaService;
 
 class PatientImage extends Model
 {
@@ -41,8 +42,7 @@ class PatientImage extends Model
 
     public function getUrlAttribute(): string
     {
-        // Return a relative path so it always uses the current host (avoids SSL/domain mismatches)
-        return '/storage/' . ltrim($this->path, '/');
+        return StorageQuotaService::getSecureUrl($this->path);
     }
 
     public function isImage(): bool
@@ -52,9 +52,7 @@ class PatientImage extends Model
 
     public function deleteWithFile(): void
     {
-        if ($this->path && Storage::disk('public')->exists($this->path)) {
-            Storage::disk('public')->delete($this->path);
-        }
+        StorageQuotaService::deleteFromDisk($this->path);
         $this->delete();
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use App\Services\StorageQuotaService;
 
 class DentalImage extends Model
 {
@@ -100,8 +101,7 @@ class DentalImage extends Model
      */
     public function getUrlAttribute(): string
     {
-        // Return a relative path so it always uses the current host
-        return '/storage/' . ltrim($this->file_path, '/');
+        return StorageQuotaService::getSecureUrl($this->file_path);
     }
 
     /**
