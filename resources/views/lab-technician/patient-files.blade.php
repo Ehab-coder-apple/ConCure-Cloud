@@ -184,7 +184,7 @@
                                             <small class="text-muted">{{ $result->created_at->format('h:i A') }}</small>
                                         </td>
                                         <td>
-                                            <a href="{{ Storage::url($result->file_path) }}"
+                                            <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($result->file_path) }}"
                                                target="_blank"
                                                class="btn btn-sm btn-outline-primary"
                                                title="{{ __('View File') }}">

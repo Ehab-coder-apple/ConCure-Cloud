@@ -101,7 +101,7 @@
                                     <div class="card h-100 shadow-sm">
                                         <!-- Image Thumbnail -->
                                         <a href="{{ url("/dental/patients/{$patient->id}/images/{$image->id}") }}">
-                                            <img src="{{ Storage::url($image->file_path) }}" 
+                                            <img src="{{ \App\Services\StorageQuotaService::getSecureUrl($image->file_path) }}"
                                                  class="card-img-top" 
                                                  alt="{{ $image->title }}"
                                                  style="height: 200px; object-fit: cover; cursor: pointer;">
@@ -142,7 +142,7 @@
                                                    class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="{{ Storage::url($image->file_path) }}" 
+                                                <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($image->file_path) }}"
                                                    download 
                                                    class="btn btn-sm btn-outline-success">
                                                     <i class="fas fa-download"></i>

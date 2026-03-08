@@ -437,7 +437,7 @@
                                     <div class="mb-1">
                                         <small class="text-muted">
                                             {{ __('Current:') }}
-                                            <a href="{{ Storage::url($labRequest->prescription_file_path) }}" target="_blank">{{ __('View') }}</a>
+                                            <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($labRequest->prescription_file_path) }}" target="_blank">{{ __('View') }}</a>
                                         </small>
                                     </div>
                                 @endif
@@ -454,7 +454,7 @@
                                     <div class="mb-1">
                                         <small class="text-muted">
                                             {{ __('Current:') }}
-                                            <a href="{{ Storage::url($labRequest->impression_file_path) }}" target="_blank">{{ __('View') }}</a>
+                                            <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($labRequest->impression_file_path) }}" target="_blank">{{ __('View') }}</a>
                                         </small>
                                     </div>
                                 @endif
@@ -471,7 +471,7 @@
                                     <div class="mb-1">
                                         <small class="text-muted">
                                             {{ __('Current:') }}
-                                            <a href="{{ Storage::url($labRequest->result_file_path) }}" target="_blank">{{ __('View') }}</a>
+                                            <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($labRequest->result_file_path) }}" target="_blank">{{ __('View') }}</a>
                                         </small>
                                     </div>
                                 @endif

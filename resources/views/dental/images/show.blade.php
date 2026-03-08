@@ -39,7 +39,7 @@
                     </h6>
                 </div>
                 <div class="card-body text-center bg-dark">
-                    <img src="{{ Storage::url($dentalImage->file_path) }}" 
+                    <img src="{{ \App\Services\StorageQuotaService::getSecureUrl($dentalImage->file_path) }}"
                          alt="{{ $dentalImage->title }}" 
                          class="img-fluid rounded"
                          style="max-height: 600px; cursor: zoom-in;"
@@ -171,12 +171,12 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <a href="{{ Storage::url($dentalImage->file_path) }}" download class="btn btn-success w-100 mb-2">
+                    <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($dentalImage->file_path) }}" download class="btn btn-success w-100 mb-2">
                         <i class="fas fa-download me-1"></i>
                         {{ __('Download Image') }}
                     </a>
 
-                    <a href="{{ Storage::url($dentalImage->file_path) }}" target="_blank" class="btn btn-outline-primary w-100 mb-2">
+                    <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($dentalImage->file_path) }}" target="_blank" class="btn btn-outline-primary w-100 mb-2">
                         <i class="fas fa-external-link-alt me-1"></i>
                         {{ __('Open in New Tab') }}
                     </a>
@@ -283,7 +283,7 @@ function openImageModal(src) {
 }
 
 function printImage() {
-    const imageUrl = '{{ Storage::url($dentalImage->file_path) }}';
+    const imageUrl = '{{ \App\Services\StorageQuotaService::getSecureUrl($dentalImage->file_path) }}';
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
         <html>

@@ -7,6 +7,7 @@ use App\Models\RadiologyRequest;
 use App\Models\RadiologyRequestTest;
 use App\Models\RadiologyTest;
 use App\Http\Traits\SmartSearch;
+use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -479,10 +480,11 @@ class RadiologyController extends Controller
         ]);
 
         try {
-            // Store the uploaded file
+            // Store the uploaded file on DigitalOcean Spaces
             $file = $request->file('result_file');
             $filename = 'radiology-result-' . $radiologyRequest->request_number . '-' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('radiology-results', $filename, 'public');
+            $tenantDir = StorageQuotaService::getTenantStoragePath($user->clinic_id, 'radiology');
+            $path = $file->storeAs($tenantDir, $filename, StorageQuotaService::SPACES_DISK);
 
             // Update radiology request with result information
             $radiologyRequest->update([

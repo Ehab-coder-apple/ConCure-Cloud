@@ -151,9 +151,10 @@ class LabTechnicianController extends Controller
         try {
             $file = $request->file('result_file');
 
-            // Generate unique filename
+            // Generate unique filename and store on DigitalOcean Spaces
+            $tenantDir = StorageQuotaService::getTenantStoragePath($user->clinic_id, 'lab');
             $filename = 'lab_result_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs("patients/{$patient->id}/lab_results", $filename, 'public');
+            $path = $file->storeAs($tenantDir, $filename, StorageQuotaService::SPACES_DISK);
 
             // Create patient file record
             $fileSize = $file->getSize();
@@ -182,7 +183,7 @@ class LabTechnicianController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Lab result uploaded successfully',
-                'file_url' => Storage::url($path),
+                'file_url' => StorageQuotaService::getSecureUrl($path),
                 'file' => $patientFile,
             ]);
 

@@ -218,7 +218,7 @@
                             @if($labRequest->prescription_file_path)
                                 <div class="col-md-4 mb-3">
                                     <strong>{{ __('Prescription') }}:</strong><br>
-                                    <a href="{{ Storage::url($labRequest->prescription_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                    <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($labRequest->prescription_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
                                         <i class="fas fa-download me-1"></i>
                                         {{ __('Download') }}
                                     </a>
@@ -227,7 +227,7 @@
                             @if($labRequest->impression_file_path)
                                 <div class="col-md-4 mb-3">
                                     <strong>{{ __('Impression') }}:</strong><br>
-                                    <a href="{{ Storage::url($labRequest->impression_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                    <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($labRequest->impression_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
                                         <i class="fas fa-download me-1"></i>
                                         {{ __('Download') }}
                                     </a>
@@ -236,7 +236,7 @@
                             @if($labRequest->result_file_path)
                                 <div class="col-md-4 mb-3">
                                     <strong>{{ __('Result') }}:</strong><br>
-                                    <a href="{{ Storage::url($labRequest->result_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                    <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($labRequest->result_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
                                         <i class="fas fa-download me-1"></i>
                                         {{ __('Download') }}
                                     </a>

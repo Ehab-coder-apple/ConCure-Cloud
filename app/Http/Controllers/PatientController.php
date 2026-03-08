@@ -262,9 +262,10 @@ class PatientController extends Controller
 
         // Handle medical history file uploads
         if ($request->hasFile('medical_files')) {
+            $tenantDir = StorageQuotaService::getTenantStoragePath($clinicId, 'documents');
             foreach ($request->file('medical_files') as $file) {
                 $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs("patients/{$patient->id}/files", $filename, 'public');
+                $path = $file->storeAs($tenantDir, $filename, StorageQuotaService::SPACES_DISK);
 
                 $fileSize = $file->getSize();
                 PatientFile::create([
@@ -281,7 +282,7 @@ class PatientController extends Controller
                 ]);
 
                 // Increment storage usage
-                app(StorageQuotaService::class)->incrementUsage(auth()->user()->clinic_id, $fileSize);
+                app(StorageQuotaService::class)->incrementUsage($clinicId, $fileSize);
             }
         }
 
@@ -411,9 +412,10 @@ class PatientController extends Controller
 
         // Handle medical history file uploads (same behavior as store())
         if ($request->hasFile('medical_files')) {
+            $tenantDir = StorageQuotaService::getTenantStoragePath($patient->clinic_id, 'documents');
             foreach ($request->file('medical_files') as $file) {
                 $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs("patients/{$patient->id}/files", $filename, 'public');
+                $path = $file->storeAs($tenantDir, $filename, StorageQuotaService::SPACES_DISK);
 
                 $fileSize = $file->getSize();
                 PatientFile::create([
@@ -430,7 +432,7 @@ class PatientController extends Controller
                 ]);
 
                 // Increment storage usage
-                app(StorageQuotaService::class)->incrementUsage(auth()->user()->clinic_id, $fileSize);
+                app(StorageQuotaService::class)->incrementUsage($patient->clinic_id, $fileSize);
             }
         }
 
@@ -684,9 +686,13 @@ class PatientController extends Controller
             return back()->withErrors(['file' => __('File type not allowed.')]);
         }
 
+        // Determine tenant folder based on category
+        $typeMap = ['lab_result' => 'lab', 'medicine_photo' => 'images', 'medical_report' => 'documents', 'other' => 'documents'];
+        $tenantDir = StorageQuotaService::getTenantStoragePath($patient->clinic_id, $typeMap[$request->category] ?? 'documents');
+
         // Generate unique filename
         $filename = time() . '_' . $file->getClientOriginalName();
-        $path = $file->storeAs("patients/{$patient->id}/files", $filename, 'public');
+        $path = $file->storeAs($tenantDir, $filename, StorageQuotaService::SPACES_DISK);
 
         $fileSize = $file->getSize();
         PatientFile::create([
@@ -702,7 +708,7 @@ class PatientController extends Controller
         ]);
 
         // Increment storage usage
-        app(StorageQuotaService::class)->incrementUsage(auth()->user()->clinic_id, $fileSize);
+        app(StorageQuotaService::class)->incrementUsage($patient->clinic_id, $fileSize);
 
         return back()->with('success', 'File uploaded successfully.');
     }
@@ -986,12 +992,10 @@ class PatientController extends Controller
 
             // Delete related records first
             foreach ($query->get() as $patient) {
-                // Delete patient files from storage
+                // Delete patient files from storage (supports both Spaces and legacy local)
                 $files = PatientFile::where('patient_id', $patient->id)->get();
                 foreach ($files as $file) {
-                    if (Storage::exists($file->file_path)) {
-                        Storage::delete($file->file_path);
-                    }
+                    StorageQuotaService::deleteFromDisk($file->file_path);
                 }
 
                 // Delete related records
@@ -1068,12 +1072,10 @@ class PatientController extends Controller
 
             // Delete related records first
             foreach ($query->get() as $patient) {
-                // Delete patient files from storage
+                // Delete patient files from storage (supports both Spaces and legacy local)
                 $files = PatientFile::where('patient_id', $patient->id)->get();
                 foreach ($files as $file) {
-                    if (Storage::exists($file->file_path)) {
-                        Storage::delete($file->file_path);
-                    }
+                    StorageQuotaService::deleteFromDisk($file->file_path);
                 }
 
                 // Delete related records

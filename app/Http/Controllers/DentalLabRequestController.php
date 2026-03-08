@@ -7,6 +7,7 @@ use App\Models\DentalTreatment;
 use App\Models\ExternalLab;
 use App\Models\Patient;
 use App\Models\User;
+use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -345,15 +346,16 @@ class DentalLabRequestController extends Controller
         }
 
         try {
-            // Handle file uploads
+            // Handle file uploads to DigitalOcean Spaces
+            $tenantDir = StorageQuotaService::getTenantStoragePath($user->clinic_id, 'dental-lab');
             if ($request->hasFile('prescription_file')) {
                 $validated['prescription_file_path'] = $request->file('prescription_file')
-                    ->store('dental-lab-requests/prescriptions', 'public');
+                    ->store($tenantDir . '/prescriptions', StorageQuotaService::SPACES_DISK);
             }
 
             if ($request->hasFile('impression_file')) {
                 $validated['impression_file_path'] = $request->file('impression_file')
-                    ->store('dental-lab-requests/impressions', 'public');
+                    ->store($tenantDir . '/impressions', StorageQuotaService::SPACES_DISK);
             }
 
             $validated['clinic_id'] = $user->clinic_id;
@@ -603,32 +605,27 @@ class DentalLabRequestController extends Controller
         }
 
         try {
-            // Handle file uploads
+            // Handle file uploads to DigitalOcean Spaces
+            $tenantDir = StorageQuotaService::getTenantStoragePath($user->clinic_id, 'dental-lab');
             if ($request->hasFile('prescription_file')) {
                 // Delete old file
-                if ($labRequest->prescription_file_path) {
-                    Storage::disk('public')->delete($labRequest->prescription_file_path);
-                }
+                StorageQuotaService::deleteFromDisk($labRequest->prescription_file_path);
                 $validated['prescription_file_path'] = $request->file('prescription_file')
-                    ->store('dental-lab-requests/prescriptions', 'public');
+                    ->store($tenantDir . '/prescriptions', StorageQuotaService::SPACES_DISK);
             }
 
             if ($request->hasFile('impression_file')) {
                 // Delete old file
-                if ($labRequest->impression_file_path) {
-                    Storage::disk('public')->delete($labRequest->impression_file_path);
-                }
+                StorageQuotaService::deleteFromDisk($labRequest->impression_file_path);
                 $validated['impression_file_path'] = $request->file('impression_file')
-                    ->store('dental-lab-requests/impressions', 'public');
+                    ->store($tenantDir . '/impressions', StorageQuotaService::SPACES_DISK);
             }
 
             if ($request->hasFile('result_file')) {
                 // Delete old file
-                if ($labRequest->result_file_path) {
-                    Storage::disk('public')->delete($labRequest->result_file_path);
-                }
+                StorageQuotaService::deleteFromDisk($labRequest->result_file_path);
                 $validated['result_file_path'] = $request->file('result_file')
-                    ->store('dental-lab-requests/results', 'public');
+                    ->store($tenantDir . '/results', StorageQuotaService::SPACES_DISK);
             }
 
             // Mark as sent if external lab is selected and not already sent
@@ -713,16 +710,10 @@ class DentalLabRequestController extends Controller
         }
 
         try {
-            // Delete files
-            if ($labRequest->prescription_file_path) {
-                Storage::disk('public')->delete($labRequest->prescription_file_path);
-            }
-            if ($labRequest->impression_file_path) {
-                Storage::disk('public')->delete($labRequest->impression_file_path);
-            }
-            if ($labRequest->result_file_path) {
-                Storage::disk('public')->delete($labRequest->result_file_path);
-            }
+            // Delete files (supports both Spaces and legacy local)
+            StorageQuotaService::deleteFromDisk($labRequest->prescription_file_path);
+            StorageQuotaService::deleteFromDisk($labRequest->impression_file_path);
+            StorageQuotaService::deleteFromDisk($labRequest->result_file_path);
 
             $labRequest->delete();
 

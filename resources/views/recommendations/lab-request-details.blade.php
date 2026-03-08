@@ -259,7 +259,7 @@
                 </div>
                 <div class="card-body">
                     <p><strong>{{ __('Result File') }}:</strong>
-                        <a href="{{ Storage::url($labRequest->result_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($labRequest->result_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                             <i class="fas fa-download me-1"></i>
                             {{ __('Download Result') }}
                         </a>

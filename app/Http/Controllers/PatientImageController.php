@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Patient;
 use App\Models\PatientImage;
+use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -43,8 +44,8 @@ class PatientImageController extends Controller
             foreach ($request->file('images') as $idx => $file) {
                 $original = $file->getClientOriginalName();
                 $safeName = time() . '_' . uniqid() . '_' . preg_replace('/[^A-Za-z0-9_\.-]/', '_', $original);
-                $dir = "patient_images/{$patient->clinic_id}/{$patient->id}";
-                $path = $file->storeAs($dir, $safeName, 'public');
+                $tenantDir = StorageQuotaService::getTenantStoragePath($patient->clinic_id, 'images');
+                $path = $file->storeAs($tenantDir, $safeName, StorageQuotaService::SPACES_DISK);
 
                 $caption = $request->input("captions.$idx") ?? null;
 
@@ -108,9 +109,7 @@ class PatientImageController extends Controller
         if ($image->patient_id !== $patient->id) {
             abort(404);
         }
-        if ($image->path && Storage::disk('public')->exists($image->path)) {
-            Storage::disk('public')->delete($image->path);
-        }
+        StorageQuotaService::deleteFromDisk($image->path);
         $image->delete();
         return back()->with('success', __('Image deleted.'));
     }

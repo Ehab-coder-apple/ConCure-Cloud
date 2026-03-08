@@ -6,6 +6,7 @@ use App\Models\Clinic;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class StorageQuotaService
 {
@@ -149,5 +150,97 @@ class StorageQuotaService
         Cache::forget("clinic_{$clinicId}_storage_used");
     }
 
+    // ─── DigitalOcean Spaces helpers ────────────────────────────────
 
+    /**
+     * The disk name used for heavy medical file storage.
+     */
+    public const SPACES_DISK = 'spaces-private';
+
+    /**
+     * Generate the tenant folder path for a given clinic and file type.
+     *
+     * @param int    $clinicId
+     * @param string $type  One of: documents, lab, xrays, radiology, images, finance, dental-lab
+     * @return string  e.g. "tenant_12/xrays"
+     */
+    public static function getTenantStoragePath(int $clinicId, string $type): string
+    {
+        $allowed = ['documents', 'lab', 'xrays', 'radiology', 'images', 'finance', 'dental-lab'];
+        if (!in_array($type, $allowed)) {
+            $type = 'documents';
+        }
+        return "tenant_{$clinicId}/{$type}";
+    }
+
+    /**
+     * Generate a secure (temporary) URL for a stored file.
+     *
+     * New files (path starts with "tenant_") → signed temporary URL from Spaces.
+     * Legacy files → local /storage/ relative URL.
+     *
+     * @param string|null $path
+     * @param int         $minutes  Link expiry in minutes (default 10)
+     * @return string
+     */
+    public static function getSecureUrl(?string $path, int $minutes = 10): string
+    {
+        if (!$path) {
+            return '#';
+        }
+
+        // New files stored on DigitalOcean Spaces
+        if (str_starts_with($path, 'tenant_')) {
+            try {
+                return Storage::disk(self::SPACES_DISK)
+                    ->temporaryUrl($path, now()->addMinutes($minutes));
+            } catch (\Exception $e) {
+                // Fallback: unsigned URL (works if bucket is public, or for debugging)
+                return Storage::disk(self::SPACES_DISK)->url($path);
+            }
+        }
+
+        // Legacy files on local public disk
+        return '/storage/' . ltrim($path, '/');
+    }
+
+    /**
+     * Check if a file exists on the correct disk (Spaces or local).
+     */
+    public static function fileExistsOnDisk(?string $path): bool
+    {
+        if (!$path) {
+            return false;
+        }
+
+        if (str_starts_with($path, 'tenant_')) {
+            return Storage::disk(self::SPACES_DISK)->exists($path);
+        }
+
+        return Storage::disk('public')->exists($path);
+    }
+
+    /**
+     * Delete a file from the correct disk (Spaces or local).
+     */
+    public static function deleteFromDisk(?string $path): bool
+    {
+        if (!$path) {
+            return true;
+        }
+
+        if (str_starts_with($path, 'tenant_')) {
+            return Storage::disk(self::SPACES_DISK)->delete($path);
+        }
+
+        // Try public, then private (legacy)
+        if (Storage::disk('public')->exists($path)) {
+            return Storage::disk('public')->delete($path);
+        }
+        if (Storage::disk('private')->exists($path)) {
+            return Storage::disk('private')->delete($path);
+        }
+
+        return true;
+    }
 }

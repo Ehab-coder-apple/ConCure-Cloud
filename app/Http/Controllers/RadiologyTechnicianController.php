@@ -154,8 +154,9 @@ class RadiologyTechnicianController extends Controller
             $file = $request->file('file');
             $fileName = time() . '_' . $file->getClientOriginalName();
 
-            // Store in private disk
-            $filePath = $file->storeAs('patient_files/' . $patient->id, $fileName, 'private');
+            // Store on DigitalOcean Spaces
+            $tenantDir = StorageQuotaService::getTenantStoragePath($user->clinic_id, 'radiology');
+            $filePath = $file->storeAs($tenantDir, $fileName, StorageQuotaService::SPACES_DISK);
 
             // Create file record
             $fileSize = $file->getSize();

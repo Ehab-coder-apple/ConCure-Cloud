@@ -6,6 +6,7 @@ use App\Models\DentalImage;
 use App\Models\DentalChart;
 use App\Models\DentalTreatment;
 use App\Models\Patient;
+use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -108,7 +109,8 @@ class DentalImageController extends Controller
         try {
             $file = $request->file('image');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('dental_images/' . $patient->id, $filename, 'public');
+            $tenantDir = StorageQuotaService::getTenantStoragePath($user->clinic_id, 'images');
+            $path = $file->storeAs($tenantDir, $filename, StorageQuotaService::SPACES_DISK);
 
             $dentalImage = DentalImage::create([
                 'patient_id' => $patient->id,
@@ -174,10 +176,8 @@ class DentalImageController extends Controller
             abort(403, 'Only doctors, dental assistants, and administrators can delete dental images.');
         }
 
-        // Delete file from storage
-        if (Storage::disk('public')->exists($dentalImage->file_path)) {
-            Storage::disk('public')->delete($dentalImage->file_path);
-        }
+        // Delete file from storage (supports both Spaces and legacy local)
+        StorageQuotaService::deleteFromDisk($dentalImage->file_path);
 
         $dentalImage->delete();
 

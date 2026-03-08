@@ -233,7 +233,7 @@
                     @if($radiologyRequest->result_file_path)
                     <div class="mb-3">
                         <strong>{{ __('Result File') }}:</strong>
-                        <a href="{{ Storage::url($radiologyRequest->result_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                        <a href="{{ \App\Services\StorageQuotaService::getSecureUrl($radiologyRequest->result_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
                             <i class="fas fa-download me-1"></i>
                             {{ __('Download') }}
                         </a>

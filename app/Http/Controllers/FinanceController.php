@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Mail\InvoiceMail;
 use App\Notifications\ExpenseNeedsApprovalNotification;
 use App\Notifications\ReceiptNeedsApprovalNotification;
+use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -286,11 +287,12 @@ class FinanceController extends Controller
             'status' => 'pending',
         ];
 
-        // Handle receipt file upload
+        // Handle receipt file upload to DigitalOcean Spaces
         if ($request->hasFile('receipt_file')) {
             $file = $request->file('receipt_file');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs("expenses/{$user->clinic_id}/receipts", $filename, 'public');
+            $tenantDir = StorageQuotaService::getTenantStoragePath($user->clinic_id, 'finance');
+            $path = $file->storeAs($tenantDir, $filename, StorageQuotaService::SPACES_DISK);
             $expenseData['receipt_file'] = $path;
         }
 
@@ -363,10 +365,8 @@ class FinanceController extends Controller
             return redirect()->route('finance.expenses')->with('error', 'Cannot delete approved expenses.');
         }
 
-        // Delete the receipt file if it exists
-        if ($expense->receipt_file && Storage::disk('public')->exists($expense->receipt_file)) {
-            Storage::disk('public')->delete($expense->receipt_file);
-        }
+        // Delete the receipt file if it exists (supports both Spaces and legacy local)
+        StorageQuotaService::deleteFromDisk($expense->receipt_file);
 
         $expense->delete();
 
@@ -409,13 +409,12 @@ class FinanceController extends Controller
 
         // Handle file upload
         if ($request->hasFile('receipt_file')) {
-            // Delete old file if exists
-            if ($expense->receipt_file && Storage::disk('public')->exists($expense->receipt_file)) {
-                Storage::disk('public')->delete($expense->receipt_file);
-            }
+            // Delete old file if exists (supports both Spaces and legacy local)
+            StorageQuotaService::deleteFromDisk($expense->receipt_file);
 
-            // Store new file
-            $receiptPath = $request->file('receipt_file')->store('expense-receipts', 'public');
+            // Store new file on DigitalOcean Spaces
+            $tenantDir = StorageQuotaService::getTenantStoragePath($user->clinic_id, 'finance');
+            $receiptPath = $request->file('receipt_file')->store($tenantDir, StorageQuotaService::SPACES_DISK);
             $expense->receipt_file = $receiptPath;
         }
 
@@ -618,11 +617,12 @@ class FinanceController extends Controller
             'status' => 'pending', // All receipts start as pending for approval
         ];
 
-        // Handle receipt file upload
+        // Handle receipt file upload to DigitalOcean Spaces
         if ($request->hasFile('receipt_file')) {
             $file = $request->file('receipt_file');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs("receipts/{$user->clinic_id}/files", $filename, 'public');
+            $tenantDir = StorageQuotaService::getTenantStoragePath($user->clinic_id, 'finance');
+            $path = $file->storeAs($tenantDir, $filename, StorageQuotaService::SPACES_DISK);
             $receiptData['receipt_file'] = $path;
         }
 
@@ -670,14 +670,13 @@ class FinanceController extends Controller
 
         // Handle receipt file upload
         if ($request->hasFile('receipt_file')) {
-            // Delete old file if exists
-            if ($receipt->receipt_file && Storage::exists($receipt->receipt_file)) {
-                Storage::delete($receipt->receipt_file);
-            }
+            // Delete old file if exists (supports both Spaces and legacy local)
+            StorageQuotaService::deleteFromDisk($receipt->receipt_file);
 
             $file = $request->file('receipt_file');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs("receipts/{$user->clinic_id}/files", $filename, 'public');
+            $tenantDir = StorageQuotaService::getTenantStoragePath($user->clinic_id, 'finance');
+            $path = $file->storeAs($tenantDir, $filename, StorageQuotaService::SPACES_DISK);
             $receipt->receipt_file = $path;
         }
 
