@@ -277,6 +277,101 @@
                         </div>
                     </div>
 
+                    <!-- Medical Videos -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-video me-2"></i>
+                                {{ __('Medical Videos') }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="videoAlerts"></div>
+
+                            @php $canEditPatients = $canEditPatients ?? (auth()->check() && (auth()->user()->canManagePatients() || auth()->user()->hasPermission('patients_edit'))); @endphp
+                            @if($canEditPatients)
+                            <div class="mb-3" id="videoUploadForm">
+                                <div class="input-group mb-2">
+                                    <input type="file" id="videoFileInput" class="form-control" accept="video/mp4,video/quicktime,video/x-msvideo,video/x-ms-wmv,video/webm,video/x-matroska" multiple>
+                                    <button class="btn btn-primary" type="button" id="videoUploadBtn" disabled>
+                                        <i class="fas fa-upload me-1"></i>{{ __('Upload') }}
+                                    </button>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-4">
+                                        <input type="text" id="videoTitle" class="form-control" placeholder="{{ __('Video title (optional)') }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" id="videoTags" class="form-control" placeholder="{{ __('Tags (comma-separated)') }}">
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-center">
+                                        <small class="text-muted">{{ __('MP4, MOV, AVI, WMV, WebM, MKV. No size limit.') }}</small>
+                                    </div>
+                                </div>
+                                <!-- Progress bars container -->
+                                <div id="videoProgressContainer" class="d-none"></div>
+                            </div>
+                            @endif
+
+                            @php
+                                $patientVideos = $patient->relationLoaded('videos') ? $patient->videos : \App\Models\PatientVideo::where('patient_id', $patient->id)->latest()->limit(24)->get();
+                            @endphp
+
+                            <div id="videoGallery">
+                            @if($patientVideos->count() === 0)
+                                <div class="text-center py-4" id="noVideosMsg">
+                                    <i class="fas fa-video fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">{{ __('No videos uploaded yet.') }}</p>
+                                </div>
+                            @else
+                                <div class="row g-2">
+                                    @foreach($patientVideos as $vid)
+                                        <div class="col-12 col-md-6">
+                                            <div class="border rounded p-2 h-100 d-flex flex-column">
+                                                <video controls preload="metadata" class="w-100 rounded mb-2" style="max-height:220px; background:#000;">
+                                                    <source src="{{ $vid->url }}" type="{{ $vid->mime }}">
+                                                    {{ __('Your browser does not support the video tag.') }}
+                                                </video>
+                                                <div class="small text-muted mb-1">
+                                                    <i class="fas fa-file-video me-1"></i>{{ $vid->filename }} ({{ $vid->file_size_human }})
+                                                </div>
+                                                @if($vid->title)
+                                                    <div class="small fw-bold mb-1">{{ $vid->title }}</div>
+                                                @endif
+                                                @if(is_array($vid->condition_tags) && count($vid->condition_tags))
+                                                    <div class="mb-1">
+                                                        @foreach($vid->condition_tags as $t)
+                                                            <span class="badge bg-light text-dark border me-1">#{{ $t }}</span>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                                <div class="d-flex gap-1 mt-auto">
+                                                    @if($canEditPatients)
+                                                    <form action="{{ route('patients.videos.update', [$patient, $vid]) }}" method="POST" class="flex-grow-1 d-flex gap-1 flex-wrap">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="text" name="title" class="form-control form-control-sm" placeholder="{{ __('Title') }}" value="{{ $vid->title }}" style="max-width: 40%">
+                                                        <input type="text" name="condition_tags" class="form-control form-control-sm" placeholder="{{ __('Tags') }}" value="{{ is_array($vid->condition_tags) ? implode(', ', $vid->condition_tags) : '' }}" style="max-width: 40%">
+                                                        <button class="btn btn-sm btn-outline-secondary" type="submit" title="{{ __('Save') }}">
+                                                            <i class="fas fa-save"></i>
+                                                        </button>
+                                                    </form>
+                                                    <form action="{{ route('patients.videos.destroy', [$patient, $vid]) }}" method="POST" onsubmit="return confirm('{{ __('Delete this video?') }}')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-sm btn-outline-danger" type="submit" title="{{ __('Delete') }}"><i class="fas fa-trash"></i></button>
+                                                    </form>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Medical Records -->
@@ -1213,5 +1308,160 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
     const modal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
     modal.hide();
 });
+
+// ─── Direct Video Upload to DigitalOcean Spaces ───
+(function() {
+    const fileInput  = document.getElementById('videoFileInput');
+    const uploadBtn  = document.getElementById('videoUploadBtn');
+    const progressC  = document.getElementById('videoProgressContainer');
+    const alertsDiv  = document.getElementById('videoAlerts');
+    const titleInput = document.getElementById('videoTitle');
+    const tagsInput  = document.getElementById('videoTags');
+
+    if (!fileInput || !uploadBtn) return;
+
+    const presignedUrlRoute = "{{ route('patients.videos.presigned-url', $patient) }}";
+    const storeRoute        = "{{ route('patients.videos.store', $patient) }}";
+    const csrfToken         = "{{ csrf_token() }}";
+
+    const allowedTypes = [
+        'video/mp4','video/quicktime','video/x-msvideo',
+        'video/x-ms-wmv','video/webm','video/x-matroska'
+    ];
+
+    fileInput.addEventListener('change', function() {
+        uploadBtn.disabled = !this.files.length;
+    });
+
+    uploadBtn.addEventListener('click', async function() {
+        const files = Array.from(fileInput.files);
+        if (!files.length) return;
+
+        // Validate types
+        for (const f of files) {
+            if (!allowedTypes.includes(f.type)) {
+                showAlert('danger', `Invalid type: ${f.name}. Allowed: MP4, MOV, AVI, WMV, WebM, MKV.`);
+                return;
+            }
+        }
+
+        uploadBtn.disabled = true;
+        fileInput.disabled = true;
+        progressC.classList.remove('d-none');
+        progressC.innerHTML = '';
+
+        let successCount = 0;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const progId = 'prog_' + i;
+
+            // Add progress bar
+            progressC.insertAdjacentHTML('beforeend', `
+                <div class="mb-2" id="${progId}">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-truncate" style="max-width:70%">${file.name}</span>
+                        <span id="${progId}_pct">0%</span>
+                    </div>
+                    <div class="progress" style="height:8px">
+                        <div id="${progId}_bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%"></div>
+                    </div>
+                    <small id="${progId}_status" class="text-muted">{{ __('Requesting upload URL...') }}</small>
+                </div>
+            `);
+
+            try {
+                // Step 1: Get presigned URL from server
+                const presignRes = await fetch(presignedUrlRoute, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        filename: file.name,
+                        content_type: file.type,
+                        size: file.size,
+                    }),
+                });
+                if (!presignRes.ok) {
+                    const err = await presignRes.json();
+                    throw new Error(err.error || 'Failed to get upload URL');
+                }
+                const { upload_url, path } = await presignRes.json();
+
+                // Step 2: Upload directly to Spaces via PUT
+                document.getElementById(progId + '_status').textContent = '{{ __("Uploading to cloud...") }}';
+                await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('PUT', upload_url, true);
+                    xhr.setRequestHeader('Content-Type', file.type);
+
+                    xhr.upload.onprogress = function(e) {
+                        if (e.lengthComputable) {
+                            const pct = Math.round((e.loaded / e.total) * 100);
+                            document.getElementById(progId + '_bar').style.width = pct + '%';
+                            document.getElementById(progId + '_pct').textContent = pct + '%';
+                        }
+                    };
+                    xhr.onload = function() {
+                        if (xhr.status >= 200 && xhr.status < 300) resolve();
+                        else reject(new Error('Upload failed: HTTP ' + xhr.status));
+                    };
+                    xhr.onerror = () => reject(new Error('Network error during upload'));
+                    xhr.send(file);
+                });
+
+                // Step 3: Confirm with Laravel (save DB record)
+                document.getElementById(progId + '_status').textContent = '{{ __("Saving record...") }}';
+                const confirmRes = await fetch(storeRoute, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        path: path,
+                        filename: file.name,
+                        content_type: file.type,
+                        size: file.size,
+                        title: titleInput ? titleInput.value : '',
+                        condition_tags: tagsInput ? tagsInput.value : '',
+                    }),
+                });
+                if (!confirmRes.ok) {
+                    const err = await confirmRes.json();
+                    throw new Error(err.error || 'Failed to save record');
+                }
+
+                document.getElementById(progId + '_bar').classList.remove('progress-bar-animated');
+                document.getElementById(progId + '_bar').classList.add('bg-success');
+                document.getElementById(progId + '_status').textContent = '✓ {{ __("Done") }}';
+                successCount++;
+
+            } catch (err) {
+                document.getElementById(progId + '_bar').classList.remove('progress-bar-animated');
+                document.getElementById(progId + '_bar').classList.add('bg-danger');
+                document.getElementById(progId + '_status').innerHTML = '<span class="text-danger">✗ ' + err.message + '</span>';
+            }
+        }
+
+        uploadBtn.disabled = false;
+        fileInput.disabled = false;
+        fileInput.value = '';
+
+        if (successCount > 0) {
+            showAlert('success', successCount + ' {{ __("video(s) uploaded successfully.") }}');
+            // Reload page after short delay to show new videos
+            setTimeout(() => window.location.reload(), 1500);
+        }
+    });
+
+    function showAlert(type, msg) {
+        alertsDiv.innerHTML = `<div class="alert alert-${type} py-2 alert-dismissible fade show">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+    }
+})();
 </script>
 @endsection

@@ -324,6 +324,9 @@ class PatientController extends Controller
         'images' => function ($q) {
             $q->latest()->limit(12);
         },
+        'videos' => function ($q) {
+            $q->latest()->limit(24);
+        },
             'prescriptions' => function ($q) {
                 $q->with('doctor')->latest()->limit(5);
             },

@@ -166,7 +166,7 @@ class StorageQuotaService
      */
     public static function getTenantStoragePath(int $clinicId, string $type): string
     {
-        $allowed = ['documents', 'lab', 'xrays', 'radiology', 'images', 'finance', 'dental-lab'];
+        $allowed = ['documents', 'lab', 'xrays', 'radiology', 'images', 'finance', 'dental-lab', 'videos'];
         if (!in_array($type, $allowed)) {
             $type = 'documents';
         }
@@ -218,6 +218,40 @@ class StorageQuotaService
         }
 
         return Storage::disk('public')->exists($path);
+    }
+
+    /**
+     * Generate a presigned PUT URL for direct browser-to-Spaces upload.
+     *
+     * @param string $path        Full object key, e.g. "tenant_5/videos/abc.mp4"
+     * @param string $contentType MIME type of the file
+     * @param int    $minutes     URL expiry in minutes
+     * @return string             Presigned PUT URL
+     */
+    public static function getPresignedUploadUrl(string $path, string $contentType = 'application/octet-stream', int $minutes = 30): string
+    {
+        $config = config('filesystems.disks.' . self::SPACES_DISK);
+
+        $client = new \Aws\S3\S3Client([
+            'version'     => 'latest',
+            'region'      => $config['region'],
+            'endpoint'    => $config['endpoint'],
+            'credentials' => [
+                'key'    => $config['key'],
+                'secret' => $config['secret'],
+            ],
+        ]);
+
+        $command = $client->getCommand('PutObject', [
+            'Bucket'      => $config['bucket'],
+            'Key'         => $path,
+            'ContentType' => $contentType,
+            'ACL'         => 'private',
+        ]);
+
+        $request = $client->createPresignedRequest($command, now()->addMinutes($minutes));
+
+        return (string) $request->getUri();
     }
 
     /**

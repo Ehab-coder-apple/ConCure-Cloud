@@ -240,6 +240,12 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         Route::patch('/{patient}/images/{image}', [App\Http\Controllers\PatientImageController::class, 'update'])->name('images.update');
         Route::delete('/{patient}/images/{image}', [App\Http\Controllers\PatientImageController::class, 'destroy'])->name('images.destroy');
+
+        // Patient Videos (direct upload to Spaces)
+        Route::post('/{patient}/videos/presigned-url', [App\Http\Controllers\PatientVideoController::class, 'presignedUrl'])->name('videos.presigned-url');
+        Route::post('/{patient}/videos', [App\Http\Controllers\PatientVideoController::class, 'store'])->name('videos.store');
+        Route::patch('/{patient}/videos/{video}', [App\Http\Controllers\PatientVideoController::class, 'update'])->name('videos.update');
+        Route::delete('/{patient}/videos/{video}', [App\Http\Controllers\PatientVideoController::class, 'destroy'])->name('videos.destroy');
     });
 
     // Checkup Management

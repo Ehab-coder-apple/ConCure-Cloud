@@ -118,6 +118,14 @@ class Patient extends Model
     }
 
     /**
+     * Get the videos for the patient.
+     */
+    public function videos(): HasMany
+    {
+        return $this->hasMany(\App\Models\PatientVideo::class);
+    }
+
+    /**
      * Get the prescriptions for the patient.
      */
     public function prescriptions(): HasMany
