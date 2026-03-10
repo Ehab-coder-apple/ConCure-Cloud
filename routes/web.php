@@ -879,6 +879,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::delete('/prescription-template', [SettingsController::class, 'deletePrescriptionTemplate'])->name('prescription-template.delete');
         Route::post('/prescription-template/settings', [SettingsController::class, 'savePrescriptionTemplateSettings'])->name('prescription-template.settings');
 
+        // Generic Report Template management (blank_report, radiology, lab_request, diet_plan, dental, invoice)
+        Route::post('/report-template/{type}/upload', [SettingsController::class, 'uploadReportTemplate'])->name('report-template.upload');
+        Route::delete('/report-template/{type}', [SettingsController::class, 'deleteReportTemplate'])->name('report-template.delete');
+        Route::post('/report-template/{type}/settings', [SettingsController::class, 'saveReportTemplateSettings'])->name('report-template.settings');
+
         // Audit logs (permission-gated)
         Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs')->middleware('can:view-audit-logs');
 

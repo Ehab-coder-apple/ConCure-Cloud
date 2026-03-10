@@ -14,6 +14,7 @@ use App\Models\DietPlanMeal;
 use App\Models\DietPlanMealFood;
 use App\Models\Food;
 use App\Models\ExternalLab;
+use App\Services\CustomTemplateService;
 use App\Services\WhatsAppService;
 use App\Http\Traits\SmartSearch;
 use Illuminate\Http\Request;
@@ -353,7 +354,31 @@ class RecommendationController extends Controller
 
         $labRequest->load(['patient', 'doctor', 'tests']);
 
-        // Split tests into chunks of 6 for pagination (same logic as print)
+        $filename = 'lab-request-' . $labRequest->request_number . '.pdf';
+
+        // Check for custom template
+        $forceCustom = request()->query('template') === 'custom';
+        $clinic = $user->clinic;
+        $templateData = $clinic ? CustomTemplateService::prepareTemplate($clinic, 'lab_request', $forceCustom) : null;
+
+        if ($templateData) {
+            $mpdf = CustomTemplateService::createMpdf($templateData);
+            $html = view('recommendations.lab-request-custom-template', [
+                'labRequest' => $labRequest,
+                'templateImagePath' => $templateData['imagePath'],
+                'tplSettings' => $templateData['settings'],
+            ])->render();
+            $mpdf->WriteHTML($html);
+            $pdfContent = $mpdf->Output('', 'S');
+            CustomTemplateService::cleanup($templateData);
+
+            return response($pdfContent, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        }
+
+        // Default DomPDF
         $testChunks = $labRequest->tests->chunk(6);
         $totalPages = $testChunks->count();
 
@@ -364,7 +389,6 @@ class RecommendationController extends Controller
             'isMultiPage' => $totalPages > 1,
         ]);
 
-        $filename = 'lab-request-' . $labRequest->request_number . '.pdf';
         return $pdf->download($filename);
     }
 
@@ -781,8 +805,31 @@ class RecommendationController extends Controller
 
         $dietPlan->load(['patient', 'doctor', 'meals.foods.food']);
 
-        $pdf = Pdf::loadView('recommendations.diet-plan-pdf', compact('dietPlan'));
+        $filename = "diet-plan-{$dietPlan->plan_number}.pdf";
 
-        return $pdf->download("diet-plan-{$dietPlan->plan_number}.pdf");
+        // Check for custom template
+        $forceCustom = request()->query('template') === 'custom';
+        $clinic = $user->clinic;
+        $templateData = $clinic ? CustomTemplateService::prepareTemplate($clinic, 'diet_plan', $forceCustom) : null;
+
+        if ($templateData) {
+            $mpdf = CustomTemplateService::createMpdf($templateData);
+            $html = view('recommendations.diet-plan-custom-template', [
+                'dietPlan' => $dietPlan,
+                'templateImagePath' => $templateData['imagePath'],
+                'tplSettings' => $templateData['settings'],
+            ])->render();
+            $mpdf->WriteHTML($html);
+            $pdfContent = $mpdf->Output('', 'S');
+            CustomTemplateService::cleanup($templateData);
+
+            return response($pdfContent, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        }
+
+        $pdf = Pdf::loadView('recommendations.diet-plan-pdf', compact('dietPlan'));
+        return $pdf->download($filename);
     }
 }

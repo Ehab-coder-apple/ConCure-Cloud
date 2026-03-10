@@ -166,7 +166,7 @@ class StorageQuotaService
      */
     public static function getTenantStoragePath(int $clinicId, string $type): string
     {
-        $allowed = ['documents', 'lab', 'xrays', 'radiology', 'images', 'finance', 'dental-lab', 'videos', 'prescription-templates'];
+        $allowed = ['documents', 'lab', 'xrays', 'radiology', 'images', 'finance', 'dental-lab', 'videos', 'prescription-templates', 'report-templates'];
         if (!in_array($type, $allowed)) {
             $type = 'documents';
         }

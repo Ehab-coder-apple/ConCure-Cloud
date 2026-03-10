@@ -7,6 +7,7 @@ use App\Models\RadiologyRequest;
 use App\Models\RadiologyRequestTest;
 use App\Models\RadiologyTest;
 use App\Http\Traits\SmartSearch;
+use App\Services\CustomTemplateService;
 use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -416,9 +417,32 @@ class RadiologyController extends Controller
 
         $radiologyRequest->load(['patient', 'doctor', 'tests.radiologyTest']);
 
-        $pdf = Pdf::loadView('radiology.pdf', compact('radiologyRequest'));
+        $filename = 'radiology-request-' . $radiologyRequest->request_number . '.pdf';
 
-        return $pdf->download('radiology-request-' . $radiologyRequest->request_number . '.pdf');
+        // Check for custom template
+        $forceCustom = request()->query('template') === 'custom';
+        $clinic = $user->clinic;
+        $templateData = $clinic ? CustomTemplateService::prepareTemplate($clinic, 'radiology', $forceCustom) : null;
+
+        if ($templateData) {
+            $mpdf = CustomTemplateService::createMpdf($templateData);
+            $html = view('radiology.pdf-custom-template', [
+                'radiologyRequest' => $radiologyRequest,
+                'templateImagePath' => $templateData['imagePath'],
+                'tplSettings' => $templateData['settings'],
+            ])->render();
+            $mpdf->WriteHTML($html);
+            $pdfContent = $mpdf->Output('', 'S');
+            CustomTemplateService::cleanup($templateData);
+
+            return response($pdfContent, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        }
+
+        $pdf = Pdf::loadView('radiology.pdf', compact('radiologyRequest'));
+        return $pdf->download($filename);
     }
 
     /**

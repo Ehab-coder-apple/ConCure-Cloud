@@ -10,6 +10,7 @@ use App\Models\PatientImage;
 use App\Models\ReportTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\CustomTemplateService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 
@@ -112,25 +113,41 @@ class PatientReportController extends Controller
             'generated_date' => Carbon::now(),
         ];
 
-        $pdf = Pdf::loadView('reports.patient-blank-report-pdf', $reportData);
+        $filename = 'blank-report-' . $patient->patient_id . '-' . Carbon::now()->format('Y-m-d-His') . '.pdf';
 
-        // Configure PDF settings
-        $pdf->setPaper('A4', 'portrait');
-        $pdf->setOptions([
-            'isHtml5ParserEnabled' => true,
-            'isPhpEnabled' => true,
-            'defaultFont' => 'Arial',
-            'margin_top' => 10,
-            'margin_right' => 10,
-            'margin_bottom' => 10,
-            'margin_left' => 10,
-        ]);
+        // Check for custom template
+        $forceCustom = $request->query('template') === 'custom';
+        $clinic = $user->clinic;
+        $templateData = $clinic ? CustomTemplateService::prepareTemplate($clinic, 'blank_report', $forceCustom) : null;
+
+        if ($templateData) {
+            // Use mPDF with custom template
+            $mpdf = CustomTemplateService::createMpdf($templateData);
+            $reportData['templateImagePath'] = $templateData['imagePath'];
+            $reportData['tplSettings'] = $templateData['settings'];
+            $html = view('reports.blank-report-custom-template', $reportData)->render();
+            $mpdf->WriteHTML($html);
+            $pdfContent = $mpdf->Output('', 'S');
+            CustomTemplateService::cleanup($templateData);
+        } else {
+            // Use DomPDF (default)
+            $pdf = Pdf::loadView('reports.patient-blank-report-pdf', $reportData);
+            $pdf->setPaper('A4', 'portrait');
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isPhpEnabled' => true,
+                'defaultFont' => 'Arial',
+                'margin_top' => 10,
+                'margin_right' => 10,
+                'margin_bottom' => 10,
+                'margin_left' => 10,
+            ]);
+            $pdfContent = $pdf->output();
+        }
 
         // Save PDF to patient files
-        $filename = 'blank-report-' . $patient->patient_id . '-' . Carbon::now()->format('Y-m-d-His') . '.pdf';
         $path = 'patients/' . $patient->id . '/files/' . $filename;
-
-        \Storage::disk('public')->put($path, $pdf->output());
+        \Storage::disk('public')->put($path, $pdfContent);
 
         // Create patient file record
         \App\Models\PatientFile::create([
@@ -146,7 +163,10 @@ class PatientReportController extends Controller
         ]);
 
         // Return PDF for download
-        return $pdf->download($filename);
+        return response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
     
     /**

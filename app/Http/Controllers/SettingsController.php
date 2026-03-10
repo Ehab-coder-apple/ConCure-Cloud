@@ -1219,4 +1219,130 @@ class SettingsController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
+    // ─── Generic Report Template Management ─────────────────────────
+
+    /**
+     * Allowed report types for custom templates (excluding 'prescription' which has its own routes).
+     */
+    private function validateReportType(string $type): bool
+    {
+        return in_array($type, ['blank_report', 'radiology', 'lab_request', 'diet_plan', 'dental', 'invoice']);
+    }
+
+    /**
+     * Upload a custom template for any report type.
+     */
+    public function uploadReportTemplate(Request $request, string $type)
+    {
+        $user = Auth::user();
+        if (!$user->clinic_id || !in_array($user->role, ['admin', 'doctor'])) {
+            return response()->json(['success' => false, 'message' => __('Unauthorized.')], 403);
+        }
+
+        if (!$this->validateReportType($type)) {
+            return response()->json(['success' => false, 'message' => __('Invalid report type.')], 400);
+        }
+
+        $request->validate([
+            'template_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ]);
+
+        $file = $request->file('template_file');
+        $clinicId = $user->clinic_id;
+        $storagePath = StorageQuotaService::getTenantStoragePath($clinicId, 'report-templates');
+        $prefix = \App\Services\CustomTemplateService::REPORT_TYPES[$type]['prefix'] ?? $type;
+        $filename = "{$prefix}_template_" . time() . '.' . $file->getClientOriginalExtension();
+        $fullPath = $storagePath . '/' . $filename;
+
+        try {
+            $clinic = \App\Models\Clinic::findOrFail($clinicId);
+            $oldPath = $clinic->getSetting("{$prefix}_template_path");
+            if ($oldPath) {
+                StorageQuotaService::deleteFromDisk($oldPath);
+            }
+
+            Storage::disk(StorageQuotaService::SPACES_DISK)
+                ->put($fullPath, file_get_contents($file->getRealPath()), 'private');
+
+            $clinic->setSetting("{$prefix}_template_path", $fullPath);
+
+            return response()->json([
+                'success' => true,
+                'message' => __('Template uploaded successfully.'),
+                'path' => $fullPath,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => __('Upload failed: ') . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Delete a custom template for any report type.
+     */
+    public function deleteReportTemplate(string $type)
+    {
+        $user = Auth::user();
+        if (!$user->clinic_id || !in_array($user->role, ['admin', 'doctor'])) {
+            return response()->json(['success' => false, 'message' => __('Unauthorized.')], 403);
+        }
+
+        if (!$this->validateReportType($type)) {
+            return response()->json(['success' => false, 'message' => __('Invalid report type.')], 400);
+        }
+
+        try {
+            $clinic = \App\Models\Clinic::findOrFail($user->clinic_id);
+            $prefix = \App\Services\CustomTemplateService::REPORT_TYPES[$type]['prefix'] ?? $type;
+            $path = $clinic->getSetting("{$prefix}_template_path");
+
+            if ($path) {
+                StorageQuotaService::deleteFromDisk($path);
+            }
+
+            $clinic->setSetting("{$prefix}_template_path", null);
+            $clinic->setSetting("{$prefix}_template_enabled", false);
+
+            return response()->json(['success' => true, 'message' => __('Template deleted successfully.')]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Save template layout settings for any report type.
+     */
+    public function saveReportTemplateSettings(Request $request, string $type)
+    {
+        $user = Auth::user();
+        if (!$user->clinic_id || !in_array($user->role, ['admin', 'doctor'])) {
+            return response()->json(['success' => false, 'message' => __('Unauthorized.')], 403);
+        }
+
+        if (!$this->validateReportType($type)) {
+            return response()->json(['success' => false, 'message' => __('Invalid report type.')], 400);
+        }
+
+        $request->validate([
+            'content_x'    => 'required|integer|min:0|max:500',
+            'content_y'    => 'required|integer|min:0|max:800',
+            'font_size'    => 'required|integer|min:6|max:24',
+            'line_spacing' => 'required|integer|min:10|max:50',
+        ]);
+
+        try {
+            $clinic = \App\Models\Clinic::findOrFail($user->clinic_id);
+            $prefix = \App\Services\CustomTemplateService::REPORT_TYPES[$type]['prefix'] ?? $type;
+
+            $clinic->setSetting("{$prefix}_template_enabled", $request->has('template_enabled'));
+            $clinic->setSetting("{$prefix}_content_x", (int) $request->content_x);
+            $clinic->setSetting("{$prefix}_content_y", (int) $request->content_y);
+            $clinic->setSetting("{$prefix}_font_size", (int) $request->font_size);
+            $clinic->setSetting("{$prefix}_line_spacing", (int) $request->line_spacing);
+
+            return response()->json(['success' => true, 'message' => __('Settings saved successfully.')]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }

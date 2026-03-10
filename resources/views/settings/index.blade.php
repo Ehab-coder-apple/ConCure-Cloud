@@ -42,6 +42,10 @@
                                 <i class="fas fa-file-prescription me-2"></i>
                                 {{ __('Prescription Template') }}
                             </a>
+                            <a href="#report-templates" class="list-group-item list-group-item-action {{ $activeTab === 'report-templates' ? 'active' : '' }}" data-bs-toggle="pill">
+                                <i class="fas fa-file-medical me-2"></i>
+                                {{ __('Report Templates') }}
+                            </a>
                             <a href="#system" class="list-group-item list-group-item-action {{ $activeTab === 'system' ? 'active' : '' }}" data-bs-toggle="pill">
                                 <i class="fas fa-server me-2"></i>
                                 {{ __('System Settings') }}
@@ -948,6 +952,154 @@
                                             </button>
                                         </div>
                                     </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Report Templates -->
+                        <div class="tab-pane fade {{ $activeTab === 'report-templates' ? 'show active' : '' }}" id="report-templates">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-file-medical me-2"></i>
+                                        {{ __('Custom Report Templates') }}
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        {{ __('Upload branded templates for different report types. The system will overlay report content on top of your template when generating PDFs.') }}
+                                    </div>
+
+                                    @php
+                                        $clinic = auth()->user()->clinic_id ? \App\Models\Clinic::find(auth()->user()->clinic_id) : null;
+                                        $reportTypes = [
+                                            'blank_report' => ['label' => 'Medical Report', 'prefix' => 'report', 'icon' => 'fa-file-medical'],
+                                            'radiology'    => ['label' => 'Radiology Request', 'prefix' => 'radiology', 'icon' => 'fa-x-ray'],
+                                            'lab_request'  => ['label' => 'Lab Request', 'prefix' => 'lab', 'icon' => 'fa-flask'],
+                                            'diet_plan'    => ['label' => 'Diet / Nutrition Plan', 'prefix' => 'diet', 'icon' => 'fa-utensils'],
+                                            'dental'       => ['label' => 'Dental Treatment', 'prefix' => 'dental', 'icon' => 'fa-tooth'],
+                                            'invoice'      => ['label' => 'Invoice', 'prefix' => 'invoice', 'icon' => 'fa-file-invoice-dollar'],
+                                        ];
+                                    @endphp
+
+                                    <div class="accordion" id="reportTemplatesAccordion">
+                                        @foreach($reportTypes as $typeKey => $typeInfo)
+                                            @php
+                                                $prefix = $typeInfo['prefix'];
+                                                $tplEnabled = $clinic ? filter_var($clinic->getSetting("{$prefix}_template_enabled", false), FILTER_VALIDATE_BOOLEAN) : false;
+                                                $tplPath = $clinic ? $clinic->getSetting("{$prefix}_template_path", '') : '';
+                                                $tplX = $clinic ? $clinic->getSetting("{$prefix}_content_x", 40) : 40;
+                                                $tplY = $clinic ? $clinic->getSetting("{$prefix}_content_y", 200) : 200;
+                                                $tplFontSize = $clinic ? $clinic->getSetting("{$prefix}_font_size", 11) : 11;
+                                                $tplLineSpacing = $clinic ? $clinic->getSetting("{$prefix}_line_spacing", 22) : 22;
+                                            @endphp
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="heading-{{ $typeKey }}">
+                                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ $typeKey }}">
+                                                        <i class="fas {{ $typeInfo['icon'] }} me-2"></i>
+                                                        {{ __($typeInfo['label']) }}
+                                                        @if($tplPath)
+                                                            <span class="badge bg-success ms-2">{{ __('Uploaded') }}</span>
+                                                        @endif
+                                                        @if($tplEnabled)
+                                                            <span class="badge bg-primary ms-1">{{ __('Active') }}</span>
+                                                        @endif
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse-{{ $typeKey }}" class="accordion-collapse collapse" data-bs-parent="#reportTemplatesAccordion">
+                                                    <div class="accordion-body">
+                                                        {{-- Template Preview --}}
+                                                        @if($tplPath)
+                                                            @php
+                                                                $tplUrl = \App\Services\StorageQuotaService::getSecureUrl($tplPath, 30);
+                                                                $tplExt = strtolower(pathinfo($tplPath, PATHINFO_EXTENSION));
+                                                            @endphp
+                                                            <div class="mb-3">
+                                                                <h6 class="text-success"><i class="fas fa-check-circle me-1"></i> {{ __('Current Template') }}</h6>
+                                                                <div class="border rounded p-2 text-center" style="max-height: 300px; overflow: auto;">
+                                                                    @if($tplExt === 'pdf')
+                                                                        <iframe src="{{ $tplUrl }}" style="width: 100%; height: 280px; border: none;"></iframe>
+                                                                    @else
+                                                                        <img src="{{ $tplUrl }}" alt="{{ $typeInfo['label'] }} Template" style="max-width: 100%; max-height: 280px; object-fit: contain;" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'text-muted p-3\'><i class=\'fas fa-file-image fa-2x mb-2\'></i><br>{{ __("Preview unavailable") }}</div>';">
+                                                                    @endif
+                                                                </div>
+                                                                <div class="mt-2 d-flex gap-2">
+                                                                    <a href="{{ $tplUrl }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                                        <i class="fas fa-external-link-alt me-1"></i> {{ __('Open') }}
+                                                                    </a>
+                                                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteReportTemplate('{{ $typeKey }}')">
+                                                                        <i class="fas fa-trash me-1"></i> {{ __('Delete') }}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        @endif
+
+                                                        {{-- Upload Form --}}
+                                                        <div class="mb-3">
+                                                            <h6>{{ __('Upload Template') }}</h6>
+                                                            <form class="rpt-upload-form" data-type="{{ $typeKey }}" enctype="multipart/form-data">
+                                                                @csrf
+                                                                <div class="input-group">
+                                                                    <input type="file" class="form-control" name="template_file" accept=".pdf,.jpg,.jpeg,.png">
+                                                                    <button type="submit" class="btn btn-primary btn-sm">
+                                                                        <i class="fas fa-upload me-1"></i> {{ __('Upload') }}
+                                                                    </button>
+                                                                </div>
+                                                                <small class="text-muted">{{ __('PDF, JPG, PNG. Max 5MB.') }}</small>
+                                                            </form>
+                                                            <div class="rpt-upload-progress mt-2" data-type="{{ $typeKey }}" style="display:none;">
+                                                                <div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%"></div></div>
+                                                            </div>
+                                                        </div>
+
+                                                        <hr>
+
+                                                        {{-- Settings Form --}}
+                                                        <form class="rpt-settings-form" data-type="{{ $typeKey }}">
+                                                            @csrf
+                                                            <div class="form-check form-switch mb-3">
+                                                                <input class="form-check-input" type="checkbox" name="template_enabled" id="tpl_enabled_{{ $typeKey }}" {{ $tplEnabled ? 'checked' : '' }} {{ !$tplPath ? 'disabled' : '' }}>
+                                                                <label class="form-check-label" for="tpl_enabled_{{ $typeKey }}">
+                                                                    <strong>{{ __('Enable Custom Template') }}</strong>
+                                                                </label>
+                                                                @if(!$tplPath)
+                                                                    <br><small class="text-warning">{{ __('Upload a template first.') }}</small>
+                                                                @endif
+                                                            </div>
+
+                                                            <div class="row g-2">
+                                                                <div class="col-md-3">
+                                                                    <label class="form-label">{{ __('X Position') }}</label>
+                                                                    <input type="number" class="form-control form-control-sm" name="content_x" value="{{ $tplX }}" min="0" max="500">
+                                                                    <small class="text-muted">{{ __('pt from left') }}</small>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <label class="form-label">{{ __('Y Position') }}</label>
+                                                                    <input type="number" class="form-control form-control-sm" name="content_y" value="{{ $tplY }}" min="0" max="800">
+                                                                    <small class="text-muted">{{ __('pt from top') }}</small>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <label class="form-label">{{ __('Font Size') }}</label>
+                                                                    <input type="number" class="form-control form-control-sm" name="font_size" value="{{ $tplFontSize }}" min="6" max="24">
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <label class="form-label">{{ __('Line Spacing') }}</label>
+                                                                    <input type="number" class="form-control form-control-sm" name="line_spacing" value="{{ $tplLineSpacing }}" min="10" max="50">
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="mt-3">
+                                                                <button type="submit" class="btn btn-success btn-sm">
+                                                                    <i class="fas fa-save me-1"></i> {{ __('Save Settings') }}
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2134,6 +2286,79 @@ if (rxSettingsForm) {
         });
     });
 }
+
+// === Report Templates Management ===
+document.querySelectorAll('.rpt-upload-form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const type = this.dataset.type;
+        const fileInput = this.querySelector('input[type="file"]');
+        if (!fileInput.files.length) { alert('{{ __("Please select a file.") }}'); return; }
+        if (fileInput.files[0].size > 5 * 1024 * 1024) { alert('{{ __("File must be less than 5MB.") }}'); return; }
+
+        const formData = new FormData();
+        formData.append('template_file', fileInput.files[0]);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        const progressDiv = document.querySelector('.rpt-upload-progress[data-type="' + type + '"]');
+        const progressBar = progressDiv.querySelector('.progress-bar');
+        progressDiv.style.display = 'block';
+
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = function(ev) {
+            if (ev.lengthComputable) { const pct = Math.round((ev.loaded / ev.total) * 100); progressBar.style.width = pct + '%'; progressBar.textContent = pct + '%'; }
+        };
+        xhr.onload = function() {
+            progressDiv.style.display = 'none';
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                if (data.success) { alert('{{ __("Template uploaded successfully!") }}'); location.href = '{{ route("settings.index") }}?tab=report-templates'; }
+                else { alert(data.message || '{{ __("Upload failed.") }}'); }
+            } else { alert('{{ __("Upload failed.") }}'); }
+        };
+        xhr.onerror = function() { progressDiv.style.display = 'none'; alert('{{ __("Upload failed.") }}'); };
+        xhr.open('POST', '/settings/report-template/' + type + '/upload');
+        xhr.send(formData);
+    });
+});
+
+function deleteReportTemplate(type) {
+    if (!confirm('{{ __("Are you sure you want to delete this template?") }}')) return;
+    fetch('/settings/report-template/' + type, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'), 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) { alert('{{ __("Template deleted.") }}'); location.href = '{{ route("settings.index") }}?tab=report-templates'; }
+        else { alert(data.message || '{{ __("Failed.") }}'); }
+    })
+    .catch(() => alert('{{ __("An error occurred.") }}'));
+}
+
+document.querySelectorAll('.rpt-settings-form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const type = this.dataset.type;
+        const btn = this.querySelector('button[type="submit"]');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> {{ __("Saving...") }}';
+        btn.disabled = true;
+
+        fetch('/settings/report-template/' + type + '/settings', {
+            method: 'POST',
+            body: new FormData(this),
+            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'), 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.innerHTML = origText; btn.disabled = false;
+            if (data.success) { alert('{{ __("Settings saved!") }}'); }
+            else { alert(data.message || '{{ __("Failed.") }}'); }
+        })
+        .catch(() => { btn.innerHTML = origText; btn.disabled = false; alert('{{ __("An error occurred.") }}'); });
+    });
+});
 </script>
 </div>
 </div>

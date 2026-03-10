@@ -7,6 +7,7 @@ use App\Models\DentalChart;
 use App\Models\DentalProcedure;
 use App\Models\Patient;
 use App\Models\User;
+use App\Services\CustomTemplateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -383,8 +384,31 @@ class DentalTreatmentController extends Controller
             'creator'
         ]);
 
-        $pdf = Pdf::loadView('dental.treatments.pdf', compact('dentalTreatment'));
+        $filename = 'treatment-plan-' . $dentalTreatment->treatment_number . '.pdf';
 
-        return $pdf->download('treatment-plan-' . $dentalTreatment->treatment_number . '.pdf');
+        // Check for custom template
+        $forceCustom = request()->query('template') === 'custom';
+        $clinic = $user->clinic;
+        $templateData = $clinic ? CustomTemplateService::prepareTemplate($clinic, 'dental', $forceCustom) : null;
+
+        if ($templateData) {
+            $mpdf = CustomTemplateService::createMpdf($templateData);
+            $html = view('dental.treatments.pdf-custom-template', [
+                'dentalTreatment' => $dentalTreatment,
+                'templateImagePath' => $templateData['imagePath'],
+                'tplSettings' => $templateData['settings'],
+            ])->render();
+            $mpdf->WriteHTML($html);
+            $pdfContent = $mpdf->Output('', 'S');
+            CustomTemplateService::cleanup($templateData);
+
+            return response($pdfContent, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        }
+
+        $pdf = Pdf::loadView('dental.treatments.pdf', compact('dentalTreatment'));
+        return $pdf->download($filename);
     }
 }
