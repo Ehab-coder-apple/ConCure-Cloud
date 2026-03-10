@@ -851,12 +851,23 @@
 
                                     <!-- Current Template Preview -->
                                     @if($rxTemplatePath)
+                                        @php
+                                            $rxTemplateUrl = \App\Services\StorageQuotaService::getSecureUrl($rxTemplatePath, 30);
+                                            $rxTemplateExt = strtolower(pathinfo($rxTemplatePath, PATHINFO_EXTENSION));
+                                        @endphp
                                         <div class="mb-4">
                                             <h6 class="text-success"><i class="fas fa-check-circle me-1"></i> {{ __('Current Template') }}</h6>
-                                            <div class="border rounded p-2 text-center" style="max-height: 300px; overflow: hidden;">
-                                                <img id="rxTemplatePreview" src="{{ \App\Services\StorageQuotaService::getSecureUrl($rxTemplatePath) }}" alt="Prescription Template" style="max-width: 100%; max-height: 280px; object-fit: contain;">
+                                            <div class="border rounded p-2 text-center" style="max-height: 400px; overflow: auto;">
+                                                @if($rxTemplateExt === 'pdf')
+                                                    <iframe src="{{ $rxTemplateUrl }}" style="width: 100%; height: 380px; border: none;"></iframe>
+                                                @else
+                                                    <img id="rxTemplatePreview" src="{{ $rxTemplateUrl }}" alt="Prescription Template" style="max-width: 100%; max-height: 380px; object-fit: contain;" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'text-muted p-3\'><i class=\'fas fa-file-image fa-3x mb-2\'></i><br>{{ __("Template uploaded but preview unavailable. It will still work for PDF generation.") }}</div>';">
+                                                @endif
                                             </div>
-                                            <div class="mt-2">
+                                            <div class="mt-2 d-flex gap-2">
+                                                <a href="{{ $rxTemplateUrl }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-external-link-alt me-1"></i> {{ __('Open in New Tab') }}
+                                                </a>
                                                 <button type="button" class="btn btn-danger btn-sm" onclick="deletePrescriptionTemplate()">
                                                     <i class="fas fa-trash me-1"></i> {{ __('Delete Template') }}
                                                 </button>
