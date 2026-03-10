@@ -306,7 +306,7 @@ class SimplePrescriptionController extends Controller
             ->with('success', 'Prescription deleted successfully!');
     }
 
-    public function pdf($id)
+    public function pdf($id, Request $request)
     {
         $user = Auth::user();
         $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
@@ -318,7 +318,7 @@ class SimplePrescriptionController extends Controller
             abort(403, 'You can only generate PDF for your own prescriptions.');
         }
 
-        // Check if clinic has a custom prescription template enabled
+        // Check if user explicitly requested custom template via query param
         $clinic = Clinic::find($user->clinic_id);
         $useCustomTemplate = false;
         $templateLocalPath = null;
@@ -326,15 +326,12 @@ class SimplePrescriptionController extends Controller
         $rxSettings = [];
 
         if ($clinic) {
+            // Use custom template if ?template=custom is passed, OR if the setting is enabled
+            $requestedCustom = $request->query('template') === 'custom';
             $enabledRaw = $clinic->getSetting('rx_template_enabled', false);
-            $useCustomTemplate = filter_var($enabledRaw, FILTER_VALIDATE_BOOLEAN);
+            $settingEnabled = filter_var($enabledRaw, FILTER_VALIDATE_BOOLEAN);
+            $useCustomTemplate = $requestedCustom || $settingEnabled;
             $templatePath = $clinic->getSetting('rx_template_path');
-
-            \Log::info('RX Template check', [
-                'enabled_raw' => $enabledRaw,
-                'enabled_bool' => $useCustomTemplate,
-                'template_path' => $templatePath,
-            ]);
 
             if ($useCustomTemplate && $templatePath) {
                 try {

@@ -18,10 +18,27 @@
                                class="btn btn-success btn-sm" target="_blank" title="{{ __('Print') }}">
                                 <i class="fas fa-print"></i>
                             </a>
-                            <a href="{{ route('simple-prescriptions.pdf', $prescription->id) }}"
-                               class="btn btn-danger btn-sm" title="{{ __('Download PDF') }}">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>
+                            <div class="btn-group">
+                                <a href="{{ route('simple-prescriptions.pdf', $prescription->id) }}"
+                                   class="btn btn-danger btn-sm" title="{{ __('Default PDF') }}">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="visually-hidden">Toggle Dropdown</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.pdf', $prescription->id) }}">
+                                            <i class="fas fa-file-pdf me-2"></i>{{ __('Default PDF') }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.pdf', [$prescription->id, 'template' => 'custom']) }}">
+                                            <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                             <button type="button" class="btn btn-success btn-sm" title="{{ __('Send via WhatsApp') }}" onclick="shareSimplePrescriptionWhatsApp()">
                                 <i class="fab fa-whatsapp"></i>
                             </button>
@@ -223,11 +240,28 @@
                                     <i class="fas fa-print me-1"></i>
                                     {{ __('Print') }}
                                 </a>
-                                <a href="{{ route('simple-prescriptions.pdf', $prescription->id) }}"
-                                   class="btn btn-danger btn-sm">
-                                    <i class="fas fa-file-pdf me-1"></i>
-                                    {{ __('PDF') }}
-                                </a>
+                                <div class="btn-group">
+                                    <a href="{{ route('simple-prescriptions.pdf', $prescription->id) }}"
+                                       class="btn btn-danger btn-sm">
+                                        <i class="fas fa-file-pdf me-1"></i>
+                                        {{ __('PDF') }}
+                                    </a>
+                                    <button type="button" class="btn btn-danger btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span class="visually-hidden">Toggle Dropdown</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('simple-prescriptions.pdf', $prescription->id) }}">
+                                                <i class="fas fa-file-pdf me-2"></i>{{ __('Default PDF') }}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('simple-prescriptions.pdf', [$prescription->id, 'template' => 'custom']) }}">
+                                                <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                             <a href="{{ route('simple-prescriptions.edit', $prescription->id) }}" class="btn btn-primary btn-sm">
                                 <i class="fas fa-edit me-1"></i>
