@@ -30,10 +30,27 @@
                             <i class="fas fa-edit me-1"></i>
                             {{ __('Edit') }}
                         </a>
-                        <a href="{{ url("/dental/treatments/{$dentalTreatment->id}/pdf") }}" class="btn btn-outline-primary" target="_blank">
-                            <i class="fas fa-file-pdf me-1"></i>
-                            {{ __('PDF') }}
-                        </a>
+                        <div class="btn-group">
+                            <a href="{{ url("/dental/treatments/{$dentalTreatment->id}/pdf") }}" class="btn btn-outline-primary" target="_blank">
+                                <i class="fas fa-file-pdf me-1"></i>
+                                {{ __('PDF') }}
+                            </a>
+                            <button type="button" class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="visually-hidden">Toggle Dropdown</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url("/dental/treatments/{$dentalTreatment->id}/pdf") }}">
+                                        <i class="fas fa-file-pdf me-2"></i>{{ __('Default PDF') }}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url("/dental/treatments/{$dentalTreatment->id}/pdf?template=custom") }}">
+                                        <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -442,10 +459,27 @@
                             {{ __('Edit Treatment') }}
                         </a>
 
-                        <a href="{{ url("/dental/treatments/{$dentalTreatment->id}/pdf") }}" class="btn btn-outline-primary w-100 mb-2" target="_blank">
-                            <i class="fas fa-file-pdf me-1"></i>
-                            {{ __('Download PDF') }}
-                        </a>
+                        <div class="btn-group w-100 mb-2">
+                            <a href="{{ url("/dental/treatments/{$dentalTreatment->id}/pdf") }}" class="btn btn-outline-primary" target="_blank" style="flex: 1;">
+                                <i class="fas fa-file-pdf me-1"></i>
+                                {{ __('Download PDF') }}
+                            </a>
+                            <button type="button" class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="visually-hidden">Toggle Dropdown</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url("/dental/treatments/{$dentalTreatment->id}/pdf") }}">
+                                        <i class="fas fa-file-pdf me-2"></i>{{ __('Default PDF') }}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url("/dental/treatments/{$dentalTreatment->id}/pdf?template=custom") }}">
+                                        <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
 
                         @if(in_array(auth()->user()->role, ['admin', 'program_owner']))
                             <form method="POST" action="{{ url("/dental/treatments/{$dentalTreatment->id}") }}" onsubmit="return confirm('{{ __('Are you sure you want to delete this treatment plan?') }}')">

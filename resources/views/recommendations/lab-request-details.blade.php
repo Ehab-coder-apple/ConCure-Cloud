@@ -22,11 +22,28 @@
                         <i class="fas fa-print me-1"></i>
                         {{ __('Print') }}
                     </a>
-                    <a href="{{ route('recommendations.lab-requests.pdf', $labRequest->id) }}"
-                       class="btn btn-outline-success me-2" target="_blank">
-                        <i class="fas fa-file-pdf me-1"></i>
-                        {{ __('Download PDF') }}
-                    </a>
+                    <div class="btn-group me-2">
+                        <a href="{{ route('recommendations.lab-requests.pdf', $labRequest->id) }}"
+                           class="btn btn-outline-success" target="_blank">
+                            <i class="fas fa-file-pdf me-1"></i>
+                            {{ __('Download PDF') }}
+                        </a>
+                        <button type="button" class="btn btn-outline-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="visually-hidden">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('recommendations.lab-requests.pdf', $labRequest->id) }}">
+                                    <i class="fas fa-file-pdf me-2"></i>{{ __('Default PDF') }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('recommendations.lab-requests.pdf', [$labRequest->id, 'template' => 'custom']) }}">
+                                    <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <a id="share-internal" href="{{ route('messages.index') }}" class="btn btn-outline-secondary me-2 px-3" title="{{ __('Share Internally (Messages)') }}"
                        data-patient-id="{{ $labRequest->patient_id }}" data-source-id="{{ $labRequest->id }}"
                        data-patient-name="{{ $labRequest->patient->full_name ?? '' }}" data-request-number="{{ $labRequest->request_number ?? '' }}">

@@ -239,9 +239,26 @@
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     @endif
-                                                    <a href="{{ route('recommendations.radiology.pdf', $request) }}" class="btn btn-outline-danger" title="{{ __('PDF') }}">
-                                                        <i class="fas fa-file-pdf"></i>
-                                                    </a>
+                                                    <div class="btn-group">
+                                                        <a href="{{ route('recommendations.radiology.pdf', $request) }}" class="btn btn-outline-danger" title="{{ __('PDF') }}">
+                                                            <i class="fas fa-file-pdf"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-outline-danger dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <span class="visually-hidden">Toggle Dropdown</span>
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-end">
+                                                            <li>
+                                                                <a class="dropdown-item" href="{{ route('recommendations.radiology.pdf', $request) }}">
+                                                                    <i class="fas fa-file-pdf me-2"></i>{{ __('Default PDF') }}
+                                                                </a>
+                                                            </li>
+                                                            <li>
+                                                                <a class="dropdown-item" href="{{ route('recommendations.radiology.pdf', [$request, 'template' => 'custom']) }}">
+                                                                    <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
+                                                                </a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
                                                     @if($request->status === 'pending')
                                                     <button type="button" class="btn btn-outline-danger"
                                                             onclick="deleteRequest({{ $request->id }}, '{{ $request->request_number }}')"

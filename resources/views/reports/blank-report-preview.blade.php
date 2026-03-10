@@ -186,11 +186,29 @@
                         <input type="hidden" name="report_title" value="{{ $report_title }}">
                         <input type="hidden" name="notes" value="{{ $notes }}">
 
+                        <input type="hidden" name="template" id="templateField" value="">
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="fas fa-save me-2"></i>
-                                {{ __('Save & Download PDF') }}
-                            </button>
+                            <div class="btn-group w-100">
+                                <button type="submit" class="btn btn-success btn-lg" style="flex: 1;" onclick="document.getElementById('templateField').value=''">
+                                    <i class="fas fa-save me-2"></i>
+                                    {{ __('Save & Download PDF') }}
+                                </button>
+                                <button type="button" class="btn btn-success btn-lg dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="visually-hidden">Toggle Dropdown</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('templateField').value=''; document.getElementById('saveReportForm').submit();">
+                                            <i class="fas fa-file-pdf me-2"></i>{{ __('Default PDF') }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('templateField').value='custom'; document.getElementById('saveReportForm').action='{{ route('patient.blank-report.generate', $patient) }}?template=custom'; document.getElementById('saveReportForm').submit();">
+                                            <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
 
                             <button type="button" class="btn btn-primary" onclick="window.print()">
                                 <i class="fas fa-print me-2"></i>

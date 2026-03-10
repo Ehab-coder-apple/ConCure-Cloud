@@ -29,9 +29,26 @@
                         <i class="fas fa-share-nodes me-1"></i> {{ __('Share Internally') }}
                     </a>
 
-                    <a href="{{ route('recommendations.radiology.pdf', $radiologyRequest) }}" class="btn btn-outline-success me-2" target="_blank">
-                        <i class="fas fa-file-pdf me-1"></i> {{ __('Download PDF') }}
-                    </a>
+                    <div class="btn-group me-2">
+                        <a href="{{ route('recommendations.radiology.pdf', $radiologyRequest) }}" class="btn btn-outline-success" target="_blank">
+                            <i class="fas fa-file-pdf me-1"></i> {{ __('Download PDF') }}
+                        </a>
+                        <button type="button" class="btn btn-outline-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="visually-hidden">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('recommendations.radiology.pdf', $radiologyRequest) }}">
+                                    <i class="fas fa-file-pdf me-2"></i>{{ __('Default PDF') }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('recommendations.radiology.pdf', [$radiologyRequest, 'template' => 'custom']) }}">
+                                    <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
 
                     @if($radiologyRequest->status === 'pending')
                         <a href="{{ route('recommendations.radiology.edit', $radiologyRequest) }}" class="btn btn-outline-primary me-2">
@@ -343,10 +360,27 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{{ route('recommendations.radiology.pdf', $radiologyRequest) }}" class="btn btn-outline-danger">
-                            <i class="fas fa-file-pdf me-1"></i>
-                            {{ __('Download PDF') }}
-                        </a>
+                        <div class="btn-group w-100 mb-2">
+                            <a href="{{ route('recommendations.radiology.pdf', $radiologyRequest) }}" class="btn btn-outline-danger">
+                                <i class="fas fa-file-pdf me-1"></i>
+                                {{ __('Download PDF') }}
+                            </a>
+                            <button type="button" class="btn btn-outline-danger dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="visually-hidden">Toggle Dropdown</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('recommendations.radiology.pdf', $radiologyRequest) }}">
+                                        <i class="fas fa-file-pdf me-2"></i>{{ __('Default PDF') }}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('recommendations.radiology.pdf', [$radiologyRequest, 'template' => 'custom']) }}">
+                                        <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
 
                             <button type="button" class="btn btn-success" onclick="shareRadiologyWhatsApp()">
                                 <i class="fab fa-whatsapp me-1"></i>
