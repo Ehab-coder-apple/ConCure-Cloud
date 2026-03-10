@@ -321,26 +321,36 @@ class SimplePrescriptionController extends Controller
         // Check if clinic has a custom prescription template enabled
         $clinic = Clinic::find($user->clinic_id);
         $useCustomTemplate = false;
-        $templateImagePath = null;
+        $templateLocalPath = null;
+        $templateIsPdf = false;
         $rxSettings = [];
 
         if ($clinic) {
-            $useCustomTemplate = (bool) $clinic->getSetting('rx_template_enabled', false);
+            $enabledRaw = $clinic->getSetting('rx_template_enabled', false);
+            $useCustomTemplate = filter_var($enabledRaw, FILTER_VALIDATE_BOOLEAN);
             $templatePath = $clinic->getSetting('rx_template_path');
+
+            \Log::info('RX Template check', [
+                'enabled_raw' => $enabledRaw,
+                'enabled_bool' => $useCustomTemplate,
+                'template_path' => $templatePath,
+            ]);
 
             if ($useCustomTemplate && $templatePath) {
                 try {
-                    // Download template to a temp file for mPDF to use
-                    $tempFile = storage_path('app/temp_rx_template_' . $clinic->id . '.' . pathinfo($templatePath, PATHINFO_EXTENSION));
+                    $ext = strtolower(pathinfo($templatePath, PATHINFO_EXTENSION));
+                    $templateIsPdf = ($ext === 'pdf');
+                    $tempFile = storage_path('app/temp_rx_template_' . $clinic->id . '.' . $ext);
                     $contents = Storage::disk(StorageQuotaService::SPACES_DISK)->get($templatePath);
                     if ($contents) {
                         file_put_contents($tempFile, $contents);
-                        $templateImagePath = $tempFile;
+                        $templateLocalPath = $tempFile;
                     } else {
                         $useCustomTemplate = false;
                     }
                 } catch (\Exception $e) {
-                    $useCustomTemplate = false; // Fallback to default
+                    \Log::error('RX Template download failed', ['error' => $e->getMessage()]);
+                    $useCustomTemplate = false;
                 }
             } else {
                 $useCustomTemplate = false;
@@ -353,14 +363,6 @@ class SimplePrescriptionController extends Controller
                 'line_spacing' => (int) $clinic->getSetting('rx_line_spacing', 22),
                 'max_medicines' => (int) $clinic->getSetting('rx_max_medicines', 12),
             ];
-        }
-
-        // Choose the view based on custom template
-        if ($useCustomTemplate && $templateImagePath) {
-            $medicines = $prescription->medicines->take($rxSettings['max_medicines']);
-            $html = view('simple-prescriptions.pdf-custom-template', compact('prescription', 'templateImagePath', 'rxSettings', 'medicines'))->render();
-        } else {
-            $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
         }
 
         // Create mPDF instance with Arabic support
@@ -388,7 +390,7 @@ class SimplePrescriptionController extends Controller
         ];
 
         // For custom templates, remove default margins so the background fills the page
-        if ($useCustomTemplate && $templateImagePath) {
+        if ($useCustomTemplate && $templateLocalPath) {
             $mpdfConfig['margin_top'] = 0;
             $mpdfConfig['margin_bottom'] = 0;
             $mpdfConfig['margin_left'] = 0;
@@ -396,11 +398,26 @@ class SimplePrescriptionController extends Controller
         }
 
         $mpdf = new \Mpdf\Mpdf($mpdfConfig);
+
+        // Apply custom template
+        if ($useCustomTemplate && $templateLocalPath) {
+            if ($templateIsPdf) {
+                // Use PDF as background template via SetDocTemplate
+                $mpdf->SetDocTemplate($templateLocalPath, true);
+            }
+
+            $medicines = $prescription->medicines->take($rxSettings['max_medicines']);
+            $templateImagePath = $templateIsPdf ? null : $templateLocalPath;
+            $html = view('simple-prescriptions.pdf-custom-template', compact('prescription', 'templateImagePath', 'rxSettings', 'medicines'))->render();
+        } else {
+            $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
+        }
+
         $mpdf->WriteHTML($html);
 
         // Clean up temp template file
-        if ($templateImagePath && file_exists($templateImagePath)) {
-            @unlink($templateImagePath);
+        if ($templateLocalPath && file_exists($templateLocalPath)) {
+            @unlink($templateLocalPath);
         }
 
         $filename = 'prescription-' . $prescription->prescription_number . '.pdf';
