@@ -874,6 +874,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/session-lifetime', [SettingsController::class, 'updateSessionLifetime'])->name('update-session-lifetime')->middleware('can:access-settings');
         Route::post('/patient-inactivity-period', [SettingsController::class, 'updatePatientInactivityPeriod'])->name('update-patient-inactivity-period')->middleware('can:access-settings');
 
+        // Prescription Template management
+        Route::post('/prescription-template/upload', [SettingsController::class, 'uploadPrescriptionTemplate'])->name('prescription-template.upload');
+        Route::delete('/prescription-template', [SettingsController::class, 'deletePrescriptionTemplate'])->name('prescription-template.delete');
+        Route::post('/prescription-template/settings', [SettingsController::class, 'savePrescriptionTemplateSettings'])->name('prescription-template.settings');
+
         // Audit logs (permission-gated)
         Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs')->middleware('can:view-audit-logs');
 

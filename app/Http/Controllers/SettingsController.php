@@ -1107,4 +1107,116 @@ class SettingsController extends Controller
             'format' => $format
         ]);
     }
+
+    // ─── Prescription Template Management ───────────────────────────
+
+    /**
+     * Upload a custom prescription template (image or PDF).
+     */
+    public function uploadPrescriptionTemplate(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->clinic_id || !in_array($user->role, ['admin', 'doctor'])) {
+            return response()->json(['success' => false, 'message' => __('Unauthorized.')], 403);
+        }
+
+        $request->validate([
+            'template_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5 MB
+        ]);
+
+        $file = $request->file('template_file');
+        $clinicId = $user->clinic_id;
+        $storagePath = \App\Services\StorageQuotaService::getTenantStoragePath($clinicId, 'prescription-templates');
+        $filename = 'rx_template_' . time() . '.' . $file->getClientOriginalExtension();
+        $fullPath = $storagePath . '/' . $filename;
+
+        try {
+            // Delete old template if exists
+            $clinic = \App\Models\Clinic::findOrFail($clinicId);
+            $oldPath = $clinic->getSetting('rx_template_path');
+            if ($oldPath) {
+                \App\Services\StorageQuotaService::deleteFromDisk($oldPath);
+            }
+
+            // Upload to Spaces
+            Storage::disk(\App\Services\StorageQuotaService::SPACES_DISK)
+                ->put($fullPath, file_get_contents($file->getRealPath()), 'private');
+
+            // Save path in clinic settings
+            $clinic->setSetting('rx_template_path', $fullPath);
+
+            return response()->json([
+                'success' => true,
+                'message' => __('Template uploaded successfully.'),
+                'path' => $fullPath,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => __('Upload failed: ') . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete the current prescription template.
+     */
+    public function deletePrescriptionTemplate()
+    {
+        $user = Auth::user();
+        if (!$user->clinic_id || !in_array($user->role, ['admin', 'doctor'])) {
+            return response()->json(['success' => false, 'message' => __('Unauthorized.')], 403);
+        }
+
+        try {
+            $clinic = \App\Models\Clinic::findOrFail($user->clinic_id);
+            $path = $clinic->getSetting('rx_template_path');
+
+            if ($path) {
+                \App\Services\StorageQuotaService::deleteFromDisk($path);
+            }
+
+            // Clear all template settings
+            $clinic->setSetting('rx_template_path', null);
+            $clinic->setSetting('rx_template_enabled', false);
+
+            return response()->json(['success' => true, 'message' => __('Template deleted successfully.')]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Save prescription template layout settings (coordinates, font size, etc.).
+     */
+    public function savePrescriptionTemplateSettings(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->clinic_id || !in_array($user->role, ['admin', 'doctor'])) {
+            return response()->json(['success' => false, 'message' => __('Unauthorized.')], 403);
+        }
+
+        $request->validate([
+            'rx_medicine_x' => 'required|integer|min:0|max:500',
+            'rx_medicine_y' => 'required|integer|min:0|max:800',
+            'rx_font_size' => 'required|integer|min:6|max:24',
+            'rx_line_spacing' => 'required|integer|min:10|max:50',
+            'rx_max_medicines' => 'required|integer|min:1|max:30',
+        ]);
+
+        try {
+            $clinic = \App\Models\Clinic::findOrFail($user->clinic_id);
+
+            $clinic->setSetting('rx_template_enabled', $request->has('rx_template_enabled'));
+            $clinic->setSetting('rx_medicine_x', (int) $request->rx_medicine_x);
+            $clinic->setSetting('rx_medicine_y', (int) $request->rx_medicine_y);
+            $clinic->setSetting('rx_font_size', (int) $request->rx_font_size);
+            $clinic->setSetting('rx_line_spacing', (int) $request->rx_line_spacing);
+            $clinic->setSetting('rx_max_medicines', (int) $request->rx_max_medicines);
+
+            return response()->json(['success' => true, 'message' => __('Settings saved successfully.')]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }

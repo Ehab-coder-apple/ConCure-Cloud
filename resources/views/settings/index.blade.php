@@ -38,6 +38,10 @@
                                 <i class="fas fa-users me-2"></i>
                                 {{ __('User Management') }}
                             </a>
+                            <a href="#prescription-template" class="list-group-item list-group-item-action {{ $activeTab === 'prescription-template' ? 'active' : '' }}" data-bs-toggle="pill">
+                                <i class="fas fa-file-prescription me-2"></i>
+                                {{ __('Prescription Template') }}
+                            </a>
                             <a href="#system" class="list-group-item list-group-item-action {{ $activeTab === 'system' ? 'active' : '' }}" data-bs-toggle="pill">
                                 <i class="fas fa-server me-2"></i>
                                 {{ __('System Settings') }}
@@ -815,6 +819,124 @@
                                             <p class="text-muted">{{ __('User management is available to administrators only.') }}</p>
                                         </div>
                                     @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prescription Template -->
+                        <div class="tab-pane fade {{ $activeTab === 'prescription-template' ? 'show active' : '' }}" id="prescription-template">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-file-prescription me-2"></i>
+                                        {{ __('Custom Prescription Template') }}
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    @php
+                                        $clinic = auth()->user()->clinic_id ? \App\Models\Clinic::find(auth()->user()->clinic_id) : null;
+                                        $rxTemplateEnabled = $clinic ? $clinic->getSetting('rx_template_enabled', false) : false;
+                                        $rxTemplatePath = $clinic ? $clinic->getSetting('rx_template_path', '') : '';
+                                        $rxMedicineX = $clinic ? $clinic->getSetting('rx_medicine_x', 40) : 40;
+                                        $rxMedicineY = $clinic ? $clinic->getSetting('rx_medicine_y', 200) : 200;
+                                        $rxFontSize = $clinic ? $clinic->getSetting('rx_font_size', 11) : 11;
+                                        $rxLineSpacing = $clinic ? $clinic->getSetting('rx_line_spacing', 22) : 22;
+                                        $rxMaxMedicines = $clinic ? $clinic->getSetting('rx_max_medicines', 12) : 12;
+                                    @endphp
+
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        {{ __('Upload your clinic\'s branded prescription letterhead. The system will overlay medicine data on top of your template when generating prescriptions.') }}
+                                    </div>
+
+                                    <!-- Current Template Preview -->
+                                    @if($rxTemplatePath)
+                                        <div class="mb-4">
+                                            <h6 class="text-success"><i class="fas fa-check-circle me-1"></i> {{ __('Current Template') }}</h6>
+                                            <div class="border rounded p-2 text-center" style="max-height: 300px; overflow: hidden;">
+                                                <img id="rxTemplatePreview" src="{{ \App\Services\StorageQuotaService::getSecureUrl($rxTemplatePath) }}" alt="Prescription Template" style="max-width: 100%; max-height: 280px; object-fit: contain;">
+                                            </div>
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-danger btn-sm" onclick="deletePrescriptionTemplate()">
+                                                    <i class="fas fa-trash me-1"></i> {{ __('Delete Template') }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <!-- Upload Form -->
+                                    <div class="mb-4">
+                                        <h6>{{ __('Upload Template') }}</h6>
+                                        <form id="rxTemplateUploadForm" enctype="multipart/form-data">
+                                            @csrf
+                                            <div class="input-group">
+                                                <input type="file" class="form-control" id="rx_template_file" name="template_file" accept=".pdf,.jpg,.jpeg,.png">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-upload me-1"></i> {{ __('Upload') }}
+                                                </button>
+                                            </div>
+                                            <small class="text-muted">{{ __('Accepted formats: PDF, JPG, PNG. Max size: 5MB. Recommended: A4 size image.') }}</small>
+                                        </form>
+                                        <div id="rxUploadProgress" class="mt-2" style="display:none;">
+                                            <div class="progress">
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr>
+
+                                    <!-- Enable/Disable Toggle -->
+                                    <form id="rxTemplateSettingsForm">
+                                        @csrf
+                                        <div class="mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="rx_template_enabled" name="rx_template_enabled" {{ $rxTemplateEnabled ? 'checked' : '' }} {{ !$rxTemplatePath ? 'disabled' : '' }}>
+                                                <label class="form-check-label" for="rx_template_enabled">
+                                                    <strong>{{ __('Use Custom Template for Prescriptions') }}</strong>
+                                                </label>
+                                            </div>
+                                            @if(!$rxTemplatePath)
+                                                <small class="text-warning">{{ __('Upload a template first to enable this option.') }}</small>
+                                            @endif
+                                        </div>
+
+                                        <h6 class="mt-4"><i class="fas fa-sliders-h me-1"></i> {{ __('Medicine List Position & Formatting') }}</h6>
+                                        <p class="text-muted small">{{ __('Adjust where the medicine list appears on your custom template. Values are in points (1 inch = 72 points). A4 is 595 x 842 points.') }}</p>
+
+                                        <div class="row g-3">
+                                            <div class="col-md-3">
+                                                <label for="rx_medicine_x" class="form-label">{{ __('X Position (left margin)') }}</label>
+                                                <input type="number" class="form-control" id="rx_medicine_x" name="rx_medicine_x" value="{{ $rxMedicineX }}" min="0" max="500">
+                                                <small class="text-muted">{{ __('pt from left') }}</small>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="rx_medicine_y" class="form-label">{{ __('Y Position (from top)') }}</label>
+                                                <input type="number" class="form-control" id="rx_medicine_y" name="rx_medicine_y" value="{{ $rxMedicineY }}" min="0" max="800">
+                                                <small class="text-muted">{{ __('pt from top') }}</small>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="rx_font_size" class="form-label">{{ __('Font Size') }}</label>
+                                                <input type="number" class="form-control" id="rx_font_size" name="rx_font_size" value="{{ $rxFontSize }}" min="6" max="24">
+                                                <small class="text-muted">{{ __('pt') }}</small>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="rx_line_spacing" class="form-label">{{ __('Line Spacing') }}</label>
+                                                <input type="number" class="form-control" id="rx_line_spacing" name="rx_line_spacing" value="{{ $rxLineSpacing }}" min="10" max="50">
+                                                <small class="text-muted">{{ __('pt') }}</small>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="rx_max_medicines" class="form-label">{{ __('Max per Page') }}</label>
+                                                <input type="number" class="form-control" id="rx_max_medicines" name="rx_max_medicines" value="{{ $rxMaxMedicines }}" min="1" max="30">
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-save me-1"></i> {{ __('Save Settings') }}
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -1889,6 +2011,118 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// === Prescription Template Management ===
+// Upload template
+const rxUploadForm = document.getElementById('rxTemplateUploadForm');
+if (rxUploadForm) {
+    rxUploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('rx_template_file');
+        if (!fileInput.files.length) { alert('{{ __("Please select a file.") }}'); return; }
+
+        const file = fileInput.files[0];
+        if (file.size > 5 * 1024 * 1024) { alert('{{ __("File must be less than 5MB.") }}'); return; }
+
+        const formData = new FormData();
+        formData.append('template_file', file);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        const progressDiv = document.getElementById('rxUploadProgress');
+        const progressBar = progressDiv.querySelector('.progress-bar');
+        progressDiv.style.display = 'block';
+
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const pct = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = pct + '%';
+                progressBar.textContent = pct + '%';
+            }
+        };
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                if (data.success) {
+                    alert('{{ __("Template uploaded successfully!") }}');
+                    location.href = '{{ route("settings.index") }}?tab=prescription-template';
+                } else {
+                    alert(data.message || '{{ __("Upload failed.") }}');
+                }
+            } else {
+                alert('{{ __("Upload failed. Please try again.") }}');
+            }
+            progressDiv.style.display = 'none';
+        };
+        xhr.onerror = function() {
+            alert('{{ __("Upload failed. Please try again.") }}');
+            progressDiv.style.display = 'none';
+        };
+        xhr.open('POST', '{{ route("settings.prescription-template.upload") }}');
+        xhr.send(formData);
+    });
+}
+
+// Delete template
+function deletePrescriptionTemplate() {
+    if (!confirm('{{ __("Are you sure you want to delete the prescription template?") }}')) return;
+
+    fetch('{{ route("settings.prescription-template.delete") }}', {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('{{ __("Template deleted successfully.") }}');
+            location.href = '{{ route("settings.index") }}?tab=prescription-template';
+        } else {
+            alert(data.message || '{{ __("Failed to delete template.") }}');
+        }
+    })
+    .catch(() => alert('{{ __("An error occurred.") }}'));
+}
+
+// Save template settings
+const rxSettingsForm = document.getElementById('rxTemplateSettingsForm');
+if (rxSettingsForm) {
+    rxSettingsForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = this.querySelector('button[type="submit"]');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> {{ __("Saving...") }}';
+        btn.disabled = true;
+
+        const formData = new FormData(this);
+
+        fetch('{{ route("settings.prescription-template.settings") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+            if (data.success) {
+                alert('{{ __("Settings saved successfully!") }}');
+            } else {
+                alert(data.message || '{{ __("Failed to save settings.") }}');
+            }
+        })
+        .catch(() => {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+            alert('{{ __("An error occurred.") }}');
+        });
+    });
+}
 </script>
 </div>
 </div>

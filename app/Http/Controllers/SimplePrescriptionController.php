@@ -6,10 +6,13 @@ use App\Models\SimplePrescription;
 use App\Models\SimplePrescriptionMedicine;
 use App\Models\Patient;
 use App\Models\Medicine;
+use App\Models\Clinic;
 use App\Services\PdfKurdishFontService;
+use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class SimplePrescriptionController extends Controller
@@ -315,11 +318,50 @@ class SimplePrescriptionController extends Controller
             abort(403, 'You can only generate PDF for your own prescriptions.');
         }
 
-        // Use mPDF with OTL (OpenType Layout) for proper Arabic support
-        // NO ArPHP preprocessing needed - mPDF with OTL handles Arabic natively
+        // Check if clinic has a custom prescription template enabled
+        $clinic = Clinic::find($user->clinic_id);
+        $useCustomTemplate = false;
+        $templateImagePath = null;
+        $rxSettings = [];
 
-        // Render the view to HTML
-        $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
+        if ($clinic) {
+            $useCustomTemplate = (bool) $clinic->getSetting('rx_template_enabled', false);
+            $templatePath = $clinic->getSetting('rx_template_path');
+
+            if ($useCustomTemplate && $templatePath) {
+                try {
+                    // Download template to a temp file for mPDF to use
+                    $tempFile = storage_path('app/temp_rx_template_' . $clinic->id . '.' . pathinfo($templatePath, PATHINFO_EXTENSION));
+                    $contents = Storage::disk(StorageQuotaService::SPACES_DISK)->get($templatePath);
+                    if ($contents) {
+                        file_put_contents($tempFile, $contents);
+                        $templateImagePath = $tempFile;
+                    } else {
+                        $useCustomTemplate = false;
+                    }
+                } catch (\Exception $e) {
+                    $useCustomTemplate = false; // Fallback to default
+                }
+            } else {
+                $useCustomTemplate = false;
+            }
+
+            $rxSettings = [
+                'medicine_x' => (int) $clinic->getSetting('rx_medicine_x', 40),
+                'medicine_y' => (int) $clinic->getSetting('rx_medicine_y', 200),
+                'font_size' => (int) $clinic->getSetting('rx_font_size', 11),
+                'line_spacing' => (int) $clinic->getSetting('rx_line_spacing', 22),
+                'max_medicines' => (int) $clinic->getSetting('rx_max_medicines', 12),
+            ];
+        }
+
+        // Choose the view based on custom template
+        if ($useCustomTemplate && $templateImagePath) {
+            $medicines = $prescription->medicines->take($rxSettings['max_medicines']);
+            $html = view('simple-prescriptions.pdf-custom-template', compact('prescription', 'templateImagePath', 'rxSettings', 'medicines'))->render();
+        } else {
+            $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
+        }
 
         // Create mPDF instance with Arabic support
         $tempDir = storage_path('mpdf/temp');
@@ -334,23 +376,32 @@ class SimplePrescriptionController extends Controller
         $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
         $fontData = $defaultFontConfig['fontdata'];
 
-        // Use DejaVu Sans for Arabic support
-        // DejaVu Sans has built-in OTL (OpenType Layout) support in mPDF
-        // It properly connects Arabic letters and handles RTL text
-        // Note: Amiri font causes "GPOS Lookup Type 5, Format 3 not supported" error in mPDF v8.2.6
-
-        $mpdf = new \Mpdf\Mpdf([
+        $mpdfConfig = [
             'mode' => 'utf-8',
             'format' => 'A4',
             'tempDir' => $tempDir,
             'fontDir' => $fontDirs,
             'fontdata' => $fontData,
-            'default_font' => 'dejavusans',  // DejaVu Sans has excellent Arabic support with OTL
+            'default_font' => 'dejavusans',
             'autoScriptToLang' => true,
             'autoLangToFont' => true,
-        ]);
+        ];
 
+        // For custom templates, remove default margins so the background fills the page
+        if ($useCustomTemplate && $templateImagePath) {
+            $mpdfConfig['margin_top'] = 0;
+            $mpdfConfig['margin_bottom'] = 0;
+            $mpdfConfig['margin_left'] = 0;
+            $mpdfConfig['margin_right'] = 0;
+        }
+
+        $mpdf = new \Mpdf\Mpdf($mpdfConfig);
         $mpdf->WriteHTML($html);
+
+        // Clean up temp template file
+        if ($templateImagePath && file_exists($templateImagePath)) {
+            @unlink($templateImagePath);
+        }
 
         $filename = 'prescription-' . $prescription->prescription_number . '.pdf';
 
