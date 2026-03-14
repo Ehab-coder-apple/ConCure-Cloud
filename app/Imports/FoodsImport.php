@@ -25,11 +25,21 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
     public function collection(Collection $rows)
     {
         $user = Auth::user();
-        
+
         foreach ($rows as $row) {
             try {
+                // Normalize row keys: WithHeadingRow may produce different keys
+                // depending on the Excel header text. Map common variations.
+                $data = $row->toArray();
+                $data = $this->normalizeRowKeys($data);
+
+                // Skip completely empty rows
+                if (empty($data['name']) && empty($data['calories'])) {
+                    continue;
+                }
+
                 // Validate row data
-                $validator = Validator::make($row->toArray(), [
+                $validator = Validator::make($data, [
                     'name' => 'required|string|max:255',
                     'name_en' => 'nullable|string|max:255',
                     'name_ar' => 'nullable|string|max:255',
@@ -38,7 +48,7 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                     'name_ku' => 'nullable|string|max:255', // Legacy support
                     'food_group' => 'nullable|string|max:255',
                     'meal_types' => 'nullable|string',
-                        'meal_type' => 'nullable|string',
+                    'meal_type' => 'nullable|string',
                     'calories' => 'required|numeric|min:0|max:9999',
                     'protein' => 'nullable|numeric|min:0|max:999',
                     'carbohydrates' => 'nullable|numeric|min:0|max:999',
@@ -57,10 +67,14 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                 ]);
 
                 if ($validator->fails()) {
-                    $this->errors[] = "Row with name '{$row['name']}': " . implode(', ', $validator->errors()->all());
+                    $rowName = $data['name'] ?? 'unknown';
+                    $this->errors[] = "Row with name '{$rowName}': " . implode(', ', $validator->errors()->all());
                     $this->skippedCount++;
                     continue;
                 }
+
+                // Use normalized $data instead of $row from here on
+                $row = collect($data);
 
                 // Find or create food group first - always ensure we have a food group
                 $foodGroupName = !empty($row['food_group']) ? trim($row['food_group']) : 'General';
@@ -244,14 +258,15 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
                     } elseif (strpos($e->getMessage(), 'Integrity constraint violation') !== false) {
                         $this->errors[] = "Row with name '{$row['name']}': Database constraint violation - " . $e->getMessage();
                     } else {
-                        $this->errors[] = "Row with name '{$row['name']}': Database error - " . $e->getMessage();
+                        $this->errors[] = "Row with name '" . ($row['name'] ?? 'unknown') . "': Database error - " . $e->getMessage();
                     }
                     $this->skippedCount++;
                     continue;
                 }
 
             } catch (\Exception $e) {
-                $this->errors[] = "Row with name '{$row['name']}': " . $e->getMessage();
+                $rowName = is_array($row) ? ($row['name'] ?? 'unknown') : ($row['name'] ?? 'unknown');
+                $this->errors[] = "Row with name '{$rowName}': " . $e->getMessage();
                 $this->skippedCount++;
             }
         }
@@ -265,6 +280,70 @@ class FoodsImport implements ToCollection, WithHeadingRow, WithBatchInserts, Wit
     public function chunkSize(): int
     {
         return 100;
+    }
+
+    /**
+     * Normalize row keys from Excel headers to expected keys.
+     * WithHeadingRow converts headers to snake_case, but user files may have
+     * different header text (e.g. "Food Name" → "food_name" instead of "name").
+     */
+    private function normalizeRowKeys(array $data): array
+    {
+        // Map of possible header variations → expected key
+        $keyMap = [
+            'food_name' => 'name',
+            'food_name_required' => 'name',
+            'name_required' => 'name',
+            'calories_required' => 'calories',
+            'calories_kcal' => 'calories',
+            'protein_g' => 'protein',
+            'protein_g_optional' => 'protein',
+            'carbohydrates_g' => 'carbohydrates',
+            'carbohydrates_g_optional' => 'carbohydrates',
+            'carbs' => 'carbohydrates',
+            'carbs_g' => 'carbohydrates',
+            'fat_g' => 'fat',
+            'fat_g_optional' => 'fat',
+            'fiber_g' => 'fiber',
+            'fiber_g_optional' => 'fiber',
+            'sugar_g' => 'sugar',
+            'sugar_g_optional' => 'sugar',
+            'sodium_mg' => 'sodium',
+            'sodium_mg_optional' => 'sodium',
+            'name_in_english_optional' => 'name_en',
+            'name_in_arabic_optional' => 'name_ar',
+            'name_in_kurdish_bahdini_optional' => 'name_ku_bahdini',
+            'name_in_kurdish_sorani_optional' => 'name_ku_sorani',
+            'description_optional' => 'description',
+            'description_in_english_optional' => 'description_en',
+            'description_in_arabic_optional' => 'description_ar',
+            'description_in_kurdish_bahdini_optional' => 'description_ku_bahdini',
+            'description_in_kurdish_sorani_optional' => 'description_ku_sorani',
+            'food_group_optional' => 'food_group',
+            'meal_types_optional_comma_separated_eg_breakfast_lunch_blank_or_any_all' => 'meal_types',
+            'meal_type_optional_single_value_legacy_breakfast_lunch_dinner_snack_any' => 'meal_type',
+            'serving_size_eg_100g_1_cup_2_pieces_1_tbsp_1_slice' => 'serving_size',
+            'serving_weight_in_grams_optional_auto_calculated_if_not_provided' => 'serving_weight',
+        ];
+
+        $normalized = [];
+        foreach ($data as $key => $value) {
+            // Clean the key: trim, lowercase, replace spaces/special chars with underscore
+            $cleanKey = strtolower(trim((string) $key));
+            $cleanKey = preg_replace('/[^a-z0-9_]/', '_', $cleanKey);
+            $cleanKey = preg_replace('/_+/', '_', $cleanKey);
+            $cleanKey = trim($cleanKey, '_');
+
+            // Map to expected key if a mapping exists
+            $finalKey = $keyMap[$cleanKey] ?? $cleanKey;
+
+            // Don't overwrite if the canonical key already exists
+            if (!isset($normalized[$finalKey])) {
+                $normalized[$finalKey] = $value;
+            }
+        }
+
+        return $normalized;
     }
 
     /**
