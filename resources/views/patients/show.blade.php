@@ -328,10 +328,16 @@
                                     @foreach($patientVideos as $vid)
                                         <div class="col-12 col-md-6">
                                             <div class="border rounded p-2 h-100 d-flex flex-column">
-                                                <video controls preload="metadata" class="w-100 rounded mb-2" style="max-height:220px; background:#000;">
-                                                    <source src="{{ $vid->url }}" type="{{ $vid->mime }}">
-                                                    {{ __('Your browser does not support the video tag.') }}
-                                                </video>
+                                                <a href="{{ route('patients.videos.show', [$patient, $vid]) }}" class="d-block position-relative mb-2" title="{{ __('Open video in full page') }}">
+                                                    <video preload="metadata" class="w-100 rounded" style="max-height:220px; background:#000; pointer-events:none;">
+                                                        <source src="{{ $vid->url }}" type="{{ $vid->mime }}">
+                                                    </video>
+                                                    <div class="position-absolute top-50 start-50 translate-middle">
+                                                        <span class="bg-dark bg-opacity-50 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                                            <i class="fas fa-play text-white fs-5"></i>
+                                                        </span>
+                                                    </div>
+                                                </a>
                                                 <div class="small text-muted mb-1">
                                                     <i class="fas fa-file-video me-1"></i>{{ $vid->filename }} ({{ $vid->file_size_human }})
                                                 </div>

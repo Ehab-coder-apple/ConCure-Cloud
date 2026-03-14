@@ -110,6 +110,15 @@ class PatientVideoController extends Controller
         ]);
     }
 
+    public function show(Patient $patient, PatientVideo $video)
+    {
+        $this->authorizePatientAccess($patient);
+        if ($video->patient_id !== $patient->id) {
+            abort(404);
+        }
+        return view('patients.videos.show', compact('patient', 'video'));
+    }
+
     public function update(Request $request, Patient $patient, PatientVideo $video)
     {
         $this->authorizePatientAccess($patient);
