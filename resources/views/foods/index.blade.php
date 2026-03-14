@@ -234,16 +234,16 @@
                         <table class="table table-hover mb-0 foods-table">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 25%;">Food Name</th>
-                                    <th style="width: 15%;">Category</th>
-                                    <th style="width: 8%;" class="text-center">Calories</th>
-                                    <th style="width: 8%;" class="text-center">Protein</th>
-                                    <th style="width: 8%;" class="text-center">Carbs</th>
-                                    <th style="width: 8%;" class="text-center">Fat</th>
-                                    <th style="width: 8%;" class="text-center">Fiber</th>
-                                    <th style="width: 10%;" class="text-center">Serving</th>
-                                    <th style="width: 8%;" class="text-center">Type</th>
-                                    <th style="width: 12%; white-space: nowrap;" class="text-center">Actions</th>
+                                    <th style="width: 20%;">Food Name</th>
+                                    <th style="width: 10%;">Category</th>
+                                    <th style="width: 7%;" class="text-center">Calories</th>
+                                    <th style="width: 7%;" class="text-center">Protein</th>
+                                    <th style="width: 7%;" class="text-center">Carbs</th>
+                                    <th style="width: 7%;" class="text-center">Fat</th>
+                                    <th style="width: 7%;" class="text-center">Fiber</th>
+                                    <th style="width: 8%;" class="text-center">Serving</th>
+                                    <th style="width: 7%;" class="text-center">Type</th>
+                                    <th style="min-width: 120px;" class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
