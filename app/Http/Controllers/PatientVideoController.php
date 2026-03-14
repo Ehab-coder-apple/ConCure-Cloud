@@ -103,6 +103,9 @@ class PatientVideoController extends Controller
             'condition_tags'      => $tags,
         ]);
 
+        // Increment storage usage
+        app(StorageQuotaService::class)->incrementUsage($patient->clinic_id, (int) $request->input('size'));
+
         return response()->json([
             'success' => true,
             'video'   => $video,
@@ -153,8 +156,13 @@ class PatientVideoController extends Controller
         if ($video->patient_id !== $patient->id) {
             abort(404);
         }
+        $fileSize = (int) $video->size;
         StorageQuotaService::deleteFromDisk($video->path);
         $video->delete();
+
+        // Decrement storage usage
+        app(StorageQuotaService::class)->decrementUsage($patient->clinic_id, $fileSize);
+
         return back()->with('success', __('Video deleted.'));
     }
 }

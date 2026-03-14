@@ -21,15 +21,42 @@ class StorageQuotaService
     protected const CACHE_TTL = 600;
 
     /**
-     * Calculate actual storage used by a clinic from patient_files table.
-     * Uses SUM(file_size) with a join through patients for tenant isolation.
+     * Calculate actual storage used by a clinic from all file tables.
+     * Sums patient_files, patient_images, patient_videos, and dental_images.
      */
     public function calculateStorageUsed(int $clinicId): int
     {
-        return (int) DB::table('patient_files')
+        // patient_files (joined through patients for clinic isolation)
+        $files = (int) DB::table('patient_files')
             ->join('patients', 'patient_files.patient_id', '=', 'patients.id')
             ->where('patients.clinic_id', $clinicId)
             ->sum('patient_files.file_size');
+
+        // patient_images (has clinic_id directly)
+        $images = 0;
+        if (Schema::hasTable('patient_images')) {
+            $images = (int) DB::table('patient_images')
+                ->where('clinic_id', $clinicId)
+                ->sum('size');
+        }
+
+        // patient_videos (has clinic_id directly)
+        $videos = 0;
+        if (Schema::hasTable('patient_videos')) {
+            $videos = (int) DB::table('patient_videos')
+                ->where('clinic_id', $clinicId)
+                ->sum('size');
+        }
+
+        // dental_images (has clinic_id directly)
+        $dental = 0;
+        if (Schema::hasTable('dental_images')) {
+            $dental = (int) DB::table('dental_images')
+                ->where('clinic_id', $clinicId)
+                ->sum('file_size');
+        }
+
+        return $files + $images + $videos + $dental;
     }
 
     /**

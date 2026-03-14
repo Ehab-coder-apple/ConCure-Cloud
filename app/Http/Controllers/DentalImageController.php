@@ -112,6 +112,7 @@ class DentalImageController extends Controller
             $tenantDir = StorageQuotaService::getTenantStoragePath($user->clinic_id, 'images');
             $path = $file->storeAs($tenantDir, $filename, StorageQuotaService::SPACES_DISK);
 
+            $fileSize = $file->getSize();
             $dentalImage = DentalImage::create([
                 'patient_id' => $patient->id,
                 'clinic_id' => $user->clinic_id,
@@ -123,12 +124,15 @@ class DentalImageController extends Controller
                 'file_path' => $path,
                 'filename' => $filename,
                 'mime_type' => $file->getMimeType(),
-                'file_size' => $file->getSize(),
+                'file_size' => $fileSize,
                 'title' => $request->title,
                 'description' => $request->description,
                 'image_date' => $request->image_date ?? now(),
                 'uploaded_by' => $user->id,
             ]);
+
+            // Increment storage usage
+            app(StorageQuotaService::class)->incrementUsage($user->clinic_id, $fileSize);
 
             return redirect()->route('dental.images.show', ['patient' => $patient, 'dentalImage' => $dentalImage])
                            ->with('success', 'Dental image uploaded successfully.');
@@ -177,9 +181,13 @@ class DentalImageController extends Controller
         }
 
         // Delete file from storage (supports both Spaces and legacy local)
+        $fileSize = (int) $dentalImage->file_size;
         StorageQuotaService::deleteFromDisk($dentalImage->file_path);
 
         $dentalImage->delete();
+
+        // Decrement storage usage
+        app(StorageQuotaService::class)->decrementUsage($patient->clinic_id, $fileSize);
 
         return redirect()->route('dental.images.index', $patient)
                        ->with('success', 'Dental image deleted successfully.');
