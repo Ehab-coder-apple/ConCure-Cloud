@@ -321,11 +321,20 @@ class Patient extends Model
     /**
      * Calculate BMI.
      */
-    public static function calculateBMI(float $weight, float $height): float
+    public static function calculateBMI(float $weight, float $height): ?float
     {
+        // Guard against zero/negative height to avoid division by zero
+        if ($height <= 0 || $weight <= 0) {
+            return null;
+        }
+
         // Height should be in cm, convert to meters
         $heightInMeters = $height / 100;
-        return round($weight / ($heightInMeters * $heightInMeters), 2);
+        $bmi = round($weight / ($heightInMeters * $heightInMeters), 2);
+
+        // Cap at 9999.99 to fit decimal(6,2) column; values above ~100 are medically unrealistic
+        // but we store them rather than silently discarding
+        return min($bmi, 9999.99);
     }
 
     /**
