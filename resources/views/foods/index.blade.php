@@ -243,7 +243,7 @@
                                     <th style="width: 8%;" class="text-center">Fiber</th>
                                     <th style="width: 10%;" class="text-center">Serving</th>
                                     <th style="width: 8%;" class="text-center">Type</th>
-                                    <th style="width: 12%;" class="text-center">Actions</th>
+                                    <th style="width: 12%; white-space: nowrap;" class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -306,8 +306,8 @@
                                             <span class="badge bg-secondary">Standard</span>
                                         @endif
                                     </td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm">
+                                    <td class="text-center" style="white-space: nowrap;">
+                                        <div class="d-flex flex-nowrap gap-1 justify-content-center">
                                             <a href="{{ route('foods.show', $food) }}" class="btn btn-outline-primary btn-sm" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
