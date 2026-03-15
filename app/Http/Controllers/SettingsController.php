@@ -1202,6 +1202,8 @@ class SettingsController extends Controller
             'rx_font_size' => 'required|integer|min:6|max:24',
             'rx_line_spacing' => 'required|integer|min:10|max:50',
             'rx_max_medicines' => 'required|integer|min:1|max:30',
+            'rx_notes_y_bottom' => 'nullable|integer|min:0|max:800',
+            'rx_notes_x_right' => 'nullable|integer|min:0|max:500',
         ]);
 
         try {
@@ -1213,6 +1215,8 @@ class SettingsController extends Controller
             $clinic->setSetting('rx_font_size', (int) $request->rx_font_size);
             $clinic->setSetting('rx_line_spacing', (int) $request->rx_line_spacing);
             $clinic->setSetting('rx_max_medicines', (int) $request->rx_max_medicines);
+            $clinic->setSetting('rx_notes_y_bottom', (int) ($request->rx_notes_y_bottom ?? 60));
+            $clinic->setSetting('rx_notes_x_right', (int) ($request->rx_notes_x_right ?? 40));
 
             return response()->json(['success' => true, 'message' => __('Settings saved successfully.')]);
         } catch (\Exception $e) {

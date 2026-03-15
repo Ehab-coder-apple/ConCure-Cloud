@@ -846,6 +846,8 @@
                                         $rxFontSize = $clinic ? $clinic->getSetting('rx_font_size', 11) : 11;
                                         $rxLineSpacing = $clinic ? $clinic->getSetting('rx_line_spacing', 22) : 22;
                                         $rxMaxMedicines = $clinic ? $clinic->getSetting('rx_max_medicines', 12) : 12;
+                                        $rxNotesYBottom = $clinic ? $clinic->getSetting('rx_notes_y_bottom', 60) : 60;
+                                        $rxNotesXRight = $clinic ? $clinic->getSetting('rx_notes_x_right', 40) : 40;
                                     @endphp
 
                                     <div class="alert alert-info">
@@ -943,6 +945,22 @@
                                             <div class="col-md-2">
                                                 <label for="rx_max_medicines" class="form-label">{{ __('Max per Page') }}</label>
                                                 <input type="number" class="form-control" id="rx_max_medicines" name="rx_max_medicines" value="{{ $rxMaxMedicines }}" min="1" max="30">
+                                            </div>
+                                        </div>
+
+                                        <h6 class="mt-4"><i class="fas fa-arrows-alt me-1"></i> {{ __('Notes Position (from bottom & right)') }}</h6>
+                                        <p class="text-muted small">{{ __('Control where the notes/additional text appears from the bottom and right edges of the page.') }}</p>
+
+                                        <div class="row g-3">
+                                            <div class="col-md-3">
+                                                <label for="rx_notes_y_bottom" class="form-label">{{ __('Y Position (from bottom)') }}</label>
+                                                <input type="number" class="form-control" id="rx_notes_y_bottom" name="rx_notes_y_bottom" value="{{ $rxNotesYBottom }}" min="0" max="800">
+                                                <small class="text-muted">{{ __('pt from bottom') }}</small>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="rx_notes_x_right" class="form-label">{{ __('X Position (from right)') }}</label>
+                                                <input type="number" class="form-control" id="rx_notes_x_right" name="rx_notes_x_right" value="{{ $rxNotesXRight }}" min="0" max="500">
+                                                <small class="text-muted">{{ __('pt from right') }}</small>
                                             </div>
                                         </div>
 

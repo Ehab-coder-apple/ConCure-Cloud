@@ -80,7 +80,11 @@
 
     {{-- Notes at bottom if present --}}
     @if($prescription->notes)
-        <div style="position: fixed; bottom: 60pt; left: {{ $medX }}pt; font-size: {{ max(7, $fontSize - 2) }}pt; color: #333;">
+        @php
+            $notesYBottom = $rxSettings['notes_y_bottom'] ?? 60;
+            $notesXRight = $rxSettings['notes_x_right'] ?? 40;
+        @endphp
+        <div style="position: fixed; bottom: {{ $notesYBottom }}pt; right: {{ $notesXRight }}pt; font-size: {{ max(7, $fontSize - 2) }}pt; color: #333;">
             <strong>Notes:</strong> {{ $prescription->notes }}
         </div>
     @endif

@@ -359,6 +359,8 @@ class SimplePrescriptionController extends Controller
                 'font_size' => (int) $clinic->getSetting('rx_font_size', 11),
                 'line_spacing' => (int) $clinic->getSetting('rx_line_spacing', 22),
                 'max_medicines' => (int) $clinic->getSetting('rx_max_medicines', 12),
+                'notes_y_bottom' => (int) $clinic->getSetting('rx_notes_y_bottom', 60),
+                'notes_x_right' => (int) $clinic->getSetting('rx_notes_x_right', 40),
             ];
         }
 
