@@ -382,16 +382,93 @@
 
                 <!-- Medical Records -->
                 <div class="col-lg-8">
-                    <!-- Medical History -->
+                    <!-- Medical Information -->
                     <div class="card mb-4">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                <i class="fas fa-file-medical me-2"></i>
-                                {{ __('Medical History') }}
+                                <i class="fas fa-notes-medical me-2"></i>
+                                {{ __('Medical Information') }}
                             </h6>
                         </div>
                         <div class="card-body">
-                            <p>{{ $patient->medical_history ?? __('No medical history recorded yet.') }}</p>
+                            @php
+                                $hasMedicalInfo = $patient->allergies || $patient->chronic_illnesses || $patient->surgeries_history || $patient->diet_history || $patient->medical_history || $patient->is_pregnant;
+                            @endphp
+
+                            @if($hasMedicalInfo)
+                                <div class="row g-3">
+                                    @if($patient->medical_history)
+                                        <div class="col-12">
+                                            <div class="border rounded p-3 bg-light">
+                                                <h6 class="text-primary mb-2">
+                                                    <i class="fas fa-history me-1"></i> {{ __('Medical History') }}
+                                                </h6>
+                                                <div class="text-break">{!! nl2br(e($patient->medical_history)) !!}</div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($patient->allergies)
+                                        <div class="col-md-6">
+                                            <div class="border rounded p-3 bg-light">
+                                                <h6 class="text-danger mb-2">
+                                                    <i class="fas fa-allergies me-1"></i> {{ __('Allergies') }}
+                                                </h6>
+                                                <div class="text-break">{!! nl2br(e($patient->allergies)) !!}</div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($patient->chronic_illnesses)
+                                        <div class="col-md-6">
+                                            <div class="border rounded p-3 bg-light">
+                                                <h6 class="text-warning mb-2">
+                                                    <i class="fas fa-heartbeat me-1"></i> {{ __('Chronic Illnesses') }}
+                                                </h6>
+                                                <div class="text-break">{!! nl2br(e($patient->chronic_illnesses)) !!}</div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($patient->surgeries_history)
+                                        <div class="col-md-6">
+                                            <div class="border rounded p-3 bg-light">
+                                                <h6 class="text-info mb-2">
+                                                    <i class="fas fa-procedures me-1"></i> {{ __('Surgery History') }}
+                                                </h6>
+                                                <div class="text-break">{!! nl2br(e($patient->surgeries_history)) !!}</div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($patient->diet_history)
+                                        <div class="col-md-6">
+                                            <div class="border rounded p-3 bg-light">
+                                                <h6 class="text-success mb-2">
+                                                    <i class="fas fa-utensils me-1"></i> {{ __('Diet History') }}
+                                                </h6>
+                                                <div class="text-break">{!! nl2br(e($patient->diet_history)) !!}</div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($patient->is_pregnant)
+                                        <div class="col-md-6">
+                                            <div class="border rounded p-3 bg-warning bg-opacity-10 border-warning">
+                                                <h6 class="text-warning mb-2">
+                                                    <i class="fas fa-baby me-1"></i> {{ __('Special Condition') }}
+                                                </h6>
+                                                <span class="badge bg-warning text-dark">{{ __('Currently Pregnant') }}</span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="text-center py-3">
+                                    <i class="fas fa-notes-medical fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">{{ __('No medical information recorded yet.') }}</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
