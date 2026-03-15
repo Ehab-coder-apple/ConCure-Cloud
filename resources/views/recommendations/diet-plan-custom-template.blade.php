@@ -95,20 +95,22 @@
         @php $currentY += $lineSpacing * 0.3; @endphp
     @endforeach
 
-    {{-- Instructions --}}
-    @if($dietPlan->instructions)
-        @php $currentY += $lineSpacing * 0.5; @endphp
-        <div style="position: fixed; top: {{ $currentY }}pt; left: {{ $contentX }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
-            <strong>Instructions:</strong> {{ $dietPlan->instructions }}
-        </div>
-    @endif
-
-    {{-- Restrictions --}}
-    @if($dietPlan->restrictions)
-        @php $currentY += $lineSpacing; @endphp
-        <div style="position: fixed; top: {{ $currentY }}pt; left: {{ $contentX }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
-            <strong>Restrictions:</strong> {{ $dietPlan->restrictions }}
-        </div>
+    {{-- Instructions & Restrictions at bottom --}}
+    @if($dietPlan->instructions || $dietPlan->restrictions)
+        @php
+            $contentYBottom = $tplSettings['content_y_bottom'] ?? 60;
+            $contentXRight = $tplSettings['content_x_right'] ?? 40;
+        @endphp
+        @if($dietPlan->instructions)
+            <div style="position: fixed; bottom: {{ $contentYBottom + ($dietPlan->restrictions ? $lineSpacing : 0) }}pt; right: {{ $contentXRight }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
+                <strong>Instructions:</strong> {{ $dietPlan->instructions }}
+            </div>
+        @endif
+        @if($dietPlan->restrictions)
+            <div style="position: fixed; bottom: {{ $contentYBottom }}pt; right: {{ $contentXRight }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
+                <strong>Restrictions:</strong> {{ $dietPlan->restrictions }}
+            </div>
+        @endif
     @endif
 </body>
 </html>

@@ -60,9 +60,11 @@
     @if(isset($notes) && !empty($notes))
         @php
             $noteLines = explode("\n", $notes);
+            $contentYBottom = $tplSettings['content_y_bottom'] ?? 60;
+            $contentXRight = $tplSettings['content_x_right'] ?? 40;
         @endphp
         @foreach($noteLines as $line)
-            <div style="position: fixed; top: {{ $currentY }}pt; left: {{ $contentX }}pt; font-size: {{ $fontSize }}pt; line-height: {{ $lineSpacing }}pt; color: #000;">
+            <div style="position: fixed; top: {{ $currentY }}pt; left: {{ $contentX }}pt; right: {{ $contentXRight }}pt; font-size: {{ $fontSize }}pt; line-height: {{ $lineSpacing }}pt; color: #000;">
                 {{ $line }}
             </div>
             @php $currentY += $lineSpacing; @endphp

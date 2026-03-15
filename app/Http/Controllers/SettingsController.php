@@ -1328,10 +1328,12 @@ class SettingsController extends Controller
         }
 
         $request->validate([
-            'content_x'    => 'required|integer|min:0|max:500',
-            'content_y'    => 'required|integer|min:0|max:800',
-            'font_size'    => 'required|integer|min:6|max:24',
-            'line_spacing' => 'required|integer|min:10|max:50',
+            'content_x'        => 'required|integer|min:0|max:500',
+            'content_y'        => 'required|integer|min:0|max:800',
+            'font_size'        => 'required|integer|min:6|max:24',
+            'line_spacing'     => 'required|integer|min:10|max:50',
+            'content_y_bottom' => 'nullable|integer|min:0|max:800',
+            'content_x_right'  => 'nullable|integer|min:0|max:500',
         ]);
 
         try {
@@ -1343,6 +1345,8 @@ class SettingsController extends Controller
             $clinic->setSetting("{$prefix}_content_y", (int) $request->content_y);
             $clinic->setSetting("{$prefix}_font_size", (int) $request->font_size);
             $clinic->setSetting("{$prefix}_line_spacing", (int) $request->line_spacing);
+            $clinic->setSetting("{$prefix}_content_y_bottom", (int) ($request->content_y_bottom ?? 60));
+            $clinic->setSetting("{$prefix}_content_x_right", (int) ($request->content_x_right ?? 40));
 
             return response()->json(['success' => true, 'message' => __('Settings saved successfully.')]);
         } catch (\Exception $e) {

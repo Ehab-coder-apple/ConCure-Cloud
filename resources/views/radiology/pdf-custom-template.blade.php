@@ -93,8 +93,11 @@
 
     {{-- Notes --}}
     @if($radiologyRequest->notes)
-        @php $currentY += $lineSpacing * 0.5; @endphp
-        <div style="position: fixed; top: {{ $currentY }}pt; left: {{ $contentX }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
+        @php
+            $contentYBottom = $tplSettings['content_y_bottom'] ?? 60;
+            $contentXRight = $tplSettings['content_x_right'] ?? 40;
+        @endphp
+        <div style="position: fixed; bottom: {{ $contentYBottom }}pt; right: {{ $contentXRight }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
             <strong>Notes:</strong> {{ $radiologyRequest->notes }}
         </div>
     @endif

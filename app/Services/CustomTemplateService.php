@@ -27,12 +27,14 @@ class CustomTemplateService
     {
         $prefix = self::REPORT_TYPES[$reportType]['prefix'] ?? $reportType;
         return [
-            'enabled'      => filter_var($clinic->getSetting("{$prefix}_template_enabled", false), FILTER_VALIDATE_BOOLEAN),
-            'path'         => $clinic->getSetting("{$prefix}_template_path", ''),
-            'content_x'    => (int) $clinic->getSetting("{$prefix}_content_x", 40),
-            'content_y'    => (int) $clinic->getSetting("{$prefix}_content_y", 200),
-            'font_size'    => (int) $clinic->getSetting("{$prefix}_font_size", 11),
-            'line_spacing' => (int) $clinic->getSetting("{$prefix}_line_spacing", 22),
+            'enabled'          => filter_var($clinic->getSetting("{$prefix}_template_enabled", false), FILTER_VALIDATE_BOOLEAN),
+            'path'             => $clinic->getSetting("{$prefix}_template_path", ''),
+            'content_x'        => (int) $clinic->getSetting("{$prefix}_content_x", 40),
+            'content_y'        => (int) $clinic->getSetting("{$prefix}_content_y", 200),
+            'font_size'        => (int) $clinic->getSetting("{$prefix}_font_size", 11),
+            'line_spacing'     => (int) $clinic->getSetting("{$prefix}_line_spacing", 22),
+            'content_y_bottom' => (int) $clinic->getSetting("{$prefix}_content_y_bottom", 60),
+            'content_x_right'  => (int) $clinic->getSetting("{$prefix}_content_x_right", 40),
         ];
     }
 

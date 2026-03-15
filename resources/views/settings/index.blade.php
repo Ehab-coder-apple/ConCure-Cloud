@@ -1011,6 +1011,8 @@
                                                 $tplY = $clinic ? $clinic->getSetting("{$prefix}_content_y", 200) : 200;
                                                 $tplFontSize = $clinic ? $clinic->getSetting("{$prefix}_font_size", 11) : 11;
                                                 $tplLineSpacing = $clinic ? $clinic->getSetting("{$prefix}_line_spacing", 22) : 22;
+                                                $tplYBottom = $clinic ? $clinic->getSetting("{$prefix}_content_y_bottom", 60) : 60;
+                                                $tplXRight = $clinic ? $clinic->getSetting("{$prefix}_content_x_right", 40) : 40;
                                             @endphp
                                             <div class="accordion-item">
                                                 <h2 class="accordion-header" id="heading-{{ $typeKey }}">
@@ -1104,6 +1106,21 @@
                                                                 <div class="col-md-3">
                                                                     <label class="form-label">{{ __('Line Spacing') }}</label>
                                                                     <input type="number" class="form-control form-control-sm" name="line_spacing" value="{{ $tplLineSpacing }}" min="10" max="50">
+                                                                </div>
+                                                            </div>
+
+                                                            <h6 class="mt-3"><i class="fas fa-arrows-alt me-1"></i> {{ __('Bottom & Right Position') }}</h6>
+                                                            <p class="text-muted small mb-2">{{ __('Control positioning from the bottom and right edges of the page.') }}</p>
+                                                            <div class="row g-2">
+                                                                <div class="col-md-3">
+                                                                    <label class="form-label">{{ __('Y Position (from bottom)') }}</label>
+                                                                    <input type="number" class="form-control form-control-sm" name="content_y_bottom" value="{{ $tplYBottom }}" min="0" max="800">
+                                                                    <small class="text-muted">{{ __('pt from bottom') }}</small>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <label class="form-label">{{ __('X Position (from right)') }}</label>
+                                                                    <input type="number" class="form-control form-control-sm" name="content_x_right" value="{{ $tplXRight }}" min="0" max="500">
+                                                                    <small class="text-muted">{{ __('pt from right') }}</small>
                                                                 </div>
                                                             </div>
 

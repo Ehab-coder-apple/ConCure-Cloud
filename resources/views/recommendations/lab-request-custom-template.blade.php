@@ -80,21 +80,23 @@
         @endif
     @endforeach
 
-    {{-- Notes --}}
-    @if($labRequest->notes)
-        @php $currentY += $lineSpacing * 0.5; @endphp
-        <div style="position: fixed; top: {{ $currentY }}pt; left: {{ $contentX }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
-            <strong>Notes:</strong> {{ $labRequest->notes }}
-        </div>
-    @endif
-
-    {{-- Lab Info --}}
-    @if($labRequest->lab_name)
-        @php $currentY += $lineSpacing; @endphp
-        <div style="position: fixed; top: {{ $currentY }}pt; left: {{ $contentX }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
-            <strong>Lab:</strong> {{ $labRequest->lab_name }}
-            @if($labRequest->lab_phone) | {{ $labRequest->lab_phone }} @endif
-        </div>
+    {{-- Notes & Lab Info at bottom --}}
+    @if($labRequest->notes || $labRequest->lab_name)
+        @php
+            $contentYBottom = $tplSettings['content_y_bottom'] ?? 60;
+            $contentXRight = $tplSettings['content_x_right'] ?? 40;
+        @endphp
+        @if($labRequest->notes)
+            <div style="position: fixed; bottom: {{ $contentYBottom + ($labRequest->lab_name ? $lineSpacing : 0) }}pt; right: {{ $contentXRight }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
+                <strong>Notes:</strong> {{ $labRequest->notes }}
+            </div>
+        @endif
+        @if($labRequest->lab_name)
+            <div style="position: fixed; bottom: {{ $contentYBottom }}pt; right: {{ $contentXRight }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
+                <strong>Lab:</strong> {{ $labRequest->lab_name }}
+                @if($labRequest->lab_phone) | {{ $labRequest->lab_phone }} @endif
+            </div>
+        @endif
     @endif
 </body>
 </html>
