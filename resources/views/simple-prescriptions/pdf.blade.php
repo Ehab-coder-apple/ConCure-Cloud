@@ -19,12 +19,10 @@
             size: A4;
         }
 
-        /* Card-style section */
+        /* Card-style section - mPDF compatible (no border-radius, no overflow) */
         .card {
             border: 1px solid #dee2e6;
-            border-radius: 6px;
             margin-bottom: 12px;
-            overflow: hidden;
         }
 
         .card-header {
@@ -109,7 +107,7 @@
                 <span style="font-size: 8px; color: #6c757d;">{{ __('Created on') }} {{ $prescription->created_at->format('F d, Y') }}</span>
             </td>
             <td style="vertical-align: middle; text-align: right;">
-                <span style="background-color: {{ $prescription->status === 'active' ? '#198754' : ($prescription->status === 'completed' ? '#0d6efd' : '#6c757d') }}; color: #fff; padding: 3px 10px; border-radius: 10px; font-size: 9px; font-weight: bold;">
+                <span style="background-color: {{ $prescription->status === 'active' ? '#198754' : ($prescription->status === 'completed' ? '#0d6efd' : '#6c757d') }}; color: #fff; padding: 3px 10px; font-size: 9px; font-weight: bold;">
                     {{ ucfirst($prescription->status) }}
                 </span>
             </td>
@@ -118,7 +116,7 @@
 
     <!-- ===== PATIENT INFORMATION ===== -->
     <div class="card">
-        <div class="card-header">&#x1f464; Patient Information</div>
+        <div class="card-header">Patient Information</div>
         <div class="card-body">
             <table style="width: 100%; font-size: 9px;">
                 <tr>
@@ -150,7 +148,7 @@
 
     <!-- ===== DOCTOR INFORMATION ===== -->
     <div class="card">
-        <div class="card-header">&#x1f9d1;&#x200d;&#x2695;&#xfe0f; Doctor Information</div>
+        <div class="card-header">Doctor Information</div>
         <div class="card-body">
             <table style="width: 100%; font-size: 9px;">
                 <tr>
@@ -170,7 +168,7 @@
     <!-- ===== DIAGNOSIS ===== -->
     @if($prescription->diagnosis)
         <div class="card">
-            <div class="card-header">&#x1fa7a; Diagnosis</div>
+            <div class="card-header">Diagnosis</div>
             <div class="card-body">
                 <div style="font-size: 9px; line-height: 1.6; direction: rtl; text-align: right;">
                     {{ $prescription->diagnosis }}
@@ -182,10 +180,10 @@
     <!-- ===== PRESCRIBED MEDICINES ===== -->
     @if($prescription->medicines->count() > 0)
         <div class="card">
-            <div class="card-header">&#x1f48a; Prescribed Medicines</div>
+            <div class="card-header">Prescribed Medicines</div>
             <div class="card-body">
                 @foreach($prescription->medicines as $index => $medicine)
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: {{ $loop->last ? '0' : '10px' }}; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; page-break-inside: avoid;">
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: {{ $loop->last ? '0' : '10px' }}; background-color: #f8f9fa; border: 1px solid #e9ecef; page-break-inside: avoid;">
                         <tr>
                             <td style="padding: 8px 10px;">
                                 <!-- Medicine Name -->
@@ -214,7 +212,7 @@
                                     <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #dee2e6;">
                                         <span style="font-size: 8px; color: #6c757d;">Instructions</span><br>
                                         <span style="font-size: 9px; color: #212529; direction: rtl;">
-                                            &#x2139;&#xfe0f; {{ $medicine->instructions }}
+                                            {{ $medicine->instructions }}
                                         </span>
                                     </div>
                                 @endif
@@ -229,7 +227,7 @@
     <!-- ===== NOTES ===== -->
     @if($prescription->notes)
         <div class="card">
-            <div class="card-header">&#x1f4dd; Notes</div>
+            <div class="card-header">Notes</div>
             <div class="card-body">
                 <div style="font-size: 9px; line-height: 1.6; direction: rtl; text-align: right;">
                     {{ $prescription->notes }}
