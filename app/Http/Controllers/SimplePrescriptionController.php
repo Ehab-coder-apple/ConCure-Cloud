@@ -434,6 +434,7 @@ class SimplePrescriptionController extends Controller
         $mpdf = new \Mpdf\Mpdf($mpdfConfig);
 
         // Apply custom template
+        $pdfConvertedImagePath = null; // track converted image for cleanup
         try {
             if ($useCustomTemplate && $templateLocalPath) {
                 \Log::info('RX PDF: rendering custom template', [
@@ -443,9 +444,60 @@ class SimplePrescriptionController extends Controller
                     'fileSize' => file_exists($templateLocalPath) ? filesize($templateLocalPath) : 0,
                 ]);
 
+                // If template is PDF, convert to image first to avoid FPDI parser issues
                 if ($templateIsPdf) {
-                    // Use PDF as background template via SetDocTemplate
-                    $mpdf->SetDocTemplate($templateLocalPath, true);
+                    $convertedImagePath = storage_path('app/temp_rx_template_' . $clinic->id . '_converted.png');
+                    $pdfConverted = false;
+
+                    // Try Imagick first
+                    if (class_exists('Imagick')) {
+                        try {
+                            $imagick = new \Imagick();
+                            $imagick->setResolution(150, 150);
+                            $imagick->readImage($templateLocalPath . '[0]'); // first page only
+                            $imagick->setImageFormat('png');
+                            $imagick->setImageCompressionQuality(95);
+                            $imagick->writeImage($convertedImagePath);
+                            $imagick->clear();
+                            $imagick->destroy();
+                            if (file_exists($convertedImagePath) && filesize($convertedImagePath) > 0) {
+                                $pdfConverted = true;
+                                $pdfConvertedImagePath = $convertedImagePath;
+                                \Log::info('RX PDF: converted PDF template to image via Imagick', [
+                                    'size' => filesize($convertedImagePath),
+                                ]);
+                            }
+                        } catch (\Exception $imgE) {
+                            \Log::warning('RX PDF: Imagick conversion failed', ['error' => $imgE->getMessage()]);
+                        }
+                    }
+
+                    // Fallback: try Ghostscript via shell
+                    if (!$pdfConverted) {
+                        $gsCmd = 'gs -sDEVICE=png16m -dNOPAUSE -dBATCH -dFirstPage=1 -dLastPage=1 -r150 -sOutputFile=' .
+                            escapeshellarg($convertedImagePath) . ' ' . escapeshellarg($templateLocalPath) . ' 2>&1';
+                        @exec($gsCmd, $gsOutput, $gsReturn);
+                        if ($gsReturn === 0 && file_exists($convertedImagePath) && filesize($convertedImagePath) > 0) {
+                            $pdfConverted = true;
+                            $pdfConvertedImagePath = $convertedImagePath;
+                            \Log::info('RX PDF: converted PDF template to image via Ghostscript');
+                        } else {
+                            \Log::warning('RX PDF: Ghostscript conversion failed', [
+                                'returnCode' => $gsReturn,
+                                'output' => implode("\n", $gsOutput ?? []),
+                            ]);
+                        }
+                    }
+
+                    if ($pdfConverted) {
+                        // Use converted image as background instead of SetDocTemplate
+                        $templateIsPdf = false;
+                        $templateLocalPath = $convertedImagePath;
+                    } else {
+                        // Last resort: try SetDocTemplate (may fail with compressed PDFs)
+                        \Log::info('RX PDF: attempting SetDocTemplate as last resort');
+                        $mpdf->SetDocTemplate($templateLocalPath, true);
+                    }
                 }
 
                 $maxMedicines = $rxSettings['max_medicines'] ?? 12;
@@ -453,7 +505,7 @@ class SimplePrescriptionController extends Controller
                 $templateImagePath = $templateIsPdf ? null : $templateLocalPath;
                 $html = view('simple-prescriptions.pdf-custom-template', compact('prescription', 'templateImagePath', 'rxSettings', 'medicines'))->render();
             } else {
-                \Log::info('RX PDF: rendering default template (useCustomTemplate=' . ($useCustomTemplate ? 'true' : 'false') . ', templateLocalPath=' . ($templateLocalPath ?: 'null') . ')');
+                \Log::info('RX PDF: rendering default template');
                 $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
             }
 
@@ -464,17 +516,18 @@ class SimplePrescriptionController extends Controller
                 'clinic_id' => $user->clinic_id,
                 'custom_template' => $useCustomTemplate,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
-            // Clean up temp file before re-throwing
+            // Clean up temp files before fallback
             if ($templateLocalPath && file_exists($templateLocalPath)) {
                 @unlink($templateLocalPath);
+            }
+            if ($pdfConvertedImagePath && file_exists($pdfConvertedImagePath)) {
+                @unlink($pdfConvertedImagePath);
             }
 
             // Fall back to default template if custom template failed
             if ($useCustomTemplate) {
-                // Reset margins for default template
                 $mpdfConfig['margin_top'] = 15;
                 $mpdfConfig['margin_bottom'] = 15;
                 $mpdfConfig['margin_left'] = 15;
@@ -487,9 +540,17 @@ class SimplePrescriptionController extends Controller
             }
         }
 
-        // Clean up temp template file
+        // Clean up temp template files
         if ($templateLocalPath && file_exists($templateLocalPath)) {
             @unlink($templateLocalPath);
+        }
+        if ($pdfConvertedImagePath && file_exists($pdfConvertedImagePath)) {
+            @unlink($pdfConvertedImagePath);
+        }
+        // Also clean original PDF temp file if we converted it
+        $origPdfTemp = storage_path('app/temp_rx_template_' . ($clinic->id ?? 0) . '.pdf');
+        if (file_exists($origPdfTemp)) {
+            @unlink($origPdfTemp);
         }
 
         $filename = 'prescription-' . $prescription->prescription_number . '.pdf';
