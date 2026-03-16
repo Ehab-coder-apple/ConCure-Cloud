@@ -333,23 +333,58 @@ class SimplePrescriptionController extends Controller
             $useCustomTemplate = $requestedCustom || $settingEnabled;
             $templatePath = $clinic->getSetting('rx_template_path');
 
+            \Log::info('RX PDF: template check', [
+                'clinic_id' => $clinic->id,
+                'requestedCustom' => $requestedCustom,
+                'settingEnabled' => $settingEnabled,
+                'useCustomTemplate' => $useCustomTemplate,
+                'templatePath' => $templatePath,
+            ]);
+
             if ($useCustomTemplate && $templatePath) {
                 try {
                     $ext = strtolower(pathinfo($templatePath, PATHINFO_EXTENSION));
                     $templateIsPdf = ($ext === 'pdf');
                     $tempFile = storage_path('app/temp_rx_template_' . $clinic->id . '.' . $ext);
-                    $contents = Storage::disk(StorageQuotaService::SPACES_DISK)->get($templatePath);
-                    if ($contents) {
-                        file_put_contents($tempFile, $contents);
-                        $templateLocalPath = $tempFile;
-                    } else {
+
+                    // Check if file exists on Spaces first
+                    $existsOnSpaces = Storage::disk(StorageQuotaService::SPACES_DISK)->exists($templatePath);
+                    \Log::info('RX PDF: template file check', [
+                        'ext' => $ext,
+                        'isPdf' => $templateIsPdf,
+                        'existsOnSpaces' => $existsOnSpaces,
+                        'spacesPath' => $templatePath,
+                    ]);
+
+                    if (!$existsOnSpaces) {
+                        \Log::warning('RX PDF: template file not found on Spaces', ['path' => $templatePath]);
                         $useCustomTemplate = false;
+                    } else {
+                        $contents = Storage::disk(StorageQuotaService::SPACES_DISK)->get($templatePath);
+                        if ($contents && strlen($contents) > 0) {
+                            file_put_contents($tempFile, $contents);
+                            $templateLocalPath = $tempFile;
+                            \Log::info('RX PDF: template downloaded OK', [
+                                'size' => strlen($contents),
+                                'localPath' => $tempFile,
+                            ]);
+                        } else {
+                            \Log::warning('RX PDF: template file empty from Spaces');
+                            $useCustomTemplate = false;
+                        }
                     }
                 } catch (\Exception $e) {
-                    \Log::error('RX Template download failed', ['error' => $e->getMessage()]);
+                    \Log::error('RX Template download failed', [
+                        'error' => $e->getMessage(),
+                        'path' => $templatePath,
+                        'trace' => $e->getTraceAsString(),
+                    ]);
                     $useCustomTemplate = false;
                 }
             } else {
+                if ($useCustomTemplate && !$templatePath) {
+                    \Log::warning('RX PDF: custom template requested but no template path stored in clinic settings');
+                }
                 $useCustomTemplate = false;
             }
 
@@ -401,6 +436,13 @@ class SimplePrescriptionController extends Controller
         // Apply custom template
         try {
             if ($useCustomTemplate && $templateLocalPath) {
+                \Log::info('RX PDF: rendering custom template', [
+                    'isPdf' => $templateIsPdf,
+                    'localPath' => $templateLocalPath,
+                    'fileExists' => file_exists($templateLocalPath),
+                    'fileSize' => file_exists($templateLocalPath) ? filesize($templateLocalPath) : 0,
+                ]);
+
                 if ($templateIsPdf) {
                     // Use PDF as background template via SetDocTemplate
                     $mpdf->SetDocTemplate($templateLocalPath, true);
@@ -411,6 +453,7 @@ class SimplePrescriptionController extends Controller
                 $templateImagePath = $templateIsPdf ? null : $templateLocalPath;
                 $html = view('simple-prescriptions.pdf-custom-template', compact('prescription', 'templateImagePath', 'rxSettings', 'medicines'))->render();
             } else {
+                \Log::info('RX PDF: rendering default template (useCustomTemplate=' . ($useCustomTemplate ? 'true' : 'false') . ', templateLocalPath=' . ($templateLocalPath ?: 'null') . ')');
                 $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
             }
 
@@ -431,6 +474,11 @@ class SimplePrescriptionController extends Controller
 
             // Fall back to default template if custom template failed
             if ($useCustomTemplate) {
+                // Reset margins for default template
+                $mpdfConfig['margin_top'] = 15;
+                $mpdfConfig['margin_bottom'] = 15;
+                $mpdfConfig['margin_left'] = 15;
+                $mpdfConfig['margin_right'] = 15;
                 $mpdf = new \Mpdf\Mpdf($mpdfConfig);
                 $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
                 $mpdf->WriteHTML($html);
