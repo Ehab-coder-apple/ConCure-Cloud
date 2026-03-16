@@ -399,20 +399,45 @@ class SimplePrescriptionController extends Controller
         $mpdf = new \Mpdf\Mpdf($mpdfConfig);
 
         // Apply custom template
-        if ($useCustomTemplate && $templateLocalPath) {
-            if ($templateIsPdf) {
-                // Use PDF as background template via SetDocTemplate
-                $mpdf->SetDocTemplate($templateLocalPath, true);
+        try {
+            if ($useCustomTemplate && $templateLocalPath) {
+                if ($templateIsPdf) {
+                    // Use PDF as background template via SetDocTemplate
+                    $mpdf->SetDocTemplate($templateLocalPath, true);
+                }
+
+                $maxMedicines = $rxSettings['max_medicines'] ?? 12;
+                $medicines = $prescription->medicines->take($maxMedicines);
+                $templateImagePath = $templateIsPdf ? null : $templateLocalPath;
+                $html = view('simple-prescriptions.pdf-custom-template', compact('prescription', 'templateImagePath', 'rxSettings', 'medicines'))->render();
+            } else {
+                $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
             }
 
-            $medicines = $prescription->medicines->take($rxSettings['max_medicines']);
-            $templateImagePath = $templateIsPdf ? null : $templateLocalPath;
-            $html = view('simple-prescriptions.pdf-custom-template', compact('prescription', 'templateImagePath', 'rxSettings', 'medicines'))->render();
-        } else {
-            $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
-        }
+            $mpdf->WriteHTML($html);
+        } catch (\Exception $e) {
+            \Log::error('RX PDF rendering failed', [
+                'prescription_id' => $id,
+                'clinic_id' => $user->clinic_id,
+                'custom_template' => $useCustomTemplate,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-        $mpdf->WriteHTML($html);
+            // Clean up temp file before re-throwing
+            if ($templateLocalPath && file_exists($templateLocalPath)) {
+                @unlink($templateLocalPath);
+            }
+
+            // Fall back to default template if custom template failed
+            if ($useCustomTemplate) {
+                $mpdf = new \Mpdf\Mpdf($mpdfConfig);
+                $html = view('simple-prescriptions.pdf', compact('prescription'))->render();
+                $mpdf->WriteHTML($html);
+            } else {
+                throw $e;
+            }
+        }
 
         // Clean up temp template file
         if ($templateLocalPath && file_exists($templateLocalPath)) {

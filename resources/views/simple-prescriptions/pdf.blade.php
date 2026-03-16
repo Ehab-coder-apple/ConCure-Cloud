@@ -74,7 +74,7 @@
             &nbsp;&nbsp;|&nbsp;&nbsp;
             <strong>Age:</strong> @if($prescription->patient->date_of_birth){{ \Carbon\Carbon::parse($prescription->patient->date_of_birth)->age }} years @else N/A @endif
             &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Date:</strong> {{ $prescription->prescribed_date->format('d/m/Y') }}
+            <strong>Date:</strong> {{ $prescription->prescribed_date ? $prescription->prescribed_date->format('d/m/Y') : date('d/m/Y') }}
         </td>
     </tr>
 </table>

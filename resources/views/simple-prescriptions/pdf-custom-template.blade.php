@@ -24,20 +24,22 @@
     @endif
 
     @php
-        $patientY = max(5, $rxSettings['medicine_y'] - 55);
-        $diagnosisY = max(5, $rxSettings['medicine_y'] - 28);
-        $medX = $rxSettings['medicine_x'];
-        $medY = $rxSettings['medicine_y'];
-        $fontSize = $rxSettings['font_size'];
-        $lineSpacing = $rxSettings['line_spacing'];
+        $medX = $rxSettings['medicine_x'] ?? 40;
+        $medY = $rxSettings['medicine_y'] ?? 200;
+        $fontSize = $rxSettings['font_size'] ?? 11;
+        $lineSpacing = $rxSettings['line_spacing'] ?? 22;
+        $patientY = max(5, $medY - 55);
+        $diagnosisY = max(5, $medY - 28);
     @endphp
 
     {{-- Patient info --}}
     <div style="position: fixed; top: {{ $patientY }}pt; left: {{ $medX }}pt; font-size: {{ $fontSize }}pt; color: #000;">
-        <strong>Patient:</strong> {{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}
+        @if($prescription->patient)
+            <strong>Patient:</strong> {{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}
+        @endif
         &nbsp;&nbsp;|&nbsp;&nbsp;
-        <strong>Date:</strong> {{ $prescription->prescribed_date->format('d/m/Y') }}
-        @if($prescription->patient->date_of_birth)
+        <strong>Date:</strong> {{ $prescription->prescribed_date ? $prescription->prescribed_date->format('d/m/Y') : date('d/m/Y') }}
+        @if($prescription->patient && $prescription->patient->date_of_birth)
             &nbsp;&nbsp;|&nbsp;&nbsp;
             <strong>Age:</strong> {{ \Carbon\Carbon::parse($prescription->patient->date_of_birth)->age }}y
         @endif
