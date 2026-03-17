@@ -412,9 +412,16 @@ class SimplePrescriptionController extends Controller
         $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
         $fontData = $defaultFontConfig['fontdata'];
 
+        // Get paper size from clinic settings (default to A4)
+        $paperSize = $clinic ? $clinic->getSetting('rx_paper_size', 'A4') : 'A4';
+        $allowedSizes = ['A4', 'A5', 'A6', 'Letter', 'Legal', 'B5'];
+        if (!in_array($paperSize, $allowedSizes)) {
+            $paperSize = 'A4';
+        }
+
         $mpdfConfig = [
             'mode' => 'utf-8',
-            'format' => 'A4',
+            'format' => $paperSize,
             'tempDir' => $tempDir,
             'fontDir' => $fontDirs,
             'fontdata' => $fontData,

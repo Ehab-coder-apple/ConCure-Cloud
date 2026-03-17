@@ -1204,6 +1204,7 @@ class SettingsController extends Controller
             'rx_max_medicines' => 'required|integer|min:1|max:30',
             'rx_notes_y_bottom' => 'nullable|integer|min:0|max:800',
             'rx_notes_x_right' => 'nullable|integer|min:0|max:500',
+            'rx_paper_size' => 'nullable|string|in:A4,A5,A6,Letter,Legal,B5',
         ]);
 
         try {
@@ -1217,6 +1218,7 @@ class SettingsController extends Controller
             $clinic->setSetting('rx_max_medicines', (int) $request->rx_max_medicines);
             $clinic->setSetting('rx_notes_y_bottom', (int) ($request->rx_notes_y_bottom ?? 60));
             $clinic->setSetting('rx_notes_x_right', (int) ($request->rx_notes_x_right ?? 40));
+            $clinic->setSetting('rx_paper_size', $request->rx_paper_size ?? 'A4');
 
             return response()->json(['success' => true, 'message' => __('Settings saved successfully.')]);
         } catch (\Exception $e) {

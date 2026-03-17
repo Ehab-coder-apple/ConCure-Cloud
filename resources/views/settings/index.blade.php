@@ -848,6 +848,7 @@
                                         $rxMaxMedicines = $clinic ? $clinic->getSetting('rx_max_medicines', 12) : 12;
                                         $rxNotesYBottom = $clinic ? $clinic->getSetting('rx_notes_y_bottom', 60) : 60;
                                         $rxNotesXRight = $clinic ? $clinic->getSetting('rx_notes_x_right', 40) : 40;
+                                        $rxPaperSize = $clinic ? $clinic->getSetting('rx_paper_size', 'A4') : 'A4';
                                     @endphp
 
                                     <div class="alert alert-info">
@@ -916,6 +917,23 @@
                                             @if(!$rxTemplatePath)
                                                 <small class="text-warning">{{ __('Upload a template first to enable this option.') }}</small>
                                             @endif
+                                        </div>
+
+                                        <!-- Paper Size -->
+                                        <div class="mb-3">
+                                            <label for="rx_paper_size" class="form-label">
+                                                <i class="fas fa-file-alt me-1"></i>
+                                                <strong>{{ __('Paper Size') }}</strong>
+                                            </label>
+                                            <select class="form-select" id="rx_paper_size" name="rx_paper_size" style="max-width: 250px;">
+                                                <option value="A4" {{ $rxPaperSize == 'A4' ? 'selected' : '' }}>A4 (210 × 297 mm)</option>
+                                                <option value="A5" {{ $rxPaperSize == 'A5' ? 'selected' : '' }}>A5 (148 × 210 mm)</option>
+                                                <option value="A6" {{ $rxPaperSize == 'A6' ? 'selected' : '' }}>A6 (105 × 148 mm)</option>
+                                                <option value="Letter" {{ $rxPaperSize == 'Letter' ? 'selected' : '' }}>Letter (8.5 × 11 in)</option>
+                                                <option value="Legal" {{ $rxPaperSize == 'Legal' ? 'selected' : '' }}>Legal (8.5 × 14 in)</option>
+                                                <option value="B5" {{ $rxPaperSize == 'B5' ? 'selected' : '' }}>B5 (176 × 250 mm)</option>
+                                            </select>
+                                            <div class="form-text">{{ __('Choose the paper size for prescription PDFs. Default is A4.') }}</div>
                                         </div>
 
                                         <h6 class="mt-4"><i class="fas fa-sliders-h me-1"></i> {{ __('Medicine List Position & Formatting') }}</h6>
