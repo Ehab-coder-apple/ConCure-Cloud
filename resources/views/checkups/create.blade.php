@@ -211,7 +211,7 @@
                                                 @php $fields = $section['fields'] ?? []; @endphp
                                                 @foreach($fields as $fieldKey => $field)
                                                     @php $type = $field['type'] ?? 'text'; @endphp
-                                                    <div class="col-md-6 mb-3">
+                                                    <div class="col-12 mb-3">
                                                         <label class="form-label">{{ $field['label'] ?? Str::headline($fieldKey) }}
                                                             @if(!empty($field['required'])) <span class="text-danger">*</span> @endif
                                                         </label>

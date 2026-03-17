@@ -170,7 +170,7 @@
                             @if(isset($section['fields']) && is_array($section['fields']))
                                 <div class="row">
                                     @foreach($section['fields'] as $fieldKey => $field)
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-12 mb-3">
                                         <div class="card border-light">
                                             <div class="card-body p-3">
                                                 <h6 class="card-title mb-2">

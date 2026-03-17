@@ -553,7 +553,7 @@ function previewTemplate() {
 
         Object.keys(section.fields || {}).forEach(fieldKey => {
             const field = section.fields[fieldKey];
-            previewHtml += `<div class="col-md-6 mb-3">`;
+            previewHtml += `<div class="col-12 mb-3">`;
             previewHtml += `<label class="form-label">${field.label}${field.required ? ' <span class="text-danger">*</span>' : ''}</label>`;
 
             switch (field.type) {

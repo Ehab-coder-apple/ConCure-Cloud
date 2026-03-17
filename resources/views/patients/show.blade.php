@@ -1308,7 +1308,7 @@ function loadTemplateFields() {
 
             Object.keys(section.fields || {}).forEach(fieldKey => {
                 const field = section.fields[fieldKey];
-                fieldsHtml += `<div class="col-md-6 mb-3">`;
+                fieldsHtml += `<div class="col-12 mb-3">`;
                 fieldsHtml += `<label for="custom_field_${fieldKey}" class="form-label">${field.label}`;
                 if (field.required) fieldsHtml += ' <span class="text-danger">*</span>';
                 fieldsHtml += '</label>';
