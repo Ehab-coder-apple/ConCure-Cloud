@@ -243,6 +243,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         // Patient Videos (direct upload to Spaces)
         Route::post('/{patient}/videos/presigned-url', [App\Http\Controllers\PatientVideoController::class, 'presignedUrl'])->name('videos.presigned-url');
+        Route::post('/{patient}/videos/upload', [App\Http\Controllers\PatientVideoController::class, 'upload'])->name('videos.upload');
         Route::post('/{patient}/videos', [App\Http\Controllers\PatientVideoController::class, 'store'])->name('videos.store');
         Route::get('/{patient}/videos/{video}', [App\Http\Controllers\PatientVideoController::class, 'show'])->name('videos.show');
         Route::patch('/{patient}/videos/{video}', [App\Http\Controllers\PatientVideoController::class, 'update'])->name('videos.update');

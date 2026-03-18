@@ -305,7 +305,7 @@
                                         <input type="text" id="videoTags" class="form-control" placeholder="{{ __('Tags (comma-separated)') }}">
                                     </div>
                                     <div class="col-md-4 d-flex align-items-center">
-                                        <small class="text-muted">{{ __('MP4, MOV, AVI, WMV, WebM, MKV. No size limit.') }}</small>
+                                        <small class="text-muted">{{ __('MP4, MOV, AVI, WMV, WebM, MKV.') }}</small>
                                     </div>
                                 </div>
                                 <!-- Progress bars container -->
@@ -1392,7 +1392,7 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
     modal.hide();
 });
 
-// ─── Direct Video Upload to DigitalOcean Spaces ───
+// ─── Video Upload (server-proxy with direct-to-Spaces fallback) ───
 (function() {
     const fileInput  = document.getElementById('videoFileInput');
     const uploadBtn  = document.getElementById('videoUploadBtn');
@@ -1403,8 +1403,7 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
 
     if (!fileInput || !uploadBtn) return;
 
-    const presignedUrlRoute = "{{ route('patients.videos.presigned-url', $patient) }}";
-    const storeRoute        = "{{ route('patients.videos.store', $patient) }}";
+    const serverUploadRoute = "{{ route('patients.videos.upload', $patient) }}";
     const csrfToken         = "{{ csrf_token() }}";
 
     const allowedTypes = [
@@ -1420,7 +1419,6 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
         const files = Array.from(fileInput.files);
         if (!files.length) return;
 
-        // Validate types
         for (const f of files) {
             if (!allowedTypes.includes(f.type)) {
                 showAlert('danger', `Invalid type: ${f.name}. Allowed: MP4, MOV, AVI, WMV, WebM, MKV.`);
@@ -1439,7 +1437,6 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
             const file = files[i];
             const progId = 'prog_' + i;
 
-            // Add progress bar
             progressC.insertAdjacentHTML('beforeend', `
                 <div class="mb-2" id="${progId}">
                     <div class="d-flex justify-content-between small mb-1">
@@ -1449,37 +1446,24 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
                     <div class="progress" style="height:8px">
                         <div id="${progId}_bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%"></div>
                     </div>
-                    <small id="${progId}_status" class="text-muted">{{ __('Requesting upload URL...') }}</small>
+                    <small id="${progId}_status" class="text-muted">{{ __('Uploading...') }}</small>
                 </div>
             `);
 
             try {
-                // Step 1: Get presigned URL from server
-                const presignRes = await fetch(presignedUrlRoute, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        filename: file.name,
-                        content_type: file.type,
-                        size: file.size,
-                    }),
-                });
-                if (!presignRes.ok) {
-                    const err = await presignRes.json();
-                    throw new Error(err.error || 'Failed to get upload URL');
-                }
-                const { upload_url, path } = await presignRes.json();
+                // Upload via server (avoids CORS issues with direct Spaces upload)
+                document.getElementById(progId + '_status').textContent = '{{ __("Uploading video...") }}';
 
-                // Step 2: Upload directly to Spaces via PUT
-                document.getElementById(progId + '_status').textContent = '{{ __("Uploading to cloud...") }}';
+                const formData = new FormData();
+                formData.append('video', file);
+                formData.append('title', titleInput ? titleInput.value : '');
+                formData.append('condition_tags', tagsInput ? tagsInput.value : '');
+
                 await new Promise((resolve, reject) => {
                     const xhr = new XMLHttpRequest();
-                    xhr.open('PUT', upload_url, true);
-                    xhr.setRequestHeader('Content-Type', file.type);
+                    xhr.open('POST', serverUploadRoute, true);
+                    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+                    xhr.setRequestHeader('Accept', 'application/json');
 
                     xhr.upload.onprogress = function(e) {
                         if (e.lengthComputable) {
@@ -1489,35 +1473,19 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
                         }
                     };
                     xhr.onload = function() {
-                        if (xhr.status >= 200 && xhr.status < 300) resolve();
-                        else reject(new Error('Upload failed: HTTP ' + xhr.status));
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve();
+                        } else {
+                            let msg = 'Upload failed: HTTP ' + xhr.status;
+                            try { msg = JSON.parse(xhr.responseText).message || msg; } catch(e) {}
+                            reject(new Error(msg));
+                        }
                     };
-                    xhr.onerror = () => reject(new Error('Network error during upload'));
-                    xhr.send(file);
+                    xhr.onerror = () => reject(new Error('{{ __("Network error during upload. Please check your connection and try again.") }}'));
+                    xhr.ontimeout = () => reject(new Error('{{ __("Upload timed out. The video may be too large.") }}'));
+                    xhr.timeout = 600000; // 10 min timeout
+                    xhr.send(formData);
                 });
-
-                // Step 3: Confirm with Laravel (save DB record)
-                document.getElementById(progId + '_status').textContent = '{{ __("Saving record...") }}';
-                const confirmRes = await fetch(storeRoute, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        path: path,
-                        filename: file.name,
-                        content_type: file.type,
-                        size: file.size,
-                        title: titleInput ? titleInput.value : '',
-                        condition_tags: tagsInput ? tagsInput.value : '',
-                    }),
-                });
-                if (!confirmRes.ok) {
-                    const err = await confirmRes.json();
-                    throw new Error(err.error || 'Failed to save record');
-                }
 
                 document.getElementById(progId + '_bar').classList.remove('progress-bar-animated');
                 document.getElementById(progId + '_bar').classList.add('bg-success');
@@ -1537,7 +1505,6 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
 
         if (successCount > 0) {
             showAlert('success', successCount + ' {{ __("video(s) uploaded successfully.") }}');
-            // Reload page after short delay to show new videos
             setTimeout(() => window.location.reload(), 1500);
         }
     });

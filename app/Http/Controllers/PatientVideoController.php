@@ -7,6 +7,7 @@ use App\Models\PatientVideo;
 use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 
 class PatientVideoController extends Controller
 {
@@ -54,6 +55,65 @@ class PatientVideoController extends Controller
         return response()->json([
             'upload_url' => $url,
             'path'       => $path,
+        ]);
+    }
+
+    /**
+     * Server-side upload: receive the video file via multipart POST and store to Spaces.
+     * This avoids CORS issues with direct browser-to-Spaces uploads.
+     */
+    public function upload(Request $request, Patient $patient): JsonResponse
+    {
+        $this->authorizePatientAccess($patient);
+
+        $request->validate([
+            'video'          => 'required|file|mimetypes:video/mp4,video/quicktime,video/x-msvideo,video/x-ms-wmv,video/webm,video/x-matroska',
+            'title'          => 'nullable|string|max:255',
+            'condition_tags' => 'nullable|string|max:500',
+        ]);
+
+        $file = $request->file('video');
+        $original = $file->getClientOriginalName();
+        $safeName = time() . '_' . uniqid() . '_' . preg_replace('/[^A-Za-z0-9_\.-]/', '_', $original);
+        $tenantDir = StorageQuotaService::getTenantStoragePath($patient->clinic_id, 'videos');
+        $path = $tenantDir . '/' . $safeName;
+
+        // Upload to Spaces
+        Storage::disk(StorageQuotaService::SPACES_DISK)->put(
+            $path,
+            file_get_contents($file->getRealPath()),
+            'private'
+        );
+
+        // Parse tags
+        $tagsRaw = (string) $request->input('condition_tags', '');
+        $tags = collect(preg_split('/[,]+/', $tagsRaw))
+            ->map(fn($t) => trim($t))
+            ->filter()
+            ->unique()
+            ->take(10)
+            ->values()
+            ->all();
+
+        $video = PatientVideo::create([
+            'clinic_id'           => $patient->clinic_id,
+            'patient_id'          => $patient->id,
+            'uploaded_by_user_id' => auth()->id(),
+            'path'                => $path,
+            'filename'            => $original,
+            'mime'                => $file->getMimeType(),
+            'size'                => $file->getSize(),
+            'title'               => $request->input('title'),
+            'condition_tags'      => $tags,
+        ]);
+
+        // Increment storage usage
+        app(StorageQuotaService::class)->incrementUsage($patient->clinic_id, (int) $file->getSize());
+
+        return response()->json([
+            'success' => true,
+            'video'   => $video,
+            'message' => __('Video uploaded successfully.'),
         ]);
     }
 
