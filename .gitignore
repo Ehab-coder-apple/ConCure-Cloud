@@ -32,6 +32,8 @@ yarn-error.log
 
 # Font data files
 /storage/fonts/*.ttf
+/storage/fonts/*.json
+/storage/fonts/*.ufm.json
 
 # Uploaded files
 /storage/app/public/uploads/*
