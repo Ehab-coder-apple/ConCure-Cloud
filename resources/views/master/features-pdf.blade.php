@@ -371,6 +371,52 @@
         </div>
     </div>
 
+    <!-- Dental & Pediatric -->
+    <div class="section">
+        <div class="section-header success">Dental & Pediatric Modules</div>
+
+        <div class="feature-grid">
+            <div class="feature-column">
+                <div class="feature-module">
+                    <h3>Dental Module</h3>
+                    <ul class="feature-list">
+                        <li>Interactive dental chart (adult & pediatric)</li>
+                        <li>Tooth-by-tooth condition tracking</li>
+                        <li>Visual tooth status indicators (color-coded)</li>
+                        <li>Dental conditions library (30+ conditions)</li>
+                        <li>Treatment planning and tracking</li>
+                        <li>Treatment history per tooth</li>
+                        <li>Simple and detailed chart views</li>
+                        <li>Dental chart PDF export</li>
+                        <li>Multi-tooth selection and bulk updates</li>
+                        <li>Searchable condition legend</li>
+                        <li>Tooth numbering system (FDI notation)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-column">
+                <div class="feature-module">
+                    <h3>Pediatric Growth Chart</h3>
+                    <ul class="feature-list">
+                        <li>WHO & CDC growth reference data</li>
+                        <li>Weight-for-age charts (0–5 years)</li>
+                        <li>Length/Height-for-age charts</li>
+                        <li>Head circumference-for-age charts</li>
+                        <li>BMI-for-age charts</li>
+                        <li>Weight-for-length/height charts</li>
+                        <li>Percentile curves (3rd–97th)</li>
+                        <li>Growth measurement recording & history</li>
+                        <li>Preterm/LBW corrected age support</li>
+                        <li>Birth weight & gestational age tracking</li>
+                        <li>Growth chart PDF export with formatted layout</li>
+                        <li>Pediatric patient list with age filtering</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="page-break"></div>
 
     <!-- Financial Management -->
@@ -670,6 +716,8 @@
                         <li><strong>Radiology:</strong> Imaging requests, DICOM integration, report generation</li>
                         <li><strong>Appointments:</strong> Calendar scheduling, conflict detection, status tracking</li>
                         <li><strong>Nutrition Planning:</strong> Food database, meal planning, calorie tracking, diet plans</li>
+                        <li><strong>Dental Module:</strong> Interactive dental charts, condition tracking, treatment planning, PDF export</li>
+                        <li><strong>Pediatric Growth:</strong> WHO/CDC growth charts, percentile tracking, corrected age support</li>
                     </ul>
                 </div>
             </div>
@@ -717,11 +765,11 @@
                     </h3>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
                         <div style="background: #f8f9fa; padding: 10px; text-align: center; border-radius: 5px;">
-                            <h2 style="color: #007bff; margin: 0;">150+</h2>
+                            <h2 style="color: #007bff; margin: 0;">200+</h2>
                             <small>Total Features</small>
                         </div>
                         <div style="background: #f8f9fa; padding: 10px; text-align: center; border-radius: 5px;">
-                            <h2 style="color: #28a745; margin: 0;">8</h2>
+                            <h2 style="color: #28a745; margin: 0;">10</h2>
                             <small>Core Modules</small>
                         </div>
                         <div style="background: #f8f9fa; padding: 10px; text-align: center; border-radius: 5px;">
@@ -771,7 +819,7 @@
     <div class="footer">
         <p><strong>ConCure Cloud</strong> - Comprehensive Clinic Management System</p>
         <p>Version 1.0 | © {{ date('Y') }} ConCure. All rights reserved.</p>
-        <p style="margin-top: 5px;">Total Features: 150+ | Generated: {{ date('F d, Y \a\t h:i A') }}</p>
+        <p style="margin-top: 5px;">Total Features: 200+ | Generated: {{ date('F d, Y \a\t h:i A') }}</p>
     </div>
 </body>
 </html>

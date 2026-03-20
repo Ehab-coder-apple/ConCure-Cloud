@@ -189,6 +189,47 @@
                                 </ul>
                             </div>
                         </div>
+
+                        <!-- Dental Module -->
+                        <div class="col-md-6 mb-4">
+                            <div class="feature-module">
+                                <h5 class="text-success"><i class="fas fa-tooth me-2"></i>Dental Module</h5>
+                                <ul class="list-unstyled ms-3">
+                                    <li><i class="fas fa-check text-success me-2"></i>Interactive dental chart (adult & pediatric)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Tooth-by-tooth condition tracking</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Visual tooth status indicators (color-coded)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Dental conditions library (30+ conditions)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Treatment planning and tracking</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Treatment history per tooth</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Simple and detailed chart views</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Dental chart PDF export</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Multi-tooth selection and bulk updates</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Searchable condition legend</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Tooth numbering system (FDI notation)</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Pediatric Growth Chart -->
+                        <div class="col-md-6 mb-4">
+                            <div class="feature-module">
+                                <h5 class="text-success"><i class="fas fa-child me-2"></i>Pediatric Growth Chart</h5>
+                                <ul class="list-unstyled ms-3">
+                                    <li><i class="fas fa-check text-success me-2"></i>WHO & CDC growth reference data</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Weight-for-age charts (0–5 years)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Length/Height-for-age charts</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Head circumference-for-age charts</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>BMI-for-age charts</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Weight-for-length/height charts</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Percentile curves (3rd–97th)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Growth measurement recording & history</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Preterm/LBW corrected age support</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Birth weight & gestational age tracking</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Growth chart PDF export with formatted layout</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Pediatric patient list with age filtering</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -502,6 +543,8 @@
                                         <li class="mb-2"><i class="fas fa-x-ray text-primary me-2"></i><strong>Radiology:</strong> Imaging requests, DICOM integration, report generation</li>
                                         <li class="mb-2"><i class="fas fa-calendar-check text-primary me-2"></i><strong>Appointments:</strong> Calendar scheduling, conflict detection, status tracking</li>
                                         <li class="mb-2"><i class="fas fa-apple-alt text-primary me-2"></i><strong>Nutrition Planning:</strong> Food database, meal planning, calorie tracking, diet plans</li>
+                                        <li class="mb-2"><i class="fas fa-tooth text-primary me-2"></i><strong>Dental Module:</strong> Interactive dental charts, condition tracking, treatment planning, PDF export</li>
+                                        <li class="mb-2"><i class="fas fa-child text-primary me-2"></i><strong>Pediatric Growth:</strong> WHO/CDC growth charts, percentile tracking, corrected age support</li>
                                     </ul>
                                 </div>
                             </div>
@@ -554,13 +597,13 @@
                                     <div class="row text-center">
                                         <div class="col-6 mb-3">
                                             <div class="p-3 bg-light rounded">
-                                                <h3 class="text-primary mb-0">150+</h3>
+                                                <h3 class="text-primary mb-0">200+</h3>
                                                 <small class="text-muted">Total Features</small>
                                             </div>
                                         </div>
                                         <div class="col-6 mb-3">
                                             <div class="p-3 bg-light rounded">
-                                                <h3 class="text-success mb-0">8</h3>
+                                                <h3 class="text-success mb-0">10</h3>
                                                 <small class="text-muted">Core Modules</small>
                                             </div>
                                         </div>
