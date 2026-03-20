@@ -147,12 +147,8 @@ class DentalTreatmentController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        // Convert comma-separated tooth_numbers string to array if needed
-        $toothNumbers = $request->tooth_numbers;
-        if (is_string($toothNumbers) && !empty($toothNumbers)) {
-            $toothNumbers = array_map('trim', explode(',', $toothNumbers));
-            $toothNumbers = array_filter($toothNumbers); // Remove empty values
-        }
+        // Normalize tooth_numbers (accept string "11,12" or array; store null when empty)
+        $toothNumbers = $this->normalizeToothNumbers($request->tooth_numbers);
 
         try {
             $treatment = DentalTreatment::create([
@@ -290,17 +286,47 @@ class DentalTreatmentController extends Controller
             'post_treatment_notes' => 'nullable|string',
         ]);
 
-        // Convert comma-separated tooth_numbers string to array if needed
+        // Convert/normalize tooth_numbers (avoid saving empty string into JSON column)
         $data = $request->except(['patient_id', 'clinic_id', 'treatment_number']);
-        if (isset($data['tooth_numbers']) && is_string($data['tooth_numbers']) && !empty($data['tooth_numbers'])) {
-            $data['tooth_numbers'] = array_map('trim', explode(',', $data['tooth_numbers']));
-            $data['tooth_numbers'] = array_filter($data['tooth_numbers']); // Remove empty values
+        if (array_key_exists('tooth_numbers', $data)) {
+            $data['tooth_numbers'] = $this->normalizeToothNumbers($data['tooth_numbers']);
         }
 
         $dentalTreatment->update($data);
 
         return redirect()->route('dental.treatments.show', $dentalTreatment)
                        ->with('success', 'Treatment plan updated successfully.');
+    }
+
+    /**
+     * Normalize tooth_numbers from request into an array or null.
+     * Accepts comma-separated string or array; returns null when empty.
+     */
+    private function normalizeToothNumbers($toothNumbers): ?array
+    {
+        if ($toothNumbers === null) {
+            return null;
+        }
+
+        if (is_string($toothNumbers)) {
+            $toothNumbers = trim($toothNumbers);
+            if ($toothNumbers === '') {
+                return null;
+            }
+            $toothNumbers = explode(',', $toothNumbers);
+        }
+
+        if (!is_array($toothNumbers)) {
+            return null;
+        }
+
+        $toothNumbers = array_values(array_filter(array_map(function ($t) {
+            return trim((string) $t);
+        }, $toothNumbers), function ($t) {
+            return $t !== '';
+        }));
+
+        return count($toothNumbers) > 0 ? $toothNumbers : null;
     }
 
     /**

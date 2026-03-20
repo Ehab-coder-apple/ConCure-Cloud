@@ -27,6 +27,7 @@ class CheckModuleAccess
         'finance'               => 'finance',
         'assistant'             => 'ai_assistant',
         'messages'              => 'messages',
+        'pediatric'             => 'pediatric',
     ];
 
     /**

@@ -75,6 +75,18 @@
                         <i class="fas fa-tooth me-1"></i>
                         {{ __('Dental Chart') }}
                     </a>
+                    @if($patient->age <= 20)
+                        <a href="{{ route('pediatric.growth-chart', $patient) }}" class="btn btn-success btn-sm me-1">
+                            <i class="fas fa-baby me-1"></i>
+                            {{ __('Growth Chart') }}
+                        </a>
+                    @else
+                        <button type="button" class="btn btn-secondary btn-sm me-1 disabled" style="opacity: 0.6; cursor: not-allowed;"
+                                onclick="alert('{{ __('Pediatric Growth Chart is only available for patients aged 20 years and under. This patient is :age years old.', ['age' => $patient->age]) }}')">
+                            <i class="fas fa-baby me-1"></i>
+                            {{ __('Growth Chart') }}
+                        </button>
+                    @endif
                     <a href="{{ route('patients.forms.index', $patient) }}" class="btn btn-secondary btn-sm me-1">
                         <i class="fas fa-file-alt me-1"></i>
                         {{ __('Forms') }}
@@ -192,6 +204,12 @@
                         <div class="card-body">
                             @if(session('success'))
                                 <div class="alert alert-success py-2">{{ session('success') }}</div>
+                            @endif
+                            @if(session('error'))
+                                <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ session('error') }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
                             @endif
                             @if($errors->any())
                                 <div class="alert alert-danger py-2">{{ $errors->first() }}</div>

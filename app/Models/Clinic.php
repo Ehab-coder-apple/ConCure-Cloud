@@ -278,6 +278,7 @@ class Clinic extends Model
         'ai_assistant'  => 'AI Medical Assistant',
         'image_bank'    => 'Medical Image Bank',
         'messages'      => 'Messages',
+        'pediatric'     => 'Pediatric Growth',
     ];
 
     /**

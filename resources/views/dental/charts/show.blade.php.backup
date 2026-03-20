@@ -4,46 +4,6 @@
 
 @push('styles')
 <style>
-    /* Root Layout */
-    .dental-chart-modern {
-        background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
-        min-height: 100vh;
-    }
-
-    .dental-header-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.25rem 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-
-    .dental-chart-container-modern {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-
-    .jaw-title {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #e5e7eb;
-    }
-
-    .quadrant-label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #9ca3af;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.5rem;
-        text-align: center;
-    }
-
     /* Clean Modern Dental Chart - Inspired by Professional UI */
     .dental-chart-wrapper {
         background: #f5f5f7;
@@ -341,6 +301,8 @@
     }
 
     .tooth-svg {
+        width: 48px;
+        height: 64px;
         filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05));
     }
 
@@ -484,28 +446,14 @@
         }
     }
 
+    }
+
     .tooth-grid {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
+        display: flex;
         justify-content: center;
         align-items: flex-start;
-        gap: 2px;
-        width: 100%;
-    }
-
-    .tooth-grid .tooth-wrapper {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-        max-width: 60px;
-        width: 0;
-    }
-
-    .tooth-grid .tooth-svg {
-        display: block !important;
-        width: 100% !important;
-        height: auto !important;
-        max-width: 55px;
+        gap: 0.5rem;
+        flex-wrap: wrap;
     }
 
     .tooth-wrapper {
@@ -526,16 +474,6 @@
         display: block;
         transition: all 0.2s ease;
         filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
-    }
-
-    /* Healthy tooth styling — make the shape visible against white background */
-    .tooth-wrapper .tooth-svg path.tooth-healthy {
-        fill: url(#healthyToothGradient);
-        stroke: #9ca3af;
-        stroke-width: 1.8;
-    }
-    .tooth-wrapper:hover .tooth-svg path.tooth-healthy {
-        stroke: #6b7280;
     }
 
     .tooth-number-label {
@@ -783,102 +721,6 @@
             background: #111827;
         }
     }
-
-    /* ─── Print Styles ─── */
-    @media print {
-        /* Hide app shell: sidebar, topbar, footer, overlays */
-        .sidebar,
-        .sidebar-overlay,
-        .topbar,
-        .main-footer,
-        .sidebar-toggle-btn,
-        .layout-debug-badge {
-            display: none !important;
-        }
-
-        /* Remove sidebar offset from main content */
-        .main-content {
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-            margin-inline-start: 0 !important;
-            margin-top: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-        }
-
-        .content-wrapper {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-        }
-
-        /* Hide non-printable UI elements */
-        .dental-toolbar,
-        .tooth-drawer,
-        .btn,
-        .alert-dismissible .btn-close {
-            display: none !important;
-        }
-
-        /* Show header card action buttons area but hide actual buttons */
-        .dental-header-card .d-flex.gap-2 {
-            display: none !important;
-        }
-
-        /* Reset backgrounds for printing */
-        .dental-chart-modern {
-            background: white !important;
-            min-height: auto !important;
-        }
-
-        .dental-header-card,
-        .dental-chart-container-modern,
-        .legend-sidebar,
-        .jaw-section {
-            background: white !important;
-            box-shadow: none !important;
-            border: 1px solid #ddd !important;
-        }
-
-        /* Ensure chart fits on page */
-        .dental-chart-modern,
-        .container-fluid {
-            padding: 0.5rem !important;
-        }
-
-        /* Keep tooth visuals visible */
-        .tooth-modern svg,
-        .tooth-modern img {
-            print-color-adjust: exact !important;
-            -webkit-print-color-adjust: exact !important;
-        }
-
-        /* Condition color badges should print with colors */
-        .condition-healthy,
-        .condition-cavity,
-        .condition-filling,
-        .condition-crown,
-        .condition-extraction,
-        .condition-implant,
-        .condition-bridge,
-        .condition-root-canal,
-        .condition-missing,
-        .condition-other {
-            print-color-adjust: exact !important;
-            -webkit-print-color-adjust: exact !important;
-        }
-
-        /* Page setup */
-        @page {
-            size: landscape;
-            margin: 1cm;
-        }
-
-        body {
-            background: white !important;
-            overflow: visible !important;
-        }
-    }
 </style>
 @endpush
 
@@ -938,17 +780,17 @@
                     <i class="fas fa-print me-1"></i>
                     {{ __('Print') }}
                 </button>
-                <a href="{{ route('dental.charts.pdf', [$patient, $dentalChart]) }}" class="btn btn-sm btn-outline-secondary">
+                <button class="btn btn-sm btn-outline-secondary">
                     <i class="fas fa-download me-1"></i>
                     {{ __('Export PDF') }}
-                </a>
+                </button>
             </div>
         </div>
 
         <!-- Main Content with Sidebar -->
         <div class="row">
             <!-- Legend Sidebar -->
-            <div class="col-lg-2 col-md-3 mb-4">
+            <div class="col-lg-3 col-md-4 mb-4">
                 <div class="legend-sidebar">
                     <div class="legend-title">
                         <i class="fas fa-list-ul me-2"></i>
@@ -974,7 +816,7 @@
             </div>
 
             <!-- Dental Chart -->
-            <div class="col-lg-10 col-md-9">
+            <div class="col-lg-9 col-md-8">
                 <div class="dental-chart-container-modern"
                      x-data="dentalChartApp()"
                      x-init="init()"
@@ -984,17 +826,6 @@
                         $toothNumbers = $dentalChart->tooth_numbers;
                         $toothRecords = $dentalChart->toothRecords->keyBy('tooth_number');
                     @endphp
-
-                    {{-- Shared SVG gradient definition for healthy teeth --}}
-                    <svg width="0" height="0" style="position:absolute">
-                        <defs>
-                            <linearGradient id="healthyToothGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stop-color="#f8f9fa"/>
-                                <stop offset="40%" stop-color="#e9ecef"/>
-                                <stop offset="100%" stop-color="#dee2e6"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
 
                     <!-- Upper Jaw -->
                     <div class="jaw-section">
@@ -1012,23 +843,44 @@
                                             $record = $toothRecords->get($toothNum);
                                             $color = $record ? $record->primary_condition_color : '#FFFFFF';
                                             $condition = $record ? $record->primary_condition : 'healthy';
-                                            $isHealthy = ($condition === 'healthy');
                                             $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
+                                            $toothType = in_array($toothNum, ['11', '12', '21', '22', '31', '32', '41', '42', '51', '52', '61', '62', '71', '72', '81', '82']) ? 'incisor' :
+                                                        (in_array($toothNum, ['13', '23', '33', '43', '53', '63', '73', '83']) ? 'canine' :
+                                                        (in_array($toothNum, ['14', '15', '24', '25', '34', '35', '44', '45']) ? 'premolar' : 'molar'));
                                         @endphp
                                         <div class="tooth-wrapper"
                                              @click="openDrawer('{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseenter="showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseleave="hideTooltip()">
-                                            <svg class="tooth-svg" viewBox="0 0 60 80">
-                                                <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
-                                                      d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
-                                                      fill="{{ $isHealthy ? 'url(#healthyToothGradient)' : $color }}" stroke="{{ $isHealthy ? '#9ca3af' : '#333' }}" stroke-width="{{ $isHealthy ? '1.8' : '1.5' }}"/>
-                                                <ellipse cx="27" cy="22" rx="5" ry="7" fill="rgba(255,255,255,0.3)"/>
+                                            <svg class="tooth-svg" viewBox="0 0 60 80" width="50" height="67">
+                                                @if($toothType === 'incisor')
+                                                    <path d="M 22 8 L 38 8 L 39 12 L 40 22 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 L 20 22 L 21 12 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <line x1="22" y1="8" x2="38" y2="8" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+                                                @elseif($toothType === 'canine')
+                                                    <path d="M 30 5 L 36 12 L 38 18 L 39 25 L 39 55 Q 37 62 34 67 Q 31 72 30 74 Q 29 72 26 67 Q 23 62 21 55 L 21 25 L 22 18 L 24 12 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 26 12 Q 28 6 30 5 Q 32 6 34 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                @elseif($toothType === 'premolar')
+                                                    <path d="M 20 18 Q 22 14 24 12 Q 26 10 28 11 L 30 13 L 32 11 Q 34 10 36 12 Q 38 14 40 18 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 24 12 Q 26 9 28 11" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 32 11 Q 34 9 36 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <line x1="30" y1="13" x2="30" y2="20" stroke="#333" stroke-width="1" opacity="0.5"/>
+                                                @else
+                                                    <path d="M 16 20 Q 18 16 20 14 Q 22 12 24 13 L 26 15 L 28 13 Q 30 12 32 13 L 34 15 L 36 13 Q 38 12 40 14 Q 42 16 44 20 L 44 55 Q 42 62 38 67 Q 34 72 30 74 Q 26 72 22 67 Q 18 62 16 55 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 20 14 Q 22 11 24 13" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 26 15 Q 28 12 28 13" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                    <path d="M 32 13 Q 32 12 34 15" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                    <path d="M 36 13 Q 38 11 40 14" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 24 15 Q 28 18 30 17 Q 32 18 36 15" fill="none" stroke="#333" stroke-width="1" opacity="0.4"/>
+                                                @endif
                                                 <text x="30" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="{{ $textColor }}">
                                                     {{ $toothNum }}
                                                 </text>
                                             </svg>
-                                            @if($record && !$isHealthy)
+                                            @if($record && $record->primary_condition !== 'healthy')
                                                 <div class="tooth-condition-badge" style="background-color: {{ $color }};">
                                                     {{ \App\Models\DentalToothRecord::CONDITIONS[$record->primary_condition]['icon'] ?? '' }}
                                                 </div>
@@ -1047,23 +899,44 @@
                                             $record = $toothRecords->get($toothNum);
                                             $color = $record ? $record->primary_condition_color : '#FFFFFF';
                                             $condition = $record ? $record->primary_condition : 'healthy';
-                                            $isHealthy = ($condition === 'healthy');
                                             $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
+                                            $toothType = in_array($toothNum, ['11', '12', '21', '22', '31', '32', '41', '42', '51', '52', '61', '62', '71', '72', '81', '82']) ? 'incisor' :
+                                                        (in_array($toothNum, ['13', '23', '33', '43', '53', '63', '73', '83']) ? 'canine' :
+                                                        (in_array($toothNum, ['14', '15', '24', '25', '34', '35', '44', '45']) ? 'premolar' : 'molar'));
                                         @endphp
                                         <div class="tooth-wrapper"
                                              @click="openDrawer('{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseenter="showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseleave="hideTooltip()">
-                                            <svg class="tooth-svg" viewBox="0 0 60 80">
-                                                <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
-                                                      d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
-                                                      fill="{{ $isHealthy ? 'url(#healthyToothGradient)' : $color }}" stroke="{{ $isHealthy ? '#9ca3af' : '#333' }}" stroke-width="{{ $isHealthy ? '1.8' : '1.5' }}"/>
-                                                <ellipse cx="27" cy="22" rx="5" ry="7" fill="rgba(255,255,255,0.3)"/>
+                                            <svg class="tooth-svg" viewBox="0 0 60 80" width="50" height="67">
+                                                @if($toothType === 'incisor')
+                                                    <path d="M 22 8 L 38 8 L 39 12 L 40 22 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 L 20 22 L 21 12 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <line x1="22" y1="8" x2="38" y2="8" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+                                                @elseif($toothType === 'canine')
+                                                    <path d="M 30 5 L 36 12 L 38 18 L 39 25 L 39 55 Q 37 62 34 67 Q 31 72 30 74 Q 29 72 26 67 Q 23 62 21 55 L 21 25 L 22 18 L 24 12 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 26 12 Q 28 6 30 5 Q 32 6 34 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                @elseif($toothType === 'premolar')
+                                                    <path d="M 20 18 Q 22 14 24 12 Q 26 10 28 11 L 30 13 L 32 11 Q 34 10 36 12 Q 38 14 40 18 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 24 12 Q 26 9 28 11" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 32 11 Q 34 9 36 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <line x1="30" y1="13" x2="30" y2="20" stroke="#333" stroke-width="1" opacity="0.5"/>
+                                                @else
+                                                    <path d="M 16 20 Q 18 16 20 14 Q 22 12 24 13 L 26 15 L 28 13 Q 30 12 32 13 L 34 15 L 36 13 Q 38 12 40 14 Q 42 16 44 20 L 44 55 Q 42 62 38 67 Q 34 72 30 74 Q 26 72 22 67 Q 18 62 16 55 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 20 14 Q 22 11 24 13" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 26 15 Q 28 12 28 13" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                    <path d="M 32 13 Q 32 12 34 15" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                    <path d="M 36 13 Q 38 11 40 14" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 24 15 Q 28 18 30 17 Q 32 18 36 15" fill="none" stroke="#333" stroke-width="1" opacity="0.4"/>
+                                                @endif
                                                 <text x="30" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="{{ $textColor }}">
                                                     {{ $toothNum }}
                                                 </text>
                                             </svg>
-                                            @if($record && !$isHealthy)
+                                            @if($record && $record->primary_condition !== 'healthy')
                                                 <div class="tooth-condition-badge" style="background-color: {{ $color }};">
                                                     {{ \App\Models\DentalToothRecord::CONDITIONS[$record->primary_condition]['icon'] ?? '' }}
                                                 </div>
@@ -1091,23 +964,44 @@
                                             $record = $toothRecords->get($toothNum);
                                             $color = $record ? $record->primary_condition_color : '#FFFFFF';
                                             $condition = $record ? $record->primary_condition : 'healthy';
-                                            $isHealthy = ($condition === 'healthy');
                                             $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
+                                            $toothType = in_array($toothNum, ['11', '12', '21', '22', '31', '32', '41', '42', '51', '52', '61', '62', '71', '72', '81', '82']) ? 'incisor' :
+                                                        (in_array($toothNum, ['13', '23', '33', '43', '53', '63', '73', '83']) ? 'canine' :
+                                                        (in_array($toothNum, ['14', '15', '24', '25', '34', '35', '44', '45']) ? 'premolar' : 'molar'));
                                         @endphp
                                         <div class="tooth-wrapper"
                                              @click="openDrawer('{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseenter="showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseleave="hideTooltip()">
-                                            <svg class="tooth-svg" viewBox="0 0 60 80" style="transform: scaleY(-1);">
-                                                <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
-                                                      d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
-                                                      fill="{{ $isHealthy ? 'url(#healthyToothGradient)' : $color }}" stroke="{{ $isHealthy ? '#9ca3af' : '#333' }}" stroke-width="{{ $isHealthy ? '1.8' : '1.5' }}"/>
-                                                <ellipse cx="27" cy="22" rx="5" ry="7" fill="rgba(255,255,255,0.3)"/>
+                                            <svg class="tooth-svg" viewBox="0 0 60 80" width="50" height="67" style="transform: scaleY(-1);">
+                                                @if($toothType === 'incisor')
+                                                    <path d="M 22 8 L 38 8 L 39 12 L 40 22 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 L 20 22 L 21 12 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <line x1="22" y1="8" x2="38" y2="8" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+                                                @elseif($toothType === 'canine')
+                                                    <path d="M 30 5 L 36 12 L 38 18 L 39 25 L 39 55 Q 37 62 34 67 Q 31 72 30 74 Q 29 72 26 67 Q 23 62 21 55 L 21 25 L 22 18 L 24 12 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 26 12 Q 28 6 30 5 Q 32 6 34 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                @elseif($toothType === 'premolar')
+                                                    <path d="M 20 18 Q 22 14 24 12 Q 26 10 28 11 L 30 13 L 32 11 Q 34 10 36 12 Q 38 14 40 18 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 24 12 Q 26 9 28 11" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 32 11 Q 34 9 36 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <line x1="30" y1="13" x2="30" y2="20" stroke="#333" stroke-width="1" opacity="0.5"/>
+                                                @else
+                                                    <path d="M 16 20 Q 18 16 20 14 Q 22 12 24 13 L 26 15 L 28 13 Q 30 12 32 13 L 34 15 L 36 13 Q 38 12 40 14 Q 42 16 44 20 L 44 55 Q 42 62 38 67 Q 34 72 30 74 Q 26 72 22 67 Q 18 62 16 55 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 20 14 Q 22 11 24 13" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 26 15 Q 28 12 28 13" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                    <path d="M 32 13 Q 32 12 34 15" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                    <path d="M 36 13 Q 38 11 40 14" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 24 15 Q 28 18 30 17 Q 32 18 36 15" fill="none" stroke="#333" stroke-width="1" opacity="0.4"/>
+                                                @endif
                                                 <text x="30" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="{{ $textColor }}" transform="scale(1, -1) translate(0, -90)">
                                                     {{ $toothNum }}
                                                 </text>
                                             </svg>
-                                            @if($record && !$isHealthy)
+                                            @if($record && $record->primary_condition !== 'healthy')
                                                 <div class="tooth-condition-badge" style="background-color: {{ $color }};">
                                                     {{ \App\Models\DentalToothRecord::CONDITIONS[$record->primary_condition]['icon'] ?? '' }}
                                                 </div>
@@ -1126,23 +1020,44 @@
                                             $record = $toothRecords->get($toothNum);
                                             $color = $record ? $record->primary_condition_color : '#FFFFFF';
                                             $condition = $record ? $record->primary_condition : 'healthy';
-                                            $isHealthy = ($condition === 'healthy');
                                             $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
+                                            $toothType = in_array($toothNum, ['11', '12', '21', '22', '31', '32', '41', '42', '51', '52', '61', '62', '71', '72', '81', '82']) ? 'incisor' :
+                                                        (in_array($toothNum, ['13', '23', '33', '43', '53', '63', '73', '83']) ? 'canine' :
+                                                        (in_array($toothNum, ['14', '15', '24', '25', '34', '35', '44', '45']) ? 'premolar' : 'molar'));
                                         @endphp
                                         <div class="tooth-wrapper"
                                              @click="openDrawer('{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseenter="showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseleave="hideTooltip()">
-                                            <svg class="tooth-svg" viewBox="0 0 60 80" style="transform: scaleY(-1);">
-                                                <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
-                                                      d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
-                                                      fill="{{ $isHealthy ? 'url(#healthyToothGradient)' : $color }}" stroke="{{ $isHealthy ? '#9ca3af' : '#333' }}" stroke-width="{{ $isHealthy ? '1.8' : '1.5' }}"/>
-                                                <ellipse cx="27" cy="22" rx="5" ry="7" fill="rgba(255,255,255,0.3)"/>
+                                            <svg class="tooth-svg" viewBox="0 0 60 80" width="50" height="67" style="transform: scaleY(-1);">
+                                                @if($toothType === 'incisor')
+                                                    <path d="M 22 8 L 38 8 L 39 12 L 40 22 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 L 20 22 L 21 12 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <line x1="22" y1="8" x2="38" y2="8" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+                                                @elseif($toothType === 'canine')
+                                                    <path d="M 30 5 L 36 12 L 38 18 L 39 25 L 39 55 Q 37 62 34 67 Q 31 72 30 74 Q 29 72 26 67 Q 23 62 21 55 L 21 25 L 22 18 L 24 12 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 26 12 Q 28 6 30 5 Q 32 6 34 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                @elseif($toothType === 'premolar')
+                                                    <path d="M 20 18 Q 22 14 24 12 Q 26 10 28 11 L 30 13 L 32 11 Q 34 10 36 12 Q 38 14 40 18 L 40 55 Q 38 62 35 67 Q 32 72 30 74 Q 28 72 25 67 Q 22 62 20 55 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 24 12 Q 26 9 28 11" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 32 11 Q 34 9 36 12" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <line x1="30" y1="13" x2="30" y2="20" stroke="#333" stroke-width="1" opacity="0.5"/>
+                                                @else
+                                                    <path d="M 16 20 Q 18 16 20 14 Q 22 12 24 13 L 26 15 L 28 13 Q 30 12 32 13 L 34 15 L 36 13 Q 38 12 40 14 Q 42 16 44 20 L 44 55 Q 42 62 38 67 Q 34 72 30 74 Q 26 72 22 67 Q 18 62 16 55 Z"
+                                                          fill="{{ $color }}" stroke="#333" stroke-width="1.8"/>
+                                                    <path d="M 20 14 Q 22 11 24 13" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 26 15 Q 28 12 28 13" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                    <path d="M 32 13 Q 32 12 34 15" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+                                                    <path d="M 36 13 Q 38 11 40 14" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                                                    <path d="M 24 15 Q 28 18 30 17 Q 32 18 36 15" fill="none" stroke="#333" stroke-width="1" opacity="0.4"/>
+                                                @endif
                                                 <text x="30" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="{{ $textColor }}" transform="scale(1, -1) translate(0, -90)">
                                                     {{ $toothNum }}
                                                 </text>
                                             </svg>
-                                            @if($record && !$isHealthy)
+                                            @if($record && $record->primary_condition !== 'healthy')
                                                 <div class="tooth-condition-badge" style="background-color: {{ $color }};">
                                                     {{ \App\Models\DentalToothRecord::CONDITIONS[$record->primary_condition]['icon'] ?? '' }}
                                                 </div>

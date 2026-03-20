@@ -75,17 +75,29 @@
                             </div>
 
                             <!-- Tooth Number -->
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ __('Tooth Number (FDI)') }}</label>
-                                <input type="text" name="tooth_number" class="form-control" value="{{ old('tooth_number', $dentalTreatment->tooth_number) }}" placeholder="e.g., 11, 21, 36">
-                                <small class="text-muted">{{ __('FDI notation: 11-18, 21-28, 31-38, 41-48') }}</small>
-                                @error('tooth_number')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
-                                @enderror
-                            </div>
+	                            <div class="col-md-6 mb-3">
+	                                <label class="form-label">{{ __('Primary Tooth Number (FDI)') }}</label>
+	                                <input type="text" name="tooth_number" class="form-control" value="{{ old('tooth_number', $dentalTreatment->tooth_number) }}" placeholder="e.g., 11, 21, 36">
+	                                <small class="text-muted">{{ __('FDI notation: 11-18, 21-28, 31-38, 41-48') }}</small>
+	                                @error('tooth_number')
+	                                    <div class="text-danger small mt-1">{{ $message }}</div>
+	                                @enderror
+	                            </div>
 
-                            <!-- Surfaces Affected -->
-                            <div class="col-md-6 mb-3">
+	                            <!-- Additional Teeth -->
+	                            <div class="col-md-6 mb-3">
+	                                <label class="form-label">{{ __('Additional Teeth') }}</label>
+	                                <input type="text" name="tooth_numbers" class="form-control"
+	                                       value="{{ old('tooth_numbers', (is_array($dentalTreatment->tooth_numbers) && count($dentalTreatment->tooth_numbers) > 0) ? implode(',', $dentalTreatment->tooth_numbers) : '') }}"
+	                                       placeholder="e.g., 33,32,31,41">
+	                                <small class="text-muted">{{ __('Comma-separated for multiple teeth') }}</small>
+	                                @error('tooth_numbers')
+	                                    <div class="text-danger small mt-1">{{ $message }}</div>
+	                                @enderror
+	                            </div>
+
+	                            <!-- Surfaces Affected -->
+	                            <div class="col-12 mb-3">
                                 <label class="form-label">{{ __('Surfaces Affected') }}</label>
                                 <div class="d-flex gap-3 flex-wrap">
                                     @php

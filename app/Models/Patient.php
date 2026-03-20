@@ -26,6 +26,8 @@ class Patient extends Model
         'education',
         'height',
         'weight',
+        'birth_weight',
+        'gestational_age_weeks',
         'bmi',
         'blood_type',
         'allergies',
@@ -47,6 +49,8 @@ class Patient extends Model
         'height' => 'decimal:2',
         'weight' => 'decimal:2',
         'bmi' => 'decimal:2',
+        'birth_weight' => 'decimal:2',
+        'gestational_age_weeks' => 'integer',
         'is_pregnant' => 'boolean',
         'is_active' => 'boolean',
     ];
@@ -573,4 +577,77 @@ class Patient extends Model
         return $this->hasMany(\App\Models\PatientForm::class);
     }
 
+    /**
+     * Get the patient's growth measurements.
+     */
+    public function growthMeasurements()
+    {
+        return $this->hasMany(\App\Models\GrowthMeasurement::class)->orderBy('measurement_date');
+    }
+
+    /**
+     * Check if the patient is low birth weight (< 2500g).
+     */
+    public function getIsLowBirthWeightAttribute(): bool
+    {
+        return $this->birth_weight !== null && $this->birth_weight < 2500;
+    }
+
+    /**
+     * Check if this is a pediatric patient (age <= 20 years).
+     */
+    public function getIsPediatricAttribute(): bool
+    {
+        return $this->age <= 20;
+    }
+
+    /**
+     * Get corrected age in months for preterm infants.
+     * Corrected age = Chronological age - (40 - gestational age at birth) weeks
+     * Only applied until 2 years (24 months) chronological age.
+     */
+    public function getCorrectedAgeMonthsAttribute(): ?float
+    {
+        if (!$this->date_of_birth || !$this->gestational_age_weeks) {
+            return null;
+        }
+
+        $rawDob = $this->getAttributes()['date_of_birth'] ?? $this->getRawOriginal('date_of_birth');
+        if (empty($rawDob) || $rawDob === '0000-00-00') {
+            return null;
+        }
+
+        try {
+            $dob = \Carbon\Carbon::parse($rawDob);
+        } catch (\Exception $e) {
+            return null;
+        }
+
+        $chronologicalMonths = $dob->floatDiffInMonths(now());
+
+        // Only correct until 24 months
+        if ($chronologicalMonths > 24) {
+            return $chronologicalMonths;
+        }
+
+        $weeksPreterm = 40 - $this->gestational_age_weeks;
+        $correctionMonths = $weeksPreterm * 7 / 30.44; // avg days/month
+        return max(0, $chronologicalMonths - $correctionMonths);
+    }
+
+    /**
+     * Get the appropriate age range key for growth chart selection.
+     * Returns: '0-24m', '2-5y', '5-20y'
+     */
+    public function getGrowthAgeRangeAttribute(): string
+    {
+        $ageMonths = $this->is_low_birth_weight ? ($this->corrected_age_months ?? ($this->age * 12)) : ($this->age * 12);
+
+        if ($ageMonths <= 24) {
+            return '0-24m';
+        } elseif ($ageMonths <= 60) {
+            return '2-5y';
+        }
+        return '5-20y';
+    }
 }

@@ -223,6 +223,42 @@
                                         @enderror
                                     </div>
 
+                                    <!-- Pediatric Information -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                                            <i class="fas fa-baby me-2"></i>
+                                            {{ __('Pediatric Information') }}
+                                        </h6>
+                                        <small class="text-muted d-block mb-3">{{ __('Fill these fields for infants/children to enable automatic growth chart type detection (LBW / Preterm).') }}</small>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="birth_weight" class="form-label">{{ __('Birth Weight (grams)') }}</label>
+                                        <input type="number" class="form-control @error('birth_weight') is-invalid @enderror"
+                                               id="birth_weight" name="birth_weight" min="200" max="7000" step="1"
+                                               value="{{ old('birth_weight') }}"
+                                               placeholder="{{ __('e.g. 2500') }}">
+                                        <small class="text-muted">{{ __('Low Birth Weight: < 2500g') }}</small>
+                                        @error('birth_weight')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="gestational_age_weeks" class="form-label">{{ __('Gestational Age (weeks)') }}</label>
+                                        <input type="number" class="form-control @error('gestational_age_weeks') is-invalid @enderror"
+                                               id="gestational_age_weeks" name="gestational_age_weeks" min="20" max="45" step="1"
+                                               value="{{ old('gestational_age_weeks') }}"
+                                               placeholder="{{ __('e.g. 40') }}">
+                                        <small class="text-muted">{{ __('Preterm: < 37 weeks | Full term: 37-42 weeks') }}</small>
+                                        @error('gestational_age_weeks')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-12" id="pediatric-status-indicator" style="display:none;">
+                                        <div class="alert alert-info py-2 mb-0" id="pediatric-status-message"></div>
+                                    </div>
 
                                     <!-- Medical Information -->
                                     <div class="col-12 mt-4">
@@ -375,4 +411,39 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const bwInput = document.getElementById('birth_weight');
+    const gaInput = document.getElementById('gestational_age_weeks');
+    const indicator = document.getElementById('pediatric-status-indicator');
+    const message = document.getElementById('pediatric-status-message');
+
+    function updateStatus() {
+        const bw = parseInt(bwInput.value);
+        const ga = parseInt(gaInput.value);
+        if (!bw && !ga) { indicator.style.display = 'none'; return; }
+
+        let labels = [];
+        let alertClass = 'alert-success';
+
+        if (bw && bw < 2500) { labels.push('{{ __("Low Birth Weight") }} (<2500g)'); alertClass = 'alert-warning'; }
+        if (ga && ga < 37) { labels.push('{{ __("Preterm") }} (<37 weeks)'); alertClass = 'alert-warning'; }
+
+        if (labels.length === 0) {
+            labels.push('{{ __("Normal birth weight & full term") }}');
+        }
+
+        message.className = 'alert py-2 mb-0 ' + alertClass;
+        message.innerHTML = '<i class="fas fa-info-circle me-1"></i> <strong>{{ __("Detected") }}:</strong> ' + labels.join(' & ') +
+            ' — {{ __("Growth chart will adjust automatically.") }}';
+        indicator.style.display = '';
+    }
+
+    bwInput.addEventListener('input', updateStatus);
+    gaInput.addEventListener('input', updateStatus);
+    updateStatus();
+});
+</script>
+@endpush
 @endsection

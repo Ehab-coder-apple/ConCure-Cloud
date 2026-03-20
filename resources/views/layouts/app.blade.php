@@ -1621,6 +1621,16 @@
                         </li>
                         @endif
 
+                        <!-- Pediatric Growth -->
+                        @if(Auth::user()->canAccessSection('pediatric') && Auth::user()->canAccessModule('pediatric'))
+                        <li class="nav-item">
+                            <a href="{{ route('pediatric.patients') }}" class="nav-link {{ request()->routeIs('pediatric.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-baby"></i>
+                                <span class="nav-text">{{ __('Pediatric Growth') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
                         <!-- Nutrition Plans -->
                         @if(Auth::user()->canAccessSection('nutrition') && Auth::user()->canAccessModule('nutrition'))
                         <li class="nav-item">

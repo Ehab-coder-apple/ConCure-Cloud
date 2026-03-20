@@ -894,6 +894,13 @@ class User extends Authenticatable
                 'dental_images' => 'Manage Dental Images',
                 'dental_manage' => 'Full Dental Management',
             ],
+            'pediatric' => [
+                'pediatric_view' => 'View Pediatric Growth Charts',
+                'pediatric_create' => 'Record Growth Measurements',
+                'pediatric_edit' => 'Edit Growth Measurements',
+                'pediatric_delete' => 'Delete Growth Measurements',
+                'pediatric_manage' => 'Full Pediatric Management',
+            ],
             'radiology' => [
                 'radiology_view' => 'View Radiology Requests',
                 'radiology_create' => 'Create Radiology Requests',

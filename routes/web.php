@@ -622,6 +622,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::put('/{dentalChart}', [App\Http\Controllers\DentalChartController::class, 'update'])->name('update');
             Route::delete('/{dentalChart}', [App\Http\Controllers\DentalChartController::class, 'destroy'])->name('destroy');
             Route::post('/{dentalChart}/tooth-record', [App\Http\Controllers\DentalChartController::class, 'updateToothRecord'])->name('update-tooth-record');
+            Route::get('/{dentalChart}/pdf', [App\Http\Controllers\DentalChartController::class, 'pdf'])->name('pdf');
         });
         Route::get('/patients/{patient}/dental-history', [App\Http\Controllers\DentalChartController::class, 'history'])->name('history');
 
@@ -660,6 +661,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::put('/{labRequest}', [App\Http\Controllers\DentalLabRequestController::class, 'update'])->name('update');
             Route::delete('/{labRequest}', [App\Http\Controllers\DentalLabRequestController::class, 'destroy'])->name('destroy');
         });
+    });
+
+    // Pediatric Growth Chart Routes
+    Route::prefix('pediatric')->name('pediatric.')->group(function () {
+        Route::get('/patients', [App\Http\Controllers\GrowthChartController::class, 'patients'])->name('patients');
+        Route::get('/patients/{patient}/growth-chart', [App\Http\Controllers\GrowthChartController::class, 'index'])->name('growth-chart');
+        Route::post('/patients/{patient}/growth-chart', [App\Http\Controllers\GrowthChartController::class, 'store'])->name('growth-chart.store');
+        Route::delete('/patients/{patient}/growth-chart/{measurement}', [App\Http\Controllers\GrowthChartController::class, 'destroy'])->name('growth-chart.destroy');
+        Route::get('/patients/{patient}/growth-chart/data', [App\Http\Controllers\GrowthChartController::class, 'chartData'])->name('growth-chart.data');
     });
 
     // Food Composition
@@ -922,6 +932,108 @@ if (config('app.debug')) {
 
     // Debug dashboard access (bypass middleware)
     Route::get('/dev/dashboard', [DashboardController::class, 'index'])->name('dev.dashboard');
+
+    // Development login shortcuts
+    Route::get('/dev/login-admin', function () {
+        $defaultClinic = \App\Models\Clinic::first();
+        $hasClinicActivationCode = \Illuminate\Support\Facades\Schema::hasColumn('clinics', 'activation_code');
+        $hasClinicEnabledModules = \Illuminate\Support\Facades\Schema::hasColumn('clinics', 'enabled_modules');
+
+        $clinicCreateData = [
+            'name' => 'Default Clinic',
+            'email' => 'admin@defaultclinic.com',
+            'phone' => '123456789',
+            'address' => 'Default Address',
+            'is_active' => true,
+            'activated_at' => now(),
+            'max_users' => 50,
+        ];
+
+        if ($hasClinicActivationCode) {
+            $clinicCreateData['activation_code'] = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(10));
+        }
+
+        if ($hasClinicEnabledModules) {
+            $clinicCreateData['enabled_modules'] = array_keys(\App\Models\Clinic::AVAILABLE_MODULES);
+        }
+
+        $clinicUpdateData = [
+            'is_active' => true,
+            'activated_at' => $defaultClinic?->activated_at ?? now(),
+        ];
+
+        if ($hasClinicEnabledModules) {
+            $clinicUpdateData['enabled_modules'] = array_keys(\App\Models\Clinic::AVAILABLE_MODULES);
+        }
+
+        if (!$defaultClinic) {
+            $defaultClinic = \App\Models\Clinic::create($clinicCreateData);
+        } else {
+            $defaultClinic->update($clinicUpdateData);
+        }
+
+        $allPermissions = collect(\App\Models\User::getAllPermissions())
+            ->flatMap(fn ($sectionPermissions) => array_keys($sectionPermissions))
+            ->unique()
+            ->values()
+            ->all();
+
+        // Find or create admin user
+        $admin = \App\Models\User::where('username', 'admin')->first();
+
+        if (!$admin) {
+            // Create admin user if doesn't exist
+            $admin = \App\Models\User::create([
+                'username' => 'admin',
+                'email' => 'admin@concure.local',
+                'password' => bcrypt('admin123'),
+                'first_name' => 'Admin',
+                'last_name' => 'User',
+                'role' => 'admin',
+                'clinic_id' => $defaultClinic->id,
+                'permissions' => $allPermissions,
+                'is_active' => true,
+                'activated_at' => now(),
+            ]);
+        } else {
+            $admin->update([
+                'role' => 'admin',
+                'clinic_id' => $defaultClinic->id,
+                'permissions' => $allPermissions,
+                'is_active' => true,
+                'activated_at' => $admin->activated_at ?? now(),
+            ]);
+        }
+
+        // Log in the user
+        Auth::login($admin);
+
+        return redirect('/dashboard')->with('success', 'Logged in as Admin (Development Mode)');
+    })->name('dev.login-admin');
+
+    Route::get('/dev/login-doctor', function () {
+        // Find or create doctor user
+        $doctor = \App\Models\User::where('username', 'doctor')->first();
+
+        if (!$doctor) {
+            // Create doctor user if doesn't exist
+            $doctor = \App\Models\User::create([
+                'username' => 'doctor',
+                'email' => 'doctor@concure.local',
+                'password' => bcrypt('doctor123'),
+                'first_name' => 'Dr. Demo',
+                'last_name' => 'Doctor',
+                'role' => 'doctor',
+                'is_active' => true,
+                'activated_at' => now(),
+            ]);
+        }
+
+        // Log in the user
+        Auth::login($doctor);
+
+        return redirect('/dashboard')->with('success', 'Logged in as Doctor (Development Mode)');
+    })->name('dev.login-doctor');
 
     // Test Word export without middleware
     Route::get('/test-word-export/{dietPlan}', function(\App\Models\DietPlan $dietPlan) {
@@ -1216,23 +1328,40 @@ if (config('app.debug')) {
     Route::get('/dev/make-admin', function () {
         $user = auth()->user();
         if ($user) {
+            $defaultClinic = $user->clinic ?: \App\Models\Clinic::first();
+
+            if (!$defaultClinic) {
+                $defaultClinic = \App\Models\Clinic::create([
+                    'name' => 'Default Clinic',
+                    'email' => 'admin@defaultclinic.com',
+                    'phone' => '123456789',
+                    'address' => 'Default Address',
+                    'is_active' => true,
+                    'activated_at' => now(),
+                    'activation_code' => \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(10)),
+                    'max_users' => 50,
+                    'enabled_modules' => array_keys(\App\Models\Clinic::AVAILABLE_MODULES),
+                ]);
+            } else {
+                $defaultClinic->update([
+                    'is_active' => true,
+                    'activated_at' => $defaultClinic->activated_at ?? now(),
+                    'enabled_modules' => array_keys(\App\Models\Clinic::AVAILABLE_MODULES),
+                ]);
+            }
+
+            $allPermissions = collect(\App\Models\User::getAllPermissions())
+                ->flatMap(fn ($sectionPermissions) => array_keys($sectionPermissions))
+                ->unique()
+                ->values()
+                ->all();
+
             $user->update([
                 'role' => 'admin',
-                'permissions' => [
-                    'dashboard_view', 'dashboard_stats',
-                    'patients_view', 'patients_create', 'patients_edit', 'patients_delete', 'patients_files', 'patients_history',
-                    'prescriptions_view', 'prescriptions_create', 'prescriptions_edit', 'prescriptions_delete', 'prescriptions_print',
-                    'appointments_view', 'appointments_create', 'appointments_edit', 'appointments_delete', 'appointments_manage',
-                    'medicines_view', 'medicines_create', 'medicines_edit', 'medicines_delete', 'medicines_inventory',
-                    'nutrition_view', 'nutrition_create', 'nutrition_edit', 'nutrition_delete', 'nutrition_manage',
-                    'radiology_view', 'radiology_create', 'radiology_edit', 'radiology_delete', 'radiology_manage',
-                    'lab_requests_view', 'lab_requests_create', 'lab_requests_edit', 'lab_requests_delete',
-                    'users_view', 'users_create', 'users_edit', 'users_delete', 'users_permissions',
-                    'settings_view', 'settings_edit',
-                    'reports_view', 'reports_generate', 'reports_export',
-                    'finance_view', 'finance_create', 'finance_edit', 'finance_reports',
-                    'audit_view', 'audit_export',
-                ]
+                'clinic_id' => $defaultClinic->id,
+                'permissions' => $allPermissions,
+                'is_active' => true,
+                'activated_at' => $user->activated_at ?? now(),
             ]);
             return "✅ Successfully updated {$user->first_name} {$user->last_name} to Admin role! Please refresh your browser.";
         }
@@ -1356,7 +1485,7 @@ Route::get('/test-dental/create-sample', function() {
     // Create a dental chart
     $chart = \App\Models\DentalChart::create([
         'patient_id' => $patient->id,
-        'clinic_id' => $user->clinic_id,
+        'clinic_id' => $user->clinic_id ?? $patient->clinic_id ?? 1,
         'chart_type' => 'adult',
         'general_notes' => 'Sample dental chart created for testing',
         'created_by' => $user->id,
@@ -1384,7 +1513,7 @@ Route::get('/test-dental/create-sample', function() {
     // Create a sample treatment plan
     $treatment = \App\Models\DentalTreatment::create([
         'patient_id' => $patient->id,
-        'clinic_id' => $user->clinic_id,
+        'clinic_id' => $user->clinic_id ?? $patient->clinic_id ?? 1,
         'dental_chart_id' => $chart->id,
         'tooth_number' => '16',
         'procedure_name' => 'Composite Filling - Two Surfaces',

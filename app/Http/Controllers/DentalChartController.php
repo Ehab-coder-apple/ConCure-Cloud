@@ -8,6 +8,7 @@ use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class DentalChartController extends Controller
 {
@@ -209,7 +210,11 @@ class DentalChartController extends Controller
 
         $dentalChart->load(['creator', 'toothRecords.creator', 'toothRecords.updater', 'treatments', 'images']);
 
-        return view('dental.charts.show', compact('patient', 'dentalChart'));
+        // Check if detailed view is requested (default to simple view with improvements)
+        $viewType = request()->query('view', 'simple');
+        $viewName = $viewType === 'detailed' ? 'dental.charts.show' : 'dental.charts.show-simple';
+
+        return view($viewName, compact('patient', 'dentalChart'));
     }
 
     /**
@@ -306,7 +311,7 @@ class DentalChartController extends Controller
             }
         }
 
-        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner'])) {
+        if (!in_array($user->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept'])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -320,6 +325,11 @@ class DentalChartController extends Controller
         ]);
 
         try {
+            // Find existing record to preserve created_by
+            $existingRecord = DentalToothRecord::where('dental_chart_id', $dentalChart->id)
+                ->where('tooth_number', $request->tooth_number)
+                ->first();
+
             $toothRecord = DentalToothRecord::updateOrCreate(
                 [
                     'dental_chart_id' => $dentalChart->id,
@@ -331,7 +341,7 @@ class DentalChartController extends Controller
                     'surfaces_affected' => $request->surfaces_affected ?? [],
                     'severity' => $request->severity,
                     'notes' => $request->notes,
-                    'created_by' => $toothRecord->created_by ?? $user->id,
+                    'created_by' => $existingRecord ? $existingRecord->created_by : $user->id,
                     'updated_by' => $user->id,
                 ]
             );
@@ -343,11 +353,41 @@ class DentalChartController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            \Log::error('Failed to update tooth record', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update tooth record.',
+                'message' => 'Failed to update tooth record: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Generate PDF for dental chart.
+     */
+    public function pdf(Patient $patient, DentalChart $dentalChart)
+    {
+        $user = Auth::user();
+
+        // Check access
+        if (!$user->isSuperAdmin()) {
+            if ($user->clinic_id && $patient->clinic_id !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to dental chart PDF.');
+            }
+        }
+
+        $dentalChart->load(['creator', 'toothRecords']);
+
+        $filename = 'dental-chart-' . $patient->patient_id . '-' . $dentalChart->created_at->format('Y-m-d') . '.pdf';
+
+        $pdf = Pdf::loadView('dental.charts.pdf', compact('patient', 'dentalChart'));
+        $pdf->setPaper('A4', 'landscape');
+
+        return $pdf->download($filename);
     }
 
     /**
