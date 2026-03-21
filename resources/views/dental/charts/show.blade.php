@@ -1112,7 +1112,7 @@
                                              @click="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseenter="!isTouchDevice && showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseleave="hideTooltip()"
-                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})">
                                             <svg class="tooth-svg" viewBox="0 0 60 80">
                                                 <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
                                                       d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
@@ -1148,7 +1148,7 @@
                                              @click="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseenter="!isTouchDevice && showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseleave="hideTooltip()"
-                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})">
                                             <svg class="tooth-svg" viewBox="0 0 60 80">
                                                 <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
                                                       d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
@@ -1193,7 +1193,7 @@
                                              @click="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseenter="!isTouchDevice && showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseleave="hideTooltip()"
-                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})">
                                             <svg class="tooth-svg" viewBox="0 0 60 80" style="transform: scaleY(-1);">
                                                 <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
                                                       d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
@@ -1229,7 +1229,7 @@
                                              @click="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseenter="!isTouchDevice && showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                              @mouseleave="hideTooltip()"
-                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})">
                                             <svg class="tooth-svg" viewBox="0 0 60 80" style="transform: scaleY(-1);">
                                                 <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
                                                       d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
