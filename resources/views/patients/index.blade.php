@@ -324,6 +324,31 @@
                             </select>
                         </div>
 
+                        <!-- Pediatric Information -->
+                        <div class="col-12 mt-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-baby me-2"></i>
+                                {{ __('Pediatric Information') }}
+                            </h6>
+                            <small class="text-muted d-block mb-3">{{ __('Fill these fields for infants/children to enable automatic growth chart type detection (LBW / Preterm).') }}</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="modal_birth_weight" class="form-label">{{ __('Birth Weight (grams)') }}</label>
+                            <input type="number" class="form-control" id="modal_birth_weight" name="birth_weight" min="200" max="7000" step="1" placeholder="{{ __('e.g. 2500') }}">
+                            <small class="text-muted">{{ __('Low Birth Weight: < 2500g') }}</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="modal_gestational_age_weeks" class="form-label">{{ __('Gestational Age (weeks)') }}</label>
+                            <input type="number" class="form-control" id="modal_gestational_age_weeks" name="gestational_age_weeks" min="20" max="45" step="1" placeholder="{{ __('e.g. 40') }}">
+                            <small class="text-muted">{{ __('Preterm: < 37 weeks | Full term: 37-42 weeks') }}</small>
+                        </div>
+
+                        <div class="col-12" id="modal-pediatric-status-indicator" style="display:none;">
+                            <div class="alert alert-info py-2 mb-0" id="modal-pediatric-status-message"></div>
+                        </div>
+
                         <!-- Medical Information -->
                         <div class="col-12 mt-4">
                             <h6 class="text-primary border-bottom pb-2 mb-3">
@@ -426,6 +451,38 @@
 </div>
 
 <script>
+// Pediatric status indicator for modal
+document.addEventListener('DOMContentLoaded', function() {
+    const bwInput = document.getElementById('modal_birth_weight');
+    const gaInput = document.getElementById('modal_gestational_age_weeks');
+    const indicator = document.getElementById('modal-pediatric-status-indicator');
+    const message = document.getElementById('modal-pediatric-status-message');
+
+    function updateModalPediatricStatus() {
+        const bw = parseInt(bwInput.value);
+        const ga = parseInt(gaInput.value);
+        if (!bw && !ga) { indicator.style.display = 'none'; return; }
+
+        let labels = [];
+        let alertClass = 'alert-success';
+
+        if (bw && bw < 2500) { labels.push('{{ __("Low Birth Weight") }} (<2500g)'); alertClass = 'alert-warning'; }
+        if (ga && ga < 37) { labels.push('{{ __("Preterm") }} (<37 weeks)'); alertClass = 'alert-warning'; }
+
+        if (labels.length === 0) {
+            labels.push('{{ __("Normal birth weight & full term") }}');
+        }
+
+        message.className = 'alert py-2 mb-0 ' + alertClass;
+        message.innerHTML = '<i class="fas fa-info-circle me-1"></i> <strong>{{ __("Detected") }}:</strong> ' + labels.join(' & ') +
+            ' — {{ __("Growth chart will adjust automatically.") }}';
+        indicator.style.display = '';
+    }
+
+    bwInput.addEventListener('input', updateModalPediatricStatus);
+    gaInput.addEventListener('input', updateModalPediatricStatus);
+});
+
 function newPrescription(patientId) {
     window.location.href = `/simple-prescriptions/create?patient_id=${patientId}`;
 }
