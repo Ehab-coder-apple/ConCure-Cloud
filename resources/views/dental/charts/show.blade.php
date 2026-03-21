@@ -518,6 +518,16 @@
         transform: translateY(-4px) scale(1.05);
     }
 
+    /* Prevent hover-scale on touch devices to avoid layout shift */
+    @media (hover: none) and (pointer: coarse) {
+        .tooth-wrapper:hover {
+            transform: none;
+        }
+        .tooth-wrapper:active {
+            transform: scale(0.95);
+        }
+    }
+
     .tooth-wrapper:hover .tooth-svg {
         filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
     }
@@ -749,8 +759,53 @@
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
+    /* Responsive — iPad / Tablet (768px – 1024px) */
+    @media (min-width: 768px) and (max-width: 1024px) {
+        .dental-chart-container-modern {
+            padding: 0.75rem;
+        }
+
+        .tooth-grid {
+            gap: 1px;
+        }
+
+        .tooth-grid .tooth-wrapper {
+            max-width: 48px;
+        }
+
+        .tooth-grid .tooth-svg {
+            max-width: 44px;
+        }
+
+        .tooth-drawer {
+            width: 380px;
+        }
+
+        .legend-sidebar {
+            position: static;
+            margin-bottom: 1rem;
+        }
+
+        .dental-toolbar {
+            padding: 0.75rem 1rem;
+            gap: 0.5rem;
+        }
+
+        .jaw-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .tooth-condition-badge {
+            width: 16px;
+            height: 16px;
+            font-size: 8px;
+            top: -5px;
+            right: -5px;
+        }
+    }
+
+    /* Responsive — small tablets / phones */
+    @media (max-width: 767.98px) {
         .tooth-drawer {
             width: 100%;
         }
@@ -762,6 +817,14 @@
 
         .tooth-grid {
             gap: 0.25rem;
+        }
+
+        .tooth-grid .tooth-wrapper {
+            max-width: 40px;
+        }
+
+        .tooth-grid .tooth-svg {
+            max-width: 36px;
         }
     }
 
@@ -1016,9 +1079,10 @@
                                             $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
                                         @endphp
                                         <div class="tooth-wrapper"
-                                             @click="openDrawer('{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
-                                             @mouseenter="showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
-                                             @mouseleave="hideTooltip()">
+                                             @click="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @mouseenter="!isTouchDevice && showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @mouseleave="hideTooltip()"
+                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                             <svg class="tooth-svg" viewBox="0 0 60 80">
                                                 <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
                                                       d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
@@ -1051,9 +1115,10 @@
                                             $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
                                         @endphp
                                         <div class="tooth-wrapper"
-                                             @click="openDrawer('{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
-                                             @mouseenter="showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
-                                             @mouseleave="hideTooltip()">
+                                             @click="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @mouseenter="!isTouchDevice && showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @mouseleave="hideTooltip()"
+                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                             <svg class="tooth-svg" viewBox="0 0 60 80">
                                                 <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
                                                       d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
@@ -1095,9 +1160,10 @@
                                             $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
                                         @endphp
                                         <div class="tooth-wrapper"
-                                             @click="openDrawer('{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
-                                             @mouseenter="showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
-                                             @mouseleave="hideTooltip()">
+                                             @click="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @mouseenter="!isTouchDevice && showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @mouseleave="hideTooltip()"
+                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                             <svg class="tooth-svg" viewBox="0 0 60 80" style="transform: scaleY(-1);">
                                                 <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
                                                       d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
@@ -1130,9 +1196,10 @@
                                             $textColor = in_array($condition, ['healthy', 'filling', 'crown', 'implant', 'bridge', 'periodontal', 'other']) ? '#000' : '#fff';
                                         @endphp
                                         <div class="tooth-wrapper"
-                                             @click="openDrawer('{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
-                                             @mouseenter="showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
-                                             @mouseleave="hideTooltip()">
+                                             @click="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @mouseenter="!isTouchDevice && showTooltip($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
+                                             @mouseleave="hideTooltip()"
+                                             @touchend.prevent="handleToothTap($event, '{{ $toothNum }}', {{ $record ? json_encode($record) : 'null' }})"
                                             <svg class="tooth-svg" viewBox="0 0 60 80" style="transform: scaleY(-1);">
                                                 <path class="{{ $isHealthy ? 'tooth-healthy' : '' }}"
                                                       d="M 30 8 C 26 8 22 11 22 16 C 22 20 23 24 23 28 L 23 38 C 23 40 22 42 20 46 C 18 50 18 54 20 58 C 21 60 23 62 25 64 L 28 74 C 28 76 29 78 30 78 C 31 78 32 76 32 74 L 35 64 C 37 62 39 60 40 58 C 42 54 42 50 40 46 C 38 42 37 40 37 38 L 37 28 C 37 24 38 20 38 16 C 38 11 34 8 30 8 Z"
@@ -1394,9 +1461,22 @@ function dentalChartApp() {
         },
         saving: false,
 
+        isTouchDevice: false,
+
         init() {
-            // Initialize Alpine.js component
-            console.log('Dental Chart App initialized');
+            // Detect touch capability
+            this.isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+            // On touch devices, dismiss tooltip when tapping outside a tooth
+            if (this.isTouchDevice) {
+                document.addEventListener('touchstart', (e) => {
+                    if (!e.target.closest('.tooth-wrapper')) {
+                        this.hideTooltip();
+                    }
+                }, { passive: true });
+            }
+
+            console.log('Dental Chart App initialized (touch=' + this.isTouchDevice + ')');
         },
 
         openDrawer(toothNumber, record) {
@@ -1433,15 +1513,44 @@ function dentalChartApp() {
             this.selectedTooth = null;
         },
 
+        handleToothTap(event, toothNumber, record) {
+            // On touch devices: first tap shows tooltip, second tap opens drawer
+            if (this.isTouchDevice && !this.drawerOpen) {
+                if (this.tooltipVisible && this.tooltipData.title === `Tooth #${toothNumber}`) {
+                    // Tooltip already showing for this tooth — open drawer
+                    this.hideTooltip();
+                    this.openDrawer(toothNumber, record);
+                } else {
+                    // First tap — show tooltip
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.showTooltip(event, toothNumber, record);
+                }
+                return;
+            }
+            // Desktop: click opens drawer directly
+            this.openDrawer(toothNumber, record);
+        },
+
         showTooltip(event, toothNumber, record) {
             if (this.drawerOpen) return; // Don't show tooltip when drawer is open
 
             const tooltip = this.$refs.tooltip;
             const rect = event.currentTarget.getBoundingClientRect();
 
-            // Position tooltip
-            tooltip.style.left = rect.left + (rect.width / 2) + 'px';
-            tooltip.style.top = rect.top - 10 + 'px';
+            // Position tooltip — ensure it stays within viewport
+            let left = rect.left + (rect.width / 2);
+            let top = rect.top - 10;
+
+            // Clamp horizontally
+            left = Math.max(100, Math.min(left, window.innerWidth - 100));
+            // If too close to top, show below instead
+            if (top < 80) {
+                top = rect.bottom + 10;
+            }
+
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
 
             // Populate tooltip data
             this.tooltipData.title = `Tooth #${toothNumber}`;
