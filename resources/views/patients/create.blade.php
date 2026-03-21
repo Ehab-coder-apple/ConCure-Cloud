@@ -223,45 +223,41 @@
                                         @enderror
                                     </div>
 
-                                    <!-- Pediatric Information (shown when age < 20) -->
-                                    <div id="pediatric-section" style="display:none;" class="col-12">
-                                        <div class="row g-3">
-                                            <div class="col-12 mt-4">
-                                                <h6 class="text-primary border-bottom pb-2 mb-3">
-                                                    <i class="fas fa-baby me-2"></i>
-                                                    {{ __('Pediatric Information') }}
-                                                </h6>
-                                                <small class="text-muted d-block mb-3">{{ __('Fill these fields for infants/children to enable automatic growth chart type detection (LBW / Preterm).') }}</small>
-                                            </div>
+                                    <!-- Pediatric Information -->
+                                    <div class="col-12 mt-4">
+                                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                                            <i class="fas fa-baby me-2"></i>
+                                            {{ __('Pediatric Information') }}
+                                        </h6>
+                                        <small class="text-muted d-block mb-3">{{ __('Fill these fields for infants/children to enable automatic growth chart type detection (LBW / Preterm).') }}</small>
+                                    </div>
 
-                                            <div class="col-md-6">
-                                                <label for="birth_weight" class="form-label">{{ __('Birth Weight (grams)') }}</label>
-                                                <input type="number" class="form-control @error('birth_weight') is-invalid @enderror"
-                                                       id="birth_weight" name="birth_weight" min="200" max="7000" step="1"
-                                                       value="{{ old('birth_weight') }}"
-                                                       placeholder="{{ __('e.g. 2500') }}">
-                                                <small class="text-muted">{{ __('Low Birth Weight: < 2500g') }}</small>
-                                                @error('birth_weight')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
-                                            </div>
+                                    <div class="col-md-6">
+                                        <label for="birth_weight" class="form-label">{{ __('Birth Weight (grams)') }}</label>
+                                        <input type="number" class="form-control @error('birth_weight') is-invalid @enderror"
+                                               id="birth_weight" name="birth_weight" min="200" max="7000" step="1"
+                                               value="{{ old('birth_weight') }}"
+                                               placeholder="{{ __('e.g. 2500') }}">
+                                        <small class="text-muted">{{ __('Low Birth Weight: < 2500g') }}</small>
+                                        @error('birth_weight')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
 
-                                            <div class="col-md-6">
-                                                <label for="gestational_age_weeks" class="form-label">{{ __('Gestational Age (weeks)') }}</label>
-                                                <input type="number" class="form-control @error('gestational_age_weeks') is-invalid @enderror"
-                                                       id="gestational_age_weeks" name="gestational_age_weeks" min="20" max="45" step="1"
-                                                       value="{{ old('gestational_age_weeks') }}"
-                                                       placeholder="{{ __('e.g. 40') }}">
-                                                <small class="text-muted">{{ __('Preterm: < 37 weeks | Full term: 37-42 weeks') }}</small>
-                                                @error('gestational_age_weeks')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
-                                            </div>
+                                    <div class="col-md-6">
+                                        <label for="gestational_age_weeks" class="form-label">{{ __('Gestational Age (weeks)') }}</label>
+                                        <input type="number" class="form-control @error('gestational_age_weeks') is-invalid @enderror"
+                                               id="gestational_age_weeks" name="gestational_age_weeks" min="20" max="45" step="1"
+                                               value="{{ old('gestational_age_weeks') }}"
+                                               placeholder="{{ __('e.g. 40') }}">
+                                        <small class="text-muted">{{ __('Preterm: < 37 weeks | Full term: 37-42 weeks') }}</small>
+                                        @error('gestational_age_weeks')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
 
-                                            <div class="col-12" id="pediatric-status-indicator" style="display:none;">
-                                                <div class="alert alert-info py-2 mb-0" id="pediatric-status-message"></div>
-                                            </div>
-                                        </div>
+                                    <div class="col-12" id="pediatric-status-indicator" style="display:none;">
+                                        <div class="alert alert-info py-2 mb-0" id="pediatric-status-message"></div>
                                     </div>
 
                                     <!-- Medical Information -->
@@ -418,35 +414,11 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const dobInput = document.getElementById('date_of_birth');
-    const pediatricSection = document.getElementById('pediatric-section');
     const bwInput = document.getElementById('birth_weight');
     const gaInput = document.getElementById('gestational_age_weeks');
     const indicator = document.getElementById('pediatric-status-indicator');
     const message = document.getElementById('pediatric-status-message');
 
-    // Show/hide pediatric section based on age from DOB
-    function togglePediatricSection() {
-        if (!dobInput.value) {
-            pediatricSection.style.display = 'none';
-            return;
-        }
-        const dob = new Date(dobInput.value);
-        const today = new Date();
-        let age = today.getFullYear() - dob.getFullYear();
-        const monthDiff = today.getMonth() - dob.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-            age--;
-        }
-        pediatricSection.style.display = age < 20 ? '' : 'none';
-    }
-
-    dobInput.addEventListener('change', togglePediatricSection);
-    dobInput.addEventListener('input', togglePediatricSection);
-    // Check on page load (e.g. validation errors with old values)
-    togglePediatricSection();
-
-    // Pediatric status indicator (LBW / Preterm detection)
     function updateStatus() {
         const bw = parseInt(bwInput.value);
         const ga = parseInt(gaInput.value);
