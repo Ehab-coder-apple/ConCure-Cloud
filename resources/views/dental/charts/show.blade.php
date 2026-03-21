@@ -979,10 +979,10 @@
                         {{ __('Back') }}
                     </a>
                     @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept']))
-                        <button class="btn btn-primary" onclick="toggleEditMode()">
+                        <a href="{{ url("/dental/patients/{$patient->id}/charts/{$dentalChart->id}") }}" class="btn btn-primary">
                             <i class="fas fa-edit me-1"></i>
                             {{ __('Edit Mode') }}
-                        </button>
+                        </a>
                     @endif
                 </div>
             </div>
