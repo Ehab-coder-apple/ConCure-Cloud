@@ -449,8 +449,8 @@
     }
 
     .drawer-action-btn.active {
-        background: #10b981;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+        background: #10b981 !important;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3) !important;
     }
 
     .drawer-action-btn.active::after {
@@ -2731,9 +2731,16 @@
     }
 
     function loadDetailsTab(toothNumber) {
+      try {
+        console.log('loadDetailsTab called, tooth:', toothNumber, 'mode:', currentDrawerMode);
         const drawerBody = document.getElementById('drawerBody');
+        if (!drawerBody) {
+            console.error('drawerBody element not found');
+            return;
+        }
         const toothRecords = @json($toothRecords);
-        const record = toothRecords[toothNumber];
+        const record = toothRecords[toothNumber] || null;
+        console.log('Record found:', !!record);
 
         // Build drawer content based on mode
         let content = '';
@@ -2884,6 +2891,14 @@
         }
 
         drawerBody.innerHTML = content;
+        console.log('Drawer body content updated, mode:', currentDrawerMode);
+      } catch (e) {
+        console.error('Error in loadDetailsTab:', e);
+        const drawerBody = document.getElementById('drawerBody');
+        if (drawerBody) {
+            drawerBody.innerHTML = '<div style="padding: 1rem; color: red;">Error loading details: ' + e.message + '</div>';
+        }
+      }
     }
 
     function loadHistoryTab(toothNumber) {
@@ -2976,32 +2991,56 @@
     }
 
     function toggleEditMode() {
-        if (isInteractionLocked()) return;
-        if (currentDrawerMode === 'view') {
-            currentDrawerMode = 'edit';
-            document.getElementById('editModeBtn').classList.add('active');
-            document.getElementById('drawerFooter').style.display = 'flex';
-            loadDetailsTab(currentDrawerTooth);
-        } else {
-            cancelEdit();
+        try {
+            console.log('toggleEditMode called, locked:', isInteractionLocked(), 'mode:', currentDrawerMode, 'tooth:', currentDrawerTooth);
+            if (isInteractionLocked()) {
+                console.warn('Edit mode blocked: interaction locked (isSaving =', dentalChartState.isSaving, ')');
+                return;
+            }
+            if (!currentDrawerTooth) {
+                console.warn('Edit mode blocked: no tooth selected');
+                return;
+            }
+            if (currentDrawerMode === 'view') {
+                currentDrawerMode = 'edit';
+                const editBtn = document.getElementById('editModeBtn');
+                const footer = document.getElementById('drawerFooter');
+                if (editBtn) editBtn.classList.add('active');
+                if (footer) footer.style.display = 'flex';
+                loadDetailsTab(currentDrawerTooth);
+                console.log('Switched to edit mode for tooth', currentDrawerTooth);
+            } else {
+                cancelEdit();
+            }
+        } catch (e) {
+            console.error('Error in toggleEditMode:', e);
+            showNotification('Error switching to edit mode: ' + e.message, 'error');
         }
     }
 
     function cancelEdit() {
-        if (isInteractionLocked()) return;
-        currentDrawerMode = 'view';
-        document.getElementById('editModeBtn').classList.remove('active');
-        document.getElementById('drawerFooter').style.display = 'none';
-        loadDetailsTab(currentDrawerTooth);
+        try {
+            if (isInteractionLocked()) return;
+            currentDrawerMode = 'view';
+            const editBtn = document.getElementById('editModeBtn');
+            const footer = document.getElementById('drawerFooter');
+            if (editBtn) editBtn.classList.remove('active');
+            if (footer) footer.style.display = 'none';
+            loadDetailsTab(currentDrawerTooth);
+        } catch (e) {
+            console.error('Error in cancelEdit:', e);
+        }
     }
 
     function toggleConditionCheckbox(label) {
         if (isInteractionLocked()) return;
         const checkbox = label.querySelector('input[type="checkbox"]');
-        if (checkbox.checked) {
-            label.classList.add('checked');
-        } else {
-            label.classList.remove('checked');
+        if (checkbox) {
+            if (checkbox.checked) {
+                label.classList.add('checked');
+            } else {
+                label.classList.remove('checked');
+            }
         }
     }
 
