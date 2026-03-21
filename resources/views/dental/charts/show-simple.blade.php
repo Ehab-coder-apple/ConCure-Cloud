@@ -870,13 +870,15 @@
     .teeth-container {
         display: flex;
         justify-content: center;
-        gap: 3rem;
+        gap: 1.5rem;
     }
 
     .teeth-grid {
         display: flex;
-        gap: 1rem;
+        gap: 0.5rem;
         align-items: flex-start;
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     /* Tooth Item - Clean Minimalist Design */
@@ -1197,8 +1199,8 @@
     .condition-bridge { background: #f97316; }
     .condition-other { background: #94a3b8; }
 
-    /* Responsive */
-    @media (max-width: 1024px) {
+    /* Responsive - stack sidebar above chart on tablets and below */
+    @media (max-width: 1280px) {
         .dental-chart-body {
             flex-direction: column;
         }
@@ -1207,23 +1209,85 @@
             width: 100%;
             border-right: none;
             border-bottom: 1px solid #e5e7eb;
+            padding: 1rem;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem 0.5rem;
+            max-height: none;
+            overflow-y: visible;
+        }
+
+        .legend-item {
+            flex: 0 0 auto;
+            padding: 0.375rem 0.5rem;
+            margin-bottom: 0;
+        }
+
+        .dental-main {
+            padding: 1rem;
         }
 
         .teeth-container {
-            flex-direction: column;
             gap: 1rem;
         }
-    }
 
-    @media (max-width: 768px) {
         .teeth-grid {
-            gap: 0.5rem;
+            gap: 0.375rem;
         }
 
         .tooth-svg {
             width: 38px;
             height: 58px;
         }
+
+        .tooth-number-badge {
+            width: 26px;
+            height: 26px;
+            font-size: 0.75rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dental-main {
+            padding: 0.75rem;
+        }
+
+        .teeth-container {
+            gap: 0.5rem;
+        }
+
+        .teeth-grid {
+            gap: 0.25rem;
+        }
+
+        .tooth-svg {
+            width: 32px;
+            height: 50px;
+        }
+
+        .tooth-number-badge {
+            width: 22px;
+            height: 22px;
+            font-size: 0.65rem;
+        }
+
+        .jaw-header .jaw-label {
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Override parent layout constraints that cause clipping */
+    .main-content,
+    .content-wrapper {
+        overflow-x: visible !important;
+    }
+
+    /* Reduce main content padding on dental chart page */
+    .main-content {
+        padding: 10px !important;
     }
 </style>
 @endpush
