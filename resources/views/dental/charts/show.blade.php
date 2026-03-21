@@ -759,36 +759,51 @@
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
-    /* Responsive — iPad / Tablet (768px – 1024px) */
-    @media (min-width: 768px) and (max-width: 1024px) {
-        .dental-chart-container-modern {
-            padding: 0.75rem;
+    /* Responsive — iPad / Tablet (max-width 1199px) */
+    @media (max-width: 1199.98px) {
+        /* Stack legend above chart — give chart full width */
+        .dental-legend-col {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+            width: 100% !important;
         }
-
-        .tooth-grid {
-            gap: 1px;
-        }
-
-        .tooth-grid .tooth-wrapper {
-            max-width: 48px;
-        }
-
-        .tooth-grid .tooth-svg {
-            max-width: 44px;
-        }
-
-        .tooth-drawer {
-            width: 380px;
+        .dental-chart-col {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+            width: 100% !important;
         }
 
         .legend-sidebar {
             position: static;
             margin-bottom: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem 1rem;
+            padding: 0.75rem 1rem;
+        }
+        .legend-sidebar .legend-title {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        .legend-sidebar .legend-item {
+            flex: 0 0 auto;
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 0;
+        }
+
+        .dental-chart-container-modern {
+            padding: 0.5rem;
+        }
+
+        .container-fluid.px-4 {
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
         }
 
         .dental-toolbar {
-            padding: 0.75rem 1rem;
+            padding: 0.5rem 0.75rem;
             gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .jaw-section {
@@ -804,19 +819,30 @@
         }
     }
 
+    /* iPad-specific tooth sizing */
+    @media (min-width: 768px) and (max-width: 1024px) {
+        .tooth-grid {
+            gap: 1px;
+        }
+        .tooth-grid .tooth-wrapper {
+            max-width: 50px;
+        }
+        .tooth-grid .tooth-svg {
+            max-width: 46px;
+        }
+        .tooth-drawer {
+            width: 380px;
+        }
+    }
+
     /* Responsive — small tablets / phones */
     @media (max-width: 767.98px) {
         .tooth-drawer {
             width: 100%;
         }
 
-        .legend-sidebar {
-            position: static;
-            margin-bottom: 1.5rem;
-        }
-
         .tooth-grid {
-            gap: 0.25rem;
+            gap: 0px;
         }
 
         .tooth-grid .tooth-wrapper {
@@ -825,6 +851,10 @@
 
         .tooth-grid .tooth-svg {
             max-width: 36px;
+        }
+
+        .dental-header-card {
+            padding: 0.75rem 1rem;
         }
     }
 
@@ -1011,7 +1041,7 @@
         <!-- Main Content with Sidebar -->
         <div class="row">
             <!-- Legend Sidebar -->
-            <div class="col-lg-2 col-md-3 mb-4">
+            <div class="col-lg-2 col-md-3 mb-4 dental-legend-col">
                 <div class="legend-sidebar">
                     <div class="legend-title">
                         <i class="fas fa-list-ul me-2"></i>
@@ -1037,7 +1067,7 @@
             </div>
 
             <!-- Dental Chart -->
-            <div class="col-lg-10 col-md-9">
+            <div class="col-lg-10 col-md-9 dental-chart-col">
                 <div class="dental-chart-container-modern"
                      x-data="dentalChartApp()"
                      x-init="init()"
