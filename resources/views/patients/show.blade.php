@@ -191,6 +191,31 @@
                                     <div class="fw-bold">{{ $patient->blood_type ?: 'N/A' }}</div>
                                 </div>
                             </div>
+
+                            @if($patient->is_pediatric)
+                            <hr class="my-2">
+                            <h6 class="text-success mb-2"><i class="fas fa-baby me-1"></i>{{ __('Pediatric Info') }}</h6>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <small class="text-muted">{{ __('Birth Weight') }}</small>
+                                    <div class="fw-bold">{{ $patient->birth_weight ? $patient->birth_weight . ' g' : 'N/A' }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">{{ __('Gestational Age') }}</small>
+                                    <div class="fw-bold">{{ $patient->gestational_age_weeks ? $patient->gestational_age_weeks . ' weeks' : 'N/A' }}</div>
+                                </div>
+                                @if($patient->is_low_birth_weight)
+                                <div class="col-12">
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>{{ __('Low Birth Weight') }}</span>
+                                </div>
+                                @endif
+                                @if($patient->gestational_age_weeks && $patient->gestational_age_weeks < 37)
+                                <div class="col-12">
+                                    <span class="badge bg-info"><i class="fas fa-clock me-1"></i>{{ __('Preterm') }} ({{ $patient->gestational_age_weeks }} {{ __('weeks') }})</span>
+                                </div>
+                                @endif
+                            </div>
+                            @endif
                         </div>
                     </div>
                     <!-- Medical Images -->
