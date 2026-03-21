@@ -4,6 +4,17 @@
 
 @push('styles')
 <style>
+    /* === Force parent containers to never clip the dental chart === */
+    .main-content,
+    .content-wrapper {
+        overflow-x: visible !important;
+    }
+    /* Reduce excessive padding on the main content area for dental page */
+    .main-content {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+
     /* Root Layout */
     .dental-chart-modern {
         background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
@@ -661,31 +672,37 @@
         bottom: 0;
     }
 
-    /* Legend Sidebar */
+    /* Legend — always horizontal bar above chart */
     .legend-sidebar {
         background: white;
         border-radius: 12px;
-        padding: 1.5rem;
+        padding: 0.75rem 1rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        position: sticky;
-        top: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem 0.75rem;
+        margin-bottom: 1rem;
     }
 
     .legend-title {
         font-size: 0.875rem;
         font-weight: 600;
         color: #374151;
-        margin-bottom: 1rem;
+        margin-right: 0.5rem;
+        white-space: nowrap;
     }
 
     .legend-item {
         display: flex;
         align-items: center;
-        padding: 0.5rem;
+        padding: 0.25rem 0.5rem;
         border-radius: 6px;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0;
         transition: background 0.2s ease;
         cursor: pointer;
+        white-space: nowrap;
+        font-size: 0.8rem;
     }
 
     .legend-item:hover {
@@ -693,10 +710,10 @@
     }
 
     .legend-color {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
         border-radius: 4px;
-        margin-right: 0.75rem;
+        margin-right: 0.5rem;
         border: 1px solid rgba(0, 0, 0, 0.1);
     }
 
@@ -759,55 +776,33 @@
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
-    /* Responsive — iPad / Tablet (max-width 1199px) */
+    /* === Dental page: override parent layout constraints === */
+    /* The .main-content and .content-wrapper have overflow-x:hidden and heavy padding.
+       We must override them so the chart is never clipped. */
+    .dental-chart-modern {
+        /* Counteract parent padding to reclaim full width */
+        margin-left: -1.25rem;
+        margin-right: -1.25rem;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    /* Override the container-fluid px-4 padding for the dental page */
+    .dental-chart-modern .container-fluid.px-4 {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    /* Responsive — tablets and smaller */
     @media (max-width: 1199.98px) {
-        /* Stack legend above chart — give chart full width */
-        .dental-legend-col {
-            flex: 0 0 100% !important;
-            max-width: 100% !important;
-            width: 100% !important;
-        }
-        .dental-chart-col {
-            flex: 0 0 100% !important;
-            max-width: 100% !important;
-            width: 100% !important;
-        }
-
-        .legend-sidebar {
-            position: static;
-            margin-bottom: 1rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.25rem 1rem;
-            padding: 0.75rem 1rem;
-        }
-        .legend-sidebar .legend-title {
-            width: 100%;
-            margin-bottom: 0.5rem;
-        }
-        .legend-sidebar .legend-item {
-            flex: 0 0 auto;
-            padding: 0.25rem 0.5rem;
-            margin-bottom: 0;
-        }
-
         .dental-chart-container-modern {
             padding: 0.5rem;
-        }
-
-        .container-fluid.px-4 {
-            padding-left: 0.5rem !important;
-            padding-right: 0.5rem !important;
         }
 
         .dental-toolbar {
             padding: 0.5rem 0.75rem;
             gap: 0.5rem;
             flex-wrap: wrap;
-        }
-
-        .jaw-section {
-            margin-bottom: 1.5rem;
         }
 
         .tooth-condition-badge {
@@ -817,21 +812,17 @@
             top: -5px;
             right: -5px;
         }
-    }
 
-    /* iPad-specific tooth sizing */
-    @media (min-width: 768px) and (max-width: 1024px) {
-        .tooth-grid {
-            gap: 1px;
-        }
-        .tooth-grid .tooth-wrapper {
-            max-width: 50px;
-        }
-        .tooth-grid .tooth-svg {
-            max-width: 46px;
-        }
         .tooth-drawer {
             width: 380px;
+        }
+
+        /* Let teeth shrink freely on tablets */
+        .tooth-grid .tooth-wrapper {
+            max-width: none;
+        }
+        .tooth-grid .tooth-svg {
+            max-width: none;
         }
     }
 
@@ -839,18 +830,6 @@
     @media (max-width: 767.98px) {
         .tooth-drawer {
             width: 100%;
-        }
-
-        .tooth-grid {
-            gap: 0px;
-        }
-
-        .tooth-grid .tooth-wrapper {
-            max-width: 40px;
-        }
-
-        .tooth-grid .tooth-svg {
-            max-width: 36px;
         }
 
         .dental-header-card {
@@ -1038,37 +1017,32 @@
             </div>
         </div>
 
-        <!-- Main Content with Sidebar -->
-        <div class="row">
-            <!-- Legend Sidebar -->
-            <div class="col-lg-2 col-md-3 mb-4 dental-legend-col">
-                <div class="legend-sidebar">
-                    <div class="legend-title">
-                        <i class="fas fa-list-ul me-2"></i>
-                        {{ __('Condition Legend') }}
-                    </div>
-                    @php
-                        $conditionCounts = [];
-                        foreach($dentalChart->toothRecords as $record) {
-                            $cond = $record->primary_condition;
-                            $conditionCounts[$cond] = ($conditionCounts[$cond] ?? 0) + 1;
-                        }
-                    @endphp
-                    @foreach(\App\Models\DentalToothRecord::CONDITIONS as $key => $condition)
-                        <div class="legend-item" data-condition="{{ $key }}">
-                            <div class="legend-color" style="background-color: {{ $condition['color'] }};"></div>
-                            <div class="legend-name">{{ $condition['name'] }}</div>
-                            @if(isset($conditionCounts[$key]))
-                                <div class="legend-count">{{ $conditionCounts[$key] }}</div>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
+        <!-- Condition Legend Bar (horizontal, full-width) -->
+        <div class="legend-sidebar">
+            <div class="legend-title">
+                <i class="fas fa-list-ul me-2"></i>
+                {{ __('Condition Legend') }}
             </div>
+            @php
+                $conditionCounts = [];
+                foreach($dentalChart->toothRecords as $record) {
+                    $cond = $record->primary_condition;
+                    $conditionCounts[$cond] = ($conditionCounts[$cond] ?? 0) + 1;
+                }
+            @endphp
+            @foreach(\App\Models\DentalToothRecord::CONDITIONS as $key => $condition)
+                <div class="legend-item" data-condition="{{ $key }}">
+                    <div class="legend-color" style="background-color: {{ $condition['color'] }};"></div>
+                    <div class="legend-name">{{ $condition['name'] }}</div>
+                    @if(isset($conditionCounts[$key]))
+                        <div class="legend-count">{{ $conditionCounts[$key] }}</div>
+                    @endif
+                </div>
+            @endforeach
+        </div>
 
-            <!-- Dental Chart -->
-            <div class="col-lg-10 col-md-9 dental-chart-col">
-                <div class="dental-chart-container-modern"
+        <!-- Dental Chart (full width) -->
+        <div class="dental-chart-container-modern"
                      x-data="dentalChartApp()"
                      x-init="init()"
                      @keydown.escape.window="closeDrawer()">
@@ -1260,8 +1234,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
     <!-- Tooth Records Details -->
     <div class="row mb-4">
