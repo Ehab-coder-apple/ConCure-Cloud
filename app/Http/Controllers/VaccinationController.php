@@ -31,8 +31,11 @@ class VaccinationController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+        $minDate = now()->subYears(20)->startOfDay();
         $query = Patient::whereNotNull('vaccination_schedule_id')
-            ->whereNotNull('date_of_birth');
+            ->whereNotNull('date_of_birth')
+            ->where('date_of_birth', '>=', $minDate)
+            ->where('date_of_birth', '!=', '0000-00-00');
 
         if ($user->clinic_id) {
             $query->where('clinic_id', $user->clinic_id);
@@ -430,8 +433,11 @@ class VaccinationController extends Controller
         $user = auth()->user();
         $searchTerm = $this->getValidatedSearchTerm($request);
 
+        $minDate = now()->subYears(20)->startOfDay();
         $query = Patient::whereNull('vaccination_schedule_id')
-            ->whereNotNull('date_of_birth');
+            ->whereNotNull('date_of_birth')
+            ->where('date_of_birth', '>=', $minDate)
+            ->where('date_of_birth', '!=', '0000-00-00');
 
         if ($user->clinic_id) {
             $query->where('clinic_id', $user->clinic_id);

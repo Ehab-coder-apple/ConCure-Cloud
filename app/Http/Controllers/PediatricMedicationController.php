@@ -30,8 +30,12 @@ class PediatricMedicationController extends Controller
     public function calculator(Request $request)
     {
         $clinicId = Auth::user()->clinic_id;
+        $minDate = now()->subYears(20)->startOfDay();
         $patients = Patient::where('clinic_id', $clinicId)
             ->where('is_active', true)
+            ->whereNotNull('date_of_birth')
+            ->where('date_of_birth', '>=', $minDate)
+            ->where('date_of_birth', '!=', '0000-00-00')
             ->orderBy('first_name')
             ->get();
         $drugs = PediatricDrug::active()->with('forms')->orderBy('generic_name')->get();
@@ -283,7 +287,14 @@ class PediatricMedicationController extends Controller
     public function history(Request $request)
     {
         $clinicId = Auth::user()->clinic_id;
-        $patients = Patient::where('clinic_id', $clinicId)->where('is_active', true)->orderBy('first_name')->get();
+        $minDate = now()->subYears(20)->startOfDay();
+        $patients = Patient::where('clinic_id', $clinicId)
+            ->where('is_active', true)
+            ->whereNotNull('date_of_birth')
+            ->where('date_of_birth', '>=', $minDate)
+            ->where('date_of_birth', '!=', '0000-00-00')
+            ->orderBy('first_name')
+            ->get();
 
         $prescriptions = collect();
         $selectedPatient = null;
