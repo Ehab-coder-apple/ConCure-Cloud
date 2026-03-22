@@ -29,7 +29,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index(['patient_id', 'measurement_date']);
+            $table->index(['patient_id', 'measurement_date'], 'npm_patient_date_index');
             $table->index('clinic_id');
         });
     }
