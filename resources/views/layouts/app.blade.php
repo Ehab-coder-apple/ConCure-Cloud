@@ -1644,7 +1644,7 @@
                                 <li class="submenu-item">
                                     <a href="{{ route('dental.lab-requests.index') }}" class="submenu-link {{ request()->routeIs('dental.lab-requests.*') ? 'active' : '' }}">
                                         <i class="fas fa-flask me-2"></i>
-                                        {{ __('Lab Requests') }}
+                                        {{ __('Dental Lab') }}
                                     </a>
                                 </li>
                                 @endif
