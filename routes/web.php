@@ -444,6 +444,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::patch('/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('update-status');
     });
 
+    // Nutrition Progress Dashboard
+    Route::prefix('nutrition/progress')->name('nutrition.progress.')->group(function () {
+        Route::get('/', [App\Http\Controllers\NutritionProgressController::class, 'dashboard'])->name('dashboard');
+        Route::post('/measurement', [App\Http\Controllers\NutritionProgressController::class, 'storeMeasurement'])->name('measurement.store');
+        Route::delete('/measurement/{measurement}', [App\Http\Controllers\NutritionProgressController::class, 'destroyMeasurement'])->name('measurement.destroy');
+        Route::post('/goal', [App\Http\Controllers\NutritionProgressController::class, 'storeGoal'])->name('goal.store');
+        Route::get('/chart-data', [App\Http\Controllers\NutritionProgressController::class, 'chartData'])->name('chart-data');
+    });
+
     // Nutrition Plan Management
     Route::prefix('nutrition')->name('nutrition.')->group(function () {
         Route::get('/', [App\Http\Controllers\NutritionController::class, 'index'])->name('index');
@@ -670,6 +679,61 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/patients/{patient}/growth-chart', [App\Http\Controllers\GrowthChartController::class, 'store'])->name('growth-chart.store');
         Route::delete('/patients/{patient}/growth-chart/{measurement}', [App\Http\Controllers\GrowthChartController::class, 'destroy'])->name('growth-chart.destroy');
         Route::get('/patients/{patient}/growth-chart/data', [App\Http\Controllers\GrowthChartController::class, 'chartData'])->name('growth-chart.data');
+
+        // Pediatric Medication Safety Routes
+        Route::prefix('medication')->name('medication.')->group(function () {
+            Route::get('/calculator', [App\Http\Controllers\PediatricMedicationController::class, 'calculator'])->name('calculator');
+            Route::post('/calculate', [App\Http\Controllers\PediatricMedicationController::class, 'calculateDose'])->name('calculate');
+            Route::post('/calculate-bulk', [App\Http\Controllers\PediatricMedicationController::class, 'bulkCalculate'])->name('calculate.bulk');
+            Route::post('/validate', [App\Http\Controllers\PediatricMedicationController::class, 'validateDose'])->name('validate');
+            Route::post('/prescribe', [App\Http\Controllers\PediatricMedicationController::class, 'storePrescription'])->name('prescribe');
+            Route::post('/prescribe-bulk', [App\Http\Controllers\PediatricMedicationController::class, 'bulkPrescribe'])->name('prescribe.bulk');
+            Route::get('/history', [App\Http\Controllers\PediatricMedicationController::class, 'history'])->name('history');
+            Route::get('/print', [App\Http\Controllers\PediatricMedicationController::class, 'printPrescription'])->name('print');
+
+            // Drug Admin
+            Route::get('/drugs', [App\Http\Controllers\PediatricMedicationController::class, 'drugAdmin'])->name('drug-admin');
+            Route::post('/drugs', [App\Http\Controllers\PediatricMedicationController::class, 'storeDrug'])->name('drug.store');
+            Route::post('/drugs/form', [App\Http\Controllers\PediatricMedicationController::class, 'storeDrugForm'])->name('drug-form.store');
+            Route::post('/drugs/rule', [App\Http\Controllers\PediatricMedicationController::class, 'storeDosageRule'])->name('dosage-rule.store');
+            Route::delete('/drugs/{drug}', [App\Http\Controllers\PediatricMedicationController::class, 'destroyDrug'])->name('drug.destroy');
+
+            // Import
+            Route::get('/import', [App\Http\Controllers\PediatricMedicationController::class, 'importPage'])->name('import');
+            Route::post('/import/preview', [App\Http\Controllers\PediatricMedicationController::class, 'importPreview'])->name('import.preview');
+            Route::post('/import/confirm', [App\Http\Controllers\PediatricMedicationController::class, 'importConfirm'])->name('import.confirm');
+            Route::get('/import/template', [App\Http\Controllers\PediatricMedicationController::class, 'downloadTemplate'])->name('import.template');
+
+            // AJAX endpoints
+            Route::get('/drug/{drug}/forms', [App\Http\Controllers\PediatricMedicationController::class, 'getDrugForms'])->name('drug.forms');
+            Route::get('/patient/{patient}/info', [App\Http\Controllers\PediatricMedicationController::class, 'getPatientInfo'])->name('patient.info');
+        });
+    });
+
+    // Vaccination Management Routes
+    Route::prefix('vaccination')->name('vaccination.')->group(function () {
+        Route::get('/', [App\Http\Controllers\VaccinationController::class, 'index'])->name('index');
+        Route::post('/enroll', [App\Http\Controllers\VaccinationController::class, 'enroll'])->name('enroll');
+        Route::get('/search-unenrolled', [App\Http\Controllers\VaccinationController::class, 'searchUnenrolled'])->name('search-unenrolled');
+        Route::get('/patients/{patient}', [App\Http\Controllers\VaccinationController::class, 'show'])->name('show');
+        Route::post('/patients/{patient}/generate', [App\Http\Controllers\VaccinationController::class, 'generate'])->name('generate');
+        Route::post('/record/{vaccination}', [App\Http\Controllers\VaccinationController::class, 'record'])->name('record');
+        Route::post('/skip/{vaccination}', [App\Http\Controllers\VaccinationController::class, 'skip'])->name('skip');
+        Route::get('/patients/{patient}/print', [App\Http\Controllers\VaccinationController::class, 'printCard'])->name('print');
+        Route::get('/patients/{patient}/api', [App\Http\Controllers\VaccinationController::class, 'apiPatientVaccinations'])->name('api.patient');
+
+        // Admin routes
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::get('/', [App\Http\Controllers\VaccinationController::class, 'adminIndex'])->name('index');
+            Route::get('/schedule/{schedule}', [App\Http\Controllers\VaccinationController::class, 'adminShowSchedule'])->name('schedule.show');
+            Route::post('/country', [App\Http\Controllers\VaccinationController::class, 'adminStoreCountry'])->name('country.store');
+            Route::delete('/country/{country}', [App\Http\Controllers\VaccinationController::class, 'adminDestroyCountry'])->name('country.destroy');
+            Route::post('/schedule', [App\Http\Controllers\VaccinationController::class, 'adminStoreSchedule'])->name('schedule.store');
+            Route::post('/item', [App\Http\Controllers\VaccinationController::class, 'adminStoreItem'])->name('item.store');
+            Route::post('/import-json', [App\Http\Controllers\VaccinationController::class, 'adminImportJson'])->name('import');
+            Route::get('/vaccines', [App\Http\Controllers\VaccinationController::class, 'adminVaccines'])->name('vaccines');
+            Route::post('/vaccines', [App\Http\Controllers\VaccinationController::class, 'adminStoreVaccine'])->name('vaccines.store');
+        });
     });
 
     // Food Composition

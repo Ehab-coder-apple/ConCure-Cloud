@@ -35,6 +35,14 @@ return new class extends Migration
             // Drop users_new table if it exists from a previous failed migration
             Schema::dropIfExists('users_new');
 
+            // Also drop any leftover index from a previous partial run (SQLite keeps index names globally)
+            try {
+                DB::statement('DROP INDEX IF EXISTS users_new_role_is_active_index');
+                DB::statement('DROP INDEX IF EXISTS users_new_clinic_id_index');
+            } catch (\Exception $e) {
+                // Ignore — index may not exist
+            }
+
             // Create new table with updated role enum
             Schema::create('users_new', function (Blueprint $table) {
                 $table->id();

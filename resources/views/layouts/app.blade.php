@@ -245,6 +245,15 @@
             margin: 0;
         }
 
+        .nav-section-label {
+            padding: 1.1rem 1rem 0.35rem;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(148, 163, 184, 0.65);
+        }
+
         .nav-item {
             margin-bottom: 0.25rem;
         }
@@ -1496,17 +1505,19 @@
                         <!-- Standard Menu (For all other roles) -->
                         @if(Auth::user()->role !== 'lab_dept' && Auth::user()->role !== 'radiology_dept')
 
+                        {{-- ─── TOP LEVEL ─── --}}
+
                         <!-- Dashboard -->
                         @if(Auth::user()->hasPermission('dashboard_view') && Auth::user()->canAccessModule('dashboard'))
                         <li class="nav-item">
                             <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-tachometer-alt"></i>
+                                <i class="nav-icon fas fa-globe"></i>
                                 <span class="nav-text">{{ __('Dashboard') }}</span>
                             </a>
                         </li>
                         @endif
 
-                        <!-- Patient Management -->
+                        <!-- Patients -->
                         @if(Auth::user()->canAccessSection('patients') && Auth::user()->canAccessModule('patients'))
                         <li class="nav-item">
                             <a href="{{ route('patients.index') }}" class="nav-link {{ request()->routeIs('patients.*') ? 'active' : '' }}">
@@ -1514,153 +1525,7 @@
                                 <span class="nav-text">{{ __('Patients') }}</span>
                             </a>
                         </li>
-
-                            <!-- Medical Image Bank -->
-                            @if((Auth::user()->hasPermission('patients_images') || Auth::user()->isSuperAdmin() || Auth::user()->isClinicAdmin()) && Auth::user()->canAccessModule('image_bank'))
-                            <li class="nav-item">
-                                <a href="{{ route('image-bank.index') }}" class="nav-link {{ request()->routeIs('image-bank.*') ? 'active' : '' }}">
-                                    <i class="nav-icon fas fa-images"></i>
-                                    <span class="nav-text">{{ __('Medical Image Bank') }}</span>
-                                </a>
-                            </li>
-                            @endif
-
-
-
                         @endif
-
-                            <!-- Messages -->
-                            @if(Auth::user()->canAccessModule('messages'))
-                            <li class="nav-item">
-                                <a href="{{ route('messages.index') }}" class="nav-link {{ request()->routeIs('messages.*') ? 'active' : '' }}">
-                                    <i class="nav-icon fas fa-inbox"></i>
-                                    <span class="nav-text">{{ __('Messages') }}</span>
-                                    <span class="badge bg-danger ms-auto" id="sidebarUnread">0</span>
-                                </a>
-                            </li>
-                            @endif
-
-                            @if(Route::has('assistant.index') && (Auth::user()->hasPermission('ai_assistant_access') || Auth::user()->isSuperAdmin() || Auth::user()->isClinicAdmin()) && Auth::user()->canAccessModule('ai_assistant'))
-                            <!-- AI Medical Assistant -->
-                            <li class="nav-item">
-                                <a href="{{ route('assistant.index') }}" class="nav-link {{ request()->routeIs('assistant.*') ? 'active' : '' }}">
-                                    <i class="nav-icon fas fa-robot"></i>
-                                    <span class="nav-text">{{ __('AI Medical Assistant') }}</span>
-                                </a>
-                            </li>
-                            @endif
-
-
-
-                        <!-- Prescriptions -->
-                        @if(Auth::user()->canAccessSection('prescriptions') && Auth::user()->canAccessModule('prescriptions'))
-                        <li class="nav-item">
-                            <a href="{{ route('simple-prescriptions.index') }}" class="nav-link {{ request()->routeIs('simple-prescriptions.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-prescription-bottle-alt"></i>
-                                <span class="nav-text">{{ __('Prescriptions') }}</span>
-                            </a>
-                        </li>
-                        @endif
-
-                        <!-- Lab Requests -->
-                        @if(Auth::user()->canViewLabRequests() && Auth::user()->canAccessModule('lab'))
-                        <li class="nav-item">
-                            <a href="{{ route('recommendations.lab-requests') }}" class="nav-link {{ request()->routeIs('recommendations.lab-requests*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-flask"></i>
-                                <span class="nav-text">{{ __('Lab Requests') }}</span>
-                            </a>
-                        </li>
-                        @endif
-
-                        <!-- Radiology Requests -->
-                        @if(Auth::user()->canViewRadiologyRequests() && Auth::user()->canAccessModule('radiology'))
-                        <li class="nav-item">
-                            <a href="{{ route('recommendations.radiology.index') }}" class="nav-link {{ request()->routeIs('recommendations.radiology.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-x-ray"></i>
-                                <span class="nav-text">{{ __('Radiology Requests') }}</span>
-                            </a>
-                        </li>
-                        @endif
-
-                        <!-- Dental Module -->
-                        @if(Auth::user()->canAccessSection('dental') && Auth::user()->canAccessModule('dental'))
-                        <li class="nav-item has-submenu {{ request()->routeIs('dental.*') ? 'active' : '' }}">
-                            <a href="#" class="nav-link submenu-toggle">
-                                <i class="nav-icon fas fa-tooth"></i>
-                                <span class="nav-text">{{ __('Dental Module') }}</span>
-                                <i class="submenu-arrow fas fa-chevron-right"></i>
-                            </a>
-                            <ul class="submenu">
-                                @if(Auth::user()->hasAnyPermission(['dental_view', 'dental_charts']))
-                                <li class="submenu-item">
-                                    <a href="{{ route('dental.charts.all') }}" class="submenu-link {{ request()->routeIs('dental.charts.*') ? 'active' : '' }}">
-                                        <i class="fas fa-tooth me-2"></i>
-                                        {{ __('Dental Charts') }}
-                                    </a>
-                                </li>
-                                @endif
-
-                                @if(Auth::user()->hasAnyPermission(['dental_view', 'dental_treatments']))
-                                <li class="submenu-item">
-                                    <a href="{{ route('dental.treatments.index') }}" class="submenu-link {{ request()->routeIs('dental.treatments.*') ? 'active' : '' }}">
-                                        <i class="fas fa-procedures me-2"></i>
-                                        {{ __('Treatments') }}
-                                    </a>
-                                </li>
-                                @endif
-
-                                @if(Auth::user()->hasAnyPermission(['dental_view', 'dental_lab']))
-                                <li class="submenu-item">
-                                    <a href="{{ route('dental.lab-requests.index') }}" class="submenu-link {{ request()->routeIs('dental.lab-requests.*') ? 'active' : '' }}">
-                                        <i class="fas fa-flask me-2"></i>
-                                        {{ __('Lab Requests') }}
-                                    </a>
-                                </li>
-                                @endif
-                            </ul>
-                        </li>
-                        @endif
-
-                        <!-- Pediatric Growth -->
-                        @if(Auth::user()->canAccessSection('pediatric') && Auth::user()->canAccessModule('pediatric'))
-                        <li class="nav-item">
-                            <a href="{{ route('pediatric.patients') }}" class="nav-link {{ request()->routeIs('pediatric.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-baby"></i>
-                                <span class="nav-text">{{ __('Pediatric Growth') }}</span>
-                            </a>
-                        </li>
-                        @endif
-
-                        <!-- Nutrition Plans -->
-                        @if(Auth::user()->canAccessSection('nutrition') && Auth::user()->canAccessModule('nutrition'))
-                        <li class="nav-item">
-                            <a href="{{ route('nutrition.index') }}" class="nav-link {{ request()->routeIs('nutrition.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-apple-alt"></i>
-                                <span class="nav-text">{{ __('Nutrition Plans') }}</span>
-                            </a>
-                        </li>
-                        @endif
-
-                        <!-- Food Composition Database -->
-                        @if((Auth::user()->canAccessSection('nutrition') || Auth::user()->hasPermission('manage-food-composition')) && Auth::user()->canAccessModule('food_database'))
-                        <li class="nav-item">
-                            <a href="{{ route('foods.index') }}" class="nav-link {{ request()->routeIs('foods.*') || request()->routeIs('food-groups.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-database"></i>
-                                <span class="nav-text">{{ __('Food Database') }}</span>
-                            </a>
-                        </li>
-                        @endif
-
-                            <!-- Forms -->
-                            @if(Auth::user()->canAccessSection('forms') && Auth::user()->canAccessModule('forms'))
-                            <li class="nav-item">
-                                <a href="{{ url('/forms/templates') }}" class="nav-link {{ request()->is('forms*') ? 'active' : '' }}">
-                                    <i class="nav-icon fas fa-file-alt"></i>
-                                    <span class="nav-text">{{ __('Forms') }}</span>
-                                </a>
-                            </li>
-                            @endif
-
 
                         <!-- Appointments -->
                         @if(Auth::user()->canAccessSection('appointments') && Auth::user()->canAccessModule('appointments'))
@@ -1673,7 +1538,198 @@
                         </li>
                         @endif
 
-                        <!-- Inventory -->
+                        <!-- Prescriptions -->
+                        @if(Auth::user()->canAccessSection('prescriptions') && Auth::user()->canAccessModule('prescriptions'))
+                        <li class="nav-item">
+                            <a href="{{ route('simple-prescriptions.index') }}" class="nav-link {{ request()->routeIs('simple-prescriptions.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-prescription-bottle-alt"></i>
+                                <span class="nav-text">{{ __('Prescriptions') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        <!-- Messages -->
+                        @if(Auth::user()->canAccessModule('messages'))
+                        <li class="nav-item">
+                            <a href="{{ route('messages.index') }}" class="nav-link {{ request()->routeIs('messages.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-comment-dots"></i>
+                                <span class="nav-text">{{ __('Messages') }}</span>
+                                <span class="badge bg-danger ms-auto" id="sidebarUnread">0</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        {{-- ─── CLINICAL ─── --}}
+                        <li class="nav-section-label">{{ __('Clinical') }}</li>
+
+                        <!-- AI Assistant -->
+                        @if(Route::has('assistant.index') && (Auth::user()->hasPermission('ai_assistant_access') || Auth::user()->isSuperAdmin() || Auth::user()->isClinicAdmin()) && Auth::user()->canAccessModule('ai_assistant'))
+                        <li class="nav-item">
+                            <a href="{{ route('assistant.index') }}" class="nav-link {{ request()->routeIs('assistant.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-robot"></i>
+                                <span class="nav-text">{{ __('AI Assistant') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        <!-- Laboratory -->
+                        @if(Auth::user()->canViewLabRequests() && Auth::user()->canAccessModule('lab'))
+                        <li class="nav-item">
+                            <a href="{{ route('recommendations.lab-requests') }}" class="nav-link {{ request()->routeIs('recommendations.lab-requests*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-flask"></i>
+                                <span class="nav-text">{{ __('Laboratory') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        <!-- Radiology -->
+                        @if(Auth::user()->canViewRadiologyRequests() && Auth::user()->canAccessModule('radiology'))
+                        <li class="nav-item">
+                            <a href="{{ route('recommendations.radiology.index') }}" class="nav-link {{ request()->routeIs('recommendations.radiology.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-x-ray"></i>
+                                <span class="nav-text">{{ __('Radiology') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        <!-- Imaging (Medical Image Bank) -->
+                        @if((Auth::user()->hasPermission('patients_images') || Auth::user()->isSuperAdmin() || Auth::user()->isClinicAdmin()) && Auth::user()->canAccessModule('image_bank'))
+                        <li class="nav-item">
+                            <a href="{{ route('image-bank.index') }}" class="nav-link {{ request()->routeIs('image-bank.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-images"></i>
+                                <span class="nav-text">{{ __('Imaging') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        <!-- Forms -->
+                        @if(Auth::user()->canAccessSection('forms') && Auth::user()->canAccessModule('forms'))
+                        <li class="nav-item">
+                            <a href="{{ url('/forms/templates') }}" class="nav-link {{ request()->is('forms*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-file-alt"></i>
+                                <span class="nav-text">{{ __('Forms') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        {{-- ─── MODULES ─── --}}
+                        <li class="nav-section-label">{{ __('Modules') }}</li>
+
+                        <!-- Dental Module -->
+                        @if(Auth::user()->canAccessSection('dental') && Auth::user()->canAccessModule('dental'))
+                        <li class="nav-item has-submenu {{ request()->routeIs('dental.*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link submenu-toggle">
+                                <i class="nav-icon fas fa-tooth"></i>
+                                <span class="nav-text">{{ __('Dental') }}</span>
+                                <i class="submenu-arrow fas fa-chevron-right"></i>
+                            </a>
+                            <ul class="submenu">
+                                @if(Auth::user()->hasAnyPermission(['dental_view', 'dental_charts']))
+                                <li class="submenu-item">
+                                    <a href="{{ route('dental.charts.all') }}" class="submenu-link {{ request()->routeIs('dental.charts.*') ? 'active' : '' }}">
+                                        <i class="fas fa-tooth me-2"></i>
+                                        {{ __('Dental Charts') }}
+                                    </a>
+                                </li>
+                                @endif
+                                @if(Auth::user()->hasAnyPermission(['dental_view', 'dental_treatments']))
+                                <li class="submenu-item">
+                                    <a href="{{ route('dental.treatments.index') }}" class="submenu-link {{ request()->routeIs('dental.treatments.*') ? 'active' : '' }}">
+                                        <i class="fas fa-procedures me-2"></i>
+                                        {{ __('Treatments') }}
+                                    </a>
+                                </li>
+                                @endif
+                                @if(Auth::user()->hasAnyPermission(['dental_view', 'dental_lab']))
+                                <li class="submenu-item">
+                                    <a href="{{ route('dental.lab-requests.index') }}" class="submenu-link {{ request()->routeIs('dental.lab-requests.*') ? 'active' : '' }}">
+                                        <i class="fas fa-flask me-2"></i>
+                                        {{ __('Lab Requests') }}
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
+                        </li>
+                        @endif
+
+                        <!-- Pediatric Module -->
+                        @if((Auth::user()->canAccessSection('pediatric') && Auth::user()->canAccessModule('pediatric')) || Auth::user()->canAccessModule('vaccination'))
+                        <li class="nav-item has-submenu {{ request()->routeIs('pediatric.*') || request()->routeIs('vaccination.*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link submenu-toggle">
+                                <i class="nav-icon fas fa-baby"></i>
+                                <span class="nav-text">{{ __('Pediatric') }}</span>
+                                <i class="submenu-arrow fas fa-chevron-right"></i>
+                            </a>
+                            <ul class="submenu">
+                                @if(Auth::user()->canAccessSection('pediatric') && Auth::user()->canAccessModule('pediatric'))
+                                <li class="submenu-item">
+                                    <a href="{{ route('pediatric.patients') }}" class="submenu-link {{ request()->routeIs('pediatric.*') && !request()->routeIs('pediatric.medication.*') ? 'active' : '' }}">
+                                        <i class="fas fa-chart-line me-2"></i>
+                                        {{ __('Growth Chart') }}
+                                    </a>
+                                </li>
+                                @endif
+                                @if(Auth::user()->canAccessSection('pediatric') && Auth::user()->canAccessModule('pediatric'))
+                                <li class="submenu-item">
+                                    <a href="{{ route('pediatric.medication.calculator') }}" class="submenu-link {{ request()->routeIs('pediatric.medication.*') ? 'active' : '' }}">
+                                        <i class="fas fa-pills me-2"></i>
+                                        {{ __('Medication Safety') }}
+                                    </a>
+                                </li>
+                                @endif
+                                @if(Auth::user()->canAccessModule('vaccination'))
+                                <li class="submenu-item">
+                                    <a href="{{ route('vaccination.index') }}" class="submenu-link {{ request()->routeIs('vaccination.*') ? 'active' : '' }}">
+                                        <i class="fas fa-syringe me-2"></i>
+                                        {{ __('Vaccination') }}
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
+                        </li>
+                        @endif
+
+                        <!-- Nutrition Module -->
+                        @if((Auth::user()->canAccessSection('nutrition') && Auth::user()->canAccessModule('nutrition')) || ((Auth::user()->canAccessSection('nutrition') || Auth::user()->hasPermission('manage-food-composition')) && Auth::user()->canAccessModule('food_database')))
+                        <li class="nav-item has-submenu {{ request()->routeIs('nutrition.*') || request()->routeIs('foods.*') || request()->routeIs('food-groups.*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link submenu-toggle">
+                                <i class="nav-icon fas fa-apple-alt"></i>
+                                <span class="nav-text">{{ __('Nutrition') }}</span>
+                                <i class="submenu-arrow fas fa-chevron-right"></i>
+                            </a>
+                            <ul class="submenu">
+                                @if(Auth::user()->canAccessSection('nutrition') && Auth::user()->canAccessModule('nutrition'))
+                                <li class="submenu-item">
+                                    <a href="{{ route('nutrition.index') }}" class="submenu-link {{ request()->routeIs('nutrition.*') ? 'active' : '' }}">
+                                        <i class="fas fa-utensils me-2"></i>
+                                        {{ __('Diet Planning') }}
+                                    </a>
+                                </li>
+                                @endif
+                                @if((Auth::user()->canAccessSection('nutrition') || Auth::user()->hasPermission('manage-food-composition')) && Auth::user()->canAccessModule('food_database'))
+                                <li class="submenu-item">
+                                    <a href="{{ route('foods.index') }}" class="submenu-link {{ request()->routeIs('foods.*') || request()->routeIs('food-groups.*') ? 'active' : '' }}">
+                                        <i class="fas fa-database me-2"></i>
+                                        {{ __('Food Database') }}
+                                    </a>
+                                </li>
+                                @endif
+                                @if(Auth::user()->canAccessSection('nutrition') && Auth::user()->canAccessModule('nutrition'))
+                                <li class="submenu-item">
+                                    <a href="{{ route('nutrition.progress.dashboard') }}" class="submenu-link {{ request()->routeIs('nutrition.progress.*') ? 'active' : '' }}">
+                                        <i class="fas fa-chart-area me-2"></i>
+                                        {{ __('Progress Dashboard') }}
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
+                        </li>
+                        @endif
+
+                        {{-- ─── OPERATIONS ─── --}}
+                        <li class="nav-section-label">{{ __('Operations') }}</li>
+
+                        <!-- Medicines -->
                         @if(Auth::user()->canAccessSection('medicines') && Auth::user()->canAccessModule('medicines'))
                         <li class="nav-item">
                             <a href="{{ route('medicines.index') }}" class="nav-link {{ request()->routeIs('medicines.*') ? 'active' : '' }}">
@@ -1692,6 +1748,9 @@
                             </a>
                         </li>
                         @endif
+
+                        {{-- ─── SYSTEM ─── --}}
+                        <li class="nav-section-label">{{ __('System') }}</li>
 
                         <!-- Administration -->
                         @if(Auth::user()->canAccessSection('users') || Auth::user()->canAccessSection('settings') || Auth::user()->role === 'admin')
@@ -1750,7 +1809,6 @@
                                     </a>
                                 </li>
                                 @endif
-                                {{-- Subscription menu removed - no longer needed --}}
                             </ul>
                         </li>
                         @endif

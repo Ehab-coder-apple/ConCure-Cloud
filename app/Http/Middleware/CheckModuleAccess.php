@@ -28,6 +28,7 @@ class CheckModuleAccess
         'assistant'             => 'ai_assistant',
         'messages'              => 'messages',
         'pediatric'             => 'pediatric',
+        'vaccination'           => 'vaccination',
     ];
 
     /**

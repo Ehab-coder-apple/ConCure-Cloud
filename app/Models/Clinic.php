@@ -41,6 +41,8 @@ class Clinic extends Model
         'service_charge_note',
         'storage_limit',
         'storage_used',
+        'country_id',
+        'schedule_override_id',
     ];
 
     protected $casts = [
@@ -65,6 +67,37 @@ class Clinic extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
+    }
+
+    /**
+     * The country this clinic belongs to.
+     */
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class);
+    }
+
+    /**
+     * The vaccination schedule override for this clinic.
+     */
+    public function scheduleOverride(): BelongsTo
+    {
+        return $this->belongsTo(VaccinationSchedule::class, 'schedule_override_id');
+    }
+
+    /**
+     * Get the effective vaccination schedule for this clinic.
+     * Clinic override > Country default.
+     */
+    public function getEffectiveVaccinationScheduleAttribute(): ?VaccinationSchedule
+    {
+        if ($this->schedule_override_id) {
+            return $this->scheduleOverride;
+        }
+        if ($this->country_id) {
+            return $this->country?->default_schedule;
+        }
+        return null;
     }
 
     /**
@@ -279,6 +312,7 @@ class Clinic extends Model
         'image_bank'    => 'Medical Image Bank',
         'messages'      => 'Messages',
         'pediatric'     => 'Pediatric Growth',
+        'vaccination'   => 'Vaccination Management',
     ];
 
     /**

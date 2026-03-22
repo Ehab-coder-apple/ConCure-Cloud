@@ -40,6 +40,7 @@ class Patient extends Model
         'emergency_contact_name',
         'emergency_contact_phone',
         'clinic_id',
+        'vaccination_schedule_id',
         'created_by',
         'is_active',
     ];
@@ -586,6 +587,46 @@ class Patient extends Model
     }
 
     /**
+     * Get the vaccination schedule assigned to this patient.
+     */
+    public function vaccinationSchedule(): BelongsTo
+    {
+        return $this->belongsTo(VaccinationSchedule::class, 'vaccination_schedule_id');
+    }
+
+    /**
+     * Get the patient's vaccination records.
+     */
+    public function vaccinations(): HasMany
+    {
+        return $this->hasMany(PatientVaccination::class)->orderBy('scheduled_date');
+    }
+
+    /**
+     * Get the patient's nutrition progress measurements.
+     */
+    public function nutritionProgressMeasurements(): HasMany
+    {
+        return $this->hasMany(NutritionProgressMeasurement::class)->orderBy('measurement_date');
+    }
+
+    /**
+     * Get the patient's nutrition goals.
+     */
+    public function nutritionGoals(): HasMany
+    {
+        return $this->hasMany(NutritionGoal::class);
+    }
+
+    /**
+     * Get the patient's active nutrition goal.
+     */
+    public function activeNutritionGoal()
+    {
+        return $this->hasOne(NutritionGoal::class)->where('is_active', true)->latest();
+    }
+
+    /**
      * Check if the patient is low birth weight (< 2500g).
      */
     public function getIsLowBirthWeightAttribute(): bool
@@ -649,5 +690,42 @@ class Patient extends Model
             return '2-5y';
         }
         return '5-20y';
+    }
+
+    /**
+     * Get the patient's pediatric prescriptions.
+     */
+    public function pediatricPrescriptions(): HasMany
+    {
+        return $this->hasMany(PediatricPrescription::class)->orderByDesc('created_at');
+    }
+
+    /**
+     * Get the latest weight from growth measurements (for pediatric dose calculations).
+     */
+    public function getLatestWeightKgAttribute(): ?float
+    {
+        $latest = $this->growthMeasurements()->latest('measurement_date')->first();
+        if ($latest && $latest->weight_kg) {
+            return (float) $latest->weight_kg;
+        }
+        // Fallback to patient profile weight
+        return $this->weight ? (float) $this->weight : null;
+    }
+
+    /**
+     * Get patient age in months.
+     */
+    public function getAgeMonthsAttribute(): int
+    {
+        $rawDob = $this->getAttributes()['date_of_birth'] ?? $this->getRawOriginal('date_of_birth');
+        if (empty($rawDob) || $rawDob === '0000-00-00') {
+            return 0;
+        }
+        try {
+            return (int) \Illuminate\Support\Carbon::parse($rawDob)->diffInMonths(now());
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 }
