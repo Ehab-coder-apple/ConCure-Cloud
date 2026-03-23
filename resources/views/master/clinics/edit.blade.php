@@ -135,6 +135,23 @@
 	                                    <div class="invalid-feedback">{{ $message }}</div>
 	                                @enderror
 	                            </div>
+	                            <div class="col-md-6 mb-3">
+	                                <label for="country_id" class="form-label">
+	                                    <i class="fas fa-globe me-1"></i> Country
+	                                </label>
+	                                <select class="form-select @error('country_id') is-invalid @enderror" id="country_id" name="country_id">
+	                                    <option value="">— No country assigned —</option>
+	                                    @foreach(($countries ?? []) as $country)
+	                                        <option value="{{ $country->id }}" {{ old('country_id', $clinic->country_id) == $country->id ? 'selected' : '' }}>
+	                                            {{ $country->flag_emoji }} {{ $country->name }} ({{ $country->iso_code }})
+	                                        </option>
+	                                    @endforeach
+	                                </select>
+	                                @error('country_id')
+	                                    <div class="invalid-feedback">{{ $message }}</div>
+	                                @enderror
+	                                <div class="form-text">Used by the Vaccination module to auto-assign the country's default schedule.</div>
+	                            </div>
 	                        </div>
                         <div class="row">
                             <div class="col-md-12 mb-3">

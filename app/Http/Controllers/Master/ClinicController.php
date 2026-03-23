@@ -138,7 +138,8 @@ class ClinicController extends Controller
     {
         $specialities = $this->specialityOptions();
         $availableModules = \App\Models\Clinic::AVAILABLE_MODULES;
-        return view('master.clinics.create', compact('specialities', 'availableModules'));
+        $countries = \App\Models\Country::where('is_active', true)->orderBy('name')->get();
+        return view('master.clinics.create', compact('specialities', 'availableModules', 'countries'));
     }
 
     /**
@@ -199,6 +200,11 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'city')) { $clinicData['city'] = $request->input('city'); }
             if (Schema::hasColumn('clinics', 'area')) { $clinicData['area'] = $request->input('area'); }
             if (Schema::hasColumn('clinics', 'street')) { $clinicData['street'] = $request->input('street'); }
+
+            // Country assignment (for Vaccination module)
+            if (Schema::hasColumn('clinics', 'country_id')) {
+                $clinicData['country_id'] = $request->input('country_id');
+            }
 
             if (Schema::hasColumn('clinics', 'is_demo')) {
                 $clinicData['is_demo'] = $request->input('clinic_type') === 'demo';
@@ -281,8 +287,9 @@ class ClinicController extends Controller
 
         $specialities = $this->specialityOptions();
         $availableModules = \App\Models\Clinic::AVAILABLE_MODULES;
+        $countries = \App\Models\Country::where('is_active', true)->orderBy('name')->get();
 
-        return view('master.clinics.edit', compact('clinic', 'adminUser', 'specialities', 'availableModules'));
+        return view('master.clinics.edit', compact('clinic', 'adminUser', 'specialities', 'availableModules', 'countries'));
     }
 
     /**
@@ -362,6 +369,11 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'city')) { $updateData['city'] = $request->input('city'); }
             if (Schema::hasColumn('clinics', 'area')) { $updateData['area'] = $request->input('area'); }
             if (Schema::hasColumn('clinics', 'street')) { $updateData['street'] = $request->input('street'); }
+
+            // Country assignment (for Vaccination module)
+            if (Schema::hasColumn('clinics', 'country_id')) {
+                $updateData['country_id'] = $request->input('country_id');
+            }
 
             if (Schema::hasColumn('clinics', 'is_demo')) {
                 $updateData['is_demo'] = $request->input('clinic_type') === 'demo';
