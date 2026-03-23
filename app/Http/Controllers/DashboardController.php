@@ -185,7 +185,7 @@ class DashboardController extends Controller
         }
 
         // Prescription statistics (include Simple Prescriptions if available)
-        if ($user->canPrescribe() || $user->canManagePatients() ) {
+        if (($user->canPrescribe() || $user->canManagePatients()) && $user->canAccessModule('prescriptions')) {
             $prescriptionsQuery = Prescription::query();
             $prescriptionsQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
@@ -243,7 +243,7 @@ class DashboardController extends Controller
         }
 
         // Lab request statistics
-        if ($user->canPrescribe() || $user->canManagePatients() ) {
+        if (($user->canPrescribe() || $user->canManagePatients()) && $user->canAccessModule('lab')) {
             $labRequestsQuery = LabRequest::query();
             $labRequestsQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
@@ -270,7 +270,7 @@ class DashboardController extends Controller
         }
 
         // Dental lab request statistics (completed and pending)
-        if ($user->canPrescribe() || $user->canManagePatients() ) {
+        if (($user->canPrescribe() || $user->canManagePatients()) && $user->canAccessModule('dental')) {
             $dentalLabRequestsQuery = DentalLabRequest::query();
             $dentalLabRequestsQuery->where('clinic_id', $user->clinic_id);
 
@@ -304,7 +304,7 @@ class DashboardController extends Controller
         }
 
         // Lab request statistics (completed with results uploaded) - includes both dental and regular lab requests
-        if ($user->canPrescribe() || $user->canManagePatients() ) {
+        if (($user->canPrescribe() || $user->canManagePatients()) && ($user->canAccessModule('lab') || $user->canAccessModule('dental'))) {
             $completedLabCount = 0;
 
             // Count completed dental lab requests with results uploaded
@@ -367,7 +367,7 @@ class DashboardController extends Controller
         }
 
         // Diet plan statistics
-        if ($user->canPrescribe() || $user->canManagePatients() ) {
+        if (($user->canPrescribe() || $user->canManagePatients()) && $user->canAccessModule('nutrition')) {
             $dietPlansQuery = DietPlan::query();
             $dietPlansQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
@@ -392,7 +392,7 @@ class DashboardController extends Controller
         }
 
         // Financial statistics
-        if ($user->canAccessFinance() ) {
+        if ($user->canAccessFinance() && $user->canAccessModule('finance')) {
             $invoicesQuery = Invoice::query();
             $invoicesQuery->where('clinic_id', $user->clinic_id);
 
@@ -427,7 +427,7 @@ class DashboardController extends Controller
         $data['recentActivity'] = $this->getRecentActivity($user);
 
         // Appointment statistics (schema-aware)
-        if (class_exists('App\\Models\\Appointment')) {
+        if (class_exists('App\\Models\\Appointment') && $user->canAccessModule('appointments')) {
             $legacy = $this->isLegacyAppointments();
             if ($legacy) {
                 $base = DB::table('appointments')->where('clinic_id', $user->clinic_id);
@@ -485,7 +485,7 @@ class DashboardController extends Controller
         }
 
         // Nutrition plan statistics (exclude dental_dept role)
-        if (class_exists('App\Models\DietPlan') && $user->role !== 'dental_dept') {
+        if (class_exists('App\Models\DietPlan') && $user->role !== 'dental_dept' && $user->canAccessModule('nutrition')) {
             $nutritionQuery = \App\Models\DietPlan::query();
             $nutritionQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);
@@ -517,10 +517,12 @@ class DashboardController extends Controller
         }
 
         // Upcoming appointments (detailed)
-        $data['upcomingAppointmentsList'] = $this->getUpcomingAppointments($user);
+        if ($user->canAccessModule('appointments')) {
+            $data['upcomingAppointmentsList'] = $this->getUpcomingAppointments($user);
 
-        // Appointments by date (for the next 7 days)
-        $data['appointmentsByDate'] = $this->getAppointmentsByDate($user);
+            // Appointments by date (for the next 7 days)
+            $data['appointmentsByDate'] = $this->getAppointmentsByDate($user);
+        }
 
         // Quick stats for charts (period-aware)
         $data['monthlyStats'] = $this->getMonthlyStats($user, $period);

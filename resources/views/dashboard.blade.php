@@ -88,7 +88,7 @@
         </div>
         @endif
 
-        @if(isset($activePrescriptions))
+        @if(isset($activePrescriptions) && Auth::user()->canAccessModule('prescriptions'))
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-success text-white h-100">
                 <div class="card-body">
@@ -109,7 +109,7 @@
         </div>
         @endif
 
-        @if(isset($completedDentalLabRequests))
+        @if(isset($completedDentalLabRequests) && Auth::user()->canAccessModule('dental'))
         <div class="col-lg-3 col-md-6 mb-3">
 	            <div class="card bg-success text-white h-100" style="background-color: #27ae60 !important;">
 	                <div class="card-body">
@@ -128,7 +128,7 @@
         </div>
         @endif
 
-        @if(isset($completedLabRequests))
+        @if(isset($completedLabRequests) && Auth::user()->canAccessModule('lab'))
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card text-white h-100" style="background-color: #1e3a5f;">
                 <div class="card-body">
@@ -153,7 +153,7 @@
         </div>
         @endif
 
-        @if(isset($totalAppointments))
+        @if(isset($totalAppointments) && Auth::user()->canAccessModule('appointments'))
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-info text-white h-100">
                 <div class="card-body">
@@ -174,7 +174,7 @@
         </div>
         @endif
 
-        @if(isset($totalNutritionPlans))
+        @if(isset($totalNutritionPlans) && Auth::user()->canAccessModule('nutrition'))
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-success text-white h-100">
                 <div class="card-body">
@@ -195,7 +195,7 @@
         </div>
         @endif
 
-        @if(isset($totalRevenue))
+        @if(isset($totalRevenue) && Auth::user()->canAccessModule('finance'))
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="card bg-secondary text-white h-100">
                 <div class="card-body">
@@ -308,7 +308,7 @@
                         </div>
                         @endif
 
-                        @if(Auth::user()->hasPermission('prescriptions_create'))
+                        @if(Auth::user()->hasPermission('prescriptions_create') && Auth::user()->canAccessModule('prescriptions'))
                         <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('simple-prescriptions.create') }}" class="btn btn-outline-success w-100">
                                 <i class="fas fa-prescription d-block mb-1"></i>
@@ -317,7 +317,7 @@
                         </div>
                         @endif
 
-                        @if(Auth::user()->hasPermission('appointments_create'))
+                        @if(Auth::user()->hasPermission('appointments_create') && Auth::user()->canAccessModule('appointments'))
                         <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('appointments.create') }}" class="btn btn-outline-info w-100">
                                 <i class="fas fa-calendar-plus d-block mb-1"></i>
@@ -326,7 +326,7 @@
                         </div>
                         @endif
 
-                        @if(Auth::user()->hasPermission('nutrition_create'))
+                        @if(Auth::user()->hasPermission('nutrition_create') && Auth::user()->canAccessModule('nutrition'))
                         <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('nutrition.create') }}" class="btn btn-outline-success w-100">
                                 <i class="fas fa-apple-alt d-block mb-1"></i>
@@ -353,6 +353,7 @@
                         </div>
                         @endif
 
+                        @if(Auth::user()->canAccessModule('lab'))
                         @can('create-lab-requests')
                         <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('recommendations.lab-requests') }}" class="btn btn-outline-warning w-100">
@@ -361,7 +362,9 @@
                             </a>
                         </div>
                         @endcan
+                        @endif
 
+                        @if(Auth::user()->canAccessModule('radiology'))
                         @can('create-radiology-requests')
                         <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('recommendations.radiology.index') }}" class="btn btn-outline-primary w-100">
@@ -370,7 +373,9 @@
                             </a>
                         </div>
                         @endcan
+                        @endif
 
+                        @if(Auth::user()->canAccessModule('finance'))
                         @can('manage-finance')
                         <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('finance.invoices') }}" class="btn btn-outline-info w-100">
@@ -385,6 +390,7 @@
                             </a>
                         </div>
                         @endcan
+                        @endif
 
 
                         @can('access-section', 'settings')
