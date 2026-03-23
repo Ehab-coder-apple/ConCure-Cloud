@@ -1793,7 +1793,7 @@
                                     </a>
                                 </li>
                                 @endif
-                                @if(Auth::user()->role === 'admin')
+                                @if(Auth::user()->role === 'admin' && Auth::user()->canAccessModule('whatsapp'))
                                 <li class="submenu-item">
                                     <a href="{{ route('whatsapp.index') }}" class="submenu-link {{ request()->routeIs('whatsapp.*') ? 'active' : '' }}">
                                         <i class="submenu-icon fab fa-whatsapp"></i>

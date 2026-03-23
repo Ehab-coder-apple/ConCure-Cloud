@@ -301,7 +301,7 @@ class Clinic extends Model
         'prescriptions' => 'Prescriptions',
         'appointments'  => 'Appointments',
         'medicines'     => 'Medicine Inventory',
-        'nutrition'     => 'Nutrition Plans',
+        'nutrition'     => 'Nutrition & Diet Planning',
         'food_database' => 'Food Database',
         'forms'         => 'Forms',
         'lab'           => 'Laboratory',
@@ -311,8 +311,9 @@ class Clinic extends Model
         'ai_assistant'  => 'AI Medical Assistant',
         'image_bank'    => 'Medical Image Bank',
         'messages'      => 'Messages',
-        'pediatric'     => 'Pediatric Growth',
+        'pediatric'     => 'Pediatric Module',
         'vaccination'   => 'Vaccination Management',
+        'whatsapp'      => 'WhatsApp Messaging',
     ];
 
     /**

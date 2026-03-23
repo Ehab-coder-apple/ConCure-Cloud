@@ -29,6 +29,7 @@ class CheckModuleAccess
         'messages'              => 'messages',
         'pediatric'             => 'pediatric',
         'vaccination'           => 'vaccination',
+        'whatsapp'              => 'whatsapp',
     ];
 
     /**
