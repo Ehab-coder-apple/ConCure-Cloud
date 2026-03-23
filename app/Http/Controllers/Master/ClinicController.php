@@ -201,9 +201,11 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'area')) { $clinicData['area'] = $request->input('area'); }
             if (Schema::hasColumn('clinics', 'street')) { $clinicData['street'] = $request->input('street'); }
 
-            // Country assignment (for Vaccination module)
+            // Country assignment (for Vaccination module) — default to Iraq if none selected
             if (Schema::hasColumn('clinics', 'country_id')) {
-                $clinicData['country_id'] = $request->input('country_id');
+                $countryId = $request->input('country_id')
+                    ?: \App\Models\Country::where('iso_code', 'IQ')->value('id');
+                $clinicData['country_id'] = $countryId;
             }
 
             if (Schema::hasColumn('clinics', 'is_demo')) {

@@ -117,10 +117,13 @@
 	                                <label for="country_id" class="form-label">
 	                                    <i class="fas fa-globe me-1"></i> Country
 	                                </label>
+	                                @php
+	                                    $defaultCountryId = old('country_id', ($countries ?? collect())->firstWhere('iso_code', 'IQ')?->id);
+	                                @endphp
 	                                <select class="form-select @error('country_id') is-invalid @enderror" id="country_id" name="country_id">
 	                                    <option value="">— No country assigned —</option>
 	                                    @foreach(($countries ?? []) as $country)
-	                                        <option value="{{ $country->id }}" {{ old('country_id') == $country->id ? 'selected' : '' }}>
+	                                        <option value="{{ $country->id }}" {{ $defaultCountryId == $country->id ? 'selected' : '' }}>
 	                                            {{ $country->flag_emoji }} {{ $country->name }} ({{ $country->iso_code }})
 	                                        </option>
 	                                    @endforeach
