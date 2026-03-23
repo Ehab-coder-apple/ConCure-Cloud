@@ -217,6 +217,76 @@
         @endif
     </div>
 
+    {{-- Vaccination Alerts Widget --}}
+    @if(isset($vaccinationAlerts))
+    <div class="row mb-4">
+        <div class="col-12">
+            @if(count($vaccinationAlerts) > 0)
+            <div class="card border-warning shadow-sm">
+                <div class="card-header bg-warning bg-opacity-10 border-warning d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-warning">
+                        <i class="fas fa-syringe me-2"></i>
+                        {{ __('Vaccination Alerts') }}
+                        <span class="badge bg-warning text-dark ms-2">{{ count($vaccinationAlerts) }}</span>
+                    </h5>
+                    <a href="{{ route('vaccination.index') }}" class="btn btn-sm btn-outline-warning">
+                        {{ __('View All') }} <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ __('Patient') }}</th>
+                                    <th>{{ __('Vaccine') }}</th>
+                                    <th>{{ __('Dose') }}</th>
+                                    <th>{{ __('Scheduled Date') }}</th>
+                                    <th>{{ __('Due') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($vaccinationAlerts as $alert)
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('vaccination.show', $alert['patient_id']) }}" class="text-decoration-none fw-semibold">
+                                            {{ $alert['patient_name'] }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">{{ $alert['vaccine_code'] }}</span>
+                                        {{ $alert['vaccine_name'] }}
+                                    </td>
+                                    <td><span class="badge bg-secondary">{{ __('Dose') }} {{ $alert['dose_number'] }}</span></td>
+                                    <td>{{ $alert['scheduled_date'] }}</td>
+                                    <td>
+                                        @if($alert['days_remaining'] === 0)
+                                            <span class="badge bg-danger">{{ $alert['days_label'] }}</span>
+                                        @elseif($alert['days_remaining'] === 1)
+                                            <span class="badge bg-warning text-dark">{{ $alert['days_label'] }}</span>
+                                        @else
+                                            <span class="badge bg-info text-dark">{{ $alert['days_label'] }}</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @else
+            <div class="card border-success shadow-sm">
+                <div class="card-body text-center py-3">
+                    <i class="fas fa-check-circle text-success fa-lg me-2"></i>
+                    <span class="text-success fw-semibold">{{ __('All vaccinations up to date — no doses due in the next 3 days.') }}</span>
+                </div>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <!-- Quick Actions -->
     <div class="row mb-4">
         <div class="col-12">

@@ -13,6 +13,7 @@ use App\Models\Receipt;
 use App\Models\User;
 use App\Models\AuditLog;
 use App\Models\Clinic;
+use App\Models\PatientVaccination;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -523,7 +524,57 @@ class DashboardController extends Controller
 
         // Quick stats for charts (period-aware)
         $data['monthlyStats'] = $this->getMonthlyStats($user, $period);
+
+        // Vaccination alerts (next 3 days) — only if pediatric module is enabled
+        if ($user->canAccessModule('pediatric') && Schema::hasTable('patient_vaccinations')) {
+            $data['vaccinationAlerts'] = $this->getVaccinationAlerts($user);
+        }
+
         return $data;
+    }
+
+    /**
+     * Get vaccination alerts — upcoming vaccinations due within the next 3 days.
+     */
+    private function getVaccinationAlerts($user): array
+    {
+        $today = Carbon::today();
+        $threeDaysLater = Carbon::today()->addDays(3);
+
+        // Age cutoff: patients must be under 20 years old
+        $ageCutoff = Carbon::now()->subYears(20);
+
+        $alerts = PatientVaccination::with(['patient', 'vaccine.translations'])
+            ->where('status', 'upcoming')
+            ->whereBetween('scheduled_date', [$today, $threeDaysLater])
+            ->whereHas('patient', function ($q) use ($user, $ageCutoff) {
+                $q->where('clinic_id', $user->clinic_id)
+                  ->where('date_of_birth', '>', $ageCutoff);
+            })
+            ->orderBy('scheduled_date', 'asc')
+            ->limit(10)
+            ->get()
+            ->map(function ($v) {
+                $daysRemaining = Carbon::today()->diffInDays(Carbon::parse($v->scheduled_date), false);
+                return [
+                    'id' => $v->id,
+                    'patient_name' => $v->patient->full_name ?? ($v->patient->first_name . ' ' . $v->patient->last_name),
+                    'patient_id' => $v->patient->id,
+                    'vaccine_name' => $v->vaccine->getLocalizedName(app()->getLocale()),
+                    'vaccine_code' => $v->vaccine->code,
+                    'dose_number' => $v->dose_number,
+                    'scheduled_date' => $v->scheduled_date->format('Y-m-d'),
+                    'days_remaining' => $daysRemaining,
+                    'days_label' => match (true) {
+                        $daysRemaining === 0 => __('Today'),
+                        $daysRemaining === 1 => __('Tomorrow'),
+                        default => __('In :days days', ['days' => $daysRemaining]),
+                    },
+                ];
+            })
+            ->toArray();
+
+        return $alerts;
     }
 
     /**
