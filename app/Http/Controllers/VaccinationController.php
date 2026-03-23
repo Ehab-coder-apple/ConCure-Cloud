@@ -173,9 +173,20 @@ class VaccinationController extends Controller
      */
     public function adminIndex()
     {
-        $countries = Country::with(['vaccinationSchedules' => function ($q) {
+        $user = auth()->user();
+        $query = Country::with(['vaccinationSchedules' => function ($q) {
             $q->withCount('items');
-        }])->orderBy('name')->get();
+        }])->orderBy('name');
+
+        // Non-master-admin tenants: only show their clinic's country
+        if ($user->role !== 'master_admin' && $user->clinic_id) {
+            $clinicCountryId = $user->clinic?->country_id;
+            if ($clinicCountryId) {
+                $query->where('id', $clinicCountryId);
+            }
+        }
+
+        $countries = $query->get();
 
         return view('vaccination.admin.index', compact('countries'));
     }
