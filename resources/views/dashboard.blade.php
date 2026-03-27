@@ -266,7 +266,7 @@
     @endif
 
     {{-- Vaccination Alerts Widget --}}
-    @if(isset($vaccinationAlerts))
+    @if(auth()->user()->canAccessSection('pediatric') && auth()->user()->canAccessModule('vaccination') && isset($vaccinationAlerts))
     <div class="row mb-4">
         <div class="col-12">
             @if(count($vaccinationAlerts) > 0)
