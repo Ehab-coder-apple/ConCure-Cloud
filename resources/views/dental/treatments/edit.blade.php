@@ -215,7 +215,7 @@
                             <!-- Paid Amount -->
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">{{ __('Paid Amount') }}</label>
-                                <input type="number" name="paid_amount" class="form-control" value="{{ old('paid_amount', $dentalTreatment->amount_paid) }}" step="0.01" min="0">
+                                <input type="number" name="paid_amount" class="form-control" value="{{ old('paid_amount', $dentalTreatment->paid_amount) }}" step="0.01" min="0">
                                 @error('paid_amount')
                                     <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror

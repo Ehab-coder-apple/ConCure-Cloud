@@ -46,6 +46,12 @@
                                 <i class="fas fa-file-medical me-2"></i>
                                 {{ __('Report Templates') }}
                             </a>
+                            @if((auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin()) && auth()->user()->canAccessModule('whatsapp'))
+                            <a href="{{ route('notifications.settings') }}" class="list-group-item list-group-item-action">
+                                <i class="fab fa-whatsapp me-2 text-success"></i>
+                                {{ __('Notification Settings') }}
+                            </a>
+                            @endif
                             <a href="#system" class="list-group-item list-group-item-action {{ $activeTab === 'system' ? 'active' : '' }}" data-bs-toggle="pill">
                                 <i class="fas fa-server me-2"></i>
                                 {{ __('System Settings') }}

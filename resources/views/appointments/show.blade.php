@@ -298,6 +298,13 @@
                                     {{ __('Send via WhatsApp') }}
                                 </button>
 
+                                @if(auth()->user()->canAccessModule('whatsapp'))
+                                <button type="button" class="btn btn-outline-success" id="sendReminderBtn" onclick="sendWhatsAppReminder()">
+                                    <i class="fab fa-whatsapp me-2"></i>
+                                    {{ __('Send WhatsApp Reminder') }}
+                                </button>
+                                @endif
+
                                 <button type="button" class="btn btn-outline-danger" onclick="deleteAppointment()">
                                     <i class="fas fa-trash me-2"></i>
                                     {{ __('Delete Appointment') }}
@@ -402,6 +409,43 @@ function shareAppointmentWhatsApp() {
   const patientWhatsApp = "{{ $appointment->patient_phone ? preg_replace('/[^0-9]/', '', $appointment->patient_phone) : '' }}";
   const url = patientWhatsApp ? `https://wa.me/${patientWhatsApp}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
   window.open(url, '_blank');
+}
+
+function sendWhatsAppReminder() {
+    const btn = document.getElementById('sendReminderBtn');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>{{ __("Sending...") }}';
+
+    fetch('{{ route("notifications.send-reminder") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+            type: '{{ $appointment->type === "follow_up" ? "follow_up_reminder" : "appointment_reminder" }}',
+            reference_id: {{ $appointment->id }}
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            btn.innerHTML = '<i class="fas fa-check me-2"></i>{{ __("Sent!") }}';
+            btn.classList.replace('btn-outline-success', 'btn-success');
+            setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.replace('btn-success', 'btn-outline-success'); }, 3000);
+        } else {
+            btn.innerHTML = '<i class="fas fa-times me-2"></i>' + (data.message || '{{ __("Failed") }}');
+            setTimeout(() => { btn.innerHTML = originalHtml; }, 3000);
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        alert('{{ __("Network error. Please try again.") }}');
+    });
 }
 
 </script>

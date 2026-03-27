@@ -49,7 +49,7 @@ class DentalTreatment extends Model
         'estimated_cost' => 'decimal:2',
         'actual_cost' => 'decimal:2',
         'paid_amount' => 'decimal:2',
-        'scheduled_date' => 'date',
+        'scheduled_date' => 'datetime',
         'completed_date' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

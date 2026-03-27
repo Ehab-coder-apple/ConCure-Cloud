@@ -798,8 +798,11 @@ class FoodController extends Controller
             $filename = 'foods_export_' . date('Y-m-d_His') . '.xlsx';
             $clinicId = $user->clinic_id;
 
+            // System data restriction: non-master users cannot export system-uploaded foods
+            $excludeSystemData = !($user->isSuperAdmin() || $user->isMasterAdmin());
+
             return Excel::download(
-                new FoodsExport($clinicId),
+                new FoodsExport($clinicId, $excludeSystemData),
                 $filename,
                 \Maatwebsite\Excel\Excel::XLSX,
                 [

@@ -81,11 +81,15 @@
                                 <i class="fas fa-stethoscope text-primary me-1"></i>
                                 {{ __('Diagnosis') }}
                             </label>
-                            <textarea class="form-control @error('diagnosis') is-invalid @enderror" 
-                                      id="diagnosis" name="diagnosis" rows="3"
-                                      placeholder="{{ __('Enter diagnosis...') }}">{{ old('diagnosis', $prescription->diagnosis) }}</textarea>
+                            <div class="voice-input-wrapper">
+                                <textarea class="form-control @error('diagnosis') is-invalid @enderror"
+                                          id="diagnosis" name="diagnosis" rows="3"
+                                          placeholder="{{ __('Enter diagnosis...') }}">{{ old('diagnosis', $prescription->diagnosis) }}</textarea>
+                                <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                                <div class="voice-status"></div>
+                            </div>
                             @error('diagnosis')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
 
@@ -95,11 +99,15 @@
                                 <i class="fas fa-sticky-note text-primary me-1"></i>
                                 {{ __('Notes') }}
                             </label>
-                            <textarea class="form-control @error('notes') is-invalid @enderror" 
-                                      id="notes" name="notes" rows="2"
-                                      placeholder="{{ __('Additional notes...') }}">{{ old('notes', $prescription->notes) }}</textarea>
+                            <div class="voice-input-wrapper">
+                                <textarea class="form-control @error('notes') is-invalid @enderror"
+                                          id="notes" name="notes" rows="2"
+                                          placeholder="{{ __('Additional notes...') }}">{{ old('notes', $prescription->notes) }}</textarea>
+                                <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                                <div class="voice-status"></div>
+                            </div>
                             @error('notes')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
 
@@ -151,43 +159,62 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">{{ __('Medicine Name') }}</label>
-                    <div class="medicine-select-container">
-                        <select class="form-select medicine-select" name="medicines[0][name]" onchange="handleMedicineSelect(this)">
-                            <option value="">{{ __('Select medicine...') }}</option>
-                            @foreach($medicines as $medicine)
-                                <option value="{{ $medicine->name }}"
-                                        data-dosage="{{ $medicine->dosage }}"
-                                        data-form="{{ $medicine->form }}">
-                                    {{ $medicine->name }}
-                                    @if($medicine->dosage) - {{ $medicine->dosage }} @endif
-                                    @if($medicine->form) ({{ ucfirst($medicine->form) }}) @endif
-                                </option>
-                            @endforeach
-                            <option value="custom" class="text-primary">{{ __('+ Add New Medicine') }}</option>
-                        </select>
-                        <input type="text" class="form-control mt-2 custom-medicine-input"
-                               placeholder="{{ __('Enter new medicine name...') }}"
-                               style="display: none;"
-                               onblur="handleCustomMedicine(this)">
+                    <div class="medicine-select-container" style="position: relative;">
+                        <div class="d-flex align-items-start gap-1">
+                            <div style="flex: 1;">
+                                <select class="form-select medicine-select" name="medicines[0][name]" onchange="handleMedicineSelect(this)">
+                                    <option value="">{{ __('Select medicine...') }}</option>
+                                    @foreach($medicines as $medicine)
+                                        <option value="{{ $medicine->name }}"
+                                                data-dosage="{{ $medicine->dosage }}"
+                                                data-form="{{ $medicine->form }}">
+                                            {{ $medicine->name }}
+                                            @if($medicine->dosage) - {{ $medicine->dosage }} @endif
+                                            @if($medicine->form) ({{ ucfirst($medicine->form) }}) @endif
+                                        </option>
+                                    @endforeach
+                                    <option value="custom" class="text-primary">{{ __('+ Add New Medicine') }}</option>
+                                </select>
+                                <input type="text" class="form-control mt-2 custom-medicine-input"
+                                       placeholder="{{ __('Enter new medicine name...') }}"
+                                       style="display: none;"
+                                       onblur="handleCustomMedicine(this)">
+                            </div>
+                            <button type="button" class="btn-voice btn-voice-medicine" title="{{ __('Dictate medicine name') }}" style="margin-top: 4px;"><i class="fas fa-microphone"></i></button>
+                        </div>
+                        <div class="voice-status voice-status-medicine"></div>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <label class="form-label">{{ __('Dosage') }}</label>
-                        <input type="text" class="form-control" name="medicines[0][dosage]" placeholder="{{ __('e.g., 1 tablet') }}">
+                        <div class="voice-input-wrapper">
+                            <input type="text" class="form-control" name="medicines[0][dosage]" placeholder="{{ __('e.g., 1 tablet') }}">
+                            <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                        </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">{{ __('Frequency') }}</label>
-                        <input type="text" class="form-control" name="medicines[0][frequency]" placeholder="{{ __('e.g., Twice daily') }}">
+                        <div class="voice-input-wrapper">
+                            <input type="text" class="form-control" name="medicines[0][frequency]" placeholder="{{ __('e.g., Twice daily') }}">
+                            <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                        </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">{{ __('Duration') }}</label>
-                        <input type="text" class="form-control" name="medicines[0][duration]" placeholder="{{ __('e.g., 7 days') }}">
+                        <div class="voice-input-wrapper">
+                            <input type="text" class="form-control" name="medicines[0][duration]" placeholder="{{ __('e.g., 7 days') }}">
+                            <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                        </div>
                     </div>
                 </div>
                 <div class="col-12">
                     <label class="form-label">{{ __('Instructions') }}</label>
-                    <textarea class="form-control" name="medicines[0][instructions]" rows="2" placeholder="{{ __('Special instructions...') }}"></textarea>
+                    <div class="voice-input-wrapper">
+                        <textarea class="form-control" name="medicines[0][instructions]" rows="2" placeholder="{{ __('Special instructions...') }}"></textarea>
+                        <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                        <div class="voice-status"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -243,6 +270,9 @@ function addMedicine(name = '', dosage = '', frequency = '', duration = '', inst
     });
     
     container.appendChild(newMedicine);
+
+    // Bind voice buttons on the new medicine row
+    if (typeof VoiceInput !== 'undefined') VoiceInput.bindAll();
 }
 
 function removeMedicine(button) {
@@ -316,4 +346,5 @@ document.addEventListener('DOMContentLoaded', function() {
     @endif
 });
 </script>
+@include('partials.voice-input')
 @endsection

@@ -211,7 +211,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/import', [PatientController::class, 'showImport'])->name('import');
         Route::post('/import', [PatientController::class, 'import'])->name('import.process');
         Route::get('/import/template', [PatientController::class, 'downloadTemplate'])->name('import.template');
-        Route::get('/export', [PatientController::class, 'export'])->name('export');
+        Route::get('/export', [PatientController::class, 'export'])->name('export')->middleware('export.check');
 
         // Bulk operations (must be before parameterized routes)
         Route::post('/bulk-delete', [PatientController::class, 'bulkDelete'])->name('bulk-delete');
@@ -399,7 +399,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/import', [App\Http\Controllers\MedicineController::class, 'showImport'])->name('import');
         Route::post('/import', [App\Http\Controllers\MedicineController::class, 'import'])->name('import.process');
         Route::get('/import/template', [App\Http\Controllers\MedicineController::class, 'downloadTemplate'])->name('import.template');
-        Route::get('/export', [App\Http\Controllers\MedicineController::class, 'export'])->name('export');
+        Route::get('/export', [App\Http\Controllers\MedicineController::class, 'export'])->name('export')->middleware('export.check');
 
         // Bulk operations
         Route::post('/bulk-delete', [App\Http\Controllers\MedicineController::class, 'bulkDelete'])->name('bulk-delete');
@@ -670,6 +670,16 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::put('/{labRequest}', [App\Http\Controllers\DentalLabRequestController::class, 'update'])->name('update');
             Route::delete('/{labRequest}', [App\Http\Controllers\DentalLabRequestController::class, 'destroy'])->name('destroy');
         });
+
+        // Dental External Labs Management
+        Route::prefix('external-labs')->name('external-labs.')->group(function () {
+            Route::get('/', [App\Http\Controllers\DentalExternalLabController::class, 'index'])->name('index');
+            Route::post('/', [App\Http\Controllers\DentalExternalLabController::class, 'store'])->name('store');
+            Route::get('/{dentalLab}', [App\Http\Controllers\DentalExternalLabController::class, 'show'])->name('show');
+            Route::put('/{dentalLab}', [App\Http\Controllers\DentalExternalLabController::class, 'update'])->name('update');
+            Route::delete('/{dentalLab}', [App\Http\Controllers\DentalExternalLabController::class, 'destroy'])->name('destroy');
+            Route::patch('/{dentalLab}/toggle-status', [App\Http\Controllers\DentalExternalLabController::class, 'toggleStatus'])->name('toggle-status');
+        });
     });
 
     // Pediatric Growth Chart Routes
@@ -697,6 +707,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::post('/drugs/form', [App\Http\Controllers\PediatricMedicationController::class, 'storeDrugForm'])->name('drug-form.store');
             Route::post('/drugs/rule', [App\Http\Controllers\PediatricMedicationController::class, 'storeDosageRule'])->name('dosage-rule.store');
             Route::delete('/drugs/{drug}', [App\Http\Controllers\PediatricMedicationController::class, 'destroyDrug'])->name('drug.destroy');
+            Route::delete('/drugs-tenant/delete-all', [App\Http\Controllers\PediatricMedicationController::class, 'destroyTenantDrugs'])->name('drugs.destroy-tenant');
 
             // Import
             Route::get('/import', [App\Http\Controllers\PediatricMedicationController::class, 'importPage'])->name('import');
@@ -746,7 +757,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/import', [FoodController::class, 'showImport'])->name('import');
         Route::post('/import', [FoodController::class, 'import'])->name('import.process');
         Route::get('/import/template', [FoodController::class, 'downloadTemplate'])->name('import.template');
-        Route::get('/export', [FoodController::class, 'export'])->name('export');
+        Route::get('/export', [FoodController::class, 'export'])->name('export')->middleware('export.check');
 
         // Search route must be before parameterized routes
         Route::get('/search', [FoodController::class, 'search'])->name('search');
@@ -897,7 +908,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/patients', [App\Http\Controllers\WhatsAppController::class, 'patientsList'])->name('patients');
         Route::post('/broadcast', [App\Http\Controllers\WhatsAppController::class, 'broadcast'])->name('broadcast');
         Route::post('/configure/twilio', [App\Http\Controllers\WhatsAppController::class, 'configureTwilio'])->name('configure.twilio');
+    });
 
+    // Notification Settings (WhatsApp auto-reminders)
+    Route::prefix('notifications')->middleware('module:whatsapp')->group(function () {
+        // Settings page — clinic admins only
+        Route::get('/settings', [App\Http\Controllers\NotificationSettingsController::class, 'index'])->name('notifications.settings')->middleware('role:admin,super_admin');
+        Route::post('/settings', [App\Http\Controllers\NotificationSettingsController::class, 'update'])->name('notifications.settings.update')->middleware('role:admin,super_admin');
+        // Manual reminder trigger — any authenticated clinic user
+        Route::post('/send-reminder', [App\Http\Controllers\NotificationSettingsController::class, 'sendReminder'])->name('notifications.send-reminder');
     });
 
 	    // Internal Messaging & Transfers

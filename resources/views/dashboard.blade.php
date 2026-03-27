@@ -217,6 +217,54 @@
         @endif
     </div>
 
+    {{-- Vaccination Delayed / Missed Summary --}}
+    @if(auth()->user()->canAccessModule('pediatric') && isset($vaccinationStats))
+    <div class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#fef3c7;">
+                        <i class="fas fa-clock text-warning fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold lh-1 text-warning">{{ $vaccinationStats['delayed'] }}</div>
+                        <small class="text-muted">{{ __('Delayed Vaccinations') }}</small>
+                        <div class="text-muted" style="font-size:.7rem;">{{ __('Overdue ≤ 30 days') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#fee2e2;">
+                        <i class="fas fa-exclamation-triangle text-danger fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold lh-1 text-danger">{{ $vaccinationStats['missed'] }}</div>
+                        <small class="text-muted">{{ __('Missed Vaccinations') }}</small>
+                        <div class="text-muted" style="font-size:.7rem;">{{ __('Overdue > 30 days') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#dbeafe;">
+                        <i class="fas fa-syringe text-primary fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold lh-1 text-primary">{{ $vaccinationStats['total_overdue'] }}</div>
+                        <small class="text-muted">{{ __('Total Overdue') }}</small>
+                        <div class="text-muted" style="font-size:.7rem;">{{ __('Delayed + Missed') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Vaccination Alerts Widget --}}
     @if(isset($vaccinationAlerts))
     <div class="row mb-4">

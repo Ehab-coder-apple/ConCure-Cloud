@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const patientInfoBar = document.getElementById('patientInfoBar');
 
     const drugForms = @json($drugFormsData);
-    const drugsData = @json($drugs->map(fn($d) => ['id' => $d->id, 'name' => $d->generic_name . ($d->brand_name ? ' ('.$d->brand_name.')' : '')]));
+    const drugsData = @json($drugs->map(fn($d) => ['id' => $d->id, 'name' => $d->generic_name . ($d->brand_name ? ' ('.$d->brand_name.')' : ''), 'category' => filled($d->category) ? $d->category : 'Uncategorized']));
 
     let rowCounter = 0;
     let patientWeight = null;
@@ -192,8 +192,23 @@ document.addEventListener('DOMContentLoaded', function() {
         showTable();
         const idx = rowCounter++;
 
+        // Build optgroup-based drug options grouped by category
         let drugOpts = '<option value="">-- Drug --</option>';
-        drugsData.forEach(d => { drugOpts += `<option value="${d.id}">${d.name}</option>`; });
+        const grouped = {};
+        drugsData.forEach(d => {
+            if (!grouped[d.category]) grouped[d.category] = [];
+            grouped[d.category].push(d);
+        });
+        const sortedCats = Object.keys(grouped).sort((a, b) => {
+            if (a === 'Uncategorized') return 1;
+            if (b === 'Uncategorized') return -1;
+            return a.localeCompare(b);
+        });
+        sortedCats.forEach(cat => {
+            drugOpts += `<optgroup label="${cat}">`;
+            grouped[cat].forEach(d => { drugOpts += `<option value="${d.id}">${d.name}</option>`; });
+            drugOpts += '</optgroup>';
+        });
 
         const tr = document.createElement('tr');
         tr.dataset.idx = idx;

@@ -1573,12 +1573,31 @@
                         @endif
 
                         <!-- Laboratory -->
-                        @if(Auth::user()->canViewLabRequests() && Auth::user()->canAccessModule('lab'))
-                        <li class="nav-item">
-                            <a href="{{ route('recommendations.lab-requests') }}" class="nav-link {{ request()->routeIs('recommendations.lab-requests*') ? 'active' : '' }}">
+                        @if((Auth::user()->canViewLabRequests() && Auth::user()->canAccessModule('lab')) || in_array(Auth::user()->role, ['admin', 'program_owner']))
+                        <li class="nav-item has-submenu {{ request()->routeIs('recommendations.lab-requests*') || request()->routeIs('external-labs.*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link submenu-toggle">
                                 <i class="nav-icon fas fa-flask"></i>
                                 <span class="nav-text">{{ __('Laboratory') }}</span>
+                                <i class="submenu-arrow fas fa-chevron-right"></i>
                             </a>
+                            <ul class="submenu">
+                                @if(Auth::user()->canViewLabRequests() && Auth::user()->canAccessModule('lab'))
+                                <li class="submenu-item">
+                                    <a href="{{ route('recommendations.lab-requests') }}" class="submenu-link {{ request()->routeIs('recommendations.lab-requests*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-list"></i>
+                                        <span class="submenu-text">{{ __('Lab Requests') }}</span>
+                                    </a>
+                                </li>
+                                @endif
+                                @if(in_array(Auth::user()->role, ['admin', 'program_owner']))
+                                <li class="submenu-item">
+                                    <a href="{{ route('external-labs.index') }}" class="submenu-link {{ request()->routeIs('external-labs.*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-building"></i>
+                                        <span class="submenu-text">{{ __('Add New Labs') }}</span>
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
                         </li>
                         @endif
 
@@ -1602,13 +1621,40 @@
                         </li>
                         @endif
 
-                        <!-- Forms -->
-                        @if(Auth::user()->canAccessSection('forms') && Auth::user()->canAccessModule('forms'))
-                        <li class="nav-item">
-                            <a href="{{ url('/forms/templates') }}" class="nav-link {{ request()->is('forms*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-file-alt"></i>
-                                <span class="nav-text">{{ __('Forms') }}</span>
+                        <!-- Templates (under Clinical) -->
+                        @if(Auth::user()->canAccessSection('forms') && Auth::user()->canAccessModule('forms') || Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner')
+                        <li class="nav-item has-submenu {{ request()->is('forms*') || request()->routeIs('admin.custom-vital-signs.*') || request()->routeIs('admin.checkup-templates.*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link submenu-toggle">
+                                <i class="nav-icon fas fa-clipboard-list"></i>
+                                <span class="nav-text">{{ __('Templates') }}</span>
+                                <i class="submenu-arrow fas fa-chevron-right"></i>
                             </a>
+                            <ul class="submenu">
+                                @if(Auth::user()->canAccessSection('forms') && Auth::user()->canAccessModule('forms'))
+                                <li class="submenu-item">
+                                    <a href="{{ url('/forms/templates') }}" class="submenu-link {{ request()->is('forms*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-file-alt"></i>
+                                        <span class="submenu-text">{{ __('Forms') }}</span>
+                                    </a>
+                                </li>
+                                @endif
+                                @if(Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner')
+                                <li class="submenu-item">
+                                    <a href="{{ route('admin.custom-vital-signs.index') }}" class="submenu-link {{ request()->routeIs('admin.custom-vital-signs.*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-stethoscope"></i>
+                                        <span class="submenu-text">{{ __('Vital Signs Templates') }}</span>
+                                    </a>
+                                </li>
+                                @endif
+                                @if(Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner')
+                                <li class="submenu-item">
+                                    <a href="{{ route('admin.checkup-templates.index') }}" class="submenu-link {{ request()->routeIs('admin.checkup-templates.*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-clipboard-list"></i>
+                                        <span class="submenu-text">{{ __('Checkup Templates') }}</span>
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
                         </li>
                         @endif
 
@@ -1645,6 +1691,14 @@
                                     <a href="{{ route('dental.lab-requests.index') }}" class="submenu-link {{ request()->routeIs('dental.lab-requests.*') ? 'active' : '' }}">
                                         <i class="fas fa-flask me-2"></i>
                                         {{ __('Dental Lab') }}
+                                    </a>
+                                </li>
+                                @endif
+                                @if(Auth::user()->isSuperAdmin() || Auth::user()->isClinicAdmin())
+                                <li class="submenu-item">
+                                    <a href="{{ route('dental.external-labs.index') }}" class="submenu-link {{ request()->routeIs('dental.external-labs.*') ? 'active' : '' }}">
+                                        <i class="fas fa-building me-2"></i>
+                                        {{ __('Add Dental Labs') }}
                                     </a>
                                 </li>
                                 @endif
@@ -1754,7 +1808,7 @@
 
                         <!-- Administration -->
                         @if(Auth::user()->canAccessSection('users') || Auth::user()->canAccessSection('settings') || Auth::user()->role === 'admin')
-                        <li class="nav-item has-submenu {{ request()->routeIs(['users.*', 'settings.*', 'external-labs.*', 'whatsapp.*', 'admin.custom-vital-signs.*', 'admin.checkup-templates.*']) ? 'active' : '' }}">
+                        <li class="nav-item has-submenu {{ request()->routeIs(['users.*', 'settings.*', 'whatsapp.*']) ? 'active' : '' }}">
                             <a href="#" class="nav-link submenu-toggle">
                                 <i class="nav-icon fas fa-cogs"></i>
                                 <span class="nav-text">{{ __('Administration') }}</span>
@@ -1769,30 +1823,8 @@
                                     </a>
                                 </li>
                                 @endif
-                                @if(in_array(Auth::user()->role, ['admin', 'program_owner']))
-                                <li class="submenu-item">
-                                    <a href="{{ route('external-labs.index') }}" class="submenu-link {{ request()->routeIs('external-labs.*') ? 'active' : '' }}">
-                                        <i class="submenu-icon fas fa-flask"></i>
-                                        <span class="submenu-text">{{ __('External Labs') }}</span>
-                                    </a>
-                                </li>
-                                @endif
-                                @if(Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner')
-                                <li class="submenu-item">
-                                    <a href="{{ route('admin.custom-vital-signs.index') }}" class="submenu-link {{ request()->routeIs('admin.custom-vital-signs.*') ? 'active' : '' }}">
-                                        <i class="submenu-icon fas fa-stethoscope"></i>
-                                        <span class="submenu-text">{{ __('Custom Vital Signs') }}</span>
-                                    </a>
-                                </li>
-                                @endif
-                                @if(Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner')
-                                <li class="submenu-item">
-                                    <a href="{{ route('admin.checkup-templates.index') }}" class="submenu-link {{ request()->routeIs('admin.checkup-templates.*') ? 'active' : '' }}">
-                                        <i class="submenu-icon fas fa-clipboard-list"></i>
-                                        <span class="submenu-text">{{ __('Checkup Templates') }}</span>
-                                    </a>
-                                </li>
-                                @endif
+
+
                                 @if(Auth::user()->role === 'admin' && Auth::user()->canAccessModule('whatsapp'))
                                 <li class="submenu-item">
                                     <a href="{{ route('whatsapp.index') }}" class="submenu-link {{ request()->routeIs('whatsapp.*') ? 'active' : '' }}">

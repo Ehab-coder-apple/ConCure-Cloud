@@ -527,9 +527,10 @@ class DashboardController extends Controller
         // Quick stats for charts (period-aware)
         $data['monthlyStats'] = $this->getMonthlyStats($user, $period);
 
-        // Vaccination alerts (next 3 days) — only if pediatric module is enabled
+        // Vaccination alerts (next 3 days) + delayed/missed stats — only if pediatric module is enabled
         if ($user->canAccessModule('pediatric') && Schema::hasTable('patient_vaccinations')) {
             $data['vaccinationAlerts'] = $this->getVaccinationAlerts($user);
+            $data['vaccinationStats'] = $this->getVaccinationStats($user);
         }
 
         return $data;
@@ -577,6 +578,45 @@ class DashboardController extends Controller
             ->toArray();
 
         return $alerts;
+    }
+
+    /**
+     * Get delayed and missed vaccination statistics for the clinic.
+     *
+     * Delayed: scheduled_date is past but within the last 30 days, status is not 'on_time' or 'skipped'.
+     * Missed:  scheduled_date is more than 30 days overdue, status is not 'on_time' or 'skipped'.
+     */
+    private function getVaccinationStats($user): array
+    {
+        $clinicId = $user->clinic_id;
+        $today = Carbon::today();
+        $thirtyDaysAgo = Carbon::today()->subDays(30);
+
+        $excludedStatuses = [
+            PatientVaccination::STATUS_ON_TIME,
+            PatientVaccination::STATUS_SKIPPED,
+        ];
+
+        $baseQuery = PatientVaccination::whereHas('patient', function ($q) use ($clinicId) {
+            $q->where('clinic_id', $clinicId);
+        })->whereNotIn('status', $excludedStatuses);
+
+        // Delayed: scheduled_date is past (≤ today) but within the last 30 days
+        $delayed = (clone $baseQuery)
+            ->where('scheduled_date', '<', $today)
+            ->where('scheduled_date', '>=', $thirtyDaysAgo)
+            ->count();
+
+        // Missed: scheduled_date is more than 30 days overdue
+        $missed = (clone $baseQuery)
+            ->where('scheduled_date', '<', $thirtyDaysAgo)
+            ->count();
+
+        return [
+            'delayed' => $delayed,
+            'missed' => $missed,
+            'total_overdue' => $delayed + $missed,
+        ];
     }
 
     /**

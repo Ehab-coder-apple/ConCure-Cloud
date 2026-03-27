@@ -654,7 +654,10 @@
                     </div>
                     <div class="col-md-8">
                         <label for="food-search" class="form-label">{{ __('Search Foods') }}</label>
-                        <input type="text" class="form-control" id="food-search" placeholder="{{ __('Type to search foods...') }}">
+                        <div class="voice-input-wrapper">
+                            <input type="text" class="form-control" id="food-search" placeholder="{{ __('Type or 🎤 speak to search foods...') }}">
+                            <button type="button" class="btn-voice" title="{{ __('Voice search') }}"><i class="fas fa-microphone"></i></button>
+                        </div>
                     </div>
                 </div>
 
@@ -2911,5 +2914,7 @@ function applyGeneratedMealOptions(generated) {
 }
 </style>
 @endpush
+
+@include('partials.voice-input')
 
 @endsection

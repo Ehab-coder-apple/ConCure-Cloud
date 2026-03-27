@@ -157,6 +157,11 @@
                                         <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#skipModal{{ $vacc->id }}">
                                             <i class="fas fa-forward"></i>
                                         </button>
+                                        @if(auth()->user()->canAccessModule('whatsapp'))
+                                        <button class="btn btn-sm btn-outline-success vacc-remind-btn" id="remindBtn{{ $vacc->id }}" onclick="sendVaccReminder({{ $vacc->id }}, this)" title="{{ __('Send WhatsApp Reminder') }}">
+                                            <i class="fab fa-whatsapp"></i>
+                                        </button>
+                                        @endif
                                         @endif
                                     </td>
                                 </tr>
@@ -244,5 +249,42 @@
 </div>
 @endif
 @endforeach
+
+@if(auth()->user()->canAccessModule('whatsapp'))
+<script>
+function sendVaccReminder(vaccId, btn) {
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    fetch('{{ route("notifications.send-reminder") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({ type: 'vaccination_reminder', reference_id: vaccId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            btn.innerHTML = '<i class="fas fa-check"></i>';
+            btn.classList.replace('btn-outline-success', 'btn-success');
+            setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.replace('btn-success', 'btn-outline-success'); }, 3000);
+        } else {
+            btn.innerHTML = '<i class="fas fa-times"></i>';
+            btn.title = data.message || '{{ __("Failed") }}';
+            setTimeout(() => { btn.innerHTML = originalHtml; btn.title = '{{ __("Send WhatsApp Reminder") }}'; }, 3000);
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    });
+}
+</script>
+@endif
 @endsection
 

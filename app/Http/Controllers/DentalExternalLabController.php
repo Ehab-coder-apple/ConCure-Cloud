@@ -6,11 +6,12 @@ use App\Models\ExternalLab;
 use App\Http\Traits\SmartSearch;
 use Illuminate\Http\Request;
 
-class ExternalLabController extends Controller
+class DentalExternalLabController extends Controller
 {
     use SmartSearch;
+
     /**
-     * Display a listing of external labs.
+     * Display a listing of dental external labs.
      */
     public function index(Request $request)
     {
@@ -18,10 +19,10 @@ class ExternalLabController extends Controller
 
         // Settings are admin-only: allow only Clinic Admins or Super Admins
         if (!($user->isSuperAdmin() || $user->isClinicAdmin())) {
-            abort(403, 'Only administrators can manage external laboratories.');
+            abort(403, 'Only administrators can manage dental laboratories.');
         }
 
-        $query = ExternalLab::byClinic($user->clinic_id)->byType('medical')->with('creator');
+        $query = ExternalLab::byClinic($user->clinic_id)->dental()->with('creator');
 
         // Apply smart search filter
         $searchTerm = $this->getValidatedSearchTerm($request);
@@ -42,53 +43,45 @@ class ExternalLabController extends Controller
             }
         }
 
-        // Apply lab type filter
-        if ($request->filled('lab_type')) {
-            $query->byType($request->lab_type);
-        }
+        $dentalLabs = $query->ordered()->paginate(15);
 
-        $externalLabs = $query->ordered()->paginate(15);
-
-        return view('external-labs.index', compact('externalLabs'));
+        return view('dental.external-labs.index', compact('dentalLabs'));
     }
 
     /**
-     * Show the specified external lab (for AJAX requests).
+     * Show the specified dental external lab (for AJAX requests).
      */
-    public function show(ExternalLab $externalLab)
+    public function show(ExternalLab $dentalLab)
     {
         $user = auth()->user();
 
-        // Ensure lab belongs to user's clinic
-        if ($externalLab->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to external laboratory.');
+        if ($dentalLab->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to dental laboratory.');
         }
 
         if (request()->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'lab' => $externalLab
+                'lab' => $dentalLab
             ]);
         }
 
-        return redirect()->route('external-labs.index');
+        return redirect()->route('dental.external-labs.index');
     }
 
     /**
-     * Store a newly created external lab.
+     * Store a newly created dental external lab.
      */
     public function store(Request $request)
     {
         $user = auth()->user();
 
-        // Only admins can create external labs
         if (!in_array($user->role, ['admin', 'program_owner'])) {
-            abort(403, 'Only administrators can create external laboratories.');
+            abort(403, 'Only administrators can create dental laboratories.');
         }
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'lab_type' => 'required|in:medical,dental',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
             'whatsapp' => 'nullable|string|max:50',
@@ -96,15 +89,14 @@ class ExternalLabController extends Controller
             'website' => 'nullable|url|max:255',
             'notes' => 'nullable|string',
             'sort_order' => 'nullable|integer|min:0',
-            // Dental-specific fields
             'turnaround_days' => 'nullable|integer|min:1',
             'accepts_digital_impressions' => 'nullable|boolean',
             'equipment_capabilities' => 'nullable|string',
         ]);
 
-        $data = [
+        ExternalLab::create([
             'name' => $request->name,
-            'lab_type' => $request->lab_type,
+            'lab_type' => 'dental',
             'address' => $request->address,
             'phone' => $request->phone,
             'whatsapp' => $request->whatsapp,
@@ -112,42 +104,33 @@ class ExternalLabController extends Controller
             'website' => $request->website,
             'notes' => $request->notes,
             'sort_order' => $request->sort_order ?? 0,
+            'turnaround_days' => $request->turnaround_days,
+            'accepts_digital_impressions' => $request->has('accepts_digital_impressions'),
+            'equipment_capabilities' => $request->equipment_capabilities,
             'clinic_id' => $user->clinic_id,
             'created_by' => $user->id,
-        ];
+        ]);
 
-        // Add dental-specific fields if lab type is dental
-        if ($request->lab_type === 'dental') {
-            $data['turnaround_days'] = $request->turnaround_days;
-            $data['accepts_digital_impressions'] = $request->has('accepts_digital_impressions');
-            $data['equipment_capabilities'] = $request->equipment_capabilities;
-        }
-
-        ExternalLab::create($data);
-
-        return back()->with('success', 'External laboratory added successfully.');
+        return back()->with('success', 'Dental laboratory added successfully.');
     }
 
     /**
-     * Update the specified external lab.
+     * Update the specified dental external lab.
      */
-    public function update(Request $request, ExternalLab $externalLab)
+    public function update(Request $request, ExternalLab $dentalLab)
     {
         $user = auth()->user();
 
-        // Only admins can update external labs
         if (!in_array($user->role, ['admin', 'program_owner'])) {
-            abort(403, 'Only administrators can update external laboratories.');
+            abort(403, 'Only administrators can update dental laboratories.');
         }
 
-        // Ensure lab belongs to user's clinic
-        if ($externalLab->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to external laboratory.');
+        if ($dentalLab->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to dental laboratory.');
         }
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'lab_type' => 'required|in:medical,dental',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
             'whatsapp' => 'nullable|string|max:50',
@@ -156,15 +139,15 @@ class ExternalLabController extends Controller
             'notes' => 'nullable|string',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
-            // Dental-specific fields
             'turnaround_days' => 'nullable|integer|min:1',
             'accepts_digital_impressions' => 'nullable|boolean',
             'equipment_capabilities' => 'nullable|string',
         ]);
 
-        $data = [
+
+
+        $dentalLab->update([
             'name' => $request->name,
-            'lab_type' => $request->lab_type,
             'address' => $request->address,
             'phone' => $request->phone,
             'whatsapp' => $request->whatsapp,
@@ -173,65 +156,55 @@ class ExternalLabController extends Controller
             'notes' => $request->notes,
             'sort_order' => $request->sort_order ?? 0,
             'is_active' => $request->boolean('is_active'),
-        ];
-
-        // Add dental-specific fields if lab type is dental
-        if ($request->lab_type === 'dental') {
-            $data['turnaround_days'] = $request->turnaround_days;
-            $data['accepts_digital_impressions'] = $request->has('accepts_digital_impressions');
-            $data['equipment_capabilities'] = $request->equipment_capabilities;
-        }
-
-        $externalLab->update($data);
-
-        return back()->with('success', 'External laboratory updated successfully.');
-    }
-
-    /**
-     * Remove the specified external lab.
-     */
-    public function destroy(ExternalLab $externalLab)
-    {
-        $user = auth()->user();
-
-        // Only admins can delete external labs
-        if (!in_array($user->role, ['admin', 'program_owner'])) {
-            abort(403, 'Only administrators can delete external laboratories.');
-        }
-
-        // Ensure lab belongs to user's clinic
-        if ($externalLab->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to external laboratory.');
-        }
-
-        $externalLab->delete();
-
-        return back()->with('success', 'External laboratory deleted successfully.');
-    }
-
-    /**
-     * Toggle the active status of an external lab.
-     */
-    public function toggleStatus(ExternalLab $externalLab)
-    {
-        $user = auth()->user();
-
-        // Only admins can toggle status
-        if (!in_array($user->role, ['admin', 'program_owner'])) {
-            abort(403, 'Only administrators can change laboratory status.');
-        }
-
-        // Ensure lab belongs to user's clinic
-        if ($externalLab->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to external laboratory.');
-        }
-
-        $externalLab->update([
-            'is_active' => !$externalLab->is_active
+            'turnaround_days' => $request->turnaround_days,
+            'accepts_digital_impressions' => $request->has('accepts_digital_impressions'),
+            'equipment_capabilities' => $request->equipment_capabilities,
         ]);
 
-        $status = $externalLab->is_active ? 'activated' : 'deactivated';
+        return back()->with('success', 'Dental laboratory updated successfully.');
+    }
 
-        return back()->with('success', "External laboratory {$status} successfully.");
+    /**
+     * Remove the specified dental external lab.
+     */
+    public function destroy(ExternalLab $dentalLab)
+    {
+        $user = auth()->user();
+
+        if (!in_array($user->role, ['admin', 'program_owner'])) {
+            abort(403, 'Only administrators can delete dental laboratories.');
+        }
+
+        if ($dentalLab->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to dental laboratory.');
+        }
+
+        $dentalLab->delete();
+
+        return back()->with('success', 'Dental laboratory deleted successfully.');
+    }
+
+    /**
+     * Toggle the active status of a dental external lab.
+     */
+    public function toggleStatus(ExternalLab $dentalLab)
+    {
+        $user = auth()->user();
+
+        if (!in_array($user->role, ['admin', 'program_owner'])) {
+            abort(403, 'Only administrators can change dental laboratory status.');
+        }
+
+        if ($dentalLab->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to dental laboratory.');
+        }
+
+        $dentalLab->update([
+            'is_active' => !$dentalLab->is_active
+        ]);
+
+        $status = $dentalLab->is_active ? 'activated' : 'deactivated';
+
+        return back()->with('success', "Dental laboratory {$status} successfully.");
     }
 }

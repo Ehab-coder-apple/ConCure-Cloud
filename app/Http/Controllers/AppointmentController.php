@@ -276,12 +276,17 @@ class AppointmentController extends Controller
                 ->exists();
         } else {
             // Overlap if start < existing_end AND end > existing_start
+            $driver = DB::getDriverName();
+            $endExpr = $driver === 'mysql'
+                ? DB::raw("DATE_ADD(appointment_datetime, INTERVAL COALESCE(duration_minutes, 30) MINUTE)")
+                : DB::raw("datetime(appointment_datetime, '+' || COALESCE(duration_minutes, 30) || ' minutes')");
+
             $conflict = DB::table('appointments')
                 ->where('doctor_id', $request->doctor_id)
                 ->whereDate('appointment_datetime', $appointmentDateTime->toDateString())
                 ->where('status', '!=', 'cancelled')
                 ->where('appointment_datetime', '<', $endTime->toDateTimeString())
-                ->where(DB::raw("DATE_ADD(appointment_datetime, INTERVAL duration_minutes MINUTE)"), '>', $appointmentDateTime->toDateTimeString())
+                ->where($endExpr, '>', $appointmentDateTime->toDateTimeString())
                 ->exists();
         }
 

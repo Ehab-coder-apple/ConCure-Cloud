@@ -7,6 +7,7 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use App\Console\Commands\ResetSuperAdmin;
 use App\Console\Commands\SendSubscriptionRenewalReminders;
 use App\Console\Commands\BackupClinicsWeekly;
+use App\Console\Commands\ProcessScheduledNotifications;
 
 class Kernel extends ConsoleKernel
 {
@@ -20,6 +21,7 @@ class Kernel extends ConsoleKernel
         ResetSuperAdmin::class,
         SendSubscriptionRenewalReminders::class,
         BackupClinicsWeekly::class,
+        ProcessScheduledNotifications::class,
     ];
 
     /**
@@ -32,6 +34,9 @@ class Kernel extends ConsoleKernel
 
         // Weekly clinic backups every Sunday 02:30 server time
         $schedule->command('clinic:backup-weekly')->weeklyOn(0, '02:30')->withoutOverlapping()->onOneServer();
+
+        // Process scheduled WhatsApp notifications every minute
+        $schedule->command('notifications:process')->everyMinute()->withoutOverlapping();
     }
 
     /**

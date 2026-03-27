@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Clinic extends Model
@@ -25,6 +26,7 @@ class Clinic extends Model
         'settings',
         'is_active',
         'is_demo',
+        'can_export',
         'enabled_modules',
         'max_users',
         'activated_at',
@@ -49,6 +51,7 @@ class Clinic extends Model
         'settings' => 'array',
         'is_active' => 'boolean',
         'is_demo' => 'boolean',
+        'can_export' => 'boolean',
         'enabled_modules' => 'array',
         'activated_at' => 'datetime',
         'next_billing_at' => 'datetime',
@@ -213,6 +216,30 @@ class Clinic extends Model
     }
 
     /**
+     * Get the notification settings for the clinic.
+     */
+    public function notificationSettings(): HasOne
+    {
+        return $this->hasOne(NotificationSetting::class);
+    }
+
+    /**
+     * Get notification logs for the clinic.
+     */
+    public function notificationLogs(): HasMany
+    {
+        return $this->hasMany(NotificationLog::class);
+    }
+
+    /**
+     * Get scheduled notifications for the clinic.
+     */
+    public function scheduledNotifications(): HasMany
+    {
+        return $this->hasMany(ScheduledNotification::class);
+    }
+
+    /**
      * Check if clinic is active.
      */
     public function isActiveWithValidSubscription(): bool
@@ -372,5 +399,29 @@ class Clinic extends Model
         $limit = $this->storage_limit ?: \App\Services\StorageQuotaService::DEFAULT_LIMIT;
         $used = app(\App\Services\StorageQuotaService::class)->getStorageUsed($this->id);
         return $limit > 0 ? round(($used / $limit) * 100, 2) : 0;
+    }
+
+    /**
+     * Check if this clinic is allowed to export data.
+     * Demo clinics require explicit can_export = true (set by master admin).
+     * Regular clinics can always export.
+     */
+    public function canExportData(): bool
+    {
+        // Demo clinics need explicit permission
+        if ($this->is_demo) {
+            return (bool) $this->can_export;
+        }
+
+        // Regular clinics can export by default
+        return true;
+    }
+
+    /**
+     * Scope to filter demo clinics.
+     */
+    public function scopeDemo($query)
+    {
+        return $query->where('is_demo', true);
     }
 }

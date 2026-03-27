@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('page-title', __('Custom Vital Signs Management'))
+@section('page-title', __('Vital Signs Templates'))
 
 @section('content')
 <div class="container">
@@ -11,7 +11,7 @@
                 <div>
                     <h1 class="h3 mb-0">
                         <i class="fas fa-stethoscope text-primary"></i>
-                        {{ __('Custom Vital Signs') }}
+                        {{ __('Vital Signs Templates') }}
                     </h1>
                     <p class="text-muted mb-0">
                         {{ __('Create and manage additional checkup points for your clinic') }}

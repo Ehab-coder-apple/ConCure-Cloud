@@ -340,11 +340,8 @@ class Food extends Model
         return $query->where(function ($q) use ($search) {
             $q->where('name', 'like', "%{$search}%")
               ->orWhere('description', 'like', "%{$search}%")
-              ->orWhereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.en'))) LIKE LOWER(?)", ["%{$search}%"])
-              ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.ar')) LIKE ?", ["%{$search}%"])
-              ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.ku_bahdini')) LIKE ?", ["%{$search}%"])
-              ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.ku_sorani')) LIKE ?", ["%{$search}%"])
-              ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(name_translations, '$.ku')) LIKE ?", ["%{$search}%"]); // Legacy support
+              // Search in JSON translations column — works on both MySQL and SQLite
+              ->orWhere('name_translations', 'like', "%{$search}%");
         });
     }
 

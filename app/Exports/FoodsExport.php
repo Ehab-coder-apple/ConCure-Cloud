@@ -16,10 +16,12 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 class FoodsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
     protected $clinicId;
+    protected $excludeSystemData;
 
-    public function __construct($clinicId = null)
+    public function __construct($clinicId = null, bool $excludeSystemData = false)
     {
         $this->clinicId = $clinicId;
+        $this->excludeSystemData = $excludeSystemData;
     }
 
     /**
@@ -31,6 +33,11 @@ class FoodsExport implements FromCollection, WithHeadings, WithMapping, WithStyl
 
         if ($this->clinicId) {
             $query->where('clinic_id', $this->clinicId);
+        }
+
+        // Exclude system/standard foods if user is not master admin
+        if ($this->excludeSystemData) {
+            $query->where('is_custom', true);
         }
 
         return $query->orderBy('name', 'asc')->get();

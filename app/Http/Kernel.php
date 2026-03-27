@@ -76,5 +76,6 @@ class Kernel extends HttpKernel
         'super.guest' => \App\Http\Middleware\SuperAdminGuest::class,
         'module' => \App\Http\Middleware\CheckModuleAccess::class,
         'storage.quota' => \App\Http\Middleware\CheckStorageQuota::class,
+        'export.check' => \App\Http\Middleware\CheckExportPermission::class,
     ];
 }

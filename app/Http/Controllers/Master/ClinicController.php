@@ -211,6 +211,14 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'is_demo')) {
                 $clinicData['is_demo'] = $request->input('clinic_type') === 'demo';
             }
+
+            // Export permission for demo clinics
+            if (Schema::hasColumn('clinics', 'can_export')) {
+                $clinicData['can_export'] = $request->input('clinic_type') === 'demo'
+                    ? (bool) $request->input('can_export', false)
+                    : true; // Regular clinics always can export
+            }
+
             // Optional billing fields
             if (Schema::hasColumn('clinics', 'billing_user_price')) { $clinicData['billing_user_price'] = $request->input('billing_user_price'); }
             if (Schema::hasColumn('clinics', 'billing_user_count')) { $clinicData['billing_user_count'] = $request->input('billing_user_count'); }
@@ -380,6 +388,14 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'is_demo')) {
                 $updateData['is_demo'] = $request->input('clinic_type') === 'demo';
             }
+
+            // Export permission for demo clinics
+            if (Schema::hasColumn('clinics', 'can_export')) {
+                $updateData['can_export'] = $request->input('clinic_type') === 'demo'
+                    ? (bool) $request->input('can_export', false)
+                    : true; // Regular clinics always can export
+            }
+
             // Optional billing fields
             if (Schema::hasColumn('clinics', 'billing_user_price')) { $updateData['billing_user_price'] = $request->input('billing_user_price'); }
             if (Schema::hasColumn('clinics', 'billing_user_count')) { $updateData['billing_user_count'] = $request->input('billing_user_count'); }

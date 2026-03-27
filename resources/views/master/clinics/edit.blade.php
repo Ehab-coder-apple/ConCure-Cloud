@@ -171,6 +171,19 @@
                             </div>
                         </div>
 
+                        <!-- Export Permission (visible for demo clinics) -->
+                        <div class="row" id="exportPermissionRow">
+                            <div class="col-md-12 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="can_export" id="can_export" value="1"
+                                           {{ old('can_export', $clinic->can_export) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="can_export">
+                                        <i class="fas fa-file-export me-1"></i> Allow Data Export
+                                    </label>
+                                </div>
+                                <div class="form-text">When enabled, this demo clinic can export data. By default, demo clinics cannot export any data.</div>
+                            </div>
+                        </div>
 
 	                        <div class="mb-2 text-muted small">
 	                            Current Address: {{ $clinic->formatted_address ?? ($clinic->address ?? 'Not provided') }}
@@ -440,8 +453,19 @@
         }
         document.querySelectorAll('input[name="clinic_type"]').forEach(r => {
             r.addEventListener('change', updateBillingVisibility);
+            r.addEventListener('change', updateExportPermissionVisibility);
         });
         updateBillingVisibility();
+
+        // Show/hide export permission toggle based on clinic type
+        const exportPermissionRow = document.getElementById('exportPermissionRow');
+        function updateExportPermissionVisibility() {
+            if (!exportPermissionRow) return;
+            const selected = document.querySelector('input[name="clinic_type"]:checked');
+            const isDemo = selected && selected.value === 'demo';
+            exportPermissionRow.style.display = isDemo ? '' : 'none';
+        }
+        updateExportPermissionVisibility();
 
         // Module select/deselect all
         const selectAll = document.getElementById('selectAllModules');

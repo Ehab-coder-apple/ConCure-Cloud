@@ -356,7 +356,25 @@ class PediatricMedicationController extends Controller
     public function drugAdmin()
     {
         $drugs = PediatricDrug::with(['forms', 'dosageRules'])->orderBy('generic_name')->get();
-        return view('pediatric.medication.drug-admin', compact('drugs'));
+
+        // Group drugs by category, with uncategorized at end
+        $grouped = $drugs->groupBy(fn($d) => filled($d->category) ? $d->category : '__uncategorized__')
+            ->sortKeys();
+
+        // Move uncategorized to end
+        if ($grouped->has('__uncategorized__')) {
+            $uncategorized = $grouped->pull('__uncategorized__');
+            $grouped->put('__uncategorized__', $uncategorized);
+        }
+
+        // Get distinct existing categories for the Add Drug modal
+        $existingCategories = PediatricDrug::whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
+
+        return view('pediatric.medication.drug-admin', compact('drugs', 'grouped', 'existingCategories'));
     }
 
     /**
@@ -371,7 +389,10 @@ class PediatricMedicationController extends Controller
             'description' => 'nullable|string|max:1000',
         ]);
 
-        PediatricDrug::create($request->only('generic_name', 'brand_name', 'category', 'description'));
+        PediatricDrug::create(array_merge(
+            $request->only('generic_name', 'brand_name', 'category', 'description'),
+            ['is_system' => false, 'clinic_id' => Auth::user()->clinic_id]
+        ));
         return back()->with('success', 'Drug added successfully.');
     }
 
@@ -421,11 +442,39 @@ class PediatricMedicationController extends Controller
 
     /**
      * Delete a drug (and cascade forms/rules).
+     * System drugs can only be deleted by superadmin.
+     * Tenant drugs can be deleted by users from the same clinic.
      */
     public function destroyDrug(PediatricDrug $drug)
     {
+        $user = Auth::user();
+
+        if (!$drug->canBeDeletedBy($user)) {
+            return back()->with('error', 'You do not have permission to delete this system drug.');
+        }
+
         $drug->delete();
         return back()->with('success', 'Drug deleted successfully.');
+    }
+
+    /**
+     * Delete all tenant (non-system) drugs for the current clinic.
+     * Superadmin can delete all non-system drugs.
+     */
+    public function destroyTenantDrugs()
+    {
+        $user = Auth::user();
+
+        $query = PediatricDrug::where('is_system', false);
+
+        if (!$user->isSuperAdmin()) {
+            $query->where('clinic_id', $user->clinic_id);
+        }
+
+        $count = $query->count();
+        $query->delete();
+
+        return back()->with('success', "$count imported medicine(s) deleted successfully.");
     }
 
     /**
@@ -603,10 +652,19 @@ class PediatricMedicationController extends Controller
             return back()->with('error', 'Error parsing file: ' . $e->getMessage());
         }
 
-        // Store in session for confirmation
+        // Sort by category for easier review, then by generic_name
+        usort($data, function ($a, $b) {
+            $catA = strtolower(trim($a['category'] ?? 'zzz'));
+            $catB = strtolower(trim($b['category'] ?? 'zzz'));
+            if ($catA !== $catB) return strcmp($catA, $catB);
+            return strcmp(strtolower($a['generic_name'] ?? ''), strtolower($b['generic_name'] ?? ''));
+        });
+
+        // Store in session for confirmation (original order preserved in session)
         session(['pediatric_import_data' => $data]);
 
-        return view('pediatric.medication.import-preview', compact('data', 'errors'));
+        $importErrors = $errors;
+        return view('pediatric.medication.import-preview', compact('data', 'importErrors'));
     }
 
     /**
@@ -630,7 +688,7 @@ class PediatricMedicationController extends Controller
                     continue;
                 }
 
-                // Find or create drug
+                // Find or create drug (imported drugs are tenant-owned, not system)
                 $drug = PediatricDrug::firstOrCreate(
                     ['generic_name' => trim($item['generic_name'])],
                     [
@@ -638,6 +696,8 @@ class PediatricMedicationController extends Controller
                         'category' => trim($item['category'] ?? ''),
                         'description' => trim($item['description'] ?? ''),
                         'is_active' => true,
+                        'is_system' => false,
+                        'clinic_id' => Auth::user()->clinic_id,
                     ]
                 );
 
@@ -652,18 +712,22 @@ class PediatricMedicationController extends Controller
                     );
                 }
 
-                // Create dosage rule
-                PediatricDosageRule::create([
-                    'drug_id' => $drug->id,
-                    'mg_per_kg_min' => (float) $item['mg_per_kg_min'],
-                    'mg_per_kg_max' => (float) $item['mg_per_kg_max'],
-                    'max_daily_mg' => !empty($item['max_daily_mg']) ? (float) $item['max_daily_mg'] : null,
-                    'frequency_per_day' => (int) ($item['frequency_per_day'] ?? 3),
-                    'frequency_hours' => !empty($item['frequency_hours']) ? (int) $item['frequency_hours'] : null,
-                    'min_age_months' => !empty($item['min_age_months']) ? (int) $item['min_age_months'] : null,
-                    'max_age_months' => !empty($item['max_age_months']) ? (int) $item['max_age_months'] : null,
-                    'notes' => $item['notes'] ?? null,
-                ]);
+                // Create dosage rule (avoid duplicates)
+                PediatricDosageRule::firstOrCreate(
+                    [
+                        'drug_id' => $drug->id,
+                        'mg_per_kg_min' => (float) $item['mg_per_kg_min'],
+                        'mg_per_kg_max' => (float) $item['mg_per_kg_max'],
+                        'frequency_per_day' => (int) ($item['frequency_per_day'] ?? 3),
+                        'min_age_months' => !empty($item['min_age_months']) ? (int) $item['min_age_months'] : null,
+                        'max_age_months' => !empty($item['max_age_months']) ? (int) $item['max_age_months'] : null,
+                    ],
+                    [
+                        'max_daily_mg' => !empty($item['max_daily_mg']) ? (float) $item['max_daily_mg'] : null,
+                        'frequency_hours' => !empty($item['frequency_hours']) ? (int) $item['frequency_hours'] : null,
+                        'notes' => $item['notes'] ?? null,
+                    ]
+                );
 
                 $imported++;
             }

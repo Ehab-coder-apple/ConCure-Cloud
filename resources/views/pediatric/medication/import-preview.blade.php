@@ -14,11 +14,11 @@
         </div>
     </div>
 
-    @if(count($errors) > 0)
+    @if(count($importErrors) > 0)
     <div class="alert alert-warning">
         <h6 class="fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>{{ __('Validation Issues') }}</h6>
         <ul class="mb-0 small">
-            @foreach($errors as $e)
+            @foreach($importErrors as $e)
             <li>{{ $e }}</li>
             @endforeach
         </ul>
@@ -45,7 +45,18 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php $currentCat = null; @endphp
                         @foreach($data as $item)
+                            @php $cat = filled($item['category'] ?? '') ? $item['category'] : __('Uncategorized'); @endphp
+                            @if($cat !== $currentCat)
+                                @php $currentCat = $cat; @endphp
+                                <tr class="table-secondary">
+                                    <td colspan="11" class="fw-bold small">
+                                        <i class="fas fa-folder-open me-1"></i> {{ $cat }}
+                                        <span class="badge bg-secondary ms-1">{{ collect($data)->filter(fn($d) => (filled($d['category'] ?? '') ? $d['category'] : __('Uncategorized')) === $cat)->count() }}</span>
+                                    </td>
+                                </tr>
+                            @endif
                         <tr class="{{ !empty($item['_errors']) ? 'table-danger' : 'table-success' }}">
                             <td>{{ $item['_row'] }}</td>
                             <td><strong>{{ $item['generic_name'] ?? '' }}</strong></td>

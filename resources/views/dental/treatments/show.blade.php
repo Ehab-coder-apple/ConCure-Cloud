@@ -218,12 +218,12 @@
                         </div>
                     </div>
 
-                    @if($dentalTreatment->amount_paid > 0 || $dentalTreatment->remaining_balance > 0)
+                    @if($dentalTreatment->paid_amount > 0 || $dentalTreatment->remaining_balance > 0)
                         <div class="row mt-3">
                             <div class="col-md-6">
                                 <p class="mb-0">
                                     <strong>{{ __('Amount Paid') }}:</strong>
-                                    {{ $dentalTreatment->currency }} {{ number_format($dentalTreatment->amount_paid ?? 0, 2) }}
+                                    {{ $dentalTreatment->currency }} {{ number_format($dentalTreatment->paid_amount ?? 0, 2) }}
                                 </p>
                             </div>
                             <div class="col-md-6">
