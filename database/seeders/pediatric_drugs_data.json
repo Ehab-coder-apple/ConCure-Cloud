@@ -1,0 +1,4734 @@
+[
+    {
+        "id": 1,
+        "generic_name": "Paracetamol",
+        "brand_name": "Calpol \/ Tylenol",
+        "category": "Analgesic \/ Antipyretic",
+        "description": "First-line treatment for pain and fever in children. Available in multiple formulations.",
+        "is_active": true,
+        "created_at": "2026-03-22T13:17:13.000000Z",
+        "updated_at": "2026-03-22T13:17:13.000000Z",
+        "is_system": true,
+        "clinic_id": null,
+        "forms": [
+            {
+                "id": 1,
+                "drug_id": 1,
+                "form": "syrup",
+                "concentration": "120mg\/5ml",
+                "concentration_mg": "120.00",
+                "concentration_per_ml": "5.00",
+                "notes": null,
+                "created_at": "2026-03-22T13:17:13.000000Z",
+                "updated_at": "2026-03-22T13:17:13.000000Z"
+            },
+            {
+                "id": 2,
+                "drug_id": 1,
+                "form": "syrup",
+                "concentration": "250mg\/5ml",
+                "concentration_mg": "250.00",
+                "concentration_per_ml": "5.00",
+                "notes": null,
+                "created_at": "2026-03-22T13:17:13.000000Z",
+                "updated_at": "2026-03-22T13:17:13.000000Z"
+            },
+            {
+                "id": 3,
+                "drug_id": 1,
+                "form": "suppository",
+                "concentration": "125mg",
+                "concentration_mg": "125.00",
+                "concentration_per_ml": null,
+                "notes": null,
+                "created_at": "2026-03-22T13:17:13.000000Z",
+                "updated_at": "2026-03-22T13:17:13.000000Z"
+            },
+            {
+                "id": 18,
+                "drug_id": 1,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 1,
+                "drug_id": 1,
+                "mg_per_kg_min": "10.00",
+                "mg_per_kg_max": "15.00",
+                "max_daily_mg": "4000.00",
+                "frequency_per_day": 4,
+                "frequency_hours": 6,
+                "min_age_months": 3,
+                "max_age_months": null,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "Do not exceed 5 doses in 24h. Avoid in liver disease.",
+                "created_at": "2026-03-22T13:17:13.000000Z",
+                "updated_at": "2026-03-22T13:17:13.000000Z"
+            },
+            {
+                "id": 7,
+                "drug_id": 1,
+                "mg_per_kg_min": "10.00",
+                "mg_per_kg_max": "15.00",
+                "max_daily_mg": "60.00",
+                "frequency_per_day": 4,
+                "frequency_hours": null,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 107,
+                "drug_id": 1,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 2,
+        "generic_name": "Ibuprofen",
+        "brand_name": "Brufen \/ Advil",
+        "category": "NSAID \/ Analgesic",
+        "description": "Anti-inflammatory, analgesic, and antipyretic. Not recommended under 3 months.",
+        "is_active": true,
+        "created_at": "2026-03-22T13:17:13.000000Z",
+        "updated_at": "2026-03-22T13:17:13.000000Z",
+        "is_system": true,
+        "clinic_id": null,
+        "forms": [
+            {
+                "id": 4,
+                "drug_id": 2,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "5.00",
+                "notes": null,
+                "created_at": "2026-03-22T13:17:13.000000Z",
+                "updated_at": "2026-03-22T13:17:13.000000Z"
+            },
+            {
+                "id": 5,
+                "drug_id": 2,
+                "form": "tablet",
+                "concentration": "200mg",
+                "concentration_mg": "200.00",
+                "concentration_per_ml": null,
+                "notes": null,
+                "created_at": "2026-03-22T13:17:13.000000Z",
+                "updated_at": "2026-03-22T13:17:13.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 2,
+                "drug_id": 2,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1200.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 3,
+                "max_age_months": null,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "Give with food. Avoid in renal impairment and asthma.",
+                "created_at": "2026-03-22T13:17:13.000000Z",
+                "updated_at": "2026-03-22T13:17:13.000000Z"
+            },
+            {
+                "id": 8,
+                "drug_id": 2,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "40.00",
+                "frequency_per_day": 3,
+                "frequency_hours": null,
+                "min_age_months": 6,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 108,
+                "drug_id": 2,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 3,
+        "generic_name": "Amoxicillin",
+        "brand_name": "Amoxil \/ Augmentin",
+        "category": "Antibiotics",
+        "description": "Broad-spectrum penicillin antibiotic for bacterial infections including otitis media, UTIs.",
+        "is_active": true,
+        "created_at": "2026-03-22T13:17:13.000000Z",
+        "updated_at": "2026-03-22T13:17:13.000000Z",
+        "is_system": true,
+        "clinic_id": null,
+        "forms": [
+            {
+                "id": 6,
+                "drug_id": 3,
+                "form": "suspension",
+                "concentration": "125mg\/5ml",
+                "concentration_mg": "125.00",
+                "concentration_per_ml": "5.00",
+                "notes": null,
+                "created_at": "2026-03-22T13:17:13.000000Z",
+                "updated_at": "2026-03-22T13:17:13.000000Z"
+            },
+            {
+                "id": 7,
+                "drug_id": 3,
+                "form": "suspension",
+                "concentration": "250mg\/5ml",
+                "concentration_mg": "250.00",
+                "concentration_per_ml": "5.00",
+                "notes": null,
+                "created_at": "2026-03-22T13:17:13.000000Z",
+                "updated_at": "2026-03-22T13:17:13.000000Z"
+            },
+            {
+                "id": 11,
+                "drug_id": 3,
+                "form": "syrup",
+                "concentration": "250mg\/5ml",
+                "concentration_mg": "250.00",
+                "concentration_per_ml": "50.00",
+                "notes": null,
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 27,
+                "drug_id": 3,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 3,
+                "drug_id": 3,
+                "mg_per_kg_min": "20.00",
+                "mg_per_kg_max": "40.00",
+                "max_daily_mg": "3000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 0,
+                "max_age_months": null,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "High dose (80-90mg\/kg\/day) for resistant otitis media. Check for penicillin allergy.",
+                "created_at": "2026-03-22T13:17:14.000000Z",
+                "updated_at": "2026-03-22T13:17:14.000000Z"
+            },
+            {
+                "id": 9,
+                "drug_id": 3,
+                "mg_per_kg_min": "20.00",
+                "mg_per_kg_max": "40.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": null,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 117,
+                "drug_id": 3,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 4,
+        "generic_name": "Azithromycin",
+        "brand_name": "Zithromax",
+        "category": "Antibiotics",
+        "description": "Macrolide antibiotic. Often used when penicillin allergy exists. Short course therapy.",
+        "is_active": true,
+        "created_at": "2026-03-22T13:17:14.000000Z",
+        "updated_at": "2026-03-22T13:17:14.000000Z",
+        "is_system": true,
+        "clinic_id": null,
+        "forms": [
+            {
+                "id": 8,
+                "drug_id": 4,
+                "form": "suspension",
+                "concentration": "200mg\/5ml",
+                "concentration_mg": "200.00",
+                "concentration_per_ml": "5.00",
+                "notes": null,
+                "created_at": "2026-03-22T13:17:14.000000Z",
+                "updated_at": "2026-03-22T13:17:14.000000Z"
+            },
+            {
+                "id": 32,
+                "drug_id": 4,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 4,
+                "drug_id": 4,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "12.00",
+                "max_daily_mg": "500.00",
+                "frequency_per_day": 1,
+                "frequency_hours": 24,
+                "min_age_months": 6,
+                "max_age_months": null,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "Day 1: 10mg\/kg, Days 2-5: 5mg\/kg. Give 1 hour before or 2 hours after meals.",
+                "created_at": "2026-03-22T13:17:14.000000Z",
+                "updated_at": "2026-03-22T13:17:14.000000Z"
+            },
+            {
+                "id": 11,
+                "drug_id": 4,
+                "mg_per_kg_min": "10.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "500.00",
+                "frequency_per_day": 1,
+                "frequency_hours": null,
+                "min_age_months": 6,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 122,
+                "drug_id": 4,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 5,
+        "generic_name": "Cetirizine",
+        "brand_name": "Zyrtec",
+        "category": "Antihistamines",
+        "description": "Second-generation antihistamine for allergic rhinitis, urticaria, and allergic conditions.",
+        "is_active": true,
+        "created_at": "2026-03-22T13:17:14.000000Z",
+        "updated_at": "2026-03-22T13:17:14.000000Z",
+        "is_system": true,
+        "clinic_id": null,
+        "forms": [
+            {
+                "id": 9,
+                "drug_id": 5,
+                "form": "syrup",
+                "concentration": "5mg\/5ml",
+                "concentration_mg": "5.00",
+                "concentration_per_ml": "5.00",
+                "notes": null,
+                "created_at": "2026-03-22T13:17:14.000000Z",
+                "updated_at": "2026-03-22T13:17:14.000000Z"
+            },
+            {
+                "id": 10,
+                "drug_id": 5,
+                "form": "drops",
+                "concentration": "10mg\/ml",
+                "concentration_mg": "10.00",
+                "concentration_per_ml": "1.00",
+                "notes": null,
+                "created_at": "2026-03-22T13:17:14.000000Z",
+                "updated_at": "2026-03-22T13:17:14.000000Z"
+            },
+            {
+                "id": 37,
+                "drug_id": 5,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 5,
+                "drug_id": 5,
+                "mg_per_kg_min": "0.13",
+                "mg_per_kg_max": "0.25",
+                "max_daily_mg": "10.00",
+                "frequency_per_day": 1,
+                "frequency_hours": 24,
+                "min_age_months": 6,
+                "max_age_months": 72,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "6-12 months: 2.5mg\/day, 1-6 years: 2.5-5mg\/day. May cause drowsiness.",
+                "created_at": "2026-03-22T13:17:14.000000Z",
+                "updated_at": "2026-03-22T13:17:14.000000Z"
+            },
+            {
+                "id": 6,
+                "drug_id": 5,
+                "mg_per_kg_min": "0.15",
+                "mg_per_kg_max": "0.50",
+                "max_daily_mg": "10.00",
+                "frequency_per_day": 1,
+                "frequency_hours": 24,
+                "min_age_months": 72,
+                "max_age_months": 216,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "6-12 years: 5-10mg\/day once daily.",
+                "created_at": "2026-03-22T13:17:14.000000Z",
+                "updated_at": "2026-03-22T13:17:14.000000Z"
+            },
+            {
+                "id": 127,
+                "drug_id": 5,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 6,
+        "generic_name": "Cefuroxime",
+        "brand_name": "Zinnat",
+        "category": "Antibiotics",
+        "description": "Infections",
+        "is_active": true,
+        "created_at": "2026-03-25T08:45:41.000000Z",
+        "updated_at": "2026-03-25T08:45:41.000000Z",
+        "is_system": true,
+        "clinic_id": null,
+        "forms": [
+            {
+                "id": 12,
+                "drug_id": 6,
+                "form": "syrup",
+                "concentration": "125mg\/5ml",
+                "concentration_mg": "125.00",
+                "concentration_per_ml": "25.00",
+                "notes": null,
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 29,
+                "drug_id": 6,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 10,
+                "drug_id": 6,
+                "mg_per_kg_min": "10.00",
+                "mg_per_kg_max": "15.00",
+                "max_daily_mg": "500.00",
+                "frequency_per_day": 2,
+                "frequency_hours": null,
+                "min_age_months": 3,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 119,
+                "drug_id": 6,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 7,
+        "generic_name": "Ceftriaxone",
+        "brand_name": "Rocephin",
+        "category": "Antibiotics",
+        "description": "Severe infections",
+        "is_active": true,
+        "created_at": "2026-03-25T08:45:41.000000Z",
+        "updated_at": "2026-03-25T08:45:41.000000Z",
+        "is_system": true,
+        "clinic_id": null,
+        "forms": [
+            {
+                "id": 13,
+                "drug_id": 7,
+                "form": "injection",
+                "concentration": "1g\/vial",
+                "concentration_mg": "1000.00",
+                "concentration_per_ml": "0.00",
+                "notes": null,
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 31,
+                "drug_id": 7,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 12,
+                "drug_id": 7,
+                "mg_per_kg_min": "50.00",
+                "mg_per_kg_max": "75.00",
+                "max_daily_mg": "2000.00",
+                "frequency_per_day": 1,
+                "frequency_hours": null,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 121,
+                "drug_id": 7,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 8,
+        "generic_name": "Metronidazole",
+        "brand_name": "Flagyl",
+        "category": "Antibiotics",
+        "description": "Anaerobic infections",
+        "is_active": true,
+        "created_at": "2026-03-25T08:45:41.000000Z",
+        "updated_at": "2026-03-25T08:45:41.000000Z",
+        "is_system": true,
+        "clinic_id": null,
+        "forms": [
+            {
+                "id": 14,
+                "drug_id": 8,
+                "form": "syrup",
+                "concentration": "125mg\/5ml",
+                "concentration_mg": "125.00",
+                "concentration_per_ml": "25.00",
+                "notes": null,
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 34,
+                "drug_id": 8,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 13,
+                "drug_id": 8,
+                "mg_per_kg_min": "7.50",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "500.00",
+                "frequency_per_day": 3,
+                "frequency_hours": null,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 124,
+                "drug_id": 8,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 9,
+        "generic_name": "Salbutamol",
+        "brand_name": "Ventolin",
+        "category": "Bronchodilator",
+        "description": "Asthma",
+        "is_active": true,
+        "created_at": "2026-03-25T08:45:41.000000Z",
+        "updated_at": "2026-03-25T08:45:41.000000Z",
+        "is_system": true,
+        "clinic_id": null,
+        "forms": [
+            {
+                "id": 15,
+                "drug_id": 9,
+                "form": "syrup",
+                "concentration": "2mg\/5ml",
+                "concentration_mg": "2.00",
+                "concentration_per_ml": "0.40",
+                "notes": null,
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 47,
+                "drug_id": 9,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 14,
+                "drug_id": 9,
+                "mg_per_kg_min": "0.10",
+                "mg_per_kg_max": "0.20",
+                "max_daily_mg": "10.00",
+                "frequency_per_day": 4,
+                "frequency_hours": null,
+                "min_age_months": 6,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 137,
+                "drug_id": 9,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 10,
+        "generic_name": "Prednisolone",
+        "brand_name": "Predsol",
+        "category": "Steroids",
+        "description": "Inflammation",
+        "is_active": true,
+        "created_at": "2026-03-25T08:45:41.000000Z",
+        "updated_at": "2026-03-25T08:45:41.000000Z",
+        "is_system": true,
+        "clinic_id": null,
+        "forms": [
+            {
+                "id": 16,
+                "drug_id": 10,
+                "form": "syrup",
+                "concentration": "15mg\/5ml",
+                "concentration_mg": "15.00",
+                "concentration_per_ml": "3.00",
+                "notes": null,
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 77,
+                "drug_id": 10,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 15,
+                "drug_id": 10,
+                "mg_per_kg_min": "1.00",
+                "mg_per_kg_max": "2.00",
+                "max_daily_mg": "60.00",
+                "frequency_per_day": 2,
+                "frequency_hours": null,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 167,
+                "drug_id": 10,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 11,
+        "generic_name": "Ondansetron",
+        "brand_name": "Zofran",
+        "category": "Antiemetic",
+        "description": "Vomiting",
+        "is_active": true,
+        "created_at": "2026-03-25T08:45:41.000000Z",
+        "updated_at": "2026-03-25T08:45:41.000000Z",
+        "is_system": true,
+        "clinic_id": null,
+        "forms": [
+            {
+                "id": 17,
+                "drug_id": 11,
+                "form": "syrup",
+                "concentration": "4mg\/5ml",
+                "concentration_mg": "4.00",
+                "concentration_per_ml": "0.80",
+                "notes": null,
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 64,
+                "drug_id": 11,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 16,
+                "drug_id": 11,
+                "mg_per_kg_min": "0.10",
+                "mg_per_kg_max": "0.15",
+                "max_daily_mg": "8.00",
+                "frequency_per_day": 3,
+                "frequency_hours": null,
+                "min_age_months": 6,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T08:45:41.000000Z",
+                "updated_at": "2026-03-25T08:45:41.000000Z"
+            },
+            {
+                "id": 154,
+                "drug_id": 11,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 12,
+        "generic_name": "Diclofenac",
+        "brand_name": "",
+        "category": "Analgesics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 19,
+                "drug_id": 12,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 109,
+                "drug_id": 12,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 13,
+        "generic_name": "Ketorolac",
+        "brand_name": "",
+        "category": "Analgesics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 20,
+                "drug_id": 13,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 110,
+                "drug_id": 13,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 14,
+        "generic_name": "Naproxen",
+        "brand_name": "",
+        "category": "Analgesics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 21,
+                "drug_id": 14,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 111,
+                "drug_id": 14,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 15,
+        "generic_name": "Aspirin",
+        "brand_name": "",
+        "category": "Analgesics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 22,
+                "drug_id": 15,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 112,
+                "drug_id": 15,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 16,
+        "generic_name": "Meloxicam",
+        "brand_name": "",
+        "category": "Analgesics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 23,
+                "drug_id": 16,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 113,
+                "drug_id": 16,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 17,
+        "generic_name": "Celecoxib",
+        "brand_name": "",
+        "category": "Analgesics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 24,
+                "drug_id": 17,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 114,
+                "drug_id": 17,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 18,
+        "generic_name": "Indomethacin",
+        "brand_name": "",
+        "category": "Analgesics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 25,
+                "drug_id": 18,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 115,
+                "drug_id": 18,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 19,
+        "generic_name": "Piroxicam",
+        "brand_name": "",
+        "category": "Analgesics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 26,
+                "drug_id": 19,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 116,
+                "drug_id": 19,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 20,
+        "generic_name": "Amoxicillin-Clavulanate",
+        "brand_name": "",
+        "category": "Antibiotics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 28,
+                "drug_id": 20,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 118,
+                "drug_id": 20,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 21,
+        "generic_name": "Cefixime",
+        "brand_name": "",
+        "category": "Antibiotics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 30,
+                "drug_id": 21,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 120,
+                "drug_id": 21,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 22,
+        "generic_name": "Clarithromycin",
+        "brand_name": "",
+        "category": "Antibiotics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 33,
+                "drug_id": 22,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 123,
+                "drug_id": 22,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 23,
+        "generic_name": "Vancomycin",
+        "brand_name": "",
+        "category": "Antibiotics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 35,
+                "drug_id": 23,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 125,
+                "drug_id": 23,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 24,
+        "generic_name": "Gentamicin",
+        "brand_name": "",
+        "category": "Antibiotics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 36,
+                "drug_id": 24,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 126,
+                "drug_id": 24,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 25,
+        "generic_name": "Loratadine",
+        "brand_name": "",
+        "category": "Antihistamines",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 38,
+                "drug_id": 25,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 128,
+                "drug_id": 25,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 26,
+        "generic_name": "Desloratadine",
+        "brand_name": "",
+        "category": "Antihistamines",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 39,
+                "drug_id": 26,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 129,
+                "drug_id": 26,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 27,
+        "generic_name": "Chlorpheniramine",
+        "brand_name": "",
+        "category": "Antihistamines",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 40,
+                "drug_id": 27,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 130,
+                "drug_id": 27,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 28,
+        "generic_name": "Diphenhydramine",
+        "brand_name": "",
+        "category": "Antihistamines",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 41,
+                "drug_id": 28,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 131,
+                "drug_id": 28,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 29,
+        "generic_name": "Fexofenadine",
+        "brand_name": "",
+        "category": "Antihistamines",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 42,
+                "drug_id": 29,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 132,
+                "drug_id": 29,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 30,
+        "generic_name": "Hydroxyzine",
+        "brand_name": "",
+        "category": "Antihistamines",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 43,
+                "drug_id": 30,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 133,
+                "drug_id": 30,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 31,
+        "generic_name": "Levocetirizine",
+        "brand_name": "",
+        "category": "Antihistamines",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 44,
+                "drug_id": 31,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 134,
+                "drug_id": 31,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 32,
+        "generic_name": "Cyproheptadine",
+        "brand_name": "",
+        "category": "Antihistamines",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 45,
+                "drug_id": 32,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 135,
+                "drug_id": 32,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 33,
+        "generic_name": "Promethazine",
+        "brand_name": "",
+        "category": "Antihistamines",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 46,
+                "drug_id": 33,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 136,
+                "drug_id": 33,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 34,
+        "generic_name": "Ipratropium",
+        "brand_name": "",
+        "category": "Respiratory",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 48,
+                "drug_id": 34,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 138,
+                "drug_id": 34,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 35,
+        "generic_name": "Budesonide",
+        "brand_name": "",
+        "category": "Respiratory",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 49,
+                "drug_id": 35,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 139,
+                "drug_id": 35,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 36,
+        "generic_name": "Formoterol",
+        "brand_name": "",
+        "category": "Respiratory",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 50,
+                "drug_id": 36,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 140,
+                "drug_id": 36,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 37,
+        "generic_name": "Montelukast",
+        "brand_name": "",
+        "category": "Respiratory",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 51,
+                "drug_id": 37,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 141,
+                "drug_id": 37,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 38,
+        "generic_name": "Theophylline",
+        "brand_name": "",
+        "category": "Respiratory",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 52,
+                "drug_id": 38,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 142,
+                "drug_id": 38,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 39,
+        "generic_name": "Beclomethasone",
+        "brand_name": "",
+        "category": "Respiratory",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 53,
+                "drug_id": 39,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 143,
+                "drug_id": 39,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 40,
+        "generic_name": "Fluticasone",
+        "brand_name": "",
+        "category": "Respiratory",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 54,
+                "drug_id": 40,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 144,
+                "drug_id": 40,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 41,
+        "generic_name": "Tiotropium",
+        "brand_name": "",
+        "category": "Respiratory",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 55,
+                "drug_id": 41,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 145,
+                "drug_id": 41,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 42,
+        "generic_name": "Salmeterol",
+        "brand_name": "",
+        "category": "Respiratory",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 56,
+                "drug_id": 42,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 146,
+                "drug_id": 42,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 43,
+        "generic_name": "Omeprazole",
+        "brand_name": "",
+        "category": "Gastrointestinal",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 57,
+                "drug_id": 43,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 147,
+                "drug_id": 43,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 44,
+        "generic_name": "Esomeprazole",
+        "brand_name": "",
+        "category": "Gastrointestinal",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 58,
+                "drug_id": 44,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 148,
+                "drug_id": 44,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 45,
+        "generic_name": "Lansoprazole",
+        "brand_name": "",
+        "category": "Gastrointestinal",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 59,
+                "drug_id": 45,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 149,
+                "drug_id": 45,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 46,
+        "generic_name": "Ranitidine",
+        "brand_name": "",
+        "category": "Gastrointestinal",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 60,
+                "drug_id": 46,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 150,
+                "drug_id": 46,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 47,
+        "generic_name": "Famotidine",
+        "brand_name": "",
+        "category": "Gastrointestinal",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 61,
+                "drug_id": 47,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 151,
+                "drug_id": 47,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 48,
+        "generic_name": "Domperidone",
+        "brand_name": "",
+        "category": "Gastrointestinal",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 62,
+                "drug_id": 48,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 152,
+                "drug_id": 48,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 49,
+        "generic_name": "Metoclopramide",
+        "brand_name": "",
+        "category": "Gastrointestinal",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 63,
+                "drug_id": 49,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 153,
+                "drug_id": 49,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 50,
+        "generic_name": "Loperamide",
+        "brand_name": "",
+        "category": "Gastrointestinal",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 65,
+                "drug_id": 50,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 155,
+                "drug_id": 50,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 51,
+        "generic_name": "ORS",
+        "brand_name": "",
+        "category": "Gastrointestinal",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 66,
+                "drug_id": 51,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 156,
+                "drug_id": 51,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 52,
+        "generic_name": "Valproate",
+        "brand_name": "",
+        "category": "Antiepileptics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 67,
+                "drug_id": 52,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 157,
+                "drug_id": 52,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 53,
+        "generic_name": "Carbamazepine",
+        "brand_name": "",
+        "category": "Antiepileptics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 68,
+                "drug_id": 53,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 158,
+                "drug_id": 53,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 54,
+        "generic_name": "Phenytoin",
+        "brand_name": "",
+        "category": "Antiepileptics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 69,
+                "drug_id": 54,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 159,
+                "drug_id": 54,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 55,
+        "generic_name": "Levetiracetam",
+        "brand_name": "",
+        "category": "Antiepileptics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 70,
+                "drug_id": 55,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 160,
+                "drug_id": 55,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 56,
+        "generic_name": "Lamotrigine",
+        "brand_name": "",
+        "category": "Antiepileptics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 71,
+                "drug_id": 56,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 161,
+                "drug_id": 56,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 57,
+        "generic_name": "Topiramate",
+        "brand_name": "",
+        "category": "Antiepileptics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 72,
+                "drug_id": 57,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 162,
+                "drug_id": 57,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 58,
+        "generic_name": "Phenobarbital",
+        "brand_name": "",
+        "category": "Antiepileptics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 73,
+                "drug_id": 58,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 163,
+                "drug_id": 58,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 59,
+        "generic_name": "Clonazepam",
+        "brand_name": "",
+        "category": "Antiepileptics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 74,
+                "drug_id": 59,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 164,
+                "drug_id": 59,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 60,
+        "generic_name": "Diazepam",
+        "brand_name": "",
+        "category": "Antiepileptics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 75,
+                "drug_id": 60,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 165,
+                "drug_id": 60,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 61,
+        "generic_name": "Ethosuximide",
+        "brand_name": "",
+        "category": "Antiepileptics",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 76,
+                "drug_id": 61,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 166,
+                "drug_id": 61,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 62,
+        "generic_name": "Dexamethasone",
+        "brand_name": "",
+        "category": "Steroids",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 78,
+                "drug_id": 62,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 168,
+                "drug_id": 62,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 63,
+        "generic_name": "Hydrocortisone",
+        "brand_name": "",
+        "category": "Steroids",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 79,
+                "drug_id": 63,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 169,
+                "drug_id": 63,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 64,
+        "generic_name": "Methylprednisolone",
+        "brand_name": "",
+        "category": "Steroids",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 80,
+                "drug_id": 64,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 170,
+                "drug_id": 64,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 65,
+        "generic_name": "Betamethasone",
+        "brand_name": "",
+        "category": "Steroids",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 81,
+                "drug_id": 65,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 171,
+                "drug_id": 65,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 66,
+        "generic_name": "Triamcinolone",
+        "brand_name": "",
+        "category": "Steroids",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 82,
+                "drug_id": 66,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 172,
+                "drug_id": 66,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 67,
+        "generic_name": "Deflazacort",
+        "brand_name": "",
+        "category": "Steroids",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 83,
+                "drug_id": 67,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 173,
+                "drug_id": 67,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 68,
+        "generic_name": "Fludrocortisone",
+        "brand_name": "",
+        "category": "Steroids",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 84,
+                "drug_id": 68,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 174,
+                "drug_id": 68,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 69,
+        "generic_name": "Budesonide oral",
+        "brand_name": "",
+        "category": "Steroids",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 85,
+                "drug_id": 69,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 175,
+                "drug_id": 69,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 70,
+        "generic_name": "Prednisone",
+        "brand_name": "",
+        "category": "Steroids",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 86,
+                "drug_id": 70,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 176,
+                "drug_id": 70,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 71,
+        "generic_name": "Fluconazole",
+        "brand_name": "",
+        "category": "Antifungals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 87,
+                "drug_id": 71,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 177,
+                "drug_id": 71,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 72,
+        "generic_name": "Itraconazole",
+        "brand_name": "",
+        "category": "Antifungals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 88,
+                "drug_id": 72,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 178,
+                "drug_id": 72,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 73,
+        "generic_name": "Ketoconazole",
+        "brand_name": "",
+        "category": "Antifungals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 89,
+                "drug_id": 73,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 179,
+                "drug_id": 73,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 74,
+        "generic_name": "Nystatin",
+        "brand_name": "",
+        "category": "Antifungals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 90,
+                "drug_id": 74,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 180,
+                "drug_id": 74,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 75,
+        "generic_name": "Amphotericin B",
+        "brand_name": "",
+        "category": "Antifungals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 91,
+                "drug_id": 75,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 181,
+                "drug_id": 75,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 76,
+        "generic_name": "Clotrimazole",
+        "brand_name": "",
+        "category": "Antifungals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 92,
+                "drug_id": 76,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 182,
+                "drug_id": 76,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 77,
+        "generic_name": "Miconazole",
+        "brand_name": "",
+        "category": "Antifungals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 93,
+                "drug_id": 77,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 183,
+                "drug_id": 77,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 78,
+        "generic_name": "Terbinafine",
+        "brand_name": "",
+        "category": "Antifungals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 94,
+                "drug_id": 78,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 184,
+                "drug_id": 78,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 79,
+        "generic_name": "Griseofulvin",
+        "brand_name": "",
+        "category": "Antifungals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 95,
+                "drug_id": 79,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 185,
+                "drug_id": 79,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 80,
+        "generic_name": "Voriconazole",
+        "brand_name": "",
+        "category": "Antifungals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 96,
+                "drug_id": 80,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 186,
+                "drug_id": 80,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 81,
+        "generic_name": "Acyclovir",
+        "brand_name": "",
+        "category": "Antivirals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 97,
+                "drug_id": 81,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 187,
+                "drug_id": 81,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 82,
+        "generic_name": "Valacyclovir",
+        "brand_name": "",
+        "category": "Antivirals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 98,
+                "drug_id": 82,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 188,
+                "drug_id": 82,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 83,
+        "generic_name": "Oseltamivir",
+        "brand_name": "",
+        "category": "Antivirals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 99,
+                "drug_id": 83,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 189,
+                "drug_id": 83,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 84,
+        "generic_name": "Zanamivir",
+        "brand_name": "",
+        "category": "Antivirals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 100,
+                "drug_id": 84,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 190,
+                "drug_id": 84,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 85,
+        "generic_name": "Ganciclovir",
+        "brand_name": "",
+        "category": "Antivirals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 101,
+                "drug_id": 85,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 191,
+                "drug_id": 85,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 86,
+        "generic_name": "Lamivudine",
+        "brand_name": "",
+        "category": "Antivirals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 102,
+                "drug_id": 86,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 192,
+                "drug_id": 86,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 87,
+        "generic_name": "Zidovudine",
+        "brand_name": "",
+        "category": "Antivirals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 103,
+                "drug_id": 87,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 193,
+                "drug_id": 87,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 88,
+        "generic_name": "Ribavirin",
+        "brand_name": "",
+        "category": "Antivirals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 104,
+                "drug_id": 88,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 194,
+                "drug_id": 88,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 89,
+        "generic_name": "Tenofovir",
+        "brand_name": "",
+        "category": "Antivirals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 105,
+                "drug_id": 89,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 195,
+                "drug_id": 89,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 90,
+        "generic_name": "Remdesivir",
+        "brand_name": "",
+        "category": "Antivirals",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 106,
+                "drug_id": 90,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 196,
+                "drug_id": 90,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 91,
+        "generic_name": "Furosemide",
+        "brand_name": "",
+        "category": "Cardiac",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 107,
+                "drug_id": 91,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 197,
+                "drug_id": 91,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 92,
+        "generic_name": "Spironolactone",
+        "brand_name": "",
+        "category": "Cardiac",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 108,
+                "drug_id": 92,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 198,
+                "drug_id": 92,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 93,
+        "generic_name": "Digoxin",
+        "brand_name": "",
+        "category": "Cardiac",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 109,
+                "drug_id": 93,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 199,
+                "drug_id": 93,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 94,
+        "generic_name": "Captopril",
+        "brand_name": "",
+        "category": "Cardiac",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 110,
+                "drug_id": 94,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 200,
+                "drug_id": 94,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 95,
+        "generic_name": "Enalapril",
+        "brand_name": "",
+        "category": "Cardiac",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 111,
+                "drug_id": 95,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 201,
+                "drug_id": 95,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 96,
+        "generic_name": "Atenolol",
+        "brand_name": "",
+        "category": "Cardiac",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 112,
+                "drug_id": 96,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 202,
+                "drug_id": 96,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 97,
+        "generic_name": "Propranolol",
+        "brand_name": "",
+        "category": "Cardiac",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 113,
+                "drug_id": 97,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 203,
+                "drug_id": 97,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 98,
+        "generic_name": "Amlodipine",
+        "brand_name": "",
+        "category": "Cardiac",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 114,
+                "drug_id": 98,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 204,
+                "drug_id": 98,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 99,
+        "generic_name": "Losartan",
+        "brand_name": "",
+        "category": "Cardiac",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 115,
+                "drug_id": 99,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 205,
+                "drug_id": 99,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    },
+    {
+        "id": 100,
+        "generic_name": "Hydrochlorothiazide",
+        "brand_name": "",
+        "category": "Cardiac",
+        "description": "",
+        "is_active": true,
+        "created_at": "2026-03-25T11:00:53.000000Z",
+        "updated_at": "2026-03-25T11:00:53.000000Z",
+        "is_system": false,
+        "clinic_id": 1,
+        "forms": [
+            {
+                "id": 116,
+                "drug_id": 100,
+                "form": "syrup",
+                "concentration": "100mg\/5ml",
+                "concentration_mg": "100.00",
+                "concentration_per_ml": "20.00",
+                "notes": null,
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ],
+        "dosage_rules": [
+            {
+                "id": 206,
+                "drug_id": 100,
+                "mg_per_kg_min": "5.00",
+                "mg_per_kg_max": "10.00",
+                "max_daily_mg": "1000.00",
+                "frequency_per_day": 3,
+                "frequency_hours": 8,
+                "min_age_months": 1,
+                "max_age_months": 144,
+                "min_weight_kg": null,
+                "max_weight_kg": null,
+                "notes": "",
+                "created_at": "2026-03-25T11:00:53.000000Z",
+                "updated_at": "2026-03-25T11:00:53.000000Z"
+            }
+        ]
+    }
+]
