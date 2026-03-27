@@ -1707,7 +1707,8 @@
                         @endif
 
                         <!-- Pediatric Module -->
-                        @if((Auth::user()->canAccessSection('pediatric') && Auth::user()->canAccessModule('pediatric')) || Auth::user()->canAccessModule('vaccination'))
+                        {{-- Parent gate: user must have pediatric section permission AND at least one child module enabled --}}
+                        @if(Auth::user()->canAccessSection('pediatric') && (Auth::user()->canAccessModule('pediatric') || Auth::user()->canAccessModule('vaccination')))
                         <li class="nav-item has-submenu {{ request()->routeIs('pediatric.*') || request()->routeIs('vaccination.*') ? 'active' : '' }}">
                             <a href="#" class="nav-link submenu-toggle">
                                 <i class="nav-icon fas fa-baby"></i>
@@ -1731,7 +1732,7 @@
                                     </a>
                                 </li>
                                 @endif
-                                @if(Auth::user()->canAccessModule('vaccination'))
+                                @if(Auth::user()->canAccessSection('pediatric') && Auth::user()->canAccessModule('vaccination'))
                                 <li class="submenu-item">
                                     <a href="{{ route('vaccination.index') }}" class="submenu-link {{ request()->routeIs('vaccination.*') ? 'active' : '' }}">
                                         <i class="fas fa-syringe me-2"></i>

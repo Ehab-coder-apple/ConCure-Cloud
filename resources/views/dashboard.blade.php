@@ -218,7 +218,7 @@
     </div>
 
     {{-- Vaccination Delayed / Missed Summary --}}
-    @if(auth()->user()->canAccessModule('pediatric') && isset($vaccinationStats))
+    @if(auth()->user()->canAccessSection('pediatric') && auth()->user()->canAccessModule('pediatric') && isset($vaccinationStats))
     <div class="row mb-4 g-3">
         <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100">
