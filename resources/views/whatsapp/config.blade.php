@@ -155,36 +155,73 @@
                         <div class="tab-pane fade" id="wppconnect" role="tabpanel">
                             <div class="row">
                                 <div class="col-md-8">
-                                    <h5>{{ __('WPPConnect (Self-hosted)') }}</h5>
-                                    <p class="text-muted">{{ __('Free, open-source WhatsApp Web API. Perfect for desktop applications.') }}</p>
-                                    
+                                    <h5>{{ __('WPPConnect — Free WhatsApp Integration') }}</h5>
+                                    <p class="text-muted">{{ __('Use your own WhatsApp number to send automated messages at zero cost.') }}</p>
+
+                                    <!-- Step 1: Server URL -->
                                     <form id="wppconnectForm">
-                                        <div class="form-group">
-                                            <label for="wppconnect_url">{{ __('Server URL') }}</label>
-                                            <input type="url" class="form-control" id="wppconnect_url" name="wppconnect_url" 
-                                                   value="http://localhost:21465" placeholder="http://localhost:21465">
+                                        <div class="form-group mb-3">
+                                            <label for="wppconnect_url">{{ __('WPPConnect Server URL') }}</label>
+                                            <input type="url" class="form-control" id="wppconnect_url" name="wppconnect_url"
+                                                   value="{{ auth()->user()->clinic->settings['whatsapp']['wppconnect_url'] ?? 'http://localhost:21465' }}"
+                                                   placeholder="http://localhost:21465">
+                                            <small class="form-text text-muted">{{ __('The URL where your WPPConnect server is running') }}</small>
                                         </div>
-                                        
-                                        <div class="form-group">
-                                            <label for="wppconnect_session">{{ __('Session Name') }}</label>
-                                            <input type="text" class="form-control" id="wppconnect_session" name="wppconnect_session" 
-                                                   value="clinic_session" placeholder="clinic_session">
+
+                                        <div class="form-group mb-3">
+                                            <label for="wppconnect_session">{{ __('Session Name (optional)') }}</label>
+                                            <input type="text" class="form-control" id="wppconnect_session" name="wppconnect_session"
+                                                   value="{{ auth()->user()->clinic->settings['whatsapp']['wppconnect_session'] ?? '' }}"
+                                                   placeholder="{{ __('Auto-generated if empty') }}">
                                         </div>
-                                        
-                                        <button type="submit" class="btn btn-info">
-                                            <i class="fas fa-qrcode"></i> {{ __('Setup WPPConnect') }}
+
+                                        <button type="submit" class="btn btn-info" id="btnSaveWppconnect">
+                                            <i class="fas fa-save"></i> {{ __('Save & Connect') }}
                                         </button>
                                     </form>
+
+                                    <!-- Step 2: QR Code -->
+                                    <div id="wppconnectQrSection" class="mt-4 d-none">
+                                        <hr>
+                                        <h5><i class="fas fa-qrcode"></i> {{ __('Scan QR Code') }}</h5>
+                                        <p class="text-muted">{{ __('Open WhatsApp on your phone → Settings → Linked Devices → Link a Device → Scan this code') }}</p>
+
+                                        <div id="wppconnectQrContainer" class="text-center py-3">
+                                            <div class="spinner-border text-success" role="status">
+                                                <span class="sr-only">{{ __('Loading...') }}</span>
+                                            </div>
+                                            <p class="mt-2">{{ __('Generating QR code...') }}</p>
+                                        </div>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm" id="btnRefreshQr">
+                                            <i class="fas fa-sync-alt"></i> {{ __('Refresh QR Code') }}
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnCheckStatus">
+                                            <i class="fas fa-check-circle"></i> {{ __('Check Connection') }}
+                                        </button>
+                                    </div>
+
+                                    <!-- Status -->
+                                    <div id="wppconnectStatusBox" class="mt-3 d-none">
+                                        <div class="alert" id="wppconnectStatusAlert"></div>
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="card bg-light">
                                         <div class="card-body">
-                                            <h6>{{ __('Installation') }}</h6>
-                                            <pre class="small bg-dark text-light p-2 rounded">npm install -g @wppconnect-team/wppconnect-server
-wppconnect-server --port 21465</pre>
-                                            <p class="small text-success">
-                                                <i class="fas fa-heart"></i> {{ __('100% Free & Open Source!') }}
-                                            </p>
+                                            <h6><i class="fas fa-heart text-danger"></i> {{ __('100% Free') }}</h6>
+                                            <p class="small">{{ __('No monthly fees. No per-message charges. Uses your own WhatsApp number.') }}</p>
+                                            <hr>
+                                            <h6>{{ __('How it works') }}</h6>
+                                            <ol class="small">
+                                                <li>{{ __('Save the server URL above') }}</li>
+                                                <li>{{ __('Scan the QR code with your phone') }}</li>
+                                                <li>{{ __('Appointment reminders are sent automatically!') }}</li>
+                                            </ol>
+                                            <hr>
+                                            <h6>{{ __('Server Installation') }}</h6>
+                                            <pre class="small bg-dark text-light p-2 rounded" style="white-space:pre-wrap">npm install -g @wppconnect-team/server
+npx wppconnect-server</pre>
                                         </div>
                                     </div>
                                 </div>
@@ -264,43 +301,83 @@ wppconnect-server --port 21465</pre>
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Test WhatsApp functionality
+    const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const hdrs = {'Content-Type':'application/json','X-CSRF-TOKEN':csrf};
+
+    // Test WhatsApp
     document.getElementById('testWhatsApp').addEventListener('click', function() {
         const phone = document.getElementById('test_phone').value;
         const message = document.getElementById('test_message').value;
-        
-        if (!phone.trim()) {
-            alert('{{ __("Please enter a phone number") }}');
-            return;
-        }
-        
-        // Send test message
-        fetch('/whatsapp/test', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                phone: phone,
-                message: message
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('{{ __("✅ Test message sent successfully!") }}');
-                if (data.whatsapp_url) {
-                    window.open(data.whatsapp_url, '_blank');
-                }
-            } else {
-                alert('{{ __("❌ Test failed:") }} ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('{{ __("Error:") }} ' + error.message);
-        });
+        if (!phone.trim()) { alert('{{ __("Please enter a phone number") }}'); return; }
+        fetch('/whatsapp/test',{method:'POST',headers:hdrs,body:JSON.stringify({phone,message})})
+            .then(r=>r.json()).then(data=>{
+                if(data.success){alert('{{ __("✅ Test message sent successfully!") }}');if(data.whatsapp_url)window.open(data.whatsapp_url,'_blank');}
+                else alert('{{ __("❌ Test failed:") }} '+data.message);
+            }).catch(e=>alert('{{ __("Error:") }} '+e.message));
     });
+
+    // ── WPPConnect ──
+    const qrSection = document.getElementById('wppconnectQrSection');
+    const qrContainer = document.getElementById('wppconnectQrContainer');
+    const statusBox = document.getElementById('wppconnectStatusBox');
+    const statusAlert = document.getElementById('wppconnectStatusAlert');
+
+    function showStatus(msg, type){
+        statusBox.classList.remove('d-none');
+        statusAlert.className='alert alert-'+type;
+        statusAlert.innerHTML=msg;
+    }
+
+    // Save WPPConnect config
+    document.getElementById('wppconnectForm').addEventListener('submit', function(e){
+        e.preventDefault();
+        const btn = document.getElementById('btnSaveWppconnect');
+        btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> {{ __("Saving...") }}';
+        fetch('/whatsapp/configure/wppconnect',{method:'POST',headers:hdrs,body:JSON.stringify({
+            wppconnect_url: document.getElementById('wppconnect_url').value,
+            wppconnect_session: document.getElementById('wppconnect_session').value
+        })}).then(r=>r.json()).then(data=>{
+            btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> {{ __("Save & Connect") }}';
+            if(data.success){
+                showStatus('<i class="fas fa-check-circle"></i> '+data.message,'success');
+                qrSection.classList.remove('d-none');
+                loadQrCode();
+            } else {
+                showStatus('<i class="fas fa-times-circle"></i> '+data.message,'danger');
+            }
+        }).catch(e=>{btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> {{ __("Save & Connect") }}';showStatus(e.message,'danger');});
+    });
+
+    // Load QR code
+    function loadQrCode(){
+        qrContainer.innerHTML='<div class="spinner-border text-success"></div><p class="mt-2">{{ __("Generating QR code...") }}</p>';
+        fetch('/whatsapp/wppconnect/qr',{headers:{'Accept':'application/json','X-CSRF-TOKEN':csrf}})
+            .then(r=>r.json()).then(data=>{
+                if(data.connected){
+                    qrContainer.innerHTML='<div class="alert alert-success"><i class="fas fa-check-circle fa-2x"></i><br>{{ __("WhatsApp is connected!") }}</div>';
+                    showStatus('{{ __("✅ WhatsApp is connected and ready to send messages.") }}','success');
+                } else if(data.qrcode){
+                    qrContainer.innerHTML='<img src="'+data.qrcode+'" alt="QR Code" style="max-width:300px" class="border rounded p-2">';
+                } else {
+                    qrContainer.innerHTML='<p class="text-warning">{{ __("Could not generate QR code. Try refreshing.") }}</p>';
+                }
+            }).catch(e=>{qrContainer.innerHTML='<p class="text-danger">'+e.message+'</p>';});
+    }
+
+    document.getElementById('btnRefreshQr')?.addEventListener('click', loadQrCode);
+    document.getElementById('btnCheckStatus')?.addEventListener('click', function(){
+        fetch('/whatsapp/wppconnect/status',{headers:{'Accept':'application/json','X-CSRF-TOKEN':csrf}})
+            .then(r=>r.json()).then(data=>{
+                if(data.connected){showStatus('<i class="fas fa-check-circle"></i> '+data.message,'success');}
+                else{showStatus('<i class="fas fa-exclamation-triangle"></i> '+data.message,'warning');}
+            }).catch(e=>showStatus(e.message,'danger'));
+    });
+
+    // Auto-show QR section if already configured
+    @if(isset(auth()->user()->clinic->settings['whatsapp']['provider']) && auth()->user()->clinic->settings['whatsapp']['provider'] === 'wppconnect')
+        qrSection.classList.remove('d-none');
+        loadQrCode();
+    @endif
 });
 </script>
 @endpush

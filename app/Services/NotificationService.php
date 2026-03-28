@@ -102,6 +102,9 @@ class NotificationService
                 return false;
             }
 
+            // Ensure WhatsApp service uses the correct clinic credentials (important for CLI/scheduler)
+            $this->whatsApp->setClinicContext($notification->clinic_id);
+
             // Send via WhatsApp service
             $result = $this->whatsApp->sendMessage($phone, $message);
 

@@ -908,6 +908,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/patients', [App\Http\Controllers\WhatsAppController::class, 'patientsList'])->name('patients');
         Route::post('/broadcast', [App\Http\Controllers\WhatsAppController::class, 'broadcast'])->name('broadcast');
         Route::post('/configure/twilio', [App\Http\Controllers\WhatsAppController::class, 'configureTwilio'])->name('configure.twilio');
+
+        // WPPConnect (free self-hosted WhatsApp)
+        Route::post('/configure/wppconnect', [App\Http\Controllers\WhatsAppController::class, 'configureWppconnect'])->name('configure.wppconnect');
+        Route::get('/wppconnect/qr', [App\Http\Controllers\WhatsAppController::class, 'wppconnectQr'])->name('wppconnect.qr');
+        Route::get('/wppconnect/status', [App\Http\Controllers\WhatsAppController::class, 'wppconnectStatus'])->name('wppconnect.status');
     });
 
     // Notification Settings (WhatsApp auto-reminders)

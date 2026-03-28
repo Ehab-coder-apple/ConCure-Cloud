@@ -17,8 +17,20 @@ class WhatsAppService
     protected $twilioSid;
     protected $twilioToken;
     protected $twilioFrom;
+    protected $wppconnectUrl;
+    protected $wppconnectSession;
+    protected $wppconnectApiKey;
 
     public function __construct()
+    {
+        $this->loadConfig();
+    }
+
+    /**
+     * Load configuration from config/whatsapp.php + clinic settings.
+     * Can be re-invoked via setClinicContext() in CLI mode.
+     */
+    protected function loadConfig(?int $clinicId = null): void
     {
         // Load configuration from config/whatsapp.php
         $config = config('whatsapp', []);
@@ -26,7 +38,13 @@ class WhatsAppService
 
         // Try to load clinic-specific WhatsApp configuration
         $clinicWhatsAppConfig = null;
-        if (auth()->check() && auth()->user()->clinic_id) {
+        if ($clinicId) {
+            // CLI context — load clinic directly by ID
+            $clinic = \App\Models\Clinic::find($clinicId);
+            if ($clinic && isset($clinic->settings['whatsapp'])) {
+                $clinicWhatsAppConfig = $clinic->settings['whatsapp'];
+            }
+        } elseif (auth()->check() && auth()->user()->clinic_id) {
             $clinic = auth()->user()->clinic;
             if ($clinic && isset($clinic->settings['whatsapp'])) {
                 $clinicWhatsAppConfig = $clinic->settings['whatsapp'];
@@ -34,17 +52,30 @@ class WhatsAppService
         }
 
         // Twilio configuration - prioritize clinic settings over env
-        if ($clinicWhatsAppConfig && isset($clinicWhatsAppConfig['provider']) && $clinicWhatsAppConfig['provider'] === 'twilio') {
+        if ($clinicWhatsAppConfig && ($clinicWhatsAppConfig['provider'] ?? '') === 'twilio') {
             $this->twilioSid = $clinicWhatsAppConfig['twilio_sid'] ?? null;
             $this->twilioToken = $clinicWhatsAppConfig['twilio_token'] ?? null;
             $this->twilioFrom = $clinicWhatsAppConfig['twilio_from'] ?? 'whatsapp:+14155238886';
-            $defaultProvider = 'twilio'; // Force Twilio if configured in clinic settings
+            $defaultProvider = 'twilio';
         } else {
             // Fallback to config/env
             $twilioConfig = $config['providers']['twilio'] ?? [];
             $this->twilioSid = $twilioConfig['account_sid'] ?? env('TWILIO_SID');
             $this->twilioToken = $twilioConfig['auth_token'] ?? env('TWILIO_TOKEN');
             $this->twilioFrom = $twilioConfig['from_number'] ?? env('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886');
+        }
+
+        // WPPConnect configuration - prioritize clinic settings over env
+        if ($clinicWhatsAppConfig && ($clinicWhatsAppConfig['provider'] ?? '') === 'wppconnect') {
+            $this->wppconnectUrl = $clinicWhatsAppConfig['wppconnect_url'] ?? null;
+            $this->wppconnectSession = $clinicWhatsAppConfig['wppconnect_session'] ?? 'clinic_session';
+            $this->wppconnectApiKey = $clinicWhatsAppConfig['wppconnect_api_key'] ?? null;
+            $defaultProvider = 'wppconnect';
+        } else {
+            $wppConfig = $config['providers']['wppconnect'] ?? [];
+            $this->wppconnectUrl = $wppConfig['api_url'] ?? env('WPPCONNECT_URL', 'http://localhost:21465');
+            $this->wppconnectSession = $wppConfig['session_name'] ?? env('WPPCONNECT_SESSION', 'clinic_session');
+            $this->wppconnectApiKey = $wppConfig['api_key'] ?? env('WPPCONNECT_API_KEY');
         }
 
         // Meta WhatsApp Business API configuration
@@ -65,12 +96,23 @@ class WhatsAppService
             Log::info('WhatsApp Service Initialized', [
                 'provider' => $this->provider,
                 'default_provider' => $defaultProvider,
+                'clinic_id' => $clinicId,
                 'clinic_config_used' => !empty($clinicWhatsAppConfig),
                 'twilio_configured' => !empty($this->twilioSid) && !empty($this->twilioToken),
                 'meta_configured' => !empty($this->apiToken) && !empty($this->phoneNumberId),
                 'chatapi_configured' => !empty($this->apiUrl) && !empty($chatApiToken),
+                'wppconnect_configured' => !empty($this->wppconnectUrl) && !empty($this->wppconnectApiKey),
             ]);
         }
+    }
+
+    /**
+     * Re-initialise credentials for a specific clinic (used by CLI scheduled jobs).
+     */
+    public function setClinicContext(int $clinicId): self
+    {
+        $this->loadConfig($clinicId);
+        return $this;
     }
 
     /**
@@ -207,6 +249,9 @@ class WhatsAppService
 
                 case 'official':
                     return $this->sendViaOfficialAPI($cleanPhone, $message, $attachmentPath);
+
+                case 'wppconnect':
+                    return $this->sendViaWPPConnect($cleanPhone, $message, $attachmentPath);
 
                 default:
                     // Fallback to web WhatsApp
@@ -460,6 +505,91 @@ class WhatsAppService
     }
 
     /**
+     * Send via WPPConnect (self-hosted, free WhatsApp Web API)
+     */
+    protected function sendViaWPPConnect(string $phoneNumber, string $message, ?string $attachmentPath = null): array
+    {
+        if (!$this->wppconnectUrl || !$this->wppconnectApiKey) {
+            Log::warning("WPPConnect not configured — cannot send to {$phoneNumber}");
+            return [
+                'success' => false,
+                'error' => 'WPPConnect is not configured. Please scan the QR code in WhatsApp settings.',
+                'status' => 'failed',
+                'configured' => false,
+            ];
+        }
+
+        $session = $this->wppconnectSession ?: 'clinic_session';
+
+        try {
+            // Send text message via WPPConnect server API
+            $headers = ['Accept' => 'application/json'];
+            if ($this->wppconnectApiKey) {
+                $headers['Authorization'] = 'Bearer ' . $this->wppconnectApiKey;
+            }
+
+            $response = Http::withHeaders($headers)
+                ->timeout(15)
+                ->post("{$this->wppconnectUrl}/api/{$session}/send-message", [
+                    'phone' => $phoneNumber,
+                    'isGroup' => false,
+                    'message' => $message,
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                // Send attachment if provided
+                if ($attachmentPath && Storage::exists($attachmentPath)) {
+                    $fileContent = Storage::get($attachmentPath);
+                    $base64 = base64_encode($fileContent);
+                    $mime = Storage::mimeType($attachmentPath) ?: 'application/octet-stream';
+
+                    Http::withHeaders($headers)
+                        ->timeout(30)
+                        ->post("{$this->wppconnectUrl}/api/{$session}/send-file-base64", [
+                            'phone' => $phoneNumber,
+                            'isGroup' => false,
+                            'base64' => "data:{$mime};base64,{$base64}",
+                            'filename' => basename($attachmentPath),
+                            'caption' => '',
+                        ]);
+                }
+
+                return [
+                    'success' => true,
+                    'message_id' => $data['id'] ?? ($data['response'][0]['id'] ?? null),
+                    'status' => 'sent',
+                    'provider' => 'wppconnect',
+                    'response' => $data,
+                ];
+            }
+
+            // Session may be disconnected
+            $body = $response->json();
+            $errorMsg = $body['message'] ?? $body['error'] ?? $response->body();
+
+            return [
+                'success' => false,
+                'error' => "WPPConnect send failed: {$errorMsg}",
+                'status' => 'failed',
+                'setup_required' => str_contains(strtolower($errorMsg), 'not found') || str_contains(strtolower($errorMsg), 'not connected'),
+            ];
+        } catch (\Exception $e) {
+            Log::error('WPPConnect WhatsApp send failed', [
+                'phone' => $phoneNumber,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'status' => 'failed',
+            ];
+        }
+    }
+
+    /**
      * Send via web WhatsApp (with automatic setup support)
      */
     protected function sendViaWebWhatsApp(string $phoneNumber, string $message, ?string $attachmentPath = null): array
@@ -558,6 +688,9 @@ class WhatsAppService
             case 'official':
                 return !empty($this->apiToken) && !empty($this->phoneNumberId);
 
+            case 'wppconnect':
+                return !empty($this->wppconnectUrl) && !empty($this->wppconnectApiKey);
+
             default:
                 return false; // Will use web WhatsApp fallback
         }
@@ -584,6 +717,7 @@ class WhatsAppService
                 'twilio' => !empty($this->twilioSid) && !empty($this->twilioToken),
                 'web_api' => !empty($this->apiUrl) && !empty($this->apiToken),
                 'official' => !empty($this->apiToken) && !empty($this->phoneNumberId),
+                'wppconnect' => !empty($this->wppconnectUrl) && !empty($this->wppconnectApiKey),
             ]
         ];
     }
@@ -675,6 +809,8 @@ class WhatsAppService
                 return !empty($this->apiUrl) && !empty($this->apiToken) && !empty($this->phoneNumberId);
             case 'web':
                 return session('whatsapp_configured', false);
+            case 'wppconnect':
+                return !empty($this->wppconnectUrl) && !empty($this->wppconnectApiKey);
             default:
                 return false;
         }

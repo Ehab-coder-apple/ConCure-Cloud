@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use App\Models\Patient;
 
 class WhatsAppController extends Controller
@@ -333,6 +334,187 @@ class WhatsAppController extends Controller
                 ],
             ],
         ]);
+    }
+
+    // ──────────────────────────────────────────────────────
+    // WPPConnect — self-hosted free WhatsApp integration
+    // ──────────────────────────────────────────────────────
+
+    /**
+     * Save WPPConnect configuration for the current clinic.
+     */
+    public function configureWppconnect(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'wppconnect_url' => 'required|url',
+            'wppconnect_session' => 'nullable|string|max:100',
+        ]);
+
+        try {
+            $clinic = $user->clinic;
+            if (!$clinic) {
+                return response()->json(['success' => false, 'message' => 'Clinic not found'], 404);
+            }
+
+            $sessionName = $request->wppconnect_session ?: 'clinic_' . $clinic->id;
+
+            // Start (or retrieve) a session on the WPPConnect server and get the API key
+            $apiUrl = rtrim($request->wppconnect_url, '/');
+            $secretKey = config('whatsapp.providers.wppconnect.api_key')
+                         ?: env('WPPCONNECT_SECRET_KEY', 'THISISMYSECURETOKEN');
+
+            $startResponse = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->post("{$apiUrl}/api/{$sessionName}/{$secretKey}/generate-token");
+
+            if (!$startResponse->successful()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Could not connect to WPPConnect server: ' . $startResponse->body(),
+                ], 400);
+            }
+
+            $tokenData = $startResponse->json();
+            $apiKey = $tokenData['token'] ?? null;
+
+            // Save to clinic settings
+            $settings = $clinic->settings ?? [];
+            $settings['whatsapp'] = [
+                'provider' => 'wppconnect',
+                'wppconnect_url' => $apiUrl,
+                'wppconnect_session' => $sessionName,
+                'wppconnect_api_key' => $apiKey,
+                'configured_at' => now()->toDateTimeString(),
+                'configured_by' => $user->id,
+            ];
+            $clinic->settings = $settings;
+            $clinic->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'WPPConnect configuration saved! Now scan the QR code to connect your WhatsApp.',
+                'session' => $sessionName,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to save WPPConnect configuration', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save configuration: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Start a WPPConnect session and return the QR code for scanning.
+     */
+    public function wppconnectQr()
+    {
+        $user = auth()->user();
+        $clinic = $user->clinic;
+
+        if (!$clinic) {
+            return response()->json(['success' => false, 'message' => 'Clinic not found'], 404);
+        }
+
+        $wa = $clinic->settings['whatsapp'] ?? [];
+        $apiUrl = $wa['wppconnect_url'] ?? null;
+        $session = $wa['wppconnect_session'] ?? null;
+        $apiKey = $wa['wppconnect_api_key'] ?? null;
+
+        if (!$apiUrl || !$session) {
+            return response()->json([
+                'success' => false,
+                'message' => 'WPPConnect is not configured for this clinic. Please save the settings first.',
+            ], 400);
+        }
+
+        try {
+            $headers = ['Accept' => 'application/json'];
+            if ($apiKey) {
+                $headers['Authorization'] = 'Bearer ' . $apiKey;
+            }
+
+            // Start session (this makes WPPConnect generate a QR code)
+            $startRes = Http::withHeaders($headers)
+                ->timeout(15)
+                ->post("{$apiUrl}/api/{$session}/start-session");
+
+            $body = $startRes->json();
+            $qrCode = $body['qrcode'] ?? $body['urlcode'] ?? null;
+            $status = $body['status'] ?? 'unknown';
+
+            // If already connected
+            if (in_array($status, ['CONNECTED', 'isLogged'])) {
+                return response()->json([
+                    'success' => true,
+                    'connected' => true,
+                    'message' => 'WhatsApp is already connected!',
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'connected' => false,
+                'qrcode' => $qrCode,
+                'status' => $status,
+                'message' => 'Scan the QR code with your WhatsApp app.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('WPPConnect QR code fetch failed', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not reach WPPConnect server: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Check the current connection status of the clinic's WPPConnect session.
+     */
+    public function wppconnectStatus()
+    {
+        $user = auth()->user();
+        $clinic = $user->clinic;
+
+        if (!$clinic) {
+            return response()->json(['success' => false, 'message' => 'Clinic not found'], 404);
+        }
+
+        $wa = $clinic->settings['whatsapp'] ?? [];
+        $apiUrl = $wa['wppconnect_url'] ?? null;
+        $session = $wa['wppconnect_session'] ?? null;
+        $apiKey = $wa['wppconnect_api_key'] ?? null;
+
+        if (!$apiUrl || !$session) {
+            return response()->json(['success' => false, 'connected' => false, 'message' => 'Not configured']);
+        }
+
+        try {
+            $headers = ['Accept' => 'application/json'];
+            if ($apiKey) {
+                $headers['Authorization'] = 'Bearer ' . $apiKey;
+            }
+
+            $res = Http::withHeaders($headers)->timeout(10)->get("{$apiUrl}/api/{$session}/check-connection-session");
+            $data = $res->json();
+            $connected = ($data['status'] ?? false) === true || ($data['message'] ?? '') === 'Connected';
+
+            return response()->json([
+                'success' => true,
+                'connected' => $connected,
+                'status' => $data['status'] ?? 'unknown',
+                'message' => $connected ? 'WhatsApp is connected and ready to send messages.' : 'WhatsApp is not connected. Please scan the QR code.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'connected' => false,
+                'message' => 'Cannot reach WPPConnect server: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
