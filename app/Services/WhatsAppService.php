@@ -135,9 +135,13 @@ class WhatsAppService
             // Clean phone number (remove non-digits)
             $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
 
-            // Ensure phone number starts with country code
-            if (!str_starts_with($cleanPhone, '964') && strlen($cleanPhone) === 10) {
-                $cleanPhone = '964' . $cleanPhone; // Add Iraq country code
+            // Ensure phone number starts with country code (Iraq: 964)
+            if (!str_starts_with($cleanPhone, '964')) {
+                if (str_starts_with($cleanPhone, '0') && strlen($cleanPhone) === 11) {
+                    $cleanPhone = '964' . substr($cleanPhone, 1);
+                } elseif (strlen($cleanPhone) === 10) {
+                    $cleanPhone = '964' . $cleanPhone;
+                }
             }
 
             // Log provider selection for debugging
@@ -180,9 +184,14 @@ class WhatsAppService
             // Clean phone number (remove non-digits)
             $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
 
-            // Ensure phone number starts with country code
-            if (!str_starts_with($cleanPhone, '964') && strlen($cleanPhone) === 10) {
-                $cleanPhone = '964' . $cleanPhone; // Add Iraq country code
+            // Ensure phone number starts with country code (Iraq: 964)
+            if (!str_starts_with($cleanPhone, '964')) {
+                // Iraqi mobile numbers: 07xx xxx xxxx (11 digits) → strip leading 0
+                if (str_starts_with($cleanPhone, '0') && strlen($cleanPhone) === 11) {
+                    $cleanPhone = '964' . substr($cleanPhone, 1);
+                } elseif (strlen($cleanPhone) === 10) {
+                    $cleanPhone = '964' . $cleanPhone;
+                }
             }
 
             // Route to appropriate provider
@@ -226,14 +235,13 @@ class WhatsAppService
     protected function sendViaTwilio(string $phoneNumber, string $message, ?string $attachmentPath = null): array
     {
         if (!$this->twilioSid || !$this->twilioToken) {
-            // Demo mode - simulate successful sending
-            Log::info("Demo mode: Simulating Twilio WhatsApp send to {$phoneNumber}");
+            Log::warning("Twilio WhatsApp credentials not configured — cannot send to {$phoneNumber}");
             return [
-                'success' => true,
-                'message' => '✅ Test message sent automatically via WhatsApp! (Demo Mode)',
+                'success' => false,
+                'error' => 'Twilio WhatsApp credentials are not configured. Please set TWILIO_SID and TWILIO_TOKEN.',
                 'demo_mode' => true,
                 'phone' => $phoneNumber,
-                'status' => 'sent'
+                'status' => 'failed',
             ];
         }
 
@@ -456,6 +464,18 @@ class WhatsAppService
      */
     protected function sendViaWebWhatsApp(string $phoneNumber, string $message, ?string $attachmentPath = null): array
     {
+        // In CLI context (scheduled jobs), there is no browser — this cannot deliver a message
+        if (app()->runningInConsole()) {
+            Log::warning("WebWhatsApp fallback called in CLI context — cannot send to {$phoneNumber}. Configure a real provider (Twilio, Meta, etc.).");
+            return [
+                'success' => false,
+                'error' => 'No WhatsApp API provider configured. WebWhatsApp fallback is not available in CLI/scheduled context.',
+                'phone' => $phoneNumber,
+                'status' => 'failed',
+                'configured' => false,
+            ];
+        }
+
         // Check if WhatsApp Web is configured via automatic setup
         if (session('whatsapp_configured', false)) {
             // WhatsApp Web is configured - simulate automatic sending
@@ -476,10 +496,10 @@ class WhatsAppService
             Log::info("WhatsApp Web not configured - generating URL for {$phoneNumber}: {$whatsappUrl}");
 
             return [
-                'success' => true,
+                'success' => false,
                 'whatsapp_url' => $whatsappUrl,
                 'status' => 'pending',
-                'message' => 'WhatsApp web URL generated. Opening WhatsApp Web...',
+                'message' => 'WhatsApp web URL generated — message not delivered automatically.',
                 'attachment_note' => $attachmentPath ? 'Attachment must be sent manually: ' . Storage::url($attachmentPath) : null,
                 'configured' => false
             ];
@@ -709,6 +729,18 @@ class WhatsAppService
     protected function sendDocumentViaWeb(string $phoneNumber, string $filePath, string $fileName, string $message): array
     {
         try {
+            // In CLI context, WebWhatsApp fallback cannot deliver messages
+            if (app()->runningInConsole()) {
+                Log::warning("WebWhatsApp document fallback called in CLI context — cannot send to {$phoneNumber}");
+                return [
+                    'success' => false,
+                    'error' => 'No WhatsApp API provider configured for document sending.',
+                    'phone' => $phoneNumber,
+                    'status' => 'failed',
+                    'configured' => false,
+                ];
+            }
+
             // Check if WhatsApp is configured via automatic setup
             if (session('whatsapp_configured', false)) {
                 // WhatsApp Web is configured - simulate automatic sending
@@ -728,8 +760,8 @@ class WhatsAppService
                 Log::info("WhatsApp Web not configured - generating URL for {$phoneNumber}: {$whatsappUrl}");
 
                 return [
-                    'success' => true,
-                    'message' => 'WhatsApp URL generated. Opening WhatsApp Web...',
+                    'success' => false,
+                    'message' => 'WhatsApp URL generated — document not delivered automatically.',
                     'whatsapp_url' => $whatsappUrl,
                     'manual_action_required' => true,
                     'configured' => false,
@@ -753,11 +785,11 @@ class WhatsAppService
     {
         try {
             if (!$this->twilioSid || !$this->twilioToken) {
-                // Demo mode - simulate successful sending (hardcoded for testing)
-                Log::info("Demo mode: Simulating WhatsApp send to {$phoneNumber}");
+                Log::warning("Twilio WhatsApp credentials not configured — cannot send document to {$phoneNumber}");
                 return [
-                    'success' => true,
-                    'message' => '✅ Invoice sent automatically via WhatsApp! (Demo Mode)',
+                    'success' => false,
+                    'message' => 'Twilio WhatsApp credentials are not configured. Please set TWILIO_SID and TWILIO_TOKEN.',
+                    'error' => 'Credentials not configured',
                     'demo_mode' => true,
                     'phone' => $phoneNumber,
                     'file' => $fileName
@@ -808,11 +840,11 @@ class WhatsAppService
     {
         try {
             if (!$this->apiToken || !$this->phoneNumberId) {
-                // Demo mode - simulate successful sending
-                Log::info("Demo mode: Simulating Meta WhatsApp send to {$phoneNumber}");
+                Log::warning("Meta WhatsApp credentials not configured — cannot send document to {$phoneNumber}");
                 return [
-                    'success' => true,
-                    'message' => '✅ Invoice sent automatically via WhatsApp! (Demo Mode)',
+                    'success' => false,
+                    'message' => 'Meta WhatsApp credentials are not configured. Please set WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID.',
+                    'error' => 'Credentials not configured',
                     'demo_mode' => true,
                     'phone' => $phoneNumber,
                     'file' => $fileName

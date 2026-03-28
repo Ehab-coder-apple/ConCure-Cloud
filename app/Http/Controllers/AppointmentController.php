@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\QueryException;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Appointment;
 use App\Models\User;
 use App\Models\Receipt;
 use App\Notifications\NewAppointmentNotification;
+use App\Services\NotificationService;
 
 class AppointmentController extends Controller
 {
@@ -400,6 +402,19 @@ class AppointmentController extends Controller
                 ]);
             }
 
+            // Schedule WhatsApp appointment reminder for the patient
+            try {
+                $appointment = Appointment::withoutGlobalScopes()->find($appointmentId);
+                if ($appointment) {
+                    app(NotificationService::class)->scheduleAppointmentReminder($appointment);
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to schedule WhatsApp appointment reminder', [
+                    'appointment_id' => $appointmentId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return redirect()->route('appointments.index')
                 ->with('success', __('Appointment scheduled successfully.'));
 
@@ -702,6 +717,20 @@ class AppointmentController extends Controller
                 }
 
                 DB::commit();
+
+                // Reschedule WhatsApp appointment reminder if datetime changed
+                try {
+                    $appointment = Appointment::withoutGlobalScopes()->find($id);
+                    if ($appointment) {
+                        app(NotificationService::class)->scheduleAppointmentReminder($appointment);
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('Failed to reschedule WhatsApp appointment reminder', [
+                        'appointment_id' => $id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
                 return redirect()->route('appointments.index')
                     ->with('success', __('Appointment updated successfully.'));
             }
