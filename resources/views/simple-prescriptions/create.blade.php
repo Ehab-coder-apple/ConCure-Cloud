@@ -186,31 +186,29 @@
                 </button>
             </div>
             <div class="row">
-                <div class="col-12 mb-3">
+                <div class="col-md-6 mb-3">
                     <label class="form-label">{{ __('Medicine Name') }}</label>
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="medicine-select-container" style="position: relative; flex: 1; min-width: 0;">
-                            <select class="form-select medicine-select" name="medicines[0][name]" onchange="handleMedicineSelect(this)">
-                                <option value="">{{ __('Select medicine...') }}</option>
-                                @foreach($medicines as $medicine)
-                                    <option value="{{ $medicine->name }}"
-                                            data-dosage="{{ $medicine->dosage }}"
-                                            data-form="{{ $medicine->form }}">
-                                        {{ $medicine->name }}
-                                        @if($medicine->dosage) - {{ $medicine->dosage }} @endif
-                                        @if($medicine->form) ({{ ucfirst($medicine->form) }}) @endif
-                                    </option>
-                                @endforeach
-                                <option value="custom" class="text-primary">{{ __('+ Add New Medicine') }}</option>
-                            </select>
-                            <input type="text" class="form-control mt-2 custom-medicine-input"
-                                   placeholder="{{ __('Enter new medicine name...') }}"
-                                   style="display: none;"
-                                   onblur="handleCustomMedicine(this)">
-                            <div class="voice-status voice-status-medicine"></div>
-                        </div>
-                        <button type="button" class="btn-voice btn-voice-medicine" title="{{ __('Dictate medicine name') }}" style="flex-shrink: 0; width: 36px; height: 36px;"><i class="fas fa-microphone"></i></button>
+                    <div class="medicine-select-container" style="position: relative;">
+                        <select class="form-select medicine-select" name="medicines[0][name]" onchange="handleMedicineSelect(this)">
+                            <option value="">{{ __('Select medicine...') }}</option>
+                            @foreach($medicines as $medicine)
+                                <option value="{{ $medicine->name }}"
+                                        data-dosage="{{ $medicine->dosage }}"
+                                        data-form="{{ $medicine->form }}">
+                                    {{ $medicine->name }}
+                                    @if($medicine->dosage) - {{ $medicine->dosage }} @endif
+                                    @if($medicine->form) ({{ ucfirst($medicine->form) }}) @endif
+                                </option>
+                            @endforeach
+                            <option value="custom" class="text-primary">{{ __('+ Add New Medicine') }}</option>
+                        </select>
+                        <input type="text" class="form-control mt-2 custom-medicine-input"
+                               placeholder="{{ __('Enter new medicine name...') }}"
+                               style="display: none;"
+                               onblur="handleCustomMedicine(this)">
+                        <div class="voice-status voice-status-medicine"></div>
                     </div>
+                    <button type="button" class="btn-voice btn-voice-medicine mt-2" title="{{ __('Dictate medicine name') }}"><i class="fas fa-microphone"></i> {{ __('Dictate') }}</button>
                 </div>
                 <div class="row mb-3" style="display: flex; gap: 10px;">
                     <div class="col-md-4" style="flex: 1;">
