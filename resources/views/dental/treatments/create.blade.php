@@ -357,7 +357,15 @@ document.getElementById('patient_id').addEventListener('change', function() {
 });
 
 // ── Canal Worksheet logic ──────────────────────────────────────────
-let canalOptions = null;
+// Default canal options (fallback if AJAX fails or seeder not run)
+let canalOptions = {
+    statuses: { not_started: 'Not Started', located: 'Located', instrumented: 'Instrumented', obturated: 'Obturated', completed: 'Completed' },
+    maf_sizes: ['08','10','15','20','25','30','35','40','45','50','55','60','70','80'],
+    tapers: ['.02','.04','.06','.08'],
+    irrigation_protocols: ['NaOCl 2.5%','NaOCl 5.25%','NaOCl 5.25% + EDTA 17%','NaOCl 5.25% + CHX 2%','CHX 2%','EDTA 17%','Saline'],
+    obturation_techniques: ['Lateral condensation','Warm vertical condensation','Single cone','Continuous wave','Thermoplasticized injection'],
+    sealers: ['AH Plus','BioRoot RCS','TotalFill BC Sealer','Pulp Canal Sealer','Sealapex','EndoSequence BC Sealer']
+};
 
 function collectToothNumbers() {
     const teeth = [];
@@ -388,8 +396,17 @@ function loadCanalWorksheet(teeth) {
     container.innerHTML = '<p class="p-3 mb-0 text-muted"><i class="fas fa-spinner fa-spin me-1"></i>{{ __("Loading canals...") }}</p>';
 
     const promises = teeth.map(t => fetch(`/dental/canals/standard/${t}`, {
-        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-    }).then(r => r.json()).catch(() => ({ success: true, tooth_number: t, canals: [], options: null })));
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        }
+    }).then(r => {
+        if (!r.ok || !r.headers.get('content-type')?.includes('json')) {
+            return { success: true, tooth_number: t, canals: [], options: null };
+        }
+        return r.json();
+    }).catch(() => ({ success: true, tooth_number: t, canals: [], options: null })));
 
     Promise.all(promises).then(results => {
         let html = '';
