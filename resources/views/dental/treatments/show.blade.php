@@ -277,6 +277,35 @@
                 </div>
             @endif
 
+            <!-- Canal Worksheet (Endodontic) -->
+            @if($dentalTreatment->tooth_number || ($dentalTreatment->tooth_numbers && count($dentalTreatment->tooth_numbers) > 0))
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-teeth me-2"></i>
+                        {{ __('Canal Worksheet (Endodontic)') }}
+                    </h6>
+                    @if(in_array(auth()->user()->role, ['doctor', 'assistant', 'admin', 'program_owner', 'dental_dept']))
+                        <button type="button" class="btn btn-sm btn-primary" id="openCanalWorksheetBtn">
+                            <i class="fas fa-plus me-1"></i>
+                            {{ __('Open Worksheet') }}
+                        </button>
+                    @endif
+                </div>
+                <div class="card-body" id="canalTreatmentsList">
+                    <div class="text-center py-3" id="canalLoading">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="ms-2 text-muted">{{ __('Loading canal data...') }}</span>
+                    </div>
+                    <div id="canalDataContainer" style="display:none;"></div>
+                    <p class="text-muted mb-0" id="noCanalData" style="display:none;">
+                        <i class="fas fa-info-circle me-1"></i>
+                        {{ __('No canal treatment data recorded yet. Click "Open Worksheet" to start documenting.') }}
+                    </p>
+                </div>
+            </div>
+            @endif
+
             <!-- Dental Lab Requests -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -497,5 +526,241 @@
         </div>
     </div>
 </div>
+<!-- Canal Worksheet Modal -->
+<div class="modal fade" id="canalWorksheetModal" tabindex="-1" aria-labelledby="canalWorksheetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="canalWorksheetModalLabel">
+                    <i class="fas fa-teeth me-2"></i>{{ __('Canal Worksheet') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="canalWorksheetBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">{{ __('Loading worksheet...') }}</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                <button type="button" class="btn btn-primary" id="saveCanalWorksheetBtn">
+                    <i class="fas fa-save me-1"></i>{{ __('Save All Canals') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const treatmentId = {{ $dentalTreatment->id }};
+    const worksheetUrl = `{{ url('/dental/treatments') }}/${treatmentId}/canals`;
+    let worksheetData = null;
+
+    // Load canal summary on page load
+    loadCanalSummary();
+
+    function loadCanalSummary() {
+        const loading = document.getElementById('canalLoading');
+        const container = document.getElementById('canalDataContainer');
+        const noData = document.getElementById('noCanalData');
+        if (!loading) return;
+
+        fetch(worksheetUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }})
+        .then(r => r.json())
+        .then(data => {
+            loading.style.display = 'none';
+            worksheetData = data;
+            if (data.existing_canals && Object.keys(data.existing_canals).length > 0) {
+                container.style.display = 'block';
+                let html = '<div class="table-responsive"><table class="table table-sm table-hover mb-0">';
+                html += '<thead><tr><th>{{ __("Tooth") }}</th><th>{{ __("Canal") }}</th><th>{{ __("WL (mm)") }}</th><th>{{ __("MAF") }}</th><th>{{ __("Taper") }}</th><th>{{ __("Status") }}</th></tr></thead><tbody>';
+                for (const [tooth, canals] of Object.entries(data.existing_canals)) {
+                    for (const [name, canal] of Object.entries(canals)) {
+                        html += `<tr>
+                            <td><span class="badge bg-primary">#${tooth}</span></td>
+                            <td><strong>${canal.canal_name}</strong></td>
+                            <td>${canal.working_length ?? '-'}</td>
+                            <td>${canal.master_apical_file ?? '-'}</td>
+                            <td>${canal.taper ?? '-'}</td>
+                            <td>${getStatusBadge(canal.status)}</td>
+                        </tr>`;
+                    }
+                }
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+            } else {
+                noData.style.display = 'block';
+            }
+        })
+        .catch(() => { loading.style.display = 'none'; if(noData) noData.style.display = 'block'; });
+    }
+
+    function getStatusBadge(status) {
+        const colors = { not_started: 'secondary', located: 'info', instrumented: 'warning', obturated: 'primary', completed: 'success' };
+        const labels = { not_started: 'Not Started', located: 'Located', instrumented: 'Instrumented', obturated: 'Obturated', completed: 'Completed' };
+        return `<span class="badge bg-${colors[status] || 'secondary'}">${labels[status] || status}</span>`;
+    }
+
+    // Open worksheet modal
+    const openBtn = document.getElementById('openCanalWorksheetBtn');
+    if (openBtn) {
+        openBtn.addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('canalWorksheetModal'));
+            modal.show();
+            loadWorksheetForm();
+        });
+    }
+
+    function loadWorksheetForm() {
+        const body = document.getElementById('canalWorksheetBody');
+        if (worksheetData) { renderWorksheetForm(body, worksheetData); return; }
+        fetch(worksheetUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }})
+        .then(r => r.json())
+        .then(data => { worksheetData = data; renderWorksheetForm(body, data); })
+        .catch(() => { body.innerHTML = '<div class="alert alert-danger">Failed to load worksheet data.</div>'; });
+    }
+
+    function buildSelect(name, options, selected, placeholder) {
+        let html = `<select class="form-select form-select-sm" name="${name}"><option value="">${placeholder}</option>`;
+        if (Array.isArray(options)) {
+            options.forEach(o => { html += `<option value="${o}" ${selected === o ? 'selected' : ''}>${o}</option>`; });
+        } else {
+            for (const [k, v] of Object.entries(options)) { html += `<option value="${k}" ${selected === k ? 'selected' : ''}>${v}</option>`; }
+        }
+        return html + '</select>';
+    }
+
+    function buildCanalRow(toothNum, canalName, existing, options, editable) {
+        const wl = existing.working_length ?? '';
+        const maf = existing.master_apical_file ?? '';
+        const cone = existing.master_cone_size ?? '';
+        const taper = existing.taper ?? '';
+        const irr = existing.irrigation_protocol ?? '';
+        const obt = existing.obturation_technique ?? '';
+        const seal = existing.sealer_type ?? '';
+        const st = existing.status ?? 'not_started';
+        const notes = existing.notes ?? '';
+
+        return `<tr data-tooth="${toothNum}" data-canal="${canalName}">
+            <td>${editable ? `<input type="text" class="form-control form-control-sm canal-name-input" value="${canalName}" placeholder="Canal name">` : `<strong>${canalName}</strong>`}</td>
+            <td><input type="number" class="form-control form-control-sm" name="working_length" value="${wl}" step="0.5" min="0" max="50" placeholder="mm"></td>
+            <td>${buildSelect('master_apical_file', options.maf_sizes, maf, 'MAF')}</td>
+            <td>${buildSelect('master_cone_size', options.maf_sizes, cone, 'Cone')}</td>
+            <td>${buildSelect('taper', options.tapers, taper, 'Taper')}</td>
+            <td>${buildSelect('irrigation_protocol', options.irrigation_protocols, irr, 'Protocol')}</td>
+            <td>${buildSelect('obturation_technique', options.obturation_techniques, obt, 'Technique')}</td>
+            <td>${buildSelect('sealer_type', options.sealers, seal, 'Sealer')}</td>
+            <td>${buildSelect('status', options.statuses, st, 'Status')}</td>
+            <td><input type="text" class="form-control form-control-sm" name="notes" value="${notes}" placeholder="Notes"></td>
+        </tr>`;
+    }
+
+    function renderWorksheetForm(body, data) {
+        if (!data.tooth_numbers || data.tooth_numbers.length === 0) {
+            body.innerHTML = '<div class="alert alert-warning">No teeth specified for this treatment.</div>';
+            return;
+        }
+        let html = '';
+        data.tooth_numbers.forEach(toothNum => {
+            const stdCanals = data.standard_canals[toothNum] || [];
+            const existing = data.existing_canals[toothNum] || {};
+            html += `<div class="card mb-3"><div class="card-header bg-light"><h6 class="mb-0"><i class="fas fa-tooth me-2"></i>Tooth #${toothNum}</h6></div><div class="card-body p-0"><div class="table-responsive"><table class="table table-sm mb-0 canal-table" data-tooth="${toothNum}"><thead><tr>
+                <th>Canal</th><th>WL (mm)</th><th>MAF</th><th>Cone</th><th>Taper</th><th>Irrigation</th><th>Obturation</th><th>Sealer</th><th>Status</th><th>Notes</th>
+            </tr></thead><tbody>`;
+            let rendered = new Set();
+            if (stdCanals.length > 0) {
+                stdCanals.forEach(sc => {
+                    html += buildCanalRow(toothNum, sc.canal_name, existing[sc.canal_name] || {}, data.options, false);
+                    rendered.add(sc.canal_name);
+                });
+            }
+            for (const [cn, cd] of Object.entries(existing)) {
+                if (!rendered.has(cn)) html += buildCanalRow(toothNum, cn, cd, data.options, false);
+            }
+            if (stdCanals.length === 0 && Object.keys(existing).length === 0) {
+                html += buildCanalRow(toothNum, '', {}, data.options, true);
+            }
+            html += `</tbody></table></div></div><div class="card-footer"><button type="button" class="btn btn-sm btn-outline-primary add-canal-row" data-tooth="${toothNum}"><i class="fas fa-plus me-1"></i>Add Canal</button></div></div>`;
+        });
+        body.innerHTML = html;
+        body.querySelectorAll('.add-canal-row').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tooth = this.dataset.tooth;
+                const tbody = body.querySelector(`table[data-tooth="${tooth}"] tbody`);
+                const tr = document.createElement('tr');
+                tr.innerHTML = buildCanalRow(tooth, '', {}, data.options, true).replace(/^<tr[^>]*>/, '').replace(/<\/tr>$/, '');
+                tr.dataset.tooth = tooth;
+                tr.dataset.canal = '';
+                tbody.appendChild(tr);
+            });
+        });
+    }
+
+    // Save all canals
+    document.getElementById('saveCanalWorksheetBtn')?.addEventListener('click', function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+
+        const canals = [];
+        document.querySelectorAll('#canalWorksheetBody .canal-table tbody tr').forEach(row => {
+            const tooth = row.dataset.tooth;
+            let canalName = row.dataset.canal;
+            const nameInput = row.querySelector('.canal-name-input');
+            if (nameInput) canalName = nameInput.value.trim();
+            if (!canalName) return;
+
+            canals.push({
+                tooth_number: tooth,
+                canal_name: canalName,
+                working_length: row.querySelector('[name="working_length"]')?.value || null,
+                master_apical_file: row.querySelector('[name="master_apical_file"]')?.value || null,
+                master_cone_size: row.querySelector('[name="master_cone_size"]')?.value || null,
+                taper: row.querySelector('[name="taper"]')?.value || null,
+                irrigation_protocol: row.querySelector('[name="irrigation_protocol"]')?.value || null,
+                obturation_technique: row.querySelector('[name="obturation_technique"]')?.value || null,
+                sealer_type: row.querySelector('[name="sealer_type"]')?.value || null,
+                status: row.querySelector('[name="status"]')?.value || 'not_started',
+                notes: row.querySelector('[name="notes"]')?.value || null,
+            });
+        });
+
+        if (canals.length === 0) {
+            alert('No canal data to save. Please fill in at least one canal.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save me-1"></i>Save All Canals';
+            return;
+        }
+
+        fetch(worksheetUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content, 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ canals })
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save me-1"></i>Save All Canals';
+            if (data.success) {
+                worksheetData = null;
+                loadCanalSummary();
+                bootstrap.Modal.getInstance(document.getElementById('canalWorksheetModal'))?.hide();
+                alert('Canal treatments saved successfully!');
+            } else {
+                alert(data.message || 'Failed to save.');
+            }
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save me-1"></i>Save All Canals';
+            alert('An error occurred while saving.');
+        });
+    });
+});
+</script>
+@endpush

@@ -646,7 +646,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::delete('/{dentalTreatment}', [App\Http\Controllers\DentalTreatmentController::class, 'destroy'])->name('destroy');
             Route::post('/{dentalTreatment}/complete', [App\Http\Controllers\DentalTreatmentController::class, 'markAsCompleted'])->name('complete');
             Route::get('/{dentalTreatment}/pdf', [App\Http\Controllers\DentalTreatmentController::class, 'pdf'])->name('pdf');
+
+            // Canal Treatment (Endodontic Worksheet)
+            Route::get('/{dentalTreatment}/canals', [App\Http\Controllers\CanalTreatmentController::class, 'getWorksheet'])->name('canals.worksheet');
+            Route::post('/{dentalTreatment}/canals', [App\Http\Controllers\CanalTreatmentController::class, 'store'])->name('canals.store');
+            Route::delete('/canals/{canalTreatment}', [App\Http\Controllers\CanalTreatmentController::class, 'destroy'])->name('canals.destroy');
         });
+
+        // Canal Treatment Patient History
+        Route::get('/patients/{patient}/canal-history', [App\Http\Controllers\CanalTreatmentController::class, 'patientHistory'])->name('canal-history');
 
         // Dental Images
         Route::prefix('patients/{patient}/images')->name('images.')->group(function () {

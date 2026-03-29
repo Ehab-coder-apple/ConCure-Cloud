@@ -179,6 +179,14 @@ class Patient extends Model
     }
 
     /**
+     * Get the canal treatments for the patient.
+     */
+    public function canalTreatments(): HasMany
+    {
+        return $this->hasMany(CanalTreatment::class);
+    }
+
+    /**
      * Get the dental images for the patient.
      */
     public function dentalImages(): HasMany

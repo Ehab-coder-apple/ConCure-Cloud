@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             MedicineSeeder::class,
             RadiologyTestsSeeder::class,
             SettingsSeeder::class,
+            CanalSeeder::class,
         ]);
     }
 }

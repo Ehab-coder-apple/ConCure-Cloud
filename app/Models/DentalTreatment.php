@@ -174,6 +174,14 @@ class DentalTreatment extends Model
     }
 
     /**
+     * Get canal treatments for this dental treatment.
+     */
+    public function canalTreatments(): HasMany
+    {
+        return $this->hasMany(CanalTreatment::class);
+    }
+
+    /**
      * Get the status display name.
      */
     public function getStatusDisplayAttribute(): string
