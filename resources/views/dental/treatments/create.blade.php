@@ -321,6 +321,39 @@
                         <li><strong>{{ __('Medium') }}</strong> - {{ __('Schedule within 1 month') }}</li>
                         <li><strong>{{ __('Low') }}</strong> - {{ __('Can be scheduled flexibly') }}</li>
                     </ul>
+
+                    <hr>
+
+                    <h6 class="text-primary">{{ __('Canal Name Abbreviations') }}</h6>
+                    <p class="small text-muted mb-1">{{ __('Common root canal abbreviations:') }}</p>
+                    <table class="table table-sm table-bordered small mb-2">
+                        <thead class="table-light">
+                            <tr><th>{{ __('Abbr.') }}</th><th>{{ __('Full Name') }}</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>MB</strong></td><td>{{ __('Mesiobuccal') }}</td></tr>
+                            <tr><td><strong>MB1</strong></td><td>{{ __('Mesiobuccal (primary)') }}</td></tr>
+                            <tr><td><strong>MB2</strong></td><td>{{ __('Mesiobuccal (secondary/accessory)') }}</td></tr>
+                            <tr><td><strong>ML</strong></td><td>{{ __('Mesiolingual') }}</td></tr>
+                            <tr><td><strong>DB</strong></td><td>{{ __('Distobuccal') }}</td></tr>
+                            <tr><td><strong>DL</strong></td><td>{{ __('Distolingual') }}</td></tr>
+                            <tr><td><strong>P</strong></td><td>{{ __('Palatal') }}</td></tr>
+                            <tr><td><strong>L</strong></td><td>{{ __('Lingual') }}</td></tr>
+                            <tr><td><strong>B</strong></td><td>{{ __('Buccal') }}</td></tr>
+                            <tr><td><strong>M</strong></td><td>{{ __('Mesial') }}</td></tr>
+                            <tr><td><strong>D</strong></td><td>{{ __('Distal') }}</td></tr>
+                            <tr><td><strong>C</strong></td><td>{{ __('Central (single canal)') }}</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="small text-muted mb-1">{{ __('Typical canal count by tooth type:') }}</p>
+                    <ul class="small text-muted mb-0">
+                        <li><strong>{{ __('Incisors') }}</strong> - {{ __('1 canal (C)') }}</li>
+                        <li><strong>{{ __('Canines') }}</strong> - {{ __('1 canal (C)') }}</li>
+                        <li><strong>{{ __('Upper Premolars') }}</strong> - {{ __('1–2 canals (B, P)') }}</li>
+                        <li><strong>{{ __('Lower Premolars') }}</strong> - {{ __('1 canal (C)') }}</li>
+                        <li><strong>{{ __('Upper Molars') }}</strong> - {{ __('3–4 canals (MB1, MB2, DB, P)') }}</li>
+                        <li><strong>{{ __('Lower Molars') }}</strong> - {{ __('3–4 canals (MB, ML, DB, DL)') }}</li>
+                    </ul>
                 </div>
             </div>
         </div>
