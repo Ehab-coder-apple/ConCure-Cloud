@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ClinicController extends Controller
 {
@@ -526,6 +528,80 @@ class ClinicController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Failed to delete clinic: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Configure WhatsApp Meta Cloud API for a clinic.
+     */
+    public function configureWhatsApp(Request $request, Clinic $clinic)
+    {
+        $request->validate([
+            'meta_phone_number_id' => 'required|string',
+            'meta_access_token' => 'nullable|string',
+        ]);
+
+        try {
+            $settings = $clinic->settings ?? [];
+            $existingWa = $settings['whatsapp'] ?? [];
+
+            $phoneNumberId = $request->meta_phone_number_id;
+            // Use new token if provided, otherwise keep existing
+            $accessToken = $request->filled('meta_access_token')
+                ? $request->meta_access_token
+                : ($existingWa['meta_access_token'] ?? null);
+
+            if (!$accessToken) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access Token is required.',
+                ], 400);
+            }
+
+            // Verify credentials with Meta API
+            $verifyResponse = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $accessToken,
+            ])->get("https://graph.facebook.com/v21.0/{$phoneNumberId}");
+
+            if (!$verifyResponse->successful()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid credentials. Meta API returned: ' . $verifyResponse->body(),
+                ], 400);
+            }
+
+            $phoneInfo = $verifyResponse->json();
+
+            $settings['whatsapp'] = [
+                'provider' => 'meta',
+                'meta_phone_number_id' => $phoneNumberId,
+                'meta_access_token' => $accessToken,
+                'meta_phone_display' => $phoneInfo['display_phone_number'] ?? null,
+                'meta_verified_name' => $phoneInfo['verified_name'] ?? null,
+                'configured_at' => now()->toDateTimeString(),
+                'configured_by' => auth()->id(),
+            ];
+
+            $clinic->settings = $settings;
+            $clinic->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'WhatsApp configured successfully!',
+                'phone_display' => $phoneInfo['display_phone_number'] ?? null,
+                'verified_name' => $phoneInfo['verified_name'] ?? null,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Master: Failed to configure WhatsApp for clinic', [
+                'clinic_id' => $clinic->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save configuration: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }

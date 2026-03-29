@@ -908,7 +908,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/patients', [App\Http\Controllers\WhatsAppController::class, 'patientsList'])->name('patients');
         Route::post('/broadcast', [App\Http\Controllers\WhatsAppController::class, 'broadcast'])->name('broadcast');
         Route::post('/configure/twilio', [App\Http\Controllers\WhatsAppController::class, 'configureTwilio'])->name('configure.twilio');
-        Route::post('/configure/meta', [App\Http\Controllers\WhatsAppController::class, 'configureMeta'])->name('configure.meta');
+        // Meta configuration moved to Master Admin panel — see routes/master.php
 
         // WPPConnect (free self-hosted WhatsApp)
         Route::post('/configure/wppconnect', [App\Http\Controllers\WhatsAppController::class, 'configureWppconnect'])->name('configure.wppconnect');

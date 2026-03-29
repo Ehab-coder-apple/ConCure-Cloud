@@ -13,7 +13,7 @@
                 </div>
                 <div class="card-body">
 
-                    <!-- Meta WhatsApp Cloud API Status -->
+                    <!-- WhatsApp Connection Status -->
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <div class="info-box">
@@ -24,7 +24,7 @@
                                     <i class="fab fa-whatsapp"></i>
                                 </span>
                                 <div class="info-box-content">
-                                    <span class="info-box-text">{{ __('Meta WhatsApp Cloud API') }}</span>
+                                    <span class="info-box-text">{{ __('WhatsApp Status') }}</span>
                                     <span class="info-box-number">
                                         {{ $metaIsConfigured ? __('Connected') : __('Not Configured') }}
                                     </span>
@@ -39,7 +39,7 @@
                                                 — {{ __('since') }} {{ \Carbon\Carbon::parse($metaConfig['configured_at'])->format('M d, Y') }}
                                             @endif
                                         @else
-                                            {{ __('Enter your credentials below to connect') }}
+                                            {{ __('Contact your system administrator to configure WhatsApp') }}
                                         @endif
                                     </span>
                                 </div>
@@ -61,90 +61,6 @@
                             </div>
                         </div>
                         @endif
-                    </div>
-
-                    <!-- Meta WhatsApp Cloud API Configuration -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <div class="card border-success">
-                                <div class="card-header bg-success text-white">
-                                    <h5 class="mb-0">
-                                        <i class="fab fa-whatsapp"></i>
-                                        {{ __('Meta WhatsApp Cloud API Configuration') }}
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle"></i>
-                                        {{ __('Free official WhatsApp API from Meta. 1,000 free conversations per month per phone number. No extra server needed.') }}
-                                    </div>
-
-                                    @if($metaIsConfigured)
-                                    <div class="alert alert-success mb-3">
-                                        <i class="fas fa-check-circle"></i>
-                                        <strong>{{ __('Connected') }}</strong> —
-                                        {{ $metaConfig['verified_name'] ?? '' }}
-                                        {{ !empty($metaConfig['phone_display']) ? '(' . $metaConfig['phone_display'] . ')' : '' }}
-                                    </div>
-                                    @endif
-
-                                    <form id="metaConfigForm">
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                                <label for="meta_phone_number_id" class="form-label">{{ __('Phone Number ID') }}</label>
-                                                <input type="text" class="form-control" id="meta_phone_number_id" name="meta_phone_number_id"
-                                                       value="{{ $metaConfig['phone_number_id'] ?? '' }}"
-                                                       placeholder="123456789012345" required>
-                                                <small class="form-text text-muted">
-                                                    {{ __('Your Phone Number ID from Meta Developer Dashboard') }}
-                                                </small>
-                                            </div>
-                                            <div class="col-md-6 mb-3">
-                                                <label for="meta_access_token" class="form-label">{{ __('Permanent Access Token') }}</label>
-                                                <input type="password" class="form-control" id="meta_access_token" name="meta_access_token"
-                                                       placeholder="{{ $metaIsConfigured ? '••••••••••••••••' : 'EAAxxxxxxx...' }}" {{ $metaIsConfigured ? '' : 'required' }}>
-                                                <small class="form-text text-muted">
-                                                    {{ __('Your permanent access token from Meta Business Settings') }}
-                                                </small>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex gap-2">
-                                            <button type="submit" class="btn btn-success" id="btnSaveMeta">
-                                                <i class="fas fa-save"></i>
-                                                {{ $metaIsConfigured ? __('Update Configuration') : __('Save & Connect') }}
-                                            </button>
-                                        </div>
-                                    </form>
-
-                                    <!-- Configuration Status -->
-                                    <div id="metaConfigStatus" class="mt-3" style="display: none;"></div>
-
-                                    <!-- Help Section -->
-                                    <div class="mt-3">
-                                        <button class="btn btn-sm btn-outline-success" type="button" data-bs-toggle="collapse" data-bs-target="#metaHelp">
-                                            <i class="fas fa-question-circle"></i> {{ __('How to get Meta WhatsApp credentials?') }}
-                                        </button>
-                                        <div class="collapse mt-2" id="metaHelp">
-                                            <div class="card card-body">
-                                                <ol>
-                                                    <li>{{ __('Go to') }} <a href="https://developers.facebook.com/" target="_blank">developers.facebook.com</a> {{ __('and create/log in to your account') }}</li>
-                                                    <li>{{ __('Create a new app (type: Business) or use an existing one') }}</li>
-                                                    <li>{{ __('Add the "WhatsApp" product to your app') }}</li>
-                                                    <li>{{ __('In the WhatsApp section, go to "API Setup"') }}</li>
-                                                    <li>{{ __('Copy your Phone Number ID (shown under the test number)') }}</li>
-                                                    <li>{{ __('Generate a permanent access token from Business Settings → System Users') }}</li>
-                                                    <li>{{ __('Paste both values above and click Save & Connect') }}</li>
-                                                </ol>
-                                                <div class="alert alert-warning mt-2 mb-0">
-                                                    <i class="fas fa-exclamation-triangle"></i>
-                                                    <strong>{{ __('Important:') }}</strong> {{ __('The temporary token from API Setup expires in 24 hours. For production, create a permanent token via System Users in Business Settings.') }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Test Message Section -->
@@ -286,68 +202,6 @@
 
 @push('scripts')
 <script>
-// Meta WhatsApp Cloud API Configuration Form
-document.getElementById('metaConfigForm')?.addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const phoneNumberId = document.getElementById('meta_phone_number_id').value;
-    const accessToken = document.getElementById('meta_access_token').value;
-    const statusDiv = document.getElementById('metaConfigStatus');
-    const btn = document.getElementById('btnSaveMeta');
-
-    if (!phoneNumberId.trim()) {
-        alert('{{ __("Please enter the Phone Number ID") }}');
-        return;
-    }
-    if (!accessToken.trim()) {
-        alert('{{ __("Please enter the Access Token") }}');
-        return;
-    }
-
-    // Show loading
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ __("Verifying & saving...") }}';
-    statusDiv.style.display = 'block';
-    statusDiv.className = 'mt-3 alert alert-info';
-    statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ __("Verifying credentials with Meta API...") }}';
-
-    fetch('/whatsapp/configure/meta', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            meta_phone_number_id: phoneNumberId,
-            meta_access_token: accessToken
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-save"></i> {{ __("Update Configuration") }}';
-        if (data.success) {
-            statusDiv.className = 'mt-3 alert alert-success';
-            let info = '<i class="fas fa-check-circle"></i> ' + data.message;
-            if (data.phone_display) info += '<br><strong>{{ __("Number") }}:</strong> ' + data.phone_display;
-            if (data.verified_name) info += '<br><strong>{{ __("Business") }}:</strong> ' + data.verified_name;
-            statusDiv.innerHTML = info;
-            setTimeout(() => { location.reload(); }, 2500);
-        } else {
-            statusDiv.className = 'mt-3 alert alert-danger';
-            statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || '{{ __("Failed to save configuration") }}');
-        }
-    })
-    .catch(error => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-save"></i> {{ __("Save & Connect") }}';
-        statusDiv.className = 'mt-3 alert alert-danger';
-        statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> {{ __("Failed to save configuration:") }} ' + error.message;
-    });
-});
-
-
 const patientsFilter = document.getElementById('patientsFilter');
 const noPatientsHint = document.getElementById('noPatientsHint');
 const sinceDateInput = document.getElementById('sinceDate');

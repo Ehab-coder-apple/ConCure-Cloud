@@ -54,6 +54,7 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::patch('/clinics/{clinic}/activate', [ClinicController::class, 'activate'])->name('clinics.activate');
     Route::patch('/clinics/{clinic}/deactivate', [ClinicController::class, 'deactivate'])->name('clinics.deactivate');
     Route::post('/clinics/{clinic}/reset-admin-password', [ClinicController::class, 'resetAdminPassword'])->name('clinics.reset-admin-password');
+    Route::post('/clinics/{clinic}/whatsapp-config', [ClinicController::class, 'configureWhatsApp'])->name('clinics.whatsapp-config');
 
     // Storage Quota Management
     Route::post('/clinics/{clinic}/update-storage-limit', [StorageQuotaController::class, 'updateStorageLimit'])->name('clinics.update-storage-limit');

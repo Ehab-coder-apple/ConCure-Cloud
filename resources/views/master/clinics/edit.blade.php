@@ -399,7 +399,7 @@
 
         <!-- Admin Tools -->
         <div class="col-lg-4">
-            <div class="card">
+            <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-user-shield me-2"></i>
@@ -432,6 +432,64 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- WhatsApp Configuration -->
+            @php
+                $waSettings = $clinic->settings['whatsapp'] ?? [];
+                $waConfigured = !empty($waSettings['meta_phone_number_id']) && !empty($waSettings['meta_access_token']);
+            @endphp
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fab fa-whatsapp me-2"></i>
+                        WhatsApp Configuration
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if($waConfigured)
+                    <div class="alert alert-success py-2 mb-3">
+                        <i class="fas fa-check-circle me-1"></i>
+                        <strong>Connected</strong>
+                        @if(!empty($waSettings['meta_verified_name']))
+                            — {{ $waSettings['meta_verified_name'] }}
+                        @endif
+                        @if(!empty($waSettings['meta_phone_display']))
+                            <br><small>{{ $waSettings['meta_phone_display'] }}</small>
+                        @endif
+                    </div>
+                    @else
+                    <div class="alert alert-warning py-2 mb-3">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Not configured
+                    </div>
+                    @endif
+
+                    <form id="whatsappConfigForm">
+                        <input type="hidden" name="clinic_id" value="{{ $clinic->id }}">
+                        <div class="mb-3">
+                            <label for="wa_phone_number_id" class="form-label">Phone Number ID</label>
+                            <input type="text" class="form-control form-control-sm" id="wa_phone_number_id"
+                                   value="{{ $waSettings['meta_phone_number_id'] ?? '' }}"
+                                   placeholder="123456789012345" required>
+                            <small class="form-text text-muted">From Meta Developer Dashboard</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="wa_access_token" class="form-label">Access Token</label>
+                            <input type="password" class="form-control form-control-sm" id="wa_access_token"
+                                   placeholder="{{ $waConfigured ? '••••••••••••••••' : 'EAAxxxxxxx...' }}"
+                                   {{ $waConfigured ? '' : 'required' }}>
+                            <small class="form-text text-muted">Permanent token from Business Settings</small>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-sm" id="btnSaveWa">
+                                <i class="fas fa-save me-1"></i>
+                                {{ $waConfigured ? 'Update' : 'Save & Connect' }}
+                            </button>
+                        </div>
+                    </form>
+                    <div id="waConfigStatus" class="mt-2" style="display: none;"></div>
                 </div>
             </div>
         </div>
@@ -480,6 +538,53 @@
                 document.querySelectorAll('.module-checkbox').forEach(cb => cb.checked = false);
             });
         }
+
+        // WhatsApp Config Form
+        document.getElementById('whatsappConfigForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const clinicId = this.querySelector('input[name="clinic_id"]').value;
+            const phoneNumberId = document.getElementById('wa_phone_number_id').value;
+            const accessToken = document.getElementById('wa_access_token').value;
+            const statusDiv = document.getElementById('waConfigStatus');
+            const btn = document.getElementById('btnSaveWa');
+
+            if (!phoneNumberId.trim()) { alert('Please enter the Phone Number ID'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'mt-2 alert alert-info py-1 small';
+            statusDiv.textContent = 'Verifying credentials with Meta API...';
+
+            fetch(`/master/clinics/${clinicId}/whatsapp-config`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ meta_phone_number_id: phoneNumberId, meta_access_token: accessToken })
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-1"></i> Update';
+                if (data.success) {
+                    statusDiv.className = 'mt-2 alert alert-success py-1 small';
+                    statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    statusDiv.className = 'mt-2 alert alert-danger py-1 small';
+                    statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> ' + (data.message || 'Failed');
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-1"></i> Save & Connect';
+                statusDiv.className = 'mt-2 alert alert-danger py-1 small';
+                statusDiv.textContent = 'Error: ' + err.message;
+            });
+        });
     });
 </script>
 @endpush
