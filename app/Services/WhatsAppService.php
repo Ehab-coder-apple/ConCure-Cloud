@@ -78,10 +78,16 @@ class WhatsAppService
             $this->wppconnectApiKey = $wppConfig['api_key'] ?? env('WPPCONNECT_API_KEY');
         }
 
-        // Meta WhatsApp Business API configuration
-        $metaConfig = $config['providers']['meta'] ?? [];
-        $this->apiToken = $metaConfig['access_token'] ?? env('WHATSAPP_ACCESS_TOKEN');
-        $this->phoneNumberId = $metaConfig['phone_number_id'] ?? env('WHATSAPP_PHONE_NUMBER_ID');
+        // Meta WhatsApp Cloud API — prioritize clinic settings over env
+        if ($clinicWhatsAppConfig && ($clinicWhatsAppConfig['provider'] ?? '') === 'meta') {
+            $this->apiToken = $clinicWhatsAppConfig['meta_access_token'] ?? null;
+            $this->phoneNumberId = $clinicWhatsAppConfig['meta_phone_number_id'] ?? null;
+            $defaultProvider = 'meta';
+        } else {
+            $metaConfig = $config['providers']['meta'] ?? [];
+            $this->apiToken = $metaConfig['access_token'] ?? env('WHATSAPP_ACCESS_TOKEN');
+            $this->phoneNumberId = $metaConfig['phone_number_id'] ?? env('WHATSAPP_PHONE_NUMBER_ID');
+        }
 
         // ChatAPI configuration
         $chatApiConfig = $config['providers']['chatapi'] ?? [];
@@ -247,6 +253,7 @@ class WhatsAppService
                 case 'web':
                     return $this->sendViaWebAPI($cleanPhone, $message, $attachmentPath);
 
+                case 'meta':
                 case 'official':
                     return $this->sendViaOfficialAPI($cleanPhone, $message, $attachmentPath);
 
@@ -473,7 +480,7 @@ class WhatsAppService
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiToken,
                 'Content-Type' => 'application/json',
-            ])->post("https://graph.facebook.com/v17.0/{$this->phoneNumberId}/messages", $data);
+            ])->post("https://graph.facebook.com/v21.0/{$this->phoneNumberId}/messages", $data);
 
             if ($response->successful()) {
                 $responseData = $response->json();
@@ -998,7 +1005,7 @@ class WhatsAppService
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiToken,
                 'Content-Type' => 'application/json',
-            ])->post("https://graph.facebook.com/v18.0/{$this->phoneNumberId}/messages", [
+            ])->post("https://graph.facebook.com/v21.0/{$this->phoneNumberId}/messages", [
                 'messaging_product' => 'whatsapp',
                 'to' => $phoneNumber,
                 'type' => 'document',
@@ -1040,7 +1047,7 @@ class WhatsAppService
                 'Authorization' => 'Bearer ' . $this->apiToken,
             ])->attach(
                 'file', file_get_contents($filePath), $fileName
-            )->post("https://graph.facebook.com/v18.0/{$this->phoneNumberId}/media", [
+            )->post("https://graph.facebook.com/v21.0/{$this->phoneNumberId}/media", [
                 'messaging_product' => 'whatsapp',
                 'type' => 'document'
             ]);

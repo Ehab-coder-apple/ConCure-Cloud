@@ -24,7 +24,6 @@ class WhatsAppController extends Controller
     {
         $user = auth()->user();
 
-
         $status = $this->whatsappService->getProviderStatus();
 
         // Try to get server status if web provider is configured
@@ -46,7 +45,22 @@ class WhatsAppController extends Controller
         // Get clinic's WhatsApp number for pre-filling test form
         $clinicWhatsApp = $this->whatsappService->getClinicWhatsAppNumber();
 
-        return view('whatsapp.index', compact('status', 'serverStatus', 'clinicWhatsApp'));
+        // Get clinic's Meta WhatsApp configuration for the view
+        $metaConfig = [];
+        if ($user->clinic && isset($user->clinic->settings['whatsapp'])) {
+            $wa = $user->clinic->settings['whatsapp'];
+            if (($wa['provider'] ?? '') === 'meta') {
+                $metaConfig = [
+                    'configured' => true,
+                    'phone_number_id' => $wa['meta_phone_number_id'] ?? '',
+                    'phone_display' => $wa['meta_phone_display'] ?? null,
+                    'verified_name' => $wa['meta_verified_name'] ?? null,
+                    'configured_at' => $wa['configured_at'] ?? null,
+                ];
+            }
+        }
+
+        return view('whatsapp.index', compact('status', 'serverStatus', 'clinicWhatsApp', 'metaConfig'));
     }
 
     /**
@@ -180,6 +194,76 @@ class WhatsAppController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Failed to save Twilio configuration', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save configuration: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Configure Meta WhatsApp Cloud API settings
+     */
+    public function configureMeta(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'meta_phone_number_id' => 'required|string',
+            'meta_access_token' => 'required|string',
+        ]);
+
+        try {
+            $clinic = $user->clinic;
+            if (!$clinic) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Clinic not found'
+                ], 404);
+            }
+
+            // Verify the credentials by calling Meta API
+            $verifyResponse = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $request->meta_access_token,
+            ])->get("https://graph.facebook.com/v21.0/{$request->meta_phone_number_id}");
+
+            if (!$verifyResponse->successful()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid credentials. Please check your Phone Number ID and Access Token. Meta API returned: ' . $verifyResponse->body(),
+                ], 400);
+            }
+
+            $phoneInfo = $verifyResponse->json();
+
+            // Store Meta configuration in clinic settings
+            $settings = $clinic->settings ?? [];
+            $settings['whatsapp'] = [
+                'provider' => 'meta',
+                'meta_phone_number_id' => $request->meta_phone_number_id,
+                'meta_access_token' => $request->meta_access_token,
+                'meta_phone_display' => $phoneInfo['display_phone_number'] ?? null,
+                'meta_verified_name' => $phoneInfo['verified_name'] ?? null,
+                'configured_at' => now()->toDateTimeString(),
+                'configured_by' => $user->id,
+            ];
+
+            $clinic->settings = $settings;
+            $clinic->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Meta WhatsApp Cloud API configured successfully! Your clinic can now send WhatsApp messages.',
+                'phone_display' => $phoneInfo['display_phone_number'] ?? null,
+                'verified_name' => $phoneInfo['verified_name'] ?? null,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to save Meta WhatsApp configuration', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

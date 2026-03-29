@@ -13,56 +13,49 @@
                 </div>
                 <div class="card-body">
 
-                    <!-- Provider Status -->
+                    <!-- Meta WhatsApp Cloud API Status -->
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <div class="info-box">
-                                <span class="info-box-icon bg-{{ $status['configured'] ? 'success' : 'warning' }}">
+                                @php
+                                    $metaIsConfigured = !empty($metaConfig['configured']);
+                                @endphp
+                                <span class="info-box-icon bg-{{ $metaIsConfigured ? 'success' : 'warning' }}">
                                     <i class="fab fa-whatsapp"></i>
                                 </span>
                                 <div class="info-box-content">
-                                    <span class="info-box-text">{{ __('Provider') }}</span>
-                                    <span class="info-box-number">{{ ucfirst($status['provider']) }}</span>
+                                    <span class="info-box-text">{{ __('Meta WhatsApp Cloud API') }}</span>
+                                    <span class="info-box-number">
+                                        {{ $metaIsConfigured ? __('Connected') : __('Not Configured') }}
+                                    </span>
                                     <div class="progress">
-                                        <div class="progress-bar bg-{{ $status['configured'] ? 'success' : 'warning' }}"
-                                             style="width: {{ $status['configured'] ? '100' : '50' }}%"></div>
+                                        <div class="progress-bar bg-{{ $metaIsConfigured ? 'success' : 'warning' }}"
+                                             style="width: {{ $metaIsConfigured ? '100' : '30' }}%"></div>
                                     </div>
                                     <span class="progress-description">
-                                        {{ $status['configured'] ? __('Configured') : __('Not Configured') }}
+                                        @if($metaIsConfigured)
+                                            {{ $metaConfig['verified_name'] ?? $metaConfig['phone_display'] ?? __('Configured') }}
+                                            @if(!empty($metaConfig['configured_at']))
+                                                — {{ __('since') }} {{ \Carbon\Carbon::parse($metaConfig['configured_at'])->format('M d, Y') }}
+                                            @endif
+                                        @else
+                                            {{ __('Enter your credentials below to connect') }}
+                                        @endif
                                     </span>
                                 </div>
                             </div>
                         </div>
-
-                        @if($serverStatus)
+                        @if($metaIsConfigured && !empty($metaConfig['phone_display']))
                         <div class="col-md-6">
                             <div class="info-box">
-                                <span class="info-box-icon bg-{{ isset($serverStatus['ready']) && $serverStatus['ready'] ? 'success' : 'danger' }}">
-                                    <i class="fas fa-server"></i>
+                                <span class="info-box-icon bg-success">
+                                    <i class="fas fa-phone"></i>
                                 </span>
                                 <div class="info-box-content">
-                                    <span class="info-box-text">{{ __('Server Status') }}</span>
-                                    <span class="info-box-number">
-                                        @if(isset($serverStatus['error']))
-                                            {{ __('Offline') }}
-                                        @elseif(isset($serverStatus['ready']) && $serverStatus['ready'])
-                                            {{ __('Ready') }}
-                                        @elseif(isset($serverStatus['hasQR']) && $serverStatus['hasQR'])
-                                            {{ __('Needs QR Scan') }}
-                                        @else
-                                            {{ __('Initializing') }}
-                                        @endif
-                                    </span>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-{{ isset($serverStatus['ready']) && $serverStatus['ready'] ? 'success' : 'warning' }}"
-                                             style="width: {{ isset($serverStatus['ready']) && $serverStatus['ready'] ? '100' : '70' }}%"></div>
-                                    </div>
+                                    <span class="info-box-text">{{ __('WhatsApp Number') }}</span>
+                                    <span class="info-box-number">{{ $metaConfig['phone_display'] }}</span>
                                     <span class="progress-description">
-                                        @if(isset($serverStatus['error']))
-                                            {{ $serverStatus['error'] }}
-                                        @else
-                                            {{ __('Last checked: ') }}{{ now()->format('H:i:s') }}
-                                        @endif
+                                        {{ $metaConfig['verified_name'] ?? __('Verified') }}
                                     </span>
                                 </div>
                             </div>
@@ -70,220 +63,82 @@
                         @endif
                     </div>
 
-                    <!-- Configuration Details -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h5>{{ __('Configuration Status') }}</h5>
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <tbody>
-                                        <tr>
-                                            <td><strong>{{ __('Current Provider') }}</strong></td>
-                                            <td>
-                                                <span class="badge bg-primary">{{ ucfirst($status['provider']) }}</span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ __('Twilio Configuration') }}</strong></td>
-                                            <td>
-                                                <span class="badge bg-{{ $status['config_check']['twilio'] ? 'success' : 'secondary' }}">
-                                                    {{ $status['config_check']['twilio'] ? __('Configured') : __('Not Configured') }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ __('Web API Configuration') }}</strong></td>
-                                            <td>
-                                                <span class="badge bg-{{ $status['config_check']['web_api'] ? 'success' : 'secondary' }}">
-                                                    {{ $status['config_check']['web_api'] ? __('Configured') : __('Not Configured') }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ __('Official API Configuration') }}</strong></td>
-                                            <td>
-                                                <span class="badge bg-{{ $status['config_check']['official'] ? 'success' : 'secondary' }}">
-                                                    {{ $status['config_check']['official'] ? __('Configured') : __('Not Configured') }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ __('Fallback to Web WhatsApp') }}</strong></td>
-                                            <td>
-                                                <span class="badge bg-{{ $status['fallback_to_web'] ? 'warning' : 'success' }}">
-                                                    {{ $status['fallback_to_web'] ? __('Yes') : __('No') }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Twilio Configuration Section -->
-                    @if(!$status['config_check']['twilio'])
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <div class="card border-info">
-                                <div class="card-header bg-info text-white">
-                                    <h5 class="mb-0">
-                                        <i class="fas fa-cog"></i>
-                                        {{ __('Twilio WhatsApp Configuration') }}
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle"></i>
-                                        {{ __('Configure Twilio to send WhatsApp messages programmatically. This is the recommended method for production use.') }}
-                                    </div>
-
-                                    <form id="twilioConfigForm">
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                                <label for="twilio_sid" class="form-label">{{ __('Twilio Account SID') }}</label>
-                                                <input type="text" class="form-control" id="twilio_sid" name="twilio_sid"
-                                                       placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" required>
-                                                <small class="form-text text-muted">
-                                                    {{ __('Your Twilio Account SID from the Twilio Console') }}
-                                                </small>
-                                            </div>
-                                            <div class="col-md-6 mb-3">
-                                                <label for="twilio_token" class="form-label">{{ __('Twilio Auth Token') }}</label>
-                                                <input type="password" class="form-control" id="twilio_token" name="twilio_token"
-                                                       placeholder="********************************" required>
-                                                <small class="form-text text-muted">
-                                                    {{ __('Your Twilio Auth Token from the Twilio Console') }}
-                                                </small>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                                <label for="twilio_from" class="form-label">{{ __('Twilio WhatsApp Number') }}</label>
-                                                <input type="text" class="form-control" id="twilio_from" name="twilio_from"
-                                                       value="whatsapp:+14155238886" placeholder="whatsapp:+14155238886" required>
-                                                <small class="form-text text-muted">
-                                                    {{ __('Your Twilio WhatsApp-enabled phone number (format: whatsapp:+1234567890)') }}
-                                                </small>
-                                            </div>
-                                            <div class="col-md-6 mb-3 d-flex align-items-end">
-                                                <button type="submit" class="btn btn-info">
-                                                    <i class="fas fa-save"></i>
-                                                    {{ __('Save Twilio Configuration') }}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
-
-                                    <!-- Configuration Status -->
-                                    <div id="twilioConfigStatus" class="mt-3" style="display: none;"></div>
-
-                                    <!-- Help Section -->
-                                    <div class="mt-3">
-                                        <button class="btn btn-sm btn-primary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#twilioHelp">
-                                            <i class="fas fa-question-circle"></i> {{ __('How to get Twilio credentials?') }}
-                                        </button>
-                                        <div class="collapse mt-2" id="twilioHelp">
-                                            <div class="card card-body">
-                                                <ol>
-                                                    <li>{{ __('Sign up for a Twilio account at') }} <a href="https://www.twilio.com/try-twilio" target="_blank">https://www.twilio.com/try-twilio</a></li>
-                                                    <li>{{ __('Go to the Twilio Console Dashboard') }}</li>
-                                                    <li>{{ __('Copy your Account SID and Auth Token') }}</li>
-                                                    <li>{{ __('Enable WhatsApp on your Twilio number or use the Twilio Sandbox') }}</li>
-                                                    <li>{{ __('For sandbox, use: whatsapp:+14155238886') }}</li>
-                                                    <li>{{ __('Paste the credentials above and click Save') }}</li>
-                                                </ol>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-
-                    <!-- WPPConnect (Free) Configuration Section -->
+                    <!-- Meta WhatsApp Cloud API Configuration -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <div class="card border-success">
                                 <div class="card-header bg-success text-white">
                                     <h5 class="mb-0">
-                                        <i class="fas fa-server"></i>
-                                        {{ __('WPPConnect (Free) — Self-Hosted WhatsApp') }}
+                                        <i class="fab fa-whatsapp"></i>
+                                        {{ __('Meta WhatsApp Cloud API Configuration') }}
                                     </h5>
                                 </div>
                                 <div class="card-body">
-                                    <div class="alert alert-success">
-                                        <i class="fas fa-heart text-danger"></i>
-                                        {{ __('100% Free — No monthly fees. No per-message charges. Uses your own WhatsApp number.') }}
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        {{ __('Free official WhatsApp API from Meta. 1,000 free conversations per month per phone number. No extra server needed.') }}
                                     </div>
 
-                                    <form id="wppconnectForm">
+                                    @if($metaIsConfigured)
+                                    <div class="alert alert-success mb-3">
+                                        <i class="fas fa-check-circle"></i>
+                                        <strong>{{ __('Connected') }}</strong> —
+                                        {{ $metaConfig['verified_name'] ?? '' }}
+                                        {{ !empty($metaConfig['phone_display']) ? '(' . $metaConfig['phone_display'] . ')' : '' }}
+                                    </div>
+                                    @endif
+
+                                    <form id="metaConfigForm">
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="wppconnect_url" class="form-label">{{ __('WPPConnect Server URL') }}</label>
-                                                <input type="url" class="form-control" id="wppconnect_url" name="wppconnect_url"
-                                                       value="{{ auth()->user()->clinic->settings['whatsapp']['wppconnect_url'] ?? 'http://localhost:21465' }}"
-                                                       placeholder="http://localhost:21465" required>
+                                                <label for="meta_phone_number_id" class="form-label">{{ __('Phone Number ID') }}</label>
+                                                <input type="text" class="form-control" id="meta_phone_number_id" name="meta_phone_number_id"
+                                                       value="{{ $metaConfig['phone_number_id'] ?? '' }}"
+                                                       placeholder="123456789012345" required>
                                                 <small class="form-text text-muted">
-                                                    {{ __('The URL where your WPPConnect server is running') }}
+                                                    {{ __('Your Phone Number ID from Meta Developer Dashboard') }}
                                                 </small>
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="wppconnect_session" class="form-label">{{ __('Session Name (optional)') }}</label>
-                                                <input type="text" class="form-control" id="wppconnect_session" name="wppconnect_session"
-                                                       value="{{ auth()->user()->clinic->settings['whatsapp']['wppconnect_session'] ?? '' }}"
-                                                       placeholder="{{ __('Auto-generated if empty') }}">
+                                                <label for="meta_access_token" class="form-label">{{ __('Permanent Access Token') }}</label>
+                                                <input type="password" class="form-control" id="meta_access_token" name="meta_access_token"
+                                                       placeholder="{{ $metaIsConfigured ? '••••••••••••••••' : 'EAAxxxxxxx...' }}" {{ $metaIsConfigured ? '' : 'required' }}>
+                                                <small class="form-text text-muted">
+                                                    {{ __('Your permanent access token from Meta Business Settings') }}
+                                                </small>
                                             </div>
                                         </div>
-                                        <button type="submit" class="btn btn-success" id="btnSaveWppconnect">
-                                            <i class="fas fa-save"></i>
-                                            {{ __('Save & Connect WPPConnect') }}
-                                        </button>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-success" id="btnSaveMeta">
+                                                <i class="fas fa-save"></i>
+                                                {{ $metaIsConfigured ? __('Update Configuration') : __('Save & Connect') }}
+                                            </button>
+                                        </div>
                                     </form>
 
-                                    <!-- QR Code Section -->
-                                    <div id="wppconnectQrSection" class="mt-4 d-none">
-                                        <hr>
-                                        <h5><i class="fas fa-qrcode"></i> {{ __('Scan QR Code') }}</h5>
-                                        <p class="text-muted">{{ __('Open WhatsApp on your phone → Settings → Linked Devices → Link a Device → Scan this code') }}</p>
-                                        <div id="wppconnectQrContainer" class="text-center py-3">
-                                            <div class="spinner-border text-success" role="status">
-                                                <span class="sr-only">{{ __('Loading...') }}</span>
-                                            </div>
-                                            <p class="mt-2">{{ __('Generating QR code...') }}</p>
-                                        </div>
-                                        <div class="text-center mt-2">
-                                            <button type="button" class="btn btn-outline-success btn-sm" id="btnRefreshQr">
-                                                <i class="fas fa-sync-alt"></i> {{ __('Refresh QR') }}
-                                            </button>
-                                            <button type="button" class="btn btn-outline-info btn-sm" id="btnCheckStatus">
-                                                <i class="fas fa-check-circle"></i> {{ __('Check Connection') }}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Status -->
-                                    <div id="wppconnectStatusBox" class="mt-3 d-none">
-                                        <div class="alert" id="wppconnectStatusAlert"></div>
-                                    </div>
+                                    <!-- Configuration Status -->
+                                    <div id="metaConfigStatus" class="mt-3" style="display: none;"></div>
 
                                     <!-- Help Section -->
                                     <div class="mt-3">
-                                        <button class="btn btn-sm btn-outline-success" type="button" data-bs-toggle="collapse" data-bs-target="#wppconnectHelp">
-                                            <i class="fas fa-question-circle"></i> {{ __('How to set up WPPConnect?') }}
+                                        <button class="btn btn-sm btn-outline-success" type="button" data-bs-toggle="collapse" data-bs-target="#metaHelp">
+                                            <i class="fas fa-question-circle"></i> {{ __('How to get Meta WhatsApp credentials?') }}
                                         </button>
-                                        <div class="collapse mt-2" id="wppconnectHelp">
+                                        <div class="collapse mt-2" id="metaHelp">
                                             <div class="card card-body">
-                                                <h6>{{ __('Server Installation') }}</h6>
-                                                <pre class="bg-dark text-light p-2 rounded" style="white-space:pre-wrap">npm install -g @wppconnect-team/server
-npx wppconnect-server</pre>
-                                                <ol class="mt-2">
-                                                    <li>{{ __('Install and run WPPConnect server on your machine or VPS') }}</li>
-                                                    <li>{{ __('Enter the server URL above and click Save & Connect') }}</li>
-                                                    <li>{{ __('Scan the QR code with your phone') }}</li>
-                                                    <li>{{ __('Appointment reminders will be sent automatically!') }}</li>
+                                                <ol>
+                                                    <li>{{ __('Go to') }} <a href="https://developers.facebook.com/" target="_blank">developers.facebook.com</a> {{ __('and create/log in to your account') }}</li>
+                                                    <li>{{ __('Create a new app (type: Business) or use an existing one') }}</li>
+                                                    <li>{{ __('Add the "WhatsApp" product to your app') }}</li>
+                                                    <li>{{ __('In the WhatsApp section, go to "API Setup"') }}</li>
+                                                    <li>{{ __('Copy your Phone Number ID (shown under the test number)') }}</li>
+                                                    <li>{{ __('Generate a permanent access token from Business Settings → System Users') }}</li>
+                                                    <li>{{ __('Paste both values above and click Save & Connect') }}</li>
                                                 </ol>
+                                                <div class="alert alert-warning mt-2 mb-0">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                    <strong>{{ __('Important:') }}</strong> {{ __('The temporary token from API Setup expires in 24 hours. For production, create a permanent token via System Users in Business Settings.') }}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -291,41 +146,6 @@ npx wppconnect-server</pre>
                             </div>
                         </div>
                     </div>
-
-                    <!-- QR Code Section (for web provider) -->
-                    @if($status['provider'] === 'web' && $status['configured'])
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h5>{{ __('WhatsApp Connection') }}</h5>
-                            <div class="text-center">
-                                @if(isset($serverStatus['hasQR']) && $serverStatus['hasQR'])
-                                    <div class="alert alert-warning">
-                                        <i class="fas fa-qrcode"></i>
-                                        {{ __('WhatsApp needs to be connected. Please scan the QR code.') }}
-                                    </div>
-                                    <button type="button" class="btn btn-primary" onclick="showQRCode()">
-                                        <i class="fas fa-qrcode"></i>
-                                        {{ __('Show QR Code') }}
-                                    </button>
-                                @elseif(isset($serverStatus['ready']) && $serverStatus['ready'])
-                                    <div class="alert alert-success">
-                                        <i class="fas fa-check-circle"></i>
-                                        {{ __('WhatsApp is connected and ready to send messages!') }}
-                                    </div>
-                                @else
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-spinner fa-spin"></i>
-                                        {{ __('WhatsApp server is initializing...') }}
-                                    </div>
-                                    <button type="button" class="btn btn-secondary" onclick="checkStatus()">
-                                        <i class="fas fa-refresh"></i>
-                                        {{ __('Check Status') }}
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                    @endif
 
                     <!-- Test Message Section -->
                     <div class="row">
@@ -462,89 +282,70 @@ npx wppconnect-server</pre>
     </div>
 </div>
 
-<!-- QR Code Modal -->
-<div class="modal fade" id="qrModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">{{ __('WhatsApp QR Code') }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center" id="qrContent">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">{{ __('Loading...') }}</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
 <script>
-// Twilio Configuration Form
-document.getElementById('twilioConfigForm')?.addEventListener('submit', function(e) {
+// Meta WhatsApp Cloud API Configuration Form
+document.getElementById('metaConfigForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
 
-    const twilioSid = document.getElementById('twilio_sid').value;
-    const twilioToken = document.getElementById('twilio_token').value;
-    const twilioFrom = document.getElementById('twilio_from').value;
-    const statusDiv = document.getElementById('twilioConfigStatus');
+    const phoneNumberId = document.getElementById('meta_phone_number_id').value;
+    const accessToken = document.getElementById('meta_access_token').value;
+    const statusDiv = document.getElementById('metaConfigStatus');
+    const btn = document.getElementById('btnSaveMeta');
+
+    if (!phoneNumberId.trim()) {
+        alert('{{ __("Please enter the Phone Number ID") }}');
+        return;
+    }
+    if (!accessToken.trim()) {
+        alert('{{ __("Please enter the Access Token") }}');
+        return;
+    }
 
     // Show loading
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ __("Verifying & saving...") }}';
     statusDiv.style.display = 'block';
     statusDiv.className = 'mt-3 alert alert-info';
-    statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ __("Saving configuration...") }}';
+    statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ __("Verifying credentials with Meta API...") }}';
 
-    // Call save endpoint
-    fetch('/whatsapp/configure/twilio', {
+    fetch('/whatsapp/configure/meta', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         body: JSON.stringify({
-            twilio_sid: twilioSid,
-            twilio_token: twilioToken,
-            twilio_from: twilioFrom
+            meta_phone_number_id: phoneNumberId,
+            meta_access_token: accessToken
         })
     })
     .then(response => response.json())
     .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> {{ __("Update Configuration") }}';
         if (data.success) {
             statusDiv.className = 'mt-3 alert alert-success';
-            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
-
-            // Reload page after 2 seconds to show updated status
-            setTimeout(() => {
-                location.reload();
-            }, 2000);
+            let info = '<i class="fas fa-check-circle"></i> ' + data.message;
+            if (data.phone_display) info += '<br><strong>{{ __("Number") }}:</strong> ' + data.phone_display;
+            if (data.verified_name) info += '<br><strong>{{ __("Business") }}:</strong> ' + data.verified_name;
+            statusDiv.innerHTML = info;
+            setTimeout(() => { location.reload(); }, 2500);
         } else {
             statusDiv.className = 'mt-3 alert alert-danger';
             statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || '{{ __("Failed to save configuration") }}');
         }
     })
     .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> {{ __("Save & Connect") }}';
         statusDiv.className = 'mt-3 alert alert-danger';
         statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> {{ __("Failed to save configuration:") }} ' + error.message;
     });
 });
-
-// QR Code display function (if needed for other purposes)
-function showQRCode() {
-    const modal = new bootstrap.Modal(document.getElementById('qrModal'));
-    modal.show();
-
-    fetch('/whatsapp/qr')
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('qrContent').innerHTML = html;
-        })
-        .catch(error => {
-            document.getElementById('qrContent').innerHTML =
-                '<div class="alert alert-danger">Failed to load QR code: ' + error.message + '</div>';
-        });
-}
 
 
 const patientsFilter = document.getElementById('patientsFilter');
@@ -756,67 +557,6 @@ document.getElementById('testForm').addEventListener('submit', function(e) {
     // Open WhatsApp (EXACT same as nutrition plan)
     window.open(whatsappUrl, '_blank');
 });
-
-// ── WPPConnect ──
-const wppQrSection = document.getElementById('wppconnectQrSection');
-const wppQrContainer = document.getElementById('wppconnectQrContainer');
-const wppStatusBox = document.getElementById('wppconnectStatusBox');
-const wppStatusAlert = document.getElementById('wppconnectStatusAlert');
-
-function showWppStatus(msg, type){
-    if(wppStatusBox) wppStatusBox.classList.remove('d-none');
-    if(wppStatusAlert){ wppStatusAlert.className='alert alert-'+type; wppStatusAlert.innerHTML=msg; }
-}
-
-// Save WPPConnect config
-document.getElementById('wppconnectForm')?.addEventListener('submit', function(e){
-    e.preventDefault();
-    const btn = document.getElementById('btnSaveWppconnect');
-    btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> {{ __("Saving...") }}';
-    fetch('/whatsapp/configure/wppconnect',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},body:JSON.stringify({
-        wppconnect_url: document.getElementById('wppconnect_url').value,
-        wppconnect_session: document.getElementById('wppconnect_session').value
-    })}).then(r=>r.json()).then(data=>{
-        btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> {{ __("Save & Connect WPPConnect") }}';
-        if(data.success){
-            showWppStatus('<i class="fas fa-check-circle"></i> '+data.message,'success');
-            if(wppQrSection){ wppQrSection.classList.remove('d-none'); loadWppQrCode(); }
-        } else {
-            showWppStatus('<i class="fas fa-times-circle"></i> '+(data.message||'Error'),'danger');
-        }
-    }).catch(e=>{ btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> {{ __("Save & Connect WPPConnect") }}'; showWppStatus(e.message,'danger'); });
-});
-
-// Load QR code
-function loadWppQrCode(){
-    if(!wppQrContainer) return;
-    wppQrContainer.innerHTML='<div class="spinner-border text-success"></div><p class="mt-2">{{ __("Generating QR code...") }}</p>';
-    fetch('/whatsapp/wppconnect/qr',{headers:{'Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content}})
-        .then(r=>r.json()).then(data=>{
-            if(data.connected){
-                wppQrContainer.innerHTML='<div class="alert alert-success"><i class="fas fa-check-circle fa-2x"></i><br>{{ __("WhatsApp is connected!") }}</div>';
-                showWppStatus('{{ __("✅ WhatsApp is connected and ready to send messages.") }}','success');
-            } else if(data.qrcode){
-                wppQrContainer.innerHTML='<img src="'+data.qrcode+'" alt="QR Code" style="max-width:300px" class="border rounded p-2">';
-            } else {
-                wppQrContainer.innerHTML='<p class="text-warning">{{ __("Could not generate QR code. Try refreshing.") }}</p>';
-            }
-        }).catch(e=>{wppQrContainer.innerHTML='<p class="text-danger">'+e.message+'</p>';});
-}
-
-document.getElementById('btnRefreshQr')?.addEventListener('click', loadWppQrCode);
-document.getElementById('btnCheckStatus')?.addEventListener('click', function(){
-    fetch('/whatsapp/wppconnect/status',{headers:{'Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content}})
-        .then(r=>r.json()).then(data=>{
-            if(data.connected){showWppStatus('<i class="fas fa-check-circle"></i> '+data.message,'success');}
-            else{showWppStatus('<i class="fas fa-exclamation-triangle"></i> '+data.message,'warning');}
-        }).catch(e=>showWppStatus(e.message,'danger'));
-});
-
-// Auto-show QR section if WPPConnect is already configured
-@if(isset(auth()->user()->clinic->settings['whatsapp']['provider']) && auth()->user()->clinic->settings['whatsapp']['provider'] === 'wppconnect')
-    if(wppQrSection){ wppQrSection.classList.remove('d-none'); loadWppQrCode(); }
-@endif
 
 
 </script>
