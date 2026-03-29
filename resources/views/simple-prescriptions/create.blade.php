@@ -186,7 +186,7 @@
                 </button>
             </div>
             <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-12 mb-3">
                     <label class="form-label">{{ __('Medicine Name') }}</label>
                     <div class="d-flex align-items-center gap-2">
                         <div class="medicine-select-container" style="position: relative; flex: 1; min-width: 0;">
