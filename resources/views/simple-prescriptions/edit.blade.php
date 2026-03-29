@@ -271,12 +271,49 @@ function addMedicine(name = '', dosage = '', frequency = '', duration = '', inst
     
     container.appendChild(newMedicine);
 
+    // Initialize Select2 on the new medicine select
+    initMedicineSelect2(newMedicine.querySelector('.medicine-select'));
+
     // Bind voice buttons on the new medicine row
     if (typeof VoiceInput !== 'undefined') VoiceInput.bindAll();
 }
 
 function removeMedicine(button) {
-    button.closest('.medicine-item').remove();
+    const item = button.closest('.medicine-item');
+    // Destroy Select2 before removing to avoid orphan dropdowns
+    $(item).find('.medicine-select').select2('destroy');
+    item.remove();
+}
+
+// Initialize Select2 with smart search on a medicine select element
+function initMedicineSelect2(selectEl) {
+    const $select = $(selectEl);
+    // Remove the native onchange since Select2 handles it via events
+    $select.removeAttr('onchange');
+
+    $select.select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Type to search medicine...") }}',
+        allowClear: true,
+        width: '100%',
+        minimumInputLength: 1,
+        language: {
+            noResults: function() {
+                return '{{ __("No medicines found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            },
+            inputTooShort: function() {
+                return '{{ __("Type 1 or more characters to search...") }}';
+            }
+        }
+    });
+
+    // Handle selection change via Select2 event
+    $select.on('select2:select', function(e) {
+        handleMedicineSelect(this);
+    });
 }
 
 // Medicine selection functions
@@ -285,7 +322,8 @@ function handleMedicineSelect(selectElement) {
     const medicineItem = selectElement.closest('.medicine-item');
 
     if (selectElement.value === 'custom') {
-        // Show custom input
+        // Destroy Select2, show custom input
+        $(selectElement).select2('destroy');
         selectElement.style.display = 'none';
         customInput.style.display = 'block';
         customInput.focus();
@@ -309,22 +347,24 @@ function handleCustomMedicine(inputElement) {
     const customValue = inputElement.value.trim();
 
     if (customValue) {
-        // Set the select value to the new medicine with 'new:' prefix
-        selectElement.value = 'new:' + customValue;
-        selectElement.style.display = 'block';
-        inputElement.style.display = 'none';
-
         // Create a temporary option to show the custom medicine
         const tempOption = document.createElement('option');
         tempOption.value = 'new:' + customValue;
         tempOption.textContent = customValue + ' (New)';
         tempOption.selected = true;
         selectElement.appendChild(tempOption);
+
+        selectElement.style.display = 'block';
+        inputElement.style.display = 'none';
+        // Re-init Select2 with the new option selected
+        initMedicineSelect2(selectElement);
     } else {
         // Cancel custom input
         selectElement.style.display = 'block';
         inputElement.style.display = 'none';
         selectElement.value = '';
+        // Re-init Select2
+        initMedicineSelect2(selectElement);
     }
 }
 
