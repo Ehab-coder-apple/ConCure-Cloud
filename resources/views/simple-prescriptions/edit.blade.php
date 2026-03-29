@@ -2,6 +2,15 @@
 
 @section('title', __('Edit Simple Prescription'))
 
+@push('styles')
+<style>
+/* Ensure Select2 does not overflow the flex container and mic button stays visible */
+.medicine-select-container .select2-container {
+    width: 100% !important;
+}
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="row justify-content-center">
@@ -160,8 +169,8 @@
                 <div class="col-md-6 mb-3">
                     <label class="form-label">{{ __('Medicine Name') }}</label>
                     <div class="medicine-select-container" style="position: relative;">
-                        <div class="d-flex align-items-start gap-1">
-                            <div style="flex: 1;">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="flex: 1; min-width: 0;">
                                 <select class="form-select medicine-select" name="medicines[0][name]" onchange="handleMedicineSelect(this)">
                                     <option value="">{{ __('Select medicine...') }}</option>
                                     @foreach($medicines as $medicine)
@@ -180,7 +189,7 @@
                                        style="display: none;"
                                        onblur="handleCustomMedicine(this)">
                             </div>
-                            <button type="button" class="btn-voice btn-voice-medicine" title="{{ __('Dictate medicine name') }}" style="margin-top: 4px;"><i class="fas fa-microphone"></i></button>
+                            <button type="button" class="btn-voice btn-voice-medicine" title="{{ __('Dictate medicine name') }}" style="flex-shrink: 0; z-index: 1;"><i class="fas fa-microphone"></i></button>
                         </div>
                         <div class="voice-status voice-status-medicine"></div>
                     </div>
