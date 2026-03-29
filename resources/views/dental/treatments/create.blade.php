@@ -389,47 +389,64 @@ function loadCanalWorksheet(teeth) {
 
     const promises = teeth.map(t => fetch(`/dental/canals/standard/${t}`, {
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-    }).then(r => r.json()));
+    }).then(r => r.json()).catch(() => ({ success: true, tooth_number: t, canals: [], options: null })));
 
     Promise.all(promises).then(results => {
         let html = '';
         results.forEach(data => {
-            if (!data.success) return;
-            if (!canalOptions) canalOptions = data.options;
-            const tooth = data.tooth_number;
+            if (data.options && !canalOptions) canalOptions = data.options;
+            const tooth = data.tooth_number || data.tooth;
             const canals = data.canals || [];
 
-            html += `<div class="border-bottom p-3 canal-tooth-block" data-tooth="${tooth}">`;
-            html += `<h6 class="text-primary mb-2"><i class="fas fa-tooth me-1"></i>{{ __("Tooth") }} #${tooth}</h6>`;
-            html += `<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr>
-                <th>{{ __("Canal") }}</th><th>{{ __("WL (mm)") }}</th><th>{{ __("MAF") }}</th>
-                <th>{{ __("Cone") }}</th><th>{{ __("Taper") }}</th><th>{{ __("Status") }}</th><th>{{ __("Notes") }}</th>
-            </tr></thead><tbody>`;
-
-            if (canals.length > 0) {
-                canals.forEach(c => { html += buildCreateCanalRow(tooth, c.canal_name, false); });
-            } else {
-                html += buildCreateCanalRow(tooth, '', true);
-            }
-
-            html += `</tbody></table></div>`;
-            html += `<button type="button" class="btn btn-sm btn-outline-secondary mt-1 add-create-canal" data-tooth="${tooth}"><i class="fas fa-plus me-1"></i>{{ __("Add Canal") }}</button>`;
-            html += `</div>`;
+            // Always build the tooth block — even when no standard canals exist
+            html += buildToothBlock(tooth, canals);
         });
 
-        container.innerHTML = html || '<p class="p-3 mb-0 text-muted">{{ __("No standard canals found for the entered teeth.") }}</p>';
+        // If no results at all, still create blocks for each tooth
+        if (!html) {
+            teeth.forEach(tooth => { html += buildToothBlock(tooth, []); });
+        }
 
-        container.querySelectorAll('.add-create-canal').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const tooth = this.dataset.tooth;
-                const tbody = this.closest('.canal-tooth-block').querySelector('tbody');
-                const tr = document.createElement('tr');
-                tr.innerHTML = buildCreateCanalRowInner(tooth, '', true);
-                tbody.appendChild(tr);
-            });
-        });
+        container.innerHTML = html;
+        bindAddCanalButtons(container);
     }).catch(() => {
-        container.innerHTML = '<p class="p-3 mb-0 text-danger">{{ __("Failed to load canal definitions.") }}</p>';
+        // Fallback: build empty worksheet for manual entry
+        let html = '';
+        teeth.forEach(tooth => { html += buildToothBlock(tooth, []); });
+        container.innerHTML = html;
+        bindAddCanalButtons(container);
+    });
+}
+
+function buildToothBlock(tooth, canals) {
+    let html = `<div class="border-bottom p-3 canal-tooth-block" data-tooth="${tooth}">`;
+    html += `<h6 class="text-primary mb-2"><i class="fas fa-tooth me-1"></i>{{ __("Tooth") }} #${tooth}</h6>`;
+    html += `<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr>
+        <th>{{ __("Canal") }}</th><th>{{ __("WL (mm)") }}</th><th>{{ __("MAF") }}</th>
+        <th>{{ __("Cone") }}</th><th>{{ __("Taper") }}</th><th>{{ __("Status") }}</th><th>{{ __("Notes") }}</th>
+    </tr></thead><tbody>`;
+
+    if (canals.length > 0) {
+        canals.forEach(c => { html += buildCreateCanalRow(tooth, c.canal_name, false); });
+    } else {
+        html += buildCreateCanalRow(tooth, '', true);
+    }
+
+    html += `</tbody></table></div>`;
+    html += `<button type="button" class="btn btn-sm btn-outline-secondary mt-1 add-create-canal" data-tooth="${tooth}"><i class="fas fa-plus me-1"></i>{{ __("Add Canal") }}</button>`;
+    html += `</div>`;
+    return html;
+}
+
+function bindAddCanalButtons(container) {
+    container.querySelectorAll('.add-create-canal').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tooth = this.dataset.tooth;
+            const tbody = this.closest('.canal-tooth-block').querySelector('tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = buildCreateCanalRowInner(tooth, '', true);
+            tbody.appendChild(tr);
+        });
     });
 }
 
@@ -472,7 +489,16 @@ document.getElementById('addCustomCanalBtn').addEventListener('click', function(
     const teeth = collectToothNumbers();
     if (teeth.length === 0) { alert('{{ __("Please enter a tooth number first.") }}'); return; }
     const tooth = teeth[0];
-    const block = document.querySelector(`.canal-tooth-block[data-tooth="${tooth}"]`);
+    let block = document.querySelector(`.canal-tooth-block[data-tooth="${tooth}"]`);
+    const container = document.getElementById('canalWorksheetContainer');
+
+    // If no block exists yet, create one
+    if (!block) {
+        container.innerHTML = buildToothBlock(tooth, []);
+        bindAddCanalButtons(container);
+        block = container.querySelector(`.canal-tooth-block[data-tooth="${tooth}"]`);
+    }
+
     if (block) {
         const tbody = block.querySelector('tbody');
         const tr = document.createElement('tr');
