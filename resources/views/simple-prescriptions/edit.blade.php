@@ -8,6 +8,18 @@
 .medicine-select-container .select2-container {
     width: 100% !important;
 }
+
+/* Override absolute positioning for medicine mic button so it flows normally */
+.medicine-item .btn-voice-medicine {
+    position: static !important;
+    display: inline-flex !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 4px 10px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+    margin-top: 6px;
+}
 </style>
 @endpush
 
@@ -187,8 +199,8 @@
                                style="display: none;"
                                onblur="handleCustomMedicine(this)">
                         <div class="voice-status voice-status-medicine"></div>
+                        <button type="button" class="btn-voice btn-voice-medicine" title="{{ __('Dictate medicine name') }}"><i class="fas fa-microphone"></i> {{ __('Dictate') }}</button>
                     </div>
-                    <button type="button" class="btn-voice btn-voice-medicine mt-2" title="{{ __('Dictate medicine name') }}"><i class="fas fa-microphone"></i> {{ __('Dictate') }}</button>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-4">
