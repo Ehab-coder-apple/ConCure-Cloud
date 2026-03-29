@@ -120,6 +120,25 @@
                             </div>
                         </div>
 
+                        <!-- Canal Worksheet (Endodontic) -->
+                        <div class="mb-3" id="canalWorksheetSection" style="display:none;">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary bg-opacity-10 d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0 text-primary">
+                                        <i class="fas fa-teeth me-2"></i>{{ __('Canal Worksheet (Endodontic)') }}
+                                    </h6>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="addCustomCanalBtn">
+                                        <i class="fas fa-plus me-1"></i>{{ __('Add Canal') }}
+                                    </button>
+                                </div>
+                                <div class="card-body p-0" id="canalWorksheetContainer">
+                                    <p class="text-muted p-3 mb-0" id="canalPlaceholder">
+                                        <i class="fas fa-info-circle me-1"></i>{{ __('Enter a tooth number above to load standard canal definitions.') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Surfaces Affected -->
                         <div class="mb-3">
                             <label class="form-label">{{ __('Surfaces Affected') }}</label>
@@ -334,6 +353,131 @@ document.getElementById('patient_id').addEventListener('change', function() {
     if (patientId) {
         // Reload page with patient_id parameter to load their dental charts
         window.location.href = '{{ url("/dental/treatments/create") }}?patient_id=' + patientId;
+    }
+});
+
+// ── Canal Worksheet logic ──────────────────────────────────────────
+let canalOptions = null;
+
+function collectToothNumbers() {
+    const teeth = [];
+    const primary = document.getElementById('tooth_number').value.trim();
+    if (primary) teeth.push(primary);
+    const additional = document.getElementById('tooth_numbers').value.trim();
+    if (additional) {
+        additional.split(',').map(t => t.trim()).filter(Boolean).forEach(t => { if (!teeth.includes(t)) teeth.push(t); });
+    }
+    return teeth;
+}
+
+function onToothNumberChange() {
+    const teeth = collectToothNumbers();
+    const section = document.getElementById('canalWorksheetSection');
+    if (teeth.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    loadCanalWorksheet(teeth);
+}
+
+document.getElementById('tooth_number').addEventListener('change', onToothNumberChange);
+document.getElementById('tooth_number').addEventListener('blur', onToothNumberChange);
+document.getElementById('tooth_numbers').addEventListener('change', onToothNumberChange);
+document.getElementById('tooth_numbers').addEventListener('blur', onToothNumberChange);
+
+function loadCanalWorksheet(teeth) {
+    const container = document.getElementById('canalWorksheetContainer');
+    container.innerHTML = '<p class="p-3 mb-0 text-muted"><i class="fas fa-spinner fa-spin me-1"></i>{{ __("Loading canals...") }}</p>';
+
+    const promises = teeth.map(t => fetch(`/dental/canals/standard/${t}`, {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(r => r.json()));
+
+    Promise.all(promises).then(results => {
+        let html = '';
+        results.forEach(data => {
+            if (!data.success) return;
+            if (!canalOptions) canalOptions = data.options;
+            const tooth = data.tooth_number;
+            const canals = data.canals || [];
+
+            html += `<div class="border-bottom p-3 canal-tooth-block" data-tooth="${tooth}">`;
+            html += `<h6 class="text-primary mb-2"><i class="fas fa-tooth me-1"></i>{{ __("Tooth") }} #${tooth}</h6>`;
+            html += `<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr>
+                <th>{{ __("Canal") }}</th><th>{{ __("WL (mm)") }}</th><th>{{ __("MAF") }}</th>
+                <th>{{ __("Cone") }}</th><th>{{ __("Taper") }}</th><th>{{ __("Status") }}</th><th>{{ __("Notes") }}</th>
+            </tr></thead><tbody>`;
+
+            if (canals.length > 0) {
+                canals.forEach(c => { html += buildCreateCanalRow(tooth, c.canal_name, false); });
+            } else {
+                html += buildCreateCanalRow(tooth, '', true);
+            }
+
+            html += `</tbody></table></div>`;
+            html += `<button type="button" class="btn btn-sm btn-outline-secondary mt-1 add-create-canal" data-tooth="${tooth}"><i class="fas fa-plus me-1"></i>{{ __("Add Canal") }}</button>`;
+            html += `</div>`;
+        });
+
+        container.innerHTML = html || '<p class="p-3 mb-0 text-muted">{{ __("No standard canals found for the entered teeth.") }}</p>';
+
+        container.querySelectorAll('.add-create-canal').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tooth = this.dataset.tooth;
+                const tbody = this.closest('.canal-tooth-block').querySelector('tbody');
+                const tr = document.createElement('tr');
+                tr.innerHTML = buildCreateCanalRowInner(tooth, '', true);
+                tbody.appendChild(tr);
+            });
+        });
+    }).catch(() => {
+        container.innerHTML = '<p class="p-3 mb-0 text-danger">{{ __("Failed to load canal definitions.") }}</p>';
+    });
+}
+
+function buildCreateCanalRow(tooth, canalName, editable) {
+    return `<tr>${buildCreateCanalRowInner(tooth, canalName, editable)}</tr>`;
+}
+
+function buildCreateCanalRowInner(tooth, canalName, editable) {
+    const idx = document.querySelectorAll(`input[name^="canals["]`).length / 7 + Math.random();
+    const i = Math.floor(idx);
+    const opts = canalOptions || {};
+    return `
+        <td>${editable ? `<input type="text" class="form-control form-control-sm" name="canals[${i}][canal_name]" value="${canalName}" placeholder="{{ __('Canal name') }}">` : `<strong>${canalName}</strong><input type="hidden" name="canals[${i}][canal_name]" value="${canalName}">`}
+            <input type="hidden" name="canals[${i}][tooth_number]" value="${tooth}">
+        </td>
+        <td><input type="number" class="form-control form-control-sm" name="canals[${i}][working_length]" step="0.5" min="0" max="50" placeholder="mm"></td>
+        <td>${buildCreateSelect(`canals[${i}][master_apical_file]`, opts.maf_sizes || [], '', '{{ __("MAF") }}')}</td>
+        <td>${buildCreateSelect(`canals[${i}][master_cone_size]`, opts.maf_sizes || [], '', '{{ __("Cone") }}')}</td>
+        <td>${buildCreateSelect(`canals[${i}][taper]`, opts.tapers || [], '', '{{ __("Taper") }}')}</td>
+        <td>${buildCreateSelect(`canals[${i}][status]`, opts.statuses || {}, 'not_started', '{{ __("Status") }}')}</td>
+        <td><input type="text" class="form-control form-control-sm" name="canals[${i}][notes]" placeholder="{{ __('Notes') }}"></td>
+    `;
+}
+
+function buildCreateSelect(name, options, selected, placeholder) {
+    let html = `<select name="${name}" class="form-select form-select-sm">`;
+    html += `<option value="">${placeholder}</option>`;
+    if (Array.isArray(options)) {
+        options.forEach(o => { html += `<option value="${o}" ${o === selected ? 'selected' : ''}>${o}</option>`; });
+    } else {
+        for (const [k, v] of Object.entries(options)) {
+            html += `<option value="${k}" ${k === selected ? 'selected' : ''}>${v}</option>`;
+        }
+    }
+    html += `</select>`;
+    return html;
+}
+
+document.getElementById('addCustomCanalBtn').addEventListener('click', function() {
+    const teeth = collectToothNumbers();
+    if (teeth.length === 0) { alert('{{ __("Please enter a tooth number first.") }}'); return; }
+    const tooth = teeth[0];
+    const block = document.querySelector(`.canal-tooth-block[data-tooth="${tooth}"]`);
+    if (block) {
+        const tbody = block.querySelector('tbody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = buildCreateCanalRowInner(tooth, '', true);
+        tbody.appendChild(tr);
     }
 });
 

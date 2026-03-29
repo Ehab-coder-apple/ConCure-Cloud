@@ -656,6 +656,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
         // Canal Treatment Patient History
         Route::get('/patients/{patient}/canal-history', [App\Http\Controllers\CanalTreatmentController::class, 'patientHistory'])->name('canal-history');
 
+        // Standard canals lookup (for create form - no treatment needed)
+        Route::get('/canals/standard/{toothNumber}', [App\Http\Controllers\CanalTreatmentController::class, 'getStandardCanals'])->name('canals.standard');
+
         // Dental Images
         Route::prefix('patients/{patient}/images')->name('images.')->group(function () {
             Route::get('/', [App\Http\Controllers\DentalImageController::class, 'index'])->name('index');

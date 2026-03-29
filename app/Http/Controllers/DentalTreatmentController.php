@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CanalTreatment;
 use App\Models\DentalTreatment;
 use App\Models\DentalChart;
 use App\Models\DentalProcedure;
@@ -151,6 +152,8 @@ class DentalTreatmentController extends Controller
         $toothNumbers = $this->normalizeToothNumbers($request->tooth_numbers);
 
         try {
+            DB::beginTransaction();
+
             $treatment = DentalTreatment::create([
                 'patient_id' => $request->patient_id,
                 'clinic_id' => $user->clinic_id,
@@ -177,10 +180,35 @@ class DentalTreatmentController extends Controller
                 'created_by' => $user->id,
             ]);
 
+            // Save canal treatment data if provided
+            if ($request->has('canals') && is_array($request->canals)) {
+                foreach ($request->canals as $canalData) {
+                    if (empty($canalData['canal_name']) || empty($canalData['tooth_number'])) continue;
+
+                    CanalTreatment::create([
+                        'dental_treatment_id' => $treatment->id,
+                        'patient_id' => $treatment->patient_id,
+                        'clinic_id' => $treatment->clinic_id,
+                        'tooth_number' => $canalData['tooth_number'],
+                        'canal_name' => $canalData['canal_name'],
+                        'working_length' => $canalData['working_length'] ?? null,
+                        'master_apical_file' => $canalData['master_apical_file'] ?? null,
+                        'master_cone_size' => $canalData['master_cone_size'] ?? null,
+                        'taper' => $canalData['taper'] ?? null,
+                        'status' => $canalData['status'] ?? 'not_started',
+                        'notes' => $canalData['notes'] ?? null,
+                        'created_by' => $user->id,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
             return redirect()->route('dental.treatments.show', $treatment)
                            ->with('success', 'Treatment plan created successfully.');
 
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->withInput()
                         ->with('error', 'Failed to create treatment plan. Please try again.');
         }

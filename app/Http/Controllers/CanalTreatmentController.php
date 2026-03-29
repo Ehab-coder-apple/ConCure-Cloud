@@ -186,5 +186,33 @@ class CanalTreatmentController extends Controller
             'canal_treatments' => $canalTreatments,
         ]);
     }
+
+    /**
+     * Get standard canal definitions for a tooth number (AJAX - for create form).
+     */
+    public function getStandardCanals(string $toothNumber)
+    {
+        $canals = ToothCanal::getForTooth($toothNumber);
+
+        if ($canals->isEmpty()) {
+            $toothType = ToothCanal::getToothType($toothNumber);
+            $arch = ToothCanal::getArch($toothNumber);
+            $canals = ToothCanal::getForToothType($toothType, $arch);
+        }
+
+        return response()->json([
+            'success' => true,
+            'tooth_number' => $toothNumber,
+            'canals' => $canals,
+            'options' => [
+                'statuses' => CanalTreatment::STATUSES,
+                'maf_sizes' => CanalTreatment::MAF_SIZES,
+                'tapers' => CanalTreatment::TAPERS,
+                'irrigation_protocols' => CanalTreatment::IRRIGATION_PROTOCOLS,
+                'obturation_techniques' => CanalTreatment::OBTURATION_TECHNIQUES,
+                'sealers' => CanalTreatment::SEALERS,
+            ],
+        ]);
+    }
 }
 
