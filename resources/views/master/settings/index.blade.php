@@ -146,6 +146,88 @@
           <p class="mb-0 text-muted">Subscription management is active. Configure plans under <a href="{{ route('master.plans.index') }}">Plans</a>.</p>
         </div>
       </div>
+
+      <!-- WhatsApp Setup Guide -->
+      <div class="card shadow-sm mt-4">
+        <div class="card-header py-3 bg-success text-white">
+          <h6 class="m-0 font-weight-bold">
+            <i class="fab fa-whatsapp me-2"></i>WhatsApp Setup Guide
+          </h6>
+        </div>
+        <div class="card-body">
+          <p class="text-muted mb-3">Follow these steps to generate WhatsApp credentials for each clinic using the <strong>Meta WhatsApp Cloud API</strong> (free — 1,000 conversations/month per number).</p>
+
+          <h6 class="fw-bold mb-2"><i class="fas fa-1 me-1 text-primary"></i> Step 1: Create a Meta Business Account</h6>
+          <p class="small mb-2">If you don't already have one, create a free Meta Business account.</p>
+          <a href="https://business.facebook.com/" target="_blank" class="btn btn-sm btn-outline-primary mb-3">
+            <i class="fas fa-external-link-alt me-1"></i>business.facebook.com
+          </a>
+
+          <h6 class="fw-bold mb-2"><i class="fas fa-2 me-1 text-primary"></i> Step 2: Create a Meta Developer App</h6>
+          <ol class="small mb-2">
+            <li>Go to the Meta Developers portal</li>
+            <li>Click <strong>"Create App"</strong> → choose <strong>"Other"</strong> → then <strong>"Business"</strong> type</li>
+            <li>Name it (e.g., "ConCure WhatsApp") and link your Business Account</li>
+          </ol>
+          <a href="https://developers.facebook.com/apps/" target="_blank" class="btn btn-sm btn-outline-primary mb-3">
+            <i class="fas fa-external-link-alt me-1"></i>developers.facebook.com/apps
+          </a>
+
+          <h6 class="fw-bold mb-2"><i class="fas fa-3 me-1 text-primary"></i> Step 3: Add the WhatsApp Product</h6>
+          <ol class="small mb-2">
+            <li>Inside your app, click <strong>"Add Products"</strong></li>
+            <li>Find <strong>"WhatsApp"</strong> and click <strong>"Set Up"</strong></li>
+            <li>Select your Business Account when prompted</li>
+          </ol>
+
+          <h6 class="fw-bold mb-2"><i class="fas fa-4 me-1 text-primary"></i> Step 4: Add a Phone Number</h6>
+          <ol class="small mb-2">
+            <li>Go to <strong>WhatsApp → API Setup</strong> in the left menu</li>
+            <li>Click <strong>"Add phone number"</strong> to register a clinic's number</li>
+            <li>Verify the number via SMS or voice call</li>
+            <li>Copy the <strong>Phone Number ID</strong> shown below the number</li>
+          </ol>
+          <div class="alert alert-info small py-2 mb-3">
+            <i class="fas fa-info-circle me-1"></i>
+            You can add <strong>up to 250 phone numbers</strong> per Business Account — one per clinic.
+          </div>
+
+          <h6 class="fw-bold mb-2"><i class="fas fa-5 me-1 text-primary"></i> Step 5: Generate a Permanent Access Token</h6>
+          <ol class="small mb-2">
+            <li>Go to <strong>Business Settings → System Users</strong></li>
+            <li>Create a System User (type: <strong>Admin</strong>) if you don't have one</li>
+            <li>Click <strong>"Generate New Token"</strong></li>
+            <li>Select your app and grant these permissions:
+              <ul>
+                <li><code>whatsapp_business_messaging</code></li>
+                <li><code>whatsapp_business_management</code></li>
+              </ul>
+            </li>
+            <li>Copy the generated token — <strong>this is your Access Token</strong></li>
+          </ol>
+          <a href="https://business.facebook.com/settings/system-users/" target="_blank" class="btn btn-sm btn-outline-primary mb-3">
+            <i class="fas fa-external-link-alt me-1"></i>Business Settings → System Users
+          </a>
+
+          <div class="alert alert-warning small py-2 mb-3">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            <strong>Important:</strong> The temporary token from "API Setup" expires in 24 hours. Always use a <strong>permanent token</strong> from System Users for production.
+          </div>
+
+          <h6 class="fw-bold mb-2"><i class="fas fa-6 me-1 text-primary"></i> Step 6: Enter Credentials in ConCure</h6>
+          <ol class="small mb-2">
+            <li>Go to <strong>Clinics → Edit Clinic</strong></li>
+            <li>Find the <strong>"WhatsApp Configuration"</strong> card on the right sidebar</li>
+            <li>Paste the <strong>Phone Number ID</strong> and <strong>Access Token</strong></li>
+            <li>Click <strong>"Save & Connect"</strong> — credentials are verified automatically</li>
+          </ol>
+
+          <div class="alert alert-success small py-2 mb-0">
+            <i class="fas fa-check-circle me-1"></i>
+            <strong>Done!</strong> The clinic can now send WhatsApp messages to patients. Repeat steps 4–6 for each clinic.
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="col-lg-4">
