@@ -358,6 +358,11 @@
                         </div>
 
                         <div class="col-12">
+                            <label for="history_of_present_illness" class="form-label">{{ __('History of Present Illness') }}</label>
+                            <textarea class="form-control" id="history_of_present_illness" name="history_of_present_illness" rows="3" placeholder="{{ __('Describe the history of the present illness...') }}"></textarea>
+                        </div>
+
+                        <div class="col-12">
                             <label for="allergies" class="form-label">{{ __('Allergies') }}</label>
                             <textarea class="form-control" id="allergies" name="allergies" rows="2" placeholder="{{ __('Known allergies and reactions') }}"></textarea>
                         </div>
