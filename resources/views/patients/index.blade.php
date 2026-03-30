@@ -359,27 +359,47 @@
 
                         <div class="col-12">
                             <label for="history_of_present_illness" class="form-label">{{ __('History of Present Illness') }}</label>
-                            <textarea class="form-control" id="history_of_present_illness" name="history_of_present_illness" rows="3" placeholder="{{ __('Describe the history of the present illness...') }}"></textarea>
+                            <div class="voice-input-wrapper">
+                                <textarea class="form-control" id="history_of_present_illness" name="history_of_present_illness" rows="3" placeholder="{{ __('Describe the history of the present illness...') }}"></textarea>
+                                <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                                <div class="voice-status"></div>
+                            </div>
                         </div>
 
                         <div class="col-12">
                             <label for="allergies" class="form-label">{{ __('Allergies') }}</label>
-                            <textarea class="form-control" id="allergies" name="allergies" rows="2" placeholder="{{ __('Known allergies and reactions') }}"></textarea>
+                            <div class="voice-input-wrapper">
+                                <textarea class="form-control" id="allergies" name="allergies" rows="2" placeholder="{{ __('Known allergies and reactions') }}"></textarea>
+                                <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                                <div class="voice-status"></div>
+                            </div>
                         </div>
 
                         <div class="col-12">
                             <label for="chronic_illnesses" class="form-label">{{ __('Chronic Illnesses') }}</label>
-                            <textarea class="form-control" id="chronic_illnesses" name="chronic_illnesses" rows="2" placeholder="{{ __('Chronic conditions and ongoing health issues') }}"></textarea>
+                            <div class="voice-input-wrapper">
+                                <textarea class="form-control" id="chronic_illnesses" name="chronic_illnesses" rows="2" placeholder="{{ __('Chronic conditions and ongoing health issues') }}"></textarea>
+                                <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                                <div class="voice-status"></div>
+                            </div>
                         </div>
 
                         <div class="col-12">
                             <label for="surgeries_history" class="form-label">{{ __('Surgery History') }}</label>
-                            <textarea class="form-control" id="surgeries_history" name="surgeries_history" rows="2" placeholder="{{ __('Previous surgeries and procedures') }}"></textarea>
+                            <div class="voice-input-wrapper">
+                                <textarea class="form-control" id="surgeries_history" name="surgeries_history" rows="2" placeholder="{{ __('Previous surgeries and procedures') }}"></textarea>
+                                <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                                <div class="voice-status"></div>
+                            </div>
                         </div>
 
                         <div class="col-12">
                             <label for="diet_history" class="form-label">{{ __('Diet History') }}</label>
-                            <textarea class="form-control" id="diet_history" name="diet_history" rows="2" placeholder="{{ __('Previous diets and nutritional information') }}"></textarea>
+                            <div class="voice-input-wrapper">
+                                <textarea class="form-control" id="diet_history" name="diet_history" rows="2" placeholder="{{ __('Previous diets and nutritional information') }}"></textarea>
+                                <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                                <div class="voice-status"></div>
+                            </div>
                         </div>
 
                         <div class="col-12">
@@ -436,7 +456,11 @@
 
                         <div class="col-12">
                             <label for="notes" class="form-label">{{ __('Notes') }}</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="{{ __('Additional notes about the patient') }}"></textarea>
+                            <div class="voice-input-wrapper">
+                                <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="{{ __('Additional notes about the patient') }}"></textarea>
+                                <button type="button" class="btn-voice" title="{{ __('Voice input') }}"><i class="fas fa-microphone"></i></button>
+                                <div class="voice-status"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -522,4 +546,5 @@ function confirmClearAll() {
     }
 }
 </script>
+@include('partials.voice-input')
 @endsection
