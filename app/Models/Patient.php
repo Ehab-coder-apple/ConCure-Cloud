@@ -31,6 +31,7 @@ class Patient extends Model
         'bmi',
         'blood_type',
         'allergies',
+        'history_of_present_illness',
         'is_pregnant',
         'chronic_illnesses',
         'surgeries_history',

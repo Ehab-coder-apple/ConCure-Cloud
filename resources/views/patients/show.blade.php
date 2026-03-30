@@ -435,7 +435,7 @@
                         </div>
                         <div class="card-body">
                             @php
-                                $hasMedicalInfo = $patient->allergies || $patient->chronic_illnesses || $patient->surgeries_history || $patient->diet_history || $patient->medical_history || $patient->is_pregnant;
+                                $hasMedicalInfo = $patient->history_of_present_illness || $patient->allergies || $patient->chronic_illnesses || $patient->surgeries_history || $patient->diet_history || $patient->medical_history || $patient->is_pregnant;
                             @endphp
 
                             @if($hasMedicalInfo)
@@ -447,6 +447,17 @@
                                                     <i class="fas fa-history me-1"></i> {{ __('Medical History') }}
                                                 </h6>
                                                 <div class="text-break">{!! nl2br(e($patient->medical_history)) !!}</div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($patient->history_of_present_illness)
+                                        <div class="col-12">
+                                            <div class="border rounded p-3 bg-light">
+                                                <h6 class="text-info mb-2">
+                                                    <i class="fas fa-file-medical-alt me-1"></i> {{ __('History of Present Illness') }}
+                                                </h6>
+                                                <div class="text-break">{!! nl2br(e($patient->history_of_present_illness)) !!}</div>
                                             </div>
                                         </div>
                                     @endif

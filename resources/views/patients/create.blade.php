@@ -269,6 +269,16 @@
                                     </div>
 
                                     <div class="col-12">
+                                        <label for="history_of_present_illness" class="form-label">{{ __('History of Present Illness') }}</label>
+                                        <textarea class="form-control @error('history_of_present_illness') is-invalid @enderror"
+                                                  id="history_of_present_illness" name="history_of_present_illness" rows="3"
+                                                  placeholder="{{ __('Describe the history of the present illness...') }}">{{ old('history_of_present_illness') }}</textarea>
+                                        @error('history_of_present_illness')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-12">
                                         <label for="allergies" class="form-label">{{ __('Allergies') }}</label>
                                         <textarea class="form-control @error('allergies') is-invalid @enderror"
                                                   id="allergies" name="allergies" rows="2"
