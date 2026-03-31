@@ -271,22 +271,31 @@
                             <i class="fas fa-info-circle me-1"></i>
                             Select the modules this clinic can access. If none are selected, all modules will be enabled by default.
                         </div>
-                        <div class="row">
-                            @foreach($availableModules as $key => $label)
-                            <div class="col-md-6 mb-2">
-                                <div class="form-check">
-                                    <input class="form-check-input module-checkbox" type="checkbox"
-                                           name="enabled_modules[]"
-                                           value="{{ $key }}"
-                                           id="module_{{ $key }}"
-                                           {{ in_array($key, old('enabled_modules', [])) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="module_{{ $key }}">
-                                        {{ $label }}
-                                    </label>
+
+                        @foreach($moduleGroups as $groupKey => $group)
+                        <div class="mb-3">
+                            <h6 class="text-secondary fw-bold border-bottom pb-2 mb-2">
+                                <i class="{{ $group['icon'] }} me-2"></i>{{ $group['label'] }}
+                            </h6>
+                            <div class="row ps-2">
+                                @foreach($group['modules'] as $key => $label)
+                                <div class="col-md-6 col-lg-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input module-checkbox" type="checkbox"
+                                               name="enabled_modules[]"
+                                               value="{{ $key }}"
+                                               id="module_{{ $key }}"
+                                               {{ in_array($key, old('enabled_modules', [])) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="module_{{ $key }}">
+                                            {{ $label }}
+                                        </label>
+                                    </div>
                                 </div>
+                                @endforeach
                             </div>
-                            @endforeach
                         </div>
+                        @endforeach
+
                         <div class="mt-2">
                             <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllModules">Select All</button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllModules">Deselect All</button>

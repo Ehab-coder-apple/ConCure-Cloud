@@ -320,26 +320,82 @@ class Clinic extends Model
     }
 
     /**
+     * Module groups for organized display in the UI.
+     * Each group has an icon, label, and list of modules.
+     */
+    public const MODULE_GROUPS = [
+        'core' => [
+            'label' => 'Core',
+            'icon'  => 'fas fa-home',
+            'modules' => [
+                'dashboard'     => 'Dashboard',
+                'patients'      => 'Patient Management',
+                'appointments'  => 'Appointments',
+                'prescriptions' => 'Prescriptions',
+                'messages'      => 'Messages',
+            ],
+        ],
+        'clinical' => [
+            'label' => 'Clinical',
+            'icon'  => 'fas fa-stethoscope',
+            'modules' => [
+                'ai_assistant'  => 'AI Medical Assistant',
+                'lab'           => 'Laboratory',
+                'radiology'     => 'Radiology',
+                'image_bank'    => 'Medical Image Bank',
+                'forms'         => 'Forms',
+            ],
+        ],
+        'modules' => [
+            'label' => 'Modules',
+            'icon'  => 'fas fa-puzzle-piece',
+            'modules' => [
+                'dental'        => 'Dental Module',
+                'nutrition'     => 'Nutrition & Diet Planning',
+                'food_database' => 'Food Database',
+                'pediatric'     => 'Pediatric Module',
+                'vaccination'   => 'Vaccination Management',
+            ],
+        ],
+        'operations' => [
+            'label' => 'Operations',
+            'icon'  => 'fas fa-cogs',
+            'modules' => [
+                'medicines'     => 'Medicine Inventory',
+                'finance'       => 'Financial Management',
+            ],
+        ],
+        'system' => [
+            'label' => 'System',
+            'icon'  => 'fas fa-shield-alt',
+            'modules' => [
+                'whatsapp'      => 'WhatsApp Messaging',
+            ],
+        ],
+    ];
+
+    /**
      * Available modules that can be toggled per clinic.
+     * Flat list derived from MODULE_GROUPS for backward compatibility.
      */
     public const AVAILABLE_MODULES = [
         'dashboard'     => 'Dashboard',
         'patients'      => 'Patient Management',
-        'prescriptions' => 'Prescriptions',
         'appointments'  => 'Appointments',
-        'medicines'     => 'Medicine Inventory',
-        'nutrition'     => 'Nutrition & Diet Planning',
-        'food_database' => 'Food Database',
-        'forms'         => 'Forms',
+        'prescriptions' => 'Prescriptions',
+        'messages'      => 'Messages',
+        'ai_assistant'  => 'AI Medical Assistant',
         'lab'           => 'Laboratory',
         'radiology'     => 'Radiology',
-        'dental'        => 'Dental Module',
-        'finance'       => 'Financial Management',
-        'ai_assistant'  => 'AI Medical Assistant',
         'image_bank'    => 'Medical Image Bank',
-        'messages'      => 'Messages',
+        'forms'         => 'Forms',
+        'dental'        => 'Dental Module',
+        'nutrition'     => 'Nutrition & Diet Planning',
+        'food_database' => 'Food Database',
         'pediatric'     => 'Pediatric Module',
         'vaccination'   => 'Vaccination Management',
+        'medicines'     => 'Medicine Inventory',
+        'finance'       => 'Financial Management',
         'whatsapp'      => 'WhatsApp Messaging',
     ];
 

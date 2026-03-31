@@ -140,8 +140,9 @@ class ClinicController extends Controller
     {
         $specialities = $this->specialityOptions();
         $availableModules = \App\Models\Clinic::AVAILABLE_MODULES;
+        $moduleGroups = \App\Models\Clinic::MODULE_GROUPS;
         $countries = \App\Models\Country::where('is_active', true)->orderBy('name')->get();
-        return view('master.clinics.create', compact('specialities', 'availableModules', 'countries'));
+        return view('master.clinics.create', compact('specialities', 'availableModules', 'moduleGroups', 'countries'));
     }
 
     /**
@@ -299,9 +300,10 @@ class ClinicController extends Controller
 
         $specialities = $this->specialityOptions();
         $availableModules = \App\Models\Clinic::AVAILABLE_MODULES;
+        $moduleGroups = \App\Models\Clinic::MODULE_GROUPS;
         $countries = \App\Models\Country::where('is_active', true)->orderBy('name')->get();
 
-        return view('master.clinics.edit', compact('clinic', 'adminUser', 'specialities', 'availableModules', 'countries'));
+        return view('master.clinics.edit', compact('clinic', 'adminUser', 'specialities', 'availableModules', 'moduleGroups', 'countries'));
     }
 
     /**

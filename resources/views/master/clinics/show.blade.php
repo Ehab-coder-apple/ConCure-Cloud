@@ -323,17 +323,24 @@
                     @if($clinic->enabled_modules === null)
                         <span class="text-muted"><i class="fas fa-check-circle text-success me-1"></i> All modules enabled (default)</span>
                     @else
-                        <div class="row">
-                            @foreach(\App\Models\Clinic::AVAILABLE_MODULES as $key => $label)
-                            <div class="col-md-4 col-lg-3 mb-2">
-                                @if(in_array($key, $clinic->enabled_modules ?? []))
-                                    <span class="text-success"><i class="fas fa-check-circle me-1"></i> {{ $label }}</span>
-                                @else
-                                    <span class="text-muted"><i class="fas fa-times-circle me-1"></i> <s>{{ $label }}</s></span>
-                                @endif
+                        @foreach(\App\Models\Clinic::MODULE_GROUPS as $groupKey => $group)
+                        <div class="mb-3">
+                            <h6 class="text-secondary fw-bold border-bottom pb-2 mb-2">
+                                <i class="{{ $group['icon'] }} me-2"></i>{{ $group['label'] }}
+                            </h6>
+                            <div class="row ps-2">
+                                @foreach($group['modules'] as $key => $label)
+                                <div class="col-md-4 col-lg-3 mb-2">
+                                    @if(in_array($key, $clinic->enabled_modules ?? []))
+                                        <span class="text-success"><i class="fas fa-check-circle me-1"></i> {{ $label }}</span>
+                                    @else
+                                        <span class="text-muted"><i class="fas fa-times-circle me-1"></i> <s>{{ $label }}</s></span>
+                                    @endif
+                                </div>
+                                @endforeach
                             </div>
-                            @endforeach
                         </div>
+                        @endforeach
                     @endif
                 </div>
             </div>
