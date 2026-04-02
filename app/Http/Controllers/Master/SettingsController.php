@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Symfony\Component\Process\Process;
+
 
 class SettingsController extends Controller
 {
@@ -144,44 +144,58 @@ class SettingsController extends Controller
                 }
             }
 
+            $fileSize = $file->getSize();
             Log::info('SQL Import started', [
                 'clinic_id' => $clinic->id,
                 'clinic_name' => $clinic->name,
                 'file_name' => $file->getClientOriginalName(),
-                'file_size' => $file->getSize(),
+                'file_size' => $fileSize,
                 'admin' => $user->email,
             ]);
 
-            // Save uploaded file to a temp path for mysql CLI
-            $tempPath = storage_path('app/temp_import_' . time() . '.sql');
-            file_put_contents($tempPath, $sql);
+            $startTime = microtime(true);
+
+            // Prepend speed optimizations to the SQL
+            $optimizedSql = "SET FOREIGN_KEY_CHECKS=0;\nSET UNIQUE_CHECKS=0;\nSET AUTOCOMMIT=0;\n"
+                . $sql
+                . "\nCOMMIT;\nSET FOREIGN_KEY_CHECKS=1;\nSET UNIQUE_CHECKS=1;\nSET AUTOCOMMIT=1;\n";
+
+            // Write optimized SQL to temp file
+            $tempPath = storage_path('app/temp_import_' . uniqid() . '.sql');
+            file_put_contents($tempPath, $optimizedSql);
+            unset($sql, $optimizedSql); // Free memory
 
             try {
-                $result = $this->importViaMysqlCli($tempPath);
+                $result = $this->executeImport($tempPath);
             } finally {
-                @unlink($tempPath); // Always clean up
+                @unlink($tempPath);
             }
 
+            $elapsed = round(microtime(true) - $startTime, 2);
+
             if ($result['success']) {
-                Log::info('SQL Import completed successfully', [
+                Log::info('SQL Import completed', [
                     'clinic_id' => $clinic->id,
                     'file_name' => $file->getClientOriginalName(),
                     'method' => $result['method'],
+                    'seconds' => $elapsed,
                 ]);
 
                 return response()->json([
                     'success' => true,
-                    'message' => "SQL import completed successfully for clinic \"{$clinic->name}\" (via {$result['method']}).",
+                    'message' => "SQL import completed for clinic \"{$clinic->name}\" in {$elapsed}s (via {$result['method']}).",
                 ]);
             } else {
                 Log::error('SQL Import failed', [
                     'clinic_id' => $clinic->id,
                     'error' => $result['error'],
+                    'method' => $result['method'] ?? 'unknown',
+                    'seconds' => $elapsed,
                 ]);
 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Import failed.',
+                    'message' => "Import failed after {$elapsed}s.",
                     'error' => $result['error'],
                 ], 422);
             }
@@ -199,89 +213,61 @@ class SettingsController extends Controller
     }
 
     /**
-     * Import SQL file using mysql CLI (fastest method).
+     * Execute SQL import - tries mysql CLI first, then PDO fallback.
+     * The SQL file should already contain SET FOREIGN_KEY_CHECKS=0 etc.
      */
-    private function importViaMysqlCli(string $filePath): array
+    private function executeImport(string $filePath): array
     {
-        $dbHost = config('database.connections.mysql.host', '127.0.0.1');
-        $dbPort = config('database.connections.mysql.port', '3306');
-        $dbName = config('database.connections.mysql.database');
-        $dbUser = config('database.connections.mysql.username');
-        $dbPass = config('database.connections.mysql.password');
-
-        // Try mysql CLI first (10x-100x faster than PDO)
-        $mysqlBin = $this->findMysqlBinary();
+        // Method 1: Try mysql CLI via exec() — fastest possible
+        $mysqlBin = trim(shell_exec('which mysql 2>/dev/null') ?? '');
+        if (empty($mysqlBin)) {
+            // Common paths on Linux servers
+            foreach (['/usr/bin/mysql', '/usr/local/bin/mysql'] as $p) {
+                if (is_executable($p)) { $mysqlBin = $p; break; }
+            }
+        }
 
         if ($mysqlBin) {
-            $command = [
-                $mysqlBin,
-                '-h', $dbHost,
-                '-P', (string) $dbPort,
-                '-u', $dbUser,
-                '--default-character-set=utf8mb4',
-                $dbName,
-            ];
+            $dbHost = escapeshellarg(config('database.connections.mysql.host', '127.0.0.1'));
+            $dbPort = escapeshellarg(config('database.connections.mysql.port', '3306'));
+            $dbName = escapeshellarg(config('database.connections.mysql.database'));
+            $dbUser = escapeshellarg(config('database.connections.mysql.username'));
+            $dbPass = config('database.connections.mysql.password');
+            $safePath = escapeshellarg($filePath);
 
-            $process = new Process($command, null, ['MYSQL_PWD' => $dbPass]);
-            $process->setTimeout(600); // 10 minutes
-            $process->setInput(file_get_contents($filePath));
-            $process->run();
+            // Use MYSQL_PWD env var to avoid password on command line
+            $cmd = "MYSQL_PWD=" . escapeshellarg($dbPass)
+                . " {$mysqlBin} -h {$dbHost} -P {$dbPort} -u {$dbUser}"
+                . " --default-character-set=utf8mb4 {$dbName} < {$safePath} 2>&1";
 
-            if ($process->isSuccessful()) {
+            Log::info('SQL Import: trying mysql CLI', ['binary' => $mysqlBin]);
+
+            $output = [];
+            $exitCode = 0;
+            exec($cmd, $output, $exitCode);
+
+            if ($exitCode === 0) {
                 return ['success' => true, 'method' => 'mysql-cli'];
             }
 
-            Log::warning('mysql CLI import failed, falling back to PDO', [
-                'error' => $process->getErrorOutput(),
+            $errorMsg = implode("\n", $output);
+            Log::warning('mysql CLI failed, falling back to PDO', [
+                'exit_code' => $exitCode,
+                'error' => $errorMsg,
             ]);
+        } else {
+            Log::info('SQL Import: mysql binary not found, using PDO');
         }
 
-        // Fallback: PDO with optimizations
-        $sql = file_get_contents($filePath);
-        $pdo = DB::connection()->getPdo();
-
-        // Disable checks for faster import
-        $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
-        $pdo->exec('SET UNIQUE_CHECKS=0');
-        $pdo->exec('SET AUTOCOMMIT=0');
-
+        // Method 2: PDO exec (optimizations already in the SQL file)
         try {
+            $sql = file_get_contents($filePath);
+            $pdo = DB::connection()->getPdo();
             $pdo->exec($sql);
-            $pdo->exec('COMMIT');
+            return ['success' => true, 'method' => 'pdo'];
         } catch (\Exception $e) {
-            $pdo->exec('ROLLBACK');
-            $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
-            $pdo->exec('SET UNIQUE_CHECKS=1');
-            $pdo->exec('SET AUTOCOMMIT=1');
-            return ['success' => false, 'error' => $e->getMessage()];
+            return ['success' => false, 'method' => 'pdo', 'error' => $e->getMessage()];
         }
-
-        $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
-        $pdo->exec('SET UNIQUE_CHECKS=1');
-        $pdo->exec('SET AUTOCOMMIT=1');
-
-        return ['success' => true, 'method' => 'pdo-optimized'];
-    }
-
-    /**
-     * Find the mysql binary path.
-     */
-    private function findMysqlBinary(): ?string
-    {
-        $paths = ['/usr/bin/mysql', '/usr/local/bin/mysql', '/usr/local/mysql/bin/mysql'];
-        foreach ($paths as $path) {
-            if (file_exists($path) && is_executable($path)) {
-                return $path;
-            }
-        }
-
-        // Try which command
-        $which = trim(shell_exec('which mysql 2>/dev/null') ?? '');
-        if ($which && file_exists($which)) {
-            return $which;
-        }
-
-        return null;
     }
 
     /**
