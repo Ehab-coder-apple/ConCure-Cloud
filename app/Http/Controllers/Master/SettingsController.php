@@ -104,9 +104,11 @@ class SettingsController extends Controller
         $clinic = Clinic::findOrFail($request->clinic_id);
         $file = $request->file('sql_file');
 
-        // Validate file extension
+        // Validate file extension (also accept macOS duplicate names like "file.sql (1)")
+        $originalName = $file->getClientOriginalName();
         $extension = strtolower($file->getClientOriginalExtension());
-        if (!in_array($extension, ['sql'])) {
+        $isSql = in_array($extension, ['sql']) || preg_match('/\.sql\s*\(\d+\)$/i', $originalName);
+        if (!$isSql) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid file type. Only .sql files are allowed.'
@@ -114,6 +116,13 @@ class SettingsController extends Controller
         }
 
         try {
+            // Allow up to 10 minutes for large SQL imports
+            set_time_limit(600);
+            ini_set('memory_limit', '512M');
+
+            // Disable query log to save memory during bulk import
+            DB::disableQueryLog();
+
             $sql = file_get_contents($file->getRealPath());
 
             if (empty(trim($sql))) {
@@ -147,29 +156,38 @@ class SettingsController extends Controller
 
             // Split SQL by semicolons (handle multi-statement files)
             $statements = array_filter(array_map('trim', preg_split('/;\s*$/m', $sql)));
+            $totalStatements = count($statements);
             $executed = 0;
-            $errors = [];
+            $batchSize = 50;
 
+            // Execute in batches for better performance
+            $batch = [];
             foreach ($statements as $index => $statement) {
                 if (empty($statement)) continue;
-                try {
-                    DB::unprepared($statement);
-                    $executed++;
-                } catch (\Exception $e) {
-                    $errors[] = 'Statement #' . ($index + 1) . ': ' . $e->getMessage();
-                    // Stop on first error to avoid partial imports
-                    DB::rollBack();
-                    Log::error('SQL Import failed at statement', [
-                        'clinic_id' => $clinic->id,
-                        'statement_index' => $index + 1,
-                        'error' => $e->getMessage(),
-                    ]);
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Import failed at statement #' . ($index + 1) . '. All changes rolled back.',
-                        'error' => $e->getMessage(),
-                        'executed_before_error' => $executed,
-                    ], 422);
+                $batch[] = $statement;
+
+                if (count($batch) >= $batchSize || $index === array_key_last($statements)) {
+                    try {
+                        // Combine batch into a single unprepared call
+                        $batchSql = implode(";\n", $batch) . ';';
+                        DB::unprepared($batchSql);
+                        $executed += count($batch);
+                        $batch = [];
+                    } catch (\Exception $e) {
+                        DB::rollBack();
+                        Log::error('SQL Import failed at batch', [
+                            'clinic_id' => $clinic->id,
+                            'statements_executed_before_error' => $executed,
+                            'batch_start' => $executed + 1,
+                            'error' => $e->getMessage(),
+                        ]);
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Import failed around statement #' . ($executed + 1) . '. All changes rolled back.',
+                            'error' => $e->getMessage(),
+                            'executed_before_error' => $executed,
+                        ], 422);
+                    }
                 }
             }
 

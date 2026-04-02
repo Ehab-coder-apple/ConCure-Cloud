@@ -181,7 +181,7 @@
               <label for="sql_file" class="form-label fw-bold">
                 <i class="fas fa-file-upload me-1"></i>SQL File
               </label>
-              <input type="file" class="form-control" id="sql_file" name="sql_file" accept=".sql" required>
+              <input type="file" class="form-control" id="sql_file" name="sql_file" required>
               <small class="text-muted">Max 50MB. Only <code>.sql</code> files with INSERT/UPDATE statements.</small>
             </div>
 
@@ -398,10 +398,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Importing...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Importing... Please wait, this may take several minutes for large files.';
             resultDiv.style.display = 'none';
 
+            // Show elapsed time
+            let seconds = 0;
+            const timer = setInterval(() => {
+                seconds++;
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>Importing... (${timeStr})`;
+            }, 1000);
+
             const formData = new FormData(this);
+
+            // Use AbortController with 10 minute timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes
 
             fetch('{{ route("master.settings.import-sql") }}', {
                 method: 'POST',
@@ -409,10 +423,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json',
                 },
-                body: formData
+                body: formData,
+                signal: controller.signal
             })
             .then(response => response.json().then(data => ({ status: response.status, data })))
             .then(({ status, data }) => {
+                clearTimeout(timeoutId);
+                clearInterval(timer);
                 resultDiv.style.display = 'block';
                 if (data.success) {
                     resultDiv.className = 'mt-3 alert alert-success';
@@ -429,9 +446,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 btn.innerHTML = originalBtn;
             })
             .catch(error => {
+                clearTimeout(timeoutId);
+                clearInterval(timer);
                 resultDiv.style.display = 'block';
                 resultDiv.className = 'mt-3 alert alert-danger';
-                resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>An unexpected error occurred.';
+                const msg = error.name === 'AbortError'
+                    ? 'Request timed out after 10 minutes. The file may be too large — try splitting it into smaller files.'
+                    : 'An unexpected error occurred. Please try again.';
+                resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>' + msg;
                 btn.disabled = false;
                 btn.innerHTML = originalBtn;
             });
