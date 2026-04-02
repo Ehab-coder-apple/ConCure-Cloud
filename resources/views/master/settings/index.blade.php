@@ -147,6 +147,53 @@
         </div>
       </div>
 
+      <!-- SQL Data Import -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header py-3 bg-warning text-dark">
+          <h6 class="m-0 font-weight-bold">
+            <i class="fas fa-database me-2"></i>SQL Data Import
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warning small mb-3">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            <strong>Caution:</strong> This tool executes raw SQL statements directly on the database.
+            Only use verified and trusted SQL files. Destructive statements (DROP, TRUNCATE, ALTER) are blocked.
+            All statements run inside a transaction — if any statement fails, everything is rolled back.
+          </div>
+
+          <form id="sqlImportForm" enctype="multipart/form-data">
+            @csrf
+            <div class="mb-3">
+              <label for="import_clinic_id" class="form-label fw-bold">
+                <i class="fas fa-clinic-medical me-1"></i>Target Clinic
+              </label>
+              <select class="form-select" id="import_clinic_id" name="clinic_id" required>
+                <option value="">— Select Clinic —</option>
+                @foreach($clinics as $clinic)
+                  <option value="{{ $clinic->id }}">{{ $clinic->name }} (ID: {{ $clinic->id }})</option>
+                @endforeach
+              </select>
+              <small class="text-muted">Choose which clinic this data belongs to.</small>
+            </div>
+
+            <div class="mb-3">
+              <label for="sql_file" class="form-label fw-bold">
+                <i class="fas fa-file-upload me-1"></i>SQL File
+              </label>
+              <input type="file" class="form-control" id="sql_file" name="sql_file" accept=".sql" required>
+              <small class="text-muted">Max 50MB. Only <code>.sql</code> files with INSERT/UPDATE statements.</small>
+            </div>
+
+            <button type="submit" class="btn btn-warning" id="sqlImportBtn">
+              <i class="fas fa-upload me-1"></i>Import SQL Data
+            </button>
+          </form>
+
+          <div id="sqlImportResult" class="mt-3" style="display:none;"></div>
+        </div>
+      </div>
+
       <!-- WhatsApp Setup Guide -->
       <div class="card shadow-sm mt-4">
         <div class="card-header py-3 bg-success text-white">
@@ -331,6 +378,62 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Re-enable button
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
+            });
+        });
+    }
+
+    // SQL Import form handler
+    const sqlForm = document.getElementById('sqlImportForm');
+    if (sqlForm) {
+        sqlForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const btn = document.getElementById('sqlImportBtn');
+            const resultDiv = document.getElementById('sqlImportResult');
+            const originalBtn = btn.innerHTML;
+
+            // Confirmation
+            if (!confirm('Are you sure you want to import this SQL file? This will execute SQL statements directly on the database for the selected clinic.')) {
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Importing...';
+            resultDiv.style.display = 'none';
+
+            const formData = new FormData(this);
+
+            fetch('{{ route("master.settings.import-sql") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+                body: formData
+            })
+            .then(response => response.json().then(data => ({ status: response.status, data })))
+            .then(({ status, data }) => {
+                resultDiv.style.display = 'block';
+                if (data.success) {
+                    resultDiv.className = 'mt-3 alert alert-success';
+                    resultDiv.innerHTML = '<i class="fas fa-check-circle me-1"></i>' + data.message;
+                } else {
+                    resultDiv.className = 'mt-3 alert alert-danger';
+                    let msg = '<i class="fas fa-times-circle me-1"></i>' + data.message;
+                    if (data.error) {
+                        msg += '<br><small class="text-muted">' + data.error + '</small>';
+                    }
+                    resultDiv.innerHTML = msg;
+                }
+                btn.disabled = false;
+                btn.innerHTML = originalBtn;
+            })
+            .catch(error => {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'mt-3 alert alert-danger';
+                resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>An unexpected error occurred.';
+                btn.disabled = false;
+                btn.innerHTML = originalBtn;
             });
         });
     }
