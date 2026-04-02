@@ -151,57 +151,35 @@ class SettingsController extends Controller
                 'admin' => $user->email,
             ]);
 
-            // Execute SQL within a transaction
+            // Execute entire SQL file in a single transaction
             DB::beginTransaction();
 
-            // Split SQL by semicolons (handle multi-statement files)
-            $statements = array_filter(array_map('trim', preg_split('/;\s*$/m', $sql)));
-            $totalStatements = count($statements);
-            $executed = 0;
-            $batchSize = 50;
-
-            // Execute in batches for better performance
-            $batch = [];
-            foreach ($statements as $index => $statement) {
-                if (empty($statement)) continue;
-                $batch[] = $statement;
-
-                if (count($batch) >= $batchSize || $index === array_key_last($statements)) {
-                    try {
-                        // Combine batch into a single unprepared call
-                        $batchSql = implode(";\n", $batch) . ';';
-                        DB::unprepared($batchSql);
-                        $executed += count($batch);
-                        $batch = [];
-                    } catch (\Exception $e) {
-                        DB::rollBack();
-                        Log::error('SQL Import failed at batch', [
-                            'clinic_id' => $clinic->id,
-                            'statements_executed_before_error' => $executed,
-                            'batch_start' => $executed + 1,
-                            'error' => $e->getMessage(),
-                        ]);
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Import failed around statement #' . ($executed + 1) . '. All changes rolled back.',
-                            'error' => $e->getMessage(),
-                            'executed_before_error' => $executed,
-                        ], 422);
-                    }
-                }
+            try {
+                // Execute the entire SQL file at once (much faster than splitting)
+                DB::unprepared($sql);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('SQL Import failed', [
+                    'clinic_id' => $clinic->id,
+                    'error' => $e->getMessage(),
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Import failed. All changes rolled back.',
+                    'error' => $e->getMessage(),
+                ], 422);
             }
 
             DB::commit();
 
             Log::info('SQL Import completed successfully', [
                 'clinic_id' => $clinic->id,
-                'statements_executed' => $executed,
+                'file_name' => $file->getClientOriginalName(),
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => "SQL import completed successfully for clinic \"{$clinic->name}\". {$executed} statement(s) executed.",
-                'statements_executed' => $executed,
+                'message' => "SQL import completed successfully for clinic \"{$clinic->name}\".",
             ]);
 
         } catch (\Exception $e) {
