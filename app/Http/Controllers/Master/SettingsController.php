@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\Process\Process;
 
 class SettingsController extends Controller
 {
@@ -151,41 +152,43 @@ class SettingsController extends Controller
                 'admin' => $user->email,
             ]);
 
-            // Execute entire SQL file in a single transaction
-            DB::beginTransaction();
+            // Save uploaded file to a temp path for mysql CLI
+            $tempPath = storage_path('app/temp_import_' . time() . '.sql');
+            file_put_contents($tempPath, $sql);
 
             try {
-                // Execute the entire SQL file at once (much faster than splitting)
-                DB::unprepared($sql);
-            } catch (\Exception $e) {
-                DB::rollBack();
+                $result = $this->importViaMysqlCli($tempPath);
+            } finally {
+                @unlink($tempPath); // Always clean up
+            }
+
+            if ($result['success']) {
+                Log::info('SQL Import completed successfully', [
+                    'clinic_id' => $clinic->id,
+                    'file_name' => $file->getClientOriginalName(),
+                    'method' => $result['method'],
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "SQL import completed successfully for clinic \"{$clinic->name}\" (via {$result['method']}).",
+                ]);
+            } else {
                 Log::error('SQL Import failed', [
                     'clinic_id' => $clinic->id,
-                    'error' => $e->getMessage(),
+                    'error' => $result['error'],
                 ]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Import failed. All changes rolled back.',
-                    'error' => $e->getMessage(),
+                    'message' => 'Import failed.',
+                    'error' => $result['error'],
                 ], 422);
             }
 
-            DB::commit();
-
-            Log::info('SQL Import completed successfully', [
-                'clinic_id' => $clinic->id,
-                'file_name' => $file->getClientOriginalName(),
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => "SQL import completed successfully for clinic \"{$clinic->name}\".",
-            ]);
-
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('SQL Import error', [
-                'clinic_id' => $clinic->id,
+                'clinic_id' => $clinic->id ?? null,
                 'error' => $e->getMessage(),
             ]);
             return response()->json([
@@ -193,6 +196,92 @@ class SettingsController extends Controller
                 'message' => 'Import failed: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Import SQL file using mysql CLI (fastest method).
+     */
+    private function importViaMysqlCli(string $filePath): array
+    {
+        $dbHost = config('database.connections.mysql.host', '127.0.0.1');
+        $dbPort = config('database.connections.mysql.port', '3306');
+        $dbName = config('database.connections.mysql.database');
+        $dbUser = config('database.connections.mysql.username');
+        $dbPass = config('database.connections.mysql.password');
+
+        // Try mysql CLI first (10x-100x faster than PDO)
+        $mysqlBin = $this->findMysqlBinary();
+
+        if ($mysqlBin) {
+            $command = [
+                $mysqlBin,
+                '-h', $dbHost,
+                '-P', (string) $dbPort,
+                '-u', $dbUser,
+                '--default-character-set=utf8mb4',
+                $dbName,
+            ];
+
+            $process = new Process($command, null, ['MYSQL_PWD' => $dbPass]);
+            $process->setTimeout(600); // 10 minutes
+            $process->setInput(file_get_contents($filePath));
+            $process->run();
+
+            if ($process->isSuccessful()) {
+                return ['success' => true, 'method' => 'mysql-cli'];
+            }
+
+            Log::warning('mysql CLI import failed, falling back to PDO', [
+                'error' => $process->getErrorOutput(),
+            ]);
+        }
+
+        // Fallback: PDO with optimizations
+        $sql = file_get_contents($filePath);
+        $pdo = DB::connection()->getPdo();
+
+        // Disable checks for faster import
+        $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+        $pdo->exec('SET UNIQUE_CHECKS=0');
+        $pdo->exec('SET AUTOCOMMIT=0');
+
+        try {
+            $pdo->exec($sql);
+            $pdo->exec('COMMIT');
+        } catch (\Exception $e) {
+            $pdo->exec('ROLLBACK');
+            $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+            $pdo->exec('SET UNIQUE_CHECKS=1');
+            $pdo->exec('SET AUTOCOMMIT=1');
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+
+        $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+        $pdo->exec('SET UNIQUE_CHECKS=1');
+        $pdo->exec('SET AUTOCOMMIT=1');
+
+        return ['success' => true, 'method' => 'pdo-optimized'];
+    }
+
+    /**
+     * Find the mysql binary path.
+     */
+    private function findMysqlBinary(): ?string
+    {
+        $paths = ['/usr/bin/mysql', '/usr/local/bin/mysql', '/usr/local/mysql/bin/mysql'];
+        foreach ($paths as $path) {
+            if (file_exists($path) && is_executable($path)) {
+                return $path;
+            }
+        }
+
+        // Try which command
+        $which = trim(shell_exec('which mysql 2>/dev/null') ?? '');
+        if ($which && file_exists($which)) {
+            return $which;
+        }
+
+        return null;
     }
 
     /**
