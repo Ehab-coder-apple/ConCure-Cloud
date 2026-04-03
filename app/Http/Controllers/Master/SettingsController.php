@@ -97,10 +97,23 @@ class SettingsController extends Controller
             ], 403);
         }
 
+        Log::info('SQL Import request received', [
+            'admin' => $user->email,
+            'ip' => $request->ip(),
+            'content_length' => (int) $request->server('CONTENT_LENGTH', 0),
+            'clinic_id_input' => $request->input('clinic_id'),
+            'has_sql_file' => $request->hasFile('sql_file'),
+        ]);
+
         $request->validate([
             'clinic_id' => 'required|exists:clinics,id',
             'sql_file'  => 'required|file|max:51200', // max 50MB
         ]);
+
+        // From this point onward this request no longer needs session writes.
+        // Release the PHP session lock before reading/scanning the upload so the
+        // browser is not blocked behind concurrent session-backed requests.
+        $this->closeSessionLock($request);
 
         $clinic = Clinic::findOrFail($request->clinic_id);
         $file = $request->file('sql_file');
@@ -168,9 +181,6 @@ class SettingsController extends Controller
                 'status' => 'running',
                 'message' => 'Import is running...',
             ]);
-
-            // Release the PHP session lock before continuing with the long-running import.
-            $this->closeSessionLock($request);
 
             // Send response IMMEDIATELY, then continue processing
             $response = response()->json([

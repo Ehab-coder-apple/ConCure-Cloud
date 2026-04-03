@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
 
 class SessionActivityController extends Controller
 {
@@ -14,38 +15,30 @@ class SessionActivityController extends Controller
      */
     public function keepAlive(Request $request)
     {
-        \Log::info('Keep-alive request received', [
-            'authenticated' => Auth::check(),
-            'user_id' => Auth::id(),
-            'ip' => $request->ip(),
-        ]);
-
         if (!Auth::check()) {
-            \Log::warning('Keep-alive failed: User not authenticated');
             return response()->json([
                 'status' => 'unauthenticated',
                 'message' => 'User not authenticated'
             ], 401);
         }
 
+        $user = Auth::user();
+
         // Update session last activity timestamp
-        Session::put('last_activity', now()->timestamp);
+        $timestamp = now()->timestamp;
+        Session::put('last_activity', $timestamp);
 
         // Save the session to persist the changes
         $request->session()->save();
-
-        \Log::info('Keep-alive successful', [
-            'user_id' => Auth::id(),
-            'timestamp' => now()->toIso8601String(),
-        ]);
+        $this->closeSessionLock($request);
 
         return response()->json([
             'status' => 'alive',
             'message' => 'Session kept alive',
             'timestamp' => now()->toIso8601String(),
             'user' => [
-                'id' => Auth::id(),
-                'name' => Auth::user()->full_name ?? Auth::user()->name,
+                'id' => $user->id,
+                'name' => $user->full_name ?? $user->name,
             ]
         ]);
     }
@@ -68,6 +61,8 @@ class SessionActivityController extends Controller
         
         $elapsedSeconds = now()->timestamp - $lastActivity;
         $remainingSeconds = max(0, $timeoutSeconds - $elapsedSeconds);
+
+        $this->closeSessionLock($request);
 
         return response()->json([
             'status' => 'active',
@@ -144,6 +139,25 @@ class SessionActivityController extends Controller
             'timeoutSeconds' => $timeoutMinutes * 60,
             'warningSeconds' => $warningMinutes * 60,
         ]);
+    }
+
+    private function closeSessionLock(Request $request): void
+    {
+        if (!$request->hasSession()) {
+            return;
+        }
+
+        try {
+            $request->session()->save();
+        } catch (\Throwable $e) {
+            Log::warning('Failed to save session before releasing session activity lock.', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        if (function_exists('session_write_close') && session_status() === PHP_SESSION_ACTIVE) {
+            @session_write_close();
+        }
     }
 }
 

@@ -392,11 +392,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const resultDiv = document.getElementById('sqlImportResult');
             const originalBtn = btn.innerHTML;
             let phaseLabel = 'Uploading';
+            const autoLogoutPauseReason = 'sql-import';
+
+            const pauseAutoLogout = () => {
+                if (window.autoLogout && typeof window.autoLogout.pause === 'function') {
+                    window.autoLogout.pause(autoLogoutPauseReason);
+                }
+            };
+
+            const resumeAutoLogout = () => {
+                if (window.autoLogout && typeof window.autoLogout.resume === 'function') {
+                    window.autoLogout.resume(autoLogoutPauseReason);
+                }
+            };
 
             if (!confirm('Are you sure you want to import this SQL file? This will execute SQL statements directly on the database for the selected clinic.')) {
                 return;
             }
 
+            pauseAutoLogout();
             btn.disabled = true;
             resultDiv.style.display = 'none';
 
@@ -427,9 +441,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.background && data.status_url) {
                     // Background job started — poll for status
                     phaseLabel = 'Processing';
-                    pollImportStatus(data.status_url, btn, resultDiv, originalBtn, timer);
+                    pollImportStatus(data.status_url, btn, resultDiv, originalBtn, timer, resumeAutoLogout);
                 } else if (data.success) {
                     clearInterval(timer);
+                    resumeAutoLogout();
                     resultDiv.style.display = 'block';
                     resultDiv.className = 'mt-3 alert alert-success';
                     resultDiv.innerHTML = '<i class="fas fa-check-circle me-1"></i>' + data.message;
@@ -437,6 +452,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     btn.innerHTML = originalBtn;
                 } else {
                     clearInterval(timer);
+                    resumeAutoLogout();
                     resultDiv.style.display = 'block';
                     resultDiv.className = 'mt-3 alert alert-danger';
                     let msg = '<i class="fas fa-times-circle me-1"></i>' + data.message;
@@ -448,6 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 clearInterval(timer);
+                resumeAutoLogout();
                 resultDiv.style.display = 'block';
                 resultDiv.className = 'mt-3 alert alert-danger';
                 resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>Upload failed. Please try again.';
@@ -457,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function pollImportStatus(statusUrl, btn, resultDiv, originalBtn, timer) {
+    function pollImportStatus(statusUrl, btn, resultDiv, originalBtn, timer, onComplete) {
         let pollCount = 0;
         const maxPolls = 300; // 10 minutes at 2s intervals
 
@@ -466,6 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (pollCount > maxPolls) {
                 clearInterval(poller);
                 clearInterval(timer);
+                onComplete?.();
                 resultDiv.style.display = 'block';
                 resultDiv.className = 'mt-3 alert alert-warning';
                 resultDiv.innerHTML = '<i class="fas fa-clock me-1"></i>Import is still running in the background. Check logs for results.';
@@ -482,6 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!ok && data.status !== 'unknown') {
                     clearInterval(poller);
                     clearInterval(timer);
+                    onComplete?.();
                     resultDiv.style.display = 'block';
                     resultDiv.className = 'mt-3 alert alert-danger';
                     resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>' + (data.message || 'Unable to read import status.');
@@ -493,6 +512,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.status === 'completed') {
                     clearInterval(poller);
                     clearInterval(timer);
+                    onComplete?.();
                     resultDiv.style.display = 'block';
                     resultDiv.className = 'mt-3 alert alert-success';
                     resultDiv.innerHTML = '<i class="fas fa-check-circle me-1"></i>' + data.message;
@@ -501,6 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (data.status === 'failed') {
                     clearInterval(poller);
                     clearInterval(timer);
+                    onComplete?.();
                     resultDiv.style.display = 'block';
                     resultDiv.className = 'mt-3 alert alert-danger';
                     resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>' + data.message;

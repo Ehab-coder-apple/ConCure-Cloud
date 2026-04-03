@@ -28,6 +28,7 @@ class AutoLogout {
         this.lastActivity = Date.now();
         this.isWarningShown = false;
         this.isPageVisible = true;
+        this.pauseReasons = new Set();
         
         // Bind methods to preserve context
         this.handleActivity = this.handleActivity.bind(this);
@@ -148,6 +149,10 @@ class AutoLogout {
      */
     handleVisibilityChange() {
         this.isPageVisible = !document.hidden;
+
+        if (this.isPaused()) {
+            return;
+        }
         
         if (this.isPageVisible) {
             // Page became visible - check session status
@@ -160,6 +165,10 @@ class AutoLogout {
      */
     handleActivity() {
         this.lastActivity = Date.now();
+
+        if (this.isPaused()) {
+            return;
+        }
         
         // Reset inactivity timer
         this.resetInactivityTimer();
@@ -174,6 +183,10 @@ class AutoLogout {
      * Reset the inactivity timer
      */
     resetInactivityTimer() {
+        if (this.isPaused()) {
+            return;
+        }
+
         // Clear existing timers
         if (this.inactivityTimer) {
             clearTimeout(this.inactivityTimer);
@@ -331,9 +344,52 @@ class AutoLogout {
     }
 
     /**
+     * Pause auto-logout timers and session keep-alive traffic.
+     */
+    pause(reason = 'manual') {
+        this.pauseReasons.add(reason);
+        this.hideWarning();
+        this.stopAllTimers();
+        console.log('⏸️ Auto-logout paused:', reason);
+    }
+
+    /**
+     * Resume auto-logout timers and keep-alive traffic.
+     */
+    resume(reason = 'manual') {
+        if (this.pauseReasons.has(reason)) {
+            this.pauseReasons.delete(reason);
+        } else if (reason === 'all') {
+            this.pauseReasons.clear();
+        }
+
+        if (this.isPaused()) {
+            return;
+        }
+
+        this.hideWarning();
+        this.lastActivity = Date.now();
+        this.resetInactivityTimer();
+        this.startKeepAlive();
+        console.log('▶️ Auto-logout resumed:', reason);
+    }
+
+    /**
+     * Check whether auto-logout is currently paused.
+     */
+    isPaused() {
+        return this.pauseReasons.size > 0;
+    }
+
+    /**
      * Perform logout
      */
     async performLogout(reason = 'inactivity') {
+        if (this.isPaused() && reason === 'inactivity') {
+            console.log('⏸️ Auto-logout inactivity timer ignored while paused');
+            return;
+        }
+
         console.log('Performing auto-logout due to:', reason);
 
         // Hide warning if shown
@@ -373,8 +429,16 @@ class AutoLogout {
      * Start keep-alive pings
      */
     startKeepAlive() {
+        if (this.isPaused() || this.keepaliveTimer) {
+            return;
+        }
+
         // Send keep-alive ping at regular intervals
         this.keepaliveTimer = setInterval(() => {
+            if (this.isPaused()) {
+                return;
+            }
+
             // Only send if page is visible and user was recently active
             const timeSinceActivity = Date.now() - this.lastActivity;
             const activityThreshold = 5 * 60 * 1000; // 5 minutes
@@ -389,6 +453,10 @@ class AutoLogout {
      * Send keep-alive ping to server
      */
     async sendKeepAlive() {
+        if (this.isPaused()) {
+            return;
+        }
+
         try {
             // Get fresh CSRF token
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -447,6 +515,10 @@ class AutoLogout {
      * Check session status on server
      */
     async checkSessionStatus() {
+        if (this.isPaused()) {
+            return;
+        }
+
         try {
             const response = await fetch('/session/status', {
                 method: 'GET',
