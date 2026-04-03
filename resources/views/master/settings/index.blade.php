@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // SQL Import form handler
+    // SQL Import form handler with background polling
     const sqlForm = document.getElementById('sqlImportForm');
     if (sqlForm) {
         sqlForm.addEventListener('submit', function(e) {
@@ -392,16 +392,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const resultDiv = document.getElementById('sqlImportResult');
             const originalBtn = btn.innerHTML;
 
-            // Confirmation
             if (!confirm('Are you sure you want to import this SQL file? This will execute SQL statements directly on the database for the selected clinic.')) {
                 return;
             }
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Importing... Please wait, this may take several minutes for large files.';
             resultDiv.style.display = 'none';
 
-            // Show elapsed time
+            // Elapsed timer
             let seconds = 0;
             const timer = setInterval(() => {
                 seconds++;
@@ -411,11 +409,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>Importing... (${timeStr})`;
             }, 1000);
 
-            const formData = new FormData(this);
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Uploading...';
 
-            // Use AbortController with 10 minute timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes
+            const formData = new FormData(this);
 
             fetch('{{ route("master.settings.import-sql") }}', {
                 method: 'POST',
@@ -423,41 +419,87 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json',
                 },
-                body: formData,
-                signal: controller.signal
+                body: formData
             })
             .then(response => response.json().then(data => ({ status: response.status, data })))
             .then(({ status, data }) => {
-                clearTimeout(timeoutId);
-                clearInterval(timer);
-                resultDiv.style.display = 'block';
-                if (data.success) {
+                if (data.background && data.job_id) {
+                    // Background job started — poll for status
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing in background...';
+                    pollImportStatus(data.job_id, btn, resultDiv, originalBtn, timer);
+                } else if (data.success) {
+                    clearInterval(timer);
+                    resultDiv.style.display = 'block';
                     resultDiv.className = 'mt-3 alert alert-success';
                     resultDiv.innerHTML = '<i class="fas fa-check-circle me-1"></i>' + data.message;
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtn;
                 } else {
+                    clearInterval(timer);
+                    resultDiv.style.display = 'block';
                     resultDiv.className = 'mt-3 alert alert-danger';
                     let msg = '<i class="fas fa-times-circle me-1"></i>' + data.message;
-                    if (data.error) {
-                        msg += '<br><small class="text-muted">' + data.error + '</small>';
-                    }
+                    if (data.error) msg += '<br><small class="text-muted">' + data.error + '</small>';
                     resultDiv.innerHTML = msg;
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtn;
                 }
-                btn.disabled = false;
-                btn.innerHTML = originalBtn;
             })
             .catch(error => {
-                clearTimeout(timeoutId);
                 clearInterval(timer);
                 resultDiv.style.display = 'block';
                 resultDiv.className = 'mt-3 alert alert-danger';
-                const msg = error.name === 'AbortError'
-                    ? 'Request timed out after 10 minutes. The file may be too large — try splitting it into smaller files.'
-                    : 'An unexpected error occurred. Please try again.';
-                resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>' + msg;
+                resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>Upload failed. Please try again.';
                 btn.disabled = false;
                 btn.innerHTML = originalBtn;
             });
         });
+    }
+
+    function pollImportStatus(jobId, btn, resultDiv, originalBtn, timer) {
+        const statusUrl = '{{ route("master.settings.import-sql-status") }}?job_id=' + encodeURIComponent(jobId);
+        let pollCount = 0;
+        const maxPolls = 600; // 10 minutes at 1s intervals
+
+        const poller = setInterval(() => {
+            pollCount++;
+            if (pollCount > maxPolls) {
+                clearInterval(poller);
+                clearInterval(timer);
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'mt-3 alert alert-warning';
+                resultDiv.innerHTML = '<i class="fas fa-clock me-1"></i>Import is still running in the background. Check logs for results.';
+                btn.disabled = false;
+                btn.innerHTML = originalBtn;
+                return;
+            }
+
+            fetch(statusUrl, {
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'completed') {
+                    clearInterval(poller);
+                    clearInterval(timer);
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'mt-3 alert alert-success';
+                    resultDiv.innerHTML = '<i class="fas fa-check-circle me-1"></i>' + data.message;
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtn;
+                } else if (data.status === 'failed') {
+                    clearInterval(poller);
+                    clearInterval(timer);
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'mt-3 alert alert-danger';
+                    resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>' + data.message;
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtn;
+                }
+                // else status is 'running' or 'queued' — keep polling
+            })
+            .catch(() => { /* ignore poll errors, keep trying */ });
+        }, 2000); // Poll every 2 seconds
     }
 });
 </script>

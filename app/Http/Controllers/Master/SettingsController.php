@@ -144,61 +144,47 @@ class SettingsController extends Controller
                 }
             }
 
-            $fileSize = $file->getSize();
-            Log::info('SQL Import started', [
+            // Save SQL file for background processing
+            $jobId = uniqid('imp_', true);
+            $tempPath = storage_path("app/sql_import_{$jobId}.sql");
+            file_put_contents($tempPath, $sql);
+            unset($sql); // Free memory
+
+            Log::info('SQL Import queued', [
                 'clinic_id' => $clinic->id,
                 'clinic_name' => $clinic->name,
                 'file_name' => $file->getClientOriginalName(),
-                'file_size' => $fileSize,
+                'file_size' => $file->getSize(),
+                'job_id' => $jobId,
                 'admin' => $user->email,
             ]);
 
-            $startTime = microtime(true);
+            // Create initial status file
+            $statusFile = storage_path("app/sql_import_{$jobId}.json");
+            file_put_contents($statusFile, json_encode([
+                'status' => 'queued',
+                'message' => 'Import is starting...',
+                'updated_at' => now()->toIso8601String(),
+            ]));
 
-            // Prepend speed optimizations to the SQL
-            $optimizedSql = "SET FOREIGN_KEY_CHECKS=0;\nSET UNIQUE_CHECKS=0;\nSET AUTOCOMMIT=0;\n"
-                . $sql
-                . "\nCOMMIT;\nSET FOREIGN_KEY_CHECKS=1;\nSET UNIQUE_CHECKS=1;\nSET AUTOCOMMIT=1;\n";
+            // Launch artisan command in background (no nginx timeout)
+            $artisan = base_path('artisan');
+            $cmd = sprintf(
+                'nohup php %s sql:import %s %s %s > %s 2>&1 &',
+                escapeshellarg($artisan),
+                escapeshellarg($tempPath),
+                escapeshellarg($clinic->id),
+                escapeshellarg($jobId),
+                escapeshellarg(storage_path("logs/sql_import_{$jobId}.log"))
+            );
+            exec($cmd);
 
-            // Write optimized SQL to temp file
-            $tempPath = storage_path('app/temp_import_' . uniqid() . '.sql');
-            file_put_contents($tempPath, $optimizedSql);
-            unset($sql, $optimizedSql); // Free memory
-
-            try {
-                $result = $this->executeImport($tempPath);
-            } finally {
-                @unlink($tempPath);
-            }
-
-            $elapsed = round(microtime(true) - $startTime, 2);
-
-            if ($result['success']) {
-                Log::info('SQL Import completed', [
-                    'clinic_id' => $clinic->id,
-                    'file_name' => $file->getClientOriginalName(),
-                    'method' => $result['method'],
-                    'seconds' => $elapsed,
-                ]);
-
-                return response()->json([
-                    'success' => true,
-                    'message' => "SQL import completed for clinic \"{$clinic->name}\" in {$elapsed}s (via {$result['method']}).",
-                ]);
-            } else {
-                Log::error('SQL Import failed', [
-                    'clinic_id' => $clinic->id,
-                    'error' => $result['error'],
-                    'method' => $result['method'] ?? 'unknown',
-                    'seconds' => $elapsed,
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => "Import failed after {$elapsed}s.",
-                    'error' => $result['error'],
-                ], 422);
-            }
+            return response()->json([
+                'success' => true,
+                'background' => true,
+                'job_id' => $jobId,
+                'message' => "Import started in background for clinic \"{$clinic->name}\". Monitoring progress...",
+            ]);
 
         } catch (\Exception $e) {
             Log::error('SQL Import error', [
@@ -213,61 +199,29 @@ class SettingsController extends Controller
     }
 
     /**
-     * Execute SQL import - tries mysql CLI first, then PDO fallback.
-     * The SQL file should already contain SET FOREIGN_KEY_CHECKS=0 etc.
+     * Check status of a background SQL import job.
      */
-    private function executeImport(string $filePath): array
+    public function importSqlStatus(Request $request)
     {
-        // Method 1: Try mysql CLI via exec() — fastest possible
-        $mysqlBin = trim(shell_exec('which mysql 2>/dev/null') ?? '');
-        if (empty($mysqlBin)) {
-            // Common paths on Linux servers
-            foreach (['/usr/bin/mysql', '/usr/local/bin/mysql'] as $p) {
-                if (is_executable($p)) { $mysqlBin = $p; break; }
-            }
+        $jobId = $request->query('job_id');
+        if (!$jobId || !preg_match('/^imp_[a-f0-9_.]+$/i', $jobId)) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid job ID.'], 400);
         }
 
-        if ($mysqlBin) {
-            $dbHost = escapeshellarg(config('database.connections.mysql.host', '127.0.0.1'));
-            $dbPort = escapeshellarg(config('database.connections.mysql.port', '3306'));
-            $dbName = escapeshellarg(config('database.connections.mysql.database'));
-            $dbUser = escapeshellarg(config('database.connections.mysql.username'));
-            $dbPass = config('database.connections.mysql.password');
-            $safePath = escapeshellarg($filePath);
+        $statusFile = storage_path("app/sql_import_{$jobId}.json");
 
-            // Use MYSQL_PWD env var to avoid password on command line
-            $cmd = "MYSQL_PWD=" . escapeshellarg($dbPass)
-                . " {$mysqlBin} -h {$dbHost} -P {$dbPort} -u {$dbUser}"
-                . " --default-character-set=utf8mb4 {$dbName} < {$safePath} 2>&1";
-
-            Log::info('SQL Import: trying mysql CLI', ['binary' => $mysqlBin]);
-
-            $output = [];
-            $exitCode = 0;
-            exec($cmd, $output, $exitCode);
-
-            if ($exitCode === 0) {
-                return ['success' => true, 'method' => 'mysql-cli'];
-            }
-
-            $errorMsg = implode("\n", $output);
-            Log::warning('mysql CLI failed, falling back to PDO', [
-                'exit_code' => $exitCode,
-                'error' => $errorMsg,
-            ]);
-        } else {
-            Log::info('SQL Import: mysql binary not found, using PDO');
+        if (!file_exists($statusFile)) {
+            return response()->json(['status' => 'unknown', 'message' => 'Job not found.'], 404);
         }
 
-        // Method 2: PDO exec (optimizations already in the SQL file)
-        try {
-            $sql = file_get_contents($filePath);
-            $pdo = DB::connection()->getPdo();
-            $pdo->exec($sql);
-            return ['success' => true, 'method' => 'pdo'];
-        } catch (\Exception $e) {
-            return ['success' => false, 'method' => 'pdo', 'error' => $e->getMessage()];
+        $data = json_decode(file_get_contents($statusFile), true);
+
+        // Clean up status file if job is done
+        if (in_array($data['status'] ?? '', ['completed', 'failed'])) {
+            // Keep for 5 minutes then auto-clean (don't delete immediately so frontend can read it)
         }
+
+        return response()->json($data);
     }
 
     /**
