@@ -144,13 +144,10 @@ class SettingsController extends Controller
                 }
             }
 
-            // Save SQL file for background processing
             $jobId = uniqid('imp_', true);
-            $tempPath = storage_path("app/sql_import_{$jobId}.sql");
-            file_put_contents($tempPath, $sql);
-            unset($sql); // Free memory
+            $statusFile = storage_path("app/sql_import_{$jobId}.json");
 
-            Log::info('SQL Import queued', [
+            Log::info('SQL Import started', [
                 'clinic_id' => $clinic->id,
                 'clinic_name' => $clinic->name,
                 'file_name' => $file->getClientOriginalName(),
@@ -159,32 +156,89 @@ class SettingsController extends Controller
                 'admin' => $user->email,
             ]);
 
-            // Create initial status file
-            $statusFile = storage_path("app/sql_import_{$jobId}.json");
+            // Write initial status
             file_put_contents($statusFile, json_encode([
-                'status' => 'queued',
-                'message' => 'Import is starting...',
+                'status' => 'running',
+                'message' => 'Import is running...',
                 'updated_at' => now()->toIso8601String(),
             ]));
 
-            // Launch artisan command in background (no nginx timeout)
-            $artisan = base_path('artisan');
-            $cmd = sprintf(
-                'nohup php %s sql:import %s %s %s > %s 2>&1 &',
-                escapeshellarg($artisan),
-                escapeshellarg($tempPath),
-                escapeshellarg($clinic->id),
-                escapeshellarg($jobId),
-                escapeshellarg(storage_path("logs/sql_import_{$jobId}.log"))
-            );
-            exec($cmd);
-
-            return response()->json([
+            // Send response IMMEDIATELY, then continue processing
+            $response = response()->json([
                 'success' => true,
                 'background' => true,
                 'job_id' => $jobId,
-                'message' => "Import started in background for clinic \"{$clinic->name}\". Monitoring progress...",
+                'message' => "Import started for clinic \"{$clinic->name}\". Processing...",
             ]);
+
+            // Flush the response to the client
+            $response->send();
+
+            // Tell PHP-FPM to close the connection to nginx/client
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            }
+
+            // --- Everything below runs AFTER the client gets the response ---
+            ignore_user_abort(true);
+            set_time_limit(600);
+
+            try {
+                $startTime = microtime(true);
+
+                // Prepend speed optimizations
+                $optimizedSql = "SET FOREIGN_KEY_CHECKS=0;\nSET UNIQUE_CHECKS=0;\nSET AUTOCOMMIT=0;\n"
+                    . $sql
+                    . "\nCOMMIT;\nSET FOREIGN_KEY_CHECKS=1;\nSET UNIQUE_CHECKS=1;\nSET AUTOCOMMIT=1;\n";
+                unset($sql);
+
+                $pdo = DB::connection()->getPdo();
+                $pdo->setAttribute(\PDO::ATTR_TIMEOUT, 600);
+                $pdo->exec($optimizedSql);
+
+                $elapsed = round(microtime(true) - $startTime, 2);
+
+                file_put_contents($statusFile, json_encode([
+                    'status' => 'completed',
+                    'message' => "Import completed successfully in {$elapsed}s.",
+                    'elapsed' => $elapsed,
+                    'updated_at' => now()->toIso8601String(),
+                ]));
+
+                Log::info('SQL Import completed', [
+                    'clinic_id' => $clinic->id,
+                    'job_id' => $jobId,
+                    'seconds' => $elapsed,
+                ]);
+            } catch (\Exception $importErr) {
+                $elapsed = round(microtime(true) - ($startTime ?? microtime(true)), 2);
+
+                // Try to clean up MySQL state
+                try {
+                    $pdo = DB::connection()->getPdo();
+                    $pdo->exec('ROLLBACK');
+                    $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+                    $pdo->exec('SET UNIQUE_CHECKS=1');
+                    $pdo->exec('SET AUTOCOMMIT=1');
+                } catch (\Exception $ignore) {}
+
+                file_put_contents($statusFile, json_encode([
+                    'status' => 'failed',
+                    'message' => "Import failed after {$elapsed}s: " . $importErr->getMessage(),
+                    'elapsed' => $elapsed,
+                    'updated_at' => now()->toIso8601String(),
+                ]));
+
+                Log::error('SQL Import failed', [
+                    'clinic_id' => $clinic->id,
+                    'job_id' => $jobId,
+                    'error' => $importErr->getMessage(),
+                    'seconds' => $elapsed,
+                ]);
+            }
+
+            // Return is ignored since response already sent, but needed to end method
+            return $response;
 
         } catch (\Exception $e) {
             Log::error('SQL Import error', [
