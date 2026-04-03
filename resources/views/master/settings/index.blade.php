@@ -385,13 +385,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // SQL Import form handler with background polling
     const sqlForm = document.getElementById('sqlImportForm');
     if (sqlForm) {
-        sqlForm.addEventListener('submit', function(e) {
+        sqlForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const btn = document.getElementById('sqlImportBtn');
             const resultDiv = document.getElementById('sqlImportResult');
+            const clinicSelect = document.getElementById('clinic_id');
+            const fileInput = document.getElementById('sql_file');
             const originalBtn = btn.innerHTML;
-            let phaseLabel = 'Uploading';
+            let phaseLabel = 'Preparing';
             const autoLogoutPauseReason = 'sql-import';
 
             const pauseAutoLogout = () => {
@@ -424,20 +426,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>${phaseLabel}... (${timeStr})`;
             }, 1000);
 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Uploading...';
+            try {
+                const request = await buildSqlImportRequest(this, clinicSelect, fileInput);
+                phaseLabel = 'Uploading';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Uploading...';
 
-            const formData = new FormData(this);
+                const response = await fetch(request.url, request.options);
+                const data = await response.json();
+                const status = response.status;
 
-            fetch('{{ route("master.settings.import-sql") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json',
-                },
-                body: formData
-            })
-            .then(response => response.json().then(data => ({ status: response.status, data })))
-            .then(({ status, data }) => {
                 if (data.background && data.status_url) {
                     // Background job started — poll for status
                     phaseLabel = 'Processing';
@@ -461,17 +458,69 @@ document.addEventListener('DOMContentLoaded', function() {
                     btn.disabled = false;
                     btn.innerHTML = originalBtn;
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 clearInterval(timer);
                 resumeAutoLogout();
                 resultDiv.style.display = 'block';
                 resultDiv.className = 'mt-3 alert alert-danger';
-                resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>Upload failed. Please try again.';
+                resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>' + (error?.message || 'Upload failed. Please try again.');
                 btn.disabled = false;
                 btn.innerHTML = originalBtn;
-            });
+            }
         });
+    }
+
+    async function buildSqlImportRequest(form, clinicSelect, fileInput) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const file = fileInput?.files?.[0];
+        const clinicId = clinicSelect?.value;
+        const importUrl = new URL('{{ route("master.settings.import-sql") }}', window.location.origin);
+
+        if (!clinicId) {
+            throw new Error('Please select a clinic.');
+        }
+
+        if (!file) {
+            throw new Error('Please choose a SQL file.');
+        }
+
+        if (typeof CompressionStream === 'function') {
+            importUrl.searchParams.set('clinic_id', clinicId);
+
+            return {
+                url: importUrl.toString(),
+                options: {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/octet-stream',
+                        'X-Sql-Import-Encoding': 'gzip',
+                        'X-Sql-File-Name': encodeURIComponent(file.name),
+                    },
+                    body: await gzipFileForImport(file),
+                }
+            };
+        }
+
+        const formData = new FormData(form);
+
+        return {
+            url: importUrl.toString(),
+            options: {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: formData,
+            }
+        };
+    }
+
+    async function gzipFileForImport(file) {
+        const compressedStream = file.stream().pipeThrough(new CompressionStream('gzip'));
+        return await new Response(compressedStream).blob();
     }
 
     function pollImportStatus(statusUrl, btn, resultDiv, originalBtn, timer, onComplete) {

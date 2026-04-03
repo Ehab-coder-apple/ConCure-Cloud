@@ -8,10 +8,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 
 class SettingsController extends Controller
 {
+    private const MAX_SQL_BYTES = 52428800;
+
     /**
      * Display the master settings page.
      */
@@ -103,11 +106,12 @@ class SettingsController extends Controller
             'content_length' => (int) $request->server('CONTENT_LENGTH', 0),
             'clinic_id_input' => $request->input('clinic_id'),
             'has_sql_file' => $request->hasFile('sql_file'),
+            'transport' => $request->header('X-Sql-Import-Encoding', $request->hasFile('sql_file') ? 'multipart' : 'unknown'),
+            'content_type' => $request->header('Content-Type'),
         ]);
 
         $request->validate([
             'clinic_id' => 'required|exists:clinics,id',
-            'sql_file'  => 'required|file|max:51200', // max 50MB
         ]);
 
         // From this point onward this request no longer needs session writes.
@@ -116,18 +120,6 @@ class SettingsController extends Controller
         $this->closeSessionLock($request);
 
         $clinic = Clinic::findOrFail($request->clinic_id);
-        $file = $request->file('sql_file');
-
-        // Validate file extension (also accept macOS duplicate names like "file.sql (1)")
-        $originalName = $file->getClientOriginalName();
-        $extension = strtolower($file->getClientOriginalExtension());
-        $isSql = in_array($extension, ['sql']) || preg_match('/\.sql\s*\(\d+\)$/i', $originalName);
-        if (!$isSql) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid file type. Only .sql files are allowed.'
-            ], 422);
-        }
 
         try {
             // Allow up to 10 minutes for large SQL imports
@@ -137,7 +129,11 @@ class SettingsController extends Controller
             // Disable query log to save memory during bulk import
             DB::disableQueryLog();
 
-            $sql = file_get_contents($file->getRealPath());
+            $payload = $this->extractSqlPayload($request);
+            $sql = $payload['sql'];
+            $originalName = $payload['original_name'];
+            $fileSize = $payload['file_size'];
+            $transport = $payload['transport'];
 
             if (empty(trim($sql))) {
                 return response()->json([
@@ -168,8 +164,9 @@ class SettingsController extends Controller
             Log::info('SQL Import started', [
                 'clinic_id' => $clinic->id,
                 'clinic_name' => $clinic->name,
-                'file_name' => $file->getClientOriginalName(),
-                'file_size' => $file->getSize(),
+                'file_name' => $originalName,
+                'file_size' => $fileSize,
+                'transport' => $transport,
                 'job_id' => $jobId,
                 'admin' => $user->email,
             ]);
@@ -247,6 +244,113 @@ class SettingsController extends Controller
                 'success' => false,
                 'message' => 'Import failed: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    private function extractSqlPayload(Request $request): array
+    {
+        if ($request->hasFile('sql_file')) {
+            $file = $request->file('sql_file');
+
+            if (!$file || !$file->isValid()) {
+                throw ValidationException::withMessages([
+                    'sql_file' => 'The uploaded SQL file is invalid.',
+                ]);
+            }
+
+            $originalName = $file->getClientOriginalName() ?: 'upload.sql';
+            $this->assertAllowedSqlFilename($originalName);
+
+            $size = (int) ($file->getSize() ?? 0);
+            $this->assertSqlSizeWithinLimit($size);
+
+            $sql = file_get_contents($file->getRealPath());
+            if ($sql === false) {
+                throw new \RuntimeException('Unable to read the uploaded SQL file.');
+            }
+
+            return [
+                'sql' => $sql,
+                'original_name' => $originalName,
+                'file_size' => $size,
+                'transport' => 'multipart',
+            ];
+        }
+
+        $encoding = strtolower((string) $request->header('X-Sql-Import-Encoding', ''));
+        if ($encoding !== 'gzip') {
+            throw ValidationException::withMessages([
+                'sql_file' => 'A SQL file is required.',
+            ]);
+        }
+
+        $compressedPayload = $request->getContent();
+        if (!is_string($compressedPayload) || $compressedPayload === '') {
+            throw ValidationException::withMessages([
+                'sql_file' => 'The SQL payload is empty.',
+            ]);
+        }
+
+        $sql = $this->decodeGzipSqlPayload($compressedPayload);
+        $this->assertSqlSizeWithinLimit(strlen($sql));
+
+        $rawFileName = (string) $request->header('X-Sql-File-Name', 'upload.sql');
+        $originalName = urldecode($rawFileName) ?: 'upload.sql';
+        $this->assertAllowedSqlFilename($originalName);
+
+        return [
+            'sql' => $sql,
+            'original_name' => $originalName,
+            'file_size' => strlen($sql),
+            'transport' => 'gzip-body',
+        ];
+    }
+
+    private function decodeGzipSqlPayload(string $compressedPayload): string
+    {
+        if (strlen($compressedPayload) > self::MAX_SQL_BYTES) {
+            throw ValidationException::withMessages([
+                'sql_file' => 'The compressed SQL payload exceeds the 50MB limit.',
+            ]);
+        }
+
+        $sql = false;
+
+        if (function_exists('gzdecode')) {
+            $sql = @gzdecode($compressedPayload);
+        }
+
+        if ($sql === false && function_exists('zlib_decode')) {
+            $sql = @zlib_decode($compressedPayload);
+        }
+
+        if (!is_string($sql)) {
+            throw ValidationException::withMessages([
+                'sql_file' => 'The compressed SQL payload could not be decoded.',
+            ]);
+        }
+
+        return $sql;
+    }
+
+    private function assertAllowedSqlFilename(string $originalName): void
+    {
+        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        $isSql = $extension === 'sql' || preg_match('/\.sql\s*\(\d+\)$/i', $originalName);
+
+        if (!$isSql) {
+            throw ValidationException::withMessages([
+                'sql_file' => 'Invalid file type. Only .sql files are allowed.',
+            ]);
+        }
+    }
+
+    private function assertSqlSizeWithinLimit(int $bytes): void
+    {
+        if ($bytes > self::MAX_SQL_BYTES) {
+            throw ValidationException::withMessages([
+                'sql_file' => 'The SQL file may not be greater than 50MB.',
+            ]);
         }
     }
 
