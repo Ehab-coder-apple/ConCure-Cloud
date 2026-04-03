@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch('{{ route("master.settings.update-timezone") }}', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-CSRF-TOKEN': getCsrfToken(this),
                     'Accept': 'application/json',
                 },
                 body: formData
@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const btn = document.getElementById('sqlImportBtn');
             const resultDiv = document.getElementById('sqlImportResult');
-            const clinicSelect = document.getElementById('clinic_id');
+            const clinicSelect = document.getElementById('import_clinic_id');
             const fileInput = document.getElementById('sql_file');
             const originalBtn = btn.innerHTML;
             let phaseLabel = 'Preparing';
@@ -470,8 +470,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function getCsrfToken(form) {
+        const metaToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (metaToken) {
+            return metaToken;
+        }
+
+        const formToken = form?.querySelector('input[name="_token"]')?.value;
+        if (formToken) {
+            return formToken;
+        }
+
+        throw new Error('CSRF token not found on page. Please refresh and try again.');
+    }
+
     async function buildSqlImportRequest(form, clinicSelect, fileInput) {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const csrfToken = getCsrfToken(form);
         const file = fileInput?.files?.[0];
         const clinicId = clinicSelect?.value;
         const importUrl = new URL('{{ route("master.settings.import-sql") }}', window.location.origin);
