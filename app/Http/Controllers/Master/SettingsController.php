@@ -186,16 +186,54 @@ class SettingsController extends Controller
             try {
                 $startTime = microtime(true);
 
-                // Prepend speed optimizations
-                $optimizedSql = "SET FOREIGN_KEY_CHECKS=0;\nSET UNIQUE_CHECKS=0;\nSET AUTOCOMMIT=0;\n"
-                    . $sql
-                    . "\nCOMMIT;\nSET FOREIGN_KEY_CHECKS=1;\nSET UNIQUE_CHECKS=1;\nSET AUTOCOMMIT=1;\n";
+                // Use mysqli::multi_query() — MUCH faster than PDO::exec() for multi-statement SQL
+                $dbConfig = config('database.connections.mysql');
+                $mysqli = new \mysqli(
+                    $dbConfig['host'],
+                    $dbConfig['username'],
+                    $dbConfig['password'],
+                    $dbConfig['database'],
+                    $dbConfig['port'] ?? 3306
+                );
+
+                if ($mysqli->connect_error) {
+                    throw new \Exception('mysqli connection failed: ' . $mysqli->connect_error);
+                }
+
+                $mysqli->set_charset($dbConfig['charset'] ?? 'utf8mb4');
+
+                // Speed optimizations
+                $mysqli->query('SET FOREIGN_KEY_CHECKS=0');
+                $mysqli->query('SET UNIQUE_CHECKS=0');
+                $mysqli->query('SET AUTOCOMMIT=0');
+
+                // Execute entire SQL in one shot via native multi-statement handler
+                if ($mysqli->multi_query($sql)) {
+                    // Consume all results (required by multi_query protocol)
+                    do {
+                        if ($result = $mysqli->store_result()) {
+                            $result->free();
+                        }
+                    } while ($mysqli->more_results() && $mysqli->next_result());
+                }
+
+                // Check for errors after consuming all results
+                if ($mysqli->errno) {
+                    $error = $mysqli->error;
+                    $mysqli->query('ROLLBACK');
+                    $mysqli->query('SET FOREIGN_KEY_CHECKS=1');
+                    $mysqli->query('SET UNIQUE_CHECKS=1');
+                    $mysqli->close();
+                    throw new \Exception("MySQL error: {$error}");
+                }
+
+                $mysqli->query('COMMIT');
+                $mysqli->query('SET FOREIGN_KEY_CHECKS=1');
+                $mysqli->query('SET UNIQUE_CHECKS=1');
+                $mysqli->query('SET AUTOCOMMIT=1');
+                $mysqli->close();
+
                 unset($sql);
-
-                $pdo = DB::connection()->getPdo();
-                $pdo->setAttribute(\PDO::ATTR_TIMEOUT, 600);
-                $pdo->exec($optimizedSql);
-
                 $elapsed = round(microtime(true) - $startTime, 2);
 
                 file_put_contents($statusFile, json_encode([
@@ -212,15 +250,6 @@ class SettingsController extends Controller
                 ]);
             } catch (\Exception $importErr) {
                 $elapsed = round(microtime(true) - ($startTime ?? microtime(true)), 2);
-
-                // Try to clean up MySQL state
-                try {
-                    $pdo = DB::connection()->getPdo();
-                    $pdo->exec('ROLLBACK');
-                    $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
-                    $pdo->exec('SET UNIQUE_CHECKS=1');
-                    $pdo->exec('SET AUTOCOMMIT=1');
-                } catch (\Exception $ignore) {}
 
                 file_put_contents($statusFile, json_encode([
                     'status' => 'failed',

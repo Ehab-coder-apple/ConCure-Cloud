@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ImportSql extends Command
@@ -32,23 +31,53 @@ class ImportSql extends Command
         try {
             $sql = file_get_contents($filePath);
 
-            // Prepend optimizations
-            $optimizedSql = "SET FOREIGN_KEY_CHECKS=0;\nSET UNIQUE_CHECKS=0;\nSET AUTOCOMMIT=0;\n"
-                . $sql
-                . "\nCOMMIT;\nSET FOREIGN_KEY_CHECKS=1;\nSET UNIQUE_CHECKS=1;\nSET AUTOCOMMIT=1;\n";
-
-            unset($sql); // Free memory
-
             Log::info('SQL Import command started', [
                 'clinic_id' => $clinicId,
                 'job_id' => $jobId,
                 'file_size' => filesize($filePath),
             ]);
 
-            // Execute via PDO directly (no timeout issues in CLI)
-            $pdo = DB::connection()->getPdo();
-            $pdo->setAttribute(\PDO::ATTR_TIMEOUT, 600);
-            $pdo->exec($optimizedSql);
+            // Use mysqli::multi_query() for maximum speed
+            $dbConfig = config('database.connections.mysql');
+            $mysqli = new \mysqli(
+                $dbConfig['host'],
+                $dbConfig['username'],
+                $dbConfig['password'],
+                $dbConfig['database'],
+                $dbConfig['port'] ?? 3306
+            );
+
+            if ($mysqli->connect_error) {
+                throw new \Exception('mysqli connection failed: ' . $mysqli->connect_error);
+            }
+
+            $mysqli->set_charset($dbConfig['charset'] ?? 'utf8mb4');
+            $mysqli->query('SET FOREIGN_KEY_CHECKS=0');
+            $mysqli->query('SET UNIQUE_CHECKS=0');
+            $mysqli->query('SET AUTOCOMMIT=0');
+
+            if ($mysqli->multi_query($sql)) {
+                do {
+                    if ($result = $mysqli->store_result()) {
+                        $result->free();
+                    }
+                } while ($mysqli->more_results() && $mysqli->next_result());
+            }
+
+            if ($mysqli->errno) {
+                $error = $mysqli->error;
+                $mysqli->query('ROLLBACK');
+                $mysqli->query('SET FOREIGN_KEY_CHECKS=1');
+                $mysqli->close();
+                throw new \Exception("MySQL error: {$error}");
+            }
+
+            $mysqli->query('COMMIT');
+            $mysqli->query('SET FOREIGN_KEY_CHECKS=1');
+            $mysqli->query('SET UNIQUE_CHECKS=1');
+            $mysqli->query('SET AUTOCOMMIT=1');
+            $mysqli->close();
+            unset($sql);
 
             $elapsed = round(microtime(true) - $startTime, 2);
 
@@ -69,14 +98,7 @@ class ImportSql extends Command
         } catch (\Exception $e) {
             $elapsed = round(microtime(true) - $startTime, 2);
 
-            // Try to reset MySQL session state
-            try {
-                $pdo = DB::connection()->getPdo();
-                $pdo->exec('ROLLBACK');
-                $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
-                $pdo->exec('SET UNIQUE_CHECKS=1');
-                $pdo->exec('SET AUTOCOMMIT=1');
-            } catch (\Exception $ignore) {}
+            // Connection already closed or failed, nothing to reset
 
             // Clean up
             @unlink($filePath);
