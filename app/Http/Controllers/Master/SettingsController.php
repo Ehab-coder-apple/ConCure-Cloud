@@ -144,8 +144,13 @@ class SettingsController extends Controller
                 }
             }
 
-            $jobId = uniqid('imp_', true);
-            $statusFile = storage_path("app/sql_import_{$jobId}.json");
+            $jobId = 'imp_' . bin2hex(random_bytes(12));
+            $statusToken = bin2hex(random_bytes(24));
+            $statusFile = $this->getImportStatusPath($jobId);
+            $statusUrl = route('api.master.settings.import-sql-status', [
+                'job_id' => $jobId,
+                'token' => $statusToken,
+            ]);
 
             Log::info('SQL Import started', [
                 'clinic_id' => $clinic->id,
@@ -157,17 +162,22 @@ class SettingsController extends Controller
             ]);
 
             // Write initial status
-            file_put_contents($statusFile, json_encode([
+            $this->writeImportStatus($statusFile, [
+                'job_id' => $jobId,
+                'status_token_hash' => hash('sha256', $statusToken),
                 'status' => 'running',
                 'message' => 'Import is running...',
-                'updated_at' => now()->toIso8601String(),
-            ]));
+            ]);
+
+            // Release the PHP session lock before continuing with the long-running import.
+            $this->closeSessionLock($request);
 
             // Send response IMMEDIATELY, then continue processing
             $response = response()->json([
                 'success' => true,
                 'background' => true,
                 'job_id' => $jobId,
+                'status_url' => $statusUrl,
                 'message' => "Import started for clinic \"{$clinic->name}\". Processing...",
             ]);
 
@@ -184,79 +194,28 @@ class SettingsController extends Controller
             set_time_limit(600);
 
             try {
-                $startTime = microtime(true);
-
-                // Use mysqli::multi_query() — MUCH faster than PDO::exec() for multi-statement SQL
-                $dbConfig = config('database.connections.mysql');
-                $mysqli = new \mysqli(
-                    $dbConfig['host'],
-                    $dbConfig['username'],
-                    $dbConfig['password'],
-                    $dbConfig['database'],
-                    $dbConfig['port'] ?? 3306
-                );
-
-                if ($mysqli->connect_error) {
-                    throw new \Exception('mysqli connection failed: ' . $mysqli->connect_error);
-                }
-
-                $mysqli->set_charset($dbConfig['charset'] ?? 'utf8mb4');
-
-                // Speed optimizations
-                $mysqli->query('SET FOREIGN_KEY_CHECKS=0');
-                $mysqli->query('SET UNIQUE_CHECKS=0');
-                $mysqli->query('SET AUTOCOMMIT=0');
-
-                // Execute entire SQL in one shot via native multi-statement handler
-                if ($mysqli->multi_query($sql)) {
-                    // Consume all results (required by multi_query protocol)
-                    do {
-                        if ($result = $mysqli->store_result()) {
-                            $result->free();
-                        }
-                    } while ($mysqli->more_results() && $mysqli->next_result());
-                }
-
-                // Check for errors after consuming all results
-                if ($mysqli->errno) {
-                    $error = $mysqli->error;
-                    $mysqli->query('ROLLBACK');
-                    $mysqli->query('SET FOREIGN_KEY_CHECKS=1');
-                    $mysqli->query('SET UNIQUE_CHECKS=1');
-                    $mysqli->close();
-                    throw new \Exception("MySQL error: {$error}");
-                }
-
-                $mysqli->query('COMMIT');
-                $mysqli->query('SET FOREIGN_KEY_CHECKS=1');
-                $mysqli->query('SET UNIQUE_CHECKS=1');
-                $mysqli->query('SET AUTOCOMMIT=1');
-                $mysqli->close();
-
+                $elapsed = $this->executeImport($sql);
                 unset($sql);
-                $elapsed = round(microtime(true) - $startTime, 2);
 
-                file_put_contents($statusFile, json_encode([
+                $this->writeImportStatus($statusFile, [
                     'status' => 'completed',
                     'message' => "Import completed successfully in {$elapsed}s.",
                     'elapsed' => $elapsed,
-                    'updated_at' => now()->toIso8601String(),
-                ]));
+                ]);
 
                 Log::info('SQL Import completed', [
                     'clinic_id' => $clinic->id,
                     'job_id' => $jobId,
                     'seconds' => $elapsed,
                 ]);
-            } catch (\Exception $importErr) {
-                $elapsed = round(microtime(true) - ($startTime ?? microtime(true)), 2);
+            } catch (\Throwable $importErr) {
+                $elapsed = round(microtime(true) - ($_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true)), 2);
 
-                file_put_contents($statusFile, json_encode([
+                $this->writeImportStatus($statusFile, [
                     'status' => 'failed',
                     'message' => "Import failed after {$elapsed}s: " . $importErr->getMessage(),
                     'elapsed' => $elapsed,
-                    'updated_at' => now()->toIso8601String(),
-                ]));
+                ]);
 
                 Log::error('SQL Import failed', [
                     'clinic_id' => $clinic->id,
@@ -269,7 +228,7 @@ class SettingsController extends Controller
             // Return is ignored since response already sent, but needed to end method
             return $response;
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('SQL Import error', [
                 'clinic_id' => $clinic->id ?? null,
                 'error' => $e->getMessage(),
@@ -287,24 +246,153 @@ class SettingsController extends Controller
     public function importSqlStatus(Request $request)
     {
         $jobId = $request->query('job_id');
-        if (!$jobId || !preg_match('/^imp_[a-f0-9_.]+$/i', $jobId)) {
+        $token = (string) $request->query('token', '');
+
+        if (!$jobId || !preg_match('/^imp_[a-z0-9._-]+$/i', $jobId)) {
             return response()->json(['status' => 'error', 'message' => 'Invalid job ID.'], 400);
         }
 
-        $statusFile = storage_path("app/sql_import_{$jobId}.json");
+        if ($token === '') {
+            return response()->json(['status' => 'error', 'message' => 'Missing status token.'], 400);
+        }
+
+        $statusFile = $this->getImportStatusPath($jobId);
 
         if (!file_exists($statusFile)) {
             return response()->json(['status' => 'unknown', 'message' => 'Job not found.'], 404);
         }
 
-        $data = json_decode(file_get_contents($statusFile), true);
+        $data = json_decode(file_get_contents($statusFile), true) ?: [];
 
-        // Clean up status file if job is done
-        if (in_array($data['status'] ?? '', ['completed', 'failed'])) {
-            // Keep for 5 minutes then auto-clean (don't delete immediately so frontend can read it)
+        $expectedHash = $data['status_token_hash'] ?? null;
+        if (!$expectedHash || !hash_equals($expectedHash, hash('sha256', $token))) {
+            return response()->json(['status' => 'forbidden', 'message' => 'Invalid status token.'], 403);
         }
 
-        return response()->json($data);
+        return response()->json(array_filter([
+            'job_id' => $data['job_id'] ?? $jobId,
+            'status' => $data['status'] ?? 'unknown',
+            'message' => $data['message'] ?? 'Job status unavailable.',
+            'elapsed' => $data['elapsed'] ?? null,
+            'updated_at' => $data['updated_at'] ?? null,
+        ], static fn ($value) => $value !== null));
+    }
+
+    private function executeImport(string $sql): float
+    {
+        $startTime = microtime(true);
+        $dbConfig = config('database.connections.mysql');
+        $mysqli = null;
+
+        try {
+            $mysqli = new \mysqli(
+                $dbConfig['host'],
+                $dbConfig['username'],
+                $dbConfig['password'],
+                $dbConfig['database'],
+                $dbConfig['port'] ?? 3306
+            );
+
+            if ($mysqli->connect_error) {
+                throw new \RuntimeException('mysqli connection failed: ' . $mysqli->connect_error);
+            }
+
+            $mysqli->set_charset($dbConfig['charset'] ?? 'utf8mb4');
+            $mysqli->query('SET FOREIGN_KEY_CHECKS=0');
+            $mysqli->query('SET UNIQUE_CHECKS=0');
+            $mysqli->query('SET AUTOCOMMIT=0');
+
+            if (!$mysqli->multi_query($sql)) {
+                throw new \RuntimeException('MySQL error: ' . $mysqli->error);
+            }
+
+            do {
+                if ($result = $mysqli->store_result()) {
+                    $result->free();
+                }
+
+                if (!$mysqli->more_results()) {
+                    break;
+                }
+
+                if (!$mysqli->next_result()) {
+                    throw new \RuntimeException('MySQL error: ' . $mysqli->error);
+                }
+            } while (true);
+
+            $mysqli->query('COMMIT');
+
+            return round(microtime(true) - $startTime, 2);
+        } catch (\Throwable $e) {
+            if ($mysqli instanceof \mysqli && !$mysqli->connect_errno) {
+                try {
+                    $mysqli->query('ROLLBACK');
+                } catch (\Throwable $rollbackError) {
+                    // Ignore rollback failures; the original import exception is more important.
+                }
+            }
+
+            throw $e;
+        } finally {
+            if ($mysqli instanceof \mysqli && !$mysqli->connect_errno) {
+                $this->restoreImportSession($mysqli);
+                $mysqli->close();
+            }
+        }
+    }
+
+    private function restoreImportSession(\mysqli $mysqli): void
+    {
+        try {
+            $mysqli->query('SET FOREIGN_KEY_CHECKS=1');
+            $mysqli->query('SET UNIQUE_CHECKS=1');
+            $mysqli->query('SET AUTOCOMMIT=1');
+        } catch (\Throwable $e) {
+            Log::warning('Failed to restore MySQL session settings after SQL import.', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function writeImportStatus(string $statusFile, array $data): void
+    {
+        $statusDirectory = dirname($statusFile);
+        if (!is_dir($statusDirectory)) {
+            mkdir($statusDirectory, 0775, true);
+        }
+
+        $existing = [];
+        if (is_file($statusFile)) {
+            $existing = json_decode(file_get_contents($statusFile), true) ?: [];
+        }
+
+        file_put_contents($statusFile, json_encode(array_merge($existing, $data, [
+            'updated_at' => now()->toIso8601String(),
+        ])), LOCK_EX);
+    }
+
+    private function getImportStatusPath(string $jobId): string
+    {
+        return storage_path("app/sql_import_{$jobId}.json");
+    }
+
+    private function closeSessionLock(Request $request): void
+    {
+        if (!$request->hasSession()) {
+            return;
+        }
+
+        try {
+            $request->session()->save();
+        } catch (\Throwable $e) {
+            Log::warning('Failed to save session before SQL import.', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        if (function_exists('session_write_close') && session_status() === PHP_SESSION_ACTIVE) {
+            @session_write_close();
+        }
     }
 
     /**

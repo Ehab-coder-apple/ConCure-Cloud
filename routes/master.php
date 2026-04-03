@@ -91,7 +91,6 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::post('/settings/timezone', [SettingsController::class, 'updateTimezone'])->name('settings.update-timezone');
     Route::post('/settings/import-sql', [SettingsController::class, 'importSql'])->name('settings.import-sql');
-    Route::get('/settings/import-sql/status', [SettingsController::class, 'importSqlStatus'])->name('settings.import-sql-status');
 
     // Features Documentation
     Route::get('/features', [DashboardController::class, 'features'])->name('features');

@@ -391,6 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const btn = document.getElementById('sqlImportBtn');
             const resultDiv = document.getElementById('sqlImportResult');
             const originalBtn = btn.innerHTML;
+            let phaseLabel = 'Uploading';
 
             if (!confirm('Are you sure you want to import this SQL file? This will execute SQL statements directly on the database for the selected clinic.')) {
                 return;
@@ -406,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const mins = Math.floor(seconds / 60);
                 const secs = seconds % 60;
                 const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-                btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>Importing... (${timeStr})`;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>${phaseLabel}... (${timeStr})`;
             }, 1000);
 
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Uploading...';
@@ -423,10 +424,10 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json().then(data => ({ status: response.status, data })))
             .then(({ status, data }) => {
-                if (data.background && data.job_id) {
+                if (data.background && data.status_url) {
                     // Background job started — poll for status
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing in background...';
-                    pollImportStatus(data.job_id, btn, resultDiv, originalBtn, timer);
+                    phaseLabel = 'Processing';
+                    pollImportStatus(data.status_url, btn, resultDiv, originalBtn, timer);
                 } else if (data.success) {
                     clearInterval(timer);
                     resultDiv.style.display = 'block';
@@ -456,10 +457,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function pollImportStatus(jobId, btn, resultDiv, originalBtn, timer) {
-        const statusUrl = '{{ route("master.settings.import-sql-status") }}?job_id=' + encodeURIComponent(jobId);
+    function pollImportStatus(statusUrl, btn, resultDiv, originalBtn, timer) {
         let pollCount = 0;
-        const maxPolls = 600; // 10 minutes at 1s intervals
+        const maxPolls = 300; // 10 minutes at 2s intervals
 
         const poller = setInterval(() => {
             pollCount++;
@@ -477,8 +477,19 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(statusUrl, {
                 headers: { 'Accept': 'application/json' }
             })
-            .then(r => r.json())
-            .then(data => {
+            .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
+            .then(({ ok, data }) => {
+                if (!ok && data.status !== 'unknown') {
+                    clearInterval(poller);
+                    clearInterval(timer);
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'mt-3 alert alert-danger';
+                    resultDiv.innerHTML = '<i class="fas fa-times-circle me-1"></i>' + (data.message || 'Unable to read import status.');
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtn;
+                    return;
+                }
+
                 if (data.status === 'completed') {
                     clearInterval(poller);
                     clearInterval(timer);
