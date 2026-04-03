@@ -130,7 +130,7 @@ class SettingsController extends Controller
             DB::disableQueryLog();
 
             $payload = $this->extractSqlPayload($request);
-            $sql = $payload['sql'];
+            $sql = $this->normalizeImportSql($payload['sql']);
             $originalName = $payload['original_name'];
             $fileSize = $payload['file_size'];
             $transport = $payload['transport'];
@@ -138,19 +138,16 @@ class SettingsController extends Controller
             if (empty(trim($sql))) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'The SQL file is empty.'
+                    'message' => 'The SQL file is empty or contains only skipped dump wrapper statements.'
                 ], 422);
             }
 
-            // Security: block dangerous statements
-            $blocked = ['DROP\s+DATABASE', 'DROP\s+TABLE', 'TRUNCATE\s+TABLE', 'ALTER\s+TABLE', 'CREATE\s+DATABASE', 'GRANT\s+', 'REVOKE\s+'];
-            foreach ($blocked as $pattern) {
-                if (preg_match('/' . $pattern . '/i', $sql)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'SQL file contains blocked statements (DROP, TRUNCATE, ALTER, GRANT, etc.). Please provide only INSERT/UPDATE statements.'
-                    ], 422);
-                }
+            $blockedStatement = $this->detectBlockedSqlStatement($sql);
+            if ($blockedStatement !== null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'SQL file contains a blocked schema/destructive statement near: ' . $blockedStatement . '. Allowed content is INSERT/UPDATE plus standard dump wrapper statements.'
+                ], 422);
             }
 
             $jobId = 'imp_' . bin2hex(random_bytes(12));
@@ -235,6 +232,22 @@ class SettingsController extends Controller
             // Return is ignored since response already sent, but needed to end method
             return $response;
 
+        } catch (ValidationException $e) {
+            $errors = $e->errors();
+            $firstError = $e->getMessage();
+
+            foreach ($errors as $messages) {
+                if (!empty($messages[0])) {
+                    $firstError = (string) $messages[0];
+                    break;
+                }
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $firstError,
+                'errors' => $errors,
+            ], 422);
         } catch (\Throwable $e) {
             Log::error('SQL Import error', [
                 'clinic_id' => $clinic->id ?? null,
@@ -331,6 +344,64 @@ class SettingsController extends Controller
         }
 
         return $sql;
+    }
+
+    private function normalizeImportSql(string $sql): string
+    {
+        $normalized = str_replace(["\r\n", "\r"], "\n", $sql);
+
+        $skipPatterns = [
+            '/^\s*--[^\n]*(?:\n|$)/m',
+            '/^\s*#[^\n]*(?:\n|$)/m',
+            '/^\s*\/\*![0-9]{5}\s+SET\b[\s\S]*?\*\/\s*;?\s*$/im',
+            '/^\s*SET\s+(?:SQL_MODE|TIME_ZONE|FOREIGN_KEY_CHECKS|UNIQUE_CHECKS|AUTOCOMMIT|SQL_NOTES|NAMES|CHARACTER_SET_CLIENT|CHARACTER_SET_RESULTS|COLLATION_CONNECTION)\b[\s\S]*?;\s*$/im',
+            '/^\s*START\s+TRANSACTION\s*;\s*$/im',
+            '/^\s*COMMIT\s*;\s*$/im',
+            '/^\s*LOCK\s+TABLES\b[\s\S]*?;\s*$/im',
+            '/^\s*UNLOCK\s+TABLES\s*;\s*$/im',
+            '/^\s*(?:\/\*![0-9]{5}\s+)?ALTER\s+TABLE\b[\s\S]*?\b(?:DISABLE|ENABLE)\s+KEYS\b[\s\S]*?(?:\*\/)?\s*;\s*$/im',
+        ];
+
+        foreach ($skipPatterns as $pattern) {
+            $normalized = preg_replace($pattern, '', $normalized) ?? $normalized;
+        }
+
+        return trim($normalized);
+    }
+
+    private function detectBlockedSqlStatement(string $sql): ?string
+    {
+        $blockedPatterns = [
+            '/\bDROP\s+(?:DATABASE|TABLE|VIEW|TRIGGER|FUNCTION|PROCEDURE|EVENT)\b/i',
+            '/\bTRUNCATE\s+(?:TABLE\s+)?[`"a-z0-9_]/i',
+            '/\bALTER\s+TABLE\b/i',
+            '/\bCREATE\s+(?:DATABASE|TABLE|VIEW|TRIGGER|FUNCTION|PROCEDURE|EVENT|USER)\b/i',
+            '/\bGRANT\b/i',
+            '/\bREVOKE\b/i',
+            '/\bRENAME\s+TABLE\b/i',
+        ];
+
+        foreach ($blockedPatterns as $pattern) {
+            if (preg_match($pattern, $sql, $matches, PREG_OFFSET_CAPTURE)) {
+                $offset = $matches[0][1] ?? 0;
+                return $this->summarizeSqlFragment($sql, $offset);
+            }
+        }
+
+        return null;
+    }
+
+    private function summarizeSqlFragment(string $sql, int $offset): string
+    {
+        $fragment = substr($sql, max(0, $offset), 140);
+        $fragment = preg_replace('/\s+/', ' ', $fragment) ?? $fragment;
+        $fragment = trim($fragment);
+
+        if ($fragment === '') {
+            return 'unknown statement';
+        }
+
+        return strlen($fragment) === 140 ? $fragment . '...' : $fragment;
     }
 
     private function assertAllowedSqlFilename(string $originalName): void

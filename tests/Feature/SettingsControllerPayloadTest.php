@@ -47,6 +47,40 @@ class SettingsControllerPayloadTest extends TestCase
         $this->invokeControllerMethod(new SettingsController(), 'extractSqlPayload', [$request]);
     }
 
+    public function test_it_allows_standard_mysqldump_wrapper_statements(): void
+    {
+        $sql = <<<'SQL'
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+LOCK TABLES `patients` WRITE;
+/*!40000 ALTER TABLE `patients` DISABLE KEYS */;
+INSERT INTO `patients` (`id`, `name`) VALUES (1, 'Test');
+/*!40000 ALTER TABLE `patients` ENABLE KEYS */;
+UNLOCK TABLES;
+SQL;
+
+        $controller = new SettingsController();
+        $normalized = $this->invokeControllerMethod($controller, 'normalizeImportSql', [$sql]);
+        $blocked = $this->invokeControllerMethod($controller, 'detectBlockedSqlStatement', [$normalized]);
+
+        $this->assertSame("INSERT INTO `patients` (`id`, `name`) VALUES (1, 'Test');", $normalized);
+        $this->assertNull($blocked);
+    }
+
+    public function test_it_still_blocks_real_schema_changes(): void
+    {
+        $sql = <<<'SQL'
+INSERT INTO `patients` (`id`, `name`) VALUES (1, 'Test');
+ALTER TABLE `patients` ADD COLUMN `legacy_code` VARCHAR(20) NULL;
+SQL;
+
+        $controller = new SettingsController();
+        $normalized = $this->invokeControllerMethod($controller, 'normalizeImportSql', [$sql]);
+        $blocked = $this->invokeControllerMethod($controller, 'detectBlockedSqlStatement', [$normalized]);
+
+        $this->assertNotNull($blocked);
+        $this->assertStringContainsString('ALTER TABLE `patients` ADD COLUMN', $blocked);
+    }
+
     private function invokeControllerMethod(object $controller, string $methodName, array $arguments = []): mixed
     {
         $method = new ReflectionMethod($controller, $methodName);
