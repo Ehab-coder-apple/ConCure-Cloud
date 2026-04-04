@@ -12,12 +12,12 @@
                     <h1 class="h3 mb-0">{{ __('Lab Requests') }}</h1>
                     <p class="text-muted mb-0">{{ __('Manage laboratory test requests') }}</p>
                 </div>
-                @can('create-prescriptions')
+                @if(auth()->user()->canCreateLabRequests())
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newLabRequestModal">
                     <i class="fas fa-plus me-1"></i>
                     {{ __('New Lab Request') }}
                 </button>
-                @endcan
+                @endif
             </div>
 
 
@@ -202,7 +202,7 @@
                                                     <i class="fas fa-share-nodes"></i>
                                                 </a>
                                                     <div class="d-inline-flex align-items-center gap-1">
-                                                    @if($labRequest->status === 'pending' && auth()->user()->hasPermission('prescriptions_create'))
+                                                    @if($labRequest->status === 'pending' && auth()->user()->canEditLabRequests())
                                                         <a href="{{ route('recommendations.lab-requests.edit', $labRequest->id) }}"
                                                            class="btn btn-sm btn-outline-primary"
                                                            title="{{ __('Edit') }}">
@@ -264,12 +264,12 @@
                             <i class="fas fa-vial fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">{{ __('No lab requests found') }}</h5>
                             <p class="text-muted mb-4">{{ __('Start by creating your first lab request.') }}</p>
-                            @can('create-prescriptions')
+                            @if(auth()->user()->canCreateLabRequests())
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newLabRequestModal">
                                 <i class="fas fa-plus me-1"></i>
                                 {{ __('Create Lab Request') }}
                             </button>
-                            @endcan
+                            @endif
                         </div>
                     @endif
                 </div>
@@ -278,7 +278,7 @@
     </div>
 </div>
 
-@can('create-prescriptions')
+@if(auth()->user()->canCreateLabRequests())
 <!-- New Lab Request Modal -->
 <div class="modal fade" id="newLabRequestModal" tabindex="-1" aria-labelledby="newLabRequestModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -460,7 +460,7 @@
         </div>
     </div>
 </div>
-@endcan
+@endif
 
 <!-- View Lab Request Modal -->
 
