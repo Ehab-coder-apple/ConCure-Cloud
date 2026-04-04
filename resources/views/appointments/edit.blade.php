@@ -179,7 +179,7 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-md-4 mb-3" id="payment_method_wrapper" style="{{ ((float) old('fees_collected', $receipt ? $receipt->amount : 0) > 0) ? '' : 'display:none;' }}">
+                                    <div class="col-md-4 mb-3" id="payment_method_wrapper">
                                         <label for="payment_method" class="form-label">{{ __('Payment Method') }}</label>
                                         <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method">
                                             <option value="">{{ __('Select method...') }}</option>
@@ -194,7 +194,7 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-12 mb-3" id="payment_notes_wrapper" style="{{ ((float) old('fees_collected', $receipt ? $receipt->amount : 0) > 0) ? '' : 'display:none;' }}">
+                                    <div class="col-12 mb-3" id="payment_notes_wrapper">
                                         <label for="payment_notes" class="form-label">{{ __('Payment Notes') }}</label>
                                         <textarea class="form-control @error('payment_notes') is-invalid @enderror"
                                                   id="payment_notes"
@@ -313,24 +313,6 @@ $(document).ready(function() {
             }
         }
     });
-
-    // Toggle payment method and notes fields based on fees collected
-    const feesInput = document.getElementById('fees_collected');
-    const paymentMethodWrapper = document.getElementById('payment_method_wrapper');
-    const paymentNotesWrapper = document.getElementById('payment_notes_wrapper');
-
-    function togglePaymentFields() {
-        const fees = parseFloat(feesInput.value) || 0;
-        if (fees > 0) {
-            paymentMethodWrapper.style.display = '';
-            paymentNotesWrapper.style.display = '';
-        } else {
-            paymentMethodWrapper.style.display = 'none';
-            paymentNotesWrapper.style.display = 'none';
-        }
-    }
-
-    feesInput.addEventListener('input', togglePaymentFields);
 });
 </script>
 @endsection

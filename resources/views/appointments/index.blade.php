@@ -260,7 +260,7 @@
                                    placeholder="0.00">
                         </div>
 
-                        <div class="col-md-6" id="modal_payment_method_wrapper" style="display:none;">
+                        <div class="col-md-6" id="modal_payment_method_wrapper">
                             <label for="modal_payment_method" class="form-label">{{ __('Payment Method') }}</label>
                             <select class="form-select" id="modal_payment_method" name="payment_method">
                                 <option value="">{{ __('Select method...') }}</option>
@@ -272,7 +272,7 @@
                             </select>
                         </div>
 
-                        <div class="col-12" id="modal_payment_notes_wrapper" style="display:none;">
+                        <div class="col-12" id="modal_payment_notes_wrapper">
                             <label for="modal_payment_notes" class="form-label">{{ __('Payment Notes') }}</label>
                             <textarea class="form-control"
                                       id="modal_payment_notes"
@@ -496,26 +496,6 @@ $(document).on('select2:open', function(e) {
             el.style.display = 'none';
         });
     }
-});
-
-// Toggle payment method and notes fields based on fees collected
-document.addEventListener('DOMContentLoaded', function() {
-    const feesInput = document.getElementById('modal_fees_collected');
-    const paymentMethodWrapper = document.getElementById('modal_payment_method_wrapper');
-    const paymentNotesWrapper = document.getElementById('modal_payment_notes_wrapper');
-
-    function togglePaymentFields() {
-        const fees = parseFloat(feesInput.value) || 0;
-        if (fees > 0) {
-            paymentMethodWrapper.style.display = '';
-            paymentNotesWrapper.style.display = '';
-        } else {
-            paymentMethodWrapper.style.display = 'none';
-            paymentNotesWrapper.style.display = 'none';
-        }
-    }
-
-    feesInput.addEventListener('input', togglePaymentFields);
 });
 
 </script>
