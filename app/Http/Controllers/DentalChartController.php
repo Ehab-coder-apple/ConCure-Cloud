@@ -324,6 +324,7 @@ class DentalChartController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        DB::beginTransaction();
         try {
             // Find existing record to preserve created_by
             $existingRecord = DentalToothRecord::where('dental_chart_id', $dentalChart->id)
@@ -346,6 +347,11 @@ class DentalChartController extends Controller
                 ]
             );
 
+            // Check if we should create treatment plans for new conditions
+            $this->syncDentalChartToTreatmentPlan($dentalChart, $toothRecord, $existingRecord, $user);
+
+            DB::commit();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Tooth record updated successfully.',
@@ -353,6 +359,7 @@ class DentalChartController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            DB::rollBack();
             \Log::error('Failed to update tooth record', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -410,5 +417,99 @@ class DentalChartController extends Controller
                             ->get();
 
         return view('dental.charts.history', compact('patient', 'charts'));
+    }
+
+    /**
+     * Sync dental chart changes to treatment plan.
+     * Creates planned treatments for certain conditions if they don't exist.
+     */
+    private function syncDentalChartToTreatmentPlan(
+        DentalChart $dentalChart,
+        DentalToothRecord $toothRecord,
+        ?DentalToothRecord $existingRecord,
+        User $user
+    ): void {
+        $newConditions = $toothRecord->conditions ?? [];
+        $oldConditions = $existingRecord ? ($existingRecord->conditions ?? []) : [];
+
+        // Find conditions that were just added
+        $addedConditions = array_diff($newConditions, $oldConditions);
+
+        // Only create treatment plans for conditions that need treatment
+        $treatableConditions = ['caries', 'fracture', 'periodontal'];
+
+        foreach ($addedConditions as $condition) {
+            if (!in_array($condition, $treatableConditions)) {
+                continue;
+            }
+
+            // Check if a planned treatment already exists for this tooth and condition
+            $existingTreatment = \App\Models\DentalTreatment::where('dental_chart_id', $dentalChart->id)
+                ->where('patient_id', $dentalChart->patient_id)
+                ->where(function($q) use ($toothRecord) {
+                    $q->where('tooth_number', $toothRecord->tooth_number)
+                      ->orWhereJsonContains('tooth_numbers', $toothRecord->tooth_number);
+                })
+                ->whereIn('status', ['planned', 'in_progress'])
+                ->where('procedure_name', 'LIKE', '%' . $this->mapConditionToProcedure($condition) . '%')
+                ->first();
+
+            if ($existingTreatment) {
+                continue; // Treatment already planned
+            }
+
+            // Get clinic currency
+            $clinicCurrency = DB::table('settings')
+                ->where('clinic_id', $user->clinic_id)
+                ->where('key', 'currency')
+                ->value('value') ?? 'USD';
+
+            // Create a planned treatment
+            \App\Models\DentalTreatment::create([
+                'patient_id' => $dentalChart->patient_id,
+                'clinic_id' => $user->clinic_id,
+                'dental_chart_id' => $dentalChart->id,
+                'tooth_number' => $toothRecord->tooth_number,
+                'tooth_numbers' => [$toothRecord->tooth_number],
+                'procedure_name' => $this->mapConditionToProcedure($condition),
+                'diagnosis' => ucfirst(str_replace('_', ' ', $condition)),
+                'surfaces_affected' => $toothRecord->surfaces_affected ?? [],
+                'status' => 'planned',
+                'priority' => $this->mapSeverityToPriority($toothRecord->severity),
+                'severity' => $toothRecord->severity,
+                'currency' => $clinicCurrency,
+                'assigned_doctor_id' => $user->id,
+                'payment_status' => 'unpaid',
+                'paid_amount' => 0,
+                'notes' => 'Auto-created from dental chart update',
+                'created_by' => $user->id,
+            ]);
+        }
+    }
+
+    /**
+     * Map dental condition to procedure name.
+     */
+    private function mapConditionToProcedure(string $condition): string
+    {
+        return match($condition) {
+            'caries' => 'Filling / Restoration',
+            'fracture' => 'Crown or Restoration',
+            'periodontal' => 'Periodontal Treatment',
+            default => ucfirst(str_replace('_', ' ', $condition)) . ' Treatment',
+        };
+    }
+
+    /**
+     * Map severity to treatment priority.
+     */
+    private function mapSeverityToPriority(?string $severity): string
+    {
+        return match($severity) {
+            'severe' => 'urgent',
+            'moderate' => 'high',
+            'mild' => 'medium',
+            default => 'medium',
+        };
     }
 }
