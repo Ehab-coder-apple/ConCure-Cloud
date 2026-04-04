@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\DentalChart;
 use App\Models\DentalToothRecord;
+use App\Models\DentalTreatment;
 use App\Models\Patient;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -429,61 +431,82 @@ class DentalChartController extends Controller
         ?DentalToothRecord $existingRecord,
         User $user
     ): void {
-        $newConditions = $toothRecord->conditions ?? [];
-        $oldConditions = $existingRecord ? ($existingRecord->conditions ?? []) : [];
+        try {
+            $newConditions = $toothRecord->conditions ?? [];
+            $oldConditions = $existingRecord ? ($existingRecord->conditions ?? []) : [];
 
-        // Find conditions that were just added
-        $addedConditions = array_diff($newConditions, $oldConditions);
-
-        // Only create treatment plans for conditions that need treatment
-        $treatableConditions = ['caries', 'fracture', 'periodontal'];
-
-        foreach ($addedConditions as $condition) {
-            if (!in_array($condition, $treatableConditions)) {
-                continue;
+            // Skip if setting to healthy or no new conditions
+            if (in_array('healthy', $newConditions) && count($newConditions) === 1) {
+                return;
             }
 
-            // Check if a planned treatment already exists for this tooth and condition
-            $existingTreatment = \App\Models\DentalTreatment::where('dental_chart_id', $dentalChart->id)
-                ->where('patient_id', $dentalChart->patient_id)
-                ->where(function($q) use ($toothRecord) {
-                    $q->where('tooth_number', $toothRecord->tooth_number)
-                      ->orWhereJsonContains('tooth_numbers', $toothRecord->tooth_number);
-                })
-                ->whereIn('status', ['planned', 'in_progress'])
-                ->where('procedure_name', 'LIKE', '%' . $this->mapConditionToProcedure($condition) . '%')
-                ->first();
+            // Find conditions that were just added
+            $addedConditions = array_diff($newConditions, $oldConditions);
 
-            if ($existingTreatment) {
-                continue; // Treatment already planned
+            // Skip if no new conditions added
+            if (empty($addedConditions)) {
+                return;
             }
 
-            // Get clinic currency
-            $clinicCurrency = DB::table('settings')
-                ->where('clinic_id', $user->clinic_id)
-                ->where('key', 'currency')
-                ->value('value') ?? 'USD';
+            // Only create treatment plans for conditions that need treatment
+            $treatableConditions = ['caries', 'fracture', 'periodontal'];
 
-            // Create a planned treatment
-            \App\Models\DentalTreatment::create([
-                'patient_id' => $dentalChart->patient_id,
-                'clinic_id' => $user->clinic_id,
+            foreach ($addedConditions as $condition) {
+                if (!in_array($condition, $treatableConditions)) {
+                    continue;
+                }
+
+                // Check if a planned treatment already exists for this tooth and condition
+                $existingTreatment = DentalTreatment::where('dental_chart_id', $dentalChart->id)
+                    ->where('patient_id', $dentalChart->patient_id)
+                    ->where(function($q) use ($toothRecord) {
+                        $q->where('tooth_number', $toothRecord->tooth_number)
+                          ->orWhereJsonContains('tooth_numbers', $toothRecord->tooth_number);
+                    })
+                    ->whereIn('status', ['planned', 'in_progress'])
+                    ->where('procedure_name', 'LIKE', '%' . $this->mapConditionToProcedure($condition) . '%')
+                    ->first();
+
+                if ($existingTreatment) {
+                    continue; // Treatment already planned
+                }
+
+                // Get clinic currency
+                $clinicCurrency = DB::table('settings')
+                    ->where('clinic_id', $user->clinic_id)
+                    ->where('key', 'currency')
+                    ->value('value') ?? 'USD';
+
+                // Create a planned treatment
+                DentalTreatment::create([
+                    'patient_id' => $dentalChart->patient_id,
+                    'clinic_id' => $user->clinic_id,
+                    'dental_chart_id' => $dentalChart->id,
+                    'tooth_number' => $toothRecord->tooth_number,
+                    'tooth_numbers' => [$toothRecord->tooth_number],
+                    'procedure_name' => $this->mapConditionToProcedure($condition),
+                    'diagnosis' => ucfirst(str_replace('_', ' ', $condition)),
+                    'surfaces_affected' => $toothRecord->surfaces_affected ?? [],
+                    'status' => 'planned',
+                    'priority' => $this->mapSeverityToPriority($toothRecord->severity),
+                    'severity' => $toothRecord->severity,
+                    'currency' => $clinicCurrency,
+                    'assigned_doctor_id' => $user->id,
+                    'payment_status' => 'unpaid',
+                    'paid_amount' => 0,
+                    'notes' => 'Auto-created from dental chart update',
+                    'created_by' => $user->id,
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to sync dental chart to treatment plan', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
                 'dental_chart_id' => $dentalChart->id,
                 'tooth_number' => $toothRecord->tooth_number,
-                'tooth_numbers' => [$toothRecord->tooth_number],
-                'procedure_name' => $this->mapConditionToProcedure($condition),
-                'diagnosis' => ucfirst(str_replace('_', ' ', $condition)),
-                'surfaces_affected' => $toothRecord->surfaces_affected ?? [],
-                'status' => 'planned',
-                'priority' => $this->mapSeverityToPriority($toothRecord->severity),
-                'severity' => $toothRecord->severity,
-                'currency' => $clinicCurrency,
-                'assigned_doctor_id' => $user->id,
-                'payment_status' => 'unpaid',
-                'paid_amount' => 0,
-                'notes' => 'Auto-created from dental chart update',
-                'created_by' => $user->id,
             ]);
+            // Don't throw the exception - just log it and continue
+            // This prevents the entire tooth record update from failing
         }
     }
 
