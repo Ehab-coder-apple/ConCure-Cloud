@@ -901,6 +901,10 @@ class User extends Authenticatable
                 'pediatric_delete' => 'Delete Growth Measurements',
                 'pediatric_manage' => 'Full Pediatric Management',
             ],
+            'progress_dashboard' => [
+                'progress_dashboard_view' => 'View Progress Dashboard',
+                'progress_dashboard_manage' => 'Manage Progress Dashboard',
+            ],
             'radiology' => [
                 'radiology_view' => 'View Radiology Requests',
                 'radiology_create' => 'Create Radiology Requests',
@@ -1007,6 +1011,11 @@ class User extends Authenticatable
                 'name' => 'Dental Module',
                 'icon' => 'fas fa-tooth',
                 'color' => 'info',
+            ],
+            'progress_dashboard' => [
+                'name' => 'Progress Dashboard',
+                'icon' => 'fas fa-chart-line',
+                'color' => 'success',
             ],
             'radiology' => [
                 'name' => 'Radiology',
