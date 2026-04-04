@@ -6,6 +6,7 @@ use App\Models\CanalTreatment;
 use App\Models\DentalTreatment;
 use App\Models\DentalChart;
 use App\Models\DentalProcedure;
+use App\Models\DentalToothRecord;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Patient;
@@ -345,7 +346,16 @@ class DentalTreatmentController extends Controller
         }
 
         DB::transaction(function () use ($dentalTreatment, $data, $user) {
+            // Track if status is changing to completed
+            $wasCompleted = $dentalTreatment->status === 'completed';
+            $isNowCompleted = ($data['status'] ?? $dentalTreatment->status) === 'completed';
+
             $dentalTreatment->update($data);
+
+            // Sync with dental chart if newly completed
+            if (!$wasCompleted && $isNowCompleted) {
+                $this->syncTreatmentToDentalChart($dentalTreatment, $user);
+            }
 
             // Sync financial data with Finance module
             $this->syncTreatmentFinancialData($dentalTreatment, $user);
@@ -536,15 +546,29 @@ class DentalTreatmentController extends Controller
             'post_treatment_notes' => 'nullable|string',
         ]);
 
-        $dentalTreatment->update([
-            'status' => 'completed',
-            'completed_date' => now(),
-            'performed_by_id' => $user->id,
-            'actual_cost' => $request->actual_cost ?? $dentalTreatment->estimated_cost,
-            'post_treatment_notes' => $request->post_treatment_notes,
-        ]);
+        DB::beginTransaction();
+        try {
+            $dentalTreatment->update([
+                'status' => 'completed',
+                'completed_date' => now(),
+                'performed_by_id' => $user->id,
+                'actual_cost' => $request->actual_cost ?? $dentalTreatment->estimated_cost,
+                'post_treatment_notes' => $request->post_treatment_notes,
+            ]);
 
-        return back()->with('success', 'Treatment marked as completed.');
+            // Sync with dental chart
+            $this->syncTreatmentToDentalChart($dentalTreatment, $user);
+
+            DB::commit();
+            return back()->with('success', 'Treatment marked as completed and dental chart updated.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Failed to complete treatment and sync chart', [
+                'treatment_id' => $dentalTreatment->id,
+                'error' => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Failed to complete treatment: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -595,5 +619,125 @@ class DentalTreatmentController extends Controller
 
         $pdf = Pdf::loadView('dental.treatments.pdf', compact('dentalTreatment'));
         return $pdf->download($filename);
+    }
+
+    /**
+     * Sync completed treatment to dental chart.
+     */
+    private function syncTreatmentToDentalChart(DentalTreatment $treatment, User $user): void
+    {
+        // Get or create dental chart for the patient
+        $dentalChart = $treatment->dental_chart_id
+            ? DentalChart::find($treatment->dental_chart_id)
+            : DentalChart::getLatestForPatient($treatment->patient_id);
+
+        // If no dental chart exists, create one
+        if (!$dentalChart) {
+            $dentalChart = DentalChart::create([
+                'patient_id' => $treatment->patient_id,
+                'clinic_id' => $treatment->clinic_id,
+                'chart_type' => 'adult', // Default to adult
+                'created_by' => $user->id,
+            ]);
+        }
+
+        // Link the treatment to the dental chart if not already linked
+        if (!$treatment->dental_chart_id) {
+            $treatment->update(['dental_chart_id' => $dentalChart->id]);
+        }
+
+        // Determine the condition based on procedure name
+        $condition = $this->mapProcedureToCondition($treatment->procedure_name);
+
+        // Get all tooth numbers affected
+        $toothNumbers = [];
+        if ($treatment->tooth_number) {
+            $toothNumbers[] = $treatment->tooth_number;
+        }
+        if ($treatment->tooth_numbers && is_array($treatment->tooth_numbers)) {
+            $toothNumbers = array_merge($toothNumbers, $treatment->tooth_numbers);
+        }
+        $toothNumbers = array_unique($toothNumbers);
+
+        // Update tooth records for each affected tooth
+        foreach ($toothNumbers as $toothNumber) {
+            if (empty($toothNumber)) continue;
+
+            // Find existing record to preserve created_by
+            $existingRecord = DentalToothRecord::where('dental_chart_id', $dentalChart->id)
+                ->where('tooth_number', $toothNumber)
+                ->first();
+
+            $conditions = $existingRecord && $existingRecord->conditions
+                ? $existingRecord->conditions
+                : [];
+
+            // Add the new condition if not already present
+            if (!in_array($condition, $conditions)) {
+                $conditions[] = $condition;
+            }
+
+            DentalToothRecord::updateOrCreate(
+                [
+                    'dental_chart_id' => $dentalChart->id,
+                    'tooth_number' => $toothNumber,
+                ],
+                [
+                    'primary_condition' => $condition,
+                    'conditions' => $conditions,
+                    'surfaces_affected' => $treatment->surfaces_affected ?? [],
+                    'severity' => $treatment->severity,
+                    'notes' => "Treatment: {$treatment->procedure_name} (#{$treatment->treatment_number})",
+                    'created_by' => $existingRecord ? $existingRecord->created_by : $user->id,
+                    'updated_by' => $user->id,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Map procedure name to dental condition.
+     */
+    private function mapProcedureToCondition(string $procedureName): string
+    {
+        $procedureLower = strtolower($procedureName);
+
+        // Root canal treatment
+        if (str_contains($procedureLower, 'root canal') ||
+            str_contains($procedureLower, 'endodontic') ||
+            str_contains($procedureLower, 'rct')) {
+            return 'root_canal';
+        }
+
+        // Crown
+        if (str_contains($procedureLower, 'crown')) {
+            return 'crown';
+        }
+
+        // Filling
+        if (str_contains($procedureLower, 'filling') ||
+            str_contains($procedureLower, 'restoration') ||
+            str_contains($procedureLower, 'composite')) {
+            return 'filling';
+        }
+
+        // Extraction
+        if (str_contains($procedureLower, 'extraction') ||
+            str_contains($procedureLower, 'extract')) {
+            return 'extraction';
+        }
+
+        // Implant
+        if (str_contains($procedureLower, 'implant')) {
+            return 'implant';
+        }
+
+        // Bridge
+        if (str_contains($procedureLower, 'bridge')) {
+            return 'bridge';
+        }
+
+        // Default to 'other'
+        return 'other';
     }
 }
