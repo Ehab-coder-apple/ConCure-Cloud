@@ -210,6 +210,9 @@ class DentalChartController extends Controller
             }
         }
 
+        // Sync all planned/in-progress treatments to the dental chart
+        $this->syncPlannedTreatmentsToChart($patient, $dentalChart, $user);
+
         $dentalChart->load(['creator', 'toothRecords.creator', 'toothRecords.updater', 'treatments', 'images']);
 
         // Check if detailed view is requested (default to simple view with improvements)
@@ -534,5 +537,139 @@ class DentalChartController extends Controller
             'mild' => 'medium',
             default => 'medium',
         };
+    }
+
+    /**
+     * Sync planned/in-progress treatments to dental chart.
+     * This ensures all treatment plans are visible on the dental chart.
+     */
+    private function syncPlannedTreatmentsToChart(Patient $patient, DentalChart $dentalChart, User $user): void
+    {
+        try {
+            // Get all treatments for this patient that are planned or in progress
+            $treatments = DentalTreatment::where('patient_id', $patient->id)
+                ->whereIn('status', ['planned', 'in_progress'])
+                ->get();
+
+            foreach ($treatments as $treatment) {
+                // Get all affected teeth
+                $toothNumbers = [];
+                if ($treatment->tooth_number) {
+                    $toothNumbers[] = $treatment->tooth_number;
+                }
+                if ($treatment->tooth_numbers && is_array($treatment->tooth_numbers)) {
+                    $toothNumbers = array_merge($toothNumbers, $treatment->tooth_numbers);
+                }
+                $toothNumbers = array_unique($toothNumbers);
+
+                // Map procedure to condition
+                $condition = $this->mapProcedureToConditionForChart($treatment->procedure_name);
+
+                foreach ($toothNumbers as $toothNumber) {
+                    if (empty($toothNumber)) continue;
+
+                    // Check if tooth record already exists
+                    $existingRecord = DentalToothRecord::where('dental_chart_id', $dentalChart->id)
+                        ->where('tooth_number', $toothNumber)
+                        ->first();
+
+                    if ($existingRecord) {
+                        // Add condition if not already present
+                        $conditions = $existingRecord->conditions ?? [];
+                        if (!in_array($condition, $conditions)) {
+                            $conditions[] = $condition;
+                            $existingRecord->update([
+                                'conditions' => $conditions,
+                                'updated_by' => $user->id,
+                            ]);
+                        }
+                    } else {
+                        // Create new tooth record with the condition
+                        DentalToothRecord::create([
+                            'dental_chart_id' => $dentalChart->id,
+                            'tooth_number' => $toothNumber,
+                            'primary_condition' => $condition,
+                            'conditions' => [$condition],
+                            'surfaces_affected' => $treatment->surfaces_affected ?? [],
+                            'severity' => $treatment->severity,
+                            'notes' => "Planned: {$treatment->procedure_name} (#{$treatment->treatment_number})",
+                            'created_by' => $user->id,
+                            'updated_by' => $user->id,
+                        ]);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to sync planned treatments to chart', [
+                'error' => $e->getMessage(),
+                'patient_id' => $patient->id,
+                'chart_id' => $dentalChart->id,
+            ]);
+            // Don't throw - just log and continue
+        }
+    }
+
+    /**
+     * Map procedure name to dental chart condition.
+     */
+    private function mapProcedureToConditionForChart(string $procedureName): string
+    {
+        $procedureLower = strtolower($procedureName);
+
+        // Root canal treatment
+        if (str_contains($procedureLower, 'root canal') ||
+            str_contains($procedureLower, 'endodontic') ||
+            str_contains($procedureLower, 'rct')) {
+            return 'root_canal';
+        }
+
+        // Crown
+        if (str_contains($procedureLower, 'crown')) {
+            return 'crown';
+        }
+
+        // Filling
+        if (str_contains($procedureLower, 'filling') ||
+            str_contains($procedureLower, 'restoration') ||
+            str_contains($procedureLower, 'composite')) {
+            return 'filling';
+        }
+
+        // Extraction
+        if (str_contains($procedureLower, 'extraction') ||
+            str_contains($procedureLower, 'extract')) {
+            return 'extraction';
+        }
+
+        // Implant
+        if (str_contains($procedureLower, 'implant')) {
+            return 'implant';
+        }
+
+        // Bridge
+        if (str_contains($procedureLower, 'bridge')) {
+            return 'bridge';
+        }
+
+        // Caries
+        if (str_contains($procedureLower, 'caries') ||
+            str_contains($procedureLower, 'cavity')) {
+            return 'caries';
+        }
+
+        // Fracture
+        if (str_contains($procedureLower, 'fracture')) {
+            return 'fracture';
+        }
+
+        // Periodontal
+        if (str_contains($procedureLower, 'periodontal') ||
+            str_contains($procedureLower, 'gum') ||
+            str_contains($procedureLower, 'gingival')) {
+            return 'periodontal';
+        }
+
+        // Default to 'other'
+        return 'other';
     }
 }
