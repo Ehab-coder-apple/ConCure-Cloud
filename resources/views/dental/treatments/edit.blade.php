@@ -187,13 +187,15 @@
                             <!-- Currency -->
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">{{ __('Currency') }}</label>
-                                <select name="currency" class="form-select">
-                                    <option value="USD" {{ old('currency', $dentalTreatment->currency) === 'USD' ? 'selected' : '' }}>USD ($)</option>
-                                    <option value="EUR" {{ old('currency', $dentalTreatment->currency) === 'EUR' ? 'selected' : '' }}>EUR (€)</option>
-                                    <option value="GBP" {{ old('currency', $dentalTreatment->currency) === 'GBP' ? 'selected' : '' }}>GBP (£)</option>
-                                    <option value="IQD" {{ old('currency', $dentalTreatment->currency) === 'IQD' ? 'selected' : '' }}>IQD (د.ع)</option>
-                                    <option value="EGP" {{ old('currency', $dentalTreatment->currency) === 'EGP' ? 'selected' : '' }}>EGP (£E)</option>
-                                </select>
+                                @php
+                                    $clinicCurrency = \DB::table('settings')
+                                        ->where('clinic_id', auth()->user()->clinic_id)
+                                        ->where('key', 'currency')
+                                        ->value('value') ?? 'USD';
+                                @endphp
+                                <input type="text" class="form-control" value="{{ $clinicCurrency }}" disabled>
+                                <input type="hidden" name="currency" value="{{ $clinicCurrency }}">
+                                <small class="text-muted">{{ __('Currency is set in Clinic Settings') }}</small>
                                 @error('currency')
                                     <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror

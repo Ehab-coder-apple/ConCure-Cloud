@@ -129,6 +129,12 @@ class DentalTreatmentController extends Controller
             abort(403, 'Only doctors, dental assistants, and dentists can create treatment plans.');
         }
 
+        // Get clinic currency setting
+        $clinicCurrency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'dental_chart_id' => 'nullable|exists:dental_charts,id',
@@ -141,7 +147,7 @@ class DentalTreatmentController extends Controller
             'surfaces_affected' => 'nullable|array',
             'description' => 'nullable|string',
             'estimated_cost' => 'nullable|numeric|min:0',
-            'currency' => 'nullable|string|max:3',
+            'currency' => 'nullable|string|in:' . $clinicCurrency,
             'estimated_duration_minutes' => 'nullable|integer|min:1',
             'status' => 'required|in:planned,in_progress,completed,cancelled',
             'priority' => 'required|in:low,medium,high,urgent',
@@ -149,6 +155,8 @@ class DentalTreatmentController extends Controller
             'scheduled_date' => 'nullable|date',
             'assigned_doctor_id' => 'nullable|exists:users,id',
             'notes' => 'nullable|string',
+        ], [
+            'currency.in' => 'The currency must match the clinic\'s configured currency (' . $clinicCurrency . ').',
         ]);
 
         // Normalize tooth_numbers (accept string "11,12" or array; store null when empty)
@@ -170,7 +178,7 @@ class DentalTreatmentController extends Controller
                 'surfaces_affected' => $request->surfaces_affected,
                 'description' => $request->description,
                 'estimated_cost' => $request->estimated_cost,
-                'currency' => $request->currency ?? 'USD',
+                'currency' => $clinicCurrency,
                 'estimated_duration_minutes' => $request->estimated_duration_minutes,
                 'status' => $request->status,
                 'priority' => $request->priority,
@@ -298,6 +306,12 @@ class DentalTreatmentController extends Controller
             abort(403, 'Only doctors, dental assistants, and dentists can update treatment plans.');
         }
 
+        // Get clinic currency setting
+        $clinicCurrency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
         $request->validate([
             'tooth_number' => 'nullable|string',
             'tooth_numbers' => 'nullable', // Accept both string and array
@@ -309,7 +323,7 @@ class DentalTreatmentController extends Controller
             'description' => 'nullable|string',
             'estimated_cost' => 'nullable|numeric|min:0',
             'actual_cost' => 'nullable|numeric|min:0',
-            'currency' => 'nullable|string|max:3',
+            'currency' => 'nullable|string|in:' . $clinicCurrency,
             'estimated_duration_minutes' => 'nullable|integer|min:1',
             'status' => 'required|in:planned,in_progress,completed,cancelled',
             'priority' => 'required|in:low,medium,high,urgent',
@@ -320,6 +334,8 @@ class DentalTreatmentController extends Controller
             'paid_amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'post_treatment_notes' => 'nullable|string',
+        ], [
+            'currency.in' => 'The currency must match the clinic\'s configured currency (' . $clinicCurrency . ').',
         ]);
 
         // Convert/normalize tooth_numbers (avoid saving empty string into JSON column)

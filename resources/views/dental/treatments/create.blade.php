@@ -196,11 +196,15 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="currency" class="form-label">{{ __('Currency') }}</label>
-                                <select name="currency" id="currency" class="form-select">
-                                    <option value="USD" {{ old('currency', 'USD') == 'USD' ? 'selected' : '' }}>USD</option>
-                                    <option value="EUR" {{ old('currency') == 'EUR' ? 'selected' : '' }}>EUR</option>
-                                    <option value="IQD" {{ old('currency') == 'IQD' ? 'selected' : '' }}>IQD</option>
-                                </select>
+                                @php
+                                    $clinicCurrency = \DB::table('settings')
+                                        ->where('clinic_id', auth()->user()->clinic_id)
+                                        ->where('key', 'currency')
+                                        ->value('value') ?? 'USD';
+                                @endphp
+                                <input type="text" class="form-control" value="{{ $clinicCurrency }}" disabled>
+                                <input type="hidden" name="currency" value="{{ $clinicCurrency }}">
+                                <small class="text-muted">{{ __('Currency is set in Clinic Settings') }}</small>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="estimated_duration_minutes" class="form-label">{{ __('Duration (minutes)') }}</label>
