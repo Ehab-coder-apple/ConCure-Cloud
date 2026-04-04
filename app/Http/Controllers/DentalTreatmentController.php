@@ -6,7 +6,10 @@ use App\Models\CanalTreatment;
 use App\Models\DentalTreatment;
 use App\Models\DentalChart;
 use App\Models\DentalProcedure;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Patient;
+use App\Models\Receipt;
 use App\Models\User;
 use App\Services\CustomTemplateService;
 use Illuminate\Http\Request;
@@ -202,6 +205,11 @@ class DentalTreatmentController extends Controller
                 }
             }
 
+            // Sync financial data with Finance module if cost is provided
+            if ($request->filled('estimated_cost') || $request->filled('actual_cost')) {
+                $this->syncTreatmentFinancialData($treatment, $user);
+            }
+
             DB::commit();
 
             return redirect()->route('dental.treatments.show', $treatment)
@@ -320,7 +328,12 @@ class DentalTreatmentController extends Controller
             $data['tooth_numbers'] = $this->normalizeToothNumbers($data['tooth_numbers']);
         }
 
-        $dentalTreatment->update($data);
+        DB::transaction(function () use ($dentalTreatment, $data, $user) {
+            $dentalTreatment->update($data);
+
+            // Sync financial data with Finance module
+            $this->syncTreatmentFinancialData($dentalTreatment, $user);
+        });
 
         return redirect()->route('dental.treatments.show', $dentalTreatment)
                        ->with('success', 'Treatment plan updated successfully.');
@@ -355,6 +368,108 @@ class DentalTreatmentController extends Controller
         }));
 
         return count($toothNumbers) > 0 ? $toothNumbers : null;
+    }
+
+    /**
+     * Sync dental treatment financial data with the Finance module.
+     * Creates or updates Invoice and Receipt records based on treatment costs and payments.
+     */
+    private function syncTreatmentFinancialData(DentalTreatment $treatment, User $user): void
+    {
+        // Only sync if there's financial data
+        $totalCost = $treatment->actual_cost ?? $treatment->estimated_cost ?? 0;
+        if ($totalCost <= 0) {
+            return;
+        }
+
+        $paidAmount = $treatment->paid_amount ?? 0;
+
+        // Create or update invoice
+        if ($treatment->invoice_id) {
+            // Update existing invoice
+            $invoice = Invoice::find($treatment->invoice_id);
+            if ($invoice) {
+                // Update invoice item
+                $item = $invoice->items()->first();
+                if ($item) {
+                    $item->update([
+                        'description' => "Dental Treatment: {$treatment->procedure_name}",
+                        'quantity' => 1,
+                        'unit_price' => $totalCost,
+                    ]);
+                }
+
+                // Update payment and status
+                $invoice->paid_amount = $paidAmount;
+                $invoice->calculateTotals();
+                $invoice->updateStatus();
+                $invoice->save();
+            }
+        } else {
+            // Create new invoice
+            $invoice = Invoice::create([
+                'patient_id' => $treatment->patient_id,
+                'clinic_id' => $treatment->clinic_id,
+                'invoice_date' => now()->toDateString(),
+                'due_date' => $treatment->scheduled_date ?? now()->addDays(30)->toDateString(),
+                'subtotal' => 0,
+                'tax_rate' => 0,
+                'discount_rate' => 0,
+                'discount_amount' => 0,
+                'paid_amount' => $paidAmount,
+                'status' => 'draft',
+                'notes' => "Dental Treatment #{$treatment->treatment_number}",
+                'created_by' => $user->id,
+            ]);
+
+            // Add invoice item
+            $invoice->addItem([
+                'description' => "Dental Treatment: {$treatment->procedure_name}",
+                'quantity' => 1,
+                'unit_price' => $totalCost,
+                'item_type' => 'procedure',
+            ]);
+
+            // Update invoice status based on payment
+            $invoice->updateStatus();
+            $invoice->save();
+
+            // Link invoice to treatment
+            $treatment->invoice_id = $invoice->id;
+            $treatment->saveQuietly(); // Save without triggering events
+        }
+
+        // Create receipt if there's a payment
+        if ($paidAmount > 0) {
+            // Check if receipt already exists for this treatment
+            $existingReceipt = Receipt::where('reference_number', $treatment->treatment_number)->first();
+
+            if ($existingReceipt) {
+                // Update existing receipt
+                $existingReceipt->update([
+                    'amount' => $paidAmount,
+                    'description' => "Payment for Dental Treatment: {$treatment->procedure_name}",
+                ]);
+            } else {
+                // Create new receipt
+                Receipt::create([
+                    'clinic_id' => $treatment->clinic_id,
+                    'description' => "Payment for Dental Treatment: {$treatment->procedure_name}",
+                    'amount' => $paidAmount,
+                    'category' => 'procedure_fee',
+                    'receipt_date' => now()->toDateString(),
+                    'payment_method' => 'cash', // Default, can be enhanced
+                    'payer_name' => $treatment->patient ?
+                        trim(($treatment->patient->first_name ?? '') . ' ' . ($treatment->patient->last_name ?? '')) : null,
+                    'reference_number' => $treatment->treatment_number,
+                    'notes' => "Dental treatment payment",
+                    'created_by' => $user->id,
+                    'status' => 'approved',
+                    'approved_by' => $user->id,
+                    'approved_at' => now(),
+                ]);
+            }
+        }
     }
 
     /**

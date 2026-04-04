@@ -38,6 +38,7 @@ class DentalTreatment extends Model
         'performed_by_id',
         'payment_status',
         'paid_amount',
+        'invoice_id',
         'notes',
         'post_treatment_notes',
         'created_by',
@@ -179,6 +180,14 @@ class DentalTreatment extends Model
     public function canalTreatments(): HasMany
     {
         return $this->hasMany(CanalTreatment::class);
+    }
+
+    /**
+     * Get the associated invoice.
+     */
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
     }
 
     /**
