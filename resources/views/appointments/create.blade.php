@@ -163,7 +163,7 @@
 	                                        @enderror
 	                                    </div>
 
-	                                    <div class="col-md-4 mb-3" id="payment_method_wrapper" style="{{ ((float) old('fees_collected', 0) > 0) ? '' : 'display:none;' }}">
+	                                    <div class="col-md-4 mb-3" id="payment_method_wrapper">
 	                                        <label for="payment_method" class="form-label">{{ __('Payment Method') }}</label>
 	                                        <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method">
 	                                            <option value="">{{ __('Select method...') }}</option>
@@ -178,7 +178,7 @@
 	                                        @enderror
 	                                    </div>
 
-	                                    <div class="col-12 mb-3" id="payment_notes_wrapper" style="{{ ((float) old('fees_collected', 0) > 0) ? '' : 'display:none;' }}">
+	                                    <div class="col-12 mb-3" id="payment_notes_wrapper">
 	                                        <label for="payment_notes" class="form-label">{{ __('Payment Notes') }}</label>
 	                                        <textarea class="form-control @error('payment_notes') is-invalid @enderror"
 	                                                  id="payment_notes"
@@ -382,33 +382,6 @@ $(document).ready(function() {
     $('#doctor_id').on('change', function() {
         // You can add AJAX call here to check doctor availability if needed
     });
-
-	    // Payment fields: show method/notes only if fees > 0
-	    function togglePaymentFields() {
-	        const feesEl = document.getElementById('fees_collected');
-	        const methodWrapper = document.getElementById('payment_method_wrapper');
-	        const notesWrapper = document.getElementById('payment_notes_wrapper');
-	        const methodEl = document.getElementById('payment_method');
-
-	        if (!feesEl || !methodWrapper || !notesWrapper) return;
-
-	        const fees = parseFloat((feesEl.value || '').toString().replace(',', '.'));
-	        const show = !isNaN(fees) && fees > 0;
-
-	        methodWrapper.style.display = show ? '' : 'none';
-	        notesWrapper.style.display = show ? '' : 'none';
-
-	        if (!show && methodEl) {
-	            methodEl.value = '';
-	        }
-	    }
-
-	    togglePaymentFields();
-	    const feesInput = document.getElementById('fees_collected');
-	    if (feesInput) {
-	        feesInput.addEventListener('input', togglePaymentFields);
-	        feesInput.addEventListener('change', togglePaymentFields);
-	    }
 
     // Load today's appointment count
     // You can add AJAX call here to get today's appointment count
