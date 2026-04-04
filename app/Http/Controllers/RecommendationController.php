@@ -80,8 +80,8 @@ class RecommendationController extends Controller
             $q->where('clinic_id', $user->clinic_id);
         });
 
-        // Restrict by doctor visibility for doctor/assistant/dentist
-        if (in_array($user->role, ['doctor', 'assistant', 'dental_dept'])) {
+        // Restrict by doctor visibility for doctor/dentist
+        if (in_array($user->role, ['doctor', 'dental_dept'])) {
             $allowedDoctorIds = $user->allowedDoctorIds();
             if (!empty($allowedDoctorIds)) {
                 $query->whereIn('doctor_id', $allowedDoctorIds);
@@ -89,6 +89,17 @@ class RecommendationController extends Controller
                 // No allowed doctors => no results
                 $query->whereRaw('1 = 0');
             }
+        }
+
+        // Assistants with lab permissions can see all lab requests in their clinic
+        // (unless they're assigned to specific doctors, then filter by those doctors)
+        if ($user->role === 'assistant') {
+            $allowedDoctorIds = $user->allowedDoctorIds();
+            // Only filter if assistant is assigned to specific doctors
+            if (!empty($allowedDoctorIds)) {
+                $query->whereIn('doctor_id', $allowedDoctorIds);
+            }
+            // If no assigned doctors, they can see all lab requests in their clinic (already filtered above)
         }
 
         // Apply filters
@@ -241,8 +252,20 @@ class RecommendationController extends Controller
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to lab request.');
         }
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->canAccessDoctor($labRequest->doctor_id)) {
-            abort(403, 'You are not allowed to access this doctor\'s lab requests.');
+
+        // Assistants with lab permissions can view all clinic lab requests
+        // Admins and super admins can view all
+        // Others must have access to the specific doctor
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            // Check if user is assistant with lab permissions - allow access
+            if ($user->role === 'assistant' && $user->canViewLabRequests()) {
+                // Assistants with lab permission can view all clinic lab requests
+            } else {
+                // For other roles, check doctor access
+                if (!$user->canAccessDoctor($labRequest->doctor_id)) {
+                    abort(403, 'You are not allowed to access this doctor\'s lab requests.');
+                }
+            }
         }
 
         $labRequest->load(['patient', 'doctor', 'tests']);
@@ -404,9 +427,20 @@ class RecommendationController extends Controller
         if ($labRequest->patient->clinic_id !== $user->clinic_id) {
             abort(403, 'Unauthorized access to lab request.');
         }
-        // Ensure assistants/doctors can only access assigned doctor data
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->canAccessDoctor($labRequest->doctor_id)) {
-            abort(403, 'You are not allowed to access this doctor\'s lab requests.');
+
+        // Assistants with lab permissions can edit all clinic lab requests
+        // Admins and super admins can edit all
+        // Others must have access to the specific doctor
+        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            // Check if user is assistant with lab permissions - allow access
+            if ($user->role === 'assistant' && $user->canEditLabRequests()) {
+                // Assistants with lab edit permission can edit all clinic lab requests
+            } else {
+                // For other roles, check doctor access
+                if (!$user->canAccessDoctor($labRequest->doctor_id)) {
+                    abort(403, 'You are not allowed to access this doctor\'s lab requests.');
+                }
+            }
         }
 
         // Check if user has permission to edit lab requests
