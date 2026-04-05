@@ -14,7 +14,11 @@
             <p class="text-muted mb-0">Master SaaS Financial Overview</p>
         </div>
         <div>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createInvoiceModal">
+            <a href="{{ route('master.finance.invoices') }}" class="btn btn-outline-primary">
+                <i class="fas fa-list me-1"></i>
+                Manage Invoices
+            </a>
+            <button type="button" class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#createInvoiceModal">
                 <i class="fas fa-file-invoice me-1"></i>
                 Create Invoice
             </button>
@@ -281,19 +285,29 @@
                                 @endphp
                                 <div class="list-group-item px-0">
                                     <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <h6 class="mb-1">{{ $receipt->clinic_name }}</h6>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h6 class="mb-1">{{ $receipt->clinic_name }}</h6>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="editPayment({{ $receipt->id }})" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deletePayment({{ $receipt->id }})" title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
                                             <small class="text-muted">
                                                 {{ Carbon\Carbon::parse($receipt->paid_at)->format('M d, Y h:i A') }}
                                             </small>
+                                            @if(isset($receipt->note) && $receipt->note)
+                                                <small class="text-muted d-block mt-1">{{ $receipt->note }}</small>
+                                            @endif
                                         </div>
-                                        <span class="badge bg-success">
+                                        <span class="badge bg-success ms-3">
                                             {{ $receiptSymbol }}{{ number_format($receipt->amount, 2) }}
                                         </span>
                                     </div>
-                                    @if(isset($receipt->note) && $receipt->note)
-                                        <small class="text-muted d-block mt-1">{{ $receipt->note }}</small>
-                                    @endif
                                 </div>
                             @endforeach
                         </div>
@@ -729,6 +743,40 @@ document.getElementById('recordPaymentForm').addEventListener('submit', function
         console.error(error);
     });
 });
+
+// Edit Payment
+function editPayment(paymentId) {
+    alert('Edit payment functionality - Coming soon!\nPayment ID: ' + paymentId);
+    // TODO: Implement edit payment modal
+}
+
+// Delete Payment
+function deletePayment(paymentId) {
+    if (!confirm('Are you sure you want to delete this payment? This action cannot be undone.')) {
+        return;
+    }
+
+    fetch(`/master/finance/payment/${paymentId}/delete`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert(result.message);
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    })
+    .catch(error => {
+        alert('Error deleting payment');
+        console.error(error);
+    });
+}
 </script>
 
 <style>

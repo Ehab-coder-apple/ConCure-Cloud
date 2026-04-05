@@ -492,5 +492,196 @@ class FinanceController extends Controller
 
         return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
     }
+
+    /**
+     * Update invoice.
+     */
+    public function updateInvoice(Request $request, MasterInvoice $invoice)
+    {
+        $request->validate([
+            'clinic_id' => 'required|exists:clinics,id',
+            'currency' => 'required|in:USD,IQD,JOD,EGP',
+            'due_date' => 'required|date',
+            'items' => 'required|array|min:1',
+            'items.*.description' => 'required|string',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $invoice->update([
+                'clinic_id' => $request->clinic_id,
+                'currency' => $request->currency,
+                'due_date' => $request->due_date,
+                'tax_rate' => $request->tax_rate ?? 0,
+                'discount_amount' => $request->discount_amount ?? 0,
+                'notes' => $request->notes,
+            ]);
+
+            // Delete existing items
+            $invoice->items()->delete();
+
+            // Add new items
+            foreach ($request->items as $item) {
+                $invoice->items()->create([
+                    'description' => $item['description'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                ]);
+            }
+
+            // Refresh to recalculate totals
+            $invoice->refresh();
+            $invoice->calculateTotals();
+            $invoice->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice updated successfully',
+                'invoice' => $invoice->load('clinic', 'items'),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update invoice: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete invoice.
+     */
+    public function deleteInvoice(MasterInvoice $invoice)
+    {
+        DB::beginTransaction();
+        try {
+            $invoiceNumber = $invoice->invoice_number;
+            $invoice->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Invoice {$invoiceNumber} deleted successfully",
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete invoice: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Record payment for an invoice.
+     */
+    public function recordInvoicePayment(Request $request, MasterInvoice $invoice)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|string',
+            'payment_date' => 'required|date',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $amount = $request->amount;
+
+            // Update invoice payment
+            $invoice->paid_amount += $amount;
+            $invoice->payment_method = $request->payment_method;
+            $invoice->payment_date = $request->payment_date;
+            $invoice->calculateTotals();
+            $invoice->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment recorded successfully',
+                'invoice' => $invoice->load('clinic', 'items'),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record payment: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Update subscription payment.
+     */
+    public function updatePayment(Request $request, SubscriptionPayment $payment)
+    {
+        $request->validate([
+            'clinic_id' => 'required|exists:clinics,id',
+            'currency' => 'required|in:USD,IQD,JOD,EGP',
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|string',
+            'paid_at' => 'required|date',
+            'note' => 'nullable|string',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $payment->update([
+                'clinic_id' => $request->clinic_id,
+                'amount' => $request->amount,
+                'currency' => $request->currency,
+                'paid_at' => $request->paid_at,
+                'method' => $request->payment_method,
+                'note' => $request->note,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment updated successfully',
+                'payment' => $payment->load('clinic'),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update payment: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete subscription payment.
+     */
+    public function deletePayment(SubscriptionPayment $payment)
+    {
+        DB::beginTransaction();
+        try {
+            $amount = $payment->amount;
+            $payment->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Payment of {$amount} deleted successfully",
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete payment: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
 

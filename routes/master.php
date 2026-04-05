@@ -100,7 +100,12 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     // Finance
     Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
     Route::post('/finance/invoice/store', [FinanceController::class, 'storeInvoice'])->name('finance.invoice.store');
+    Route::put('/finance/invoice/{invoice}/update', [FinanceController::class, 'updateInvoice'])->name('finance.invoice.update');
+    Route::delete('/finance/invoice/{invoice}/delete', [FinanceController::class, 'deleteInvoice'])->name('finance.invoice.delete');
+    Route::post('/finance/invoice/{invoice}/record-payment', [FinanceController::class, 'recordInvoicePayment'])->name('finance.invoice.record-payment');
     Route::post('/finance/payment/store', [FinanceController::class, 'recordPayment'])->name('finance.payment.store');
+    Route::put('/finance/payment/{payment}/update', [FinanceController::class, 'updatePayment'])->name('finance.payment.update');
+    Route::delete('/finance/payment/{payment}/delete', [FinanceController::class, 'deletePayment'])->name('finance.payment.delete');
     Route::get('/finance/invoices', [FinanceController::class, 'invoices'])->name('finance.invoices');
     Route::get('/finance/invoice/{invoice}', [FinanceController::class, 'showInvoice'])->name('finance.invoice.show');
     Route::get('/finance/invoice/{invoice}/print', [FinanceController::class, 'printInvoice'])->name('finance.invoice.print');
