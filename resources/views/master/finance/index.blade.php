@@ -306,31 +306,152 @@
 
 <!-- Create Invoice Modal -->
 <div class="modal fade" id="createInvoiceModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create Invoice</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted">Invoice management coming soon...</p>
-            </div>
+            <form id="createInvoiceForm">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-invoice me-2"></i>
+                        Create Invoice
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="invoice_clinic_id" class="form-label">Clinic <span class="text-danger">*</span></label>
+                            <select class="form-select" id="invoice_clinic_id" name="clinic_id" required>
+                                <option value="">Select Clinic</option>
+                                @foreach(App\Models\Clinic::where('is_demo', false)->orderBy('name')->get() as $clinic)
+                                    <option value="{{ $clinic->id }}">{{ $clinic->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="invoice_due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="invoice_due_date" name="due_date" required>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Items -->
+                    <div class="mb-3">
+                        <label class="form-label">Invoice Items <span class="text-danger">*</span></label>
+                        <div id="invoiceItemsContainer">
+                            <div class="invoice-item row mb-2">
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control" name="items[0][description]" placeholder="Description" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" class="form-control item-quantity" name="items[0][quantity]" placeholder="Qty" min="1" value="1" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control item-price" name="items[0][unit_price]" placeholder="Unit Price" min="0" step="0.01" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-danger btn-sm remove-item" disabled>
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="addInvoiceItem">
+                            <i class="fas fa-plus me-1"></i> Add Item
+                        </button>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="invoice_tax_rate" class="form-label">Tax Rate (%)</label>
+                            <input type="number" class="form-control" id="invoice_tax_rate" name="tax_rate" min="0" max="100" step="0.01" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="invoice_discount" class="form-label">Discount Amount</label>
+                            <input type="number" class="form-control" id="invoice_discount" name="discount_amount" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Subtotal</label>
+                            <input type="text" class="form-control" id="invoice_subtotal" readonly value="{{ $currencySymbol }}0.00">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="invoice_notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="invoice_notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Create Invoice
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<!-- Create Receipt Modal -->
+<!-- Record Payment Modal -->
 <div class="modal fade" id="createReceiptModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Record Payment</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted">This feature is available in the Reports section under "Quick Add Payment"</p>
-                <a href="{{ route('master.reports') }}" class="btn btn-primary">Go to Reports</a>
-            </div>
+            <form id="recordPaymentForm">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-receipt me-2"></i>
+                        Record Payment
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="payment_clinic_id" class="form-label">Clinic <span class="text-danger">*</span></label>
+                        <select class="form-select" id="payment_clinic_id" name="clinic_id" required>
+                            <option value="">Select Clinic</option>
+                            @foreach(App\Models\Clinic::where('is_demo', false)->orderBy('name')->get() as $clinic)
+                                <option value="{{ $clinic->id }}">{{ $clinic->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="payment_amount" class="form-label">Amount <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">{{ $currencySymbol }}</span>
+                            <input type="number" class="form-control" id="payment_amount" name="amount" min="0.01" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">Payment Method <span class="text-danger">*</span></label>
+                        <select class="form-select" id="payment_method" name="payment_method" required>
+                            <option value="">Select Method</option>
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="credit_card">Credit Card</option>
+                            <option value="check">Check</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="payment_paid_at" class="form-label">Payment Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="payment_paid_at" name="paid_at" value="{{ date('Y-m-d') }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="payment_note" class="form-label">Note</label>
+                        <textarea class="form-control" id="payment_note" name="note" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-1"></i> Record Payment
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -412,6 +533,145 @@ const revenueChart = new Chart(ctx, {
             }
         }
     }
+});
+
+// Invoice Item Management
+let itemIndex = 1;
+
+document.getElementById('addInvoiceItem').addEventListener('click', function() {
+    const container = document.getElementById('invoiceItemsContainer');
+    const newItem = document.createElement('div');
+    newItem.className = 'invoice-item row mb-2';
+    newItem.innerHTML = `
+        <div class="col-md-5">
+            <input type="text" class="form-control" name="items[${itemIndex}][description]" placeholder="Description" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" class="form-control item-quantity" name="items[${itemIndex}][quantity]" placeholder="Qty" min="1" value="1" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" class="form-control item-price" name="items[${itemIndex}][unit_price]" placeholder="Unit Price" min="0" step="0.01" required>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-danger btn-sm remove-item">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(newItem);
+    itemIndex++;
+    updateRemoveButtons();
+});
+
+document.getElementById('invoiceItemsContainer').addEventListener('click', function(e) {
+    if (e.target.closest('.remove-item')) {
+        e.target.closest('.invoice-item').remove();
+        updateRemoveButtons();
+        calculateInvoiceSubtotal();
+    }
+});
+
+function updateRemoveButtons() {
+    const items = document.querySelectorAll('.invoice-item');
+    items.forEach((item, index) => {
+        const removeBtn = item.querySelector('.remove-item');
+        if (items.length === 1) {
+            removeBtn.disabled = true;
+        } else {
+            removeBtn.disabled = false;
+        }
+    });
+}
+
+// Calculate subtotal
+document.getElementById('invoiceItemsContainer').addEventListener('input', function(e) {
+    if (e.target.classList.contains('item-quantity') || e.target.classList.contains('item-price')) {
+        calculateInvoiceSubtotal();
+    }
+});
+
+function calculateInvoiceSubtotal() {
+    let subtotal = 0;
+    document.querySelectorAll('.invoice-item').forEach(item => {
+        const qty = parseFloat(item.querySelector('.item-quantity').value) || 0;
+        const price = parseFloat(item.querySelector('.item-price').value) || 0;
+        subtotal += qty * price;
+    });
+    document.getElementById('invoice_subtotal').value = '{{ $currencySymbol }}' + subtotal.toFixed(2);
+}
+
+// Create Invoice Form
+document.getElementById('createInvoiceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const data = {
+        clinic_id: formData.get('clinic_id'),
+        due_date: formData.get('due_date'),
+        tax_rate: formData.get('tax_rate'),
+        discount_amount: formData.get('discount_amount'),
+        notes: formData.get('notes'),
+        items: []
+    };
+
+    // Collect items
+    document.querySelectorAll('.invoice-item').forEach((item, index) => {
+        data.items.push({
+            description: formData.get(`items[${index}][description]`),
+            quantity: parseFloat(formData.get(`items[${index}][quantity]`)),
+            unit_price: parseFloat(formData.get(`items[${index}][unit_price]`))
+        });
+    });
+
+    fetch('{{ route("master.finance.invoice.store") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content || formData.get('_token')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert('Invoice created successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    })
+    .catch(error => {
+        alert('Error creating invoice');
+        console.error(error);
+    });
+});
+
+// Record Payment Form
+document.getElementById('recordPaymentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    fetch('{{ route("master.finance.payment.store") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': formData.get('_token')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert('Payment recorded successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    })
+    .catch(error => {
+        alert('Error recording payment');
+        console.error(error);
+    });
 });
 </script>
 

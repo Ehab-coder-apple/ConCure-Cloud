@@ -5,12 +5,13 @@ namespace App\Http\Controllers\Master;
 use App\Http\Controllers\Controller;
 use App\Models\Clinic;
 use App\Models\User;
-use App\Models\Invoice;
-use App\Models\Receipt;
-use App\Models\Expense;
+use App\Models\MasterInvoice;
+use App\Models\SubscriptionPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class FinanceController extends Controller
 {
@@ -337,4 +338,157 @@ class FinanceController extends Controller
             'expenses' => $expenseData,
         ];
     }
+
+    /**
+     * Store new invoice.
+     */
+    public function storeInvoice(Request $request)
+    {
+        $request->validate([
+            'clinic_id' => 'required|exists:clinics,id',
+            'due_date' => 'required|date',
+            'items' => 'required|array|min:1',
+            'items.*.description' => 'required|string',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $invoice = MasterInvoice::create([
+                'clinic_id' => $request->clinic_id,
+                'invoice_date' => now(),
+                'due_date' => $request->due_date,
+                'tax_rate' => $request->tax_rate ?? 0,
+                'discount_amount' => $request->discount_amount ?? 0,
+                'status' => 'sent',
+                'notes' => $request->notes,
+                'created_by' => Auth::id(),
+            ]);
+
+            // Add items
+            foreach ($request->items as $item) {
+                $invoice->items()->create([
+                    'description' => $item['description'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                ]);
+            }
+
+            // Refresh to recalculate totals
+            $invoice->refresh();
+            $invoice->calculateTotals();
+            $invoice->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice created successfully',
+                'invoice' => $invoice->load('clinic', 'items'),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create invoice: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Record payment.
+     */
+    public function recordPayment(Request $request)
+    {
+        $request->validate([
+            'clinic_id' => 'required|exists:clinics,id',
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|string',
+            'paid_at' => 'required|date',
+            'note' => 'nullable|string',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $payment = SubscriptionPayment::create([
+                'clinic_id' => $request->clinic_id,
+                'amount' => $request->amount,
+                'paid_at' => $request->paid_at,
+                'note' => $request->note,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment recorded successfully',
+                'payment' => $payment->load('clinic'),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record payment: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get invoices list.
+     */
+    public function invoices(Request $request)
+    {
+        $query = MasterInvoice::with('clinic')
+            ->orderBy('invoice_date', 'desc');
+
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('clinic_id') && $request->clinic_id) {
+            $query->where('clinic_id', $request->clinic_id);
+        }
+
+        $invoices = $query->paginate(20);
+
+        return view('master.finance.invoices', compact('invoices'));
+    }
+
+    /**
+     * Show invoice details.
+     */
+    public function showInvoice(MasterInvoice $invoice)
+    {
+        $invoice->load('clinic', 'items', 'creator');
+        return view('master.finance.invoice-show', compact('invoice'));
+    }
+
+    /**
+     * Print invoice.
+     */
+    public function printInvoice(MasterInvoice $invoice)
+    {
+        $invoice->load('clinic', 'items');
+        $currencySymbol = config('concure.currency_symbol', '$');
+
+        return view('master.finance.invoice-print', compact('invoice', 'currencySymbol'));
+    }
+
+    /**
+     * Generate invoice PDF.
+     */
+    public function downloadInvoicePDF(MasterInvoice $invoice)
+    {
+        $invoice->load('clinic', 'items');
+        $currencySymbol = config('concure.currency_symbol', '$');
+
+        $pdf = Pdf::loadView('master.finance.invoice-pdf', compact('invoice', 'currencySymbol'));
+
+        return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
+    }
 }
+

@@ -99,6 +99,12 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
 
     // Finance
     Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
+    Route::post('/finance/invoice/store', [FinanceController::class, 'storeInvoice'])->name('finance.invoice.store');
+    Route::post('/finance/payment/store', [FinanceController::class, 'recordPayment'])->name('finance.payment.store');
+    Route::get('/finance/invoices', [FinanceController::class, 'invoices'])->name('finance.invoices');
+    Route::get('/finance/invoice/{invoice}', [FinanceController::class, 'showInvoice'])->name('finance.invoice.show');
+    Route::get('/finance/invoice/{invoice}/print', [FinanceController::class, 'printInvoice'])->name('finance.invoice.print');
+    Route::get('/finance/invoice/{invoice}/pdf', [FinanceController::class, 'downloadInvoicePDF'])->name('finance.invoice.pdf');
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
