@@ -112,23 +112,29 @@ class FinanceController extends Controller
 
     /**
      * Get financial statistics for the period.
+     * Excludes demo clinics - only counts paying tenants.
      */
     private function getFinancialStats(Carbon $from, Carbon $to): array
     {
-        // Get clinic payments (subscription payments)
-        $paymentsQuery = DB::table('subscription_payments')
-            ->whereBetween('paid_at', [$from, $to]);
+        // Get clinic payments (subscription payments) - Exclude demo clinics
+        $totalRevenue = DB::table('subscription_payments')
+            ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
+            ->where('clinics.is_demo', false)
+            ->whereBetween('subscription_payments.paid_at', [$from, $to])
+            ->sum('subscription_payments.amount');
 
-        $totalRevenue = $paymentsQuery->sum('amount');
         $paymentCount = DB::table('subscription_payments')
-            ->whereBetween('paid_at', [$from, $to])
+            ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
+            ->where('clinics.is_demo', false)
+            ->whereBetween('subscription_payments.paid_at', [$from, $to])
             ->count();
 
-        // Calculate expected revenue from active subscriptions
+        // Calculate expected revenue from active subscriptions (excluding demo)
         $expectedRevenue = $this->calculateExpectedRevenue($from, $to);
 
-        // Get service charges
-        $serviceCharges = Clinic::whereBetween('service_charge_date', [$from, $to])
+        // Get service charges (excluding demo clinics)
+        $serviceCharges = Clinic::where('is_demo', false)
+            ->whereBetween('service_charge_date', [$from, $to])
             ->sum('service_charge_amount');
 
         // Calculate expenses (operational costs - if tracked)
@@ -150,10 +156,12 @@ class FinanceController extends Controller
 
     /**
      * Calculate expected revenue from active subscriptions.
+     * Excludes demo clinics - only counts paying tenants.
      */
     private function calculateExpectedRevenue(Carbon $from, Carbon $to): float
     {
         $activeClinics = Clinic::where('is_active', true)
+            ->where('is_demo', false) // Exclude demo clinics
             ->whereNotNull('plan_id')
             ->get();
 
@@ -170,25 +178,48 @@ class FinanceController extends Controller
 
     /**
      * Get tenant statistics.
+     * Separates demo clinics from paying tenants.
      */
     private function getTenantStats(Carbon $from, Carbon $to): array
     {
-        $totalTenants = Clinic::count();
-        $activeTenants = Clinic::where('is_active', true)->count();
-        $inactiveTenants = Clinic::where('is_active', false)->count();
+        // Paying tenants (excluding demos)
+        $totalTenants = Clinic::where('is_demo', false)->count();
+        $activeTenants = Clinic::where('is_active', true)->where('is_demo', false)->count();
+        $inactiveTenants = Clinic::where('is_active', false)->where('is_demo', false)->count();
+
+        // Demo clinics (separate count)
         $demoTenants = Clinic::where('is_demo', true)->count();
+        $activeDemos = Clinic::where('is_demo', true)->where('is_active', true)->count();
 
-        // New tenants in period
-        $newTenants = Clinic::whereBetween('created_at', [$from, $to])->count();
-
-        // Total users across all clinics
-        $totalUsers = User::whereNotNull('clinic_id')->count();
-        $activeUsers = User::whereNotNull('clinic_id')
-            ->where('is_active', true)
+        // New paying tenants in period (excluding demos)
+        $newTenants = Clinic::where('is_demo', false)
+            ->whereBetween('created_at', [$from, $to])
             ->count();
 
-        // Users by role distribution
+        // New demo clinics in period
+        $newDemos = Clinic::where('is_demo', true)
+            ->whereBetween('created_at', [$from, $to])
+            ->count();
+
+        // Total users across all clinics (excluding demo clinic users)
+        $totalUsers = User::whereNotNull('clinic_id')
+            ->whereHas('clinic', function($query) {
+                $query->where('is_demo', false);
+            })
+            ->count();
+
+        $activeUsers = User::whereNotNull('clinic_id')
+            ->where('is_active', true)
+            ->whereHas('clinic', function($query) {
+                $query->where('is_demo', false);
+            })
+            ->count();
+
+        // Users by role distribution (paying tenants only)
         $usersByRole = User::whereNotNull('clinic_id')
+            ->whereHas('clinic', function($query) {
+                $query->where('is_demo', false);
+            })
             ->select('role', DB::raw('count(*) as count'))
             ->groupBy('role')
             ->pluck('count', 'role')
@@ -199,7 +230,9 @@ class FinanceController extends Controller
             'active_tenants' => $activeTenants,
             'inactive_tenants' => $inactiveTenants,
             'demo_tenants' => $demoTenants,
+            'active_demos' => $activeDemos,
             'new_tenants' => $newTenants,
+            'new_demos' => $newDemos,
             'total_users' => $totalUsers,
             'active_users' => $activeUsers,
             'users_by_role' => $usersByRole,
@@ -216,11 +249,13 @@ class FinanceController extends Controller
 
     /**
      * Get recent receipts/payments.
+     * Excludes demo clinic payments.
      */
     private function getRecentReceipts()
     {
         return DB::table('subscription_payments')
             ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
+            ->where('clinics.is_demo', false) // Exclude demo clinics
             ->select(
                 'subscription_payments.*',
                 'clinics.name as clinic_name'
@@ -232,6 +267,7 @@ class FinanceController extends Controller
 
     /**
      * Get revenue chart data.
+     * Excludes demo clinic payments.
      */
     private function getRevenueChartData(string $period, Carbon $from, Carbon $to): array
     {
@@ -246,8 +282,10 @@ class FinanceController extends Controller
                 for ($date = $from->copy(); $date->lte($to); $date->addDay()) {
                     $labels[] = $date->format('M d');
                     $revenueData[] = DB::table('subscription_payments')
-                        ->whereDate('paid_at', $date)
-                        ->sum('amount');
+                        ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
+                        ->where('clinics.is_demo', false)
+                        ->whereDate('subscription_payments.paid_at', $date)
+                        ->sum('subscription_payments.amount');
                     $expenseData[] = 0; // Placeholder
                 }
                 break;
@@ -259,8 +297,10 @@ class FinanceController extends Controller
                     $weekEnd = $date->copy()->endOfWeek()->min($to);
                     $labels[] = 'Week ' . $date->weekOfYear;
                     $revenueData[] = DB::table('subscription_payments')
-                        ->whereBetween('paid_at', [$date, $weekEnd])
-                        ->sum('amount');
+                        ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
+                        ->where('clinics.is_demo', false)
+                        ->whereBetween('subscription_payments.paid_at', [$date, $weekEnd])
+                        ->sum('subscription_payments.amount');
                     $expenseData[] = 0; // Placeholder
                 }
                 break;
@@ -272,8 +312,10 @@ class FinanceController extends Controller
                     $monthEnd = $date->copy()->endOfMonth()->min($to);
                     $labels[] = $date->format('M Y');
                     $revenueData[] = DB::table('subscription_payments')
-                        ->whereBetween('paid_at', [$date, $monthEnd])
-                        ->sum('amount');
+                        ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
+                        ->where('clinics.is_demo', false)
+                        ->whereBetween('subscription_payments.paid_at', [$date, $monthEnd])
+                        ->sum('subscription_payments.amount');
                     $expenseData[] = 0; // Placeholder
                 }
                 break;
@@ -282,8 +324,10 @@ class FinanceController extends Controller
                 // Monthly breakdown for custom period
                 $labels = ['Period Total'];
                 $revenueData = [DB::table('subscription_payments')
-                    ->whereBetween('paid_at', [$from, $to])
-                    ->sum('amount')];
+                    ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
+                    ->where('clinics.is_demo', false)
+                    ->whereBetween('subscription_payments.paid_at', [$from, $to])
+                    ->sum('subscription_payments.amount')];
                 $expenseData = [0];
         }
 

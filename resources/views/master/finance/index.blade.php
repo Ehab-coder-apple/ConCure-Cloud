@@ -154,12 +154,17 @@
     </div>
 
     <!-- Tenant & User Statistics -->
+    <div class="alert alert-warning mb-3">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Note:</strong> Financial metrics exclude demo clinics. Tenant and user statistics show paying tenants only.
+    </div>
+
     <div class="row mb-4">
-        <!-- Total Tenants -->
+        <!-- Total Tenants (Paying) -->
         <div class="col-lg-2 col-md-4 mb-3">
             <div class="card border-left-dark h-100">
                 <div class="card-body">
-                    <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Total Tenants</div>
+                    <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Paying Tenants</div>
                     <div class="h5 mb-0 font-weight-bold text-gray-800">
                         {{ number_format($tenantStats['total_tenants']) }}
                     </div>
@@ -168,7 +173,7 @@
             </div>
         </div>
 
-        <!-- Active Tenants -->
+        <!-- Active Tenants (Paying) -->
         <div class="col-lg-2 col-md-4 mb-3">
             <div class="card border-left-success h-100">
                 <div class="card-body">
@@ -181,7 +186,7 @@
             </div>
         </div>
 
-        <!-- Inactive Tenants -->
+        <!-- Inactive Tenants (Paying) -->
         <div class="col-lg-2 col-md-4 mb-3">
             <div class="card border-left-danger h-100">
                 <div class="card-body">
@@ -194,20 +199,25 @@
             </div>
         </div>
 
-        <!-- Demo Tenants -->
+        <!-- Demo Tenants (Separate) -->
         <div class="col-lg-2 col-md-4 mb-3">
             <div class="card border-left-warning h-100">
                 <div class="card-body">
-                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Demo</div>
+                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Demo Clinics</div>
                     <div class="h5 mb-0 font-weight-bold text-gray-800">
                         {{ number_format($tenantStats['demo_tenants']) }}
                     </div>
-                    <small class="text-muted">Trial</small>
+                    <small class="text-muted">
+                        {{ number_format($tenantStats['active_demos']) }} active
+                        @if($tenantStats['new_demos'] > 0)
+                            <span class="text-success">(+{{ $tenantStats['new_demos'] }} new)</span>
+                        @endif
+                    </small>
                 </div>
             </div>
         </div>
 
-        <!-- Total Users -->
+        <!-- Total Users (Paying Tenants Only) -->
         <div class="col-lg-2 col-md-4 mb-3">
             <div class="card border-left-info h-100">
                 <div class="card-body">
@@ -215,12 +225,12 @@
                     <div class="h5 mb-0 font-weight-bold text-gray-800">
                         {{ number_format($tenantStats['total_users']) }}
                     </div>
-                    <small class="text-muted">All clinics</small>
+                    <small class="text-muted">Paying clinics</small>
                 </div>
             </div>
         </div>
 
-        <!-- Active Users -->
+        <!-- Active Users (Paying Tenants Only) -->
         <div class="col-lg-2 col-md-4 mb-3">
             <div class="card border-left-primary h-100">
                 <div class="card-body">
