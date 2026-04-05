@@ -82,7 +82,7 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 {{ $currencySymbol }}{{ number_format($stats['total_revenue'], 2) }}
                             </div>
-                            <small class="text-muted">From {{ $stats['payment_count'] }} payments</small>
+                            <small class="text-muted">From {{ $stats['payment_count'] }} payments <span class="badge bg-info" style="font-size: 0.6rem;">Multi-Currency</span></small>
                         </div>
                         <div class="icon-circle bg-success text-white">
                             <i class="fas fa-dollar-sign"></i>
@@ -274,6 +274,10 @@
                     @if($recentReceipts->count() > 0)
                         <div class="list-group list-group-flush">
                             @foreach($recentReceipts as $receipt)
+                                @php
+                                    $receiptCurrency = $receipt->currency ?? 'USD';
+                                    $receiptSymbol = App\Models\MasterInvoice::getCurrencySymbolStatic($receiptCurrency);
+                                @endphp
                                 <div class="list-group-item px-0">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
@@ -283,7 +287,7 @@
                                             </small>
                                         </div>
                                         <span class="badge bg-success">
-                                            {{ $currencySymbol }}{{ number_format($receipt->amount, 2) }}
+                                            {{ $receiptSymbol }}{{ number_format($receipt->amount, 2) }}
                                         </span>
                                     </div>
                                     @if($receipt->note)
@@ -557,15 +561,20 @@ const revenueChart = new Chart(ctx, {
 // Currency symbols map
 const currencySymbols = {
     'USD': '$',
-    'IQD': 'IQD',
-    'JOD': 'JD',
-    'EGP': 'EGP'
+    'IQD': 'IQD ',
+    'JOD': 'JD ',
+    'EGP': 'EGP '
 };
 
 // Update currency symbol when currency changes (Payment form)
 document.getElementById('payment_currency').addEventListener('change', function() {
     const symbol = currencySymbols[this.value] || '$';
     document.getElementById('payment_currency_symbol').textContent = symbol;
+});
+
+// Update currency symbol when currency changes (Invoice form)
+document.getElementById('invoice_currency').addEventListener('change', function() {
+    calculateInvoiceSubtotal();
 });
 
 // Invoice Item Management
@@ -630,7 +639,12 @@ function calculateInvoiceSubtotal() {
         const price = parseFloat(item.querySelector('.item-price').value) || 0;
         subtotal += qty * price;
     });
-    document.getElementById('invoice_subtotal').value = '{{ $currencySymbol }}' + subtotal.toFixed(2);
+
+    // Get selected currency
+    const currency = document.getElementById('invoice_currency').value || 'USD';
+    const symbol = currencySymbols[currency] || '$';
+
+    document.getElementById('invoice_subtotal').value = symbol + subtotal.toFixed(2);
 }
 
 // Create Invoice Form
@@ -661,11 +675,18 @@ document.getElementById('createInvoiceForm').addEventListener('submit', function
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content || formData.get('_token')
+            'X-CSRF-TOKEN': formData.get('_token')
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.message || 'Server error');
+            });
+        }
+        return response.json();
+    })
     .then(result => {
         if (result.success) {
             alert('Invoice created successfully');
@@ -675,8 +696,8 @@ document.getElementById('createInvoiceForm').addEventListener('submit', function
         }
     })
     .catch(error => {
-        alert('Error creating invoice');
-        console.error(error);
+        alert('Error creating invoice: ' + error.message);
+        console.error('Full error:', error);
     });
 });
 
