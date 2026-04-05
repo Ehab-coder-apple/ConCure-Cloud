@@ -13,10 +13,12 @@ class SubscriptionPayment extends Model
     protected $fillable = [
         'clinic_id',
         'amount',
+        'currency',
         'paid_at',
         'method',
         'reference',
         'notes',
+        'note',
     ];
 
     protected $casts = [
