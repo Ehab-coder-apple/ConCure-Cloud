@@ -346,6 +346,7 @@ class FinanceController extends Controller
     {
         $request->validate([
             'clinic_id' => 'required|exists:clinics,id',
+            'currency' => 'required|in:USD,IQD,JOD,EGP',
             'due_date' => 'required|date',
             'items' => 'required|array|min:1',
             'items.*.description' => 'required|string',
@@ -360,6 +361,7 @@ class FinanceController extends Controller
         try {
             $invoice = MasterInvoice::create([
                 'clinic_id' => $request->clinic_id,
+                'currency' => $request->currency,
                 'invoice_date' => now(),
                 'due_date' => $request->due_date,
                 'tax_rate' => $request->tax_rate ?? 0,
@@ -406,6 +408,7 @@ class FinanceController extends Controller
     {
         $request->validate([
             'clinic_id' => 'required|exists:clinics,id',
+            'currency' => 'required|in:USD,IQD,JOD,EGP',
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|string',
             'paid_at' => 'required|date',
@@ -417,6 +420,7 @@ class FinanceController extends Controller
             $payment = SubscriptionPayment::create([
                 'clinic_id' => $request->clinic_id,
                 'amount' => $request->amount,
+                'currency' => $request->currency,
                 'paid_at' => $request->paid_at,
                 'note' => $request->note,
             ]);
@@ -473,9 +477,8 @@ class FinanceController extends Controller
     public function printInvoice(MasterInvoice $invoice)
     {
         $invoice->load('clinic', 'items');
-        $currencySymbol = config('concure.currency_symbol', '$');
 
-        return view('master.finance.invoice-print', compact('invoice', 'currencySymbol'));
+        return view('master.finance.invoice-print', compact('invoice'));
     }
 
     /**
@@ -484,9 +487,8 @@ class FinanceController extends Controller
     public function downloadInvoicePDF(MasterInvoice $invoice)
     {
         $invoice->load('clinic', 'items');
-        $currencySymbol = config('concure.currency_symbol', '$');
 
-        $pdf = Pdf::loadView('master.finance.invoice-pdf', compact('invoice', 'currencySymbol'));
+        $pdf = Pdf::loadView('master.finance.invoice-pdf', compact('invoice'));
 
         return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
     }

@@ -319,7 +319,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="invoice_clinic_id" class="form-label">Clinic <span class="text-danger">*</span></label>
                             <select class="form-select" id="invoice_clinic_id" name="clinic_id" required>
                                 <option value="">Select Clinic</option>
@@ -328,7 +328,16 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label for="invoice_currency" class="form-label">Currency <span class="text-danger">*</span></label>
+                            <select class="form-select" id="invoice_currency" name="currency" required>
+                                <option value="USD">US Dollar ($)</option>
+                                <option value="IQD">Iraqi Dinar (IQD)</option>
+                                <option value="JOD">Jordanian Dinar (JD)</option>
+                                <option value="EGP">Egyptian Pound (EGP)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label for="invoice_due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" id="invoice_due_date" name="due_date" required>
                         </div>
@@ -416,9 +425,19 @@
                     </div>
 
                     <div class="mb-3">
+                        <label for="payment_currency" class="form-label">Currency <span class="text-danger">*</span></label>
+                        <select class="form-select" id="payment_currency" name="currency" required>
+                            <option value="USD">US Dollar ($)</option>
+                            <option value="IQD">Iraqi Dinar (IQD)</option>
+                            <option value="JOD">Jordanian Dinar (JD)</option>
+                            <option value="EGP">Egyptian Pound (EGP)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="payment_amount" class="form-label">Amount <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <span class="input-group-text">{{ $currencySymbol }}</span>
+                            <span class="input-group-text" id="payment_currency_symbol">$</span>
                             <input type="number" class="form-control" id="payment_amount" name="amount" min="0.01" step="0.01" required>
                         </div>
                     </div>
@@ -535,6 +554,20 @@ const revenueChart = new Chart(ctx, {
     }
 });
 
+// Currency symbols map
+const currencySymbols = {
+    'USD': '$',
+    'IQD': 'IQD',
+    'JOD': 'JD',
+    'EGP': 'EGP'
+};
+
+// Update currency symbol when currency changes (Payment form)
+document.getElementById('payment_currency').addEventListener('change', function() {
+    const symbol = currencySymbols[this.value] || '$';
+    document.getElementById('payment_currency_symbol').textContent = symbol;
+});
+
 // Invoice Item Management
 let itemIndex = 1;
 
@@ -607,6 +640,7 @@ document.getElementById('createInvoiceForm').addEventListener('submit', function
     const formData = new FormData(this);
     const data = {
         clinic_id: formData.get('clinic_id'),
+        currency: formData.get('currency'),
         due_date: formData.get('due_date'),
         tax_rate: formData.get('tax_rate'),
         discount_amount: formData.get('discount_amount'),

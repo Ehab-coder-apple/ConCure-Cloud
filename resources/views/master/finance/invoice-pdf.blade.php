@@ -1,3 +1,6 @@
+@php
+    $currencySymbol = $invoice->getCurrencySymbol();
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>

@@ -37,6 +37,10 @@
     </style>
 </head>
 <body>
+    @php
+        $currencySymbol = $invoice->getCurrencySymbol();
+    @endphp
+
     <div class="container my-4">
         <div class="no-print mb-3">
             <button onclick="window.print()" class="btn btn-primary">

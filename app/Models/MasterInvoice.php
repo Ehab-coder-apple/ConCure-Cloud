@@ -14,6 +14,7 @@ class MasterInvoice extends Model
     protected $fillable = [
         'invoice_number',
         'clinic_id',
+        'currency',
         'invoice_date',
         'due_date',
         'subtotal',
@@ -50,6 +51,13 @@ class MasterInvoice extends Model
         'partial' => 'Partially Paid',
         'overdue' => 'Overdue',
         'cancelled' => 'Cancelled',
+    ];
+
+    const CURRENCIES = [
+        'USD' => '$',
+        'IQD' => 'IQD',
+        'JOD' => 'JD',
+        'EGP' => 'EGP',
     ];
 
     /**
@@ -150,5 +158,21 @@ class MasterInvoice extends Model
         $this->payment_date = $paymentDate ?? now();
         $this->calculateTotals();
         $this->save();
+    }
+
+    /**
+     * Get currency symbol.
+     */
+    public function getCurrencySymbol(): string
+    {
+        return self::CURRENCIES[$this->currency] ?? '$';
+    }
+
+    /**
+     * Get currency symbol for a given currency code.
+     */
+    public static function getCurrencySymbolStatic(string $currency): string
+    {
+        return self::CURRENCIES[$currency] ?? '$';
     }
 }
