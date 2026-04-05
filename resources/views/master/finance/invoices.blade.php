@@ -128,6 +128,86 @@
     </div>
 </div>
 
+<!-- Edit Invoice Modal -->
+<div class="modal fade" id="editInvoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <form id="editInvoiceForm">
+                @csrf
+                <input type="hidden" id="edit_invoice_id" name="invoice_id">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit Invoice
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_invoice_clinic_id" class="form-label">Clinic <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_invoice_clinic_id" name="clinic_id" required>
+                                <option value="">Select Clinic</option>
+                                @foreach(App\Models\Clinic::where('is_demo', false)->orderBy('name')->get() as $clinic)
+                                    <option value="{{ $clinic->id }}">{{ $clinic->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_invoice_currency" class="form-label">Currency <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_invoice_currency" name="currency" required>
+                                <option value="USD">US Dollar ($)</option>
+                                <option value="IQD">Iraqi Dinar (IQD)</option>
+                                <option value="JOD">Jordanian Dinar (JD)</option>
+                                <option value="EGP">Egyptian Pound (EGP)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_invoice_due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="edit_invoice_due_date" name="due_date" required>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Items -->
+                    <div class="mb-3">
+                        <label class="form-label">Invoice Items <span class="text-danger">*</span></label>
+                        <div id="editInvoiceItemsContainer"></div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="addEditInvoiceItem">
+                            <i class="fas fa-plus me-1"></i> Add Item
+                        </button>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_invoice_tax_rate" class="form-label">Tax Rate (%)</label>
+                            <input type="number" class="form-control" id="edit_invoice_tax_rate" name="tax_rate" min="0" max="100" step="0.01" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit_invoice_discount" class="form-label">Discount Amount</label>
+                            <input type="number" class="form-control" id="edit_invoice_discount" name="discount_amount" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Subtotal</label>
+                            <input type="text" class="form-control" id="edit_invoice_subtotal" readonly value="$0.00">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_invoice_notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="edit_invoice_notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Update Invoice
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Record Payment Modal -->
 <div class="modal fade" id="recordInvoicePaymentModal" tabindex="-1">
     <div class="modal-dialog">
@@ -233,8 +313,35 @@ document.getElementById('recordInvoicePaymentForm').addEventListener('submit', f
 });
 
 function editInvoice(invoiceId) {
-    alert('Edit invoice functionality - Coming soon!\nInvoice ID: ' + invoiceId);
-    // TODO: Implement edit modal
+    const invoice = invoicesData.find(inv => inv.id === invoiceId);
+    if (!invoice) return;
+
+    // Populate edit form
+    document.getElementById('edit_invoice_id').value = invoice.id;
+    document.getElementById('edit_invoice_clinic_id').value = invoice.clinic_id;
+    document.getElementById('edit_invoice_currency').value = invoice.currency;
+    document.getElementById('edit_invoice_due_date').value = invoice.due_date;
+    document.getElementById('edit_invoice_tax_rate').value = invoice.tax_rate || 0;
+    document.getElementById('edit_invoice_discount').value = invoice.discount_amount || 0;
+    document.getElementById('edit_invoice_notes').value = invoice.notes || '';
+
+    // Clear existing items
+    document.getElementById('editInvoiceItemsContainer').innerHTML = '';
+
+    // Add invoice items
+    if (invoice.items && invoice.items.length > 0) {
+        invoice.items.forEach((item, index) => {
+            addEditInvoiceItem(item.description, item.quantity, item.unit_price, index);
+        });
+    } else {
+        addEditInvoiceItem('', 1, 0, 0);
+    }
+
+    editItemIndex = invoice.items ? invoice.items.length : 1;
+    updateEditRemoveButtons();
+    calculateEditInvoiceSubtotal();
+
+    new bootstrap.Modal(document.getElementById('editInvoiceModal')).show();
 }
 
 function deleteInvoice(invoiceId) {
@@ -265,5 +372,146 @@ function deleteInvoice(invoiceId) {
         console.error(error);
     });
 }
+
+// Edit Invoice Item Management
+let editItemIndex = 1;
+
+const currencySymbols = {
+    'USD': '$',
+    'IQD': 'IQD ',
+    'JOD': 'JD ',
+    'EGP': 'EGP '
+};
+
+function addEditInvoiceItem(description = '', quantity = 1, price = 0, index = null) {
+    const idx = index !== null ? index : editItemIndex++;
+    const container = document.getElementById('editInvoiceItemsContainer');
+    const newItem = document.createElement('div');
+    newItem.className = 'edit-invoice-item row mb-2';
+    newItem.innerHTML = `
+        <div class="col-md-5">
+            <input type="text" class="form-control" name="items[${idx}][description]" placeholder="Description" value="${description}" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" class="form-control edit-item-quantity" name="items[${idx}][quantity]" placeholder="Qty" min="1" value="${quantity}" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" class="form-control edit-item-price" name="items[${idx}][unit_price]" placeholder="Unit Price" min="0" step="0.01" value="${price}" required>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-danger btn-sm edit-remove-item">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(newItem);
+}
+
+document.getElementById('addEditInvoiceItem').addEventListener('click', function() {
+    addEditInvoiceItem();
+    updateEditRemoveButtons();
+});
+
+document.getElementById('editInvoiceItemsContainer').addEventListener('click', function(e) {
+    if (e.target.closest('.edit-remove-item')) {
+        e.target.closest('.edit-invoice-item').remove();
+        updateEditRemoveButtons();
+        calculateEditInvoiceSubtotal();
+    }
+});
+
+function updateEditRemoveButtons() {
+    const items = document.querySelectorAll('.edit-invoice-item');
+    items.forEach((item) => {
+        const removeBtn = item.querySelector('.edit-remove-item');
+        if (items.length === 1) {
+            removeBtn.disabled = true;
+        } else {
+            removeBtn.disabled = false;
+        }
+    });
+}
+
+// Update currency symbol when currency changes (Edit Invoice form)
+document.getElementById('edit_invoice_currency').addEventListener('change', function() {
+    calculateEditInvoiceSubtotal();
+});
+
+// Calculate subtotal for edit form
+document.getElementById('editInvoiceItemsContainer').addEventListener('input', function(e) {
+    if (e.target.classList.contains('edit-item-quantity') || e.target.classList.contains('edit-item-price')) {
+        calculateEditInvoiceSubtotal();
+    }
+});
+
+function calculateEditInvoiceSubtotal() {
+    let subtotal = 0;
+    document.querySelectorAll('.edit-invoice-item').forEach(item => {
+        const qty = parseFloat(item.querySelector('.edit-item-quantity').value) || 0;
+        const price = parseFloat(item.querySelector('.edit-item-price').value) || 0;
+        subtotal += qty * price;
+    });
+
+    const currency = document.getElementById('edit_invoice_currency').value || 'USD';
+    const symbol = currencySymbols[currency] || '$';
+
+    document.getElementById('edit_invoice_subtotal').value = symbol + subtotal.toFixed(2);
+}
+
+// Submit Edit Invoice Form
+document.getElementById('editInvoiceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const invoiceId = document.getElementById('edit_invoice_id').value;
+    const formData = new FormData(this);
+    const data = {
+        clinic_id: formData.get('clinic_id'),
+        currency: formData.get('currency'),
+        due_date: formData.get('due_date'),
+        tax_rate: formData.get('tax_rate'),
+        discount_amount: formData.get('discount_amount'),
+        notes: formData.get('notes'),
+        items: []
+    };
+
+    // Collect items
+    document.querySelectorAll('.edit-invoice-item').forEach((item, index) => {
+        const inputs = item.querySelectorAll('input');
+        data.items.push({
+            description: inputs[0].value,
+            quantity: parseFloat(inputs[1].value),
+            unit_price: parseFloat(inputs[2].value)
+        });
+    });
+
+    fetch(`/master/finance/invoice/${invoiceId}/update`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': formData.get('_token')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.message || 'Server error');
+            });
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            alert('Invoice updated successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    })
+    .catch(error => {
+        alert('Error updating invoice: ' + error.message);
+        console.error('Full error:', error);
+    });
+});
 </script>
 @endsection

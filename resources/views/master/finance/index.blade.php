@@ -419,6 +419,82 @@
     </div>
 </div>
 
+<!-- Edit Payment Modal -->
+<div class="modal fade" id="editPaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editPaymentForm">
+                @csrf
+                <input type="hidden" id="edit_payment_id" name="payment_id">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit Payment
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_payment_clinic_id" class="form-label">Clinic <span class="text-danger">*</span></label>
+                        <select class="form-select" id="edit_payment_clinic_id" name="clinic_id" required>
+                            <option value="">Select Clinic</option>
+                            @foreach(App\Models\Clinic::where('is_demo', false)->orderBy('name')->get() as $clinic)
+                                <option value="{{ $clinic->id }}">{{ $clinic->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_payment_currency" class="form-label">Currency <span class="text-danger">*</span></label>
+                        <select class="form-select" id="edit_payment_currency" name="currency" required>
+                            <option value="USD">US Dollar ($)</option>
+                            <option value="IQD">Iraqi Dinar (IQD)</option>
+                            <option value="JOD">Jordanian Dinar (JD)</option>
+                            <option value="EGP">Egyptian Pound (EGP)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_payment_amount" class="form-label">Amount <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text" id="edit_payment_currency_symbol">$</span>
+                            <input type="number" class="form-control" id="edit_payment_amount" name="amount" min="0.01" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_payment_method" class="form-label">Payment Method <span class="text-danger">*</span></label>
+                        <select class="form-select" id="edit_payment_method" name="payment_method" required>
+                            <option value="">Select Method</option>
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="credit_card">Credit Card</option>
+                            <option value="check">Check</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_payment_paid_at" class="form-label">Payment Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="edit_payment_paid_at" name="paid_at" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_payment_note" class="form-label">Note</label>
+                        <textarea class="form-control" id="edit_payment_note" name="note" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Update Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Record Payment Modal -->
 <div class="modal fade" id="createReceiptModal" tabindex="-1">
     <div class="modal-dialog">
@@ -744,11 +820,75 @@ document.getElementById('recordPaymentForm').addEventListener('submit', function
     });
 });
 
+// Store payments data for JavaScript access
+const paymentsData = @json($recentReceipts);
+
+// Update currency symbol when currency changes (Edit Payment form)
+document.getElementById('edit_payment_currency').addEventListener('change', function() {
+    const symbol = currencySymbols[this.value] || '$';
+    document.getElementById('edit_payment_currency_symbol').textContent = symbol;
+});
+
 // Edit Payment
 function editPayment(paymentId) {
-    alert('Edit payment functionality - Coming soon!\nPayment ID: ' + paymentId);
-    // TODO: Implement edit payment modal
+    const payment = paymentsData.find(p => p.id === paymentId);
+    if (!payment) {
+        alert('Payment not found');
+        return;
+    }
+
+    // Populate edit form
+    document.getElementById('edit_payment_id').value = payment.id;
+    document.getElementById('edit_payment_clinic_id').value = payment.clinic_id;
+    document.getElementById('edit_payment_currency').value = payment.currency || 'USD';
+    document.getElementById('edit_payment_amount').value = payment.amount;
+    document.getElementById('edit_payment_method').value = payment.method || '';
+    document.getElementById('edit_payment_paid_at').value = payment.paid_at ? payment.paid_at.split(' ')[0] : '';
+    document.getElementById('edit_payment_note').value = payment.note || '';
+
+    // Update currency symbol
+    const symbol = currencySymbols[payment.currency || 'USD'] || '$';
+    document.getElementById('edit_payment_currency_symbol').textContent = symbol;
+
+    new bootstrap.Modal(document.getElementById('editPaymentModal')).show();
 }
+
+// Submit Edit Payment Form
+document.getElementById('editPaymentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const paymentId = document.getElementById('edit_payment_id').value;
+    const formData = new FormData(this);
+
+    fetch(`/master/finance/payment/${paymentId}/update`, {
+        method: 'PUT',
+        headers: {
+            'X-CSRF-TOKEN': formData.get('_token'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            clinic_id: formData.get('clinic_id'),
+            currency: formData.get('currency'),
+            amount: formData.get('amount'),
+            payment_method: formData.get('payment_method'),
+            paid_at: formData.get('paid_at'),
+            note: formData.get('note')
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert('Payment updated successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    })
+    .catch(error => {
+        alert('Error updating payment');
+        console.error(error);
+    });
+});
 
 // Delete Payment
 function deletePayment(paymentId) {
