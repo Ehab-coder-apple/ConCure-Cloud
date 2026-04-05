@@ -275,7 +275,8 @@
                         <div class="list-group list-group-flush">
                             @foreach($recentReceipts as $receipt)
                                 @php
-                                    $receiptCurrency = $receipt->currency ?? 'USD';
+                                    // Check if currency field exists (after migration)
+                                    $receiptCurrency = isset($receipt->currency) ? $receipt->currency : 'USD';
                                     $receiptSymbol = App\Models\MasterInvoice::getCurrencySymbolStatic($receiptCurrency);
                                 @endphp
                                 <div class="list-group-item px-0">
@@ -290,7 +291,7 @@
                                             {{ $receiptSymbol }}{{ number_format($receipt->amount, 2) }}
                                         </span>
                                     </div>
-                                    @if($receipt->note)
+                                    @if(isset($receipt->note) && $receipt->note)
                                         <small class="text-muted d-block mt-1">{{ $receipt->note }}</small>
                                     @endif
                                 </div>
