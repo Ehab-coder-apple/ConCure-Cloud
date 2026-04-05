@@ -1,0 +1,443 @@
+@extends('master.layouts.app')
+
+@section('title', 'Financial Dashboard')
+
+@section('content')
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="fas fa-chart-line text-success me-2"></i>
+                Financial Dashboard
+            </h1>
+            <p class="text-muted mb-0">Master SaaS Financial Overview</p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createInvoiceModal">
+                <i class="fas fa-file-invoice me-1"></i>
+                Create Invoice
+            </button>
+            <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#createReceiptModal">
+                <i class="fas fa-receipt me-1"></i>
+                Record Payment
+            </button>
+        </div>
+    </div>
+
+    <!-- Period Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ route('master.finance.index') }}" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="period" class="form-label">Time Period</label>
+                    <select class="form-select" id="period" name="period" onchange="toggleCustomDates()">
+                        <option value="today" {{ $period == 'today' ? 'selected' : '' }}>Today</option>
+                        <option value="week" {{ $period == 'week' ? 'selected' : '' }}>This Week</option>
+                        <option value="month" {{ $period == 'month' ? 'selected' : '' }}>This Month</option>
+                        <option value="quarter" {{ $period == 'quarter' ? 'selected' : '' }}>This Quarter</option>
+                        <option value="semester" {{ $period == 'semester' ? 'selected' : '' }}>This Semester</option>
+                        <option value="year" {{ $period == 'year' ? 'selected' : '' }}>This Year</option>
+                        <option value="custom" {{ $period == 'custom' ? 'selected' : '' }}>Custom Range</option>
+                    </select>
+                </div>
+                <div class="col-md-3" id="customFromDiv" style="display: {{ $period == 'custom' ? 'block' : 'none' }}">
+                    <label for="from" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="from" name="from" value="{{ $from->format('Y-m-d') }}">
+                </div>
+                <div class="col-md-3" id="customToDiv" style="display: {{ $period == 'custom' ? 'block' : 'none' }}">
+                    <label for="to" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="to" name="to" value="{{ $to->format('Y-m-d') }}">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i>
+                        Apply Filter
+                    </button>
+                    <a href="{{ route('master.finance.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-redo me-1"></i>
+                        Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Period Display -->
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-calendar me-2"></i>
+        <strong>Showing data for:</strong> {{ $from->format('M d, Y') }} - {{ $to->format('M d, Y') }}
+        ({{ $from->diffInDays($to) + 1 }} days)
+    </div>
+
+    <!-- Financial Statistics Cards -->
+    <div class="row mb-4">
+        <!-- Total Revenue -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Revenue</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ $currencySymbol }}{{ number_format($stats['total_revenue'], 2) }}
+                            </div>
+                            <small class="text-muted">From {{ $stats['payment_count'] }} payments</small>
+                        </div>
+                        <div class="icon-circle bg-success text-white">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expected Revenue -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Expected Revenue</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ $currencySymbol }}{{ number_format($stats['expected_revenue'], 2) }}
+                            </div>
+                            <small class="text-muted">Collection: {{ number_format($stats['collection_rate'], 1) }}%</small>
+                        </div>
+                        <div class="icon-circle bg-warning text-white">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Charges -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Service Charges</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ $currencySymbol }}{{ number_format($stats['service_charges'], 2) }}
+                            </div>
+                            <small class="text-muted">Additional fees</small>
+                        </div>
+                        <div class="icon-circle bg-info text-white">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Net Profit -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Net Profit</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ $currencySymbol }}{{ number_format($stats['net_profit'], 2) }}
+                            </div>
+                            <small class="text-muted">Revenue - Expenses</small>
+                        </div>
+                        <div class="icon-circle bg-primary text-white">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tenant & User Statistics -->
+    <div class="row mb-4">
+        <!-- Total Tenants -->
+        <div class="col-lg-2 col-md-4 mb-3">
+            <div class="card border-left-dark h-100">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Total Tenants</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        {{ number_format($tenantStats['total_tenants']) }}
+                    </div>
+                    <small class="text-success">+{{ $tenantStats['new_tenants'] }} this period</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Tenants -->
+        <div class="col-lg-2 col-md-4 mb-3">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        {{ number_format($tenantStats['active_tenants']) }}
+                    </div>
+                    <small class="text-muted">Subscribed</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inactive Tenants -->
+        <div class="col-lg-2 col-md-4 mb-3">
+            <div class="card border-left-danger h-100">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Inactive</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        {{ number_format($tenantStats['inactive_tenants']) }}
+                    </div>
+                    <small class="text-muted">Suspended</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Tenants -->
+        <div class="col-lg-2 col-md-4 mb-3">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Demo</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        {{ number_format($tenantStats['demo_tenants']) }}
+                    </div>
+                    <small class="text-muted">Trial</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Users -->
+        <div class="col-lg-2 col-md-4 mb-3">
+            <div class="card border-left-info h-100">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Users</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        {{ number_format($tenantStats['total_users']) }}
+                    </div>
+                    <small class="text-muted">All clinics</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Users -->
+        <div class="col-lg-2 col-md-4 mb-3">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Active Users</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        {{ number_format($tenantStats['active_users']) }}
+                    </div>
+                    <small class="text-muted">Enabled</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue Chart & Recent Payments -->
+    <div class="row mb-4">
+        <!-- Revenue Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-chart-area me-2"></i>
+                        Revenue Trend
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Payments -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-clock me-2"></i>
+                        Recent Payments
+                    </h6>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    @if($recentReceipts->count() > 0)
+                        <div class="list-group list-group-flush">
+                            @foreach($recentReceipts as $receipt)
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ $receipt->clinic_name }}</h6>
+                                            <small class="text-muted">
+                                                {{ Carbon\Carbon::parse($receipt->paid_at)->format('M d, Y h:i A') }}
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-success">
+                                            {{ $currencySymbol }}{{ number_format($receipt->amount, 2) }}
+                                        </span>
+                                    </div>
+                                    @if($receipt->note)
+                                        <small class="text-muted d-block mt-1">{{ $receipt->note }}</small>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>No recent payments</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Invoice Modal -->
+<div class="modal fade" id="createInvoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Invoice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Invoice management coming soon...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Receipt Modal -->
+<div class="modal fade" id="createReceiptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Record Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">This feature is available in the Reports section under "Quick Add Payment"</p>
+                <a href="{{ route('master.reports') }}" class="btn btn-primary">Go to Reports</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+function toggleCustomDates() {
+    const period = document.getElementById('period').value;
+    const customFromDiv = document.getElementById('customFromDiv');
+    const customToDiv = document.getElementById('customToDiv');
+
+    if (period === 'custom') {
+        customFromDiv.style.display = 'block';
+        customToDiv.style.display = 'block';
+    } else {
+        customFromDiv.style.display = 'none';
+        customToDiv.style.display = 'none';
+    }
+}
+
+// Revenue Chart
+const ctx = document.getElementById('revenueChart').getContext('2d');
+const revenueChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {!! json_encode($revenueChart['labels']) !!},
+        datasets: [
+            {
+                label: 'Revenue',
+                data: {!! json_encode($revenueChart['revenue']) !!},
+                borderColor: 'rgb(40, 167, 69)',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            },
+            {
+                label: 'Expenses',
+                data: {!! json_encode($revenueChart['expenses']) !!},
+                borderColor: 'rgb(220, 53, 69)',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        label += '{{ $currencySymbol }}' + context.parsed.y.toFixed(2);
+                        return label;
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '{{ $currencySymbol }}' + value.toFixed(0);
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+
+<style>
+.icon-circle {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #28a745 !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #ffc107 !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #17a2b8 !important;
+}
+
+.border-left-primary {
+    border-left: 0.25rem solid #007bff !important;
+}
+
+.border-left-dark {
+    border-left: 0.25rem solid #343a40 !important;
+}
+
+.border-left-danger {
+    border-left: 0.25rem solid #dc3545 !important;
+}
+</style>
+@endsection

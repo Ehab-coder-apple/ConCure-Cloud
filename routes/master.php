@@ -11,6 +11,7 @@ use App\Http\Controllers\Master\PaymentsController;
 use App\Http\Controllers\Master\PlanController;
 use App\Http\Controllers\Master\MaintenanceController;
 use App\Http\Controllers\Master\SettingsController;
+use App\Http\Controllers\Master\FinanceController;
 use App\Http\Controllers\StorageQuotaController;
 
 /*
@@ -95,6 +96,9 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     // Features Documentation
     Route::get('/features', [DashboardController::class, 'features'])->name('features');
     Route::get('/features/pdf', [DashboardController::class, 'featuresPdf'])->name('features.pdf');
+
+    // Finance
+    Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
