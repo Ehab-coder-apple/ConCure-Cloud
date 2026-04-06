@@ -82,9 +82,9 @@
                                 @endphp
                                 <tr>
                                     <td><strong>{{ $invoice->invoice_number }}</strong></td>
-                                    <td>{{ $invoice->clinic->name }}</td>
-                                    <td>{{ $invoice->invoice_date->format('M d, Y') }}</td>
-                                    <td>{{ $invoice->due_date->format('M d, Y') }}</td>
+                                    <td>{{ $invoice->clinic ? $invoice->clinic->name : 'N/A' }}</td>
+                                    <td>{{ $invoice->invoice_date ? $invoice->invoice_date->format('M d, Y') : 'N/A' }}</td>
+                                    <td>{{ $invoice->due_date ? $invoice->due_date->format('M d, Y') : 'N/A' }}</td>
                                     <td>{{ $symbol }}{{ number_format($invoice->total_amount, 2) }}</td>
                                     <td class="text-success">{{ $symbol }}{{ number_format($invoice->paid_amount, 2) }}</td>
                                     <td class="text-danger">{{ $symbol }}{{ number_format($invoice->balance, 2) }}</td>
@@ -262,7 +262,7 @@
 
 <script>
 // Store invoices data for JavaScript access
-const invoicesData = @json($invoices->items());
+const invoicesData = @json($invoices->count() > 0 ? $invoices->items() : []);
 
 function openRecordPaymentModal(invoiceId) {
     const invoice = invoicesData.find(inv => inv.id === invoiceId);

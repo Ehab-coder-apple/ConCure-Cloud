@@ -447,20 +447,34 @@ class FinanceController extends Controller
      */
     public function invoices(Request $request)
     {
-        $query = MasterInvoice::with('clinic')
-            ->orderBy('invoice_date', 'desc');
+        try {
+            $query = MasterInvoice::with('clinic')
+                ->orderBy('invoice_date', 'desc');
 
-        if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
+            if ($request->has('status') && $request->status) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->has('clinic_id') && $request->clinic_id) {
+                $query->where('clinic_id', $request->clinic_id);
+            }
+
+            $invoices = $query->paginate(20);
+
+            // Get all clinics for filter
+            $clinics = \App\Models\Clinic::where('is_active', true)
+                ->orderBy('name')
+                ->get();
+
+            return view('master.finance.invoices', compact('invoices', 'clinics'));
+        } catch (\Exception $e) {
+            \Log::error('Error loading invoices page', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Failed to load invoices: ' . $e->getMessage());
         }
-
-        if ($request->has('clinic_id') && $request->clinic_id) {
-            $query->where('clinic_id', $request->clinic_id);
-        }
-
-        $invoices = $query->paginate(20);
-
-        return view('master.finance.invoices', compact('invoices'));
     }
 
     /**
