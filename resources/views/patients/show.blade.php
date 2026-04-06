@@ -127,7 +127,7 @@
                             <div class="row g-2">
                                 <div class="col-6">
                                     <small class="text-muted">{{ __('Age') }}</small>
-                                    <div class="fw-bold">{{ $patient->age ?? ($patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->age : '25') }} {{ __('years') }}</div>
+                                    <div class="fw-bold">{{ $patient->age_formatted ?? 'N/A' }}</div>
                                 </div>
                                 <div class="col-6">
                                     <small class="text-muted">{{ __('Gender') }}</small>

@@ -41,7 +41,7 @@
         <strong>Date:</strong> {{ $prescription->prescribed_date ? $prescription->prescribed_date->format('d/m/Y') : date('d/m/Y') }}
         @if($prescription->patient && $prescription->patient->date_of_birth)
             &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Age:</strong> {{ \Carbon\Carbon::parse($prescription->patient->date_of_birth)->age }}y
+            <strong>Age:</strong> {{ $prescription->patient->age_formatted }}
         @endif
     </div>
 

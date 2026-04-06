@@ -82,7 +82,7 @@
             &nbsp;&nbsp;|&nbsp;&nbsp;
             <strong>Gender:</strong> {{ ucfirst($prescription->patient->gender ?? 'N/A') }}
             &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Age:</strong> @if($prescription->patient->date_of_birth){{ \Carbon\Carbon::parse($prescription->patient->date_of_birth)->age }} years @else N/A @endif
+            <strong>Age:</strong> {{ $prescription->patient->age_formatted ?? 'N/A' }}
             &nbsp;&nbsp;|&nbsp;&nbsp;
             <strong>Date:</strong> {{ $prescription->prescribed_date->format('d/m/Y') }}
         </div>

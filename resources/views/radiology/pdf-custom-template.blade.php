@@ -39,7 +39,7 @@
         <strong>Date:</strong> {{ $radiologyRequest->requested_date->format('d/m/Y') }}
         @if($radiologyRequest->patient->date_of_birth)
             &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Age:</strong> {{ \Carbon\Carbon::parse($radiologyRequest->patient->date_of_birth)->age }}y
+            <strong>Age:</strong> {{ $radiologyRequest->patient->age_formatted }}
         @endif
     </div>
     @php $currentY += $lineSpacing; @endphp

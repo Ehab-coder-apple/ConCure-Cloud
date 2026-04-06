@@ -175,7 +175,10 @@
                                 @if($appointment->date_of_birth)
                                 <div class="col-md-6 mb-3">
                                     <small class="text-muted d-block">{{ __('Age') }}</small>
-                                    <div class="fw-bold">{{ \Carbon\Carbon::parse($appointment->date_of_birth)->age }} {{ __('years') }}</div>
+                                    @php
+                                        $patient = \App\Models\Patient::where('id', $appointment->patient_id)->first();
+                                    @endphp
+                                    <div class="fw-bold">{{ $patient ? $patient->age_formatted : \Carbon\Carbon::parse($appointment->date_of_birth)->age . ' years' }}</div>
                                 </div>
                                 @endif
 

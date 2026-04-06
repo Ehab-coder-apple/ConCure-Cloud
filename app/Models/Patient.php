@@ -737,4 +737,43 @@ class Patient extends Model
             return 0;
         }
     }
+
+    /**
+     * Get patient age formatted with years and months.
+     * For patients under 1 year, shows only months.
+     * For patients 1 year and older, shows years and months.
+     */
+    public function getAgeFormattedAttribute(): string
+    {
+        $rawDob = $this->getAttributes()['date_of_birth'] ?? $this->getRawOriginal('date_of_birth');
+
+        if (empty($rawDob) || $rawDob === '0000-00-00' || $rawDob === '0000-00-00 00:00:00') {
+            return '0 years';
+        }
+
+        try {
+            $dob = \Illuminate\Support\Carbon::parse($rawDob);
+            $years = $dob->age;
+            $totalMonths = $dob->diffInMonths(now());
+            $months = $totalMonths % 12;
+
+            if ($years < 1) {
+                // Under 1 year: show only months
+                return $totalMonths . ' ' . ($totalMonths == 1 ? 'month' : 'months');
+            } elseif ($years < 3) {
+                // 1-2 years: show both years and months
+                if ($months > 0) {
+                    return $years . ' ' . ($years == 1 ? 'year' : 'years') . ', ' .
+                           $months . ' ' . ($months == 1 ? 'month' : 'months');
+                } else {
+                    return $years . ' ' . ($years == 1 ? 'year' : 'years');
+                }
+            } else {
+                // 3+ years: show only years
+                return $years . ' ' . ($years == 1 ? 'year' : 'years');
+            }
+        } catch (\Throwable $e) {
+            return '0 years';
+        }
+    }
 }

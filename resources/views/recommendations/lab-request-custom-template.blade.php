@@ -39,7 +39,7 @@
         <strong>Date:</strong> {{ $labRequest->created_at->format('d/m/Y') }}
         @if($labRequest->patient->date_of_birth)
             &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Age:</strong> {{ \Carbon\Carbon::parse($labRequest->patient->date_of_birth)->age }}y
+            <strong>Age:</strong> {{ $labRequest->patient->age_formatted }}
         @endif
     </div>
     @php $currentY += $lineSpacing; @endphp

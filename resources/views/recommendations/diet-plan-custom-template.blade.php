@@ -36,7 +36,7 @@
         <strong>Date:</strong> {{ $dietPlan->created_at->format('d/m/Y') }}
         @if($dietPlan->patient->date_of_birth)
             &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Age:</strong> {{ \Carbon\Carbon::parse($dietPlan->patient->date_of_birth)->age }}y
+            <strong>Age:</strong> {{ $dietPlan->patient->age_formatted }}
         @endif
     </div>
     @php $currentY += $lineSpacing; @endphp

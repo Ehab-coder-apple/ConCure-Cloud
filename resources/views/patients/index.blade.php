@@ -126,7 +126,7 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{{ $patient->age ?? ($patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->age : '-') }}</td>
+                                        <td>{{ $patient->age_formatted ?? '-' }}</td>
                                         <td>
                                             <span class="badge bg-{{ $patient->gender == 'male' ? 'info' : 'pink' }} text-dark">
                                                 {{ ucfirst($patient->gender ?? 'Unknown') }}

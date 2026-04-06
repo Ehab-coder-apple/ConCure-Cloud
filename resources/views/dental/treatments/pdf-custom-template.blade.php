@@ -36,7 +36,7 @@
         <strong>Date:</strong> {{ now()->format('d/m/Y') }}
         @if($dentalTreatment->patient->date_of_birth)
             &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Age:</strong> {{ \Carbon\Carbon::parse($dentalTreatment->patient->date_of_birth)->age }}y
+            <strong>Age:</strong> {{ $dentalTreatment->patient->age_formatted }}
         @endif
     </div>
     @php $currentY += $lineSpacing; @endphp
