@@ -43,7 +43,9 @@ class FinanceController extends Controller
         // Chart data for revenue trends
         $revenueChart = $this->getRevenueChartData($period, $from, $to);
 
-        $currencySymbol = config('concure.currency_symbol', '$');
+        // Get the most used currency from actual payments
+        $mostUsedCurrency = $this->getMostUsedCurrency();
+        $currencySymbol = $this->getCurrencySymbol($mostUsedCurrency);
 
         return view('master.finance.index', compact(
             'period',
@@ -54,7 +56,8 @@ class FinanceController extends Controller
             'recentInvoices',
             'recentReceipts',
             'revenueChart',
-            'currencySymbol'
+            'currencySymbol',
+            'mostUsedCurrency'
         ));
     }
 
@@ -697,6 +700,39 @@ class FinanceController extends Controller
                 'message' => 'Failed to delete payment: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Get the most used currency from subscription payments.
+     */
+    private function getMostUsedCurrency(): string
+    {
+        $currency = DB::table('subscription_payments')
+            ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
+            ->where('clinics.is_demo', false)
+            ->select('subscription_payments.currency', DB::raw('COUNT(*) as count'))
+            ->groupBy('subscription_payments.currency')
+            ->orderBy('count', 'desc')
+            ->value('currency');
+
+        return $currency ?? 'USD';
+    }
+
+    /**
+     * Get currency symbol from currency code.
+     */
+    private function getCurrencySymbol(string $currency): string
+    {
+        $symbols = [
+            'USD' => '$',
+            'IQD' => 'IQD',
+            'JOD' => 'JD',
+            'EGP' => 'EGP',
+            'EUR' => '€',
+            'GBP' => '£',
+        ];
+
+        return $symbols[$currency] ?? $currency;
     }
 }
 
