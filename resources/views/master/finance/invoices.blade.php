@@ -365,7 +365,14 @@ function deleteInvoice(invoiceId) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.message || 'Server error');
+            });
+        }
+        return response.json();
+    })
     .then(result => {
         if (result.success) {
             alert(result.message);
@@ -375,8 +382,8 @@ function deleteInvoice(invoiceId) {
         }
     })
     .catch(error => {
-        alert('Error deleting invoice');
-        console.error(error);
+        alert('Error deleting invoice: ' + error.message);
+        console.error('Full error:', error);
     });
 }
 

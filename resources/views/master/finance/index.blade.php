@@ -903,7 +903,14 @@ function deletePayment(paymentId) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.message || 'Server error');
+            });
+        }
+        return response.json();
+    })
     .then(result => {
         if (result.success) {
             alert(result.message);
@@ -913,8 +920,8 @@ function deletePayment(paymentId) {
         }
     })
     .catch(error => {
-        alert('Error deleting payment');
-        console.error(error);
+        alert('Error deleting payment: ' + error.message);
+        console.error('Full error:', error);
     });
 }
 </script>
