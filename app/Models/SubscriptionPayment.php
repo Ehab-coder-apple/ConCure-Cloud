@@ -18,7 +18,6 @@ class SubscriptionPayment extends Model
         'method',
         'reference',
         'notes',
-        'note',
     ];
 
     protected $casts = [

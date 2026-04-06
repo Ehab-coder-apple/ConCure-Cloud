@@ -422,7 +422,8 @@ class FinanceController extends Controller
                 'amount' => $request->amount,
                 'currency' => $request->currency,
                 'paid_at' => $request->paid_at,
-                'note' => $request->note,
+                'method' => $request->payment_method,
+                'notes' => $request->note, // Fixed: column name is 'notes' not 'note'
             ]);
 
             DB::commit();
@@ -640,7 +641,7 @@ class FinanceController extends Controller
                 'currency' => $request->currency,
                 'paid_at' => $request->paid_at,
                 'method' => $request->payment_method,
-                'note' => $request->note,
+                'notes' => $request->note, // Fixed: column name is 'notes' not 'note'
             ]);
 
             DB::commit();
