@@ -1,4 +1,4 @@
-@extends('layouts.master')
+@extends('master.layouts.app')
 
 @section('title', 'Master Invoices')
 
