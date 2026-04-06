@@ -620,6 +620,17 @@ class FinanceController extends Controller
             $invoice->calculateTotals();
             $invoice->save();
 
+            // Create a subscription payment record for dashboard tracking
+            SubscriptionPayment::create([
+                'clinic_id' => $invoice->clinic_id,
+                'amount' => $amount,
+                'currency' => $invoice->currency,
+                'paid_at' => $request->payment_date,
+                'method' => $request->payment_method,
+                'reference' => 'Invoice: ' . $invoice->invoice_number,
+                'notes' => 'Payment for invoice ' . $invoice->invoice_number,
+            ]);
+
             DB::commit();
 
             return response()->json([
