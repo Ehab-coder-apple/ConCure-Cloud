@@ -23,7 +23,7 @@ class SubscriptionPayment extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'paid_at' => 'date',
+        'paid_at' => 'datetime',
     ];
 
     public function clinic(): BelongsTo
