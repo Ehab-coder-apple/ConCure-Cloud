@@ -297,7 +297,14 @@ document.getElementById('recordInvoicePaymentForm').addEventListener('submit', f
         },
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.message || 'Server error');
+            });
+        }
+        return response.json();
+    })
     .then(result => {
         if (result.success) {
             alert('Payment recorded successfully');
@@ -307,8 +314,8 @@ document.getElementById('recordInvoicePaymentForm').addEventListener('submit', f
         }
     })
     .catch(error => {
-        alert('Error recording payment');
-        console.error(error);
+        alert('Error recording payment: ' + error.message);
+        console.error('Full error:', error);
     });
 });
 
