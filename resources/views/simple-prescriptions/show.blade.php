@@ -111,12 +111,14 @@
                                 <div class="col-md-6">
                                     <strong>{{ __('Name') }}:</strong> {{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}<br>
                                     <strong>{{ __('Patient ID') }}:</strong> {{ $prescription->patient->patient_id }}<br>
-                                    <strong>{{ __('Gender') }}:</strong> {{ ucfirst($prescription->patient->gender ?? 'Not specified') }}
+                                    <strong>{{ __('Gender') }}:</strong> {{ ucfirst($prescription->patient->gender ?? 'Not specified') }}<br>
+                                    <strong>{{ __('Age') }}:</strong> {{ $prescription->patient->age_formatted ?? 'N/A' }}
                                 </div>
                                 <div class="col-md-6">
                                     <strong>{{ __('Phone') }}:</strong> {{ $prescription->patient->phone ?? 'Not provided' }}<br>
                                     <strong>{{ __('Email') }}:</strong> {{ $prescription->patient->email ?? 'Not provided' }}<br>
-                                    <strong>{{ __('Date of Birth') }}:</strong> {{ $prescription->patient->date_of_birth ? \Carbon\Carbon::parse($prescription->patient->date_of_birth)->format('M d, Y') : 'Not provided' }}
+                                    <strong>{{ __('Weight') }}:</strong> {{ $prescription->patient->latest_weight_kg ?? $prescription->patient->weight ?? 'N/A' }} kg<br>
+                                    <strong>{{ __('Height') }}:</strong> {{ $prescription->patient->height ?? 'N/A' }} cm
                                 </div>
                             </div>
                         </div>

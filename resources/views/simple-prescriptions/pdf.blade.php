@@ -74,6 +74,10 @@
             &nbsp;&nbsp;|&nbsp;&nbsp;
             <strong>Age:</strong> {{ $prescription->patient->age_formatted ?? 'N/A' }}
             &nbsp;&nbsp;|&nbsp;&nbsp;
+            <strong>Weight:</strong> {{ $prescription->patient->latest_weight_kg ?? $prescription->patient->weight ?? 'N/A' }} kg
+            &nbsp;&nbsp;|&nbsp;&nbsp;
+            <strong>Height:</strong> {{ $prescription->patient->height ?? 'N/A' }} cm
+            &nbsp;&nbsp;|&nbsp;&nbsp;
             <strong>Date:</strong> {{ $prescription->prescribed_date ? $prescription->prescribed_date->format('d/m/Y') : date('d/m/Y') }}
         </td>
     </tr>
