@@ -739,9 +739,27 @@ class Patient extends Model
     }
 
     /**
-     * Get patient age formatted with years and months.
-     * For patients under 1 year, shows only months.
-     * For patients 1 year and older, shows years and months.
+     * Get patient age in days.
+     */
+    public function getAgeDaysAttribute(): int
+    {
+        $rawDob = $this->getAttributes()['date_of_birth'] ?? $this->getRawOriginal('date_of_birth');
+        if (empty($rawDob) || $rawDob === '0000-00-00') {
+            return 0;
+        }
+        try {
+            return (int) \Illuminate\Support\Carbon::parse($rawDob)->diffInDays(now());
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Get patient age formatted with years, months, or days.
+     * For newborns (0-30 days), shows days.
+     * For infants (31 days - 1 year), shows months.
+     * For toddlers (1-2 years), shows years and months.
+     * For older children (3+ years), shows only years.
      */
     public function getAgeFormattedAttribute(): string
     {
@@ -755,21 +773,38 @@ class Patient extends Model
             $dob = \Illuminate\Support\Carbon::parse($rawDob);
             $years = $dob->age;
             $totalMonths = $dob->diffInMonths(now());
+            $totalDays = $dob->diffInDays(now());
             $months = $totalMonths % 12;
 
-            if ($years < 1) {
-                // Under 1 year: show only months
-                return $totalMonths . ' ' . ($totalMonths == 1 ? 'month' : 'months');
-            } elseif ($years < 3) {
-                // 1-2 years: show both years and months
+            // Newborns (0-30 days): show days
+            if ($totalDays <= 30) {
+                return $totalDays . ' ' . ($totalDays == 1 ? 'day' : 'days');
+            }
+            // Infants (31 days - 1 year): show months and days
+            elseif ($years < 1) {
+                $daysInMonth = $totalDays % 30; // Approximate days after months
+                if ($totalMonths == 0) {
+                    return $totalDays . ' ' . ($totalDays == 1 ? 'day' : 'days');
+                } elseif ($daysInMonth > 0 && $totalMonths < 6) {
+                    // For first 6 months, show months and days
+                    return $totalMonths . ' ' . ($totalMonths == 1 ? 'month' : 'months') . ', ' .
+                           $daysInMonth . ' ' . ($daysInMonth == 1 ? 'day' : 'days');
+                } else {
+                    // After 6 months, show only months
+                    return $totalMonths . ' ' . ($totalMonths == 1 ? 'month' : 'months');
+                }
+            }
+            // Toddlers (1-2 years): show years and months
+            elseif ($years < 3) {
                 if ($months > 0) {
                     return $years . ' ' . ($years == 1 ? 'year' : 'years') . ', ' .
                            $months . ' ' . ($months == 1 ? 'month' : 'months');
                 } else {
                     return $years . ' ' . ($years == 1 ? 'year' : 'years');
                 }
-            } else {
-                // 3+ years: show only years
+            }
+            // Older children (3+ years): show only years
+            else {
                 return $years . ' ' . ($years == 1 ? 'year' : 'years');
             }
         } catch (\Throwable $e) {
