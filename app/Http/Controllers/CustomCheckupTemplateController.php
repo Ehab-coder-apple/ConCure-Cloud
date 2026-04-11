@@ -87,6 +87,10 @@ class CustomCheckupTemplateController extends Controller
             $request->merge(['form_config' => is_array($decoded) ? $decoded : []]);
         }
 
+        $request->merge([
+            'form_config' => CustomCheckupTemplate::normalizeFormConfig($request->input('form_config')),
+        ]);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
@@ -187,6 +191,10 @@ class CustomCheckupTemplateController extends Controller
             $decoded = json_decode($rawConfig, true);
             $request->merge(['form_config' => is_array($decoded) ? $decoded : []]);
         }
+
+        $request->merge([
+            'form_config' => CustomCheckupTemplate::normalizeFormConfig($request->input('form_config')),
+        ]);
 
         $request->validate([
             'name' => 'required|string|max:255',

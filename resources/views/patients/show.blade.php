@@ -2,6 +2,40 @@
 
 @section('title', __('Patient Details'))
 
+@push('styles')
+<style>
+    .visit-timeline-entry { display: flex; gap: 1rem; position: relative; }
+    .visit-timeline-entry:not(:last-child) { padding-bottom: 1.5rem; }
+    .visit-timeline-marker { width: 1.5rem; display: flex; justify-content: center; position: relative; flex-shrink: 0; }
+    .visit-timeline-marker::after { content: ''; position: absolute; top: 1.1rem; bottom: -1.5rem; width: 2px; background: var(--bs-border-color); }
+    .visit-timeline-entry:last-child .visit-timeline-marker::after { display: none; }
+    .visit-timeline-dot { width: .95rem; height: .95rem; border-radius: 999px; margin-top: .35rem; background: var(--bs-primary); border: 3px solid rgba(13, 110, 253, .18); }
+    .visit-timeline-dot-first { background: #6f42c1; border-color: rgba(111, 66, 193, .2); }
+    .visit-timeline-dot-latest { background: #198754; border-color: rgba(25, 135, 84, .2); }
+    .visit-timeline-card { border-left: 4px solid transparent; }
+    .visit-timeline-card.is-first-visit { border-left-color: #6f42c1; }
+    .visit-timeline-card.is-most-recent { border-left-color: #198754; }
+    .visit-summary-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--bs-secondary-color); }
+    .visit-vitals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .75rem; }
+    .visit-vital-card { border-radius: .75rem; background: var(--bs-tertiary-bg); padding: .75rem; }
+    .visit-timeline-empty { border: 1px dashed var(--bs-border-color); border-radius: .75rem; }
+    .visit-timeline-record.d-none { display: none !important; }
+    .visit-card-preview { font-size: .95rem; }
+    .visit-summary-toggle .label-expanded { display: none; }
+    .visit-summary-toggle:not(.collapsed) .label-expanded { display: inline; }
+    .visit-summary-toggle:not(.collapsed) .label-collapsed { display: none; }
+    .visit-summary-toggle:not(.collapsed) .fa-chevron-down { transform: rotate(180deg); }
+    .visit-summary-toggle .fa-chevron-down { transition: transform .2s ease; }
+    .visit-history-status { font-size: .875rem; }
+    .prescription-history-record.d-none { display: none !important; }
+    .prescription-history-status { font-size: .875rem; }
+    @media (max-width: 575.98px) {
+        .visit-timeline-entry { gap: .75rem; }
+        .visit-timeline-marker { width: 1rem; }
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="row">
@@ -632,118 +666,84 @@
                     </div>
 
 
-                    <!-- Recent Checkups -->
+                    <!-- Patient Visit Timeline -->
                     <div class="card mb-4">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">
                                 <i class="fas fa-stethoscope me-2"></i>
-                                {{ __('Recent Checkups') }}
+                                {{ __('Patient Visit Timeline') }}
                             </h6>
+                            <div class="d-flex gap-2">
+                            <a href="{{ route('checkups.index', $patient) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-list me-1"></i>
+                                {{ __('All Checkups') }}
+                            </a>
                             <a href="{{ route('checkups.create', $patient) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-plus me-1"></i>
                                 {{ __('New Checkup') }}
                             </a>
+                            </div>
                         </div>
                         <div class="card-body">
-                            @if($patient->checkups && $patient->checkups->count() > 0)
-                                <div class="list-group list-group-flush">
-                                    @foreach($patient->checkups as $checkup)
-                                    <div class="list-group-item px-0">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div class="flex-grow-1">
-                                                <div class="d-flex align-items-center mb-2">
-                                                    <span class="badge bg-success me-2">
-                                                        {{ \Carbon\Carbon::parse($checkup->checkup_date)->format('M d, Y') }}
-                                                    </span>
-                                                    @if($checkup->recorder)
-                                                        <small class="text-muted">
-                                                            <i class="fas fa-user-md me-1"></i>
-                                                            {{ $checkup->recorder->name }}
-                                                        </small>
-                                                    @endif
-                                                </div>
-
-                                                <div class="row g-2 mb-2">
-                                                    @if($checkup->weight)
-                                                        <div class="col-auto">
-                                                            <small class="text-muted">
-                                                                <i class="fas fa-weight me-1"></i>
-                                                                <strong>{{ $checkup->weight }} kg</strong>
-                                                            </small>
-                                                        </div>
-                                                    @endif
-                                                    @if($checkup->height)
-                                                        <div class="col-auto">
-                                                            <small class="text-muted">
-                                                                <i class="fas fa-ruler-vertical me-1"></i>
-                                                                <strong>{{ $checkup->height }} cm</strong>
-                                                            </small>
-                                                        </div>
-                                                    @endif
-                                                    @if($checkup->blood_pressure)
-                                                        <div class="col-auto">
-                                                            <small class="text-muted">
-                                                                <i class="fas fa-heartbeat me-1"></i>
-                                                                <strong>{{ $checkup->blood_pressure }}</strong>
-                                                            </small>
-                                                        </div>
-                                                    @endif
-                                                    @if($checkup->temperature)
-                                                        <div class="col-auto">
-                                                            <small class="text-muted">
-                                                                <i class="fas fa-thermometer-half me-1"></i>
-                                                                <strong>{{ $checkup->temperature }}°C</strong>
-                                                            </small>
-                                                        </div>
-                                                    @endif
-                                                </div>
-
-                                                @if($checkup->symptoms)
-                                                    <div class="mb-1">
-                                                        <small class="text-muted">
-                                                            <i class="fas fa-notes-medical me-1"></i>
-                                                            <strong>{{ __('Symptoms:') }}</strong> {{ Str::limit($checkup->symptoms, 100) }}
-                                                        </small>
-                                                    </div>
-                                                @endif
-
-                                                @if($checkup->notes)
-                                                    <div>
-                                                        <small class="text-muted">
-                                                            <i class="fas fa-clipboard me-1"></i>
-                                                            {{ Str::limit($checkup->notes, 100) }}
-                                                        </small>
-                                                    </div>
-                                                @endif
-                                            </div>
-
-                                            <div class="ms-3">
-                                                <a href="{{ route('checkups.show', [$patient, $checkup]) }}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                            </div>
-                                        </div>
+                            <form id="visitTimelineSearchForm" class="row g-2 align-items-center mb-4">
+                                <div class="col-md-8">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                        <input
+                                            type="search"
+                                            id="visitTimelineSearch"
+                                            class="form-control"
+                                            placeholder="{{ __('Search diagnosis or chief complaint...') }}"
+                                            value="{{ $visitTimelineSearch }}"
+                                        >
                                     </div>
-                                    @endforeach
                                 </div>
+                                <div class="col-md-4 d-flex gap-2 justify-content-md-end">
+                                    <button type="submit" class="btn btn-outline-primary">
+                                        <i class="fas fa-search me-1"></i>{{ __('Search') }}
+                                    </button>
+                                    <button type="button" id="visitTimelineClear" class="btn btn-outline-secondary">
+                                        <i class="fas fa-eraser me-1"></i>{{ __('Clear') }}
+                                    </button>
+                                </div>
+                            </form>
 
-                                @if($patient->checkups->count() >= 10)
-                                    <div class="text-center mt-3">
-                                        <a href="{{ route('checkups.index', $patient) }}" class="btn btn-sm btn-outline-secondary">
-                                            {{ __('View All Checkups') }}
-                                        </a>
-                                    </div>
-                                @endif
-                            @else
-                                <div class="text-center py-4">
-                                    <i class="fas fa-stethoscope fa-2x text-muted mb-2"></i>
-                                    <p class="text-muted mb-3">{{ __('No checkups recorded yet.') }}</p>
-                                    <a href="{{ route('checkups.create', $patient) }}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-plus me-1"></i>
-                                        {{ __('Record First Checkup') }}
-                                    </a>
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                                <div id="visitTimelineStatus" class="text-muted visit-history-status">
+                                    @if($visitTimeline->total() > 1)
+                                        {{ __('Showing the most recent visit. Expand the timeline to view older visits.') }}
+                                    @elseif($visitTimeline->total() === 1)
+                                        {{ __('Only one visit is available in this timeline.') }}
+                                    @else
+                                        {{ __('No visits are available in this timeline yet.') }}
+                                    @endif
                                 </div>
-                            @endif
+                                <button
+                                    type="button"
+                                    id="visitTimelineToggle"
+                                    class="btn btn-sm btn-outline-primary {{ $visitTimeline->total() > 1 ? '' : 'd-none' }}"
+                                    aria-expanded="false"
+                                >
+                                    <i class="fas fa-angle-down me-1"></i>
+                                    <span>{{ __('Show Full History') }}</span>
+                                </button>
+                            </div>
+
+                            <div
+                                id="patientVisitTimeline"
+                                data-endpoint="{{ route('patients.visit-timeline', $patient) }}"
+                                data-next-page-url="{{ $visitTimeline->nextPageUrl() ?? '' }}"
+                                data-total="{{ $visitTimeline->total() }}"
+                            >
+                                <div id="visitTimelineList">
+                                    @include('patients.partials.visit-timeline-items', ['patient' => $patient, 'visitTimeline' => $visitTimeline])
+                                </div>
+                                <div id="visitTimelineLoading" class="text-center py-3 d-none">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                    <span class="text-muted ms-2">{{ __('Loading more visits...') }}</span>
+                                </div>
+                                <div id="visitTimelineSentinel" class="d-none"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -825,68 +825,7 @@
                             </button>
                         </div>
                         <div class="card-body">
-                            @php
-                                $allPrescriptions = collect();
-                                if($patient->prescriptions) {
-                                    $allPrescriptions = $allPrescriptions->merge($patient->prescriptions);
-                                }
-                                if($patient->simplePrescriptions) {
-                                    $allPrescriptions = $allPrescriptions->merge($patient->simplePrescriptions);
-                                }
-                                $allPrescriptions = $allPrescriptions->sortByDesc('created_at')->take(5);
-
-                            @endphp
-
-
-                            @if($allPrescriptions->count() > 0)
-                                <div class="list-group list-group-flush">
-                                    @foreach($allPrescriptions as $prescription)
-                                    <div class="list-group-item border-0 px-0">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div class="flex-grow-1">
-                                                <div class="d-flex align-items-center mb-1">
-                                                    <span class="badge bg-primary me-2">{{ $prescription->prescription_number ?? 'N/A' }}</span>
-                                                    <small class="text-muted">{{ $prescription->prescribed_date ? \Carbon\Carbon::parse($prescription->prescribed_date)->format('M d, Y') : ($prescription->created_at ? $prescription->created_at->format('M d, Y') : 'N/A') }}</small>
-                                                </div>
-                                                <h6 class="mb-1">{{ $prescription->diagnosis ?? __('General Prescription') }}</h6>
-                                                <p class="mb-1 text-muted small">
-                                                    {{ __('Doctor:') }} {{ $prescription->doctor->first_name ?? 'Unknown' }} {{ $prescription->doctor->last_name ?? '' }}
-                                                </p>
-                                                @if($prescription->notes)
-                                                <p class="mb-0 small text-muted">{{ Str::limit($prescription->notes, 100) }}</p>
-                                                @endif
-                                            </div>
-                                            <div class="text-end">
-                                                <span class="badge bg-{{ $prescription->status == 'active' ? 'success' : ($prescription->status == 'completed' ? 'info' : 'secondary') }}">
-                                                    {{ ucfirst($prescription->status ?? 'active') }}
-                                                </span>
-                                                <div class="mt-1">
-                                                    @if(get_class($prescription) === 'App\Models\SimplePrescription')
-                                                        <a href="{{ route('simple-prescriptions.show', $prescription) }}" class="btn btn-sm btn-outline-primary">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                    @else
-                                                        <a href="{{ route('prescriptions.show', $prescription) }}" class="btn btn-sm btn-outline-primary">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                </div>
-                                <div class="text-center mt-3">
-                                    <a href="{{ route('simple-prescriptions.index') }}?patient_id={{ $patient->id }}" class="btn btn-sm btn-outline-secondary">
-                                        {{ __('View All Prescriptions') }}
-                                    </a>
-                                </div>
-                            @else
-                                <div class="text-center py-4">
-                                    <i class="fas fa-prescription-bottle fa-2x text-muted mb-2"></i>
-                                    <p class="text-muted mb-0">{{ __('No prescriptions recorded yet.') }}</p>
-                                </div>
-                            @endif
+                            @include('patients.partials.recent-prescriptions', ['patient' => $patient])
                         </div>
                     </div>
 
@@ -1094,59 +1033,71 @@
                 @csrf
                 <div class="modal-body">
                     <div class="row">
-                        <!-- Vital Signs -->
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <h6 class="text-primary mb-3">
                                 <i class="fas fa-heartbeat me-1"></i>
                                 {{ __('Vital Signs') }}
                             </h6>
+                        </div>
 
-                            <div class="mb-3">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="mb-0">
                                 <label for="weight" class="form-label">{{ __('Weight (kg)') }}</label>
                                 <input type="number" class="form-control" id="weight" name="weight"
                                        step="0.1" min="1" max="500" placeholder="70.5">
                             </div>
+                        </div>
 
-                            <div class="mb-3">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="mb-0">
                                 <label for="height" class="form-label">{{ __('Height (cm)') }}</label>
                                 <input type="number" class="form-control" id="height" name="height"
                                        step="0.1" min="50" max="300" placeholder="175">
                             </div>
+                        </div>
 
-                            <div class="mb-3">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="mb-0">
                                 <label for="blood_pressure" class="form-label">{{ __('Blood Pressure') }}</label>
                                 <input type="text" class="form-control" id="blood_pressure" name="blood_pressure"
                                        placeholder="120/80" pattern="\d{2,3}/\d{2,3}">
                                 <div class="form-text">{{ __('Format: 120/80') }}</div>
                             </div>
+                        </div>
 
-                            <div class="mb-3">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="mb-0">
                                 <label for="heart_rate" class="form-label">{{ __('Heart Rate (bpm)') }}</label>
                                 <input type="number" class="form-control" id="heart_rate" name="heart_rate"
                                        min="30" max="200" placeholder="72">
                             </div>
                         </div>
 
-                        <!-- Additional Measurements -->
-                        <div class="col-md-6">
+                        <div class="col-12 mt-2">
                             <h6 class="text-primary mb-3">
                                 <i class="fas fa-thermometer-half me-1"></i>
                                 {{ __('Additional Measurements') }}
                             </h6>
+                        </div>
 
-                            <div class="mb-3">
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="mb-0">
                                 <label for="temperature" class="form-label">{{ __('Temperature (°C)') }}</label>
                                 <input type="number" class="form-control" id="temperature" name="temperature"
                                        step="0.1" min="30" max="45" placeholder="36.5">
                             </div>
+                        </div>
 
-                            <div class="mb-3">
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="mb-0">
                                 <label for="respiratory_rate" class="form-label">{{ __('Respiratory Rate (per min)') }}</label>
                                 <input type="number" class="form-control" id="respiratory_rate" name="respiratory_rate"
                                        min="5" max="50" placeholder="16">
                             </div>
+                        </div>
 
-                            <div class="mb-3">
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="mb-0">
                                 <label for="blood_sugar" class="form-label">{{ __('Blood Sugar (mg/dL)') }}</label>
                                 <input type="number" class="form-control" id="blood_sugar" name="blood_sugar"
                                        step="0.1" min="20" max="600" placeholder="100">
@@ -1246,6 +1197,8 @@
                     <div id="customTemplateFields" style="display: none;">
                         <!-- Template fields will be loaded here dynamically -->
                     </div>
+
+                    @include('checkups.partials.fixed-clinical-fields', ['idPrefix' => 'modal_'])
 
                     <!-- Clinical Notes -->
                     <div class="row mt-3">
@@ -1348,6 +1301,7 @@ function newPrescription() {
 function loadTemplateFields() {
     const templateSelect = document.getElementById('checkup_template');
     const customFieldsContainer = document.getElementById('customTemplateFields');
+    const reservedClinicalKeys = @json(\App\Models\PatientCheckup::reservedClinicalCustomFieldKeys());
 
     if (templateSelect.value) {
         const selectedOption = templateSelect.selectedOptions[0];
@@ -1357,11 +1311,16 @@ function loadTemplateFields() {
 
         Object.keys(templateData).forEach(sectionKey => {
             const section = templateData[sectionKey];
+            const sectionFields = Object.entries(section.fields || {}).filter(([fieldKey]) => !reservedClinicalKeys.includes(fieldKey));
+
+            if (sectionFields.length === 0) {
+                return;
+            }
+
             fieldsHtml += `<div class="row mt-3"><div class="col-12"><h6 class="text-primary">${section.title || sectionKey}</h6></div></div>`;
             fieldsHtml += '<div class="row">';
 
-            Object.keys(section.fields || {}).forEach(fieldKey => {
-                const field = section.fields[fieldKey];
+            sectionFields.forEach(([fieldKey, field]) => {
                 fieldsHtml += `<div class="col-12 mb-3">`;
                 fieldsHtml += `<label for="custom_field_${fieldKey}" class="form-label">${field.label}`;
                 if (field.required) fieldsHtml += ' <span class="text-danger">*</span>';
@@ -1567,5 +1526,244 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
         alertsDiv.innerHTML = `<div class="alert alert-${type} py-2 alert-dismissible fade show">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
     }
 })();
+
+(function() {
+    const historyRoot = document.getElementById('patientPrescriptionHistory');
+    const historyToggle = document.getElementById('prescriptionHistoryToggle');
+    const historyStatus = document.getElementById('prescriptionHistoryStatus');
+
+    if (!historyRoot || !historyToggle || !historyStatus) {
+        return;
+    }
+
+    const totalPrescriptions = Number(historyRoot.dataset.total || 0);
+    let isHistoryExpanded = false;
+
+    const historyItems = () => Array.from(historyRoot.querySelectorAll('[data-prescription-history-item="true"]'));
+
+    const updateHistoryControls = () => {
+        const hasAdditionalPrescriptions = totalPrescriptions > 1;
+
+        historyToggle.classList.toggle('d-none', !hasAdditionalPrescriptions);
+
+        if (!hasAdditionalPrescriptions) {
+            historyStatus.textContent = totalPrescriptions === 1
+                ? `{{ __('Only one prescription is available in this history.') }}`
+                : `{{ __('No prescriptions recorded yet.') }}`;
+            return;
+        }
+
+        const hiddenCount = Math.max(totalPrescriptions - 1, 0);
+
+        historyToggle.setAttribute('aria-expanded', isHistoryExpanded ? 'true' : 'false');
+        historyToggle.innerHTML = isHistoryExpanded
+            ? `<i class="fas fa-angle-up me-1"></i><span>{{ __('Hide Full History') }}</span>`
+            : `<i class="fas fa-angle-down me-1"></i><span>{{ __('Show Full History') }}${hiddenCount > 0 ? ` (${hiddenCount})` : ''}</span>`;
+
+        historyStatus.textContent = isHistoryExpanded
+            ? `{{ __('Showing the full prescription history.') }}`
+            : `{{ __('Showing the most recent prescription. Expand history to view older prescriptions.') }}`;
+    };
+
+    const applyHistoryVisibility = () => {
+        historyItems().forEach((item) => {
+            item.classList.toggle('d-none', !isHistoryExpanded);
+        });
+
+        updateHistoryControls();
+    };
+
+    historyToggle.addEventListener('click', function() {
+        isHistoryExpanded = !isHistoryExpanded;
+        applyHistoryVisibility();
+    });
+
+    applyHistoryVisibility();
+})();
+
+(function() {
+    const timelineRoot = document.getElementById('patientVisitTimeline');
+    const timelineList = document.getElementById('visitTimelineList');
+    const sentinel = document.getElementById('visitTimelineSentinel');
+    const loadingIndicator = document.getElementById('visitTimelineLoading');
+    const searchForm = document.getElementById('visitTimelineSearchForm');
+    const searchInput = document.getElementById('visitTimelineSearch');
+    const clearButton = document.getElementById('visitTimelineClear');
+    const historyToggle = document.getElementById('visitTimelineToggle');
+    const historyStatus = document.getElementById('visitTimelineStatus');
+
+    if (!timelineRoot || !timelineList || !sentinel || !searchForm || !searchInput || !clearButton || !historyToggle || !historyStatus) {
+        return;
+    }
+
+    const endpoint = timelineRoot.dataset.endpoint;
+    let nextPageUrl = timelineRoot.dataset.nextPageUrl || '';
+    let totalVisits = Number(timelineRoot.dataset.total || 0);
+    let activeSearch = searchInput.value.trim();
+    let isTimelineExpanded = false;
+    let isLoading = false;
+    let debounceTimer;
+
+    const historyItems = () => Array.from(timelineList.querySelectorAll('[data-visit-history-item="true"]'));
+
+    const updateHistoryControls = () => {
+        const hasAdditionalVisits = totalVisits > 1;
+
+        historyToggle.classList.toggle('d-none', !hasAdditionalVisits);
+
+        if (!hasAdditionalVisits) {
+            historyStatus.textContent = totalVisits === 1
+                ? `{{ __('Only one visit is available in this timeline.') }}`
+                : `{{ __('No visits are available in this timeline yet.') }}`;
+            return;
+        }
+
+        const hiddenCount = Math.max(totalVisits - 1, 0);
+
+        historyToggle.setAttribute('aria-expanded', isTimelineExpanded ? 'true' : 'false');
+        historyToggle.innerHTML = isTimelineExpanded
+            ? `<i class="fas fa-angle-up me-1"></i><span>{{ __('Hide Full History') }}</span>`
+            : `<i class="fas fa-angle-down me-1"></i><span>{{ __('Show Full History') }}${hiddenCount > 0 ? ` (${hiddenCount})` : ''}</span>`;
+
+        historyStatus.textContent = isTimelineExpanded
+            ? `{{ __('Showing the full visit history.') }}`
+            : `{{ __('Showing the most recent visit. Expand the timeline to view older visits.') }}`;
+    };
+
+    const applyTimelineVisibility = () => {
+        historyItems().forEach((item) => {
+            item.classList.toggle('d-none', !isTimelineExpanded);
+        });
+
+        updateHistoryControls();
+        updateSentinelState();
+    };
+
+    const updateSentinelState = () => {
+        sentinel.classList.toggle('d-none', !isTimelineExpanded || !nextPageUrl);
+    };
+
+    const setLoading = (value) => {
+        isLoading = value;
+        loadingIndicator.classList.toggle('d-none', !value);
+    };
+
+    const buildInitialUrl = () => {
+        const url = new URL(endpoint, window.location.origin);
+        if (activeSearch) {
+            url.searchParams.set('search', activeSearch);
+        }
+
+        return url.toString();
+    };
+
+    const syncHistory = () => {
+        const url = new URL(window.location.href);
+
+        if (activeSearch) {
+            url.searchParams.set('visit_search', activeSearch);
+        } else {
+            url.searchParams.delete('visit_search');
+        }
+
+        window.history.replaceState({}, '', url);
+    };
+
+    const renderError = () => {
+        timelineList.innerHTML = `
+            <div class="alert alert-danger mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {{ __('Unable to load the visit timeline right now. Please try again.') }}
+            </div>
+        `;
+    };
+
+    const fetchTimeline = async ({ append = false, url = null } = {}) => {
+        if (isLoading) {
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const response = await fetch(url || buildInitialUrl(), {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed request');
+            }
+
+            const data = await response.json();
+
+            totalVisits = Number(data.total || 0);
+
+            if (append) {
+                timelineList.insertAdjacentHTML('beforeend', data.html);
+            } else {
+                timelineList.innerHTML = data.html;
+                syncHistory();
+            }
+
+            nextPageUrl = data.next_page_url || '';
+            applyTimelineVisibility();
+        } catch (error) {
+            if (!append) {
+                renderError();
+            }
+            totalVisits = 0;
+            nextPageUrl = '';
+            applyTimelineVisibility();
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    historyToggle.addEventListener('click', function() {
+        isTimelineExpanded = !isTimelineExpanded;
+        applyTimelineVisibility();
+    });
+
+    searchForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        activeSearch = searchInput.value.trim();
+        nextPageUrl = '';
+        fetchTimeline();
+    });
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            activeSearch = searchInput.value.trim();
+            nextPageUrl = '';
+            fetchTimeline();
+        }, 350);
+    });
+
+    clearButton.addEventListener('click', function() {
+        searchInput.value = '';
+        activeSearch = '';
+        nextPageUrl = '';
+        fetchTimeline();
+        searchInput.focus();
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+        const entry = entries[0];
+
+        if (entry && entry.isIntersecting && nextPageUrl) {
+            fetchTimeline({ append: true, url: nextPageUrl });
+        }
+    }, {
+        rootMargin: '160px 0px',
+    });
+
+    observer.observe(sentinel);
+    applyTimelineVisibility();
+})();
 </script>
 @endsection
+

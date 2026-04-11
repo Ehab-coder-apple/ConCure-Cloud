@@ -3,8 +3,11 @@
 namespace App\Imports;
 
 use App\Models\Patient;
+use App\Models\PatientCheckup;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -47,12 +50,19 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                 list($normalizedDob, $dobWarning) = $this->normalizeDate($data['date_of_birth'] ?? '');
                 $data['date_of_birth'] = $normalizedDob; // may be null
                 if ($dobWarning) { $this->warnings[] = "Row {$rowNumber}: {$dobWarning}"; }
+                list($normalizedPreviousVisitDate, $previousVisitWarning) = $this->normalizeDate(
+                    $data['previous_visit_date'] ?? '',
+                    'historical visit will be ignored'
+                );
+                $data['previous_visit_date'] = $normalizedPreviousVisitDate;
+                if ($previousVisitWarning) { $this->warnings[] = "Row {$rowNumber}: {$previousVisitWarning}"; }
 
                 // Validate required fields
                 $validator = Validator::make($data, [
                     'first_name' => 'required|string|max:255',
                     'last_name' => 'required|string|max:255',
                     'date_of_birth' => 'nullable|date',
+                    'previous_visit_date' => 'nullable|date',
                     'gender' => 'nullable|in:male,female,other',
                     'phone' => 'nullable|max:20',
                     'email' => 'nullable|email|max:255',
@@ -61,6 +71,7 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                     'first_name' => 'First Name',
                     'last_name' => 'Last Name',
                     'date_of_birth' => 'Date of Birth',
+                    'previous_visit_date' => 'Previous Visit Date',
                     'gender' => 'Gender',
                     'phone' => 'Phone',
                     'email' => 'Email',
@@ -113,35 +124,40 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                     $bmi = round($weight / ($heightInMeters * $heightInMeters), 2);
                 }
 
-                // Create the patient
                 try {
-                    Patient::create([
-                        'patient_id' => $patientId,
-                        'first_name' => trim($data['first_name']),
-                        'last_name' => trim($data['last_name']),
-                        'date_of_birth' => $finalDob,
-                        'gender' => $finalGender,
-                        'phone' => trim($data['phone'] ?? ''),
-                        'whatsapp_phone' => trim($data['whatsapp_phone'] ?? ''),
-                        'email' => trim($data['email'] ?? ''),
-                        'address' => trim($data['address'] ?? ''),
-                        'job' => trim($data['job'] ?? ''),
-                        'education' => trim($data['education'] ?? ''),
-                        'height' => $height,
-                        'weight' => $weight,
-                        'bmi' => $bmi,
-                        'allergies' => trim($data['allergies'] ?? ''),
-                        'is_pregnant' => $this->parseBoolean($data['is_pregnant'] ?? ''),
-                        'chronic_illnesses' => trim($data['chronic_illnesses'] ?? ''),
-                        'surgeries_history' => trim($data['surgeries_history'] ?? ''),
-                        'diet_history' => trim($data['diet_history'] ?? ''),
-                        'notes' => trim($data['notes'] ?? ''),
-                        'emergency_contact_name' => trim($data['emergency_contact_name'] ?? ''),
-                        'emergency_contact_phone' => trim($data['emergency_contact_phone'] ?? ''),
-                        'clinic_id' => $user->clinic_id,
-                        'created_by' => $user->id,
-                        'is_active' => $this->parseBoolean($data['is_active'] ?? 'true'),
-                    ]);
+                    DB::transaction(function () use ($data, $patientId, $finalDob, $finalGender, $height, $weight, $bmi, $user) {
+                        $patient = Patient::create([
+                            'patient_id' => $patientId,
+                            'first_name' => trim($data['first_name']),
+                            'last_name' => trim($data['last_name']),
+                            'date_of_birth' => $finalDob,
+                            'gender' => $finalGender,
+                            'phone' => trim($data['phone'] ?? ''),
+                            'whatsapp_phone' => trim($data['whatsapp_phone'] ?? ''),
+                            'email' => trim($data['email'] ?? ''),
+                            'address' => trim($data['address'] ?? ''),
+                            'job' => trim($data['job'] ?? ''),
+                            'education' => trim($data['education'] ?? ''),
+                            'height' => $height,
+                            'weight' => $weight,
+                            'bmi' => $bmi,
+                            'allergies' => trim($data['allergies'] ?? ''),
+                            'is_pregnant' => $this->parseBoolean($data['is_pregnant'] ?? ''),
+                            'chronic_illnesses' => trim($data['chronic_illnesses'] ?? ''),
+                            'surgeries_history' => trim($data['surgeries_history'] ?? ''),
+                            'diet_history' => trim($data['diet_history'] ?? ''),
+                            'notes' => trim($data['notes'] ?? ''),
+                            'emergency_contact_name' => trim($data['emergency_contact_name'] ?? ''),
+                            'emergency_contact_phone' => trim($data['emergency_contact_phone'] ?? ''),
+                            'clinic_id' => $user->clinic_id,
+                            'created_by' => $user->id,
+                            'is_active' => $this->parseBoolean($data['is_active'] ?? 'true'),
+                        ]);
+
+                        if (!empty($data['previous_visit_date'])) {
+                            $this->createHistoricalVisitEntry($patient, $data['previous_visit_date'], $user->id);
+                        }
+                    });
 
                     $this->importedCount++;
                 } catch (\Illuminate\Database\QueryException $e) {
@@ -214,7 +230,7 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
      * Normalize Excel dates: accepts Y-m-d strings or Excel serial numbers.
      * Returns array [Y-m-d|null, warning|null]
      */
-    private function normalizeDate($value): array
+    private function normalizeDate($value, string $invalidDisposition = 'will use default'): array
     {
         if ($value === null) return [null, null];
         // If numeric, try Excel serial
@@ -223,7 +239,7 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                 $dt = ExcelDate::excelToDateTimeObject($value);
                 return [$dt->format('Y-m-d'), null];
             } catch (\Throwable $e) {
-                return [null, 'Invalid date detected; could not convert Excel serial'];
+                return [null, "Invalid date detected; could not convert Excel serial ({$invalidDisposition})"];
 
 
             }
@@ -233,8 +249,20 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
         try {
             return [\Carbon\Carbon::parse($v)->format('Y-m-d'), null];
         } catch (\Throwable $e) {
-            return [null, "Invalid date format '{$v}' (will use default)"];
+            return [null, "Invalid date format '{$v}' ({$invalidDisposition})"];
         }
+    }
+
+    /**
+     * Create a historical visit entry so imported patients appear in the visit timeline.
+     */
+    private function createHistoricalVisitEntry(Patient $patient, string $previousVisitDate, int $recordedBy): void
+    {
+        PatientCheckup::create([
+            'patient_id' => $patient->id,
+            'recorded_by' => $recordedBy,
+            'checkup_date' => Carbon::parse($previousVisitDate)->startOfDay(),
+        ]);
     }
 
 
@@ -287,6 +315,7 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
             'first_name' => 'First Name (Required)',
             'last_name' => 'Last Name (Required)',
             'date_of_birth' => 'Date of Birth (YYYY-MM-DD)',
+            'previous_visit_date' => 'Previous Visit Date (YYYY-MM-DD, optional)',
             'gender' => 'Gender (male/female)',
             'phone' => 'Phone Number',
             'whatsapp_phone' => 'WhatsApp Phone',
@@ -318,6 +347,7 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                 'first_name' => 'Ahmed',
                 'last_name' => 'Hassan',
                 'date_of_birth' => '1985-03-15',
+                'previous_visit_date' => '2026-03-01',
                 'gender' => 'male',
                 'phone' => '+9647501234567',
                 'whatsapp_phone' => '+9647501234567',
@@ -341,6 +371,7 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                 'first_name' => 'Fatima',
                 'last_name' => 'Ali',
                 'date_of_birth' => '1990-07-22',
+                'previous_visit_date' => '',
                 'gender' => 'female',
                 'phone' => '+9647502345678',
                 'whatsapp_phone' => '+9647502345678',

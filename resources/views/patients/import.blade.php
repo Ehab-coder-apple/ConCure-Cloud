@@ -113,6 +113,7 @@
                             <ul class="text-muted small">
                                 <li>{{ __('First Name and Last Name columns are required') }}</li>
                                 <li>{{ __('Date format: YYYY-MM-DD (e.g., 1985-03-15)') }}</li>
+                                <li>{{ __('Use previous_visit_date (YYYY-MM-DD) to create one historical visit in the patient timeline') }}</li>
                                 <li>{{ __('Gender: male or female') }}</li>
                                 <li>{{ __('Phone numbers: include country code (e.g., +9647501234567)') }}</li>
                                 <li>{{ __('Height in cm, Weight in kg') }}</li>
@@ -198,6 +199,7 @@
                                 <li>{{ __('Test with a small batch first (5-10 patients)') }}</li>
                                 <li>{{ __('Ensure phone numbers include country codes') }}</li>
                                 <li>{{ __('Use consistent date formats (YYYY-MM-DD)') }}</li>
+                                <li>{{ __('Leave previous_visit_date empty if no historical visit should be imported') }}</li>
                                 <li>{{ __('Fill required fields: First Name, Last Name') }}</li>
                             </ul>
                         </div>

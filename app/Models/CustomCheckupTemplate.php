@@ -122,16 +122,7 @@ class CustomCheckupTemplate extends Model
      */
     public function getFormSectionsAttribute(): array
     {
-        $config = $this->form_config;
-        if (!is_array($config)) {
-            if (is_string($config)) {
-                $decoded = json_decode($config, true);
-                $config = is_array($decoded) ? $decoded : [];
-            } else {
-                $config = [];
-            }
-        }
-        $sections = $config['sections'] ?? [];
+        $sections = static::normalizeFormConfig($this->form_config)['sections'] ?? [];
         return is_array($sections) ? $sections : [];
     }
 
@@ -291,7 +282,7 @@ class CustomCheckupTemplate extends Model
             'medical_condition' => $data['medical_condition'] ?? null,
             'specialty' => $data['specialty'] ?? null,
             'checkup_type' => $data['checkup_type'] ?? 'follow_up',
-            'form_config' => $data['form_config'],
+            'form_config' => static::normalizeFormConfig($data['form_config'] ?? []),
             'is_active' => true,
             'is_default' => $data['is_default'] ?? false,
             'created_by' => $creator->id,
@@ -312,11 +303,110 @@ class CustomCheckupTemplate extends Model
             'medical_condition' => $this->medical_condition,
             'specialty' => $this->specialty,
             'checkup_type' => $this->checkup_type,
-            'form_config' => $this->form_config,
+            'form_config' => static::normalizeFormConfig($this->form_config),
             'is_active' => true,
             'is_default' => false,
             'created_by' => $creator->id,
         ]);
+    }
+
+    /**
+     * Built-in clinical summary section used by visit history.
+     */
+    public static function defaultClinicalSummarySection(): array
+    {
+        return [
+            'title' => 'Clinical Summary',
+            'is_system' => true,
+            'fields' => [
+                'chief_complaint' => [
+                    'type' => 'textarea',
+                    'label' => 'Chief Complaint',
+                    'required' => false,
+                ],
+                'diagnosis' => [
+                    'type' => 'textarea',
+                    'label' => 'Diagnosis',
+                    'required' => false,
+                ],
+                'physical_examination' => [
+                    'type' => 'textarea',
+                    'label' => 'Clinical Examination',
+                    'required' => false,
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Ensure every template contains the standard clinical summary fields.
+     */
+    public static function normalizeFormConfig($config): array
+    {
+        if (!is_array($config)) {
+            if (is_string($config)) {
+                $decoded = json_decode($config, true);
+                $config = is_array($decoded) ? $decoded : [];
+            } else {
+                $config = [];
+            }
+        }
+
+        $sections = $config['sections'] ?? [];
+        $sections = is_array($sections) ? $sections : [];
+
+        $clinicalSection = static::defaultClinicalSummarySection();
+        $clinicalFields = $clinicalSection['fields'];
+        $normalizedSections = [];
+        $extraClinicalFields = [];
+        $reservedClinicalKeys = PatientCheckup::reservedClinicalCustomFieldKeys();
+        $clinicalFieldKeyMap = [];
+
+        foreach (PatientCheckup::clinicalFieldKeyGroups() as $canonicalKey => $aliases) {
+            foreach ($aliases as $alias) {
+                $clinicalFieldKeyMap[$alias] = $canonicalKey;
+            }
+        }
+
+        foreach ($sections as $sectionKey => $section) {
+            $section = is_array($section) ? $section : [];
+            $sectionTitle = $section['title'] ?? null;
+            $sectionFields = isset($section['fields']) && is_array($section['fields']) ? $section['fields'] : [];
+
+            foreach ($sectionFields as $fieldKey => $field) {
+                if (!in_array($fieldKey, $reservedClinicalKeys, true)) {
+                    continue;
+                }
+
+                $canonicalFieldKey = $clinicalFieldKeyMap[$fieldKey] ?? $fieldKey;
+
+                if (isset($clinicalFields[$canonicalFieldKey])) {
+                    $clinicalFields[$canonicalFieldKey] = array_merge($clinicalFields[$canonicalFieldKey], is_array($field) ? $field : []);
+                }
+
+                unset($sectionFields[$fieldKey]);
+            }
+
+            if ($sectionKey === 'clinical_summary' || $sectionTitle === $clinicalSection['title']) {
+                foreach ($sectionFields as $fieldKey => $field) {
+                    $extraClinicalFields[$fieldKey] = $field;
+                }
+
+                continue;
+            }
+
+            $normalizedSections[$sectionKey] = array_merge($section, [
+                'fields' => $sectionFields,
+            ]);
+        }
+
+        $clinicalSection['fields'] = array_merge($clinicalFields, $extraClinicalFields);
+
+        return [
+            'sections' => array_merge([
+                'clinical_summary' => $clinicalSection,
+            ], $normalizedSections),
+        ];
     }
 
     /**

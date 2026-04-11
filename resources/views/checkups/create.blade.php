@@ -51,14 +51,15 @@
                         </div>
 
                         <div class="row">
-                            <!-- Vital Signs -->
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <h6 class="text-primary mb-3">
                                     <i class="fas fa-heartbeat me-1"></i>
                                     {{ __('Vital Signs') }}
                                 </h6>
+                            </div>
 
-                                <div class="mb-3">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="mb-0">
                                     <label for="weight" class="form-label">{{ __('Weight (kg)') }}</label>
                                     <input type="number" class="form-control @error('weight') is-invalid @enderror"
                                            id="weight" name="weight" step="0.1" min="1" max="500"
@@ -67,8 +68,10 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+                            </div>
 
-                                <div class="mb-3">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="mb-0">
                                     <label for="height" class="form-label">{{ __('Height (cm)') }}</label>
                                     <input type="number" class="form-control @error('height') is-invalid @enderror"
                                            id="height" name="height" step="0.1" min="50" max="300"
@@ -77,8 +80,10 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+                            </div>
 
-                                <div class="mb-3">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="mb-0">
                                     <label for="blood_pressure" class="form-label">{{ __('Blood Pressure') }}</label>
                                     <input type="text" class="form-control @error('blood_pressure') is-invalid @enderror"
                                            id="blood_pressure" name="blood_pressure"
@@ -88,8 +93,10 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+                            </div>
 
-                                <div class="mb-3">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="mb-0">
                                     <label for="heart_rate" class="form-label">{{ __('Heart Rate (bpm)') }}</label>
                                     <input type="number" class="form-control @error('heart_rate') is-invalid @enderror"
                                            id="heart_rate" name="heart_rate" min="30" max="200"
@@ -100,14 +107,15 @@
                                 </div>
                             </div>
 
-                            <!-- Additional Measurements -->
-                            <div class="col-md-6">
+                            <div class="col-12 mt-2">
                                 <h6 class="text-primary mb-3">
                                     <i class="fas fa-thermometer-half me-1"></i>
                                     {{ __('Additional Measurements') }}
                                 </h6>
+                            </div>
 
-                                <div class="mb-3">
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <div class="mb-0">
                                     <label for="temperature" class="form-label">{{ __('Temperature (°C)') }}</label>
                                     <input type="number" class="form-control @error('temperature') is-invalid @enderror"
                                            id="temperature" name="temperature" step="0.1" min="30" max="45"
@@ -116,8 +124,10 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+                            </div>
 
-                                <div class="mb-3">
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <div class="mb-0">
                                     <label for="respiratory_rate" class="form-label">{{ __('Respiratory Rate (per min)') }}</label>
                                     <input type="number" class="form-control @error('respiratory_rate') is-invalid @enderror"
                                            id="respiratory_rate" name="respiratory_rate" min="5" max="50"
@@ -126,8 +136,10 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+                            </div>
 
-                                <div class="mb-3">
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <div class="mb-0">
                                     <label for="blood_sugar" class="form-label">{{ __('Blood Sugar (mg/dL)') }}</label>
                                     <input type="number" class="form-control @error('blood_sugar') is-invalid @enderror"
                                            id="blood_sugar" name="blood_sugar" step="0.1" min="20" max="600"
@@ -142,6 +154,10 @@
                         <!-- Custom Vital Signs -->
                         @php
                             $patientCustomSigns = $patient->assigned_custom_vital_signs;
+                        @endphp
+
+                        @php
+                            $reservedClinicalKeys = \App\Models\PatientCheckup::reservedClinicalCustomFieldKeys();
                         @endphp
 
                         @if($patientCustomSigns->count() > 0)
@@ -205,10 +221,13 @@
                                     </h6>
 
                                     @foreach($template->form_sections as $sectionKey => $section)
+                                        @php
+                                            $fields = collect($section['fields'] ?? [])->reject(fn ($field, $fieldKey) => in_array($fieldKey, $reservedClinicalKeys, true));
+                                        @endphp
+                                        @if($fields->isNotEmpty())
                                         <div class="mb-3">
                                             <h6 class="fw-semibold">{{ $section['title'] ?? Str::headline($sectionKey) }}</h6>
                                             <div class="row">
-                                                @php $fields = $section['fields'] ?? []; @endphp
                                                 @foreach($fields as $fieldKey => $field)
                                                     @php $type = $field['type'] ?? 'text'; @endphp
                                                     <div class="col-12 mb-3">
@@ -262,10 +281,13 @@
                                                 @endforeach
                                             </div>
                                         </div>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>
                             @endif
+
+                        @include('checkups.partials.fixed-clinical-fields')
 
 
                         <!-- Clinical Notes -->

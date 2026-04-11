@@ -219,6 +219,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         // API route for dropdowns (must be before parameterized routes)
         Route::get('/api', [PatientController::class, 'apiList'])->name('api');
+        Route::get('/{patient}/visit-timeline', [PatientController::class, 'visitTimeline'])->name('visit-timeline');
 
         Route::get('/{patient}', [PatientController::class, 'show'])->name('show');
         Route::get('/{patient}/edit', [PatientController::class, 'edit'])->name('edit');

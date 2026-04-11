@@ -171,6 +171,10 @@
                                 <li>{{ __('Configure field types, validation, and options') }}</li>
                                 <li>{{ __('Use the preview to see how the form will look') }}</li>
                             </ul>
+                            <div class="mt-3 pt-3 border-top">
+                                <strong>{{ __('Built-in visit history fields:') }}</strong>
+                                {{ __('Chief Complaint, Diagnosis, and Clinical Examination are included automatically in every template.') }}
+                            </div>
                         </div>
                         
                         <div id="formBuilder">
@@ -348,69 +352,99 @@ const defaultTemplates = {
     }
 };
 
+const defaultClinicalSection = @json(\App\Models\CustomCheckupTemplate::defaultClinicalSummarySection());
+const defaultClinicalFieldKeys = Object.keys(defaultClinicalSection.fields || {});
+
+function cloneBuilderData(data) {
+    return JSON.parse(JSON.stringify(data));
+}
+
+function normalizeSections(sections = {}) {
+    const clinicalSummary = cloneBuilderData(defaultClinicalSection);
+    const normalizedSections = {};
+
+    Object.entries(sections || {}).forEach(([sectionKey, section]) => {
+        const normalizedSection = cloneBuilderData(section || {});
+        normalizedSection.fields = normalizedSection.fields || {};
+
+        Object.entries(normalizedSection.fields).forEach(([fieldKey, field]) => {
+            if (!defaultClinicalFieldKeys.includes(fieldKey)) {
+                return;
+            }
+
+            clinicalSummary.fields[fieldKey] = {
+                ...clinicalSummary.fields[fieldKey],
+                ...field,
+            };
+
+            delete normalizedSection.fields[fieldKey];
+        });
+
+        if (sectionKey === 'clinical_summary' || normalizedSection.title === defaultClinicalSection.title) {
+            Object.entries(normalizedSection.fields).forEach(([fieldKey, field]) => {
+                clinicalSummary.fields[fieldKey] = field;
+            });
+            return;
+        }
+
+        normalizedSections[sectionKey] = normalizedSection;
+    });
+
+    return {
+        clinical_summary: clinicalSummary,
+        ...normalizedSections,
+    };
+}
+
 function loadTemplate(templateKey) {
     const template = defaultTemplates[templateKey];
     if (!template) return;
-    
-    // Fill basic information
+
     document.getElementById('name').value = template.name;
     document.getElementById('medical_condition').value = template.medical_condition;
     document.getElementById('specialty').value = template.specialty;
     document.getElementById('checkup_type').value = template.checkup_type;
     document.getElementById('description').value = template.description;
-    
-    // Clear existing form builder
-    document.getElementById('formBuilder').innerHTML = '';
-    sectionCounter = 0;
-    fieldCounter = 0;
-    
-    // Load sections and fields
-    Object.keys(template.sections).forEach(sectionKey => {
-        const section = template.sections[sectionKey];
-        addSection(section.title, section.fields);
-    });
-    
+
+    loadExistingConfig({ sections: template.sections || {} });
     updateFormConfig();
 }
 
-function addSection(title = '', fields = {}) {
+function addSection(title = '', fields = {}, options = {}) {
     sectionCounter++;
     const sectionId = 'section_' + sectionCounter;
-    
+    const isSystemSection = Boolean(options.isSystemSection);
+    const sectionKey = options.sectionKey || title.toLowerCase().replace(/\s+/g, '_');
+
     const sectionHtml = `
-        <div class="card mb-3" id="${sectionId}">
+        <div class="card mb-3" id="${sectionId}" data-section-key="${sectionKey}" data-system-section="${isSystemSection ? '1' : '0'}">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
                         <i class="fas fa-folder me-2"></i>
-                        <input type="text" class="form-control d-inline-block" style="width: auto;" 
-                               placeholder="Section Title" value="${title}" onchange="updateFormConfig()">
+                        <input type="text" class="form-control d-inline-block" style="width: auto;"
+                               placeholder="Section Title" value="${title}" onchange="updateFormConfig()" ${isSystemSection ? 'readonly' : ''}>
+                        ${isSystemSection ? '<span class="badge bg-primary-subtle text-primary-emphasis border ms-2">Built-in</span>' : ''}
                     </h6>
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSection('${sectionId}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    ${isSystemSection ? '' : `<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSection('${sectionId}')"><i class="fas fa-trash"></i></button>`}
                 </div>
             </div>
             <div class="card-body">
-                <div class="section-fields" id="${sectionId}_fields">
-                    <!-- Fields will be added here -->
-                </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addField('${sectionId}')">
-                    <i class="fas fa-plus me-1"></i>
-                    Add Field
-                </button>
+                <div class="section-fields" id="${sectionId}_fields"></div>
+                ${isSystemSection ? '<p class="text-muted small mb-0">These fields support visit history and stay with every template.</p>' : `<button type="button" class="btn btn-outline-secondary btn-sm" onclick="addField('${sectionId}')"><i class="fas fa-plus me-1"></i>Add Field</button>`}
             </div>
         </div>
     `;
-    
+
     document.getElementById('formBuilder').insertAdjacentHTML('beforeend', sectionHtml);
-    
-    // Add existing fields if provided
+
     Object.keys(fields).forEach(fieldKey => {
-        const field = fields[fieldKey];
-        addField(sectionId, field);
+        addField(sectionId, fields[fieldKey], {
+            fieldKey,
+            isSystemField: isSystemSection && defaultClinicalFieldKeys.includes(fieldKey),
+        });
     });
-    
+
     updateFormConfig();
 }
 
@@ -419,55 +453,52 @@ function removeSection(sectionId) {
     updateFormConfig();
 }
 
-function addField(sectionId, fieldData = {}) {
+function addField(sectionId, fieldData = {}, options = {}) {
     fieldCounter++;
     const fieldId = 'field_' + fieldCounter;
-    
+    const isSystemField = Boolean(options.isSystemField);
+    const fieldKey = options.fieldKey || '';
+
     const fieldHtml = `
-        <div class="border rounded p-3 mb-3" id="${fieldId}">
+        <div class="border rounded p-3 mb-3" id="${fieldId}" data-field-key="${fieldKey}" data-system-field="${isSystemField ? '1' : '0'}">
             <div class="row">
                 <div class="col-md-4 mb-2">
                     <label class="form-label">Field Label</label>
-                    <input type="text" class="form-control" placeholder="Field Label" 
-                           value="${fieldData.label || ''}" onchange="updateFormConfig()">
+                    <input type="text" class="form-control" placeholder="Field Label"
+                           value="${fieldData.label || ''}" onchange="updateFormConfig()" ${isSystemField ? 'readonly' : ''}>
                 </div>
                 <div class="col-md-3 mb-2">
                     <label class="form-label">Field Type</label>
-                    <select class="form-select" onchange="updateFieldType(this); updateFormConfig()">
-                        ${Object.keys(fieldTypes).map(key => 
-                            `<option value="${key}" ${fieldData.type === key ? 'selected' : ''}>${fieldTypes[key]}</option>`
-                        ).join('')}
+                    <select class="form-select" onchange="updateFieldType(this); updateFormConfig()" ${isSystemField ? 'disabled' : ''}>
+                        ${Object.keys(fieldTypes).map(key => `<option value="${key}" ${fieldData.type === key ? 'selected' : ''}>${fieldTypes[key]}</option>`).join('')}
                     </select>
                 </div>
                 <div class="col-md-3 mb-2">
                     <label class="form-label">Required</label>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" ${fieldData.required ? 'checked' : ''} onchange="updateFormConfig()">
+                        <input class="form-check-input" type="checkbox" ${fieldData.required ? 'checked' : ''} onchange="updateFormConfig()" ${isSystemField ? 'disabled' : ''}>
                         <label class="form-check-label">Required Field</label>
                     </div>
                 </div>
                 <div class="col-md-2 mb-2">
                     <label class="form-label">Actions</label>
-                    <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeField('${fieldId}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    ${isSystemField ? '<span class="badge bg-primary-subtle text-primary-emphasis border">Locked</span>' : `<button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeField('${fieldId}')"><i class="fas fa-trash"></i></button>`}
                 </div>
             </div>
             <div class="field-options" style="display: none;">
                 <label class="form-label">Options (one per line)</label>
-                <textarea class="form-control" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3" onchange="updateFormConfig()">${fieldData.options ? fieldData.options.join('\\\\n') : ''}</textarea>
+                <textarea class="form-control" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3" onchange="updateFormConfig()" ${isSystemField ? 'readonly' : ''}>${fieldData.options ? fieldData.options.join('\\n') : ''}</textarea>
             </div>
         </div>
     `;
-    
+
     document.getElementById(sectionId + '_fields').insertAdjacentHTML('beforeend', fieldHtml);
-    
-    // Show options field if needed
+
     if (fieldData.type === 'select' || fieldData.type === 'radio') {
         const fieldElement = document.getElementById(fieldId);
         fieldElement.querySelector('.field-options').style.display = 'block';
     }
-    
+
     updateFormConfig();
 }
 
@@ -480,7 +511,7 @@ function updateFieldType(selectElement) {
     const fieldContainer = selectElement.closest('.border');
     const optionsDiv = fieldContainer.querySelector('.field-options');
     const fieldType = selectElement.value;
-    
+
     if (fieldType === 'select' || fieldType === 'radio') {
         optionsDiv.style.display = 'block';
     } else {
@@ -495,27 +526,29 @@ function updateFormConfig() {
         const sectionTitle = sectionCard.querySelector('input[placeholder="Section Title"]').value;
         if (!sectionTitle) return;
 
-        const sectionKey = sectionTitle.toLowerCase().replace(/\s+/g, '_');
+        const sectionKey = sectionCard.dataset.sectionKey || sectionTitle.toLowerCase().replace(/\s+/g, '_');
         sections[sectionKey] = {
             title: sectionTitle,
             fields: {}
         };
 
+        if (sectionCard.dataset.systemSection === '1') {
+            sections[sectionKey].is_system = true;
+        }
+
         sectionCard.querySelectorAll('.section-fields .border').forEach(fieldDiv => {
             const label = fieldDiv.querySelector('input[placeholder="Field Label"]').value;
             if (!label) return;
 
-            const fieldKey = label.toLowerCase().replace(/\s+/g, '_');
+            const fieldKey = fieldDiv.dataset.fieldKey || label.toLowerCase().replace(/\s+/g, '_');
             const type = fieldDiv.querySelector('select').value;
             const required = fieldDiv.querySelector('input[type="checkbox"]').checked;
-
             const field = {
                 type: type,
                 label: label,
                 required: required
             };
 
-            // Add options for select/radio fields
             if (type === 'select' || type === 'radio') {
                 const optionsText = fieldDiv.querySelector('textarea').value;
                 if (optionsText) {
@@ -527,53 +560,42 @@ function updateFormConfig() {
         });
     });
 
-    // Always ensure we have a valid structure
     const formConfig = { sections: sections };
-
-    // Store as JSON string for preview/debugging
     document.getElementById('form_config_json').value = JSON.stringify(formConfig);
 
-    // Create hidden form fields for Laravel validation
     const formConfigFieldsContainer = document.getElementById('form_config_fields');
     formConfigFieldsContainer.innerHTML = '';
 
-    // Create nested form fields for form_config array
     Object.keys(sections).forEach(sectionKey => {
         const section = sections[sectionKey];
 
-        // Add section title
         const titleInput = document.createElement('input');
         titleInput.type = 'hidden';
         titleInput.name = `form_config[sections][${sectionKey}][title]`;
         titleInput.value = section.title;
         formConfigFieldsContainer.appendChild(titleInput);
 
-        // Add section fields
         Object.keys(section.fields).forEach(fieldKey => {
             const field = section.fields[fieldKey];
 
-            // Add field type
             const typeInput = document.createElement('input');
             typeInput.type = 'hidden';
             typeInput.name = `form_config[sections][${sectionKey}][fields][${fieldKey}][type]`;
             typeInput.value = field.type;
             formConfigFieldsContainer.appendChild(typeInput);
 
-            // Add field label
             const labelInput = document.createElement('input');
             labelInput.type = 'hidden';
             labelInput.name = `form_config[sections][${sectionKey}][fields][${fieldKey}][label]`;
             labelInput.value = field.label;
             formConfigFieldsContainer.appendChild(labelInput);
 
-            // Add field required
             const requiredInput = document.createElement('input');
             requiredInput.type = 'hidden';
             requiredInput.name = `form_config[sections][${sectionKey}][fields][${fieldKey}][required]`;
             requiredInput.value = field.required ? '1' : '0';
             formConfigFieldsContainer.appendChild(requiredInput);
 
-            // Add field options if present
             if (field.options && field.options.length > 0) {
                 field.options.forEach((option, index) => {
                     const optionInput = document.createElement('input');
@@ -590,19 +612,19 @@ function updateFormConfig() {
 function previewTemplate() {
     updateFormConfig();
     const formConfig = JSON.parse(document.getElementById('form_config_json').value || '{}');
-    
+
     let previewHtml = '<div class="alert alert-info">This is how your template will look in checkup forms:</div>';
-    
+
     Object.keys(formConfig.sections || {}).forEach(sectionKey => {
         const section = formConfig.sections[sectionKey];
         previewHtml += `<h6 class="text-primary border-bottom pb-2">${section.title}</h6>`;
         previewHtml += '<div class="row">';
-        
+
         Object.keys(section.fields || {}).forEach(fieldKey => {
             const field = section.fields[fieldKey];
             previewHtml += `<div class="col-12 mb-3">`;
             previewHtml += `<label class="form-label">${field.label}${field.required ? ' <span class="text-danger">*</span>' : ''}</label>`;
-            
+
             switch (field.type) {
                 case 'select':
                     previewHtml += '<select class="form-select" disabled><option>Select...</option>';
@@ -622,44 +644,41 @@ function previewTemplate() {
                 default:
                     previewHtml += `<input type="${field.type}" class="form-control" disabled>`;
             }
-            
+
             previewHtml += '</div>';
         });
-        
+
         previewHtml += '</div>';
     });
-    
+
     document.getElementById('previewContent').innerHTML = previewHtml;
     const modal = new bootstrap.Modal(document.getElementById('previewModal'));
     modal.show();
 }
 
-// Initialize form builder
 document.addEventListener('DOMContentLoaded', function() {
-    // Add initial section if none exists
-    if (document.getElementById('formBuilder').children.length === 0) {
-        addSection();
-    }
-
-    // Load existing form config if present (create uses form_config_json)
     const formConfigInput = document.getElementById('form_config') || document.getElementById('form_config_json');
     const existingConfig = formConfigInput ? formConfigInput.value : '';
+    let loaded = false;
+
     if (existingConfig) {
         try {
-            const config = JSON.parse(existingConfig);
-            loadExistingConfig(config);
+            loadExistingConfig(JSON.parse(existingConfig));
+            loaded = true;
         } catch (e) {
             console.error('Error loading existing config:', e);
         }
     }
 
-    // Ensure form_config is updated before form submission
+    if (!loaded) {
+        loadExistingConfig({ sections: {} });
+    }
+
     const form = document.querySelector('form');
     if (form) {
         form.addEventListener('submit', function(e) {
             updateFormConfig();
 
-            // Validate that we have at least one section
             const formConfig = document.getElementById('form_config_json').value;
             if (!formConfig || formConfig === '{}' || formConfig === '') {
                 e.preventDefault();
@@ -682,20 +701,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Update form config whenever sections change
     updateFormConfig();
 });
 
 function loadExistingConfig(config) {
-    // Clear existing form builder
     document.getElementById('formBuilder').innerHTML = '';
     sectionCounter = 0;
     fieldCounter = 0;
 
-    // Load sections and fields
-    Object.keys(config.sections || {}).forEach(sectionKey => {
-        const section = config.sections[sectionKey];
-        addSection(section.title, section.fields);
+    const normalizedSections = normalizeSections(config.sections || {});
+
+    Object.keys(normalizedSections).forEach(sectionKey => {
+        const section = normalizedSections[sectionKey];
+        addSection(section.title, section.fields || {}, {
+            sectionKey,
+            isSystemSection: sectionKey === 'clinical_summary',
+        });
     });
 }
 </script>

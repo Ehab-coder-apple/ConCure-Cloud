@@ -412,4 +412,133 @@ class PatientCheckup extends Model
 
         return $sections;
     }
+
+    /**
+     * Canonical and legacy keys used for the fixed clinical summary fields.
+     */
+    public static function clinicalFieldKeyGroups(): array
+    {
+        return [
+            'chief_complaint' => [
+                'chief_complaint',
+                'chiefComplaint',
+                'complaint',
+                'presenting_complaint',
+                'presentingComplaint',
+                'reason_for_visit',
+            ],
+            'diagnosis' => [
+                'diagnosis',
+                'assessment',
+                'impression',
+                'clinical_diagnosis',
+                'working_diagnosis',
+            ],
+            'physical_examination' => [
+                'physical_examination',
+                'clinical_examination',
+                'examination',
+                'physicalExam',
+                'exam',
+                'objective_findings',
+                'findings',
+            ],
+        ];
+    }
+
+    /**
+     * Custom-field keys that should not be duplicated by dynamic templates.
+     */
+    public static function reservedClinicalCustomFieldKeys(): array
+    {
+        return collect(static::clinicalFieldKeyGroups())
+            ->flatten()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Get the chief complaint for timeline/history views.
+     */
+    public function getChiefComplaintAttribute(): ?string
+    {
+        return $this->resolveClinicalField(
+            static::clinicalFieldKeyGroups()['chief_complaint'],
+            [$this->symptoms, $this->notes]
+        );
+    }
+
+    /**
+     * Get the diagnosis for timeline/history views.
+     */
+    public function getDiagnosisAttribute(): ?string
+    {
+        return $this->resolveClinicalField(
+            static::clinicalFieldKeyGroups()['diagnosis'],
+            [$this->recommendations, $this->notes]
+        );
+    }
+
+    /**
+     * Get the physical examination summary for timeline/history views.
+     */
+    public function getExaminationAttribute(): ?string
+    {
+        return $this->resolveClinicalField(
+            static::clinicalFieldKeyGroups()['physical_examination'],
+            [$this->notes]
+        );
+    }
+
+    /**
+     * Resolve a clinical field from custom fields with sensible fallbacks.
+     */
+    private function resolveClinicalField(array $candidateKeys, array $fallbackValues = []): ?string
+    {
+        foreach ($candidateKeys as $key) {
+            $value = data_get($this->custom_fields ?? [], $key);
+            $normalized = $this->normalizeClinicalValue($value);
+
+            if ($normalized !== null) {
+                return $normalized;
+            }
+        }
+
+        foreach ($fallbackValues as $value) {
+            $normalized = $this->normalizeClinicalValue($value);
+
+            if ($normalized !== null) {
+                return $normalized;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalize arbitrary clinical values to display-ready text.
+     */
+    private function normalizeClinicalValue(mixed $value): ?string
+    {
+        if (is_array($value)) {
+            $value = collect($value)
+                ->flatten()
+                ->map(fn ($item) => is_scalar($item) ? trim((string) $item) : null)
+                ->filter()
+                ->implode(', ');
+        }
+
+        if (is_bool($value)) {
+            $value = $value ? 'Yes' : 'No';
+        }
+
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        return $value !== '' ? $value : null;
+    }
 }

@@ -5,13 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Patient;
 use App\Models\PatientCheckup;
 use App\Models\PatientFile;
+use App\Models\PatientImage;
+use App\Models\Prescription;
+use App\Models\SimplePrescription;
 use App\Imports\PatientsImport;
 use App\Exports\PatientsExport;
 use App\Models\Clinic;
 use App\Http\Traits\SmartSearch;
 
 use App\Services\StorageQuotaService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -313,16 +319,13 @@ class PatientController extends Controller
     /**
      * Display the specified patient.
      */
-    public function show(Patient $patient)
+    public function show(Request $request, Patient $patient)
     {
         $this->authorizePatientAccess($patient);
 
         $patient->load([
             'clinic',
             'creator',
-            'checkups' => function ($q) {
-                $q->with('recorder')->latest('checkup_date')->limit(10);
-            },
             'files' => function ($q) {
                 $q->with('uploader')->latest()->limit(10);
             },
@@ -343,7 +346,240 @@ class PatientController extends Controller
             }
         ]);
 
-        return view('patients.show', compact('patient'));
+        $visitTimelineSearch = trim((string) $request->input('visit_search', ''));
+        $visitTimeline = $this->buildVisitTimelinePaginator($patient, $visitTimelineSearch, 1);
+
+        return view('patients.show', compact('patient', 'visitTimeline', 'visitTimelineSearch'));
+    }
+
+    /**
+     * Return paginated visit timeline markup for AJAX lazy loading/search.
+     */
+    public function visitTimeline(Request $request, Patient $patient)
+    {
+        $this->authorizePatientAccess($patient);
+
+        $search = trim((string) $request->input('search', ''));
+        $page = max(1, (int) $request->input('page', 1));
+        $visitTimeline = $this->buildVisitTimelinePaginator($patient, $search, $page);
+
+        return response()->json([
+            'html' => view('patients.partials.visit-timeline-items', compact('patient', 'visitTimeline'))->render(),
+            'next_page_url' => $visitTimeline->nextPageUrl(),
+            'has_more_pages' => $visitTimeline->hasMorePages(),
+            'current_page' => $visitTimeline->currentPage(),
+            'total' => $visitTimeline->total(),
+        ]);
+    }
+
+    /**
+     * Build a paginated visit timeline for a patient.
+     */
+    private function buildVisitTimelinePaginator(Patient $patient, string $search = '', int $page = 1, int $perPage = 8): LengthAwarePaginator
+    {
+        $query = $patient->checkups()
+            ->with('recorder')
+            ->orderByDesc('checkup_date')
+            ->orderByDesc('id');
+
+        if ($search !== '') {
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search) . '%';
+
+            $query->where(function ($builder) use ($like) {
+                $builder->where('symptoms', 'like', $like)
+                    ->orWhere('notes', 'like', $like)
+                    ->orWhere('recommendations', 'like', $like)
+                    ->orWhere('custom_fields', 'like', $like);
+            });
+        }
+
+        $visitTimeline = $query->paginate($perPage, ['*'], 'page', $page)->appends([
+            'search' => $search,
+        ]);
+
+        $this->decorateVisitTimeline($patient, $visitTimeline->getCollection());
+
+        return $visitTimeline;
+    }
+
+    /**
+     * Decorate timeline entries with derived badges, prescriptions, and attachments.
+     */
+    private function decorateVisitTimeline(Patient $patient, Collection $checkups): void
+    {
+        if ($checkups->isEmpty()) {
+            return;
+        }
+
+        $firstVisitId = $patient->checkups()->orderBy('checkup_date')->orderBy('id')->value('id');
+        $mostRecentVisitId = $patient->checkups()->orderByDesc('checkup_date')->orderByDesc('id')->value('id');
+
+        $visitDates = $checkups
+            ->map(fn (PatientCheckup $checkup) => $checkup->checkup_date instanceof Carbon
+                ? $checkup->checkup_date->copy()
+                : Carbon::parse($checkup->checkup_date ?? now()))
+            ->filter();
+
+        if ($visitDates->isEmpty()) {
+            return;
+        }
+
+        $dateStart = $visitDates->sort()->first()->copy()->startOfDay();
+        $dateEnd = $visitDates->sortDesc()->first()->copy()->endOfDay();
+
+        $standardPrescriptions = Prescription::query()
+            ->with(['doctor', 'medicines.medicine'])
+            ->where('patient_id', $patient->id)
+            ->whereBetween('prescribed_date', [$dateStart->toDateString(), $dateEnd->toDateString()])
+            ->get()
+            ->groupBy(fn (Prescription $prescription) => optional($prescription->prescribed_date)->format('Y-m-d'));
+
+        $simplePrescriptions = SimplePrescription::query()
+            ->with(['doctor', 'medicines'])
+            ->where('patient_id', $patient->id)
+            ->whereBetween('prescribed_date', [$dateStart->toDateString(), $dateEnd->toDateString()])
+            ->get()
+            ->groupBy(fn (SimplePrescription $prescription) => optional($prescription->prescribed_date)->format('Y-m-d'));
+
+        $files = PatientFile::query()
+            ->with('uploader')
+            ->where('patient_id', $patient->id)
+            ->whereBetween('created_at', [$dateStart, $dateEnd])
+            ->latest()
+            ->get()
+            ->groupBy(fn (PatientFile $file) => optional($file->created_at)->toDateString());
+
+        $images = PatientImage::query()
+            ->with('uploader')
+            ->where('patient_id', $patient->id)
+            ->whereBetween('created_at', [$dateStart, $dateEnd])
+            ->latest()
+            ->get()
+            ->groupBy(fn (PatientImage $image) => optional($image->created_at)->toDateString());
+
+        foreach ($checkups as $checkup) {
+            $dateKey = optional($checkup->checkup_date)->toDateString();
+
+            $timelinePrescriptions = $this->transformPrescriptions($standardPrescriptions->get($dateKey, collect()), false)
+                ->merge($this->transformPrescriptions($simplePrescriptions->get($dateKey, collect()), true))
+                ->values();
+
+            $checkup->setAttribute('is_first_visit', (int) $checkup->id === (int) $firstVisitId);
+            $checkup->setAttribute('is_most_recent_visit', (int) $checkup->id === (int) $mostRecentVisitId);
+            $checkup->setAttribute('timeline_prescriptions', $timelinePrescriptions);
+            $checkup->setAttribute('timeline_prescription_summary', $this->buildPrescriptionSummary($timelinePrescriptions));
+            $checkup->setAttribute(
+                'timeline_attachments',
+                $this->buildVisitAttachments(
+                    $files->get($dateKey, collect()),
+                    $images->get($dateKey, collect())
+                )
+            );
+        }
+    }
+
+    /**
+     * Transform prescriptions into presentation-friendly timeline payloads.
+     */
+    private function transformPrescriptions(Collection $prescriptions, bool $isSimple): Collection
+    {
+        return $prescriptions->map(function ($prescription) use ($isSimple) {
+            $medicines = $prescription->medicines
+                ->map(fn ($medicine) => $this->formatPrescriptionMedicine($medicine, $isSimple))
+                ->values();
+
+            return [
+                'id' => $prescription->id,
+                'type' => $isSimple ? 'simple' : 'standard',
+                'number' => $prescription->prescription_number,
+                'diagnosis' => $prescription->diagnosis,
+                'notes' => $prescription->notes,
+                'doctor_name' => $prescription->doctor?->full_name,
+                'date' => optional($prescription->prescribed_date)->format('M d, Y'),
+                'medicines' => $medicines,
+                'summary' => $medicines->pluck('name')->filter()->take(3)->implode(', '),
+            ];
+        });
+    }
+
+    /**
+     * Format a prescription medicine for drawer display.
+     */
+    private function formatPrescriptionMedicine(object $medicine, bool $isSimple): array
+    {
+        return [
+            'name' => $isSimple
+                ? $medicine->medicine_name
+                : ($medicine->medicine_name_display ?? $medicine->medicine_name),
+            'dosage' => $medicine->dosage,
+            'frequency' => $isSimple ? $medicine->frequency : ($medicine->frequency_display ?? $medicine->frequency),
+            'duration' => $isSimple ? $medicine->duration : ($medicine->duration_display ?? $medicine->duration),
+            'instructions' => $medicine->instructions,
+        ];
+    }
+
+    /**
+     * Build a concise prescription summary for the timeline card.
+     */
+    private function buildPrescriptionSummary(Collection $prescriptions): ?string
+    {
+        $medicineNames = $prescriptions
+            ->flatMap(fn (array $prescription) => collect($prescription['medicines'] ?? [])->pluck('name'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($medicineNames->isNotEmpty()) {
+            $visible = $medicineNames->take(3)->implode(', ');
+            $remaining = max($medicineNames->count() - 3, 0);
+
+            return $remaining > 0
+                ? sprintf('%s +%d more', $visible, $remaining)
+                : $visible;
+        }
+
+        $diagnoses = $prescriptions->pluck('diagnosis')->filter()->unique()->values();
+
+        if ($diagnoses->isNotEmpty()) {
+            return $diagnoses->take(2)->implode(' · ');
+        }
+
+        return null;
+    }
+
+    /**
+     * Build a visit attachment collection from files and images uploaded that day.
+     */
+    private function buildVisitAttachments(Collection $files, Collection $images): Collection
+    {
+        $fileAttachments = $files->map(fn (PatientFile $file) => [
+            'type' => __('File'),
+            'label' => $file->original_name,
+            'url' => $file->file_url,
+            'description' => $file->description,
+            'meta' => $file->category_display,
+            'icon' => $file->file_icon,
+            'uploaded_at' => optional($file->created_at)->format('M d, Y g:i A'),
+            'uploaded_at_sort' => optional($file->created_at)->timestamp,
+            'uploader' => $file->uploader?->full_name,
+        ]);
+
+        $imageAttachments = $images->map(fn (PatientImage $image) => [
+            'type' => __('Image'),
+            'label' => $image->filename,
+            'url' => $image->url,
+            'description' => $image->caption,
+            'meta' => __('Clinical image'),
+            'icon' => 'fas fa-image text-success',
+            'uploaded_at' => optional($image->created_at)->format('M d, Y g:i A'),
+            'uploaded_at_sort' => optional($image->created_at)->timestamp,
+            'uploader' => $image->uploader?->full_name,
+        ]);
+
+        return $fileAttachments
+            ->merge($imageAttachments)
+            ->sortByDesc('uploaded_at_sort')
+            ->values();
     }
 
     /**

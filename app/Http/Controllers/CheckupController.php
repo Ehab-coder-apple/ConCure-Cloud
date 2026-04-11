@@ -67,6 +67,9 @@ class CheckupController extends Controller
             'temperature' => 'nullable|numeric|min:30|max:45',
             'respiratory_rate' => 'nullable|integer|min:5|max:50',
             'blood_sugar' => 'nullable|numeric|min:20|max:600',
+            'chief_complaint' => 'nullable|string',
+            'diagnosis' => 'nullable|string',
+            'clinical_examination' => 'nullable|string',
             'symptoms' => 'nullable|string',
             'notes' => 'nullable|string',
             'recommendations' => 'nullable|string',
@@ -125,6 +128,8 @@ class CheckupController extends Controller
                 }
             }
         }
+
+        $customFields = $this->mergeFixedClinicalFields($customFields, $request);
 
         PatientCheckup::create([
             'patient_id' => $patient->id,
@@ -201,6 +206,9 @@ class CheckupController extends Controller
             'temperature' => 'nullable|numeric|min:30|max:45',
             'respiratory_rate' => 'nullable|integer|min:5|max:50',
             'blood_sugar' => 'nullable|numeric|min:20|max:600',
+            'chief_complaint' => 'nullable|string',
+            'diagnosis' => 'nullable|string',
+            'clinical_examination' => 'nullable|string',
             'symptoms' => 'nullable|string',
             'notes' => 'nullable|string',
             'recommendations' => 'nullable|string',
@@ -217,6 +225,8 @@ class CheckupController extends Controller
                 }
             }
         }
+
+        $customFields = $this->mergeFixedClinicalFields($customFields, $request);
 
         $checkup->update([
             'weight' => $request->weight,
@@ -277,5 +287,33 @@ class CheckupController extends Controller
             !$user->canManagePatients()) {
             abort(403, 'Insufficient permissions to view patients.');
         }
+    }
+
+    /**
+     * Normalize fixed clinical inputs into canonical custom field keys.
+     */
+    private function mergeFixedClinicalFields(array $customFields, Request $request): array
+    {
+        $normalizedFields = collect($customFields)
+            ->except(PatientCheckup::reservedClinicalCustomFieldKeys())
+            ->all();
+
+        $fixedFields = [
+            'chief_complaint' => $request->input('chief_complaint'),
+            'diagnosis' => $request->input('diagnosis'),
+            'physical_examination' => $request->input('clinical_examination'),
+        ];
+
+        foreach ($fixedFields as $fieldKey => $value) {
+            if (is_string($value)) {
+                $value = trim($value);
+            }
+
+            if ($value !== null && $value !== '') {
+                $normalizedFields[$fieldKey] = $value;
+            }
+        }
+
+        return $normalizedFields;
     }
 }
