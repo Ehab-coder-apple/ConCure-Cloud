@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
+use App\Services\PatientProfileModuleRegistry;
 
 class Patient extends Model
 {
@@ -147,6 +149,31 @@ class Patient extends Model
         return $this->hasMany(SimplePrescription::class);
     }
 
+    public function medicalOverview(): HasOne
+    {
+        return $this->hasOne(PatientMedicalOverview::class);
+    }
+
+    public function modules(): HasMany
+    {
+        return $this->hasMany(PatientModule::class);
+    }
+
+    public function activeModules(): HasMany
+    {
+        return $this->modules()->where('is_active', true);
+    }
+
+    public function medications(): HasMany
+    {
+        return $this->hasMany(PatientMedication::class)->latest('started_on');
+    }
+
+    public function visits(): HasMany
+    {
+        return $this->hasMany(PatientVisit::class, 'patient_id')->latest('visit_date');
+    }
+
     /**
      * Get the lab requests for the patient.
      */
@@ -193,6 +220,42 @@ class Patient extends Model
     public function dentalImages(): HasMany
     {
         return $this->hasMany(DentalImage::class);
+    }
+
+    public function dentalProfile(): HasOne
+    {
+        return $this->hasOne(PatientDental::class);
+    }
+
+    public function entProfile(): HasOne
+    {
+        return $this->hasOne(PatientEnt::class);
+    }
+
+    /**
+     * Get ENT records for this patient.
+     */
+    public function entRecords(): HasMany
+    {
+        return $this->hasMany(\App\Models\EntRecord::class);
+    }
+
+    /**
+     * Get audiometry tests for this patient.
+     */
+    public function audiometryTests(): HasMany
+    {
+        return $this->hasMany(\App\Models\AudiometryTest::class);
+    }
+
+    public function pediatricProfile(): HasOne
+    {
+        return $this->hasOne(PatientPediatric::class);
+    }
+
+    public function nutritionProfile(): HasOne
+    {
+        return $this->hasOne(PatientNutrition::class);
     }
 
     /**
@@ -635,12 +698,118 @@ class Patient extends Model
         return $this->hasOne(NutritionGoal::class)->where('is_active', true)->latest();
     }
 
+    public function getAllergiesAttribute($value): ?string
+    {
+        return $this->overviewValue('allergies', $value);
+    }
+
+    public function getChronicIllnessesAttribute($value): ?string
+    {
+        return $this->overviewValue('chronic_diseases', $value);
+    }
+
+    public function getSurgeriesHistoryAttribute($value): ?string
+    {
+        return $this->overviewValue('surgeries', $value);
+    }
+
+    public function getMedicalHistoryAttribute($value): ?string
+    {
+        return $this->overviewValue('medical_history', $value);
+    }
+
+    public function getIsPregnantAttribute($value): bool
+    {
+        $overview = $this->getMedicalOverviewRelation();
+
+        if ($overview?->hasFlag('pregnant')) {
+            return true;
+        }
+
+        return (bool) $value;
+    }
+
+    public function getMedicalFlagsAttribute(): array
+    {
+        $overview = $this->getMedicalOverviewRelation();
+        $flags = $overview?->flags ?? [];
+
+        if (($this->attributes['is_pregnant'] ?? false) && !isset($flags['pregnant'])) {
+            $flags['pregnant'] = true;
+        }
+
+        return collect($flags)->filter()->all();
+    }
+
+    public function getActiveProfileModulesAttribute()
+    {
+        $activeModuleNames = ($this->relationLoaded('activeModules') ? $this->activeModules : $this->activeModules()->get())
+            ->pluck('module_name')
+            ->all();
+        $activeModuleNames = array_values(array_unique(array_merge(
+            PatientProfileModuleRegistry::defaultActiveModulesForPatient($this),
+            $activeModuleNames
+        )));
+
+        return collect(PatientProfileModuleRegistry::eligibleModulesForPatient($this))
+            ->filter(fn (array $module) => in_array($module['key'], $activeModuleNames, true))
+            ->values();
+    }
+
+    public function getAvailableProfileModulesAttribute()
+    {
+        $activeModuleNames = ($this->relationLoaded('activeModules') ? $this->activeModules : $this->activeModules()->get())
+            ->pluck('module_name')
+            ->all();
+        $activeModuleNames = array_values(array_unique(array_merge(
+            PatientProfileModuleRegistry::defaultActiveModulesForPatient($this),
+            $activeModuleNames
+        )));
+
+        return collect(PatientProfileModuleRegistry::eligibleModulesForPatient($this))
+            ->reject(fn (array $module) => in_array($module['key'], $activeModuleNames, true))
+            ->values();
+    }
+
     /**
      * Check if the patient is low birth weight (< 2500g).
      */
     public function getIsLowBirthWeightAttribute(): bool
     {
         return $this->birth_weight !== null && $this->birth_weight < 2500;
+    }
+
+    private function getPediatricProfileRelation(): ?PatientPediatric
+    {
+        if ($this->relationLoaded('pediatricProfile')) {
+            return $this->getRelation('pediatricProfile');
+        }
+
+        return $this->pediatricProfile()->first();
+    }
+
+    public function getBirthWeightAttribute($value)
+    {
+        return data_get($this->getPediatricProfileRelation(), 'birth_weight') ?? $value;
+    }
+
+    public function getGestationalAgeWeeksAttribute($value)
+    {
+        return data_get($this->getPediatricProfileRelation(), 'gestational_age') ?? $value;
+    }
+
+    private function getMedicalOverviewRelation(): ?PatientMedicalOverview
+    {
+        if ($this->relationLoaded('medicalOverview')) {
+            return $this->getRelation('medicalOverview');
+        }
+
+        return $this->medicalOverview()->first();
+    }
+
+    private function overviewValue(string $overviewColumn, $fallback): ?string
+    {
+        return data_get($this->getMedicalOverviewRelation(), $overviewColumn) ?? $fallback;
     }
 
     /**
