@@ -215,11 +215,20 @@
         content: none !important;
     }
 
-    /* Make test information more compact */
-    .card-body .row .col-md-4 {
-        display: inline-block !important;
-        width: 32% !important;
-        margin-right: 1% !important;
+    /* Hide the Test Information card in print - info is in header */
+    .test-info-card {
+        display: none !important;
+    }
+
+    /* Force page break before page 2 content */
+    .page-2-content {
+        page-break-before: always !important;
+    }
+
+    /* Ensure audiogram section stays on page 1 */
+    .audiogram-section {
+        page-break-after: auto !important;
+        page-break-inside: avoid !important;
     }
 }
 </style>
@@ -233,7 +242,8 @@
         <p>
             <strong>{{ Auth::user()->clinic->name ?? 'ConCure Clinic Management System' }}</strong><br>
             {{ __('Pure Tone Audiometry Test') }} | {{ __('Test Date') }}: {{ $audiometryTest->test_date->format('F d, Y') }}<br>
-            {{ __('Patient') }}: {{ $audiometryTest->patient->full_name }} ({{ $audiometryTest->patient->patient_id }})
+            {{ __('Patient') }}: {{ $audiometryTest->patient->full_name }} ({{ $audiometryTest->patient->patient_id }})<br>
+            {{ __('Test Type') }}: {{ $audiometryTest->test_type_display }} | {{ __('Performed By') }}: {{ $audiometryTest->performer->full_name }}
         </p>
     </div>
 
@@ -263,8 +273,8 @@
         </div>
     </div>
 
-    <!-- Patient & Test Information -->
-    <div class="card mb-3">
+    <!-- Patient & Test Information - Hidden in print, info is in header -->
+    <div class="card mb-3 test-info-card">
         <div class="card-header">
             <h5 class="mb-0">{{ __('Test Information') }}</h5>
         </div>
@@ -289,8 +299,8 @@
         </div>
     </div>
 
-    <!-- Audiogram Charts -->
-    <div class="row">
+    <!-- Audiogram Charts - Page 1 -->
+    <div class="row audiogram-section">
         <!-- Right Ear Audiogram -->
         @if($audiometryTest->right_ear_data)
         <div class="col-md-6 mb-3">
@@ -336,9 +346,9 @@
         @endif
     </div>
 
-    <!-- Speech Audiometry Results -->
+    <!-- Page 2: Speech Audiometry Results -->
     @if($audiometryTest->right_srt || $audiometryTest->left_srt || $audiometryTest->right_wrs || $audiometryTest->left_wrs)
-    <div class="card mb-3">
+    <div class="card mb-3 page-2-content">
         <div class="card-header">
             <h5 class="mb-0">{{ __('Speech Audiometry Results') }}</h5>
         </div>
