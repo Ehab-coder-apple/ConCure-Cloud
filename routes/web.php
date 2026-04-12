@@ -219,6 +219,21 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         // API route for dropdowns (must be before parameterized routes)
         Route::get('/api', [PatientController::class, 'apiList'])->name('api');
+        Route::post('/{patient}/modules', [App\Http\Controllers\PatientModuleController::class, 'store'])->name('modules.store');
+        Route::delete('/{patient}/modules/{module}', [App\Http\Controllers\PatientModuleController::class, 'destroy'])->name('modules.destroy');
+        Route::get('/{patient}/modules/{module}', [App\Http\Controllers\PatientModuleController::class, 'show'])->name('modules.show');
+        Route::put('/{patient}/medical-overview', [App\Http\Controllers\PatientMedicalOverviewController::class, 'update'])->name('medical-overview.update');
+        Route::post('/{patient}/medications', [App\Http\Controllers\PatientMedicationController::class, 'store'])->name('medications.store');
+        Route::post('/{patient}/visits', [App\Http\Controllers\PatientVisitController::class, 'store'])->name('visits.store');
+        Route::get('/{patient}/visits/{visit}', [App\Http\Controllers\PatientVisitController::class, 'show'])->name('visits.show');
+        Route::get('/{patient}/dental', [App\Http\Controllers\PatientDentalController::class, 'show'])->name('dental.show');
+        Route::put('/{patient}/dental', [App\Http\Controllers\PatientDentalController::class, 'update'])->name('dental.update');
+        Route::get('/{patient}/ent', [App\Http\Controllers\PatientEntController::class, 'show'])->name('ent.show');
+        Route::put('/{patient}/ent', [App\Http\Controllers\PatientEntController::class, 'update'])->name('ent.update');
+        Route::get('/{patient}/pediatric', [App\Http\Controllers\PatientPediatricController::class, 'show'])->name('pediatric.show');
+        Route::put('/{patient}/pediatric', [App\Http\Controllers\PatientPediatricController::class, 'update'])->name('pediatric.update');
+        Route::get('/{patient}/nutrition', [App\Http\Controllers\PatientNutritionController::class, 'show'])->name('nutrition.show');
+        Route::put('/{patient}/nutrition', [App\Http\Controllers\PatientNutritionController::class, 'update'])->name('nutrition.update');
         Route::get('/{patient}/visit-timeline', [PatientController::class, 'visitTimeline'])->name('visit-timeline');
 
         Route::get('/{patient}', [PatientController::class, 'show'])->name('show');
@@ -250,6 +265,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::patch('/{patient}/videos/{video}', [App\Http\Controllers\PatientVideoController::class, 'update'])->name('videos.update');
         Route::delete('/{patient}/videos/{video}', [App\Http\Controllers\PatientVideoController::class, 'destroy'])->name('videos.destroy');
     });
+
+    Route::get('/patient/{patient}/dental', [App\Http\Controllers\PatientDentalController::class, 'show'])->name('patient.dental');
+    Route::get('/patient/{patient}/ent', [App\Http\Controllers\PatientEntController::class, 'show'])->name('patient.ent');
+    Route::get('/patient/{patient}/pediatric', [App\Http\Controllers\PatientPediatricController::class, 'show'])->name('patient.pediatric');
+    Route::get('/patient/{patient}/nutrition', [App\Http\Controllers\PatientNutritionController::class, 'show'])->name('patient.nutrition');
 
     // Checkup Management
     Route::prefix('patients/{patient}/checkups')->name('checkups.')->group(function () {
@@ -691,6 +711,27 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::put('/{dentalLab}', [App\Http\Controllers\DentalExternalLabController::class, 'update'])->name('update');
             Route::delete('/{dentalLab}', [App\Http\Controllers\DentalExternalLabController::class, 'destroy'])->name('destroy');
             Route::patch('/{dentalLab}/toggle-status', [App\Http\Controllers\DentalExternalLabController::class, 'toggleStatus'])->name('toggle-status');
+        });
+    });
+
+    // ENT Module Routes
+    Route::prefix('ent')->name('ent.')->group(function () {
+        // ENT Records
+        Route::get('/', [App\Http\Controllers\EntController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\EntController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\EntController::class, 'store'])->name('store');
+        Route::get('/{entRecord}', [App\Http\Controllers\EntController::class, 'show'])->name('show');
+        Route::get('/{entRecord}/edit', [App\Http\Controllers\EntController::class, 'edit'])->name('edit');
+        Route::put('/{entRecord}', [App\Http\Controllers\EntController::class, 'update'])->name('update');
+        Route::delete('/{entRecord}', [App\Http\Controllers\EntController::class, 'destroy'])->name('destroy');
+
+        // Audiometry Tests
+        Route::prefix('audiometry')->name('audiometry.')->group(function () {
+            Route::get('/create', [App\Http\Controllers\AudiometryController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\AudiometryController::class, 'store'])->name('store');
+            Route::get('/{audiometryTest}', [App\Http\Controllers\AudiometryController::class, 'show'])->name('show');
+            Route::get('/{audiometryTest}/edit', [App\Http\Controllers\AudiometryController::class, 'edit'])->name('edit');
+            Route::put('/{audiometryTest}', [App\Http\Controllers\AudiometryController::class, 'update'])->name('update');
         });
     });
 

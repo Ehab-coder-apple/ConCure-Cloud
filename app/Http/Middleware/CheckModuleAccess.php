@@ -18,6 +18,7 @@ class CheckModuleAccess
         'recommendations/lab'   => 'lab',
         'recommendations/radiology' => 'radiology',
         'dental'                => 'dental',
+        'ent'                   => 'ent',
         'nutrition'             => 'nutrition',
         'foods'                 => 'food_database',
         'food-groups'           => 'food_database',

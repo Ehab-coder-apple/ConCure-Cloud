@@ -1706,6 +1706,31 @@
                         </li>
                         @endif
 
+                        <!-- ENT Module -->
+                        @if(Auth::user()->canAccessSection('ent') && Auth::user()->canAccessModule('ent'))
+                        <li class="nav-item has-submenu {{ request()->routeIs('ent.*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link submenu-toggle">
+                                <i class="nav-icon fas fa-ear-listen"></i>
+                                <span class="nav-text">{{ __('ENT') }}</span>
+                                <i class="submenu-arrow fas fa-chevron-right"></i>
+                            </a>
+                            <ul class="submenu">
+                                <li class="submenu-item">
+                                    <a href="{{ route('ent.index') }}" class="submenu-link {{ request()->routeIs('ent.index') || request()->routeIs('ent.show') || request()->routeIs('ent.edit') ? 'active' : '' }}">
+                                        <i class="fas fa-notes-medical me-2"></i>
+                                        {{ __('ENT Records') }}
+                                    </a>
+                                </li>
+                                <li class="submenu-item">
+                                    <a href="{{ route('ent.audiometry.create') }}" class="submenu-link {{ request()->routeIs('ent.audiometry.*') ? 'active' : '' }}">
+                                        <i class="fas fa-volume-high me-2"></i>
+                                        {{ __('Audiometry') }}
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        @endif
+
                         <!-- Pediatric Module -->
                         {{-- Parent gate: user must have pediatric section permission AND at least one child module enabled --}}
                         @if(Auth::user()->canAccessSection('pediatric') && (Auth::user()->canAccessModule('pediatric') || Auth::user()->canAccessModule('vaccination')))

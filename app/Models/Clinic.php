@@ -351,6 +351,7 @@ class Clinic extends Model
             'icon'  => 'fas fa-puzzle-piece',
             'modules' => [
                 'dental'        => 'Dental Module',
+                'ent'           => 'ENT Module',
                 'nutrition'     => 'Nutrition & Diet Planning',
                 'food_database' => 'Food Database',
                 'pediatric'     => 'Pediatric Module',
@@ -390,6 +391,7 @@ class Clinic extends Model
         'image_bank'    => 'Medical Image Bank',
         'forms'         => 'Forms',
         'dental'        => 'Dental Module',
+        'ent'           => 'ENT Module',
         'nutrition'     => 'Nutrition & Diet Planning',
         'food_database' => 'Food Database',
         'pediatric'     => 'Pediatric Module',
