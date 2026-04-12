@@ -110,27 +110,30 @@
         background: white !important;
     }
 
-    /* Audiogram row - Stack vertically for portrait */
+    /* Audiogram row - Side by side for portrait, centered */
     .row {
-        display: block !important;
+        display: flex !important;
         width: 100% !important;
-        margin: 0 !important;
+        margin: 0 auto !important;
+        justify-content: center !important;
+        flex-wrap: nowrap !important;
+        page-break-inside: avoid !important;
     }
 
     .col-md-6 {
         display: block !important;
-        width: 100% !important;
-        max-width: 100% !important;
+        width: 48% !important;
+        max-width: 48% !important;
         float: none !important;
-        padding: 0 !important;
-        margin-bottom: 10px !important;
+        padding: 0 1% !important;
+        margin-bottom: 0 !important;
     }
 
-    /* Optimize chart size for portrait */
+    /* Optimize chart size for portrait side-by-side */
     canvas {
         width: 100% !important;
         max-width: 100% !important;
-        height: 280px !important;
+        height: 300px !important;
         display: block !important;
     }
 
