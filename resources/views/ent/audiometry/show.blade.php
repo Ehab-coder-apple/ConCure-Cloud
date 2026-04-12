@@ -29,7 +29,7 @@
     }
 
     body {
-        padding: 15mm 10mm !important;
+        padding: 8mm 10mm !important;
     }
 
     /* Reset container widths */
@@ -40,26 +40,27 @@
         margin: 0 !important;
     }
 
-    /* Print-only header - larger and clearer */
+    /* Print-only header - compact for portrait */
     .print-header {
         display: block !important;
         text-align: center;
-        margin-bottom: 15px;
-        border-bottom: 3px solid #000;
-        padding-bottom: 12px;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 8px;
     }
 
     .print-header h1 {
-        font-size: 32px !important;
+        font-size: 24px !important;
         font-weight: bold !important;
-        margin: 0 0 8px 0 !important;
+        margin: 0 0 5px 0 !important;
         color: #000 !important;
     }
 
     .print-header p {
-        font-size: 14px !important;
+        font-size: 11px !important;
         margin: 0 !important;
         color: #333 !important;
+        line-height: 1.3 !important;
     }
 
     .d-none {
@@ -71,25 +72,25 @@
         display: none !important;
     }
 
-    /* Card styling - make cards more prominent */
+    /* Card styling - compact for portrait */
     .card {
-        border: 2px solid #000 !important;
-        margin-bottom: 12px !important;
+        border: 1px solid #333 !important;
+        margin-bottom: 8px !important;
         page-break-inside: avoid;
         box-shadow: none !important;
         background: white !important;
     }
 
     .card-header {
-        padding: 12px 15px !important;
-        border-bottom: 2px solid #000 !important;
+        padding: 8px 12px !important;
+        border-bottom: 1px solid #333 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
     }
 
     .card-header h5 {
-        font-size: 18px !important;
+        font-size: 14px !important;
         font-weight: bold !important;
         margin: 0 !important;
     }
@@ -105,42 +106,40 @@
     }
 
     .card-body {
-        padding: 15px !important;
+        padding: 10px !important;
         background: white !important;
     }
 
-    /* Audiogram row - CRITICAL for side-by-side layout */
+    /* Audiogram row - Stack vertically for portrait */
     .row {
-        display: table !important;
+        display: block !important;
         width: 100% !important;
-        table-layout: fixed !important;
-        page-break-inside: avoid !important;
         margin: 0 !important;
     }
 
     .col-md-6 {
-        display: table-cell !important;
-        width: 49% !important;
-        max-width: 49% !important;
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
         float: none !important;
-        padding: 0 5px !important;
-        vertical-align: top !important;
+        padding: 0 !important;
+        margin-bottom: 10px !important;
     }
 
-    /* Make charts BIGGER */
+    /* Optimize chart size for portrait */
     canvas {
         width: 100% !important;
         max-width: 100% !important;
-        height: 350px !important;
+        height: 280px !important;
         display: block !important;
     }
 
-    /* Text content sizing */
+    /* Text content sizing - compact */
     p {
-        font-size: 13px !important;
-        line-height: 1.4 !important;
+        font-size: 11px !important;
+        line-height: 1.3 !important;
         color: #000 !important;
-        margin: 5px 0 !important;
+        margin: 3px 0 !important;
     }
 
     strong {
@@ -149,23 +148,23 @@
     }
 
     h5 {
-        font-size: 18px !important;
+        font-size: 14px !important;
         color: #000 !important;
-        margin: 0 0 8px 0 !important;
+        margin: 0 0 5px 0 !important;
     }
 
     h6 {
-        font-size: 15px !important;
+        font-size: 12px !important;
         font-weight: bold !important;
         color: #000 !important;
-        margin: 8px 0 5px 0 !important;
+        margin: 5px 0 3px 0 !important;
     }
 
-    /* Badge styling - make more visible */
+    /* Badge styling - compact */
     .badge {
         border: 1px solid #000 !important;
-        padding: 5px 10px !important;
-        font-size: 13px !important;
+        padding: 3px 8px !important;
+        font-size: 10px !important;
         font-weight: bold !important;
         display: inline-block !important;
         -webkit-print-color-adjust: exact !important;
@@ -185,13 +184,13 @@
     /* Interpretation badges under charts */
     .text-center {
         text-align: center !important;
-        margin-top: 10px !important;
+        margin-top: 5px !important;
     }
 
-    /* Page settings */
+    /* Page settings - PORTRAIT mode */
     @page {
-        size: A4 landscape;
-        margin: 15mm 10mm;
+        size: A4 portrait;
+        margin: 10mm 10mm;
     }
 
     /* Prevent orphaned content */
