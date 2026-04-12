@@ -54,17 +54,52 @@
         </div>
     </div>
 
-    <!-- Audiogram Chart -->
-    @if($audiometryTest->right_ear_data || $audiometryTest->left_ear_data)
-    <div class="card mb-3">
-        <div class="card-header">
-            <h5 class="mb-0">{{ __('Audiogram Chart') }}</h5>
+    <!-- Audiogram Charts -->
+    <div class="row">
+        <!-- Right Ear Audiogram -->
+        @if($audiometryTest->right_ear_data)
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-ear-listen me-2"></i>{{ __('Right Ear Audiogram') }}</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="rightEarChart" width="400" height="400"></canvas>
+                    @if($audiometryTest->right_interpretation)
+                    <div class="mt-3 text-center">
+                        <strong>{{ __('Interpretation') }}:</strong>
+                        <span class="badge {{ $audiometryTest->right_interpretation === 'normal' ? 'bg-success' : 'bg-warning' }} ms-2">
+                            {{ $audiometryTest->right_interpretation_display }}
+                        </span>
+                    </div>
+                    @endif
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <canvas id="audiogramChart" width="800" height="400"></canvas>
+        @endif
+
+        <!-- Left Ear Audiogram -->
+        @if($audiometryTest->left_ear_data)
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-ear-listen me-2"></i>{{ __('Left Ear Audiogram') }}</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="leftEarChart" width="400" height="400"></canvas>
+                    @if($audiometryTest->left_interpretation)
+                    <div class="mt-3 text-center">
+                        <strong>{{ __('Interpretation') }}:</strong>
+                        <span class="badge {{ $audiometryTest->left_interpretation === 'normal' ? 'bg-success' : 'bg-warning' }} ms-2">
+                            {{ $audiometryTest->left_interpretation_display }}
+                        </span>
+                    </div>
+                    @endif
+                </div>
+            </div>
         </div>
+        @endif
     </div>
-    @endif
 
     <!-- Speech Audiometry Results -->
     @if($audiometryTest->right_srt || $audiometryTest->left_srt || $audiometryTest->right_wrs || $audiometryTest->left_wrs)
@@ -195,9 +230,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('audiogramChart');
-    if (!ctx) return;
-
     // Prepare data
     const frequencies = [250, 500, 1000, 2000, 3000, 4000, 6000, 8000];
     const rightEarData = @json($audiometryTest->right_ear_data ?? []);
@@ -214,131 +246,123 @@ document.addEventListener('DOMContentLoaded', function() {
         return val !== null && val !== undefined ? val : null;
     });
 
-    // Create audiogram chart
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: frequencies.map(f => f + ' Hz'),
-            datasets: [
-                {
+    // Common chart options
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+            y: {
+                reverse: true, // Audiograms show worse hearing (higher dB) at bottom
+                min: -10,
+                max: 120,
+                ticks: {
+                    stepSize: 10,
+                    callback: function(value) {
+                        return value + ' dB';
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Hearing Level (dB HL)',
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    }
+                },
+                grid: {
+                    color: function(context) {
+                        // Highlight normal hearing threshold (0-25 dB)
+                        if (context.tick.value === 25) {
+                            return 'rgba(0, 128, 0, 0.3)';
+                        }
+                        return 'rgba(0, 0, 0, 0.1)';
+                    },
+                    lineWidth: function(context) {
+                        if (context.tick.value === 25) {
+                            return 2;
+                        }
+                        return 1;
+                    }
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Frequency (Hz)',
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    }
+                },
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        if (context.parsed.y !== null) {
+                            return context.parsed.y + ' dB HL';
+                        }
+                        return '';
+                    }
+                }
+            }
+        }
+    };
+
+    // Create Right Ear Chart
+    const rightCtx = document.getElementById('rightEarChart');
+    if (rightCtx) {
+        new Chart(rightCtx, {
+            type: 'line',
+            data: {
+                labels: frequencies.map(f => f + ' Hz'),
+                datasets: [{
                     label: 'Right Ear',
                     data: rightValues,
                     borderColor: 'rgb(220, 53, 69)',
                     backgroundColor: 'rgba(220, 53, 69, 0.1)',
                     pointStyle: 'circle',
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
-                    borderWidth: 2,
+                    pointRadius: 7,
+                    pointHoverRadius: 9,
+                    borderWidth: 3,
                     tension: 0.1,
                     spanGaps: true
-                },
-                {
+                }]
+            },
+            options: commonOptions
+        });
+    }
+
+    // Create Left Ear Chart
+    const leftCtx = document.getElementById('leftEarChart');
+    if (leftCtx) {
+        new Chart(leftCtx, {
+            type: 'line',
+            data: {
+                labels: frequencies.map(f => f + ' Hz'),
+                datasets: [{
                     label: 'Left Ear',
                     data: leftValues,
                     borderColor: 'rgb(13, 110, 253)',
                     backgroundColor: 'rgba(13, 110, 253, 0.1)',
                     pointStyle: 'crossRot',
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
-                    borderWidth: 2,
+                    pointRadius: 7,
+                    pointHoverRadius: 9,
+                    borderWidth: 3,
                     tension: 0.1,
                     spanGaps: true
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            scales: {
-                y: {
-                    reverse: true, // Audiograms show worse hearing (higher dB) at bottom
-                    min: -10,
-                    max: 120,
-                    ticks: {
-                        stepSize: 10,
-                        callback: function(value) {
-                            return value + ' dB';
-                        }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Hearing Level (dB HL)',
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        }
-                    },
-                    grid: {
-                        color: function(context) {
-                            // Highlight normal hearing threshold (0-25 dB)
-                            if (context.tick.value === 25) {
-                                return 'rgba(0, 128, 0, 0.3)';
-                            }
-                            return 'rgba(0, 0, 0, 0.1)';
-                        },
-                        lineWidth: function(context) {
-                            if (context.tick.value === 25) {
-                                return 2;
-                            }
-                            return 1;
-                        }
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Frequency (Hz)',
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
-                }
+                }]
             },
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 20,
-                        font: {
-                            size: 12
-                        }
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Pure Tone Audiogram',
-                    font: {
-                        size: 16,
-                        weight: 'bold'
-                    },
-                    padding: {
-                        top: 10,
-                        bottom: 20
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.parsed.y !== null) {
-                                label += context.parsed.y + ' dB HL';
-                            }
-                            return label;
-                        }
-                    }
-                }
-            }
-        }
-    });
+            options: commonOptions
+        });
+    }
 });
 </script>
 @endpush
