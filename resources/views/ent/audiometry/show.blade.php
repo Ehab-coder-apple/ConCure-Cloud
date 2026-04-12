@@ -9,46 +9,89 @@
     nav.breadcrumb,
     .btn,
     button,
-    .no-print {
+    .no-print,
+    #sidebar,
+    .topbar,
+    .app-header,
+    .app-sidebar {
         display: none !important;
+        visibility: hidden !important;
     }
 
-    /* Reset body and container */
-    body {
+    /* Force full page layout */
+    html, body {
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
         background: white !important;
-        margin: 0;
-        padding: 20px;
+        overflow: visible !important;
     }
 
+    body {
+        padding: 15mm 10mm !important;
+    }
+
+    /* Reset container widths */
     .container-fluid {
+        width: 100% !important;
         max-width: 100% !important;
         padding: 0 !important;
         margin: 0 !important;
     }
 
-    /* Page header styling */
-    h2 {
-        font-size: 24px !important;
-        margin-bottom: 10px !important;
-        color: #000 !important;
-        page-break-after: avoid;
+    /* Print-only header - larger and clearer */
+    .print-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 15px;
+        border-bottom: 3px solid #000;
+        padding-bottom: 12px;
     }
 
-    /* Card styling for print */
+    .print-header h1 {
+        font-size: 32px !important;
+        font-weight: bold !important;
+        margin: 0 0 8px 0 !important;
+        color: #000 !important;
+    }
+
+    .print-header p {
+        font-size: 14px !important;
+        margin: 0 !important;
+        color: #333 !important;
+    }
+
+    .d-none {
+        display: block !important;
+    }
+
+    /* Screen-only title */
+    .screen-title {
+        display: none !important;
+    }
+
+    /* Card styling - make cards more prominent */
     .card {
-        border: 1px solid #333 !important;
-        margin-bottom: 15px !important;
+        border: 2px solid #000 !important;
+        margin-bottom: 12px !important;
         page-break-inside: avoid;
         box-shadow: none !important;
+        background: white !important;
     }
 
     .card-header {
-        background-color: #f8f9fa !important;
-        color: #000 !important;
-        border-bottom: 2px solid #333 !important;
-        padding: 10px 15px !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+        padding: 12px 15px !important;
+        border-bottom: 2px solid #000 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    .card-header h5 {
+        font-size: 18px !important;
+        font-weight: bold !important;
+        margin: 0 !important;
     }
 
     .card-header.bg-danger {
@@ -63,56 +106,70 @@
 
     .card-body {
         padding: 15px !important;
+        background: white !important;
     }
 
-    /* Audiogram cards - ensure they print side by side */
+    /* Audiogram row - CRITICAL for side-by-side layout */
     .row {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        page-break-inside: avoid;
-    }
-
-    .col-md-6 {
-        flex: 0 0 48% !important;
-        max-width: 48% !important;
-        margin-right: 2% !important;
-    }
-
-    .col-md-6:last-child {
-        margin-right: 0 !important;
-    }
-
-    /* Chart container */
-    canvas {
-        max-width: 100% !important;
-        height: auto !important;
-    }
-
-    /* Text styling */
-    p, strong, span {
-        color: #000 !important;
-        font-size: 12px !important;
-    }
-
-    h5 {
-        font-size: 16px !important;
-        color: #000 !important;
+        display: table !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+        page-break-inside: avoid !important;
         margin: 0 !important;
     }
 
-    h6 {
-        font-size: 14px !important;
-        color: #000 !important;
-        margin-bottom: 5px !important;
+    .col-md-6 {
+        display: table-cell !important;
+        width: 49% !important;
+        max-width: 49% !important;
+        float: none !important;
+        padding: 0 5px !important;
+        vertical-align: top !important;
     }
 
-    /* Badge styling */
+    /* Make charts BIGGER */
+    canvas {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 350px !important;
+        display: block !important;
+    }
+
+    /* Text content sizing */
+    p {
+        font-size: 13px !important;
+        line-height: 1.4 !important;
+        color: #000 !important;
+        margin: 5px 0 !important;
+    }
+
+    strong {
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    h5 {
+        font-size: 18px !important;
+        color: #000 !important;
+        margin: 0 0 8px 0 !important;
+    }
+
+    h6 {
+        font-size: 15px !important;
+        font-weight: bold !important;
+        color: #000 !important;
+        margin: 8px 0 5px 0 !important;
+    }
+
+    /* Badge styling - make more visible */
     .badge {
-        border: 1px solid #333 !important;
-        padding: 4px 8px !important;
-        font-size: 11px !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+        border: 1px solid #000 !important;
+        padding: 5px 10px !important;
+        font-size: 13px !important;
+        font-weight: bold !important;
+        display: inline-block !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
     .badge.bg-success {
@@ -125,54 +182,44 @@
         color: #000 !important;
     }
 
-    /* Table styling if present */
-    table {
-        border-collapse: collapse !important;
-        width: 100% !important;
+    /* Interpretation badges under charts */
+    .text-center {
+        text-align: center !important;
+        margin-top: 10px !important;
     }
 
-    table td, table th {
-        border: 1px solid #333 !important;
-        padding: 5px !important;
-        font-size: 11px !important;
+    /* Page settings */
+    @page {
+        size: A4 landscape;
+        margin: 15mm 10mm;
     }
 
-    /* Prevent page breaks inside important sections */
-    .card,
-    .row,
-    canvas,
-    .chart-container {
+    /* Prevent orphaned content */
+    h5, h6 {
+        page-break-after: avoid !important;
+    }
+
+    .card {
         page-break-inside: avoid !important;
     }
 
-    /* Add page breaks between major sections */
-    .page-break-before {
-        page-break-before: always !important;
-    }
-
-    /* Footer for printed pages */
-    @page {
-        margin: 1.5cm;
-        size: A4 landscape;
-    }
-
-    /* Print header */
-    .print-header {
-        display: block !important;
-        text-align: center;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #000;
-        padding-bottom: 10px;
-    }
-
-    .d-none {
-        display: block !important;
-    }
-
-    /* Ensure colors print */
+    /* Force exact color printing */
     * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* Hide links */
+    a[href]:after {
+        content: none !important;
+    }
+
+    /* Make test information more compact */
+    .card-body .row .col-md-4 {
+        display: inline-block !important;
+        width: 32% !important;
+        margin-right: 1% !important;
     }
 }
 </style>
@@ -182,14 +229,15 @@
 <div class="container-fluid">
     <!-- Print-only header -->
     <div class="print-header d-none">
-        <h1 style="margin: 0; font-size: 28px;">{{ __('Audiogram Report') }}</h1>
-        <p style="margin: 5px 0; font-size: 14px;">
-            {{ Auth::user()->clinic->name ?? 'ConCure Clinic' }} |
-            {{ __('Date') }}: {{ $audiometryTest->test_date->format('F d, Y') }}
+        <h1>{{ __('AUDIOGRAM REPORT') }}</h1>
+        <p>
+            <strong>{{ Auth::user()->clinic->name ?? 'ConCure Clinic Management System' }}</strong><br>
+            {{ __('Pure Tone Audiometry Test') }} | {{ __('Test Date') }}: {{ $audiometryTest->test_date->format('F d, Y') }}<br>
+            {{ __('Patient') }}: {{ $audiometryTest->patient->full_name }} ({{ $audiometryTest->patient->patient_id }})
         </p>
     </div>
 
-    <div class="row mb-4 no-print">
+    <div class="row mb-4 no-print screen-title">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
