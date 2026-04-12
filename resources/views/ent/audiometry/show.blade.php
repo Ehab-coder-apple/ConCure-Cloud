@@ -1,8 +1,195 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+@media print {
+    /* Hide all unnecessary elements */
+    .sidebar,
+    .navbar,
+    nav.breadcrumb,
+    .btn,
+    button,
+    .no-print {
+        display: none !important;
+    }
+
+    /* Reset body and container */
+    body {
+        background: white !important;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .container-fluid {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Page header styling */
+    h2 {
+        font-size: 24px !important;
+        margin-bottom: 10px !important;
+        color: #000 !important;
+        page-break-after: avoid;
+    }
+
+    /* Card styling for print */
+    .card {
+        border: 1px solid #333 !important;
+        margin-bottom: 15px !important;
+        page-break-inside: avoid;
+        box-shadow: none !important;
+    }
+
+    .card-header {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+        border-bottom: 2px solid #333 !important;
+        padding: 10px 15px !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .card-header.bg-danger {
+        background-color: #dc3545 !important;
+        color: white !important;
+    }
+
+    .card-header.bg-primary {
+        background-color: #0d6efd !important;
+        color: white !important;
+    }
+
+    .card-body {
+        padding: 15px !important;
+    }
+
+    /* Audiogram cards - ensure they print side by side */
+    .row {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        page-break-inside: avoid;
+    }
+
+    .col-md-6 {
+        flex: 0 0 48% !important;
+        max-width: 48% !important;
+        margin-right: 2% !important;
+    }
+
+    .col-md-6:last-child {
+        margin-right: 0 !important;
+    }
+
+    /* Chart container */
+    canvas {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    /* Text styling */
+    p, strong, span {
+        color: #000 !important;
+        font-size: 12px !important;
+    }
+
+    h5 {
+        font-size: 16px !important;
+        color: #000 !important;
+        margin: 0 !important;
+    }
+
+    h6 {
+        font-size: 14px !important;
+        color: #000 !important;
+        margin-bottom: 5px !important;
+    }
+
+    /* Badge styling */
+    .badge {
+        border: 1px solid #333 !important;
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .badge.bg-success {
+        background-color: #198754 !important;
+        color: white !important;
+    }
+
+    .badge.bg-warning {
+        background-color: #ffc107 !important;
+        color: #000 !important;
+    }
+
+    /* Table styling if present */
+    table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+    }
+
+    table td, table th {
+        border: 1px solid #333 !important;
+        padding: 5px !important;
+        font-size: 11px !important;
+    }
+
+    /* Prevent page breaks inside important sections */
+    .card,
+    .row,
+    canvas,
+    .chart-container {
+        page-break-inside: avoid !important;
+    }
+
+    /* Add page breaks between major sections */
+    .page-break-before {
+        page-break-before: always !important;
+    }
+
+    /* Footer for printed pages */
+    @page {
+        margin: 1.5cm;
+        size: A4 landscape;
+    }
+
+    /* Print header */
+    .print-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+    }
+
+    .d-none {
+        display: block !important;
+    }
+
+    /* Ensure colors print */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
-    <div class="row mb-4">
+    <!-- Print-only header -->
+    <div class="print-header d-none">
+        <h1 style="margin: 0; font-size: 28px;">{{ __('Audiogram Report') }}</h1>
+        <p style="margin: 5px 0; font-size: 14px;">
+            {{ Auth::user()->clinic->name ?? 'ConCure Clinic' }} |
+            {{ __('Date') }}: {{ $audiometryTest->test_date->format('F d, Y') }}
+        </p>
+    </div>
+
+    <div class="row mb-4 no-print">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
