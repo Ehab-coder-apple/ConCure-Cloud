@@ -5,6 +5,7 @@ namespace App\Imports;
 use App\Models\Patient;
 use App\Models\PatientCheckup;
 use Carbon\Carbon;
+use DateTimeInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,18 +35,25 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
             $rowNumber++;
 
             try {
+                $data = $row->toArray();
+
+                // Skip legacy template instruction rows from older downloads.
+                if ($this->isTemplateInstructionRow($data)) {
+                    continue;
+                }
+
+                $data['first_name'] = $this->normalizeText($data['first_name'] ?? '');
+                $data['last_name'] = $this->normalizeText($data['last_name'] ?? '');
+
                 // Skip empty rows
-                if (empty(trim($row['first_name'] ?? '')) && empty(trim($row['last_name'] ?? ''))) {
+                if (empty($data['first_name']) && empty($data['last_name'])) {
                     continue;
                 }
 
                 // Normalize data to bypass empty cells and odd types
-                $data = $row->toArray();
-                $data['first_name'] = trim((string)($data['first_name'] ?? ''));
-                $data['last_name'] = trim((string)($data['last_name'] ?? ''));
-                $data['phone'] = isset($data['phone']) ? trim((string)$data['phone']) : null;
-                $data['whatsapp_phone'] = isset($data['whatsapp_phone']) ? trim((string)$data['whatsapp_phone']) : null;
-                $data['email'] = isset($data['email']) ? trim((string)$data['email']) : null;
+                $data['phone'] = $this->normalizeText($data['phone'] ?? null);
+                $data['whatsapp_phone'] = $this->normalizeText($data['whatsapp_phone'] ?? null);
+                $data['email'] = $this->normalizeText($data['email'] ?? null);
                 $data['gender'] = $this->normalizeGender($data['gender'] ?? '');
                 list($normalizedDob, $dobWarning) = $this->normalizeDate($data['date_of_birth'] ?? '');
                 $data['date_of_birth'] = $normalizedDob; // may be null
@@ -101,17 +109,8 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                     continue;
                 }
 
-                // Finalize required-but-missing fields with safe defaults (bypass null cells)
-                $finalDob = $data['date_of_birth'] ?? null;
-                if (empty($finalDob)) {
-                    $finalDob = '2000-01-01';
-                    $this->warnings[] = "Row {$rowNumber}: Date of Birth missing; set to 2000-01-01";
-                }
-                $finalGender = strtolower(trim($data['gender'] ?? ''));
-                if ($finalGender === '') {
-                    $finalGender = 'other';
-                    $this->warnings[] = "Row {$rowNumber}: Gender missing; set to 'other'";
-                }
+                $finalDob = $data['date_of_birth'] ?: null;
+                $finalGender = $data['gender'] !== '' ? $data['gender'] : null;
 
                 // Parse numeric fields
                 $height = $this->parseNumeric($data['height'] ?? '');
@@ -128,27 +127,27 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
                     DB::transaction(function () use ($data, $patientId, $finalDob, $finalGender, $height, $weight, $bmi, $user) {
                         $patient = Patient::create([
                             'patient_id' => $patientId,
-                            'first_name' => trim($data['first_name']),
-                            'last_name' => trim($data['last_name']),
+                            'first_name' => $data['first_name'],
+                            'last_name' => $data['last_name'],
                             'date_of_birth' => $finalDob,
                             'gender' => $finalGender,
-                            'phone' => trim($data['phone'] ?? ''),
-                            'whatsapp_phone' => trim($data['whatsapp_phone'] ?? ''),
-                            'email' => trim($data['email'] ?? ''),
-                            'address' => trim($data['address'] ?? ''),
-                            'job' => trim($data['job'] ?? ''),
-                            'education' => trim($data['education'] ?? ''),
+                            'phone' => $data['phone'],
+                            'whatsapp_phone' => $data['whatsapp_phone'],
+                            'email' => $data['email'],
+                            'address' => $this->normalizeText($data['address'] ?? null),
+                            'job' => $this->normalizeText($data['job'] ?? null),
+                            'education' => $this->normalizeText($data['education'] ?? null),
                             'height' => $height,
                             'weight' => $weight,
                             'bmi' => $bmi,
-                            'allergies' => trim($data['allergies'] ?? ''),
+                            'allergies' => $this->normalizeText($data['allergies'] ?? null),
                             'is_pregnant' => $this->parseBoolean($data['is_pregnant'] ?? ''),
-                            'chronic_illnesses' => trim($data['chronic_illnesses'] ?? ''),
-                            'surgeries_history' => trim($data['surgeries_history'] ?? ''),
-                            'diet_history' => trim($data['diet_history'] ?? ''),
-                            'notes' => trim($data['notes'] ?? ''),
-                            'emergency_contact_name' => trim($data['emergency_contact_name'] ?? ''),
-                            'emergency_contact_phone' => trim($data['emergency_contact_phone'] ?? ''),
+                            'chronic_illnesses' => $this->normalizeText($data['chronic_illnesses'] ?? null),
+                            'surgeries_history' => $this->normalizeText($data['surgeries_history'] ?? null),
+                            'diet_history' => $this->normalizeText($data['diet_history'] ?? null),
+                            'notes' => $this->normalizeText($data['notes'] ?? null),
+                            'emergency_contact_name' => $this->normalizeText($data['emergency_contact_name'] ?? null),
+                            'emergency_contact_phone' => $this->normalizeText($data['emergency_contact_phone'] ?? null),
                             'clinic_id' => $user->clinic_id,
                             'created_by' => $user->id,
                             'is_active' => $this->parseBoolean($data['is_active'] ?? 'true'),
@@ -161,7 +160,7 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
 
                     $this->importedCount++;
                 } catch (\Illuminate\Database\QueryException $e) {
-                    $this->errors[] = "Row {$rowNumber}: Database error (likely a required field is missing or invalid). Please check Date of Birth and Gender in the sheet.";
+                    $this->errors[] = "Row {$rowNumber}: Database error while saving the patient. Please make sure the latest patient schema migration has been applied.";
                     $this->skippedCount++;
                     continue;
                 }
@@ -190,11 +189,13 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
      */
     private function parseNumeric($value)
     {
-        if (empty(trim($value))) {
+        $value = $this->normalizeText($value);
+
+        if ($value === null) {
             return null;
         }
 
-        $cleaned = preg_replace('/[^\d.]/', '', trim($value));
+        $cleaned = preg_replace('/[^\d.]/', '', $value);
         return is_numeric($cleaned) ? (float)$cleaned : null;
     }
 
@@ -203,11 +204,13 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
      */
     private function parseBoolean($value)
     {
-        if (empty(trim($value))) {
+        $value = $this->normalizeText($value);
+
+        if ($value === null) {
             return false;
         }
 
-        $value = strtolower(trim($value));
+        $value = strtolower($value);
         return in_array($value, ['true', '1', 'yes', 'y', 'on']);
     }
 
@@ -216,7 +219,7 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
      */
     private function normalizeGender($value): string
     {
-        $v = strtolower(trim((string)$value));
+        $v = strtolower($this->normalizeText($value) ?? '');
         if ($v === '') return '';
         $map = [
             'm' => 'male', 'male' => 'male', '1' => 'male',
@@ -230,27 +233,84 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
      * Normalize Excel dates: accepts Y-m-d strings or Excel serial numbers.
      * Returns array [Y-m-d|null, warning|null]
      */
-    private function normalizeDate($value, string $invalidDisposition = 'will use default'): array
+    private function normalizeDate($value, string $invalidDisposition = 'will be left empty'): array
     {
-        if ($value === null) return [null, null];
-        // If numeric, try Excel serial
+        if ($value === null) {
+            return [null, null];
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return [Carbon::instance($value)->format('Y-m-d'), null];
+        }
+
         if (is_numeric($value)) {
             try {
                 $dt = ExcelDate::excelToDateTimeObject($value);
                 return [$dt->format('Y-m-d'), null];
             } catch (\Throwable $e) {
                 return [null, "Invalid date detected; could not convert Excel serial ({$invalidDisposition})"];
-
-
             }
         }
-        $v = trim((string)$value);
-        if ($v === '') return [null, null];
+
+        $v = $this->normalizeText($value);
+        if ($v === null) {
+            return [null, null];
+        }
+
+        foreach (['Y-m-d', 'Y/m/d', 'd/m/Y', 'd-m-Y', 'm/d/Y', 'm-d-Y', 'd.m.Y'] as $format) {
+            try {
+                $dt = Carbon::createFromFormat($format, $v);
+                if ($dt !== false) {
+                    return [$dt->format('Y-m-d'), null];
+                }
+            } catch (\Throwable $e) {
+                // Try next known format.
+            }
+        }
+
         try {
-            return [\Carbon\Carbon::parse($v)->format('Y-m-d'), null];
+            return [Carbon::parse($v)->format('Y-m-d'), null];
         } catch (\Throwable $e) {
             return [null, "Invalid date format '{$v}' ({$invalidDisposition})"];
         }
+    }
+
+    private function normalizeText($value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        $normalized = trim((string) $value);
+
+        return $normalized === '' ? null : $normalized;
+    }
+
+    private function isTemplateInstructionRow(array $data): bool
+    {
+        $expectedHeaders = self::getExpectedHeaders();
+        $nonEmptyValues = 0;
+        $matchingLabels = 0;
+
+        foreach ($expectedHeaders as $key => $label) {
+            $value = $this->normalizeText($data[$key] ?? null);
+
+            if ($value === null) {
+                continue;
+            }
+
+            $nonEmptyValues++;
+
+            if (strcasecmp($value, $label) === 0) {
+                $matchingLabels++;
+            }
+        }
+
+        return $nonEmptyValues > 0 && $nonEmptyValues === $matchingLabels;
     }
 
     /**
@@ -314,9 +374,9 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
         return [
             'first_name' => 'First Name (Required)',
             'last_name' => 'Last Name (Required)',
-            'date_of_birth' => 'Date of Birth (YYYY-MM-DD)',
+            'date_of_birth' => 'Date of Birth (YYYY-MM-DD, optional)',
             'previous_visit_date' => 'Previous Visit Date (YYYY-MM-DD, optional)',
-            'gender' => 'Gender (male/female)',
+            'gender' => 'Gender (male/female/other, optional)',
             'phone' => 'Phone Number',
             'whatsapp_phone' => 'WhatsApp Phone',
             'email' => 'Email Address',

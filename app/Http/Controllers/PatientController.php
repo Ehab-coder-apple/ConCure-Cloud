@@ -1079,11 +1079,8 @@ class PatientController extends Controller
         // Get headers
         $headers = PatientsImport::getExpectedHeaders();
         $headerKeys = array_keys($headers);
-        $headerValues = array_values($headers);
-
         // Set headers
         $sheet->fromArray([$headerKeys], null, 'A1');
-        $sheet->fromArray([$headerValues], null, 'A2');
 
         // Style headers
         $headerStyle = [
@@ -1091,7 +1088,7 @@ class PatientController extends Controller
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'color' => ['rgb' => '4472C4']],
             'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
         ];
-        $sheet->getStyle('A1:' . chr(64 + count($headerKeys)) . '2')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:' . chr(64 + count($headerKeys)) . '1')->applyFromArray($headerStyle);
 
         // Auto-size columns
         foreach (range('A', chr(64 + count($headerKeys))) as $col) {
@@ -1101,7 +1098,7 @@ class PatientController extends Controller
         // Add sample data if requested
         if ($includeSampleData) {
             $sampleData = PatientsImport::getSampleData();
-            $startRow = 3;
+            $startRow = 2;
             foreach ($sampleData as $rowData) {
                 $rowValues = [];
                 foreach ($headerKeys as $key) {
