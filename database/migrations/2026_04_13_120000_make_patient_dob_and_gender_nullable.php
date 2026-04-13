@@ -1,24 +1,27 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('patients', function (Blueprint $table) {
-            $table->date('date_of_birth')->nullable()->change();
-            $table->enum('gender', ['male', 'female', 'other'])->nullable()->change();
-        });
+        DB::statement('ALTER TABLE patients MODIFY date_of_birth DATE NULL');
+        DB::statement("ALTER TABLE patients MODIFY gender ENUM('male', 'female', 'other') NULL");
     }
 
     public function down(): void
     {
-        Schema::table('patients', function (Blueprint $table) {
-            $table->date('date_of_birth')->nullable(false)->change();
-            $table->enum('gender', ['male', 'female', 'other'])->nullable(false)->change();
-        });
+        DB::table('patients')->whereNull('date_of_birth')->update([
+            'date_of_birth' => '2000-01-01',
+        ]);
+
+        DB::table('patients')->whereNull('gender')->update([
+            'gender' => 'other',
+        ]);
+
+        DB::statement('ALTER TABLE patients MODIFY date_of_birth DATE NOT NULL');
+        DB::statement("ALTER TABLE patients MODIFY gender ENUM('male', 'female', 'other') NOT NULL");
     }
 };
