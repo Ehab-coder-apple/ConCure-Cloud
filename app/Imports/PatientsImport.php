@@ -305,12 +305,31 @@ class PatientsImport implements ToCollection, WithHeadingRow, WithBatchInserts, 
 
             $nonEmptyValues++;
 
-            if (strcasecmp($value, $label) === 0) {
+            if ($this->looksLikeInstructionLabel($value, $label)) {
                 $matchingLabels++;
             }
         }
 
         return $nonEmptyValues > 0 && $nonEmptyValues === $matchingLabels;
+    }
+
+    private function looksLikeInstructionLabel(string $value, string $expectedLabel): bool
+    {
+        $normalizedValue = $this->normalizeInstructionLabel($value);
+        $normalizedExpected = $this->normalizeInstructionLabel($expectedLabel);
+        $normalizedBase = $this->normalizeInstructionLabel(preg_replace('/\s*\(.*/', '', $expectedLabel) ?? $expectedLabel);
+
+        return $normalizedValue === $normalizedExpected
+            || $normalizedValue === $normalizedBase
+            || ($normalizedBase !== '' && str_starts_with($normalizedValue, $normalizedBase));
+    }
+
+    private function normalizeInstructionLabel(string $value): string
+    {
+        $normalized = strtolower(trim($value));
+        $normalized = preg_replace('/[^a-z0-9]+/', ' ', $normalized) ?? $normalized;
+
+        return trim($normalized);
     }
 
     /**

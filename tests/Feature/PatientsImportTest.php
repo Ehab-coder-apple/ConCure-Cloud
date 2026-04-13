@@ -125,6 +125,7 @@ class PatientsImportTest extends TestCase
                 ->whereDate('checkup_date', '2026-02-15')
                 ->exists()
         );
+        $this->assertSame('2026-02-15', optional($patient->fresh()->last_visit_date)->format('Y-m-d'));
     }
 
     public function test_import_template_headers_include_previous_visit_date(): void
@@ -214,6 +215,61 @@ class PatientsImportTest extends TestCase
         $this->assertSame(1, $import->getImportedCount());
         $this->assertSame(0, $import->getSkippedCount());
         $this->assertSame([], $import->getErrors());
+    }
+
+    public function test_import_skips_older_instruction_row_with_slightly_different_labels(): void
+    {
+        $clinic = Clinic::create([
+            'name' => 'Older Template Clinic',
+            'activation_code' => 'older-template-clinic-code',
+        ]);
+
+        $user = User::create([
+            'username' => 'older_template_importer',
+            'email' => 'older-template-importer@example.com',
+            'password' => 'password',
+            'first_name' => 'Older',
+            'last_name' => 'Importer',
+            'role' => 'doctor',
+            'clinic_id' => $clinic->id,
+        ]);
+
+        $this->actingAs($user);
+
+        $import = new PatientsImport();
+        $import->collection(collect([
+            collect([
+                'first_name' => 'First Name',
+                'last_name' => 'Last Name',
+                'date_of_birth' => 'Date of Birth (YYYY-MM-DD)',
+                'previous_visit_date' => 'Previous Visit Date (YYYY-MM-DD, optional)',
+                'gender' => 'Gender (male/female/other)',
+                'phone' => 'Phone Number',
+                'whatsapp_phone' => 'WhatsApp Phone',
+                'email' => 'Email Address',
+            ]),
+            collect([
+                'first_name' => 'Noor',
+                'last_name' => 'Ali',
+                'date_of_birth' => '10/05/1992',
+                'previous_visit_date' => '26/02/2013',
+                'gender' => 'female',
+                'email' => 'noor.ali@example.com',
+            ]),
+        ]));
+
+        $patient = Patient::where('first_name', 'Noor')->where('last_name', 'Ali')->first();
+
+        $this->assertNotNull($patient);
+        $this->assertSame(1, $import->getImportedCount());
+        $this->assertSame(0, $import->getSkippedCount());
+        $this->assertSame([], $import->getErrors());
+        $this->assertSame([], $import->getWarnings());
+        $this->assertTrue(
+            PatientCheckup::where('patient_id', $patient->id)
+                ->whereDate('checkup_date', '2013-02-26')
+                ->exists()
+        );
     }
 
     public function test_import_keeps_missing_dob_and_gender_empty_instead_of_faking_values(): void

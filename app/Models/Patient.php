@@ -375,6 +375,25 @@ class Patient extends Model
     }
 
     /**
+     * Get the latest visit date shown on patient listings.
+     */
+    public function getLastVisitDateAttribute()
+    {
+        if ($this->relationLoaded('checkups')) {
+            $latestLoadedCheckup = $this->getRelation('checkups')
+                ->filter(fn ($checkup) => !empty($checkup->checkup_date))
+                ->sortByDesc(fn ($checkup) => $checkup->checkup_date instanceof \DateTimeInterface
+                    ? $checkup->checkup_date->getTimestamp()
+                    : strtotime((string) $checkup->checkup_date))
+                ->first();
+
+            return $latestLoadedCheckup?->checkup_date;
+        }
+
+        return $this->checkups()->latest('checkup_date')->value('checkup_date');
+    }
+
+    /**
      * Get the latest weight from checkups.
      */
     public function getLatestWeightAttribute(): ?float
