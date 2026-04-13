@@ -37,7 +37,7 @@
 @endpush
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid" data-auto-voice-scope="patient-show-page">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -105,22 +105,6 @@
                         <i class="fas fa-clipboard-list me-1"></i>
                         {{ __('Checkup') }}
                     </a>
-                    <a href="{{ url("/dental/patients/{$patient->id}/charts") }}" class="btn btn-info btn-sm me-1">
-                        <i class="fas fa-tooth me-1"></i>
-                        {{ __('Dental Chart') }}
-                    </a>
-                    @if($patient->age <= 20)
-                        <a href="{{ route('pediatric.growth-chart', $patient) }}" class="btn btn-success btn-sm me-1">
-                            <i class="fas fa-baby me-1"></i>
-                            {{ __('Growth Chart') }}
-                        </a>
-                    @else
-                        <button type="button" class="btn btn-secondary btn-sm me-1 disabled" style="opacity: 0.6; cursor: not-allowed;"
-                                onclick="alert('{{ __('Pediatric Growth Chart is only available for patients aged 20 years and under. This patient is :age years old.', ['age' => $patient->age]) }}')">
-                            <i class="fas fa-baby me-1"></i>
-                            {{ __('Growth Chart') }}
-                        </button>
-                    @endif
                     <a href="{{ route('patients.forms.index', $patient) }}" class="btn btn-secondary btn-sm me-1">
                         <i class="fas fa-file-alt me-1"></i>
                         {{ __('Forms') }}
@@ -138,6 +122,8 @@
                 </div>
 
             </div>
+
+            @include('patients.partials.profile-hub')
 
             <div class="row">
                 <!-- Patient Information -->
@@ -165,11 +151,11 @@
                                 </div>
                                 <div class="col-6">
                                     <small class="text-muted">{{ __('Gender') }}</small>
-                                    <div class="fw-bold">{{ ucfirst($patient->gender ?? 'Male') }}</div>
+                                    <div class="fw-bold">{{ $patient->gender ? ucfirst($patient->gender) : __('Not recorded') }}</div>
                                 </div>
                                 <div class="col-12">
                                     <small class="text-muted">{{ __('Phone') }}</small>
-                                    <div class="fw-bold">{{ $patient->phone ?? '+1-555-0123' }}</div>
+                                    <div class="fw-bold">{{ filled($patient->phone) ? $patient->phone : __('Not recorded') }}</div>
                                 </div>
                                 @if($patient->whatsapp_phone)
                                 <div class="col-12">
@@ -188,11 +174,11 @@
                                 @endif
                                 <div class="col-12">
                                     <small class="text-muted">{{ __('Email') }}</small>
-                                    <div class="fw-bold">{{ $patient->email ?? 'demo@patient.com' }}</div>
+                                    <div class="fw-bold">{{ filled($patient->email) ? $patient->email : __('Not recorded') }}</div>
                                 </div>
                                 <div class="col-12">
                                     <small class="text-muted">{{ __('Address') }}</small>
-                                    <div class="fw-bold">{{ $patient->address ?? '123 Main Street, City, State' }}</div>
+                                    <div class="fw-bold">{{ filled($patient->address) ? $patient->address : __('Not recorded') }}</div>
                                 </div>
                             </div>
                         </div>
@@ -210,15 +196,15 @@
                             <div class="row g-2">
                                 <div class="col-6">
                                     <small class="text-muted">{{ __('Height') }}</small>
-                                    <div class="fw-bold">{{ $patient->height ?? '170' }} cm</div>
+                                    <div class="fw-bold">{{ filled($patient->height) ? $patient->height . ' cm' : __('N/A') }}</div>
                                 </div>
                                 <div class="col-6">
                                     <small class="text-muted">{{ __('Weight') }}</small>
-                                    <div class="fw-bold">{{ $patient->weight ?? '70' }} kg</div>
+                                    <div class="fw-bold">{{ filled($patient->weight) ? $patient->weight . ' kg' : __('N/A') }}</div>
                                 </div>
                                 <div class="col-6">
                                     <small class="text-muted">{{ __('BMI') }}</small>
-                                    <div class="fw-bold">{{ $patient->bmi ?? '24.2' }}</div>
+                                    <div class="fw-bold">{{ filled($patient->bmi) ? $patient->bmi : __('N/A') }}</div>
                                 </div>
                                 <div class="col-6">
                                     <small class="text-muted">{{ __('Blood Type') }}</small>
@@ -464,12 +450,12 @@
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="fas fa-notes-medical me-2"></i>
-                                {{ __('Medical Information') }}
+                                {{ __('Medical Overview Snapshot') }}
                             </h6>
                         </div>
                         <div class="card-body">
                             @php
-                                $hasMedicalInfo = $patient->history_of_present_illness || $patient->allergies || $patient->chronic_illnesses || $patient->surgeries_history || $patient->diet_history || $patient->medical_history || $patient->is_pregnant;
+                                $hasMedicalInfo = $patient->allergies || $patient->chronic_illnesses || $patient->surgeries_history || $patient->medical_history || $patient->is_pregnant || !empty($patient->medical_flags);
                             @endphp
 
                             @if($hasMedicalInfo)
@@ -481,17 +467,6 @@
                                                     <i class="fas fa-history me-1"></i> {{ __('Medical History') }}
                                                 </h6>
                                                 <div class="text-break">{!! nl2br(e($patient->medical_history)) !!}</div>
-                                            </div>
-                                        </div>
-                                    @endif
-
-                                    @if($patient->history_of_present_illness)
-                                        <div class="col-12">
-                                            <div class="border rounded p-3 bg-light">
-                                                <h6 class="text-info mb-2">
-                                                    <i class="fas fa-file-medical-alt me-1"></i> {{ __('History of Present Illness') }}
-                                                </h6>
-                                                <div class="text-break">{!! nl2br(e($patient->history_of_present_illness)) !!}</div>
                                             </div>
                                         </div>
                                     @endif
@@ -529,24 +504,15 @@
                                         </div>
                                     @endif
 
-                                    @if($patient->diet_history)
-                                        <div class="col-md-6">
-                                            <div class="border rounded p-3 bg-light">
-                                                <h6 class="text-success mb-2">
-                                                    <i class="fas fa-utensils me-1"></i> {{ __('Diet History') }}
-                                                </h6>
-                                                <div class="text-break">{!! nl2br(e($patient->diet_history)) !!}</div>
-                                            </div>
-                                        </div>
-                                    @endif
-
-                                    @if($patient->is_pregnant)
+                                    @if(!empty($patient->medical_flags))
                                         <div class="col-md-6">
                                             <div class="border rounded p-3 bg-warning bg-opacity-10 border-warning">
                                                 <h6 class="text-warning mb-2">
-                                                    <i class="fas fa-baby me-1"></i> {{ __('Special Condition') }}
+                                                    <i class="fas fa-exclamation-triangle me-1"></i> {{ __('Clinical Flags') }}
                                                 </h6>
-                                                <span class="badge bg-warning text-dark">{{ __('Currently Pregnant') }}</span>
+                                                @foreach(collect($patient->medical_flags)->keys() as $flagKey)
+                                                    <span class="badge bg-warning text-dark me-1 mb-1">{{ __(\App\Models\PatientMedicalOverview::FLAG_LABELS[$flagKey] ?? ucfirst($flagKey)) }}</span>
+                                                @endforeach
                                             </div>
                                         </div>
                                     @endif
@@ -1765,5 +1731,6 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
     applyTimelineVisibility();
 })();
 </script>
+@include('partials.voice-input')
 @endsection
 

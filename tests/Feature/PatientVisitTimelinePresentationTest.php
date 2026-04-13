@@ -89,4 +89,17 @@ class PatientVisitTimelinePresentationTest extends TestCase
         $this->assertStringContainsString('data-visit-history-item="false"', $html);
         $this->assertStringContainsString('data-visit-history-item="true"', $html);
     }
+
+    public function test_patient_show_view_does_not_include_demo_fallback_values_for_missing_fields(): void
+    {
+        $template = file_get_contents(resource_path('views/patients/show.blade.php'));
+
+        $this->assertIsString($template);
+        $this->assertStringNotContainsString("'+1-555-0123'", $template);
+        $this->assertStringNotContainsString("'demo@patient.com'", $template);
+        $this->assertStringNotContainsString("'123 Main Street, City, State'", $template);
+        $this->assertStringNotContainsString("'170' }} cm", $template);
+        $this->assertStringNotContainsString("'70' }} kg", $template);
+        $this->assertStringNotContainsString("'24.2'", $template);
+    }
 }
