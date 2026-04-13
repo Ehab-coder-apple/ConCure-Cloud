@@ -799,6 +799,10 @@ class Patient extends Model
 
     private function getPediatricProfileRelation(): ?PatientPediatric
     {
+        if (!class_exists(\App\Models\PatientPediatric::class)) {
+            return null;
+        }
+
         if ($this->relationLoaded('pediatricProfile')) {
             return $this->getRelation('pediatricProfile');
         }
@@ -818,6 +822,10 @@ class Patient extends Model
 
     private function getMedicalOverviewRelation(): ?PatientMedicalOverview
     {
+        if (!class_exists(\App\Models\PatientMedicalOverview::class)) {
+            return null;
+        }
+
         if ($this->relationLoaded('medicalOverview')) {
             return $this->getRelation('medicalOverview');
         }
