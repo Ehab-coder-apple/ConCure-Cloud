@@ -123,7 +123,9 @@
 
             </div>
 
-            @include('patients.partials.profile-hub')
+            @if(view()->exists('patients.partials.profile-hub'))
+                @include('patients.partials.profile-hub')
+            @endif
 
             <div class="row">
                 <!-- Patient Information -->
