@@ -136,6 +136,45 @@ class PatientsImportTest extends TestCase
         $this->assertSame('Previous Visit Date (YYYY-MM-DD, optional)', $headers['previous_visit_date']);
     }
 
+    public function test_last_visit_date_is_available_on_patient_list_query_shape(): void
+    {
+        $clinic = Clinic::create([
+            'name' => 'Patient List Clinic',
+            'activation_code' => 'patient-list-clinic-code',
+        ]);
+
+        $user = User::create([
+            'username' => 'list_importer',
+            'email' => 'list-importer@example.com',
+            'password' => 'password',
+            'first_name' => 'List',
+            'last_name' => 'Importer',
+            'role' => 'doctor',
+            'clinic_id' => $clinic->id,
+        ]);
+
+        $patient = Patient::create([
+            'patient_id' => 'P123456',
+            'first_name' => 'Razan',
+            'last_name' => 'Karim',
+            'clinic_id' => $clinic->id,
+            'created_by' => $user->id,
+            'is_active' => true,
+        ]);
+
+        PatientCheckup::create([
+            'patient_id' => $patient->id,
+            'recorded_by' => $user->id,
+            'checkup_date' => '2013-02-26 00:00:00',
+        ]);
+
+        $listedPatient = Patient::with(['checkups' => function ($query) {
+            $query->latest('checkup_date')->limit(1);
+        }])->findOrFail($patient->id);
+
+        $this->assertSame('2013-02-26', optional($listedPatient->last_visit_date)->format('Y-m-d'));
+    }
+
     public function test_import_accepts_common_excel_style_day_month_year_dates(): void
     {
         $clinic = Clinic::create([

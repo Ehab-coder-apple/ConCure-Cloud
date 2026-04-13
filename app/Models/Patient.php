@@ -377,8 +377,12 @@ class Patient extends Model
     /**
      * Get the latest visit date shown on patient listings.
      */
-    public function getLastVisitDateAttribute()
+    public function getLastVisitDateAttribute($value)
     {
+        if (!empty($value)) {
+            return $value;
+        }
+
         if ($this->relationLoaded('checkups')) {
             $latestLoadedCheckup = $this->getRelation('checkups')
                 ->filter(fn ($checkup) => !empty($checkup->checkup_date))
@@ -387,10 +391,14 @@ class Patient extends Model
                     : strtotime((string) $checkup->checkup_date))
                 ->first();
 
-            return $latestLoadedCheckup?->checkup_date;
+            if ($latestLoadedCheckup?->checkup_date) {
+                return $latestLoadedCheckup->checkup_date;
+            }
         }
 
-        return $this->checkups()->latest('checkup_date')->value('checkup_date');
+        $latestCheckupDate = $this->checkups()->latest('checkup_date')->value('checkup_date');
+
+        return $latestCheckupDate ? \Illuminate\Support\Carbon::parse($latestCheckupDate) : null;
     }
 
     /**
