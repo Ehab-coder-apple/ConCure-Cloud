@@ -329,6 +329,24 @@ class Patient extends Model
     }
 
     /**
+     * Get a DOB value safe for HTML date inputs.
+     */
+    public function getDateOfBirthForFormAttribute(): ?string
+    {
+        $rawDob = $this->getAttributes()['date_of_birth'] ?? $this->getRawOriginal('date_of_birth');
+
+        if (empty($rawDob) || $rawDob === '0000-00-00' || $rawDob === '0000-00-00 00:00:00') {
+            return null;
+        }
+
+        try {
+            return \Illuminate\Support\Carbon::parse($rawDob)->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
      * Get BMI category.
      */
     public function getBmiCategoryAttribute(): string
@@ -930,12 +948,12 @@ class Patient extends Model
      * For toddlers (1-2 years), shows years and months.
      * For older children (3+ years), shows only years.
      */
-    public function getAgeFormattedAttribute(): string
+    public function getAgeFormattedAttribute(): ?string
     {
         $rawDob = $this->getAttributes()['date_of_birth'] ?? $this->getRawOriginal('date_of_birth');
 
         if (empty($rawDob) || $rawDob === '0000-00-00' || $rawDob === '0000-00-00 00:00:00') {
-            return '0 years';
+            return null;
         }
 
         try {
@@ -977,7 +995,7 @@ class Patient extends Model
                 return $years . ' ' . ($years == 1 ? 'year' : 'years');
             }
         } catch (\Throwable $e) {
-            return '0 years';
+            return null;
         }
     }
 }

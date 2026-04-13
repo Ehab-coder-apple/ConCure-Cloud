@@ -2,10 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesPatientAccess;
 use App\Models\Patient;
 use App\Models\PatientCheckup;
+use App\Models\PatientDental;
+use App\Models\PatientEnt;
 use App\Models\PatientFile;
+use App\Models\PatientNutrition;
+use App\Models\PatientPediatric;
 use App\Models\PatientImage;
+use App\Models\PatientMedicalOverview;
 use App\Models\Prescription;
 use App\Models\SimplePrescription;
 use App\Imports\PatientsImport;
@@ -13,6 +19,7 @@ use App\Exports\PatientsExport;
 use App\Models\Clinic;
 use App\Http\Traits\SmartSearch;
 
+use App\Services\PatientProfileModuleRegistry;
 use App\Services\StorageQuotaService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -28,6 +35,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class PatientController extends Controller
 {
     use SmartSearch;
+    use AuthorizesPatientAccess;
     /**
      * Display a listing of patients.
      */
@@ -142,7 +150,14 @@ class PatientController extends Controller
 
         $patients = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return view('patients.index', compact('patients'));
+        $availableClinics = auth()->user()?->isSuperAdmin()
+            ? Clinic::query()->orderBy('name')->get(['id', 'name'])
+            : collect();
+
+        return view('patients.index', array_merge($this->patientFormViewData(), [
+            'patients' => $patients,
+            'availableClinics' => $availableClinics,
+        ]));
     }
 
     /**
@@ -150,7 +165,13 @@ class PatientController extends Controller
      */
     public function create()
     {
-        return view('patients.create');
+        $availableClinics = auth()->user()?->isSuperAdmin()
+            ? Clinic::query()->orderBy('name')->get(['id', 'name'])
+            : collect();
+
+        return view('patients.create', array_merge($this->patientFormViewData(), [
+            'availableClinics' => $availableClinics,
+        ]));
     }
 
     /**
@@ -202,7 +223,7 @@ class PatientController extends Controller
         $validationRules = [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'date_of_birth' => $isQuickAdd ? 'nullable|date|before:today' : 'required|date|before:today',
@@ -219,11 +240,25 @@ class PatientController extends Controller
             'is_pregnant' => 'boolean',
             'chronic_illnesses' => 'nullable|string',
             'surgeries_history' => 'nullable|string',
-            'diet_history' => 'nullable|string',
             'medical_history' => 'nullable|string',
+            'current_medications_summary' => 'nullable|string',
             'notes' => 'nullable|string',
             'emergency_contact_name' => 'nullable|string|max:255',
             'emergency_contact_phone' => 'nullable|string|max:20',
+            'clinic_id' => 'nullable|exists:clinics,id',
+            'selected_modules' => 'nullable|array',
+            'selected_modules.*' => ['string', Rule::in(collect(PatientProfileModuleRegistry::all())->pluck('key')->all())],
+            'medical_flags' => 'nullable|array',
+            'medical_flags.pregnant' => 'nullable|boolean',
+            'medical_flags.diabetic' => 'nullable|boolean',
+            'medical_flags.hypertensive' => 'nullable|boolean',
+            'dental_oral_hygiene' => ['nullable', 'string', Rule::in(array_keys(PatientDental::ORAL_HYGIENE_STATUSES))],
+            'dental_smoking_status' => ['nullable', 'string', Rule::in(array_keys(PatientDental::SMOKING_STATUSES))],
+            'pediatric_birth_weight' => 'nullable|integer|min:200|max:7000',
+            'pediatric_gestational_age_weeks' => 'nullable|integer|min:20|max:45',
+            'nutrition_height' => 'nullable|numeric|min:50|max:300',
+            'nutrition_weight' => 'nullable|numeric|min:1|max:500',
+            'ent_notes' => 'nullable|string',
             'medical_files.*' => 'nullable|file|max:10240|mimes:pdf,jpg,jpeg,png,doc,docx',
         ];
 
@@ -240,6 +275,12 @@ class PatientController extends Controller
             throw $e;
         }
 
+        $nutritionHeight = $request->input('nutrition_height', $request->input('height'));
+        $nutritionWeight = $request->input('nutrition_weight', $request->input('weight'));
+        $pediatricBirthWeight = $request->input('pediatric_birth_weight', $request->input('birth_weight'));
+        $pediatricGestationalAgeWeeks = $request->input('pediatric_gestational_age_weeks', $request->input('gestational_age_weeks'));
+        $pregnantFlag = $request->boolean('medical_flags.pregnant') || $request->boolean('is_pregnant');
+
         $patient = Patient::create([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -251,18 +292,12 @@ class PatientController extends Controller
             'address' => $request->address,
             'job' => $request->job,
             'education' => $request->education,
-            'height' => $request->height,
-            'weight' => $request->weight,
-            'allergies' => $request->allergies,
-            'history_of_present_illness' => $request->history_of_present_illness,
-            'is_pregnant' => $request->boolean('is_pregnant'),
-            'chronic_illnesses' => $request->chronic_illnesses,
-            'surgeries_history' => $request->surgeries_history,
-            'diet_history' => $request->diet_history,
-            'medical_history' => $request->medical_history,
+            'height' => $nutritionHeight,
+            'weight' => $nutritionWeight,
+            'is_pregnant' => $pregnantFlag,
             'blood_type' => $request->blood_type,
-            'birth_weight' => $request->birth_weight,
-            'gestational_age_weeks' => $request->gestational_age_weeks,
+            'birth_weight' => $pediatricBirthWeight,
+            'gestational_age_weeks' => $pediatricGestationalAgeWeeks,
             'notes' => $request->notes,
             'emergency_contact_name' => $request->emergency_contact_name,
             'emergency_contact_phone' => $request->emergency_contact_phone,
@@ -270,6 +305,14 @@ class PatientController extends Controller
             'created_by' => $user->id,
             'is_active' => true,
         ]);
+
+        $this->syncMedicalOverview($patient, $request);
+        $selectedModules = $this->eligibleSelectedModulesForPatient(
+            $patient,
+            $this->requestedModuleKeys($request)
+        );
+        $this->syncSelectedModules($patient, $selectedModules);
+        $this->syncModuleProfiles($patient, $request, $selectedModules);
 
         // Handle medical history file uploads
         if ($request->hasFile('medical_files')) {
@@ -326,6 +369,12 @@ class PatientController extends Controller
         $patient->load([
             'clinic',
             'creator',
+            'medicalOverview',
+            'dentalProfile',
+            'entProfile',
+            'pediatricProfile',
+            'nutritionProfile',
+            'activeModules',
             'files' => function ($q) {
                 $q->with('uploader')->latest()->limit(10);
             },
@@ -343,13 +392,98 @@ class PatientController extends Controller
             },
             'appointments' => function ($q) {
                 $q->with('doctor')->latest('appointment_datetime')->limit(5);
-            }
+            },
+            'medications' => function ($q) {
+                $q->latest('started_on')->limit(8);
+            },
+            'visits' => function ($q) {
+                $q->with(['hpi', 'creator'])->latest('visit_date')->limit(6);
+            },
+        ]);
+
+        $patient->loadCount([
+            'dentalCharts',
+            'dentalTreatments',
+            'dentalImages',
+            'growthMeasurements',
+            'pediatricPrescriptions',
+            'vaccinations',
+            'dietPlans',
+            'nutritionProgressMeasurements',
+            'nutritionGoals',
         ]);
 
         $visitTimelineSearch = trim((string) $request->input('visit_search', ''));
         $visitTimeline = $this->buildVisitTimelinePaginator($patient, $visitTimelineSearch, 1);
 
-        return view('patients.show', compact('patient', 'visitTimeline', 'visitTimelineSearch'));
+        $medicalOverview = $patient->medicalOverview ?: new PatientMedicalOverview([
+            'allergies' => $patient->getRawOriginal('allergies'),
+            'chronic_diseases' => $patient->getRawOriginal('chronic_illnesses'),
+            'surgeries' => $patient->getRawOriginal('surgeries_history'),
+            'medical_history' => $patient->getRawOriginal('medical_history'),
+            'flags' => array_filter([
+                'pregnant' => (bool) $patient->getRawOriginal('is_pregnant'),
+            ]),
+        ]);
+
+        $activeProfileModules = PatientProfileModuleRegistry::filterVisibleToUser($patient->active_profile_modules, auth()->user());
+        $availableProfileModules = PatientProfileModuleRegistry::filterVisibleToUser($patient->available_profile_modules, auth()->user());
+        $currentMedications = $patient->medications->where('status', 'current')->values();
+        $pastMedications = $patient->medications->where('status', 'past')->values();
+        $recentVisits = $patient->visits;
+        $legacyProfileHpi = $patient->getRawOriginal('history_of_present_illness');
+        $latestDentalChart = $patient->dentalCharts()->latest('created_at')->first();
+        $dentalLastVisitLabel = optional($latestDentalChart?->created_at)->format('M d, Y') ?: __('Not recorded');
+        $patient->setAttribute('dental_last_visit_label', $dentalLastVisitLabel);
+        $dentalProfile = $patient->dentalProfile ?: new PatientDental([
+            'smoking_status' => 'unknown',
+            'bruxism' => false,
+        ]);
+        $entProfile = $patient->entProfile ?: new PatientEnt([
+            'dizziness' => false,
+        ]);
+        $patient->setAttribute('ent_issue_count', $entProfile->issue_count);
+        $patient->setAttribute('ent_dizziness_label', $entProfile->dizziness ? __('Yes') : __('No'));
+        $patient->setAttribute('ent_file_count', $patient->files()->entRelated()->count());
+        $pediatricProfile = $patient->pediatricProfile ?: new PatientPediatric([
+            'birth_weight' => $patient->getRawOriginal('birth_weight'),
+            'gestational_age' => $patient->getRawOriginal('gestational_age_weeks'),
+            'vaccination_status' => 'unknown',
+            'feeding_type' => 'unknown',
+        ]);
+        $patient->setAttribute('pediatric_growth_status_label', __($pediatricProfile->growth_status_label));
+        $patient->setAttribute('pediatric_vaccination_status_label', $pediatricProfile->vaccination_status_label ? __($pediatricProfile->vaccination_status_label) : __('Not recorded'));
+        $latestNutritionMeasurement = $patient->nutritionProgressMeasurements->sortByDesc('measurement_date')->first();
+        $activeNutritionGoal = $patient->nutritionGoals->where('is_active', true)->sortByDesc('created_at')->first();
+        $latestNutritionPlan = $patient->dietPlans->sortByDesc('created_at')->first();
+        $nutritionProfile = $patient->nutritionProfile ?: new PatientNutrition([
+            'height' => $latestNutritionMeasurement?->height_cm ?? $patient->height,
+            'weight' => $latestNutritionMeasurement?->weight_kg ?? $patient->weight,
+            'bmi' => $latestNutritionMeasurement?->bmi ?? $patient->bmi,
+        ]);
+        $nutritionLastVisitLabel = optional($recentVisits->first()?->visit_date)->format('M d, Y') ?: __('Not recorded');
+        $patient->setAttribute('nutrition_last_visit_label', $nutritionLastVisitLabel);
+
+        return view('patients.show', compact(
+            'patient',
+            'visitTimeline',
+            'visitTimelineSearch',
+            'medicalOverview',
+            'activeProfileModules',
+            'availableProfileModules',
+            'currentMedications',
+            'pastMedications',
+            'recentVisits',
+            'legacyProfileHpi',
+            'dentalProfile',
+            'dentalLastVisitLabel',
+            'entProfile',
+            'pediatricProfile',
+            'nutritionProfile',
+            'latestNutritionMeasurement',
+            'activeNutritionGoal',
+            'latestNutritionPlan'
+        ));
     }
 
     /**
@@ -589,7 +723,19 @@ class PatientController extends Controller
     {
         $this->authorizePatientAccess($patient);
 
-        return view('patients.edit', compact('patient'));
+        $patient->loadMissing([
+            'medicalOverview',
+            'modules',
+            'dentalProfile',
+            'entProfile',
+            'pediatricProfile',
+            'nutritionProfile',
+        ]);
+
+        return view('patients.edit', array_merge(
+            ['patient' => $patient, 'selectedModuleKeys' => $this->selectedModuleKeysForPatient($patient)],
+            $this->patientFormViewData($patient->clinic)
+        ));
     }
 
     /**
@@ -602,8 +748,8 @@ class PatientController extends Controller
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'date_of_birth' => 'required|date|before:today',
-            'gender' => 'required|in:male,female,other',
+            'date_of_birth' => 'nullable|date|before:today',
+            'gender' => 'nullable|in:male,female,other',
             'phone' => 'nullable|string|max:20',
             'whatsapp_phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
@@ -619,14 +765,43 @@ class PatientController extends Controller
             'is_pregnant' => 'boolean',
             'chronic_illnesses' => 'nullable|string',
             'surgeries_history' => 'nullable|string',
-            'diet_history' => 'nullable|string',
             'medical_history' => 'nullable|string',
+            'current_medications_summary' => 'nullable|string',
             'notes' => 'nullable|string',
             'emergency_contact_name' => 'nullable|string|max:255',
             'emergency_contact_phone' => 'nullable|string|max:20',
+            'selected_modules' => 'nullable|array',
+            'selected_modules.*' => ['string', Rule::in(collect(PatientProfileModuleRegistry::all())->pluck('key')->all())],
+            'medical_flags' => 'nullable|array',
+            'medical_flags.pregnant' => 'nullable|boolean',
+            'medical_flags.diabetic' => 'nullable|boolean',
+            'medical_flags.hypertensive' => 'nullable|boolean',
+            'dental_oral_hygiene' => ['nullable', 'string', Rule::in(array_keys(PatientDental::ORAL_HYGIENE_STATUSES))],
+            'dental_smoking_status' => ['nullable', 'string', Rule::in(array_keys(PatientDental::SMOKING_STATUSES))],
+            'pediatric_birth_weight' => 'nullable|integer|min:200|max:7000',
+            'pediatric_gestational_age_weeks' => 'nullable|integer|min:20|max:45',
+            'nutrition_height' => 'nullable|numeric|min:50|max:300',
+            'nutrition_weight' => 'nullable|numeric|min:1|max:500',
+            'ent_notes' => 'nullable|string',
             'is_active' => 'boolean',
             'medical_files.*' => 'nullable|file|max:10240|mimes:pdf,jpg,jpeg,png,doc,docx',
         ]);
+
+        $nutritionHeight = $request->has('nutrition_height')
+            ? ($request->input('nutrition_height') ?: null)
+            : ($request->has('height') ? ($request->input('height') ?: null) : $patient->height);
+        $nutritionWeight = $request->has('nutrition_weight')
+            ? ($request->input('nutrition_weight') ?: null)
+            : ($request->has('weight') ? ($request->input('weight') ?: null) : $patient->weight);
+        $pediatricBirthWeight = $request->has('pediatric_birth_weight')
+            ? ($request->input('pediatric_birth_weight') ?: null)
+            : ($request->has('birth_weight') ? ($request->input('birth_weight') ?: null) : $patient->birth_weight);
+        $pediatricGestationalAgeWeeks = $request->has('pediatric_gestational_age_weeks')
+            ? ($request->input('pediatric_gestational_age_weeks') ?: null)
+            : ($request->has('gestational_age_weeks') ? ($request->input('gestational_age_weeks') ?: null) : $patient->gestational_age_weeks);
+        $pregnantFlag = $request->boolean('_supports_extended_medical_flags') || $request->has('is_pregnant')
+            ? ($request->boolean('medical_flags.pregnant') || $request->boolean('is_pregnant'))
+            : $patient->is_pregnant;
 
         $patient->update([
             'first_name' => $request->first_name,
@@ -639,25 +814,25 @@ class PatientController extends Controller
             'address' => $request->address,
             'job' => $request->job,
             'education' => $request->education,
-            'height' => $request->height,
-            'weight' => $request->weight,
-            'allergies' => $request->allergies,
-            'history_of_present_illness' => $request->history_of_present_illness,
-            'is_pregnant' => $request->boolean('is_pregnant'),
-            'chronic_illnesses' => $request->chronic_illnesses,
-            'surgeries_history' => $request->surgeries_history,
-            'diet_history' => $request->diet_history,
-            // Keep existing medical_history unless it is explicitly provided.
-            // (Create/Edit forms currently don't include this field.)
-            'medical_history' => $request->input('medical_history', $patient->medical_history),
+            'height' => $nutritionHeight,
+            'weight' => $nutritionWeight,
+            'is_pregnant' => $pregnantFlag,
             'blood_type' => $request->blood_type,
-            'birth_weight' => $request->birth_weight,
-            'gestational_age_weeks' => $request->gestational_age_weeks,
+            'birth_weight' => $pediatricBirthWeight,
+            'gestational_age_weeks' => $pediatricGestationalAgeWeeks,
             'notes' => $request->notes,
             'emergency_contact_name' => $request->emergency_contact_name,
             'emergency_contact_phone' => $request->emergency_contact_phone,
             'is_active' => $request->boolean('is_active', true),
         ]);
+
+        $this->syncMedicalOverview($patient, $request);
+        $selectedModules = $this->eligibleSelectedModulesForPatient(
+            $patient,
+            $this->requestedModuleKeys($request)
+        );
+        $this->syncSelectedModules($patient, $selectedModules);
+        $this->syncModuleProfiles($patient, $request, $selectedModules);
 
         // Handle medical history file uploads (same behavior as store())
         if ($request->hasFile('medical_files')) {
@@ -917,7 +1092,7 @@ class PatientController extends Controller
 
         $request->validate([
             'file' => 'required|file|max:' . config('app.concure.max_file_size'),
-            'category' => 'required|in:lab_result,medicine_photo,medical_report,other',
+            'category' => 'required|in:lab_result,medicine_photo,medical_report,ent_audiometry,ent_scan,other',
             'description' => 'nullable|string|max:500',
         ]);
 
@@ -936,7 +1111,7 @@ class PatientController extends Controller
         }
 
         // Determine tenant folder based on category
-        $typeMap = ['lab_result' => 'lab', 'medicine_photo' => 'images', 'medical_report' => 'documents', 'other' => 'documents'];
+        $typeMap = ['lab_result' => 'lab', 'medicine_photo' => 'images', 'medical_report' => 'documents', 'ent_audiometry' => 'documents', 'ent_scan' => 'images', 'other' => 'documents'];
         $tenantDir = StorageQuotaService::getTenantStoragePath($patient->clinic_id, $typeMap[$request->category] ?? 'documents');
 
         // Generate unique filename
@@ -1015,40 +1190,186 @@ class PatientController extends Controller
         }
     }
 
-    /**
-     * Authorize access to patient.
-     */
-    private function authorizePatientAccess(Patient $patient): void
+    private function syncMedicalOverview(Patient $patient, Request $request): void
+    {
+        $existingFlags = $patient->medicalOverview?->flags ?? [];
+        $submittedFlags = $request->input('medical_flags', []);
+        $supportsExtendedFlags = $request->boolean('_supports_extended_medical_flags');
+
+        $flags = [
+            'pregnant' => $supportsExtendedFlags || $request->has('is_pregnant')
+                ? ($request->boolean('medical_flags.pregnant') || $request->boolean('is_pregnant'))
+                : (bool) data_get($existingFlags, 'pregnant', false),
+            'diabetic' => $supportsExtendedFlags
+                ? (bool) data_get($submittedFlags, 'diabetic', false)
+                : (bool) data_get($existingFlags, 'diabetic', false),
+            'hypertensive' => $supportsExtendedFlags
+                ? (bool) data_get($submittedFlags, 'hypertensive', false)
+                : (bool) data_get($existingFlags, 'hypertensive', false),
+        ];
+
+        $patient->medicalOverview()->updateOrCreate(
+            [],
+            [
+                'allergies' => $request->input('allergies'),
+                'chronic_diseases' => $request->input('chronic_illnesses'),
+                'surgeries' => $request->input('surgeries_history'),
+                'medical_history' => $request->input('medical_history'),
+                'current_medications_summary' => $request->input('current_medications_summary'),
+                'flags' => array_filter($flags),
+            ]
+        );
+    }
+
+    private function requestedModuleKeys(Request $request): array
+    {
+        $selectedModules = collect($request->input('selected_modules', []))
+            ->filter(fn ($module) => is_string($module) && trim($module) !== '')
+            ->map(fn (string $module) => strtolower(trim($module)));
+
+        $autoDetectedModules = collect([
+            $request->filled('dental_oral_hygiene') || $request->filled('dental_smoking_status') ? 'dental' : null,
+            $request->filled('pediatric_birth_weight') || $request->filled('pediatric_gestational_age_weeks') || $request->filled('birth_weight') || $request->filled('gestational_age_weeks') ? 'pediatric' : null,
+            $request->filled('nutrition_height') || $request->filled('nutrition_weight') || $request->filled('height') || $request->filled('weight') ? 'nutrition' : null,
+            $request->filled('ent_notes') ? 'ent' : null,
+        ]);
+
+        $allowedModules = collect(PatientProfileModuleRegistry::all())->pluck('key')->all();
+
+        return $selectedModules
+            ->merge($autoDetectedModules)
+            ->filter()
+            ->intersect($allowedModules)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function eligibleSelectedModulesForPatient(Patient $patient, array $requestedModules): array
+    {
+        $eligibleModules = collect(PatientProfileModuleRegistry::eligibleModulesForPatient($patient))
+            ->pluck('key')
+            ->all();
+
+        return collect($requestedModules)
+            ->intersect($eligibleModules)
+            ->values()
+            ->all();
+    }
+
+    private function syncSelectedModules(Patient $patient, array $selectedModules): void
+    {
+        $knownModules = collect(PatientProfileModuleRegistry::all())->pluck('key')->all();
+
+        $patient->modules()
+            ->whereIn('module_name', $knownModules)
+            ->whereNotIn('module_name', $selectedModules)
+            ->update(['is_active' => false]);
+
+        foreach ($selectedModules as $module) {
+            $patient->modules()->updateOrCreate(
+                ['module_name' => $module],
+                ['is_active' => true]
+            );
+        }
+    }
+
+    private function patientFormViewData(?Clinic $clinic = null): array
+    {
+        $clinic ??= $this->resolvePatientFormClinic();
+
+        return [
+            'moduleDefinitions' => PatientProfileModuleRegistry::filterVisibleToUser(
+                PatientProfileModuleRegistry::modulesForClinic($clinic),
+                auth()->user()
+            )->all(),
+            'medicalFlags' => PatientMedicalOverview::FLAG_LABELS,
+            'dentalOralHygieneOptions' => PatientDental::ORAL_HYGIENE_STATUSES,
+            'dentalSmokingStatusOptions' => PatientDental::SMOKING_STATUSES,
+        ];
+    }
+
+    private function resolvePatientFormClinic(): ?Clinic
     {
         $user = auth()->user();
 
-        // Super admins can access all patients
-        if ($user->isSuperAdmin()) {
-            return;
+        if (!$user) {
+            return null;
         }
 
-        // Users can only access patients in their clinic
-        if ($patient->clinic_id !== $user->clinic_id) {
-            abort(403, 'Unauthorized access to patient.');
+        if ($user->clinic_id) {
+            return $user->clinic;
         }
 
-        // Clinic admins can access all patients in their clinic
-        if ($user->isClinicAdmin()) {
-            return;
+        $selectedClinicId = old('clinic_id');
+
+        return $selectedClinicId ? Clinic::query()->find($selectedClinicId) : null;
+    }
+
+    private function selectedModuleKeysForPatient(Patient $patient): array
+    {
+        $activeModuleKeys = $patient->modules
+            ->where('is_active', true)
+            ->pluck('module_name');
+
+        if ($patient->modules->isEmpty()) {
+            $activeModuleKeys = $activeModuleKeys->merge([
+                $patient->dentalProfile ? 'dental' : null,
+                $patient->pediatricProfile ? 'pediatric' : null,
+                $patient->nutritionProfile ? 'nutrition' : null,
+                $patient->entProfile ? 'ent' : null,
+            ]);
         }
 
-        // Users with patient permissions can access all patients in their clinic
-        if ($user->hasAnyPermission(['patients_view', 'patients_edit', 'patients_manage'])) {
-            return;
+        return $activeModuleKeys
+            ->filter()
+            ->intersect(collect(PatientProfileModuleRegistry::eligibleModulesForPatient($patient))->pluck('key'))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function syncModuleProfiles(Patient $patient, Request $request, array $selectedModules): void
+    {
+        if (in_array('dental', $selectedModules, true)) {
+            $dentalData = array_filter([
+                'oral_hygiene' => $request->input('dental_oral_hygiene'),
+                'smoking_status' => $request->input('dental_smoking_status'),
+            ], fn ($value) => $value !== null && $value !== '');
+
+            if ($dentalData !== []) {
+                $patient->dentalProfile()->updateOrCreate([], $dentalData);
+            }
         }
 
-        // Regular doctors can only access patients they have appointments or prescriptions with
-        $hasAccess = $patient->appointments()->where('doctor_id', $user->id)->exists()
-                  || $patient->prescriptions()->where('doctor_id', $user->id)->exists()
-                  || $patient->simplePrescriptions()->where('doctor_id', $user->id)->exists();
+        if (in_array('pediatric', $selectedModules, true)) {
+            $pediatricData = array_filter([
+                'birth_weight' => $request->input('pediatric_birth_weight', $request->input('birth_weight')),
+                'gestational_age' => $request->input('pediatric_gestational_age_weeks', $request->input('gestational_age_weeks')),
+            ], fn ($value) => $value !== null && $value !== '');
 
-        if (!$hasAccess) {
-            abort(403, 'You can only access patients you have appointments or prescriptions with.');
+            if ($pediatricData !== []) {
+                $patient->pediatricProfile()->updateOrCreate([], $pediatricData);
+            }
+        }
+
+        if (in_array('nutrition', $selectedModules, true)) {
+            $nutritionData = array_filter([
+                'height' => $request->input('nutrition_height', $request->input('height')),
+                'weight' => $request->input('nutrition_weight', $request->input('weight')),
+            ], fn ($value) => $value !== null && $value !== '');
+
+            if ($nutritionData !== []) {
+                $patient->nutritionProfile()->updateOrCreate([], $nutritionData);
+            }
+        }
+
+        if (in_array('ent', $selectedModules, true)) {
+            $entNotes = $request->input('ent_notes');
+
+            if ($entNotes !== null && $entNotes !== '') {
+                $patient->entProfile()->updateOrCreate([], ['notes' => $entNotes]);
+            }
         }
     }
 
