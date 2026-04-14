@@ -34,6 +34,14 @@
                     </h6>
                 </div>
                 <div class="card-body">
+                    @php
+                        $selectedTemplateId = old('template_id', optional($template)->id);
+                    @endphp
+
+                    @include('checkups.partials.template-selector', [
+                        'selectedTemplateId' => $selectedTemplateId,
+                    ])
+
                     <form action="{{ route('checkups.store', $patient) }}" method="POST">
                         @csrf
 

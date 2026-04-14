@@ -167,6 +167,8 @@ class ClinicController extends Controller
             'service_charge_amount' => 'nullable|numeric|min:0|max:10000000',
             'service_charge_date' => 'nullable|date',
             'service_charge_note' => 'nullable|string|max:500',
+            'enabled_modules' => 'nullable|array',
+            'enabled_modules.*' => ['string', Rule::in(array_keys(Clinic::AVAILABLE_MODULES))],
             // Admin
             'admin_first_name' => 'required|string|max:255',
             'admin_last_name' => 'required|string|max:255',
@@ -229,9 +231,15 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'service_charge_date')) { $clinicData['service_charge_date'] = $request->input('service_charge_date'); }
             if (Schema::hasColumn('clinics', 'service_charge_note')) { $clinicData['service_charge_note'] = $request->input('service_charge_note'); }
 
+            $enabledModules = collect($request->input('enabled_modules', []))
+                ->filter(fn ($module) => is_string($module) && $module !== '')
+                ->unique()
+                ->values()
+                ->all();
+
             // Module access control
             if (Schema::hasColumn('clinics', 'enabled_modules')) {
-                $clinicData['enabled_modules'] = $request->input('enabled_modules', null);
+                $clinicData['enabled_modules'] = $enabledModules !== [] ? $enabledModules : null;
             }
 
             $clinic = Clinic::create($clinicData);
@@ -333,6 +341,8 @@ class ClinicController extends Controller
             'service_charge_amount' => 'nullable|numeric|min:0|max:10000000',
             'service_charge_date' => 'nullable|date',
             'service_charge_note' => 'nullable|string|max:500',
+            'enabled_modules' => 'nullable|array',
+            'enabled_modules.*' => ['string', Rule::in(array_keys(Clinic::AVAILABLE_MODULES))],
         ];
 
         // Only validate admin fields if admin user exists
@@ -412,10 +422,16 @@ class ClinicController extends Controller
                 $updateData['storage_limit'] = (int) ($request->storage_limit_gb * 1024 * 1024 * 1024);
             }
 
+            $enabledModules = collect($request->input('enabled_modules', []))
+                ->filter(fn ($module) => is_string($module) && $module !== '')
+                ->unique()
+                ->values()
+                ->all();
+
             // Module access control
             if (Schema::hasColumn('clinics', 'enabled_modules')) {
                 // If no checkboxes checked, store null (= all modules enabled by default)
-                $updateData['enabled_modules'] = $request->input('enabled_modules', null);
+                $updateData['enabled_modules'] = $enabledModules !== [] ? $enabledModules : null;
             }
 
             $clinic->update($updateData);

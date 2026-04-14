@@ -32,7 +32,14 @@ class PatientFile extends Model
         'lab_result' => 'Lab Result',
         'medicine_photo' => 'Medicine Photo',
         'medical_report' => 'Medical Report',
+        'ent_audiometry' => 'ENT Audiometry',
+        'ent_scan' => 'ENT Scan / Imaging',
         'other' => 'Other',
+    ];
+
+    public const ENT_CATEGORIES = [
+        'ent_audiometry',
+        'ent_scan',
     ];
 
     /**
@@ -185,6 +192,11 @@ class PatientFile extends Model
     public function scopeByCategory($query, string $category)
     {
         return $query->where('category', $category);
+    }
+
+    public function scopeEntRelated($query)
+    {
+        return $query->whereIn('category', self::ENT_CATEGORIES);
     }
 
     /**

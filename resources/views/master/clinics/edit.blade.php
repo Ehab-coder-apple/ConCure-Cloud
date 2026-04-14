@@ -290,6 +290,10 @@
                                     <i class="fas fa-info-circle me-1"></i>
                                     Select the modules this clinic can access. If none are selected, all modules will be enabled by default.
                                 </div>
+                                <div class="alert alert-warning small mb-3">
+                                    <i class="fas fa-ear-listen me-1"></i>
+                                    Disable <strong>ENT Module</strong> here to hide ENT menus and block ENT routes clinic-wide, including Audiometry and ENT patient pages.
+                                </div>
 
                                 @foreach($moduleGroups as $groupKey => $group)
                                 <div class="mb-3">

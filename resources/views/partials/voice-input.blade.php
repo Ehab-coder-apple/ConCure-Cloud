@@ -1,8 +1,12 @@
 {{-- Voice-to-Text (Speech Recognition) component --}}
 <style>
-.voice-input-wrapper { position: relative; }
+.voice-input-wrapper { position: relative; width: 100%; }
 .voice-input-wrapper textarea,
-.voice-input-wrapper input[type="text"] { padding-right: 44px; }
+.voice-input-wrapper input[type="text"],
+.voice-input-wrapper input[type="tel"],
+.voice-input-wrapper input[type="email"],
+.voice-input-wrapper input[type="search"],
+.voice-input-wrapper input[type="url"] { padding-right: 44px; }
 .btn-voice {
     position: absolute;
     top: 8px;
@@ -32,14 +36,29 @@
     0%, 100% { box-shadow: 0 0 0 0 rgba(220,53,69,0.5); }
     50% { box-shadow: 0 0 0 8px rgba(220,53,69,0); }
 }
-.voice-status {
+.voice-status:not(:empty) {
     font-size: 0.75rem;
     margin-top: 2px;
     min-height: 18px;
 }
+.voice-input-wrapper.voice-input-sm .btn-voice {
+    top: 4px;
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+}
+.input-group > .voice-input-wrapper {
+    flex: 1 1 auto;
+    width: 1%;
+    min-width: 0;
+}
 /* RTL adjustment */
 html[dir="rtl"] .voice-input-wrapper textarea,
-html[dir="rtl"] .voice-input-wrapper input[type="text"] { padding-right: 12px; padding-left: 44px; }
+html[dir="rtl"] .voice-input-wrapper input[type="text"],
+html[dir="rtl"] .voice-input-wrapper input[type="tel"],
+html[dir="rtl"] .voice-input-wrapper input[type="email"],
+html[dir="rtl"] .voice-input-wrapper input[type="search"],
+html[dir="rtl"] .voice-input-wrapper input[type="url"] { padding-right: 12px; padding-left: 44px; }
 html[dir="rtl"] .btn-voice { right: auto; left: 8px; }
 </style>
 
@@ -47,6 +66,9 @@ html[dir="rtl"] .btn-voice { right: auto; left: 8px; }
 const VoiceInput = {
     supported: !!( window.SpeechRecognition || window.webkitSpeechRecognition ),
     activeInstance: null,
+    autoEnhanceSelector: 'textarea, input[type="text"], input[type="tel"], input[type="email"], input[type="search"], input[type="url"]',
+    observer: null,
+    refreshTimer: null,
 
     langMap: {
         'en': 'en-US',
@@ -57,6 +79,95 @@ const VoiceInput = {
     getLang() {
         const appLocale = '{{ app()->getLocale() }}';
         return this.langMap[appLocale] || 'en-US';
+    },
+
+    getField(btn) {
+        return btn.closest('.voice-input-wrapper')?.querySelector('.voice-input-target, textarea, input[type="text"], input[type="tel"], input[type="email"], input[type="search"], input[type="url"]');
+    },
+
+    isEligibleField(field) {
+        if (!field || field.closest('[data-voice-ignore]')) {
+            return false;
+        }
+
+        return !field.disabled && !field.readOnly && !field.closest('.voice-input-wrapper');
+    },
+
+    wrapField(field) {
+        if (!this.isEligibleField(field)) {
+            return;
+        }
+
+        const parent = field.parentElement;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'voice-input-wrapper auto-voice-wrapper';
+
+        if (field.classList.contains('form-control-sm')) {
+            wrapper.classList.add('voice-input-sm');
+        }
+
+        ['width', 'maxWidth', 'minWidth', 'flex'].forEach((prop) => {
+            if (field.style[prop]) {
+                wrapper.style[prop] = field.style[prop];
+                field.style[prop] = '';
+            }
+        });
+
+        if (field.classList.contains('w-100')) {
+            wrapper.classList.add('w-100');
+        }
+
+        if (parent?.classList.contains('input-group')) {
+            wrapper.style.flex = '1 1 auto';
+            wrapper.style.width = '1%';
+            wrapper.style.minWidth = '0';
+        }
+
+        field.parentNode.insertBefore(wrapper, field);
+        wrapper.appendChild(field);
+        field.classList.add('voice-input-target');
+        field.style.width = '100%';
+        field.style.maxWidth = '100%';
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn-voice';
+        button.title = '{{ __("Voice input") }}';
+        button.innerHTML = '<i class="fas fa-microphone"></i>';
+
+        const status = document.createElement('div');
+        status.className = 'voice-status';
+
+        wrapper.appendChild(button);
+        wrapper.appendChild(status);
+    },
+
+    enhanceWithin(root = document) {
+        root.querySelectorAll?.('[data-auto-voice-scope]').forEach((scope) => {
+            scope.querySelectorAll(this.autoEnhanceSelector).forEach((field) => this.wrapField(field));
+        });
+    },
+
+    queueRefresh() {
+        window.clearTimeout(this.refreshTimer);
+        this.refreshTimer = window.setTimeout(() => {
+            this.enhanceWithin(document);
+            this.bindAll();
+        }, 50);
+    },
+
+    observe() {
+        if (!window.MutationObserver || this.observer) {
+            return;
+        }
+
+        this.observer = new MutationObserver((mutations) => {
+            if (mutations.some((mutation) => mutation.addedNodes.length > 0)) {
+                this.queueRefresh();
+            }
+        });
+
+        this.observer.observe(document.body, { childList: true, subtree: true });
     },
 
     init(btn) {
@@ -90,9 +201,12 @@ const VoiceInput = {
         recognition.continuous = true;
         recognition.interimResults = true;
 
-        const textarea = btn.closest('.voice-input-wrapper').querySelector('textarea, input[type="text"]');
+        const field = this.getField(btn);
         const statusEl = btn.closest('.voice-input-wrapper').querySelector('.voice-status');
-        const startPos = textarea.value.length;
+
+        if (!field) {
+            return;
+        }
 
         btn.classList.add('recording');
         btn.innerHTML = '<i class="fas fa-stop"></i>';
@@ -109,9 +223,9 @@ const VoiceInput = {
                 }
             }
             if (final) {
-                const separator = textarea.value.length > 0 && !textarea.value.endsWith(' ') ? ' ' : '';
-                textarea.value += separator + final;
-                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                const separator = field.value.length > 0 && !field.value.endsWith(' ') ? ' ' : '';
+                field.value += separator + final.trim();
+                field.dispatchEvent(new Event('input', { bubbles: true }));
             }
             if (statusEl && interim) {
                 statusEl.innerHTML = '<span class="text-muted"><i class="fas fa-ellipsis-h me-1"></i>' + interim + '</span>';
@@ -261,6 +375,10 @@ const VoiceInput = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => VoiceInput.bindAll());
+document.addEventListener('DOMContentLoaded', () => {
+    VoiceInput.enhanceWithin(document);
+    VoiceInput.bindAll();
+    VoiceInput.observe();
+});
 </script>
 

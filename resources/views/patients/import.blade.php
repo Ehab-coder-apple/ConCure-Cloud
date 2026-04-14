@@ -112,9 +112,10 @@
                             <h6 class="font-weight-bold text-primary">{{ __('Step 2: Prepare Your Data') }}</h6>
                             <ul class="text-muted small">
                                 <li>{{ __('First Name and Last Name columns are required') }}</li>
-                                <li>{{ __('Date format: YYYY-MM-DD (e.g., 1985-03-15)') }}</li>
-                                <li>{{ __('Use previous_visit_date (YYYY-MM-DD) to create one historical visit in the patient timeline') }}</li>
-                                <li>{{ __('Gender: male or female') }}</li>
+                                <li>{{ __('Date format: YYYY-MM-DD is recommended, but common Excel date cells like 26/02/2013 are also accepted') }}</li>
+                                <li>{{ __('Use previous_visit_date to create one historical visit in the patient timeline; leave it empty if unknown') }}</li>
+                                <li>{{ __('Date of birth and gender can be left empty if not available') }}</li>
+                                <li>{{ __('Gender values: male, female, or other') }}</li>
                                 <li>{{ __('Phone numbers: include country code (e.g., +9647501234567)') }}</li>
                                 <li>{{ __('Height in cm, Weight in kg') }}</li>
                                 <li>{{ __('Boolean fields: true/false, yes/no, 1/0') }}</li>
@@ -198,7 +199,7 @@
                                 <li>{{ __('Use the provided Excel template for best results') }}</li>
                                 <li>{{ __('Test with a small batch first (5-10 patients)') }}</li>
                                 <li>{{ __('Ensure phone numbers include country codes') }}</li>
-                                <li>{{ __('Use consistent date formats (YYYY-MM-DD)') }}</li>
+                                <li>{{ __('Use YYYY-MM-DD when possible, especially for CSV files') }}</li>
                                 <li>{{ __('Leave previous_visit_date empty if no historical visit should be imported') }}</li>
                                 <li>{{ __('Fill required fields: First Name, Last Name') }}</li>
                             </ul>

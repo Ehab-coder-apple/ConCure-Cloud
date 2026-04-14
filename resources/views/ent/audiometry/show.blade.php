@@ -13,7 +13,9 @@
     #sidebar,
     .topbar,
     .app-header,
-    .app-sidebar {
+    .app-sidebar,
+    .main-footer,
+    .sidebar-overlay {
         display: none !important;
         visibility: hidden !important;
     }
@@ -29,7 +31,19 @@
     }
 
     body {
-        padding: 8mm 10mm !important;
+        padding: 5mm 6mm !important;
+    }
+
+    #app,
+    .main-content,
+    .content-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        box-sizing: border-box !important;
     }
 
     /* Reset container widths */
@@ -37,30 +51,59 @@
         width: 100% !important;
         max-width: 100% !important;
         padding: 0 !important;
-        margin: 0 !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
     }
 
-    /* Print-only header - compact for portrait */
+    /* Print-only header - professional report layout */
     .print-header {
         display: block !important;
-        text-align: center;
-        margin-bottom: 10px;
-        border-bottom: 2px solid #000;
-        padding-bottom: 8px;
+        margin: 0 0 6px 0 !important;
+        padding: 8px 10px !important;
+        border: 1.5px solid #1f2937 !important;
+        border-left: 4px solid #0f172a !important;
+        border-radius: 6px !important;
+        background: #fff !important;
+        text-align: center !important;
+        page-break-inside: avoid !important;
     }
 
     .print-header h1 {
-        font-size: 24px !important;
-        font-weight: bold !important;
-        margin: 0 0 5px 0 !important;
+        font-size: 18px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.6px !important;
+        margin: 0 0 2px 0 !important;
         color: #000 !important;
     }
 
-    .print-header p {
-        font-size: 11px !important;
-        margin: 0 !important;
-        color: #333 !important;
-        line-height: 1.3 !important;
+    .print-header .clinic-name {
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.4px !important;
+        color: #334155 !important;
+        margin-bottom: 5px !important;
+    }
+
+    .print-meta {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 3px 10px !important;
+        text-align: left !important;
+        margin-top: 4px !important;
+    }
+
+    .print-meta-item {
+        font-size: 9px !important;
+        line-height: 1.2 !important;
+        color: #111827 !important;
+    }
+
+    .print-meta-label {
+        display: inline-block !important;
+        min-width: 70px !important;
+        font-weight: 700 !important;
+        color: #334155 !important;
     }
 
     .d-none {
@@ -72,25 +115,27 @@
         display: none !important;
     }
 
-    /* Card styling - compact for portrait */
+    /* Card styling - cleaner print presentation */
     .card {
-        border: 1px solid #333 !important;
-        margin-bottom: 8px !important;
+        border: 1px solid #374151 !important;
+        border-radius: 6px !important;
+        margin-bottom: 5px !important;
         page-break-inside: avoid;
         box-shadow: none !important;
         background: white !important;
+        overflow: hidden !important;
     }
 
     .card-header {
-        padding: 8px 12px !important;
-        border-bottom: 1px solid #333 !important;
+        padding: 6px 8px !important;
+        border-bottom: 1px solid #374151 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
     }
 
     .card-header h5 {
-        font-size: 14px !important;
+        font-size: 12px !important;
         font-weight: bold !important;
         margin: 0 !important;
     }
@@ -106,43 +151,129 @@
     }
 
     .card-body {
-        padding: 10px !important;
+        padding: 7px !important;
         background: white !important;
     }
 
-    /* Audiogram row - Side by side for portrait, centered */
-    .row {
+    /* Audiogram row - balanced and centered for portrait print */
+    .audiogram-section {
         display: flex !important;
         width: 100% !important;
-        margin: 0 auto !important;
+        max-width: 100% !important;
+        margin: 0 auto 6px auto !important;
+        padding: 0 !important;
         justify-content: center !important;
+        align-items: flex-start !important;
+        gap: 2mm !important;
         flex-wrap: nowrap !important;
         page-break-inside: avoid !important;
+        box-sizing: border-box !important;
     }
 
-    .col-md-6 {
+    .audiogram-section > .col-md-6 {
         display: block !important;
-        width: 48% !important;
-        max-width: 48% !important;
+        flex: 0 0 calc(50% - 1.5mm) !important;
+        width: calc(50% - 1.5mm) !important;
+        max-width: calc(50% - 1.5mm) !important;
         float: none !important;
-        padding: 0 1% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .audiogram-section > .col-md-6:only-child {
+        flex-basis: 70% !important;
+        width: 70% !important;
+        max-width: 70% !important;
+    }
+
+    .audiogram-section .card {
+        margin-bottom: 0 !important;
+        border-width: 1.25px !important;
+    }
+
+    .audiogram-section .card-header {
+        padding: 6px 8px !important;
+    }
+
+    .audiogram-section .card-header h5 {
+        font-size: 11px !important;
+        letter-spacing: 0.1px !important;
+    }
+
+    .chart-panel {
+        position: relative !important;
+        height: 290px !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+    }
+
+    .print-summary-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 2.5mm !important;
+        margin-top: 2mm !important;
+        align-items: start !important;
+    }
+
+    .print-summary-grid .summary-card {
         margin-bottom: 0 !important;
     }
 
+    .print-summary-grid .notes-card {
+        grid-column: 1 / -1 !important;
+    }
+
+    .print-summary-grid .card-header {
+        padding: 5px 7px !important;
+    }
+
+    .print-summary-grid .card-header h5 {
+        font-size: 11px !important;
+    }
+
+    .print-summary-grid .card-body {
+        padding: 6px 7px !important;
+    }
+
+    .print-summary-grid .row {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        margin: 0 !important;
+    }
+
+    .print-summary-grid .col-md-6 {
+        flex: 0 0 50% !important;
+        width: 50% !important;
+        max-width: 50% !important;
+        padding: 0 4px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .print-summary-grid .col-md-6:first-child {
+        padding-left: 0 !important;
+    }
+
+    .print-summary-grid .col-md-6:last-child {
+        padding-right: 0 !important;
+    }
+
     /* Optimize chart size for portrait side-by-side */
+    .chart-panel canvas,
     canvas {
         width: 100% !important;
         max-width: 100% !important;
-        height: 300px !important;
+        height: 100% !important;
         display: block !important;
     }
 
     /* Text content sizing - compact */
     p {
-        font-size: 11px !important;
-        line-height: 1.3 !important;
+        font-size: 9px !important;
+        line-height: 1.18 !important;
         color: #000 !important;
-        margin: 3px 0 !important;
+        margin: 2px 0 !important;
     }
 
     strong {
@@ -151,23 +282,23 @@
     }
 
     h5 {
-        font-size: 14px !important;
+        font-size: 12px !important;
         color: #000 !important;
         margin: 0 0 5px 0 !important;
     }
 
     h6 {
-        font-size: 12px !important;
+        font-size: 10px !important;
         font-weight: bold !important;
         color: #000 !important;
-        margin: 5px 0 3px 0 !important;
+        margin: 3px 0 2px 0 !important;
     }
 
     /* Badge styling - compact */
     .badge {
         border: 1px solid #000 !important;
-        padding: 3px 8px !important;
-        font-size: 10px !important;
+        padding: 2px 6px !important;
+        font-size: 8px !important;
         font-weight: bold !important;
         display: inline-block !important;
         -webkit-print-color-adjust: exact !important;
@@ -187,13 +318,13 @@
     /* Interpretation badges under charts */
     .text-center {
         text-align: center !important;
-        margin-top: 5px !important;
+        margin-top: 4px !important;
     }
 
     /* Page settings - PORTRAIT mode */
     @page {
         size: A4 portrait;
-        margin: 10mm 10mm;
+        margin: 5mm;
     }
 
     /* Prevent orphaned content */
@@ -224,13 +355,18 @@
 
     /* Force page break before page 2 content */
     .page-2-content {
-        page-break-before: always !important;
+        page-break-before: auto !important;
+        break-before: auto !important;
     }
 
     /* Ensure audiogram section stays on page 1 */
     .audiogram-section {
         page-break-after: auto !important;
         page-break-inside: avoid !important;
+    }
+
+    .page-2-content {
+        margin-top: 0 !important;
     }
 }
 </style>
@@ -241,12 +377,15 @@
     <!-- Print-only header -->
     <div class="print-header d-none">
         <h1>{{ __('AUDIOGRAM REPORT') }}</h1>
-        <p>
-            <strong>{{ Auth::user()->clinic->name ?? 'ConCure Clinic Management System' }}</strong><br>
-            {{ __('Pure Tone Audiometry Test') }} | {{ __('Test Date') }}: {{ $audiometryTest->test_date->format('F d, Y') }}<br>
-            {{ __('Patient') }}: {{ $audiometryTest->patient->full_name }} ({{ $audiometryTest->patient->patient_id }})<br>
-            {{ __('Test Type') }}: {{ $audiometryTest->test_type_display }} | {{ __('Performed By') }}: {{ $audiometryTest->performer->full_name }}
-        </p>
+        <div class="clinic-name">{{ Auth::user()->clinic->name ?? 'ConCure Clinic Management System' }}</div>
+        <div class="print-meta">
+            <div class="print-meta-item"><span class="print-meta-label">{{ __('Patient') }}:</span> {{ $audiometryTest->patient->full_name }}</div>
+            <div class="print-meta-item"><span class="print-meta-label">{{ __('Patient ID') }}:</span> {{ $audiometryTest->patient->patient_id }}</div>
+            <div class="print-meta-item"><span class="print-meta-label">{{ __('Test Date') }}:</span> {{ $audiometryTest->test_date->format('F d, Y') }}</div>
+            <div class="print-meta-item"><span class="print-meta-label">{{ __('Test Type') }}:</span> {{ $audiometryTest->test_type_display }}</div>
+            <div class="print-meta-item"><span class="print-meta-label">{{ __('Performed By') }}:</span> {{ $audiometryTest->performer->full_name }}</div>
+            <div class="print-meta-item"><span class="print-meta-label">{{ __('Report') }}:</span> {{ __('Pure Tone Audiometry') }}</div>
+        </div>
     </div>
 
     <div class="row mb-4 no-print screen-title">
@@ -311,7 +450,9 @@
                     <h5 class="mb-0"><i class="fas fa-ear-listen me-2"></i>{{ __('Right Ear Audiogram') }}</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="rightEarChart" width="400" height="400"></canvas>
+                    <div class="chart-panel">
+                        <canvas id="rightEarChart" width="400" height="400"></canvas>
+                    </div>
                     @if($audiometryTest->right_interpretation)
                     <div class="mt-3 text-center">
                         <strong>{{ __('Interpretation') }}:</strong>
@@ -333,7 +474,9 @@
                     <h5 class="mb-0"><i class="fas fa-ear-listen me-2"></i>{{ __('Left Ear Audiogram') }}</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="leftEarChart" width="400" height="400"></canvas>
+                    <div class="chart-panel">
+                        <canvas id="leftEarChart" width="400" height="400"></canvas>
+                    </div>
                     @if($audiometryTest->left_interpretation)
                     <div class="mt-3 text-center">
                         <strong>{{ __('Interpretation') }}:</strong>
@@ -348,9 +491,10 @@
         @endif
     </div>
 
+    <div class="print-summary-grid">
     <!-- Page 2: Speech Audiometry Results -->
     @if($audiometryTest->right_srt || $audiometryTest->left_srt || $audiometryTest->right_wrs || $audiometryTest->left_wrs)
-    <div class="card mb-3 page-2-content">
+    <div class="card mb-3 page-2-content summary-card">
         <div class="card-header">
             <h5 class="mb-0">{{ __('Speech Audiometry Results') }}</h5>
         </div>
@@ -386,7 +530,7 @@
 
     <!-- Tympanometry Results -->
     @if($audiometryTest->right_tympanometry || $audiometryTest->left_tympanometry)
-    <div class="card mb-3">
+    <div class="card mb-3 summary-card">
         <div class="card-header">
             <h5 class="mb-0">{{ __('Tympanometry Results') }}</h5>
         </div>
@@ -409,7 +553,7 @@
 
     <!-- Clinical Interpretation -->
     @if($audiometryTest->right_interpretation || $audiometryTest->left_interpretation)
-    <div class="card mb-3">
+    <div class="card mb-3 summary-card">
         <div class="card-header">
             <h5 class="mb-0">{{ __('Clinical Interpretation') }}</h5>
         </div>
@@ -443,7 +587,7 @@
 
     <!-- Notes & Recommendations -->
     @if($audiometryTest->notes || $audiometryTest->recommendations)
-    <div class="card mb-3">
+    <div class="card mb-3 summary-card notes-card">
         <div class="card-header">
             <h5 class="mb-0">{{ __('Notes & Recommendations') }}</h5>
         </div>
@@ -458,6 +602,7 @@
         </div>
     </div>
     @endif
+    </div>
 
     <!-- Action Buttons -->
     <div class="mb-3">
@@ -496,7 +641,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Common chart options
     const commonOptions = {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
+        animation: false,
+        layout: {
+            padding: {
+                top: 4,
+                right: 6,
+                bottom: 0,
+                left: 6
+            }
+        },
         scales: {
             y: {
                 reverse: true, // Audiograms show worse hearing (higher dB) at bottom
@@ -504,6 +658,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 max: 120,
                 ticks: {
                     stepSize: 10,
+                    font: {
+                        size: 9,
+                        weight: '600'
+                    },
                     callback: function(value) {
                         return value + ' dB';
                     }
@@ -515,6 +673,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         size: 12,
                         weight: 'bold'
                     }
+                },
+                border: {
+                    color: 'rgba(31, 41, 55, 0.65)'
                 },
                 grid: {
                     color: function(context) {
@@ -533,6 +694,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             },
             x: {
+                ticks: {
+                    font: {
+                        size: 9,
+                        weight: '600'
+                    },
+                    maxRotation: 0,
+                    minRotation: 0
+                },
                 title: {
                     display: true,
                     text: 'Frequency (Hz)',
@@ -540,6 +709,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         size: 12,
                         weight: 'bold'
                     }
+                },
+                border: {
+                    color: 'rgba(31, 41, 55, 0.65)'
                 },
                 grid: {
                     color: 'rgba(0, 0, 0, 0.05)'
@@ -576,10 +748,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     borderColor: 'rgb(220, 53, 69)',
                     backgroundColor: 'rgba(220, 53, 69, 0.1)',
                     pointStyle: 'circle',
-                    pointRadius: 7,
-                    pointHoverRadius: 9,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBorderWidth: 2,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: 'rgb(220, 53, 69)',
                     borderWidth: 3,
-                    tension: 0.1,
+                    tension: 0,
                     spanGaps: true
                 }]
             },
@@ -600,10 +775,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     borderColor: 'rgb(13, 110, 253)',
                     backgroundColor: 'rgba(13, 110, 253, 0.1)',
                     pointStyle: 'crossRot',
-                    pointRadius: 7,
-                    pointHoverRadius: 9,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBorderWidth: 2,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: 'rgb(13, 110, 253)',
                     borderWidth: 3,
-                    tension: 0.1,
+                    tension: 0,
                     spanGaps: true
                 }]
             },

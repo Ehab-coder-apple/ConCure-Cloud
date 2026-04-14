@@ -228,8 +228,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/{patient}/visits/{visit}', [App\Http\Controllers\PatientVisitController::class, 'show'])->name('visits.show');
         Route::get('/{patient}/dental', [App\Http\Controllers\PatientDentalController::class, 'show'])->name('dental.show');
         Route::put('/{patient}/dental', [App\Http\Controllers\PatientDentalController::class, 'update'])->name('dental.update');
-        Route::get('/{patient}/ent', [App\Http\Controllers\PatientEntController::class, 'show'])->name('ent.show');
-        Route::put('/{patient}/ent', [App\Http\Controllers\PatientEntController::class, 'update'])->name('ent.update');
+        Route::middleware(['module:ent', 'section:ent'])->group(function () {
+            Route::get('/{patient}/ent', [App\Http\Controllers\PatientEntController::class, 'show'])->name('ent.show');
+            Route::put('/{patient}/ent', [App\Http\Controllers\PatientEntController::class, 'update'])->name('ent.update');
+        });
         Route::get('/{patient}/pediatric', [App\Http\Controllers\PatientPediatricController::class, 'show'])->name('pediatric.show');
         Route::put('/{patient}/pediatric', [App\Http\Controllers\PatientPediatricController::class, 'update'])->name('pediatric.update');
         Route::get('/{patient}/nutrition', [App\Http\Controllers\PatientNutritionController::class, 'show'])->name('nutrition.show');
@@ -267,7 +269,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
     });
 
     Route::get('/patient/{patient}/dental', [App\Http\Controllers\PatientDentalController::class, 'show'])->name('patient.dental');
-    Route::get('/patient/{patient}/ent', [App\Http\Controllers\PatientEntController::class, 'show'])->name('patient.ent');
+    Route::get('/patient/{patient}/ent', [App\Http\Controllers\PatientEntController::class, 'show'])
+        ->middleware(['module:ent', 'section:ent'])
+        ->name('patient.ent');
     Route::get('/patient/{patient}/pediatric', [App\Http\Controllers\PatientPediatricController::class, 'show'])->name('patient.pediatric');
     Route::get('/patient/{patient}/nutrition', [App\Http\Controllers\PatientNutritionController::class, 'show'])->name('patient.nutrition');
 
@@ -715,7 +719,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
     });
 
     // ENT Module Routes
-    Route::prefix('ent')->name('ent.')->group(function () {
+    Route::prefix('ent')->name('ent.')->middleware(['module:ent', 'section:ent'])->group(function () {
         // ENT Records
         Route::get('/', [App\Http\Controllers\EntController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\EntController::class, 'create'])->name('create');

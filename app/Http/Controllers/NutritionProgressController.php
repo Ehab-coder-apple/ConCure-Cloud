@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Patient;
 use App\Models\NutritionGoal;
+use App\Models\PatientNutrition;
 use App\Models\NutritionProgressMeasurement;
 use Illuminate\Http\Request;
 
@@ -60,7 +61,7 @@ class NutritionProgressController extends Controller
         $user = auth()->user();
         $patient = Patient::where('clinic_id', $user->clinic_id)->findOrFail($request->patient_id);
 
-        NutritionProgressMeasurement::create([
+        $measurement = NutritionProgressMeasurement::create([
             'patient_id' => $patient->id,
             'clinic_id' => $user->clinic_id,
             'recorded_by' => $user->id,
@@ -74,6 +75,21 @@ class NutritionProgressController extends Controller
             'visceral_fat' => $request->visceral_fat,
             'body_water_percentage' => $request->body_water_percentage,
             'notes' => $request->notes,
+        ]);
+
+        PatientNutrition::updateOrCreate(
+            ['patient_id' => $patient->id],
+            [
+                'height' => $measurement->height_cm ?? $patient->height,
+                'weight' => $measurement->weight_kg ?? $patient->weight,
+                'bmi' => $measurement->bmi,
+            ]
+        );
+
+        $patient->update([
+            'height' => $measurement->height_cm ?? $patient->height,
+            'weight' => $measurement->weight_kg ?? $patient->weight,
+            'bmi' => $measurement->bmi ?? $patient->bmi,
         ]);
 
         return redirect()->route('nutrition.progress.dashboard', ['patient_id' => $patient->id])

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CustomCheckupTemplate;
 use App\Models\Patient;
 use App\Models\PatientCheckup;
 use Illuminate\Http\Request;
@@ -41,15 +42,25 @@ class CheckupController extends Controller
     {
         $this->authorizePatientAccess($patient);
 
+        $patientTemplates = $patient->assigned_checkup_templates;
         $template = null;
+
         if ($request->filled('template_id')) {
-            $template = \App\Models\CustomCheckupTemplate::find($request->template_id);
-            if ($template && $template->clinic_id !== $patient->clinic_id) {
+            $selectedTemplateId = (int) $request->template_id;
+            $selectedAssignment = $patientTemplates->firstWhere('template_id', $selectedTemplateId);
+
+            if (!$selectedAssignment) {
+                abort(404, 'Template not assigned to this patient.');
+            }
+
+            $template = $selectedAssignment->template;
+
+            if (!$template instanceof CustomCheckupTemplate || $template->clinic_id !== $patient->clinic_id) {
                 abort(403, 'Unauthorized access to template.');
             }
         }
 
-        return view('checkups.create', compact('patient', 'template'));
+        return view('checkups.create', compact('patient', 'template', 'patientTemplates'));
     }
 
     /**
