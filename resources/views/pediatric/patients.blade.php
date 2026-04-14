@@ -72,7 +72,7 @@
                                                 </a>
                                             </td>
                                             <td>
-                                                <span class="badge bg-light text-dark">{{ $patient->age }} {{ __('yrs') }}</span>
+                                                <span class="badge bg-light text-dark">{{ $patient->age_formatted ?? ($patient->age . ' ' . __('yrs')) }}</span>
                                             </td>
                                             <td>
                                                 <span class="badge bg-{{ strtolower($patient->gender) === 'female' ? 'danger' : 'primary' }}">

@@ -977,11 +977,12 @@ class Patient extends Model
     }
 
     /**
-     * Get patient age formatted with years, months, or days.
-     * For newborns (0-30 days), shows days.
-     * For infants (31 days - 1 year), shows months.
-     * For toddlers (1-2 years), shows years and months.
-     * For older children (3+ years), shows only years.
+     * Get patient age formatted based on pediatric thresholds.
+     *
+     * Formatting rules:
+     * - Neonatal (< 30 days): Display in Days only (e.g., "24 Days")
+     * - Infant (1 month to < 12 months): Display in Months and Days (e.g., "8 Months, 12 Days")
+     * - Child (1 year+): Display in Years and Months (e.g., "3 Years, 5 Months")
      */
     public function getAgeFormattedAttribute(): ?string
     {
@@ -993,42 +994,79 @@ class Patient extends Model
 
         try {
             $dob = \Illuminate\Support\Carbon::parse($rawDob);
+            $now = now();
+
+            $totalDays = $dob->diffInDays($now);
+
+            // Neonatal (Less than 30 days): Display in Days only
+            if ($totalDays < 30) {
+                return $totalDays . ' ' . __($totalDays == 1 ? 'Day' : 'Days');
+            }
+
+            $totalMonths = $dob->diffInMonths($now);
+
+            // Infant (1 month to less than 12 months): Display in Months and Days
+            if ($totalMonths < 12) {
+                // Calculate remaining days after full months
+                $monthsAgo = $dob->copy()->addMonths($totalMonths);
+                $remainingDays = $monthsAgo->diffInDays($now);
+
+                if ($remainingDays > 0) {
+                    return $totalMonths . ' ' . __($totalMonths == 1 ? 'Month' : 'Months') . ', ' .
+                           $remainingDays . ' ' . __($remainingDays == 1 ? 'Day' : 'Days');
+                } else {
+                    return $totalMonths . ' ' . __($totalMonths == 1 ? 'Month' : 'Months');
+                }
+            }
+
+            // Child (1 year and older): Display in Years and Months
             $years = $dob->age;
-            $totalMonths = $dob->diffInMonths(now());
-            $totalDays = $dob->diffInDays(now());
             $months = $totalMonths % 12;
 
-            // Newborns (0-30 days): show days
-            if ($totalDays <= 30) {
-                return $totalDays . ' ' . ($totalDays == 1 ? 'day' : 'days');
+            if ($months > 0) {
+                return $years . ' ' . __($years == 1 ? 'Year' : 'Years') . ', ' .
+                       $months . ' ' . __($months == 1 ? 'Month' : 'Months');
+            } else {
+                return $years . ' ' . __($years == 1 ? 'Year' : 'Years');
             }
-            // Infants (31 days - 1 year): show months and days
-            elseif ($years < 1) {
-                $daysInMonth = $totalDays % 30; // Approximate days after months
-                if ($totalMonths == 0) {
-                    return $totalDays . ' ' . ($totalDays == 1 ? 'day' : 'days');
-                } elseif ($daysInMonth > 0 && $totalMonths < 6) {
-                    // For first 6 months, show months and days
-                    return $totalMonths . ' ' . ($totalMonths == 1 ? 'month' : 'months') . ', ' .
-                           $daysInMonth . ' ' . ($daysInMonth == 1 ? 'day' : 'days');
-                } else {
-                    // After 6 months, show only months
-                    return $totalMonths . ' ' . ($totalMonths == 1 ? 'month' : 'months');
-                }
-            }
-            // Toddlers (1-2 years): show years and months
-            elseif ($years < 3) {
-                if ($months > 0) {
-                    return $years . ' ' . ($years == 1 ? 'year' : 'years') . ', ' .
-                           $months . ' ' . ($months == 1 ? 'month' : 'months');
-                } else {
-                    return $years . ' ' . ($years == 1 ? 'year' : 'years');
-                }
-            }
-            // Older children (3+ years): show only years
-            else {
-                return $years . ' ' . ($years == 1 ? 'year' : 'years');
-            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get pediatric-specific age display with capitalization.
+     * Alias for age_formatted for consistency.
+     */
+    public function getPediatricAgeAttribute(): ?string
+    {
+        return $this->age_formatted;
+    }
+
+    /**
+     * Get detailed age breakdown for tooltips/detailed display.
+     * Returns array with years, months, days breakdown.
+     */
+    public function getAgeBreakdownAttribute(): ?array
+    {
+        $rawDob = $this->getAttributes()['date_of_birth'] ?? $this->getRawOriginal('date_of_birth');
+
+        if (empty($rawDob) || $rawDob === '0000-00-00' || $rawDob === '0000-00-00 00:00:00') {
+            return null;
+        }
+
+        try {
+            $dob = \Illuminate\Support\Carbon::parse($rawDob);
+            $now = now();
+
+            return [
+                'total_days' => $dob->diffInDays($now),
+                'total_months' => $dob->diffInMonths($now),
+                'years' => $dob->age,
+                'months' => $dob->diffInMonths($now) % 12,
+                'days_in_current_month' => $dob->copy()->addMonths($dob->diffInMonths($now))->diffInDays($now),
+                'formatted' => $this->age_formatted,
+            ];
         } catch (\Throwable $e) {
             return null;
         }

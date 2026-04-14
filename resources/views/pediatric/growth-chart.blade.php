@@ -45,7 +45,7 @@
         <p>
             {{ __('Gender') }}: {{ $gender === 'boys' ? __('Male') : __('Female') }} |
             {{ __('DOB') }}: {{ $patient->date_of_birth ? $patient->date_of_birth->format('M d, Y') : 'N/A' }} |
-            {{ __('Age') }}: @if($ageMonths !== null){{ round($ageMonths, 1) }} {{ __('months') }}@else N/A @endif
+            {{ __('Age') }}: {{ $patient->age_formatted ?? 'N/A' }}
             @if(($isPreterm ?? false) || ($isLBW ?? false))
                 | {{ __('Birth Weight') }}: {{ $patient->birth_weight ?? 'N/A' }}g
                 | {{ __('Gestational Age') }}: {{ $patient->gestational_age_weeks ?? 'N/A' }} {{ __('weeks') }}
@@ -98,17 +98,7 @@
                         </div>
                         <div class="col-md-2">
                             <small class="text-muted d-block">{{ __('Age') }}</small>
-                            <strong>
-                                @if($ageMonths !== null)
-                                    @if($ageMonths < 24)
-                                        {{ round($ageMonths, 1) }} {{ __('months') }}
-                                    @else
-                                        {{ floor($ageMonths / 12) }} {{ __('years') }}, {{ round($ageMonths % 12) }} {{ __('months') }}
-                                    @endif
-                                @else
-                                    N/A
-                                @endif
-                            </strong>
+                            <strong>{{ $patient->age_formatted ?? 'N/A' }}</strong>
                         </div>
                         <div class="col-md-2">
                             <small class="text-muted d-block">{{ __('Birth Weight') }}</small>
