@@ -10,8 +10,15 @@
             <p class="text-muted mb-0">{{ __('ENT-specific issues, notes, visit context, and supporting audiometry or scan files for this patient.') }}</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('patients.show', ['patient' => $patient->id]) }}" class="btn btn-outline-secondary">{{ __('Back to Patient Profile') }}</a>
-            <a href="{{ route('patient.ent', ['patient' => $patient->id]) }}" class="btn btn-primary">{{ __('Open Direct ENT Route') }}</a>
+            <a href="{{ route('patients.show', ['patient' => $patient->id]) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>{{ __('Back to Patient Profile') }}
+            </a>
+            <a href="{{ route('ent.create', ['patient_id' => $patient->id]) }}" class="btn btn-success">
+                <i class="fas fa-plus me-1"></i>{{ __('New ENT Record') }}
+            </a>
+            <a href="{{ route('ent.audiometry.create', ['patient_id' => $patient->id]) }}" class="btn btn-primary">
+                <i class="fas fa-volume-high me-1"></i>{{ __('New Audiometry Test') }}
+            </a>
         </div>
     </div>
 
