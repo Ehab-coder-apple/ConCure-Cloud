@@ -36,7 +36,13 @@ class AudiometryController extends Controller
             }
         }
 
-        return view('ent.audiometry.create', compact('entRecord', 'patient'));
+        // Get all patients for the dropdown (when no patient is pre-selected)
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'patient_id', 'first_name', 'last_name']);
+
+        return view('ent.audiometry.create', compact('entRecord', 'patient', 'patients'));
     }
 
     /**

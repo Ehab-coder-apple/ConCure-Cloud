@@ -39,6 +39,22 @@
                     <div class="col-md-12 mb-3">
                         <p><strong>{{ __('Patient') }}:</strong> {{ $patient->full_name }} ({{ $patient->patient_id }})</p>
                     </div>
+                    @else
+                    {{-- Patient selector when no patient is pre-selected --}}
+                    <div class="col-md-12 mb-3">
+                        <label for="patient_id" class="form-label">{{ __('Select Patient') }} <span class="text-danger">*</span></label>
+                        <select name="patient_id" id="patient_id" class="form-select select2 @error('patient_id') is-invalid @enderror" required>
+                            <option value="">{{ __('-- Select Patient --') }}</option>
+                            @foreach($patients as $p)
+                                <option value="{{ $p->id }}" {{ old('patient_id') == $p->id ? 'selected' : '' }}>
+                                    {{ $p->full_name }} ({{ $p->patient_id }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('patient_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
                     @endif
 
                     <div class="col-md-4 mb-3">
@@ -245,4 +261,24 @@
         </div>
     </form>
 </div>
+
+@push('styles')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+@endpush
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize Select2 for patient selector
+        $('#patient_id').select2({
+            theme: 'bootstrap-5',
+            placeholder: '{{ __("-- Select Patient --") }}',
+            allowClear: true,
+            width: '100%'
+        });
+    });
+</script>
+@endpush
 @endsection
