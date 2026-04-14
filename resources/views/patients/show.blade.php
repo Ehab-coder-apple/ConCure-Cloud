@@ -55,40 +55,10 @@
                     </nav>
                 </div>
                 <div>
-                    <div class="btn-group me-1" role="group">
-                        <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-file-medical me-1"></i>
-                            {{ __('Report') }}
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item" href="{{ route('patient.report', $patient) }}" target="_blank">
-                                    <i class="fas fa-eye me-2"></i>
-                                    {{ __('View Report') }}
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ route('patient.report', $patient) }}?format=pdf" target="_blank">
-                                    <i class="fas fa-file-pdf me-2"></i>
-                                    {{ __('Download PDF') }}
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="#" onclick="showReportModal()">
-                                    <i class="fas fa-calendar-alt me-2"></i>
-                                    {{ __('Custom Date Range') }}
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="{{ route('patient.blank-report', $patient) }}">
-                                    <i class="fas fa-file-alt me-2"></i>
-                                    {{ __('Blank Report') }}
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    <a href="{{ route('checkups.index', $patient) }}" class="btn btn-primary btn-sm me-1">
+                        <i class="fas fa-notes-medical me-1"></i>
+                        {{ __('Check Up') }}
+                    </a>
                     <a href="{{ route('patients.edit', $patient->id ?? 1) }}" class="btn btn-outline-primary btn-sm me-1">
                         <i class="fas fa-edit me-1"></i>
                         {{ __('Edit') }}
@@ -103,7 +73,7 @@
                     </a>
                     <a href="{{ route('patients.checkup-templates.index', $patient) }}" class="btn btn-warning btn-sm me-1">
                         <i class="fas fa-clipboard-list me-1"></i>
-                        {{ __('Checkup') }}
+                        {{ __('Templates') }}
                     </a>
                     <a href="{{ route('patients.forms.index', $patient) }}" class="btn btn-secondary btn-sm me-1">
                         <i class="fas fa-file-alt me-1"></i>
