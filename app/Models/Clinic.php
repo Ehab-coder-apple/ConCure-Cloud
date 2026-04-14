@@ -402,14 +402,40 @@ class Clinic extends Model
     ];
 
     /**
+     * Modules that are enabled by default for all clinics.
+     * Super admin can explicitly disable them via clinic settings.
+     */
+    public const DEFAULT_ENABLED_MODULES = [
+        'dashboard',
+        'patients',
+        'appointments',
+        'prescriptions',
+        'messages',
+        'ent', // ENT module enabled by default
+        'dental',
+        'pediatric',
+        'nutrition',
+        'lab',
+        'radiology',
+        'medicines',
+        'finance',
+    ];
+
+    /**
      * Check if a specific module is enabled for this clinic.
      * If enabled_modules is null (not yet configured), all modules are enabled by default.
+     * Some modules are enabled by default and must be explicitly disabled.
      */
     public function hasModule(string $module): bool
     {
         // If not configured yet, allow everything (backward compatible)
         if ($this->enabled_modules === null) {
             return true;
+        }
+
+        // If enabled_modules is an empty array, use defaults
+        if (is_array($this->enabled_modules) && empty($this->enabled_modules)) {
+            return in_array($module, self::DEFAULT_ENABLED_MODULES);
         }
 
         return in_array($module, $this->enabled_modules);
