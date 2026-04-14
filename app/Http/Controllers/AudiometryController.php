@@ -11,6 +11,45 @@ use Illuminate\Support\Facades\Auth;
 class AudiometryController extends Controller
 {
     /**
+     * Display a listing of all audiometry tests.
+     */
+    public function index(Request $request)
+    {
+        $user = Auth::user();
+
+        $query = AudiometryTest::with(['patient', 'performer', 'entRecord'])
+            ->where('clinic_id', $user->clinic_id)
+            ->orderBy('test_date', 'desc');
+
+        // Filter by patient if specified
+        if ($request->filled('patient_id')) {
+            $query->where('patient_id', $request->patient_id);
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('patient', function ($patientQuery) use ($search) {
+                    $patientQuery->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('patient_id', 'like', "%{$search}%");
+                })
+                ->orWhere('test_type', 'like', "%{$search}%")
+                ->orWhere('notes', 'like', "%{$search}%");
+            });
+        }
+
+        $audiometryTests = $query->paginate(20);
+
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+            ->orderBy('first_name')
+            ->get();
+
+        return view('ent.audiometry.index', compact('audiometryTests', 'patients'));
+    }
+
+    /**
      * Show the form for creating a new audiometry test.
      */
     public function create(Request $request)

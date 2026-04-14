@@ -1722,7 +1722,7 @@
                                     </a>
                                 </li>
                                 <li class="submenu-item">
-                                    <a href="{{ route('ent.audiometry.create') }}" class="submenu-link {{ request()->routeIs('ent.audiometry.*') ? 'active' : '' }}">
+                                    <a href="{{ route('ent.audiometry.index') }}" class="submenu-link {{ request()->routeIs('ent.audiometry.*') ? 'active' : '' }}">
                                         <i class="fas fa-volume-high me-2"></i>
                                         {{ __('Audiometry') }}
                                     </a>

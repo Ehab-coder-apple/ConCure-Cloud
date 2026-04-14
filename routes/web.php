@@ -731,6 +731,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         // Audiometry Tests
         Route::prefix('audiometry')->name('audiometry.')->group(function () {
+            Route::get('/', [App\Http\Controllers\AudiometryController::class, 'index'])->name('index');
             Route::get('/create', [App\Http\Controllers\AudiometryController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\AudiometryController::class, 'store'])->name('store');
             Route::get('/{audiometryTest}', [App\Http\Controllers\AudiometryController::class, 'show'])->name('show');
