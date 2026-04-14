@@ -33,13 +33,20 @@ class PatientEntController extends Controller
         $visitContextCount = $patient->visits()->count();
         $entFileCount = $patient->files()->entRelated()->count();
 
+        // Get all audiometry tests for this patient
+        $audiometryTests = \App\Models\AudiometryTest::where('patient_id', $patient->id)
+            ->with(['performer', 'entRecord'])
+            ->latest('test_date')
+            ->get();
+
         return view('patients.ent.show', compact(
             'patient',
             'entProfile',
             'recentVisits',
             'entFiles',
             'visitContextCount',
-            'entFileCount'
+            'entFileCount',
+            'audiometryTests'
         ));
     }
 

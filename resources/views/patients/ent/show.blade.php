@@ -134,6 +134,83 @@
                 </div>
             </div>
         </div>
+
+        {{-- Audiometry Tests Section --}}
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-volume-high text-primary me-2"></i>{{ __('Audiometry Tests') }}</h6>
+                <a href="{{ route('ent.audiometry.create', ['patient_id' => $patient->id]) }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus me-1"></i>{{ __('Add Audiometry Test') }}
+                </a>
+            </div>
+            <div class="card-body">
+                @if($audiometryTests->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Test Date') }}</th>
+                                    <th>{{ __('Test Type') }}</th>
+                                    <th>{{ __('Right Ear') }}</th>
+                                    <th>{{ __('Left Ear') }}</th>
+                                    <th>{{ __('ENT Record') }}</th>
+                                    <th>{{ __('Performed By') }}</th>
+                                    <th>{{ __('Actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($audiometryTests as $test)
+                                <tr>
+                                    <td>{{ $test->test_date->format('Y-m-d') }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ $test->test_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        @if($test->right_interpretation)
+                                            <span class="badge {{ $test->right_interpretation === 'normal' ? 'bg-success' : 'bg-warning' }}">
+                                                {{ $test->right_interpretation_display }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">N/A</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($test->left_interpretation)
+                                            <span class="badge {{ $test->left_interpretation === 'normal' ? 'bg-success' : 'bg-warning' }}">
+                                                {{ $test->left_interpretation_display }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">N/A</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($test->ent_record_id)
+                                            <a href="{{ route('ent.show', $test->ent_record_id) }}" class="text-decoration-none">
+                                                <i class="fas fa-link me-1"></i>{{ __('Linked') }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">{{ __('Standalone') }}</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $test->performer?->full_name ?? 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ route('ent.audiometry.show', $test) }}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-chart-line me-1"></i>{{ __('View') }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <p class="text-muted mb-0">
+                        {{ __('No audiometry tests recorded for this patient.') }}
+                        <a href="{{ route('ent.audiometry.create', ['patient_id' => $patient->id]) }}">{{ __('Create the first test') }}</a>
+                    </p>
+                @endif
+            </div>
+        </div>
     </div>
 </div>
 @endsection
