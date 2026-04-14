@@ -720,16 +720,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     // ENT Module Routes
     Route::prefix('ent')->name('ent.')->middleware(['module:ent', 'section:ent'])->group(function () {
-        // ENT Records
-        Route::get('/', [App\Http\Controllers\EntController::class, 'index'])->name('index');
-        Route::get('/create', [App\Http\Controllers\EntController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\EntController::class, 'store'])->name('store');
-        Route::get('/{entRecord}', [App\Http\Controllers\EntController::class, 'show'])->name('show');
-        Route::get('/{entRecord}/edit', [App\Http\Controllers\EntController::class, 'edit'])->name('edit');
-        Route::put('/{entRecord}', [App\Http\Controllers\EntController::class, 'update'])->name('update');
-        Route::delete('/{entRecord}', [App\Http\Controllers\EntController::class, 'destroy'])->name('destroy');
-
-        // Audiometry Tests
+        // Audiometry Tests (MUST be before {entRecord} wildcard route)
         Route::prefix('audiometry')->name('audiometry.')->group(function () {
             Route::get('/', [App\Http\Controllers\AudiometryController::class, 'index'])->name('index');
             Route::get('/create', [App\Http\Controllers\AudiometryController::class, 'create'])->name('create');
@@ -738,6 +729,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::get('/{audiometryTest}/edit', [App\Http\Controllers\AudiometryController::class, 'edit'])->name('edit');
             Route::put('/{audiometryTest}', [App\Http\Controllers\AudiometryController::class, 'update'])->name('update');
         });
+
+        // ENT Records (wildcard routes MUST be last)
+        Route::get('/', [App\Http\Controllers\EntController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\EntController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\EntController::class, 'store'])->name('store');
+        Route::get('/{entRecord}', [App\Http\Controllers\EntController::class, 'show'])->name('show');
+        Route::get('/{entRecord}/edit', [App\Http\Controllers\EntController::class, 'edit'])->name('edit');
+        Route::put('/{entRecord}', [App\Http\Controllers\EntController::class, 'update'])->name('update');
+        Route::delete('/{entRecord}', [App\Http\Controllers\EntController::class, 'destroy'])->name('destroy');
     });
 
     // Pediatric Growth Chart Routes
