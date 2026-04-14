@@ -154,8 +154,8 @@
                                                 <a href="{{ route('patients.show', $patient->id) }}" class="btn btn-outline-primary" title="{{ __('View Details') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="{{ route('patient.report', $patient->id) }}" class="btn btn-outline-success" title="{{ __('Generate Report') }}" target="_blank">
-                                                    <i class="fas fa-file-medical"></i>
+                                                <a href="{{ route('checkups.index', $patient->id) }}" class="btn btn-outline-info" title="{{ __('Check Up') }}">
+                                                    <i class="fas fa-notes-medical"></i>
                                                 </a>
                                                 <a href="{{ route('patients.edit', $patient->id) }}" class="btn btn-outline-secondary" title="{{ __('Edit') }}">
                                                     <i class="fas fa-edit"></i>
