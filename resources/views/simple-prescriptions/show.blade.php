@@ -117,8 +117,8 @@
                                 <div class="col-md-6">
                                     <strong>{{ __('Phone') }}:</strong> {{ $prescription->patient->phone ?? 'Not provided' }}<br>
                                     <strong>{{ __('Email') }}:</strong> {{ $prescription->patient->email ?? 'Not provided' }}<br>
-                                    <strong>{{ __('Weight') }}:</strong> {{ $prescription->patient->latest_weight_kg ?? $prescription->patient->weight ?? 'N/A' }} kg<br>
-                                    <strong>{{ __('Height') }}:</strong> {{ $prescription->patient->height ?? 'N/A' }} cm
+                                    <strong>{{ __('Weight') }}:</strong> {{ $prescription->patient->latest_weight_kg ?? 'N/A' }} kg<br>
+                                    <strong>{{ __('Height') }}:</strong> {{ $prescription->patient->latest_height ?? 'N/A' }} cm
                                 </div>
                             </div>
                         </div>

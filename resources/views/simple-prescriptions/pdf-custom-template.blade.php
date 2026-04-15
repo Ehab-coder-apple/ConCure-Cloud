@@ -43,13 +43,13 @@
             &nbsp;&nbsp;|&nbsp;&nbsp;
             <strong>Age:</strong> {{ $prescription->patient->age_formatted }}
         @endif
-        @if($prescription->patient && $prescription->patient->weight)
+        @if($prescription->patient && $prescription->patient->latest_weight_kg)
             &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Weight:</strong> {{ $prescription->patient->latest_weight_kg ?? $prescription->patient->weight }} kg
+            <strong>Weight:</strong> {{ $prescription->patient->latest_weight_kg }} kg
         @endif
-        @if($prescription->patient && $prescription->patient->height)
+        @if($prescription->patient && $prescription->patient->latest_height)
             &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Height:</strong> {{ $prescription->patient->height }} cm
+            <strong>Height:</strong> {{ $prescription->patient->latest_height }} cm
         @endif
     </div>
 

@@ -932,16 +932,47 @@ class Patient extends Model
     }
 
     /**
-     * Get the latest weight from growth measurements (for pediatric dose calculations).
+     * Get the latest weight from checkups, growth measurements, or patient profile.
+     * Priority: checkups > growth_measurements > patient.weight
      */
     public function getLatestWeightKgAttribute(): ?float
     {
-        $latest = $this->growthMeasurements()->latest('measurement_date')->first();
-        if ($latest && $latest->weight_kg) {
-            return (float) $latest->weight_kg;
+        // First, check latest checkup
+        $latestCheckup = $this->checkups()->whereNotNull('weight')->latest('checkup_date')->first();
+        if ($latestCheckup && $latestCheckup->weight) {
+            return (float) $latestCheckup->weight;
         }
+
+        // Then, check growth measurements (pediatric)
+        $latestGrowth = $this->growthMeasurements()->latest('measurement_date')->first();
+        if ($latestGrowth && $latestGrowth->weight_kg) {
+            return (float) $latestGrowth->weight_kg;
+        }
+
         // Fallback to patient profile weight
         return $this->weight ? (float) $this->weight : null;
+    }
+
+    /**
+     * Get the latest height from checkups, growth measurements, or patient profile.
+     * Priority: checkups > growth_measurements > patient.height
+     */
+    public function getLatestHeightAttribute(): ?float
+    {
+        // First, check latest checkup
+        $latestCheckup = $this->checkups()->whereNotNull('height')->latest('checkup_date')->first();
+        if ($latestCheckup && $latestCheckup->height) {
+            return (float) $latestCheckup->height;
+        }
+
+        // Then, check growth measurements (pediatric)
+        $latestGrowth = $this->growthMeasurements()->latest('measurement_date')->first();
+        if ($latestGrowth && $latestGrowth->height_cm) {
+            return (float) $latestGrowth->height_cm;
+        }
+
+        // Fallback to patient profile height
+        return $this->height ? (float) $this->height : null;
     }
 
     /**
