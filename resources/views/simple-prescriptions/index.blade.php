@@ -54,6 +54,22 @@
                                            placeholder="{{ __('Search by patient name or ID') }}">
                                 </div>
 
+                                @if(auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin())
+                                <div class="col-md-3">
+                                    <label for="doctor_name" class="form-label">{{ __('Doctor Name') }}</label>
+                                    <input type="text" class="form-control" id="doctor_name" name="doctor_name"
+                                           value="{{ request('doctor_name') }}"
+                                           placeholder="{{ __('Search by doctor name') }}"
+                                           list="doctors_list">
+                                    @if(isset($doctors) && $doctors->count() > 0)
+                                    <datalist id="doctors_list">
+                                        @foreach($doctors as $doctor)
+                                            <option value="{{ ($doctor->title_prefix ? $doctor->title_prefix . ' ' : '') . $doctor->first_name . ' ' . $doctor->last_name }}">
+                                        @endforeach
+                                    </datalist>
+                                    @endif
+                                </div>
+                                @else
                                 <div class="col-md-3">
                                     <label for="patient_id" class="form-label">{{ __('Select Patient') }}</label>
                                     <select class="form-select" id="patient_id" name="patient_id">
@@ -65,6 +81,7 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                @endif
 
                                 <div class="col-md-2">
                                     <label for="date_from" class="form-label">{{ __('From Date') }}</label>
@@ -97,7 +114,7 @@
                                         <i class="fas fa-times me-1"></i>
                                         {{ __('Clear') }}
                                     </a>
-                                    @if(request()->hasAny(['patient_name', 'patient_id', 'date_from', 'date_to', 'status']))
+                                    @if(request()->hasAny(['patient_name', 'patient_id', 'doctor_name', 'date_from', 'date_to', 'status']))
                                         <span class="badge bg-info ms-2">
                                             {{ $prescriptions->total() }} {{ __('results found') }}
                                         </span>
@@ -116,6 +133,10 @@
                                     <tr>
                                         <th>{{ __('Prescription #') }}</th>
                                         <th>{{ __('Patient') }}</th>
+                                        <th>{{ __('Doctor') }}</th>
+                                        @if(auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin())
+                                        <th>{{ __('Clinic') }}</th>
+                                        @endif
                                         <th>{{ __('Diagnosis') }}</th>
                                         <th>{{ __('Date') }}</th>
                                         <th>{{ __('Status') }}</th>
@@ -136,6 +157,19 @@
                                                 </div>
                                             </td>
                                             <td>
+                                                <div>
+                                                    <strong>{{ ($prescription->doctor->title_prefix ? $prescription->doctor->title_prefix . ' ' : '') . $prescription->doctor->first_name . ' ' . $prescription->doctor->last_name }}</strong>
+                                                </div>
+                                            </td>
+                                            @if(auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin())
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    <i class="fas fa-clinic-medical me-1"></i>
+                                                    {{ $prescription->clinic->name ?? 'Unknown' }}
+                                                </span>
+                                            </td>
+                                            @endif
+                                            <td>
                                                 {{ Str::limit($prescription->diagnosis ?? 'No diagnosis', 50) }}
                                             </td>
                                             <td>
@@ -148,14 +182,16 @@
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm">
-                                                    <a href="{{ route('simple-prescriptions.show', $prescription->id) }}" 
+                                                    <a href="{{ route('simple-prescriptions.show', $prescription->id) }}"
                                                        class="btn btn-outline-primary" title="{{ __('View') }}">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                    <a href="{{ route('simple-prescriptions.edit', $prescription->id) }}" 
+                                                    @if(auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin() || $prescription->doctor_id === auth()->id())
+                                                    <a href="{{ route('simple-prescriptions.edit', $prescription->id) }}"
                                                        class="btn btn-outline-secondary" title="{{ __('Edit') }}">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
+                                                    @endif
                                                     <form action="{{ route('simple-prescriptions.destroy', $prescription->id) }}" 
                                                           method="POST" class="d-inline"
                                                           onsubmit="return confirm('{{ __('Are you sure you want to delete this prescription?') }}')">

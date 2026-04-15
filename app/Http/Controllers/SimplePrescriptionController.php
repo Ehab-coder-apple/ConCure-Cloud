@@ -20,14 +20,26 @@ class SimplePrescriptionController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = SimplePrescription::with(['patient', 'doctor'])
-            ->forClinic($user->clinic_id);
+
+        // Get tenant clinic IDs for cross-clinic access
+        $tenantClinicIds = $user->clinic ? $user->clinic->getTenantClinicIds() : [$user->clinic_id];
+
+        $query = SimplePrescription::with(['patient', 'doctor', 'clinic']);
 
         // Filter prescriptions based on user role
-        // Only Super Admins and Clinic Admins can see all prescriptions
-        // Regular doctors can only see their own prescriptions
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
-            $query->where('doctor_id', $user->id);
+        if ($user->isSuperAdmin()) {
+            // Super Admin sees all prescriptions from all clinics
+            // No filter needed
+        } elseif ($user->role === 'pharmacist') {
+            // Pharmacists see all prescriptions from all clinics in their tenant
+            $query->whereIn('clinic_id', $tenantClinicIds);
+        } elseif ($user->isClinicAdmin()) {
+            // Clinic Admins see all prescriptions in their clinic only
+            $query->where('clinic_id', $user->clinic_id);
+        } else {
+            // Regular doctors can only see their own prescriptions
+            $query->where('clinic_id', $user->clinic_id)
+                  ->where('doctor_id', $user->id);
         }
 
         // Filter by patient name
@@ -38,6 +50,16 @@ class SimplePrescriptionController extends Controller
                   ->orWhere('first_name', 'LIKE', "%{$patientName}%")
                   ->orWhere('last_name', 'LIKE', "%{$patientName}%")
                   ->orWhere('patient_id', 'LIKE', "%{$patientName}%");
+            });
+        }
+
+        // Filter by doctor name (new filter for pharmacists)
+        if ($request->filled('doctor_name')) {
+            $doctorName = $request->doctor_name;
+            $query->whereHas('doctor', function ($q) use ($doctorName) {
+                $q->where(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$doctorName}%")
+                  ->orWhere('first_name', 'LIKE', "%{$doctorName}%")
+                  ->orWhere('last_name', 'LIKE', "%{$doctorName}%");
             });
         }
 
@@ -62,13 +84,24 @@ class SimplePrescriptionController extends Controller
 
         $prescriptions = $query->orderBy('created_at', 'desc')->paginate(20);
 
-        // Get patients for dropdown filter
-        $patients = Patient::where('clinic_id', Auth::user()->clinic_id)
+        // Get patients for dropdown filter (from tenant clinics)
+        $patients = Patient::whereIn('clinic_id', $tenantClinicIds)
             ->where('is_active', true)
             ->orderBy('first_name')
             ->get();
 
-        return view('simple-prescriptions.index', compact('prescriptions', 'patients'));
+        // Get list of doctors for filter dropdown (for pharmacists)
+        $doctors = collect();
+        if ($user->role === 'pharmacist' || $user->isSuperAdmin()) {
+            $doctors = User::whereIn('clinic_id', $tenantClinicIds)
+                ->where('role', 'doctor')
+                ->where('is_active', true)
+                ->select('id', 'first_name', 'last_name', 'title_prefix')
+                ->orderBy('first_name')
+                ->get();
+        }
+
+        return view('simple-prescriptions.index', compact('prescriptions', 'patients', 'doctors'));
     }
 
     public function create(Request $request)
