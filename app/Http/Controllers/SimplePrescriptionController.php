@@ -7,6 +7,7 @@ use App\Models\SimplePrescriptionMedicine;
 use App\Models\Patient;
 use App\Models\Medicine;
 use App\Models\Clinic;
+use App\Models\User;
 use App\Services\PdfKurdishFontService;
 use App\Services\StorageQuotaService;
 use Illuminate\Http\Request;
