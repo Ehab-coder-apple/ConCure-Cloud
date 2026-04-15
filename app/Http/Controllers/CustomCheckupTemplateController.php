@@ -172,6 +172,12 @@ class CustomCheckupTemplateController extends Controller
     {
         $this->authorizeTemplateAccess($template);
 
+        // Auto-migrate legacy templates on first edit
+        $template->migrateLegacyFieldsToFormConfig();
+
+        // Refresh to get updated form_config
+        $template->refresh();
+
         $checkupTypes = CustomCheckupTemplate::getCheckupTypes();
         $fieldTypes = CustomCheckupTemplate::getFieldTypes();
 

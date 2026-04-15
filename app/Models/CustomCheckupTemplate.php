@@ -311,6 +311,68 @@ class CustomCheckupTemplate extends Model
     }
 
     /**
+     * Migrate legacy custom_checkup_fields to form_config JSON.
+     * For templates created before the form builder migration.
+     */
+    public function migrateLegacyFieldsToFormConfig(): bool
+    {
+        // Check if already has form_config with sections
+        if (!empty($this->form_config) && isset($this->form_config['sections']) && count($this->form_config['sections']) > 1) {
+            \Log::info("Template {$this->id} already has form_config, skipping migration");
+            return false; // Already migrated
+        }
+
+        // Get legacy fields from custom_checkup_fields table
+        $legacyFields = $this->customFields()->orderBy('order')->get();
+
+        if ($legacyFields->isEmpty()) {
+            \Log::info("Template {$this->id} has no legacy fields to migrate");
+            return false; // Nothing to migrate
+        }
+
+        \Log::info("Migrating {$legacyFields->count()} legacy fields for template {$this->id}");
+
+        // Group fields by section (or create default section)
+        $sections = [];
+        $defaultSectionKey = 'custom_fields';
+
+        foreach ($legacyFields as $field) {
+            $sectionKey = $field->section ?? $defaultSectionKey;
+            $sectionTitle = $field->section ?? 'Custom Fields';
+
+            if (!isset($sections[$sectionKey])) {
+                $sections[$sectionKey] = [
+                    'title' => $sectionTitle,
+                    'fields' => [],
+                ];
+            }
+
+            // Convert field to new format
+            $fieldKey = $field->field_name;
+            $fieldConfig = [
+                'type' => $field->field_type ?? 'text',
+                'label' => $field->label ?? $field->field_name,
+                'required' => $field->is_required ?? false,
+            ];
+
+            // Handle select/radio options
+            if (in_array($fieldConfig['type'], ['select', 'radio']) && !empty($field->options)) {
+                $fieldConfig['options'] = is_array($field->options) ? $field->options : json_decode($field->options, true) ?? [];
+            }
+
+            $sections[$sectionKey]['fields'][$fieldKey] = $fieldConfig;
+        }
+
+        // Update form_config
+        $newFormConfig = static::normalizeFormConfig(['sections' => $sections]);
+        $this->update(['form_config' => $newFormConfig]);
+
+        \Log::info("Successfully migrated template {$this->id} with " . count($sections) . " sections");
+
+        return true;
+    }
+
+    /**
      * Built-in clinical summary section used by visit history.
      */
     public static function defaultClinicalSummarySection(): array
