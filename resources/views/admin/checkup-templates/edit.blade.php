@@ -204,10 +204,32 @@
                                 }
                             }
                             if ($formConfigJson === '') {
+                                // Debug: Let's see what we have
+                                \Log::info('Template Edit - Raw form_config:', ['form_config' => $template->form_config]);
+                                \Log::info('Template Edit - Form sections:', ['sections' => $template->form_sections]);
+                                \Log::info('Template Edit - Sections count:', ['count' => count($template->form_sections)]);
+
                                 // Fall back to normalized sections accessor
                                 $formConfigJson = json_encode(['sections' => $template->form_sections], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
                             }
                         @endphp
+                        <!-- Debug Output (remove in production) -->
+                        @if(config('app.debug'))
+                        <div class="alert alert-warning">
+                            <strong>DEBUG INFO:</strong><br>
+                            Template ID: {{ $template->id }}<br>
+                            Sections Count: {{ count($template->form_sections) }}<br>
+                            Fields Count: {{ $template->fields_count }}<br>
+                            <details>
+                                <summary>Raw form_config</summary>
+                                <pre style="font-size:10px; max-height:200px; overflow:auto;">{{ json_encode($template->form_config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                            </details>
+                            <details>
+                                <summary>Normalized form_sections</summary>
+                                <pre style="font-size:10px; max-height:200px; overflow:auto;">{{ json_encode($template->form_sections, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                            </details>
+                        </div>
+                        @endif
                         <textarea name="form_config" id="form_config" style="display:none;">{{ $formConfigJson }}</textarea>
                     </div>
                 </div>
