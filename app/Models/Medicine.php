@@ -164,12 +164,12 @@ class Medicine extends Model
     /**
      * Scope to filter medicines visible to a specific user based on role.
      * Regular users see: their own medicines + admin-uploaded medicines
-     * Admins see: all medicines in their clinic
+     * Admins and Pharmacists see: all medicines in their clinic
      */
     public function scopeVisibleToUser($query, User $user)
     {
-        // Super Admins and Clinic Admins see all medicines in their clinic
-        if ($user->isSuperAdmin() || $user->isClinicAdmin()) {
+        // Super Admins, Clinic Admins, and Pharmacists see all medicines in their clinic
+        if ($user->isSuperAdmin() || $user->isClinicAdmin() || $user->role === 'pharmacist') {
             return $query->where('clinic_id', $user->clinic_id);
         }
 

@@ -13,7 +13,7 @@ class MedicinePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'doctor', 'nurse', 'assistant']);
+        return $user->hasAnyRole(['admin', 'doctor', 'nurse', 'assistant', 'pharmacist']);
     }
 
     /**
@@ -26,8 +26,8 @@ class MedicinePolicy
             return false;
         }
 
-        // Admins can view all medicines in their clinic
-        if ($user->isSuperAdmin() || $user->isClinicAdmin()) {
+        // Admins and pharmacists can view all medicines in their clinic
+        if ($user->isSuperAdmin() || $user->isClinicAdmin() || $user->role === 'pharmacist') {
             return true;
         }
 
@@ -50,7 +50,7 @@ class MedicinePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'doctor']);
+        return $user->hasAnyRole(['admin', 'doctor', 'pharmacist']);
     }
 
     /**
@@ -63,8 +63,8 @@ class MedicinePolicy
             return false;
         }
 
-        // Admins can update all medicines in their clinic
-        if ($user->isSuperAdmin() || $user->isClinicAdmin()) {
+        // Admins and pharmacists can update all medicines in their clinic
+        if ($user->isSuperAdmin() || $user->isClinicAdmin() || $user->role === 'pharmacist') {
             return true;
         }
 
@@ -82,8 +82,8 @@ class MedicinePolicy
             return false;
         }
 
-        // Admins can delete all medicines in their clinic
-        if ($user->isSuperAdmin() || $user->isClinicAdmin()) {
+        // Admins and pharmacists can delete all medicines in their clinic
+        if ($user->isSuperAdmin() || $user->isClinicAdmin() || $user->role === 'pharmacist') {
             return true;
         }
 
