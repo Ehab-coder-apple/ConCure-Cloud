@@ -25,14 +25,37 @@
 
             <!-- Search and Filter -->
             <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-filter me-2"></i>
+                        {{ __('Filter Prescriptions') }}
+                    </h6>
+                </div>
                 <div class="card-body">
                     <form method="GET" action="{{ route('prescriptions.index') }}" class="row g-3">
-                        <div class="col-md-4">
-                            <label for="search" class="form-label">{{ __('Search') }}</label>
-                            <input type="text" class="form-control" id="search" name="search" 
-                                   value="{{ request('search') }}" placeholder="{{ __('Patient name, prescription ID...') }}">
-                        </div>
                         <div class="col-md-3">
+                            <label for="search" class="form-label">{{ __('Patient Name') }}</label>
+                            <input type="text" class="form-control" id="search" name="search"
+                                   value="{{ request('search') }}" placeholder="{{ __('Search by patient name...') }}">
+                        </div>
+
+                        @if(auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin())
+                        <div class="col-md-3">
+                            <label for="doctor_name" class="form-label">{{ __('Doctor Name') }}</label>
+                            <input type="text" class="form-control" id="doctor_name" name="doctor_name"
+                                   value="{{ request('doctor_name') }}" placeholder="{{ __('Search by doctor name...') }}"
+                                   list="doctors_list">
+                            @if(isset($doctors) && $doctors->count() > 0)
+                            <datalist id="doctors_list">
+                                @foreach($doctors as $doctor)
+                                    <option value="{{ ($doctor->title_prefix ? $doctor->title_prefix . ' ' : '') . $doctor->first_name . ' ' . $doctor->last_name }}">
+                                @endforeach
+                            </datalist>
+                            @endif
+                        </div>
+                        @endif
+
+                        <div class="col-md-2">
                             <label for="status" class="form-label">{{ __('Status') }}</label>
                             <select class="form-select" id="status" name="status">
                                 <option value="">{{ __('All Statuses') }}</option>
@@ -41,17 +64,24 @@
                                 <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>{{ __('Cancelled') }}</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <label for="date_from" class="form-label">{{ __('Date From') }}</label>
+                        <div class="col-md-2">
+                            <label for="date_from" class="form-label">{{ __('From Date') }}</label>
                             <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request('date_from') }}">
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">&nbsp;</label>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-outline-primary">
+                            <label for="date_to" class="form-label">{{ __('To Date') }}</label>
+                            <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request('date_to') }}">
+                        </div>
+                        <div class="col-md-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-search me-1"></i>
-                                    {{ __('Search') }}
+                                    {{ __('Filter') }}
                                 </button>
+                                <a href="{{ route('prescriptions.index') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-redo me-1"></i>
+                                    {{ __('Clear') }}
+                                </a>
                             </div>
                         </div>
                     </form>
@@ -76,6 +106,9 @@
                                         <th>{{ __('Prescription ID') }}</th>
                                         <th>{{ __('Patient') }}</th>
                                         <th>{{ __('Doctor') }}</th>
+                                        @if(auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin())
+                                        <th>{{ __('Clinic') }}</th>
+                                        @endif
                                         <th>{{ __('Date') }}</th>
                                         <th>{{ __('Medications') }}</th>
                                         <th>{{ __('Status') }}</th>
@@ -90,19 +123,31 @@
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <div class="avatar bg-info text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
-                                                    {{ strtoupper(substr($prescription->patient->first_name ?? 'P', 0, 1) . substr($prescription->patient->last_name ?? 'A', 0, 1)) }}
+                                                <div class="avatar bg-info text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                                    {{ strtoupper(substr($prescription->patient_first_name ?? 'P', 0, 1) . substr($prescription->patient_last_name ?? 'A', 0, 1)) }}
                                                 </div>
                                                 <div>
-                                                    <div class="fw-bold">{{ ($prescription->patient->first_name ?? 'Demo') . ' ' . ($prescription->patient->last_name ?? 'Patient') }}</div>
-                                                    <small class="text-muted">{{ $prescription->patient->patient_id ?? 'P000001' }}</small>
+                                                    <div class="fw-bold">{{ ($prescription->patient_first_name ?? 'Demo') . ' ' . ($prescription->patient_last_name ?? 'Patient') }}</div>
+                                                    <small class="text-muted">{{ $prescription->patient_id ?? 'P000001' }}</small>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{{ ($prescription->doctor->first_name ?? 'Dr.') . ' ' . ($prescription->doctor->last_name ?? 'Smith') }}</td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ ($prescription->doctor_title ? $prescription->doctor_title . ' ' : '') . ($prescription->doctor_first_name ?? 'Dr.') . ' ' . ($prescription->doctor_last_name ?? 'Smith') }}</strong>
+                                            </div>
+                                        </td>
+                                        @if(auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin())
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-clinic-medical me-1"></i>
+                                                {{ $prescription->clinic_name ?? 'Unknown Clinic' }}
+                                            </span>
+                                        </td>
+                                        @endif
                                         <td>{{ $prescription->created_at ? \Carbon\Carbon::parse($prescription->created_at)->format('M d, Y') : now()->format('M d, Y') }}</td>
                                         <td>
-                                            <span class="badge bg-secondary">{{ $prescription->medicines_count ?? 3 }} {{ __('medications') }}</span>
+                                            <span class="badge bg-light text-dark">{{ $prescription->medicines_count ?? 0 }} {{ __('meds') }}</span>
                                         </td>
                                         <td>
                                             <span class="badge bg-{{ $prescription->status == 'active' ? 'success' : ($prescription->status == 'completed' ? 'primary' : 'secondary') }}">
@@ -117,9 +162,11 @@
                                                 <button type="button" class="btn btn-outline-success" title="{{ __('Print PDF') }}">
                                                     <i class="fas fa-file-pdf"></i>
                                                 </button>
+                                                @if(auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin() || $prescription->doctor_id === auth()->id())
                                                 <a href="{{ route('prescriptions.edit', $prescription->id) }}" class="btn btn-outline-secondary" title="{{ __('Edit') }}">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

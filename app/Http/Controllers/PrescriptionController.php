@@ -14,23 +14,37 @@ class PrescriptionController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+
+        // Get tenant clinic IDs for cross-clinic access
+        $tenantClinicIds = $user->clinic ? $user->clinic->getTenantClinicIds() : [$user->clinic_id];
+
         $query = DB::table('prescriptions')
             ->leftJoin('patients', 'prescriptions.patient_id', '=', 'patients.id')
             ->leftJoin('users as doctors', 'prescriptions.doctor_id', '=', 'doctors.id')
+            ->leftJoin('clinics', 'prescriptions.clinic_id', '=', 'clinics.id')
             ->select(
                 'prescriptions.*',
                 'patients.first_name as patient_first_name',
                 'patients.last_name as patient_last_name',
                 'patients.patient_id',
                 'doctors.first_name as doctor_first_name',
-                'doctors.last_name as doctor_last_name'
-            )
-            ->where('prescriptions.clinic_id', $user->clinic_id);
+                'doctors.last_name as doctor_last_name',
+                'doctors.title_prefix as doctor_title',
+                'clinics.name as clinic_name'
+            );
 
         // Filter prescriptions based on user role
-        // Only Super Admins and Clinic Admins can see all prescriptions
-        // Regular doctors can only see their own prescriptions
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+        if ($user->isSuperAdmin()) {
+            // Super Admin sees all prescriptions from all clinics
+            // No filter needed
+        } elseif ($user->role === 'pharmacist') {
+            // Pharmacists see all prescriptions from all clinics in their tenant
+            $query->whereIn('prescriptions.clinic_id', $tenantClinicIds);
+        } elseif ($user->isClinicAdmin()) {
+            // Clinic Admins see all prescriptions in their clinic only
+            $query->where('prescriptions.clinic_id', $user->clinic_id);
+        } else {
+            // Regular doctors can only see their own prescriptions
             $query->where('prescriptions.doctor_id', $user->id);
         }
 
@@ -44,6 +58,16 @@ class PrescriptionController extends Controller
             });
         }
 
+        // Filter by doctor name (new filter for pharmacists)
+        if ($request->filled('doctor_name')) {
+            $doctorName = $request->doctor_name;
+            $query->where(function ($q) use ($doctorName) {
+                $q->where('doctors.first_name', 'like', "%{$doctorName}%")
+                  ->orWhere('doctors.last_name', 'like', "%{$doctorName}%")
+                  ->orWhereRaw("CONCAT(doctors.first_name, ' ', doctors.last_name) LIKE ?", ["%{$doctorName}%"]);
+            });
+        }
+
         if ($request->filled('status')) {
             $query->where('prescriptions.status', $request->status);
         }
@@ -52,9 +76,25 @@ class PrescriptionController extends Controller
             $query->whereDate('prescriptions.created_at', '>=', $request->date_from);
         }
 
+        if ($request->filled('date_to')) {
+            $query->whereDate('prescriptions.created_at', '<=', $request->date_to);
+        }
+
         $prescriptions = $query->orderBy('prescriptions.created_at', 'desc')->paginate(15);
 
-        return view('prescriptions.index', compact('prescriptions'));
+        // Get list of doctors for filter dropdown (for pharmacists)
+        $doctors = collect();
+        if ($user->role === 'pharmacist' || $user->isSuperAdmin()) {
+            $doctors = DB::table('users')
+                ->whereIn('clinic_id', $tenantClinicIds)
+                ->where('role', 'doctor')
+                ->where('is_active', true)
+                ->select('id', 'first_name', 'last_name', 'title_prefix')
+                ->orderBy('first_name')
+                ->get();
+        }
+
+        return view('prescriptions.index', compact('prescriptions', 'doctors'));
     }
 
     /**

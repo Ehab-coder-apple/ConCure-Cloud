@@ -45,6 +45,7 @@ class Clinic extends Model
         'storage_used',
         'country_id',
         'schedule_override_id',
+        'tenant_id',
     ];
 
     protected $casts = [
@@ -507,5 +508,46 @@ class Clinic extends Model
     public function scopeDemo($query)
     {
         return $query->where('is_demo', true);
+    }
+
+    /**
+     * Scope to filter by tenant.
+     */
+    public function scopeByTenant($query, ?string $tenantId)
+    {
+        if ($tenantId === null) {
+            return $query;
+        }
+
+        return $query->where('tenant_id', $tenantId);
+    }
+
+    /**
+     * Get all clinics in the same tenant.
+     */
+    public function getTenantClinics()
+    {
+        if (!$this->tenant_id) {
+            return collect([$this]);
+        }
+
+        return static::where('tenant_id', $this->tenant_id)
+            ->where('is_active', true)
+            ->get();
+    }
+
+    /**
+     * Get IDs of all clinics in the same tenant.
+     */
+    public function getTenantClinicIds(): array
+    {
+        if (!$this->tenant_id) {
+            return [$this->id];
+        }
+
+        return static::where('tenant_id', $this->tenant_id)
+            ->where('is_active', true)
+            ->pluck('id')
+            ->toArray();
     }
 }
