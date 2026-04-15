@@ -87,6 +87,11 @@ class MedicineController extends Controller
             'contraindications' => 'nullable|string|max:1000',
             'is_frequent' => 'boolean',
             'is_active' => 'boolean',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'purchase_price' => 'nullable|numeric|min:0',
+            'selling_price' => 'nullable|numeric|min:0',
+            'expiry_date' => 'nullable|date',
+            'batch_number' => 'nullable|string|max:100',
         ]);
 
         // Check for duplicate medicine in the same clinic
@@ -112,6 +117,11 @@ class MedicineController extends Controller
             'contraindications' => $request->contraindications,
             'is_frequent' => $request->boolean('is_frequent'),
             'is_active' => $request->boolean('is_active', true),
+            'stock_quantity' => $request->stock_quantity ?? 0,
+            'purchase_price' => $request->purchase_price,
+            'selling_price' => $request->selling_price,
+            'expiry_date' => $request->expiry_date,
+            'batch_number' => $request->batch_number,
             'clinic_id' => $user->clinic_id,
             'created_by' => $user->id,
         ]);
@@ -170,6 +180,11 @@ class MedicineController extends Controller
             'contraindications' => 'nullable|string|max:1000',
             'is_frequent' => 'boolean',
             'is_active' => 'boolean',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'purchase_price' => 'nullable|numeric|min:0',
+            'selling_price' => 'nullable|numeric|min:0',
+            'expiry_date' => 'nullable|date',
+            'batch_number' => 'nullable|string|max:100',
         ]);
 
         // Check for duplicate medicine in the same clinic (excluding current)
@@ -196,6 +211,11 @@ class MedicineController extends Controller
             'contraindications' => $request->contraindications,
             'is_frequent' => $request->boolean('is_frequent'),
             'is_active' => $request->boolean('is_active'),
+            'stock_quantity' => $request->stock_quantity ?? 0,
+            'purchase_price' => $request->purchase_price,
+            'selling_price' => $request->selling_price,
+            'expiry_date' => $request->expiry_date,
+            'batch_number' => $request->batch_number,
         ]);
 
         return redirect()->route('medicines.show', $medicine)
