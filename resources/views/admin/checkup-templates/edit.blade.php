@@ -295,6 +295,7 @@
 <script>
 let sectionCounter = 0;
 let fieldCounter = 0;
+let isLoadingConfig = false; // Flag to prevent updateFormConfig during initialization
 
 // Field types available
 const fieldTypes = @json($fieldTypes);
@@ -567,12 +568,22 @@ function updateFormConfig() {
         }
 
         sectionCard.querySelectorAll('.section-fields .border').forEach(fieldDiv => {
-            const label = fieldDiv.querySelector('input[placeholder="Field Label"]').value;
+            const labelInput = fieldDiv.querySelector('input[placeholder="Field Label"]');
+            const typeSelect = fieldDiv.querySelector('select');
+            const requiredCheckbox = fieldDiv.querySelector('input[type="checkbox"]');
+
+            // Guard against null elements
+            if (!labelInput || !typeSelect || !requiredCheckbox) {
+                console.warn('Skipping field div with missing elements:', fieldDiv);
+                return;
+            }
+
+            const label = labelInput.value;
             if (!label) return;
 
             const fieldKey = fieldDiv.dataset.fieldKey || label.toLowerCase().replace(/\s+/g, '_');
-            const type = fieldDiv.querySelector('select').value;
-            const required = fieldDiv.querySelector('input[type="checkbox"]').checked;
+            const type = typeSelect.value;
+            const required = requiredCheckbox.checked;
             const field = {
                 type: type,
                 label: label,
@@ -580,9 +591,9 @@ function updateFormConfig() {
             };
 
             if (type === 'select' || type === 'radio') {
-                const optionsText = fieldDiv.querySelector('textarea').value;
-                if (optionsText) {
-                    field.options = optionsText.split('\n').filter(opt => opt.trim());
+                const optionsTextarea = fieldDiv.querySelector('textarea');
+                if (optionsTextarea && optionsTextarea.value) {
+                    field.options = optionsTextarea.value.split('\n').filter(opt => opt.trim());
                 }
             }
 
@@ -642,28 +653,40 @@ function previewTemplate() {
 
 function initFormBuilder() {
     let loaded = false;
-    const existingConfig = document.getElementById('form_config').value;
+    const formConfigElement = document.getElementById('form_config');
+
+    if (!formConfigElement) {
+        console.error('form_config element not found!');
+        return;
+    }
+
+    const existingConfig = formConfigElement.value;
 
     console.log('Initializing Form Builder...');
     console.log('Existing config (raw):', existingConfig);
 
-    if (existingConfig) {
+    if (existingConfig && existingConfig.trim() !== '') {
         try {
             const parsedConfig = JSON.parse(existingConfig);
             console.log('Parsed config:', parsedConfig);
-            console.log('Sections count:', Object.keys(parsedConfig.sections || {}).length);
 
-            loadExistingConfig(parsedConfig);
-            loaded = true;
-            console.log('Successfully loaded existing configuration');
+            if (parsedConfig && parsedConfig.sections) {
+                console.log('Sections count:', Object.keys(parsedConfig.sections).length);
+                loadExistingConfig(parsedConfig);
+                loaded = true;
+                console.log('Successfully loaded existing configuration');
+            } else {
+                console.warn('Parsed config has no sections property');
+            }
         } catch (e) {
             console.error('Error loading existing config:', e);
             console.error('Config value that failed to parse:', existingConfig);
+            console.error('Parse error details:', e.message);
         }
     }
 
     if (!loaded) {
-        console.warn('No existing config found, loading empty template');
+        console.warn('No existing config found, loading default clinical summary section');
         loadExistingConfig({ sections: {} });
     }
 }
