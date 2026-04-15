@@ -208,7 +208,7 @@
                                 $formConfigJson = json_encode(['sections' => $template->form_sections], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
                             }
                         @endphp
-                        <input type="hidden" name="form_config" id="form_config" value="{{ $formConfigJson }}">
+                        <textarea name="form_config" id="form_config" style="display:none;">{{ $formConfigJson }}</textarea>
                     </div>
                 </div>
             </div>
@@ -622,16 +622,26 @@ function initFormBuilder() {
     let loaded = false;
     const existingConfig = document.getElementById('form_config').value;
 
+    console.log('Initializing Form Builder...');
+    console.log('Existing config (raw):', existingConfig);
+
     if (existingConfig) {
         try {
-            loadExistingConfig(JSON.parse(existingConfig));
+            const parsedConfig = JSON.parse(existingConfig);
+            console.log('Parsed config:', parsedConfig);
+            console.log('Sections count:', Object.keys(parsedConfig.sections || {}).length);
+
+            loadExistingConfig(parsedConfig);
             loaded = true;
+            console.log('Successfully loaded existing configuration');
         } catch (e) {
             console.error('Error loading existing config:', e);
+            console.error('Config value that failed to parse:', existingConfig);
         }
     }
 
     if (!loaded) {
+        console.warn('No existing config found, loading empty template');
         loadExistingConfig({ sections: {} });
     }
 }
