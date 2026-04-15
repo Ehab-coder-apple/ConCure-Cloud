@@ -203,13 +203,25 @@ class SimplePrescriptionController extends Controller
     public function show($id)
     {
         $user = Auth::user();
-        $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines'])
-            ->forClinic($user->clinic_id)
-            ->findOrFail($id);
 
-        // Authorization: Only allow access to own prescriptions for regular doctors
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
-            abort(403, 'You can only view your own prescriptions.');
+        // Get tenant clinic IDs for cross-clinic access
+        $tenantClinicIds = $user->clinic ? $user->clinic->getTenantClinicIds() : [$user->clinic_id];
+
+        // Pharmacists and super admins can view prescriptions from all tenant clinics
+        if ($user->role === 'pharmacist' || $user->isSuperAdmin()) {
+            $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
+                ->whereIn('clinic_id', $tenantClinicIds)
+                ->findOrFail($id);
+        } else {
+            // Others are restricted to their clinic
+            $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
+                ->forClinic($user->clinic_id)
+                ->findOrFail($id);
+
+            // Authorization: Only allow access to own prescriptions for regular doctors
+            if (!$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+                abort(403, 'You can only view your own prescriptions.');
+            }
         }
 
         return view('simple-prescriptions.show', compact('prescription'));
@@ -218,6 +230,12 @@ class SimplePrescriptionController extends Controller
     public function edit($id)
     {
         $user = Auth::user();
+
+        // Pharmacists cannot edit prescriptions
+        if ($user->role === 'pharmacist') {
+            abort(403, 'Pharmacists can view but not edit prescriptions.');
+        }
+
         $prescription = SimplePrescription::with('medicines')
             ->forClinic($user->clinic_id)
             ->findOrFail($id);
@@ -343,13 +361,24 @@ class SimplePrescriptionController extends Controller
     public function pdf($id, Request $request)
     {
         $user = Auth::user();
-        $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
-            ->forClinic($user->clinic_id)
-            ->findOrFail($id);
 
-        // Authorization: Only allow PDF generation for own prescriptions for regular doctors
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
-            abort(403, 'You can only generate PDF for your own prescriptions.');
+        // Get tenant clinic IDs for cross-clinic access
+        $tenantClinicIds = $user->clinic ? $user->clinic->getTenantClinicIds() : [$user->clinic_id];
+
+        // Pharmacists and super admins can view prescriptions from all tenant clinics
+        if ($user->role === 'pharmacist' || $user->isSuperAdmin()) {
+            $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
+                ->whereIn('clinic_id', $tenantClinicIds)
+                ->findOrFail($id);
+        } else {
+            $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
+                ->forClinic($user->clinic_id)
+                ->findOrFail($id);
+
+            // Authorization: Only allow PDF generation for own prescriptions for regular doctors
+            if (!$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+                abort(403, 'You can only generate PDF for your own prescriptions.');
+            }
         }
 
         // Check if user explicitly requested custom template via query param
@@ -604,13 +633,24 @@ class SimplePrescriptionController extends Controller
     public function print($id)
     {
         $user = Auth::user();
-        $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
-            ->forClinic($user->clinic_id)
-            ->findOrFail($id);
 
-        // Authorization: Only allow printing own prescriptions for regular doctors
-        if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
-            abort(403, 'You can only print your own prescriptions.');
+        // Get tenant clinic IDs for cross-clinic access
+        $tenantClinicIds = $user->clinic ? $user->clinic->getTenantClinicIds() : [$user->clinic_id];
+
+        // Pharmacists and super admins can view prescriptions from all tenant clinics
+        if ($user->role === 'pharmacist' || $user->isSuperAdmin()) {
+            $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
+                ->whereIn('clinic_id', $tenantClinicIds)
+                ->findOrFail($id);
+        } else {
+            $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
+                ->forClinic($user->clinic_id)
+                ->findOrFail($id);
+
+            // Authorization: Only allow printing own prescriptions for regular doctors
+            if (!$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+                abort(403, 'You can only print your own prescriptions.');
+            }
         }
 
         return view('simple-prescriptions.print', compact('prescription'));
