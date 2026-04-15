@@ -123,12 +123,84 @@
                                     <!-- Contraindications -->
                                     <div class="col-md-6 mb-3">
                                         <label for="contraindications" class="form-label">{{ __('Contraindications') }}</label>
-                                        <textarea class="form-control @error('contraindications') is-invalid @enderror" 
-                                                  id="contraindications" name="contraindications" rows="3" 
+                                        <textarea class="form-control @error('contraindications') is-invalid @enderror"
+                                                  id="contraindications" name="contraindications" rows="3"
                                                   placeholder="{{ __('When not to use this medicine...') }}">{{ old('contraindications', $medicine->contraindications) }}</textarea>
                                         @error('contraindications')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
+                                    </div>
+
+                                    <!-- Inventory Management Section -->
+                                    <div class="col-12 mb-3">
+                                        <div class="card bg-info bg-opacity-10 border-info">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-info">
+                                                    <i class="fas fa-warehouse me-2"></i>
+                                                    {{ __('Inventory Management') }}
+                                                </h6>
+                                                <div class="row g-3 mt-1">
+                                                    <!-- Stock Quantity -->
+                                                    <div class="col-md-4">
+                                                        <label for="stock_quantity" class="form-label">{{ __('Stock Quantity') }}</label>
+                                                        <input type="number" class="form-control @error('stock_quantity') is-invalid @enderror"
+                                                               id="stock_quantity" name="stock_quantity"
+                                                               value="{{ old('stock_quantity', $medicine->stock_quantity) }}"
+                                                               min="0" step="1" placeholder="{{ __('Available units') }}">
+                                                        @error('stock_quantity')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+
+                                                    <!-- Purchase Price -->
+                                                    <div class="col-md-4">
+                                                        <label for="purchase_price" class="form-label">{{ __('Purchase Price (per unit)') }}</label>
+                                                        <input type="number" class="form-control @error('purchase_price') is-invalid @enderror"
+                                                               id="purchase_price" name="purchase_price"
+                                                               value="{{ old('purchase_price', $medicine->purchase_price) }}"
+                                                               min="0" step="0.01" placeholder="{{ __('Cost price') }}">
+                                                        @error('purchase_price')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+
+                                                    <!-- Selling Price -->
+                                                    <div class="col-md-4">
+                                                        <label for="selling_price" class="form-label">{{ __('Selling Price (per unit)') }}</label>
+                                                        <input type="number" class="form-control @error('selling_price') is-invalid @enderror"
+                                                               id="selling_price" name="selling_price"
+                                                               value="{{ old('selling_price', $medicine->selling_price) }}"
+                                                               min="0" step="0.01" placeholder="{{ __('Retail price') }}">
+                                                        @error('selling_price')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+
+                                                    <!-- Expiry Date -->
+                                                    <div class="col-md-6">
+                                                        <label for="expiry_date" class="form-label">{{ __('Expiry Date') }}</label>
+                                                        <input type="date" class="form-control @error('expiry_date') is-invalid @enderror"
+                                                               id="expiry_date" name="expiry_date"
+                                                               value="{{ old('expiry_date', $medicine->expiry_date ? $medicine->expiry_date->format('Y-m-d') : '') }}">
+                                                        @error('expiry_date')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+
+                                                    <!-- Batch Number -->
+                                                    <div class="col-md-6">
+                                                        <label for="batch_number" class="form-label">{{ __('Batch/Lot Number') }}</label>
+                                                        <input type="text" class="form-control @error('batch_number') is-invalid @enderror"
+                                                               id="batch_number" name="batch_number"
+                                                               value="{{ old('batch_number', $medicine->batch_number) }}"
+                                                               placeholder="{{ __('e.g., BATCH-2024-001') }}">
+                                                        @error('batch_number')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <!-- Settings -->

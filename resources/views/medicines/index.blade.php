@@ -149,9 +149,11 @@
                                         <th>{{ __('Medicine') }}</th>
                                         <th>{{ __('Form') }}</th>
                                         <th>{{ __('Dosage') }}</th>
+                                        <th>{{ __('Stock') }}</th>
+                                        <th>{{ __('Selling Price') }}</th>
+                                        <th>{{ __('Expiry') }}</th>
                                         <th>{{ __('Status') }}</th>
                                         <th>{{ __('Frequent') }}</th>
-                                        <th>{{ __('Created') }}</th>
                                         <th>{{ __('Actions') }}</th>
                                     </tr>
                                 </thead>
@@ -174,6 +176,52 @@
                                         </td>
                                         <td>{{ $medicine->dosage ?? '-' }}</td>
                                         <td>
+                                            @if($medicine->stock_quantity <= 0)
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                                    {{ __('Out of Stock') }}
+                                                </span>
+                                            @elseif($medicine->stock_quantity <= 10)
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                                    {{ $medicine->stock_quantity }} {{ __('units') }}
+                                                </span>
+                                            @else
+                                                <span class="badge bg-success">
+                                                    {{ $medicine->stock_quantity }} {{ __('units') }}
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($medicine->selling_price)
+                                                <strong>{{ number_format($medicine->selling_price, 2) }}</strong>
+                                                @if($medicine->purchase_price)
+                                                    <br><small class="text-muted">{{ __('Cost') }}: {{ number_format($medicine->purchase_price, 2) }}</small>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($medicine->expiry_date)
+                                                @if($medicine->isExpired())
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-times-circle me-1"></i>
+                                                        {{ $medicine->expiry_date->format('M d, Y') }}
+                                                    </span>
+                                                @elseif($medicine->isExpiringSoon())
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        {{ $medicine->expiry_date->format('M d, Y') }}
+                                                    </span>
+                                                @else
+                                                    <small class="text-muted">{{ $medicine->expiry_date->format('M d, Y') }}</small>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
                                             @if($medicine->is_active)
                                                 <span class="badge bg-success">{{ __('Active') }}</span>
                                             @else
@@ -186,12 +234,6 @@
                                             @else
                                                 <i class="far fa-star text-muted" title="{{ __('Regular Medicine') }}"></i>
                                             @endif
-                                        </td>
-                                        <td>
-                                            <small class="text-muted">
-                                                {{ $medicine->created_at->format('M d, Y') }}<br>
-                                                {{ __('by') }} {{ $medicine->creator->name ?? 'System' }}
-                                            </small>
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">

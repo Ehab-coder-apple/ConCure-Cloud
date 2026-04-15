@@ -21,6 +21,11 @@ class Medicine extends Model
         'side_effects',
         'contraindications',
         'is_frequent',
+        'stock_quantity',
+        'purchase_price',
+        'selling_price',
+        'expiry_date',
+        'batch_number',
         'clinic_id',
         'created_by',
         'is_active',
@@ -29,6 +34,10 @@ class Medicine extends Model
     protected $casts = [
         'is_frequent' => 'boolean',
         'is_active' => 'boolean',
+        'stock_quantity' => 'integer',
+        'purchase_price' => 'decimal:2',
+        'selling_price' => 'decimal:2',
+        'expiry_date' => 'date',
     ];
 
     /**
@@ -175,5 +184,106 @@ class Medicine extends Model
                       });
                   });
             });
+    }
+
+    /**
+     * Scope to filter low stock medicines.
+     */
+    public function scopeLowStock($query, int $threshold = 10)
+    {
+        return $query->where('stock_quantity', '<=', $threshold)
+                    ->where('stock_quantity', '>', 0);
+    }
+
+    /**
+     * Scope to filter out of stock medicines.
+     */
+    public function scopeOutOfStock($query)
+    {
+        return $query->where('stock_quantity', '<=', 0);
+    }
+
+    /**
+     * Scope to filter expiring soon medicines.
+     */
+    public function scopeExpiringSoon($query, int $days = 30)
+    {
+        return $query->whereNotNull('expiry_date')
+                    ->whereBetween('expiry_date', [now(), now()->addDays($days)]);
+    }
+
+    /**
+     * Scope to filter expired medicines.
+     */
+    public function scopeExpired($query)
+    {
+        return $query->whereNotNull('expiry_date')
+                    ->where('expiry_date', '<', now());
+    }
+
+    /**
+     * Check if medicine is low on stock.
+     */
+    public function isLowStock(int $threshold = 10): bool
+    {
+        return $this->stock_quantity <= $threshold && $this->stock_quantity > 0;
+    }
+
+    /**
+     * Check if medicine is out of stock.
+     */
+    public function isOutOfStock(): bool
+    {
+        return $this->stock_quantity <= 0;
+    }
+
+    /**
+     * Check if medicine is expiring soon.
+     */
+    public function isExpiringSoon(int $days = 30): bool
+    {
+        if (!$this->expiry_date) {
+            return false;
+        }
+
+        return $this->expiry_date->isBetween(now(), now()->addDays($days));
+    }
+
+    /**
+     * Check if medicine is expired.
+     */
+    public function isExpired(): bool
+    {
+        if (!$this->expiry_date) {
+            return false;
+        }
+
+        return $this->expiry_date->isPast();
+    }
+
+    /**
+     * Get stock status badge color.
+     */
+    public function getStockStatusColorAttribute(): string
+    {
+        if ($this->isOutOfStock()) {
+            return 'danger';
+        } elseif ($this->isLowStock()) {
+            return 'warning';
+        }
+        return 'success';
+    }
+
+    /**
+     * Get stock status text.
+     */
+    public function getStockStatusTextAttribute(): string
+    {
+        if ($this->isOutOfStock()) {
+            return 'Out of Stock';
+        } elseif ($this->isLowStock()) {
+            return 'Low Stock';
+        }
+        return 'In Stock';
     }
 }
