@@ -1131,12 +1131,12 @@ class FinanceController extends Controller
 
         $stats['monthlyProfit'] = $stats['monthlyRevenue'] - $stats['monthlyExpenses'];
 
-        // Outstanding amounts
+        // Outstanding amounts - Include ALL unpaid balances (sent, overdue, partial_paid)
         $stats['outstandingInvoices'] = $invoicesQuery->clone()
-            ->whereIn('status', ['sent', 'overdue'])
+            ->whereIn('status', ['sent', 'overdue', 'partial_paid'])
             ->sum('balance');
 
-        // Partial payments balance
+        // Partial payments balance (subset of outstanding)
         $stats['partialPaymentsBalance'] = $invoicesQuery->clone()
             ->where('status', 'partial_paid')
             ->sum('balance');
