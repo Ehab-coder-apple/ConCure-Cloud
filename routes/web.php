@@ -411,6 +411,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::delete('/{prescription}', [SimplePrescriptionController::class, 'destroy'])->name('destroy');
         Route::get('/{prescription}/pdf', [SimplePrescriptionController::class, 'pdf'])->name('pdf');
         Route::get('/{prescription}/print', [SimplePrescriptionController::class, 'print'])->name('print');
+        Route::post('/{prescription}/dispense', [SimplePrescriptionController::class, 'convertToSale'])->name('dispense');
     });
 
     // Medicine Management

@@ -64,10 +64,19 @@
                                }); localStorage.setItem('prefill_transfer', v); sessionStorage.setItem('prefill_transfer', v);}catch(e){}">
                                 <i class="fas fa-share-nodes"></i>
                             </a>
+                            @if(auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin() || $prescription->doctor_id === auth()->id())
                             <a href="{{ route('simple-prescriptions.edit', $prescription->id) }}"
                                class="btn btn-light btn-sm" title="{{ __('Edit Prescription') }}">
                                 <i class="fas fa-edit"></i>
                             </a>
+                            @endif
+
+                            @if((auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin()) && !$prescription->is_dispensed && $prescription->status === 'active')
+                            <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#dispenseModal" title="{{ __('Dispense & Create Sale') }}">
+                                <i class="fas fa-pills me-1"></i>{{ __('Dispense') }}
+                            </button>
+                            @endif
+
                             <a href="{{ route('simple-prescriptions.index') }}"
                                class="btn btn-outline-light btn-sm" title="{{ __('Back to Prescriptions') }}">
                                 <i class="fas fa-arrow-left"></i>
@@ -95,6 +104,18 @@
                             <span class="badge bg-{{ $prescription->status === 'active' ? 'success' : ($prescription->status === 'completed' ? 'primary' : 'secondary') }} fs-6">
                                 {{ ucfirst($prescription->status) }}
                             </span>
+                            @if($prescription->is_dispensed)
+                            <br><br>
+                            <div class="alert alert-info mb-0 d-inline-block">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>{{ __('Dispensed') }}</strong><br>
+                                <small>
+                                    {{ __('on') }} {{ $prescription->dispensed_at->format('M d, Y \a\t H:i') }}<br>
+                                    {{ __('by') }} {{ $prescription->dispenser->first_name ?? 'Unknown' }} {{ $prescription->dispenser->last_name ?? '' }}<br>
+                                    {{ __('Ref') }}: {{ $prescription->dispense_reference }}
+                                </small>
+                            </div>
+                            @endif
                         </div>
                     </div>
 
@@ -371,6 +392,87 @@ function shareSimplePrescriptionWhatsApp() {
 }
 </script>
 @endpush
+
+<!-- Dispense Modal -->
+@if((auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin()) && !$prescription->is_dispensed && $prescription->status === 'active')
+<div class="modal fade" id="dispenseModal" tabindex="-1" aria-labelledby="dispenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="dispenseModalLabel">
+                    <i class="fas fa-pills me-2"></i>{{ __('Dispense Prescription') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('simple-prescriptions.dispense', $prescription) }}">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>{{ __('This will:') }}</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>{{ __('Create sale transactions for all medicines') }}</li>
+                            <li>{{ __('Automatically reduce inventory stock') }}</li>
+                            <li>{{ __('Mark prescription as completed') }}</li>
+                            <li>{{ __('Generate sales receipt') }}</li>
+                        </ul>
+                    </div>
+
+                    @if($prescription->medicines && $prescription->medicines->count() > 0)
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <strong>{{ __('Medicines to Dispense') }}</strong>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                @foreach($prescription->medicines as $med)
+                                <li class="mb-2">
+                                    <i class="fas fa-pills text-primary me-2"></i>
+                                    <strong>{{ $med->medicine_name }}</strong>
+                                    @if($med->quantity)
+                                        <span class="badge bg-secondary">{{ $med->quantity }} {{ __('units') }}</span>
+                                    @endif
+                                    @if($med->dosage)
+                                        <br><small class="text-muted ms-4">{{ $med->dosage }}</small>
+                                    @endif
+                                </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                    @endif
+
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">{{ __('Payment Method') }} <span class="text-danger">*</span></label>
+                        <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required>
+                            <option value="">{{ __('Select payment method') }}</option>
+                            <option value="cash">{{ __('Cash') }}</option>
+                            <option value="card">{{ __('Card') }}</option>
+                            <option value="credit">{{ __('Credit') }}</option>
+                            <option value="insurance">{{ __('Insurance') }}</option>
+                            <option value="other">{{ __('Other') }}</option>
+                        </select>
+                        @error('payment_method')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>{{ __('Important') }}:</strong> {{ __('This action cannot be undone. Make sure all medicines are available in inventory before proceeding.') }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-check me-1"></i>{{ __('Dispense & Create Sale') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 </style>
 @endsection

@@ -656,5 +656,164 @@ class SimplePrescriptionController extends Controller
         return view('simple-prescriptions.print', compact('prescription'));
     }
 
+    /**
+     * Convert prescription to sale (Dispense medicines and update inventory).
+     */
+    public function convertToSale(Request $request, $id)
+    {
+        $user = Auth::user();
 
+        // Only pharmacists and admins can dispense
+        if (!in_array($user->role, ['pharmacist', 'admin', 'super_admin'])) {
+            abort(403, 'Only pharmacists and admins can dispense prescriptions.');
+        }
+
+        // Get tenant clinic IDs for cross-clinic access
+        $tenantClinicIds = $user->clinic ? $user->clinic->getTenantClinicIds() : [$user->clinic_id];
+
+        // Load prescription with medicines
+        if ($user->role === 'pharmacist' || $user->isSuperAdmin()) {
+            $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines'])
+                ->whereIn('clinic_id', $tenantClinicIds)
+                ->findOrFail($id);
+        } else {
+            $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines'])
+                ->where('clinic_id', $user->clinic_id)
+                ->findOrFail($id);
+        }
+
+        // Check if already dispensed
+        if ($prescription->is_dispensed) {
+            return back()->with('error', 'This prescription has already been dispensed on ' .
+                $prescription->dispensed_at->format('M d, Y \a\t H:i') . ' by ' .
+                ($prescription->dispenser->name ?? 'Unknown'));
+        }
+
+        // Check if prescription is active
+        if ($prescription->status !== 'active') {
+            return back()->with('error', 'Only active prescriptions can be dispensed. Current status: ' . $prescription->status);
+        }
+
+        // Validate payment method
+        $request->validate([
+            'payment_method' => 'required|in:cash,card,credit,insurance,other',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $unavailableMedicines = [];
+            $insufficientStock = [];
+            $totalAmount = 0;
+
+            // First pass: Check all medicines availability and stock
+            foreach ($prescription->medicines as $prescribedMedicine) {
+                // Try to find matching medicine in inventory
+                $medicine = Medicine::where('clinic_id', $prescription->clinic_id)
+                    ->where(function ($query) use ($prescribedMedicine) {
+                        $query->where('name', 'LIKE', '%' . $prescribedMedicine->medicine_name . '%')
+                            ->orWhere('generic_name', 'LIKE', '%' . $prescribedMedicine->medicine_name . '%');
+                    })
+                    ->where('is_active', true)
+                    ->first();
+
+                if (!$medicine) {
+                    $unavailableMedicines[] = $prescribedMedicine->medicine_name;
+                    continue;
+                }
+
+                // Check stock quantity
+                $quantityNeeded = (int) ($prescribedMedicine->quantity ?? 1);
+                if ($medicine->stock_quantity < $quantityNeeded) {
+                    $insufficientStock[] = [
+                        'name' => $medicine->name,
+                        'needed' => $quantityNeeded,
+                        'available' => $medicine->stock_quantity,
+                    ];
+                }
+            }
+
+            // If any medicines are unavailable or have insufficient stock, abort
+            if (!empty($unavailableMedicines)) {
+                DB::rollBack();
+                return back()->with('error', 'The following medicines are not found in inventory: ' .
+                    implode(', ', $unavailableMedicines) . '. Please add them to inventory first.');
+            }
+
+            if (!empty($insufficientStock)) {
+                DB::rollBack();
+                $errorMessage = 'Insufficient stock for the following medicines:<br>';
+                foreach ($insufficientStock as $item) {
+                    $errorMessage .= "• {$item['name']}: Need {$item['needed']} units, only {$item['available']} available<br>";
+                }
+                return back()->with('error', $errorMessage);
+            }
+
+            // Second pass: Create transactions and update stock
+            $dispenseReference = 'DISP-' . date('Ymd') . '-' . str_pad($prescription->id, 5, '0', STR_PAD_LEFT) . '-' . time();
+
+            foreach ($prescription->medicines as $prescribedMedicine) {
+                // Find medicine again
+                $medicine = Medicine::where('clinic_id', $prescription->clinic_id)
+                    ->where(function ($query) use ($prescribedMedicine) {
+                        $query->where('name', 'LIKE', '%' . $prescribedMedicine->medicine_name . '%')
+                            ->orWhere('generic_name', 'LIKE', '%' . $prescribedMedicine->medicine_name . '%');
+                    })
+                    ->where('is_active', true)
+                    ->first();
+
+                $quantityNeeded = (int) ($prescribedMedicine->quantity ?? 1);
+                $unitPrice = $medicine->selling_price ?? 0;
+                $itemTotal = $quantityNeeded * $unitPrice;
+                $totalAmount += $itemTotal;
+
+                // Record stock before transaction
+                $stockBefore = $medicine->stock_quantity;
+
+                // Create transaction record
+                \App\Models\MedicineTransaction::create([
+                    'medicine_id' => $medicine->id,
+                    'clinic_id' => $prescription->clinic_id,
+                    'user_id' => $user->id,
+                    'type' => 'sale',
+                    'quantity' => $quantityNeeded,
+                    'unit_price' => $unitPrice,
+                    'total_amount' => $itemTotal,
+                    'reference_number' => $dispenseReference,
+                    'patient_id' => $prescription->patient_id,
+                    'payment_method' => $request->payment_method,
+                    'stock_before' => $stockBefore,
+                    'stock_after' => $stockBefore - $quantityNeeded,
+                    'notes' => 'Dispensed from prescription #' . $prescription->prescription_number,
+                    'transaction_date' => now(),
+                ]);
+
+                // Update medicine stock
+                $medicine->decrement('stock_quantity', $quantityNeeded);
+            }
+
+            // Mark prescription as dispensed
+            $prescription->update([
+                'is_dispensed' => true,
+                'dispensed_at' => now(),
+                'dispensed_by' => $user->id,
+                'dispense_reference' => $dispenseReference,
+                'status' => 'completed',
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('simple-prescriptions.show', $prescription)
+                ->with('success', 'Prescription dispensed successfully! Total amount: ' . number_format($totalAmount, 2) .
+                    ' | Reference: ' . $dispenseReference);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Prescription dispense failed', [
+                'prescription_id' => $prescription->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return back()->with('error', 'Failed to dispense prescription: ' . $e->getMessage());
+        }
+    }
 }

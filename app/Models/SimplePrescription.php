@@ -21,11 +21,17 @@ class SimplePrescription extends Model
         'diagnosis',
         'notes',
         'prescribed_date',
-        'status'
+        'status',
+        'is_dispensed',
+        'dispensed_at',
+        'dispensed_by',
+        'dispense_reference',
     ];
 
     protected $casts = [
         'prescribed_date' => 'date',
+        'is_dispensed' => 'boolean',
+        'dispensed_at' => 'datetime',
     ];
 
     // Relationships
@@ -42,6 +48,30 @@ class SimplePrescription extends Model
     public function clinic(): BelongsTo
     {
         return $this->belongsTo(Clinic::class);
+    }
+
+    /**
+     * Get the pharmacist who dispensed this prescription.
+     */
+    public function dispenser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dispensed_by');
+    }
+
+    /**
+     * Check if prescription has been dispensed.
+     */
+    public function isDispensed(): bool
+    {
+        return $this->is_dispensed;
+    }
+
+    /**
+     * Check if prescription can be dispensed.
+     */
+    public function canBeDispensed(): bool
+    {
+        return !$this->is_dispensed && $this->status === 'active';
     }
 
     public function medicines(): HasMany
