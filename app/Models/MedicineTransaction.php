@@ -29,11 +29,11 @@ class MedicineTransaction extends Model
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
+        'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'total_amount' => 'decimal:2',
-        'stock_before' => 'integer',
-        'stock_after' => 'integer',
+        'stock_before' => 'decimal:2',
+        'stock_after' => 'decimal:2',
         'transaction_date' => 'date',
     ];
 

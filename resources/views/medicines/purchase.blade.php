@@ -63,9 +63,10 @@
                             <!-- Quantity -->
                             <div class="col-md-6 mb-3">
                                 <label for="quantity" class="form-label">{{ __('Quantity') }} <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control @error('quantity') is-invalid @enderror" 
-                                       id="quantity" name="quantity" value="{{ old('quantity', 1) }}" 
-                                       min="1" step="1" required>
+                                <input type="number" class="form-control @error('quantity') is-invalid @enderror"
+                                       id="quantity" name="quantity" value="{{ old('quantity', 1) }}"
+                                       min="0.01" step="0.01" required>
+                                <small class="text-muted">{{ __('Supports decimals (e.g., 0.5, 1.5, 10.25)') }}</small>
                                 @error('quantity')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

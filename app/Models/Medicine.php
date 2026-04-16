@@ -34,7 +34,7 @@ class Medicine extends Model
     protected $casts = [
         'is_frequent' => 'boolean',
         'is_active' => 'boolean',
-        'stock_quantity' => 'integer',
+        'stock_quantity' => 'decimal:2',
         'purchase_price' => 'decimal:2',
         'selling_price' => 'decimal:2',
         'expiry_date' => 'date',

@@ -87,7 +87,7 @@ class MedicineController extends Controller
             'contraindications' => 'nullable|string|max:1000',
             'is_frequent' => 'boolean',
             'is_active' => 'boolean',
-            'stock_quantity' => 'nullable|integer|min:0',
+            'stock_quantity' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1,2})?$/',
             'purchase_price' => 'nullable|numeric|min:0',
             'selling_price' => 'nullable|numeric|min:0',
             'expiry_date' => 'nullable|date',
@@ -180,7 +180,7 @@ class MedicineController extends Controller
             'contraindications' => 'nullable|string|max:1000',
             'is_frequent' => 'boolean',
             'is_active' => 'boolean',
-            'stock_quantity' => 'nullable|integer|min:0',
+            'stock_quantity' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1,2})?$/',
             'purchase_price' => 'nullable|numeric|min:0',
             'selling_price' => 'nullable|numeric|min:0',
             'expiry_date' => 'nullable|date',
@@ -608,12 +608,13 @@ class MedicineController extends Controller
 
         $request->validate([
             'patient_id' => 'nullable|exists:patients,id',
-            'quantity' => 'required|integer|min:1|max:' . $medicine->stock_quantity,
+            'quantity' => 'required|numeric|min:0.01|max:' . $medicine->stock_quantity . '|regex:/^\d+(\.\d{1,2})?$/',
             'unit_price' => 'required|numeric|min:0',
             'payment_method' => 'required|in:cash,card,credit,insurance,other',
             'notes' => 'nullable|string|max:500',
         ], [
             'quantity.max' => 'Insufficient stock. Available: ' . $medicine->stock_quantity . ' units.',
+            'quantity.regex' => 'Quantity must be a valid number with up to 2 decimal places (e.g., 0.5, 1.5, 10.25).',
         ]);
 
         DB::beginTransaction();
@@ -679,12 +680,14 @@ class MedicineController extends Controller
 
         $request->validate([
             'supplier_name' => 'required|string|max:255',
-            'quantity' => 'required|integer|min:1',
+            'quantity' => 'required|numeric|min:0.01|regex:/^\d+(\.\d{1,2})?$/',
             'unit_price' => 'required|numeric|min:0',
             'payment_method' => 'required|in:cash,card,bank_transfer,credit,check,other',
             'expiry_date' => 'nullable|date|after:today',
             'batch_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
+        ], [
+            'quantity.regex' => 'Quantity must be a valid number with up to 2 decimal places (e.g., 0.5, 1.5, 10.25).',
         ]);
 
         DB::beginTransaction();

@@ -75,11 +75,11 @@
                             <!-- Quantity -->
                             <div class="col-md-6 mb-3">
                                 <label for="quantity" class="form-label">{{ __('Quantity') }} <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control @error('quantity') is-invalid @enderror" 
-                                       id="quantity" name="quantity" value="{{ old('quantity', 1) }}" 
-                                       min="1" max="{{ $medicine->stock_quantity }}" step="1" required
+                                <input type="number" class="form-control @error('quantity') is-invalid @enderror"
+                                       id="quantity" name="quantity" value="{{ old('quantity', 1) }}"
+                                       min="0.01" max="{{ $medicine->stock_quantity }}" step="0.01" required
                                        {{ $medicine->stock_quantity <= 0 ? 'disabled' : '' }}>
-                                <small class="text-muted">{{ __('Max') }}: {{ $medicine->stock_quantity }} {{ __('units') }}</small>
+                                <small class="text-muted">{{ __('Max') }}: {{ $medicine->stock_quantity }} {{ __('units') }} | {{ __('Supports decimals (e.g., 0.5, 1.5)') }}</small>
                                 @error('quantity')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

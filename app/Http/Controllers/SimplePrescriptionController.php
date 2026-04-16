@@ -721,8 +721,8 @@ class SimplePrescriptionController extends Controller
                     continue;
                 }
 
-                // Check stock quantity
-                $quantityNeeded = (int) ($prescribedMedicine->quantity ?? 1);
+                // Check stock quantity - support decimals for cosmetics/fillers
+                $quantityNeeded = (float) ($prescribedMedicine->quantity ?? 1);
                 if ($medicine->stock_quantity < $quantityNeeded) {
                     $insufficientStock[] = [
                         'name' => $medicine->name,
@@ -761,7 +761,8 @@ class SimplePrescriptionController extends Controller
                     ->where('is_active', true)
                     ->first();
 
-                $quantityNeeded = (int) ($prescribedMedicine->quantity ?? 1);
+                // Support decimal quantities for cosmetics/fillers (e.g., 0.5 ml, 1.5 ml)
+                $quantityNeeded = (float) ($prescribedMedicine->quantity ?? 1);
                 $unitPrice = $medicine->selling_price ?? 0;
                 $itemTotal = $quantityNeeded * $unitPrice;
                 $totalAmount += $itemTotal;
