@@ -430,6 +430,12 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/bulk-delete', [App\Http\Controllers\MedicineController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/clear-all', [App\Http\Controllers\MedicineController::class, 'clearAll'])->name('clear-all');
 
+        // Sell and Purchase routes
+        Route::get('/{medicine}/sell', [App\Http\Controllers\MedicineController::class, 'sellForm'])->name('sell');
+        Route::post('/{medicine}/sell', [App\Http\Controllers\MedicineController::class, 'processSell'])->name('sell.process');
+        Route::get('/{medicine}/purchase', [App\Http\Controllers\MedicineController::class, 'purchaseForm'])->name('purchase');
+        Route::post('/{medicine}/purchase', [App\Http\Controllers\MedicineController::class, 'processPurchase'])->name('purchase.process');
+
         Route::get('/{medicine}', [App\Http\Controllers\MedicineController::class, 'show'])->name('show');
         Route::get('/{medicine}/edit', [App\Http\Controllers\MedicineController::class, 'edit'])->name('edit');
         Route::put('/{medicine}', [App\Http\Controllers\MedicineController::class, 'update'])->name('update');

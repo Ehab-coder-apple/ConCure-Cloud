@@ -237,25 +237,26 @@
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <a href="{{ route('medicines.show', $medicine) }}" class="btn btn-sm btn-outline-primary">
+                                                <a href="{{ route('medicines.show', $medicine) }}" class="btn btn-sm btn-outline-primary" title="{{ __('View') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 @can('update', $medicine)
-                                                <a href="{{ route('medicines.edit', $medicine) }}" class="btn btn-sm btn-outline-secondary">
+                                                <a href="{{ route('medicines.edit', $medicine) }}" class="btn btn-sm btn-outline-secondary" title="{{ __('Edit') }}">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 @endcan
-                                                @can('update', $medicine)
-                                                <form method="POST" action="{{ route('medicines.toggle-status', $medicine) }}" class="d-inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="submit" class="btn btn-sm {{ $medicine->is_active ? 'btn-outline-warning' : 'btn-outline-success' }}" 
-                                                            title="{{ $medicine->is_active ? __('Deactivate') : __('Activate') }}">
-                                                        <i class="fas {{ $medicine->is_active ? 'fa-pause' : 'fa-play' }}"></i>
-                                                    </button>
-                                                </form>
-                                                @endcan
                                             </div>
+
+                                            @can('update', $medicine)
+                                            <div class="btn-group mt-1" role="group">
+                                                <a href="{{ route('medicines.sell', $medicine) }}" class="btn btn-sm btn-danger" title="{{ __('Sell') }}">
+                                                    <i class="fas fa-shopping-cart me-1"></i>{{ __('Sell') }}
+                                                </a>
+                                                <a href="{{ route('medicines.purchase', $medicine) }}" class="btn btn-sm btn-success" title="{{ __('Purchase') }}">
+                                                    <i class="fas fa-cart-plus me-1"></i>{{ __('Purchase') }}
+                                                </a>
+                                            </div>
+                                            @endcan
                                         </td>
                                     </tr>
                                     @endforeach

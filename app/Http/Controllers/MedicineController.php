@@ -581,4 +581,167 @@ class MedicineController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Show sell medicine form.
+     */
+    public function sellForm(Medicine $medicine)
+    {
+        $this->authorize('update', $medicine);
+
+        $patients = \App\Models\Patient::where('clinic_id', Auth::user()->clinic_id)
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->get();
+
+        return view('medicines.sell', compact('medicine', 'patients'));
+    }
+
+    /**
+     * Process medicine sale.
+     */
+    public function processSell(Request $request, Medicine $medicine)
+    {
+        $this->authorize('update', $medicine);
+
+        $user = Auth::user();
+
+        $request->validate([
+            'patient_id' => 'nullable|exists:patients,id',
+            'quantity' => 'required|integer|min:1|max:' . $medicine->stock_quantity,
+            'unit_price' => 'required|numeric|min:0',
+            'payment_method' => 'required|in:cash,card,credit,insurance,other',
+            'notes' => 'nullable|string|max:500',
+        ], [
+            'quantity.max' => 'Insufficient stock. Available: ' . $medicine->stock_quantity . ' units.',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $quantity = $request->quantity;
+            $unitPrice = $request->unit_price;
+            $totalAmount = $quantity * $unitPrice;
+
+            // Record stock before transaction
+            $stockBefore = $medicine->stock_quantity;
+
+            // Create transaction record
+            $transaction = \App\Models\MedicineTransaction::create([
+                'medicine_id' => $medicine->id,
+                'clinic_id' => $user->clinic_id,
+                'user_id' => $user->id,
+                'type' => 'sale',
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'total_amount' => $totalAmount,
+                'reference_number' => 'SALE-' . date('Ymd') . '-' . str_pad($medicine->id, 5, '0', STR_PAD_LEFT) . '-' . time(),
+                'patient_id' => $request->patient_id,
+                'payment_method' => $request->payment_method,
+                'stock_before' => $stockBefore,
+                'stock_after' => $stockBefore - $quantity,
+                'notes' => $request->notes,
+                'transaction_date' => now(),
+            ]);
+
+            // Update medicine stock
+            $medicine->decrement('stock_quantity', $quantity);
+
+            DB::commit();
+
+            return redirect()->route('medicines.index')
+                ->with('success', 'Medicine sold successfully. Receipt: ' . $transaction->reference_number);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()
+                ->with('error', 'Sale failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show purchase medicine form.
+     */
+    public function purchaseForm(Medicine $medicine)
+    {
+        $this->authorize('update', $medicine);
+
+        return view('medicines.purchase', compact('medicine'));
+    }
+
+    /**
+     * Process medicine purchase.
+     */
+    public function processPurchase(Request $request, Medicine $medicine)
+    {
+        $this->authorize('update', $medicine);
+
+        $user = Auth::user();
+
+        $request->validate([
+            'supplier_name' => 'required|string|max:255',
+            'quantity' => 'required|integer|min:1',
+            'unit_price' => 'required|numeric|min:0',
+            'payment_method' => 'required|in:cash,card,bank_transfer,credit,check,other',
+            'expiry_date' => 'nullable|date|after:today',
+            'batch_number' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $quantity = $request->quantity;
+            $unitPrice = $request->unit_price;
+            $totalAmount = $quantity * $unitPrice;
+
+            // Record stock before transaction
+            $stockBefore = $medicine->stock_quantity;
+
+            // Create transaction record
+            $transaction = \App\Models\MedicineTransaction::create([
+                'medicine_id' => $medicine->id,
+                'clinic_id' => $user->clinic_id,
+                'user_id' => $user->id,
+                'type' => 'purchase',
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'total_amount' => $totalAmount,
+                'reference_number' => 'PUR-' . date('Ymd') . '-' . str_pad($medicine->id, 5, '0', STR_PAD_LEFT) . '-' . time(),
+                'supplier_name' => $request->supplier_name,
+                'payment_method' => $request->payment_method,
+                'stock_before' => $stockBefore,
+                'stock_after' => $stockBefore + $quantity,
+                'notes' => $request->notes,
+                'transaction_date' => now(),
+            ]);
+
+            // Update medicine stock and optionally update purchase price, expiry, batch
+            $medicine->increment('stock_quantity', $quantity);
+
+            // Update medicine details if provided
+            $updateData = [];
+            if ($request->filled('unit_price')) {
+                $updateData['purchase_price'] = $unitPrice;
+            }
+            if ($request->filled('expiry_date')) {
+                $updateData['expiry_date'] = $request->expiry_date;
+            }
+            if ($request->filled('batch_number')) {
+                $updateData['batch_number'] = $request->batch_number;
+            }
+
+            if (!empty($updateData)) {
+                $medicine->update($updateData);
+            }
+
+            DB::commit();
+
+            return redirect()->route('medicines.index')
+                ->with('success', 'Medicine purchased successfully. Reference: ' . $transaction->reference_number);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()
+                ->with('error', 'Purchase failed: ' . $e->getMessage());
+        }
+    }
 }

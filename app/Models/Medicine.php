@@ -82,6 +82,14 @@ class Medicine extends Model
     }
 
     /**
+     * Get the transactions for this medicine.
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(MedicineTransaction::class);
+    }
+
+    /**
      * Get the form display name.
      */
     public function getFormDisplayAttribute(): string
