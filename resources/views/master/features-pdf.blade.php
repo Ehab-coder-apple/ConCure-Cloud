@@ -221,7 +221,7 @@
             </div>
             <div class="overview-item">
                 <h3>Role-Based Access</h3>
-                <p>10+ user roles with granular permissions</p>
+                <p>15 user roles with granular permissions</p>
             </div>
             <div class="overview-item">
                 <h3>Multi-Clinic</h3>
@@ -266,11 +266,13 @@
                         <li>Instructions and notes</li>
                         <li>Simple prescription mode (quick entry)</li>
                         <li>PDF generation with clinic branding</li>
+                        <li>Custom Rx template support (upload clinic-branded template)</li>
                         <li>Print functionality</li>
                         <li>Prescription history</li>
                         <li>Drug interaction warnings</li>
                         <li>Prescription templates</li>
                         <li>Multi-language prescription printing</li>
+                        <li>Auto-populated Height/Weight from latest checkup or growth measurement</li>
                     </ul>
                 </div>
             </div>
@@ -386,11 +388,18 @@
                         <li>Dental conditions library (30+ conditions)</li>
                         <li>Treatment planning and tracking</li>
                         <li>Treatment history per tooth</li>
+                        <li>Canal treatment (endodontic) worksheet with FDI canal library</li>
+                        <li>Dental imaging with tooth-level linkage</li>
                         <li>Simple and detailed chart views</li>
                         <li>Dental chart PDF export</li>
                         <li>Multi-tooth selection and bulk updates</li>
                         <li>Searchable condition legend</li>
                         <li>Tooth numbering system (FDI notation)</li>
+                        <li>Dental lab requests with external lab integration</li>
+                        <li>External dental labs directory and management</li>
+                        <li>Lab request assignment to Dental Technician or CAD/CAM Designer</li>
+                        <li>Dedicated workflow for technicians/designers (restricted to assigned requests)</li>
+                        <li>Lab request result upload and completion tracking</li>
                     </ul>
                 </div>
             </div>
@@ -559,9 +568,13 @@
                         <li><strong>Pharmacist:</strong> Pharmacy operations</li>
                         <li><strong>Lab Dept:</strong> Laboratory technician</li>
                         <li><strong>Radiology Dept:</strong> Radiology technician</li>
+                        <li><strong>Dental Dept:</strong> Dentist</li>
+                        <li><strong>Dental Technician:</strong> Dental lab technician (assigned lab requests only)</li>
+                        <li><strong>CAD/CAM Designer:</strong> Dental CAD/CAM designer (assigned lab requests only)</li>
                         <li><strong>Assistant:</strong> Administrative support</li>
                         <li><strong>Nurse:</strong> Nursing staff</li>
                         <li><strong>Accountant:</strong> Financial operations</li>
+                        <li><strong>Patient:</strong> Patient self-service access</li>
                     </ul>
                 </div>
             </div>

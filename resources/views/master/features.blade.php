@@ -45,7 +45,7 @@
                         </div>
                         <div class="col-md-4">
                             <h6 class="text-primary"><i class="fas fa-users-cog me-2"></i>Role-Based Access</h6>
-                            <p>10+ user roles with granular permissions</p>
+                            <p>15 user roles with granular permissions</p>
                         </div>
                         <div class="col-md-4">
                             <h6 class="text-primary"><i class="fas fa-building me-2"></i>Multi-Clinic</h6>
@@ -99,11 +99,13 @@
                                     <li><i class="fas fa-check text-success me-2"></i>Instructions and notes</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Simple prescription mode (quick entry)</li>
                                     <li><i class="fas fa-check text-success me-2"></i>PDF generation with clinic branding</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Custom Rx template support (upload clinic-branded template)</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Print functionality</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Prescription history</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Drug interaction warnings</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Prescription templates</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Multi-language prescription printing</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Auto-populated Height/Weight from latest checkup or growth measurement</li>
                                 </ul>
                             </div>
                         </div>
@@ -201,11 +203,18 @@
                                     <li><i class="fas fa-check text-success me-2"></i>Dental conditions library (30+ conditions)</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Treatment planning and tracking</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Treatment history per tooth</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Canal treatment (endodontic) worksheet with FDI canal library</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Dental imaging with tooth-level linkage</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Simple and detailed chart views</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Dental chart PDF export</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Multi-tooth selection and bulk updates</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Searchable condition legend</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Tooth numbering system (FDI notation)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Dental lab requests with external lab integration</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>External dental labs directory and management</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Lab request assignment to Dental Technician or CAD/CAM Designer</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Dedicated workflow for technicians/designers (restricted to assigned requests)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Lab request result upload and completion tracking</li>
                                 </ul>
                             </div>
                         </div>
@@ -385,9 +394,13 @@
                                 <li><i class="fas fa-check text-danger me-2"></i><strong>Pharmacist:</strong> Pharmacy operations</li>
                                 <li><i class="fas fa-check text-danger me-2"></i><strong>Lab Dept:</strong> Laboratory technician</li>
                                 <li><i class="fas fa-check text-danger me-2"></i><strong>Radiology Dept:</strong> Radiology technician</li>
+                                <li><i class="fas fa-check text-danger me-2"></i><strong>Dental Dept:</strong> Dentist</li>
+                                <li><i class="fas fa-check text-danger me-2"></i><strong>Dental Technician:</strong> Dental lab technician (assigned lab requests only)</li>
+                                <li><i class="fas fa-check text-danger me-2"></i><strong>CAD/CAM Designer:</strong> Dental CAD/CAM designer (assigned lab requests only)</li>
                                 <li><i class="fas fa-check text-danger me-2"></i><strong>Assistant:</strong> Administrative support</li>
                                 <li><i class="fas fa-check text-danger me-2"></i><strong>Nurse:</strong> Nursing staff</li>
                                 <li><i class="fas fa-check text-danger me-2"></i><strong>Accountant:</strong> Financial operations</li>
+                                <li><i class="fas fa-check text-danger me-2"></i><strong>Patient:</strong> Patient self-service access</li>
                             </ul>
                         </div>
                         <div class="col-md-6 mb-3">
