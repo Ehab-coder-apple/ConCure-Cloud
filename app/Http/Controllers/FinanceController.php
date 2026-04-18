@@ -28,8 +28,9 @@ class FinanceController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->canAccessFinance()) {
-            abort(403, 'Access denied to finance module.');
+        // Restricted create-only users must never see aggregate dashboard data.
+        if (!$user->canViewFinance()) {
+            return $this->redirectToFirstAllowedCreate($user, 'finance.index');
         }
 
         // Get financial statistics
@@ -56,14 +57,104 @@ class FinanceController extends Controller
     }
 
     /**
+     * Display the invoice create form for restricted users (no listing, no stats).
+     * Admins and broad-access users can still use this URL if they wish.
+     */
+    public function createInvoice()
+    {
+        $user = auth()->user();
+
+        if (!$user->canCreateInvoices()) {
+            abort(403, 'Access denied to create invoices.');
+        }
+
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get();
+
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.create-invoice', compact('patients', 'currency', 'currencySymbol'));
+    }
+
+    /**
+     * Display the expense create form for restricted users.
+     */
+    public function createExpense()
+    {
+        $user = auth()->user();
+
+        if (!$user->canCreateExpenses()) {
+            abort(403, 'Access denied to create expenses.');
+        }
+
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.create-expense', compact('currency', 'currencySymbol'));
+    }
+
+    /**
+     * Display the receipt create form for restricted users.
+     */
+    public function createReceipt()
+    {
+        $user = auth()->user();
+
+        if (!$user->canCreateReceipts()) {
+            abort(403, 'Access denied to create receipts.');
+        }
+
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.create-receipt', compact('currency', 'currencySymbol'));
+    }
+
+    /**
+     * Send a create-only user to the first create form they're allowed to use.
+     * Used whenever a restricted user hits an aggregate URL (dashboard/list).
+     */
+    private function redirectToFirstAllowedCreate($user, string $attemptedRouteName)
+    {
+        if ($user->canCreateInvoices()) {
+            return redirect()->route('finance.invoices.create');
+        }
+        if ($user->canCreateReceipts()) {
+            return redirect()->route('finance.receipts.create');
+        }
+        if ($user->canCreateExpenses()) {
+            return redirect()->route('finance.expenses.create');
+        }
+
+        abort(403, 'Access denied to finance module.');
+    }
+
+
+    /**
      * Display invoices.
      */
     public function invoices(Request $request)
     {
         $user = auth()->user();
 
-        if (!$user->canAccessFinance()) {
-            abort(403, 'Access denied to invoices.');
+        if (!$user->canViewFinance()) {
+            return $this->redirectToFirstAllowedCreate($user, 'finance.invoices');
         }
 
         $query = Invoice::with(['patient', 'clinic', 'creator']);
@@ -118,8 +209,8 @@ class FinanceController extends Controller
     public function storeInvoice(Request $request)
     {
         $user = auth()->user();
-        
-        if (!$user->canAccessFinance()) {
+
+        if (!$user->canCreateInvoices()) {
             abort(403, 'Access denied to create invoices.');
         }
 
@@ -163,6 +254,12 @@ class FinanceController extends Controller
             }
         });
 
+        // Restricted users return to the dedicated create form (never to the dashboard).
+        if (!$user->canViewFinance()) {
+            return redirect()->route('finance.invoices.create')
+                ->with('success', __('Invoice created successfully.'));
+        }
+
         return back()->with('success', 'Invoice created successfully.');
     }
 
@@ -179,9 +276,8 @@ class FinanceController extends Controller
                 return redirect()->route('login')->withErrors(['error' => 'Please log in to access expenses.']);
             }
 
-            if (!$user->canAccessFinance()) {
-                \Log::warning('User attempted to access expenses without permission', ['user_id' => $user->id]);
-                abort(403, 'Access denied to expenses.');
+            if (!$user->canViewFinance()) {
+                return $this->redirectToFirstAllowedCreate($user, 'finance.expenses');
             }
 
             // Verify user has a valid clinic
@@ -252,8 +348,8 @@ class FinanceController extends Controller
     public function storeExpense(Request $request)
     {
         $user = auth()->user();
-        
-        if (!$user->canAccessFinance()) {
+
+        if (!$user->canCreateExpenses()) {
             abort(403, 'Access denied to create expenses.');
         }
 
@@ -301,6 +397,11 @@ class FinanceController extends Controller
         // Notify admins about the new expense that needs approval
         $this->notifyAdminsForExpenseApproval($expense, $user, false);
 
+        if (!$user->canViewFinance()) {
+            return redirect()->route('finance.expenses.create')
+                ->with('success', __('Expense created successfully and sent for approval.'));
+        }
+
         return back()->with('success', 'Expense created successfully and sent for approval.');
     }
 
@@ -310,7 +411,7 @@ class FinanceController extends Controller
     public function approveExpense(Expense $expense)
     {
         $user = auth()->user();
-        
+
         if (!$user->hasPermission('finance_approve')) {
             abort(403, 'Insufficient permission to approve expenses.');
         }
@@ -330,7 +431,7 @@ class FinanceController extends Controller
     public function rejectExpense(Expense $expense)
     {
         $user = auth()->user();
-        
+
         if (!$user->hasPermission('finance_approve')) {
             abort(403, 'Insufficient permission to reject expenses.');
         }
@@ -535,8 +636,8 @@ class FinanceController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->canAccessFinance()) {
-            abort(403, 'Access denied to receipts.');
+        if (!$user->canViewFinance()) {
+            return $this->redirectToFirstAllowedCreate($user, 'finance.receipts');
         }
 
         $query = Receipt::with(['clinic', 'creator', 'approver']);
@@ -587,7 +688,7 @@ class FinanceController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->canAccessFinance()) {
+        if (!$user->canCreateReceipts()) {
             abort(403, 'Access denied to create receipts.');
         }
 
@@ -630,6 +731,11 @@ class FinanceController extends Controller
 
         // Notify admins about the new receipt that needs approval
         $this->notifyAdminsForReceiptApproval($receipt, $user, false);
+
+        if (!$user->canViewFinance()) {
+            return redirect()->route('finance.receipts.create')
+                ->with('success', __('Receipt created successfully and sent for approval.'));
+        }
 
         return back()->with('success', 'Receipt created successfully and sent for approval.');
     }

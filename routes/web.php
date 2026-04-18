@@ -857,6 +857,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         // Invoices
         Route::get('/invoices', [FinanceController::class, 'invoices'])->name('invoices');
+        Route::get('/invoices/create', [FinanceController::class, 'createInvoice'])
+            ->name('invoices.create')->middleware('can:finance-invoices-create');
         Route::post('/invoices', [FinanceController::class, 'storeInvoice'])->name('invoices.store');
         Route::get('/invoices/{invoice}/edit', [FinanceController::class, 'getInvoiceForEdit'])->name('invoices.edit');
         Route::put('/invoices/{invoice}', [FinanceController::class, 'updateInvoice'])->name('invoices.update');
@@ -910,6 +912,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         // Expenses
         Route::get('/expenses', [FinanceController::class, 'expenses'])->name('expenses');
+        Route::get('/expenses/create', [FinanceController::class, 'createExpense'])
+            ->name('expenses.create')->middleware('can:finance-expenses-create');
         Route::post('/expenses', [FinanceController::class, 'storeExpense'])->name('expenses.store');
         Route::put('/expenses/{expense}', [FinanceController::class, 'updateExpense'])->name('expenses.update');
         Route::post('/expenses/{expense}/approve', [FinanceController::class, 'approveExpense'])->name('expenses.approve');
@@ -918,6 +922,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         // Receipts
         Route::get('/receipts', [FinanceController::class, 'receipts'])->name('receipts');
+        Route::get('/receipts/create', [FinanceController::class, 'createReceipt'])
+            ->name('receipts.create')->middleware('can:finance-receipts-create');
         Route::post('/receipts', [FinanceController::class, 'storeReceipt'])->name('receipts.store');
         Route::put('/receipts/{receipt}', [FinanceController::class, 'updateReceipt'])->name('receipts.update');
         Route::delete('/receipts/{receipt}', [FinanceController::class, 'destroyReceipt'])->name('receipts.destroy');

@@ -455,6 +455,12 @@ class User extends Authenticatable
 
     /**
      * Check if user can access finance.
+     *
+     * Note: the granular *_create perms (finance_invoices_create, finance_expenses_create,
+     * finance_receipts_create) are intentionally EXCLUDED here so restricted create-only
+     * users cannot reach update/delete/reports endpoints. Their narrow access is wired
+     * separately through canCreate{Invoices,Expenses,Receipts}() and the manage-finance
+     * gate, which permits them to enter the /finance route group.
      */
     public function canAccessFinance(): bool
     {
@@ -462,10 +468,57 @@ class User extends Authenticatable
         if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
             return true;
         }
-        // Everyone else must have explicit finance_* permission(s)
+        // Everyone else must have explicit broad finance_* permission(s)
         return $this->hasAnyPermission([
             'finance_view', 'finance_create', 'finance_edit', 'finance_delete', 'finance_reports', 'finance_approve'
         ]);
+    }
+
+    /**
+     * Check if user can view the finance dashboard, listings and aggregate data.
+     * Restricted roles with only *_create permissions MUST NOT pass this check.
+     */
+    public function canViewFinance(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+        return $this->hasAnyPermission([
+            'finance_view', 'finance_edit', 'finance_delete', 'finance_reports', 'finance_approve',
+        ]);
+    }
+
+    /**
+     * Check if user can record invoices (via broad finance perms or the granular create perm).
+     */
+    public function canCreateInvoices(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+        return $this->hasAnyPermission(['finance_create', 'finance_invoices_create']);
+    }
+
+    /**
+     * Check if user can record expenses (via broad finance perms or the granular create perm).
+     */
+    public function canCreateExpenses(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+        return $this->hasAnyPermission(['finance_create', 'finance_expenses_create']);
+    }
+
+    /**
+     * Check if user can record receipts (via broad finance perms or the granular create perm).
+     */
+    public function canCreateReceipts(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+        return $this->hasAnyPermission(['finance_create', 'finance_receipts_create']);
     }
 
     /**
@@ -938,6 +991,9 @@ class User extends Authenticatable
                 'finance_delete' => 'Delete Financial Records',
                 'finance_reports' => 'View Financial Reports',
                 'finance_approve' => 'Approve Financial Transactions',
+                'finance_invoices_create' => 'Record Invoices Only (no dashboard / no aggregates)',
+                'finance_expenses_create' => 'Record Expenses Only (no dashboard / no aggregates)',
+                'finance_receipts_create' => 'Record Receipts Only (no dashboard / no aggregates)',
             ],
             'users' => [
                 'users_view' => 'View Users',

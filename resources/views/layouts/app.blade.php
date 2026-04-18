@@ -1831,12 +1831,40 @@
 
                         <!-- Finance -->
                         @if(Auth::user()->canAccessSection('finance') && Auth::user()->canAccessModule('finance'))
-                        <li class="nav-item">
-                            <a href="{{ route('finance.index') }}" class="nav-link {{ request()->routeIs('finance.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-dollar-sign"></i>
-                                <span class="nav-text">{{ __('Finance') }}</span>
-                            </a>
-                        </li>
+                            @if(Auth::user()->canViewFinance())
+                                <li class="nav-item">
+                                    <a href="{{ route('finance.index') }}" class="nav-link {{ request()->routeIs('finance.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-dollar-sign"></i>
+                                        <span class="nav-text">{{ __('Finance') }}</span>
+                                    </a>
+                                </li>
+                            @else
+                                {{-- Restricted create-only users: direct links, no dashboard --}}
+                                @if(Auth::user()->canCreateInvoices())
+                                    <li class="nav-item">
+                                        <a href="{{ route('finance.invoices.create') }}" class="nav-link {{ request()->routeIs('finance.invoices.create') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                                            <span class="nav-text">{{ __('Add Invoice') }}</span>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if(Auth::user()->canCreateReceipts())
+                                    <li class="nav-item">
+                                        <a href="{{ route('finance.receipts.create') }}" class="nav-link {{ request()->routeIs('finance.receipts.create') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-hand-holding-usd"></i>
+                                            <span class="nav-text">{{ __('Record Receipt') }}</span>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if(Auth::user()->canCreateExpenses())
+                                    <li class="nav-item">
+                                        <a href="{{ route('finance.expenses.create') }}" class="nav-link {{ request()->routeIs('finance.expenses.create') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-receipt"></i>
+                                            <span class="nav-text">{{ __('Add Expense') }}</span>
+                                        </a>
+                                    </li>
+                                @endif
+                            @endif
                         @endif
 
                         {{-- ─── SYSTEM ─── --}}

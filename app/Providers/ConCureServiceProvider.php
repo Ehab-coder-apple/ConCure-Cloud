@@ -64,10 +64,13 @@ class ConCureServiceProvider extends ServiceProvider
 
 
         Gate::define('manage-finance', function (User $user) {
-            // Only Super Admins or Clinic Admins are auto-allowed; everyone else needs explicit finance_* permission
+            // Admins are auto-allowed; everyone else needs any broad finance_* permission
+            // OR one of the granular *_create perms used by restricted roles (Reception,
+            // Lab Tech) that can record transactions but cannot see aggregate data.
             return ($user->isSuperAdmin() || $user->isClinicAdmin()) ||
                 $user->hasAnyPermission([
-                    'finance_view', 'finance_create', 'finance_edit', 'finance_delete', 'finance_reports', 'finance_approve'
+                    'finance_view', 'finance_create', 'finance_edit', 'finance_delete', 'finance_reports', 'finance_approve',
+                    'finance_invoices_create', 'finance_expenses_create', 'finance_receipts_create',
                 ]);
         });
 
@@ -235,6 +238,24 @@ class ConCureServiceProvider extends ServiceProvider
 
         Gate::define('finance-reports', function (User $user) {
             return $user->hasPermission('finance_reports');
+        });
+
+        // Read access to the finance dashboard / listings (excludes create-only users)
+        Gate::define('view-finance-dashboard', function (User $user) {
+            return $user->canViewFinance();
+        });
+
+        // Granular "create only" gates for restricted roles (e.g. Reception, Lab Tech)
+        Gate::define('finance-invoices-create', function (User $user) {
+            return $user->canCreateInvoices();
+        });
+
+        Gate::define('finance-expenses-create', function (User $user) {
+            return $user->canCreateExpenses();
+        });
+
+        Gate::define('finance-receipts-create', function (User $user) {
+            return $user->canCreateReceipts();
         });
 
 
