@@ -58,14 +58,14 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <form method="GET" action="{{ route('patients.index') }}" class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="search" class="form-label">{{ __('Search Patients') }}</label>
                             <input type="text" class="form-control" id="search" name="search"
                                    value="{{ request('search') }}"
                                    placeholder="{{ __('Search by name, ID, phone, email (min 1 character)...') }}"
                                    minlength="1">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="status" class="form-label">{{ __('Status') }}</label>
                             <select class="form-select" id="status" name="status">
                                 <option value="">{{ __('All Statuses') }}</option>
@@ -73,12 +73,23 @@
                                 <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>{{ __('Inactive') }}</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="gender" class="form-label">{{ __('Gender') }}</label>
                             <select class="form-select" id="gender" name="gender">
                                 <option value="">{{ __('All Genders') }}</option>
                                 <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>{{ __('Male') }}</option>
                                 <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>{{ __('Female') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="doctor_id" class="form-label">{{ __('Doctor') }}</label>
+                            <select class="form-select" id="doctor_id" name="doctor_id">
+                                <option value="">{{ __('All Doctors') }}</option>
+                                @foreach(($doctors ?? []) as $doctor)
+                                    <option value="{{ $doctor->id }}" @selected((string)($selectedDoctorId ?? request('doctor_id')) === (string)$doctor->id)>
+                                        {{ $doctor->full_name_with_title }}@if($doctor->role === 'dental_dept') ({{ __('Dental') }})@endif
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-2">

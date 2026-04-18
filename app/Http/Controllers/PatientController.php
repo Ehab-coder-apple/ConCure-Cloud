@@ -14,6 +14,7 @@ use App\Models\PatientPediatric;
 use App\Models\PatientModule;
 use App\Models\Prescription;
 use App\Models\SimplePrescription;
+use App\Models\User;
 use App\Imports\PatientsImport;
 use App\Exports\PatientsExport;
 use App\Models\Clinic;
@@ -147,10 +148,47 @@ class PatientController extends Controller
             }
         }
 
-        $patients = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Build the list of doctors available for the filter dropdown
+        // (active users with doctor or dental_dept roles, scoped to the clinic)
+        $doctorsQuery = User::whereIn('role', ['doctor', 'dental_dept'])
+            ->where('is_active', true);
+        if ($user->clinic_id) {
+            $doctorsQuery->where('clinic_id', $user->clinic_id);
+        }
+        $doctors = $doctorsQuery
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'title_prefix', 'role']);
+
+        // Filter patients by assigned doctor (any interaction: created_by,
+        // appointments, prescriptions, simple prescriptions, lab requests,
+        // diet plans, dental charts or dental treatments)
+        $selectedDoctorId = null;
+        if ($request->filled('doctor_id')) {
+            $requestedDoctorId = (int) $request->doctor_id;
+            if ($doctors->contains('id', $requestedDoctorId)) {
+                $selectedDoctorId = $requestedDoctorId;
+                $query->where(function ($q) use ($selectedDoctorId) {
+                    $q->where('created_by', $selectedDoctorId)
+                        ->orWhereHas('appointments', fn ($sub) => $sub->where('doctor_id', $selectedDoctorId))
+                        ->orWhereHas('prescriptions', fn ($sub) => $sub->where('doctor_id', $selectedDoctorId))
+                        ->orWhereHas('simplePrescriptions', fn ($sub) => $sub->where('doctor_id', $selectedDoctorId))
+                        ->orWhereHas('labRequests', fn ($sub) => $sub->where('doctor_id', $selectedDoctorId))
+                        ->orWhereHas('dietPlans', fn ($sub) => $sub->where('doctor_id', $selectedDoctorId))
+                        ->orWhereHas('dentalCharts', fn ($sub) => $sub->where('created_by', $selectedDoctorId))
+                        ->orWhereHas('dentalTreatments', fn ($sub) => $sub->where('assigned_doctor_id', $selectedDoctorId));
+                });
+            }
+        }
+
+        $patients = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
         return view('patients.index', array_merge(
-            ['patients' => $patients],
+            [
+                'patients' => $patients,
+                'doctors' => $doctors,
+                'selectedDoctorId' => $selectedDoctorId,
+            ],
             $this->patientFormViewData($user)
         ));
     }
