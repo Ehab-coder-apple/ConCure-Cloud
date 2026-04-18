@@ -487,7 +487,7 @@
             </div>
             <div style="margin-bottom: 4px;">
                 <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Date of Birth:</span>
-                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->patient->date_of_birth->format('M d, Y') }}</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->patient->date_of_birth ? $labRequest->patient->date_of_birth->format('M d, Y') : 'N/A' }}</span>
             </div>
             <div style="margin-bottom: 4px;">
                 <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Gender:</span>
@@ -500,7 +500,7 @@
             <h3 style="color: #2c5aa0; margin: 0 0 8px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #2c5aa0; padding-bottom: 3px;">Requesting Physician</h3>
             <div style="margin-bottom: 4px;">
                 <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Doctor:</span>
-                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">Dr. {{ $labRequest->doctor->first_name }} {{ $labRequest->doctor->last_name }}</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">Dr. {{ $labRequest->doctor?->first_name }} {{ $labRequest->doctor?->last_name }}</span>
             </div>
             @if($labRequest->due_date)
             <div style="margin-bottom: 4px;">
@@ -677,7 +677,7 @@
                 <div style="border-bottom: 2px solid #000; height: 50px; margin-bottom: 10px;"></div>
                 <div style="text-align: center;">
                     <strong style="color: #2c5aa0; text-transform: uppercase; font-size: 12px;">Physician Signature</strong><br>
-                    <small style="color: #495057;">Dr. {{ $labRequest->doctor->first_name }} {{ $labRequest->doctor->last_name }}</small><br>
+                    <small style="color: #495057;">Dr. {{ $labRequest->doctor?->first_name }} {{ $labRequest->doctor?->last_name }}</small><br>
                     <small style="color: #6c757d;">{{ auth()->user()->clinic->name ?? 'ConCure Clinic' }}</small>
                 </div>
             </div>
