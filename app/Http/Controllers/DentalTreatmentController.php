@@ -27,6 +27,11 @@ class DentalTreatmentController extends Controller
     {
         $user = Auth::user();
 
+        // Dental designers and lab technicians cannot access treatment plans
+        if (in_array($user->role, ['dental_designer', 'dental_lab_technician'])) {
+            abort(403, 'Dental designers and lab technicians do not have access to treatment plans.');
+        }
+
         $query = DentalTreatment::with(['patient', 'assignedDoctor', 'dentalChart']);
 
         // Filter by clinic

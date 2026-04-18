@@ -38,6 +38,11 @@ class DashboardController extends Controller
             return redirect()->route('recommendations.radiology-technician.dashboard');
         }
 
+        // Redirect dental designers and lab technicians directly to dental lab
+        if (in_array($user->role, ['dental_designer', 'dental_lab_technician'])) {
+            return redirect()->route('dental-lab-requests.index');
+        }
+
         // DEBUG: Log assistant doctor assignments
         if ($user->role === 'assistant') {
             \Log::info('Assistant Dashboard Debug', [
@@ -423,11 +428,15 @@ class DashboardController extends Controller
             $data['newUsersThisMonth'] = $applyPeriod((clone $usersQuery)->active(), 'created_at')->count();
         }
 
-        // Recent activity
-        $data['recentActivity'] = $this->getRecentActivity($user);
+        // Recent activity (exclude dental lab roles)
+        if (!in_array($user->role, ['dental_designer', 'dental_lab_technician'])) {
+            $data['recentActivity'] = $this->getRecentActivity($user);
+        }
 
-        // Appointment statistics (schema-aware)
-        if (class_exists('App\\Models\\Appointment') && $user->canAccessModule('appointments')) {
+        // Appointment statistics (schema-aware) - exclude dental lab roles
+        if (class_exists('App\\Models\\Appointment') &&
+            !in_array($user->role, ['dental_designer', 'dental_lab_technician']) &&
+            $user->canAccessModule('appointments')) {
             $legacy = $this->isLegacyAppointments();
             if ($legacy) {
                 $base = DB::table('appointments')->where('clinic_id', $user->clinic_id);
@@ -484,8 +493,10 @@ class DashboardController extends Controller
             }
         }
 
-        // Nutrition plan statistics (exclude dental_dept role)
-        if (class_exists('App\Models\DietPlan') && $user->role !== 'dental_dept' && $user->canAccessModule('nutrition')) {
+        // Nutrition plan statistics (exclude dental roles)
+        if (class_exists('App\Models\DietPlan') &&
+            !in_array($user->role, ['dental_dept', 'dental_designer', 'dental_lab_technician']) &&
+            $user->canAccessModule('nutrition')) {
             $nutritionQuery = \App\Models\DietPlan::query();
             $nutritionQuery->whereHas('patient', function ($q) use ($user) {
                 $q->where('clinic_id', $user->clinic_id);

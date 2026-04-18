@@ -21,6 +21,11 @@ class DentalChartController extends Controller
     {
         $user = Auth::user();
 
+        // Dental designers and lab technicians cannot access dental charts
+        if (in_array($user->role, ['dental_designer', 'dental_lab_technician'])) {
+            abort(403, 'Dental designers and lab technicians do not have access to dental charts.');
+        }
+
         // Build query
         $query = DentalChart::with(['patient', 'creator', 'toothRecords']);
 
@@ -66,6 +71,11 @@ class DentalChartController extends Controller
     public function index(Request $request, Patient $patient)
     {
         $user = Auth::user();
+
+        // Dental designers and lab technicians cannot access dental charts
+        if (in_array($user->role, ['dental_designer', 'dental_lab_technician'])) {
+            abort(403, 'Dental designers and lab technicians do not have access to dental charts.');
+        }
 
         // Check access
         if (!$user->isSuperAdmin()) {
