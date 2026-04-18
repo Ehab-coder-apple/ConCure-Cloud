@@ -40,7 +40,7 @@ class DashboardController extends Controller
 
         // Redirect dental designers and lab technicians directly to dental lab
         if (in_array($user->role, ['dental_designer', 'dental_lab_technician'])) {
-            return redirect()->route('dental-lab-requests.index');
+            return redirect()->route('dental.lab-requests.index');
         }
 
         // DEBUG: Log assistant doctor assignments
