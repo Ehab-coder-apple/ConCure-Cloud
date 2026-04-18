@@ -347,6 +347,24 @@ class Patient extends Model
     }
 
     /**
+     * Get DOB formatted for display, safe against null and legacy '0000-00-00' values.
+     */
+    public function getDobFormattedAttribute(): ?string
+    {
+        $rawDob = $this->getAttributes()['date_of_birth'] ?? $this->getRawOriginal('date_of_birth');
+
+        if (empty($rawDob) || $rawDob === '0000-00-00' || $rawDob === '0000-00-00 00:00:00') {
+            return null;
+        }
+
+        try {
+            return \Illuminate\Support\Carbon::parse($rawDob)->format('M d, Y');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
      * Get BMI category.
      */
     public function getBmiCategoryAttribute(): string

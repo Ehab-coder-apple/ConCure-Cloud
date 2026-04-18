@@ -438,7 +438,7 @@
 </head>
 <body>
     @php
-        $clinicId = auth()->user()->clinic_id ?? $labRequest->doctor->clinic_id ?? 2;
+        $clinicId = auth()->user()->clinic_id ?? $labRequest->doctor?->clinic_id ?? 2;
         $clinicInfo = \App\Helpers\ClinicHelper::getClinicInfo($clinicId);
         $clinicLogoPath = $clinicInfo['logo_pdf_path'] ?? null;
     @endphp
@@ -487,7 +487,7 @@
             </div>
             <div style="margin-bottom: 4px;">
                 <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Date of Birth:</span>
-                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->patient->date_of_birth ? $labRequest->patient->date_of_birth->format('M d, Y') : 'N/A' }}</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->patient->dob_formatted ?? 'N/A' }}</span>
             </div>
             <div style="margin-bottom: 4px;">
                 <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Gender:</span>
@@ -502,10 +502,17 @@
                 <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Doctor:</span>
                 <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">Dr. {{ $labRequest->doctor?->first_name }} {{ $labRequest->doctor?->last_name }}</span>
             </div>
-            @if($labRequest->due_date)
+            @php
+                $dueDateRaw = $labRequest->getRawOriginal('due_date');
+                $dueDateFormatted = null;
+                if (!empty($dueDateRaw) && $dueDateRaw !== '0000-00-00' && $dueDateRaw !== '0000-00-00 00:00:00') {
+                    try { $dueDateFormatted = \Illuminate\Support\Carbon::parse($dueDateRaw)->format('M d, Y'); } catch (\Throwable $e) {}
+                }
+            @endphp
+            @if($dueDateFormatted)
             <div style="margin-bottom: 4px;">
                 <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Due Date:</span>
-                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->due_date->format('M d, Y') }}</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $dueDateFormatted }}</span>
             </div>
             @endif
             @if($labRequest->lab_name)
@@ -516,7 +523,7 @@
             @endif
             <div style="margin-bottom: 4px;">
                 <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Clinic:</span>
-                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ auth()->user()->clinic->name ?? 'ConCure Clinic' }}</span>
+                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ auth()->user()->clinic?->name ?? 'ConCure Clinic' }}</span>
             </div>
         </div>
     </div>
@@ -678,7 +685,7 @@
                 <div style="text-align: center;">
                     <strong style="color: #2c5aa0; text-transform: uppercase; font-size: 12px;">Physician Signature</strong><br>
                     <small style="color: #495057;">Dr. {{ $labRequest->doctor?->first_name }} {{ $labRequest->doctor?->last_name }}</small><br>
-                    <small style="color: #6c757d;">{{ auth()->user()->clinic->name ?? 'ConCure Clinic' }}</small>
+                    <small style="color: #6c757d;">{{ auth()->user()->clinic?->name ?? 'ConCure Clinic' }}</small>
                 </div>
             </div>
             <div style="display: table-cell; width: 50%; padding-left: 20px;">
@@ -694,7 +701,7 @@
 
     <!-- Footer -->
     <div style="margin-top: 30px; text-align: center; border-top: 1px solid #dee2e6; padding-top: 15px; color: #6c757d; font-size: 10px;">
-        <p style="margin: 0 0 5px 0;"><strong>{{ auth()->user()->clinic->name ?? 'ConCure Clinic' }}</strong> - Laboratory Request Form</p>
+        <p style="margin: 0 0 5px 0;"><strong>{{ auth()->user()->clinic?->name ?? 'ConCure Clinic' }}</strong> - Laboratory Request Form</p>
         <p style="margin: 0;">Generated on {{ now()->format('M d, Y \a\t H:i') }} | Request #{{ $labRequest->request_number }}</p>
         <p style="margin: 5px 0 0 0; font-style: italic;">This is a computer-generated document. No signature is required for processing.</p>
     </div>
