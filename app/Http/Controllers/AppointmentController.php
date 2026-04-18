@@ -154,8 +154,14 @@ class AppointmentController extends Controller
                     )
                     ->where('appointments.clinic_id', $user->clinic_id);
 
-	                // Apply same role-based filtering for calendar view
-	                $this->applyAppointmentVisibilityFilter($calendarQuery, $user, 'appointments.doctor_id', 'appointments.created_by');
+                // Calendar visibility is intentionally broader than the list view.
+                // The calendar is a scheduling tool and front-desk / reception staff
+                // need to see the entire clinic schedule. Doctors still only see
+                // their own appointments on the calendar to keep it readable; admins
+                // and everyone else see the full clinic schedule.
+                if (!($user->isSuperAdmin() || $user->isClinicAdmin()) && $user->role === 'doctor') {
+                    $calendarQuery->where('appointments.doctor_id', $user->id);
+                }
 
                 if ($legacy) {
                     $calendarQuery = $calendarQuery
