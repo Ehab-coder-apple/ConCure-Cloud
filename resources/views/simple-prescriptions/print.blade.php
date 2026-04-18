@@ -86,7 +86,7 @@
             &nbsp;&nbsp;|&nbsp;&nbsp;
             <strong>Weight:</strong> {{ $prescription->patient->latest_weight_kg ?? $prescription->patient->weight ?? 'N/A' }} kg
             &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Height:</strong> {{ $prescription->patient->height ?? 'N/A' }} cm
+            <strong>Height:</strong> {{ $prescription->patient->latest_height ?? $prescription->patient->height ?? 'N/A' }} cm
             &nbsp;&nbsp;|&nbsp;&nbsp;
             <strong>Date:</strong> {{ $prescription->prescribed_date->format('d/m/Y') }}
         </div>

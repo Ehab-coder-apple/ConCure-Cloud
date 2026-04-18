@@ -100,7 +100,7 @@
         <div class="col"><div class="label">{{ __('Age') }}</div><div class="value">{{ $patient->age_formatted ?? ($patient->age_months . ' ' . __('months')) }}</div></div>
         <div class="col"><div class="label">{{ __('Gender') }}</div><div class="value">{{ ucfirst($patient->gender ?? '--') }}</div></div>
         <div class="col"><div class="label">{{ __('Weight') }}</div><div class="value">{{ $patient->latest_weight_kg ?? $patient->weight ?? '--' }} kg</div></div>
-        <div class="col"><div class="label">{{ __('Height') }}</div><div class="value">{{ $patient->height ?? '--' }} cm</div></div>
+        <div class="col"><div class="label">{{ __('Height') }}</div><div class="value">{{ $patient->latest_height ?? $patient->height ?? '--' }} cm</div></div>
         <div class="col"><div class="label">{{ __('Date') }}</div><div class="value">{{ now()->format('d M Y') }}</div></div>
     </div>
 
