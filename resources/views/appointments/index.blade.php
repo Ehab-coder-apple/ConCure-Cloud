@@ -350,7 +350,16 @@ function initializeCalendar() {
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
         height: 'auto',
-        events: @json($calendarEvents ?? []),
+        // Lazy-load events for whatever range the user is currently viewing.
+        // FullCalendar sends ?start=...&end=... so past / future navigation
+        // always fetches the matching appointments from the server.
+        events: {
+            url: '{{ route('appointments.calendar-events') }}',
+            method: 'GET',
+            failure: function () {
+                console.error('Failed to load appointment events');
+            }
+        },
         eventClick: function(info) {
             showAppointmentDetails(info.event);
         },

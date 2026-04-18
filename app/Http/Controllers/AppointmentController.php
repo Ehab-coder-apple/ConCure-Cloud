@@ -217,6 +217,112 @@ class AppointmentController extends Controller
         return view('appointments.index', compact('appointments', 'doctors', 'viewType', 'calendarEvents', 'patients'));
     }
 
+
+    /**
+     * JSON endpoint consumed by FullCalendar in the appointments calendar view.
+     *
+     * FullCalendar calls this with ?start=...&end=... every time the user
+     * navigates (prev/next, month/week/day). Returning events on demand
+     * avoids preloading a fixed window in the page render and lets the
+     * user navigate freely through past / future dates.
+     */
+    public function calendarEvents(Request $request)
+    {
+        $user = Auth::user();
+
+        try {
+            $rangeStart = $request->filled('start')
+                ? Carbon::parse($request->start)
+                : Carbon::now()->subDays(30);
+            $rangeEnd = $request->filled('end')
+                ? Carbon::parse($request->end)
+                : Carbon::now()->addDays(90);
+        } catch (\Throwable $e) {
+            $rangeStart = Carbon::now()->subDays(30);
+            $rangeEnd = Carbon::now()->addDays(90);
+        }
+
+        $legacy = $this->isLegacyAppointments();
+
+        $query = DB::table('appointments')
+            ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
+            ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
+            ->select(
+                'appointments.id',
+                'appointments.appointment_datetime',
+                'appointments.duration_minutes',
+                'appointments.appointment_date',
+                'appointments.appointment_time',
+                'appointments.duration',
+                'appointments.type',
+                'appointments.status',
+                'appointments.notes',
+                'patients.first_name as patient_first_name',
+                'patients.last_name as patient_last_name',
+                'doctors.first_name as doctor_first_name',
+                'doctors.last_name as doctor_last_name'
+            )
+            ->where('appointments.clinic_id', $user->clinic_id);
+
+        // Calendar visibility: doctors only see their own; admins and
+        // everyone else (assistants/receptionists/nurses/...) see the full
+        // clinic schedule so the calendar is useful as a scheduling tool.
+        if (!($user->isSuperAdmin() || $user->isClinicAdmin()) && $user->role === 'doctor') {
+            $query->where('appointments.doctor_id', $user->id);
+        }
+
+        if ($legacy) {
+            $query->whereDate('appointments.appointment_date', '>=', $rangeStart->toDateString())
+                  ->whereDate('appointments.appointment_date', '<=', $rangeEnd->toDateString());
+        } else {
+            $query->where('appointments.appointment_datetime', '>=', $rangeStart)
+                  ->where('appointments.appointment_datetime', '<=', $rangeEnd);
+        }
+
+        $events = [];
+        try {
+            foreach ($query->get() as $appointment) {
+                if ($legacy) {
+                    $dateStr = $appointment->appointment_date ?: Carbon::today()->toDateString();
+                    $timeStr = $appointment->appointment_time ?: '00:00:00';
+                    $startDateTime = Carbon::parse(trim($dateStr . ' ' . $timeStr));
+                    $durationMinutes = is_numeric($appointment->duration) ? (int) $appointment->duration : 30;
+                } else {
+                    $startDateTime = Carbon::parse($appointment->appointment_datetime);
+                    $durationMinutes = is_numeric($appointment->duration_minutes) ? (int) $appointment->duration_minutes : 30;
+                }
+                $endDateTime = $startDateTime->copy()->addMinutes($durationMinutes);
+
+                $events[] = [
+                    'id' => $appointment->id,
+                    'title' => trim(($appointment->patient_first_name ?? 'Unknown') . ' ' . ($appointment->patient_last_name ?? 'Patient')),
+                    'start' => $startDateTime->toIso8601String(),
+                    'end' => $endDateTime->toIso8601String(),
+                    'backgroundColor' => $this->getStatusColor($appointment->status),
+                    'borderColor' => $this->getStatusColor($appointment->status),
+                    'extendedProps' => [
+                        'patient' => trim(($appointment->patient_first_name ?? '') . ' ' . ($appointment->patient_last_name ?? '')),
+                        'doctor' => 'Dr. ' . trim(($appointment->doctor_first_name ?? '') . ' ' . ($appointment->doctor_last_name ?? '')),
+                        'type' => $appointment->type,
+                        'status' => $appointment->status,
+                        'notes' => $appointment->notes,
+                        'duration' => $durationMinutes . ' min',
+                    ],
+                ];
+            }
+        } catch (\Throwable $e) {
+            Log::error('Appointments calendar-events endpoint failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            return response()->json([], 200);
+        }
+
+        return response()->json($events);
+    }
+
+
     /**
      * Show the form for creating a new appointment.
      */

@@ -461,6 +461,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
     Route::prefix('appointments')->name('appointments.')->group(function () {
         Route::get('/', [AppointmentController::class, 'index'])->name('index');
         Route::get('/create', [AppointmentController::class, 'create'])->name('create');
+        // JSON feed consumed by FullCalendar (must come before the {appointment} route)
+        Route::get('/calendar-events', [AppointmentController::class, 'calendarEvents'])->name('calendar-events');
         Route::post('/', [AppointmentController::class, 'store'])->name('store');
         Route::get('/{appointment}', [AppointmentController::class, 'show'])->name('show');
 	    Route::get('/{appointment}/receipt/pdf', [AppointmentController::class, 'generateReceiptPDF'])->name('receipt-pdf');
