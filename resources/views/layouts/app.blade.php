@@ -1502,8 +1502,18 @@
                         </li>
                         @endif
 
+                        <!-- Dental Lab Menu (Only for dental_technician and cad_cam_designer roles) -->
+                        @if(in_array(Auth::user()->role, ['dental_technician', 'cad_cam_designer']))
+                        <li class="nav-item">
+                            <a href="{{ route('dental.lab-requests.index') }}" class="nav-link {{ request()->routeIs('dental.lab-requests.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-tooth"></i>
+                                <span class="nav-text">{{ __('Dental Lab Requests') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
                         <!-- Standard Menu (For all other roles) -->
-                        @if(Auth::user()->role !== 'lab_dept' && Auth::user()->role !== 'radiology_dept')
+                        @if(!in_array(Auth::user()->role, ['lab_dept', 'radiology_dept', 'dental_technician', 'cad_cam_designer']))
 
                         {{-- ─── TOP LEVEL ─── --}}
 

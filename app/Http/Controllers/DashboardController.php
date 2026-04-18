@@ -38,8 +38,8 @@ class DashboardController extends Controller
             return redirect()->route('recommendations.radiology-technician.dashboard');
         }
 
-        // Redirect dental designers and lab technicians directly to dental lab
-        if (in_array($user->role, ['dental_designer', 'dental_lab_technician'])) {
+        // Redirect dental designers (CAD/CAM) and dental technicians directly to dental lab
+        if (in_array($user->role, ['cad_cam_designer', 'dental_technician'])) {
             return redirect()->route('dental.lab-requests.index');
         }
 
@@ -429,13 +429,13 @@ class DashboardController extends Controller
         }
 
         // Recent activity (exclude dental lab roles)
-        if (!in_array($user->role, ['dental_designer', 'dental_lab_technician'])) {
+        if (!in_array($user->role, ['cad_cam_designer', 'dental_technician'])) {
             $data['recentActivity'] = $this->getRecentActivity($user);
         }
 
         // Appointment statistics (schema-aware) - exclude dental lab roles
         if (class_exists('App\\Models\\Appointment') &&
-            !in_array($user->role, ['dental_designer', 'dental_lab_technician']) &&
+            !in_array($user->role, ['cad_cam_designer', 'dental_technician']) &&
             $user->canAccessModule('appointments')) {
             $legacy = $this->isLegacyAppointments();
             if ($legacy) {
@@ -495,7 +495,7 @@ class DashboardController extends Controller
 
         // Nutrition plan statistics (exclude dental roles)
         if (class_exists('App\Models\DietPlan') &&
-            !in_array($user->role, ['dental_dept', 'dental_designer', 'dental_lab_technician']) &&
+            !in_array($user->role, ['dental_dept', 'cad_cam_designer', 'dental_technician']) &&
             $user->canAccessModule('nutrition')) {
             $nutritionQuery = \App\Models\DietPlan::query();
             $nutritionQuery->whereHas('patient', function ($q) use ($user) {
