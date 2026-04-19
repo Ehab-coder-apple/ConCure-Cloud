@@ -183,6 +183,11 @@ class WhatsAppService
             // Clean phone number (remove non-digits)
             $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
 
+            // Strip international dial prefix (00) that users may type in place of +
+            if (str_starts_with($cleanPhone, '00')) {
+                $cleanPhone = substr($cleanPhone, 2);
+            }
+
             // Ensure phone number starts with country code (Iraq: 964)
             if (!str_starts_with($cleanPhone, '964')) {
                 if (str_starts_with($cleanPhone, '0') && strlen($cleanPhone) === 11) {
@@ -231,6 +236,11 @@ class WhatsAppService
         try {
             // Clean phone number (remove non-digits)
             $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
+
+            // Strip international dial prefix (00) that users may type in place of +
+            if (str_starts_with($cleanPhone, '00')) {
+                $cleanPhone = substr($cleanPhone, 2);
+            }
 
             // Ensure phone number starts with country code (Iraq: 964)
             if (!str_starts_with($cleanPhone, '964')) {
@@ -734,27 +744,33 @@ class WhatsAppService
      */
     public function getWebUrl(string $phoneNumber, string $message): string
     {
-        $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
-        if (!str_starts_with($cleanPhone, '964') && strlen($cleanPhone) === 10) {
-            $cleanPhone = '964' . $cleanPhone;
-        }
-        
+        $cleanPhone = $this->formatPhoneNumber($phoneNumber);
         $encodedMessage = urlencode($message);
         return "https://wa.me/{$cleanPhone}?text={$encodedMessage}";
     }
 
     /**
-     * Format phone number for WhatsApp
+     * Format phone number for WhatsApp.
+     *
+     * WhatsApp click-to-chat endpoints (wa.me / api.whatsapp.com / web.whatsapp.com)
+     * require the phone in pure E.164 digits: no +, no 00 international dial prefix,
+     * no spaces. The desktop app is particularly strict — a leading 00 causes the
+     * "This link couldn't be opened" error on macOS/Windows handoff.
      */
     public function formatPhoneNumber(string $phoneNumber): string
     {
-        $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
-        
-        // Add Iraq country code if not present
+        $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber ?? '');
+
+        // Drop the international dial prefix (00) that some users type instead of +
+        if (str_starts_with($cleanPhone, '00')) {
+            $cleanPhone = substr($cleanPhone, 2);
+        }
+
+        // Add Iraq country code if not present and the number looks like a local 10-digit
         if (!str_starts_with($cleanPhone, '964') && strlen($cleanPhone) === 10) {
             $cleanPhone = '964' . $cleanPhone;
         }
-        
+
         return $cleanPhone;
     }
 
@@ -763,7 +779,7 @@ class WhatsAppService
      */
     public function isValidPhoneNumber(string $phoneNumber): bool
     {
-        $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
+        $cleanPhone = $this->formatPhoneNumber($phoneNumber);
 
         // Check if it's a valid length (10 digits local or 13 digits with country code)
         return strlen($cleanPhone) === 10 ||
@@ -775,18 +791,13 @@ class WhatsAppService
      */
     public function generateWhatsAppWebUrl(string $phoneNumber = '', string $message = ''): string
     {
-        // Clean phone number
-        $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
+        // Normalise phone (strips +, spaces, leading 00, etc.)
+        $cleanPhone = $this->formatPhoneNumber($phoneNumber);
 
         // If no phone number provided, use a default setup message
         if (empty($cleanPhone)) {
             $message = $message ?: 'WhatsApp has been configured for your clinic management system. You can now send invoices, lab reports, and other documents directly via WhatsApp!';
             return 'https://web.whatsapp.com/send?text=' . urlencode($message);
-        }
-
-        // Ensure phone number starts with country code
-        if (!str_starts_with($cleanPhone, '964') && strlen($cleanPhone) === 10) {
-            $cleanPhone = '964' . $cleanPhone; // Add Iraq country code
         }
 
         // Create WhatsApp Web URL with phone and message

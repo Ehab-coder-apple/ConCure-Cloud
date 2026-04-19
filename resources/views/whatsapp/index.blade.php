@@ -375,7 +375,12 @@ document.getElementById('testForm').addEventListener('submit', function(e) {
     }
 
     // Clean phone number (remove non-digits and + sign)
-    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    let cleanPhone = phone.replace(/[^0-9]/g, '');
+
+    // Strip international dial prefix (00) typed in place of +
+    if (cleanPhone.startsWith('00')) {
+        cleanPhone = cleanPhone.substring(2);
+    }
 
     // Validate phone number length
     if (cleanPhone.length < 10) {
