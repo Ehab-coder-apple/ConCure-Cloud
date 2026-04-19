@@ -244,24 +244,27 @@ class AppointmentController extends Controller
 
         $legacy = $this->isLegacyAppointments();
 
+        // Select only the date/time columns that actually exist for this
+        // clinic's schema. Selecting a missing column throws an SQL error
+        // which, combined with legacy deployments, would cause the
+        // calendar to silently return an empty array.
+        $dateColumns = $legacy
+            ? ['appointments.appointment_date', 'appointments.appointment_time', 'appointments.duration']
+            : ['appointments.appointment_datetime', 'appointments.duration_minutes'];
+
         $query = DB::table('appointments')
             ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
             ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
-            ->select(
+            ->select(array_merge([
                 'appointments.id',
-                'appointments.appointment_datetime',
-                'appointments.duration_minutes',
-                'appointments.appointment_date',
-                'appointments.appointment_time',
-                'appointments.duration',
                 'appointments.type',
                 'appointments.status',
                 'appointments.notes',
                 'patients.first_name as patient_first_name',
                 'patients.last_name as patient_last_name',
                 'doctors.first_name as doctor_first_name',
-                'doctors.last_name as doctor_last_name'
-            )
+                'doctors.last_name as doctor_last_name',
+            ], $dateColumns))
             ->where('appointments.clinic_id', $user->clinic_id);
 
         // Calendar visibility: doctors only see their own; admins and
@@ -1001,27 +1004,30 @@ class AppointmentController extends Controller
         $user = $request->user();
         if (!$user) return response()->json(['my_count' => 0, 'clinic_count' => 0, 'my' => [], 'clinic' => []]);
 
+        try {
         $now = Carbon::now();
         $legacy = $this->isLegacyAppointments();
         $statuses = ['scheduled', 'confirmed'];
 
-        $buildBase = function() use ($legacy, $now) {
+        // Only select the date/time columns the clinic's schema actually has.
+        $dateCols = $legacy
+            ? ['appointments.appointment_date', 'appointments.appointment_time']
+            : ['appointments.appointment_datetime'];
+
+        $buildBase = function() use ($legacy, $now, $dateCols) {
             $q = DB::table('appointments')
                 ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
                 ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
-                ->select(
+                ->select(array_merge([
                     'appointments.id',
                     'appointments.appointment_number',
                     'appointments.status',
                     'appointments.type',
-                    'appointments.appointment_datetime',
-                    'appointments.appointment_date',
-                    'appointments.appointment_time',
                     'patients.first_name as patient_first_name',
                     'patients.last_name as patient_last_name',
                     'doctors.first_name as doctor_first_name',
-                    'doctors.last_name as doctor_last_name'
-                );
+                    'doctors.last_name as doctor_last_name',
+                ], $dateCols));
             if ($legacy) {
                 $q->whereRaw("STR_TO_DATE(CONCAT(appointment_date,' ', appointment_time), '%Y-%m-%d %H:%i:%s') >= ?", [$now->format('Y-m-d H:i:s')])
                   ->orderBy('appointment_date')->orderBy('appointment_time');
@@ -1081,6 +1087,14 @@ class AppointmentController extends Controller
             'my' => $myList,
             'clinic' => $clinicList,
         ]);
+        } catch (\Throwable $e) {
+            Log::error('Appointments upcoming-summary endpoint failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            return response()->json(['my_count' => 0, 'clinic_count' => 0, 'my' => [], 'clinic' => []], 200);
+        }
     }
 
 
