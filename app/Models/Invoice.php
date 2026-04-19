@@ -281,15 +281,35 @@ class Invoice extends Model
     }
 
     /**
-     * Mark invoice as paid.
+     * Record a payment against this invoice and refresh balance + status.
+     *
+     * Used by the "Mark as Paid" / "Add Payment" action on the invoice list.
+     * The previous implementation only bumped paid_amount and left balance
+     * and status stale, so invoices stayed in 'draft' after partial payments.
      */
-    public function markAsPaid(float $amount, string $paymentMethod = null): void
+    public function markAsPaid(float $amount, ?string $paymentMethod = null): void
     {
-        $this->update([
-            'paid_amount' => $this->paid_amount + $amount,
+        $newPaidAmount = (float) $this->paid_amount + (float) $amount;
+        $newBalance = max(0, (float) $this->total_amount - $newPaidAmount);
+
+        // Apply on the model so calculateNewStatus() sees the latest values
+        $this->paid_amount = $newPaidAmount;
+        $this->balance = $newBalance;
+        $newStatus = $this->calculateNewStatus();
+
+        $updateData = [
+            'paid_amount' => $newPaidAmount,
+            'balance' => $newBalance,
+            'status' => $newStatus,
             'payment_method' => $paymentMethod ?? $this->payment_method,
-            'paid_at' => now(),
-        ]);
+        ];
+
+        // paid_at reflects full payment only
+        if ($newStatus === 'paid' && !$this->paid_at) {
+            $updateData['paid_at'] = now();
+        }
+
+        $this->update($updateData);
     }
 
     /**
