@@ -461,20 +461,19 @@ Route::middleware(['auth', 'activation'])->group(function () {
     Route::prefix('appointments')->name('appointments.')->group(function () {
         Route::get('/', [AppointmentController::class, 'index'])->name('index');
         Route::get('/create', [AppointmentController::class, 'create'])->name('create');
-        // JSON feed consumed by FullCalendar (must come before the {appointment} route)
+        // Static utility routes must come before the {appointment} wildcard so
+        // they aren't captured as appointment ids.
         Route::get('/calendar-events', [AppointmentController::class, 'calendarEvents'])->name('calendar-events');
+        // Sidebar badge count for doctor's upcoming appointments (today)
+        Route::get('/pending-count', [AppointmentController::class, 'pendingCount'])->name('pending-count');
+        // Upcoming summary for bell dropdown
+        Route::get('/upcoming-summary', [AppointmentController::class, 'upcomingSummary'])->name('upcoming-summary');
         Route::post('/', [AppointmentController::class, 'store'])->name('store');
         Route::get('/{appointment}', [AppointmentController::class, 'show'])->name('show');
-	    Route::get('/{appointment}/receipt/pdf', [AppointmentController::class, 'generateReceiptPDF'])->name('receipt-pdf');
+        Route::get('/{appointment}/receipt/pdf', [AppointmentController::class, 'generateReceiptPDF'])->name('receipt-pdf');
         Route::get('/{appointment}/edit', [AppointmentController::class, 'edit'])->name('edit');
         Route::put('/{appointment}', [AppointmentController::class, 'update'])->name('update');
         Route::delete('/{appointment}', [AppointmentController::class, 'destroy'])->name('destroy');
-        // Sidebar badge count for doctor's upcoming appointments (today)
-        Route::get('/pending-count', [AppointmentController::class, 'pendingCount'])->name('pending-count');
-
-        // Upcoming summary for bell dropdown
-        Route::get('/upcoming-summary', [AppointmentController::class, 'upcomingSummary'])->name('upcoming-summary');
-
         Route::patch('/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('update-status');
     });
 
