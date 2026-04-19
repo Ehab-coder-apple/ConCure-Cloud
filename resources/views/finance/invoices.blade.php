@@ -530,8 +530,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
-                <button type="button" class="btn btn-success" onclick="showEmailModal()">
-                    <i class="fas fa-envelope"></i> {{ __('Email') }}
+                <button type="button" class="btn btn-success" onclick="showWhatsAppShare()" style="background-color:#25D366;border-color:#25D366;">
+                    <i class="fab fa-whatsapp"></i> {{ __('WhatsApp') }}
                 </button>
                 <button type="button" class="btn btn-info" onclick="printInvoice()">
                     <i class="fas fa-print"></i> {{ __('Print') }}
@@ -544,59 +544,43 @@
     </div>
 </div>
 
-<!-- Email Invoice Modal -->
-<div class="modal fade" id="emailInvoiceModal" tabindex="-1" aria-labelledby="emailInvoiceModalLabel" aria-hidden="true">
+<!-- WhatsApp Invoice Modal -->
+<div class="modal fade" id="whatsappInvoiceModal" tabindex="-1" aria-labelledby="whatsappInvoiceModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="emailInvoiceModalLabel">
-                    <i class="fas fa-envelope me-2"></i>{{ __('Email Invoice') }}
+            <div class="modal-header" style="background-color:#25D366;color:#fff;">
+                <h5 class="modal-title" id="whatsappInvoiceModalLabel">
+                    <i class="fab fa-whatsapp me-2"></i>{{ __('Send Invoice via WhatsApp') }}
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="emailInvoiceForm">
-                @csrf
+            <form id="whatsappInvoiceForm">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="email-recipient" class="form-label">{{ __('Recipient Email') }}</label>
-                        <input type="email" class="form-control" id="email-recipient" name="email" required>
-                        <div class="form-text">{{ __('Email address where the invoice will be sent') }}</div>
+                        <label for="whatsapp-recipient" class="form-label">{{ __('Recipient WhatsApp Number') }}</label>
+                        <input type="tel" class="form-control" id="whatsapp-recipient" name="phone"
+                               placeholder="9647XXXXXXXXX" required>
+                        <div class="form-text">{{ __('International format without + or leading zeros (e.g. 9647XXXXXXXXX).') }}</div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="email-subject" class="form-label">{{ __('Subject') }} <small class="text-muted">({{ __('Optional') }})</small></label>
-                        <input type="text" class="form-control" id="email-subject" name="subject"
-                               placeholder="{{ __('Invoice from') }} {{ auth()->user()->clinic->name ?? 'Clinic' }}">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="email-message" class="form-label">{{ __('Custom Message') }} <small class="text-muted">({{ __('Optional') }})</small></label>
-                        <textarea class="form-control" id="email-message" name="message" rows="4"
-                                  placeholder="{{ __('Add a personal message to include with the invoice...') }}"></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="attach-pdf" name="attach_pdf" checked>
-                            <label class="form-check-label" for="attach-pdf">
-                                {{ __('Attach PDF invoice') }}
-                            </label>
-                            <div class="form-text">{{ __('Include a PDF copy of the invoice as an attachment') }}</div>
-                        </div>
+                        <label for="whatsapp-message" class="form-label">{{ __('Message') }}</label>
+                        <textarea class="form-control" id="whatsapp-message" name="message" rows="6"></textarea>
+                        <div class="form-text">{{ __('A link to the invoice PDF will be appended automatically.') }}</div>
                     </div>
 
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
                         <strong>{{ __('Invoice Details:') }}</strong>
-                        <div id="email-invoice-details" class="mt-2">
+                        <div id="whatsapp-invoice-details" class="mt-2">
                             <!-- Invoice details will be populated here -->
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-paper-plane me-2"></i>{{ __('Send Email') }}
+                    <button type="submit" class="btn btn-success" style="background-color:#25D366;border-color:#25D366;">
+                        <i class="fab fa-whatsapp me-2"></i>{{ __('Open WhatsApp') }}
                     </button>
                 </div>
             </form>
@@ -903,112 +887,93 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Show email modal function
-    window.showEmailModal = function() {
-        const invoiceIdInput = document.querySelector('#editInvoiceModal input[name="invoice_id"]');
-        if (invoiceIdInput && invoiceIdInput.value) {
-            const invoiceId = invoiceIdInput.value;
+    // Normalise a phone number into the digits-only E.164 form expected by wa.me.
+    function normalizeWhatsAppPhone(raw) {
+        let p = (raw || '').replace(/[^0-9]/g, '');
+        if (p.startsWith('00')) p = p.substring(2);
+        if (!p.startsWith('964') && p.length === 10) p = '964' + p;
+        return p;
+    }
 
-            // Fetch invoice details for email modal
-            fetch(`{{ route('finance.invoices.email-form', ':id') }}`.replace(':id', invoiceId))
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Populate email form
-                        document.getElementById('email-recipient').value = data.invoice.patient_email || '';
-                        document.getElementById('email-subject').value = `Invoice ${data.invoice.invoice_number} from {{ auth()->user()->clinic->name ?? 'Clinic' }}`;
-
-                        // Populate invoice details
-                        document.getElementById('email-invoice-details').innerHTML = `
-                            <div><strong>{{ __('Invoice:') }}</strong> ${data.invoice.invoice_number}</div>
-                            <div><strong>{{ __('Patient:') }}</strong> ${data.invoice.patient_name}</div>
-                            <div><strong>{{ __('Amount:') }}</strong> ${currencySymbol}${formatAmount(data.invoice.total_amount)}</div>
-                            <div><strong>{{ __('Status:') }}</strong> <span class="badge bg-${data.invoice.status === 'paid' ? 'success' : (data.invoice.status === 'overdue' ? 'danger' : 'warning')}">${data.invoice.status.charAt(0).toUpperCase() + data.invoice.status.slice(1)}</span></div>
-                        `;
-
-                        // Store invoice ID for sending
-                        document.getElementById('emailInvoiceForm').dataset.invoiceId = invoiceId;
-
-                        // Show email modal
-                        new bootstrap.Modal(document.getElementById('emailInvoiceModal')).show();
-                    } else {
-                        alert('{{ __("Error loading invoice details.") }}');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('{{ __("Error loading invoice details.") }}');
-                });
-        } else {
-            alert('{{ __("Please save the invoice first before emailing.") }}');
+    // Build the default WhatsApp message body from an invoice payload.
+    function buildWhatsAppInvoiceMessage(inv, publicUrl) {
+        const clinicName = '{{ auth()->user()->clinic->name ?? "Clinic" }}';
+        const statusLabel = (inv.status || '').charAt(0).toUpperCase() + (inv.status || '').slice(1);
+        const lines = [
+            '🧾 {{ __("Invoice") }}',
+            '',
+            `👤 {{ __("Patient") }}: ${inv.patient_name || ''}`,
+            `📄 {{ __("Invoice #") }}: ${inv.invoice_number || ''}`,
+            `💰 {{ __("Amount") }}: ${currencySymbol}${formatAmount(inv.total_amount || 0)}`,
+            `📌 {{ __("Status") }}: ${statusLabel}`,
+        ];
+        if (publicUrl) {
+            lines.push('');
+            lines.push(`📎 {{ __("PDF") }}: ${publicUrl}`);
         }
-    };
+        lines.push('');
+        lines.push('📱 {{ __("Generated by ConCure Clinic Management System") }}');
+        return lines.join('\n');
+    }
 
-    // Email form submission
-    document.getElementById('emailInvoiceForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+    // Show WhatsApp share modal for the currently-edited invoice.
+    window.showWhatsAppShare = function() {
+        const invoiceIdInput = document.querySelector('#editInvoiceModal input[name="invoice_id"]');
+        if (!invoiceIdInput || !invoiceIdInput.value) {
+            alert('{{ __("Please save the invoice first before sharing.") }}');
+            return;
+        }
+        const invoiceId = invoiceIdInput.value;
 
-        const invoiceId = this.dataset.invoiceId;
-        const formData = new FormData(this);
-        const submitButton = this.querySelector('button[type="submit"]');
-        const originalText = submitButton.innerHTML;
-
-        // Show loading state
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>{{ __("Sending...") }}';
-
-        // Send email
-        fetch(`{{ route('finance.invoices.email', ':id') }}`.replace(':id', invoiceId), {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        // Fetch invoice details + public PDF URL in parallel
+        Promise.all([
+            fetch(`{{ route('finance.invoices.email-form', ':id') }}`.replace(':id', invoiceId)).then(r => r.json()),
+            fetch(`{{ route('finance.invoices.public-pdf-url', ':id') }}`.replace(':id', invoiceId)).then(r => r.json()).catch(() => ({ success: false })),
+        ])
+        .then(([formData, urlData]) => {
+            if (!formData.success) {
+                alert('{{ __("Error loading invoice details.") }}');
+                return;
             }
-        })
-        .then(response => {
-            if (response.status === 419) {
-                // CSRF token expired - show user-friendly message
-                alert('{{ __("Your session has expired. Please refresh the page and try again.") }}');
-                if (confirm('{{ __("Would you like to refresh the page now?") }}')) {
-                    window.location.reload();
-                }
-                throw new Error('CSRF token expired');
-            }
-            return response;
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Show success message
-                alert('{{ __("Invoice sent successfully!") }}');
+            const inv = formData.invoice;
+            const publicUrl = (urlData && urlData.success) ? urlData.public_url : '';
 
-                // Close modal
-                bootstrap.Modal.getInstance(document.getElementById('emailInvoiceModal')).hide();
+            document.getElementById('whatsapp-recipient').value = normalizeWhatsAppPhone(inv.patient_whatsapp || '');
+            document.getElementById('whatsapp-message').value = buildWhatsAppInvoiceMessage(inv, publicUrl);
 
-                // Reset form
-                document.getElementById('emailInvoiceForm').reset();
+            const statusClass = inv.status === 'paid' ? 'success' : (inv.status === 'overdue' ? 'danger' : 'warning');
+            const statusLabel = (inv.status || '').charAt(0).toUpperCase() + (inv.status || '').slice(1);
+            document.getElementById('whatsapp-invoice-details').innerHTML = `
+                <div><strong>{{ __('Invoice:') }}</strong> ${inv.invoice_number}</div>
+                <div><strong>{{ __('Patient:') }}</strong> ${inv.patient_name}</div>
+                <div><strong>{{ __('Amount:') }}</strong> ${currencySymbol}${formatAmount(inv.total_amount)}</div>
+                <div><strong>{{ __('Status:') }}</strong> <span class="badge bg-${statusClass}">${statusLabel}</span></div>
+            `;
 
-                // Refresh invoice list if needed
-                location.reload();
-            } else {
-                alert('{{ __("Error:") }} ' + (data.message || 'Unknown error occurred'));
-                console.error('Server error:', data);
-            }
+            document.getElementById('whatsappInvoiceForm').dataset.invoiceId = invoiceId;
+            new bootstrap.Modal(document.getElementById('whatsappInvoiceModal')).show();
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('{{ __("Network error. Please check your connection and try again.") }}');
-        })
-        .finally(() => {
-            // Reset button state
-            submitButton.disabled = false;
-            submitButton.innerHTML = originalText;
+            alert('{{ __("Error loading invoice details.") }}');
         });
+    };
+
+    // WhatsApp form submission: open wa.me (or wa.me composer if phone empty) in a new tab.
+    document.getElementById('whatsappInvoiceForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const phone = normalizeWhatsAppPhone(document.getElementById('whatsapp-recipient').value);
+        const message = document.getElementById('whatsapp-message').value;
+        const encoded = encodeURIComponent(message);
+
+        const url = phone
+            ? `https://wa.me/${phone}?text=${encoded}`
+            : `https://wa.me/?text=${encoded}`;
+
+        window.open(url, '_blank');
+
+        bootstrap.Modal.getInstance(document.getElementById('whatsappInvoiceModal')).hide();
     });
 
     // Calculate totals for edit modal

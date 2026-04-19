@@ -1638,6 +1638,7 @@ class FinanceController extends Controller
                 'invoice_number' => $invoice->invoice_number,
                 'patient_name' => $invoice->patient->first_name . ' ' . $invoice->patient->last_name,
                 'patient_email' => $invoice->patient->email,
+                'patient_whatsapp' => $invoice->patient->whatsapp_phone ?: $invoice->patient->phone,
                 'total_amount' => $invoice->total_amount,
                 'status' => $invoice->status,
             ]
