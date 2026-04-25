@@ -2489,6 +2489,8 @@
     });
     </script>
 
+    @include('partials.messaging-realtime')
+
     @stack('scripts')
 </body>
 </html>

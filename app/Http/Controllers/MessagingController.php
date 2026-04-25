@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageReceived;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
@@ -136,6 +137,7 @@ class MessagingController extends Controller
             'transfer_type' => 'nullable|string|in:patient_file,radiology_request,lab_request,lab_result,prescription,nutrition_plan',
             'source_type' => 'nullable|string',
             'source_id' => 'nullable|integer',
+            'priority' => 'nullable|string|in:normal,urgent',
             'metadata' => 'nullable|array',
         ]);
 
@@ -188,6 +190,7 @@ class MessagingController extends Controller
                     'source_type' => $data['source_type'],
                     'source_id' => $data['source_id'],
                     'status' => 'pending',
+                    'priority' => $data['priority'] ?? Transfer::PRIORITY_NORMAL,
                     'metadata' => $data['metadata'] ?? null,
                 ]);
             }
@@ -206,6 +209,20 @@ class MessagingController extends Controller
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
+
+            // Broadcast to each recipient on their private clinic-scoped channel.
+            // Best-effort: a broadcast failure must never break message delivery.
+            foreach ($recipientIds as $rid) {
+                try {
+                    broadcast(new MessageReceived($message->fresh(['sender', 'patient', 'transfer']), (int) $rid))->toOthers();
+                } catch (\Throwable $e) {
+                    Log::warning('MessageReceived broadcast failed', [
+                        'message_id' => $message->id,
+                        'recipient_id' => $rid,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
             return response()->json(['success' => true, 'message_id' => $message->id]);
         });
@@ -282,6 +299,14 @@ class MessagingController extends Controller
             'acted_at' => now(),
         ]);
 
+        // Acting on the transfer implies the message has been seen by this user.
+        if ($transfer->message_id) {
+            MessageRecipient::where('message_id', $transfer->message_id)
+                ->where('user_id', $user->id)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+        }
+
         AuditLog::create([
             'user_id' => $user->id,
             'user_name' => $user->full_name ?? ($user->first_name.' '.$user->last_name),
@@ -316,6 +341,12 @@ class MessagingController extends Controller
             ->where('clinic_id', $user->clinic_id)
             ->where('is_active', true)
             ->where('id', '!=', $user->id);
+
+        // Optional role filter (e.g. 'doctor' for the Send-to-Doctor picker)
+        $roleFilter = $request->input('role');
+        if (is_string($roleFilter) && $roleFilter !== '') {
+            $query->where('role', $roleFilter);
+        }
 
         // Apply search if valid term provided
         if ($searchTerm !== null) {
@@ -398,6 +429,12 @@ class MessagingController extends Controller
 
         $conversation->is_archived = true;
         $conversation->save();
+
+        // Archiving implies the user has dealt with everything in this conversation.
+        MessageRecipient::whereIn('message_id', $conversation->messages()->pluck('id'))
+            ->where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
 
         AuditLog::create([
             'user_id' => $user->id,

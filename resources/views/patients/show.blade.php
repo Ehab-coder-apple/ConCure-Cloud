@@ -89,6 +89,24 @@
                             {{ __('Share Internally') }}
                         </a>
 
+                        @php
+                            $handoffSender = auth()->user();
+                            $canSendHandoff = $handoffSender && (
+                                in_array($handoffSender->role, ['admin', 'assistant', 'nurse'], true)
+                                || (method_exists($handoffSender, 'isClinicAdmin') && $handoffSender->isClinicAdmin())
+                                || (method_exists($handoffSender, 'isSuperAdmin') && $handoffSender->isSuperAdmin())
+                            );
+                        @endphp
+                        @if ($canSendHandoff)
+                            <button type="button" class="btn btn-outline-primary btn-sm ms-1"
+                                    data-concure-send-to-doctor
+                                    data-patient-id="{{ (int) ($patient->id ?? 0) }}"
+                                    data-patient-name="{{ $patient->full_name ?? trim(($patient->first_name ?? '').' '.($patient->last_name ?? '')) }}">
+                                <i class="fas fa-user-md me-1"></i>
+                                {{ __('Send to Doctor') }}
+                            </button>
+                        @endif
+
                 </div>
 
             </div>

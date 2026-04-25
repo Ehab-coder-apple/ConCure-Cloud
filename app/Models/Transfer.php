@@ -20,10 +20,14 @@ class Transfer extends Model
         'source_type',
         'source_id',
         'status',
+        'priority',
         'acted_by',
         'acted_at',
         'metadata',
     ];
+
+    public const PRIORITY_NORMAL = 'normal';
+    public const PRIORITY_URGENT = 'urgent';
 
     protected $casts = [
         'metadata' => 'array',
