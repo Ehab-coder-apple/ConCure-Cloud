@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GrowthMeasurement;
 use App\Models\Patient;
 use App\Models\PatientCheckup;
 use App\Models\PatientDental;
@@ -279,6 +280,11 @@ class PatientController extends Controller
             'blood_type' => 'nullable|string|in:A+,A-,B+,B-,AB+,AB-,O+,O-,NA',
             'birth_weight' => 'nullable|integer|min:200|max:7000',
             'gestational_age_weeks' => 'nullable|integer|min:20|max:45',
+            'pediatric_birth_weight' => 'nullable|integer|min:200|max:7000',
+            'pediatric_gestational_age_weeks' => 'nullable|integer|min:20|max:45',
+            'pediatric_current_weight_kg' => 'nullable|numeric|min:0|max:300',
+            'pediatric_current_height_cm' => 'nullable|numeric|min:0|max:250',
+            'pediatric_head_circumference_cm' => 'nullable|numeric|min:0|max:80',
             'allergies' => 'nullable|string',
             'is_pregnant' => 'boolean',
             'chronic_illnesses' => 'nullable|string',
@@ -374,6 +380,7 @@ class PatientController extends Controller
                         'birth_weight' => $request->pediatric_birth_weight,
                         'gestational_age' => $request->pediatric_gestational_age_weeks,
                     ]);
+                    $this->recordPediatricBaselineMeasurement($patient, $request, $user, $clinicId);
                 } elseif ($moduleName === 'nutrition') {
                     PatientNutrition::create([
                         'patient_id' => $patient->id,
@@ -824,6 +831,11 @@ class PatientController extends Controller
             'blood_type' => 'nullable|string|in:A+,A-,B+,B-,AB+,AB-,O+,O-,NA',
             'birth_weight' => 'nullable|integer|min:200|max:7000',
             'gestational_age_weeks' => 'nullable|integer|min:20|max:45',
+            'pediatric_birth_weight' => 'nullable|integer|min:200|max:7000',
+            'pediatric_gestational_age_weeks' => 'nullable|integer|min:20|max:45',
+            'pediatric_current_weight_kg' => 'nullable|numeric|min:0|max:300',
+            'pediatric_current_height_cm' => 'nullable|numeric|min:0|max:250',
+            'pediatric_head_circumference_cm' => 'nullable|numeric|min:0|max:80',
             'allergies' => 'nullable|string',
             'is_pregnant' => 'boolean',
             'chronic_illnesses' => 'nullable|string',
@@ -922,6 +934,7 @@ class PatientController extends Controller
                         'gestational_age' => $request->pediatric_gestational_age_weeks,
                     ]
                 );
+                $this->recordPediatricBaselineMeasurement($patient, $request, auth()->user(), $patient->clinic_id);
             } elseif ($moduleName === 'nutrition') {
                 PatientNutrition::updateOrCreate(
                     ['patient_id' => $patient->id],
@@ -1632,6 +1645,44 @@ class PatientController extends Controller
                 'success' => false,
                 'message' => 'Clear all failed: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Record an initial / current growth measurement when the pediatric module
+     * is enabled and weight, height, or head circumference is provided. Idempotent
+     * per (patient_id, measurement_date=today): updates the existing row instead
+     * of duplicating if the user submits the form multiple times the same day.
+     */
+    protected function recordPediatricBaselineMeasurement(Patient $patient, Request $request, $user, ?int $clinicId): void
+    {
+        $weightKg = $request->filled('pediatric_current_weight_kg') ? (float) $request->input('pediatric_current_weight_kg') : null;
+        $heightCm = $request->filled('pediatric_current_height_cm') ? (float) $request->input('pediatric_current_height_cm') : null;
+        $headCm = $request->filled('pediatric_head_circumference_cm') ? (float) $request->input('pediatric_head_circumference_cm') : null;
+
+        if ($weightKg === null && $heightCm === null && $headCm === null) {
+            return;
+        }
+
+        try {
+            GrowthMeasurement::updateOrCreate(
+                [
+                    'patient_id' => $patient->id,
+                    'measurement_date' => Carbon::today()->toDateString(),
+                ],
+                [
+                    'clinic_id' => $clinicId,
+                    'weight_kg' => $weightKg,
+                    'length_height_cm' => $heightCm,
+                    'head_circumference_cm' => $headCm,
+                    'created_by' => $user?->id,
+                ]
+            );
+        } catch (\Exception $e) {
+            \Log::error('Failed to record pediatric baseline growth measurement', [
+                'patient_id' => $patient->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }
