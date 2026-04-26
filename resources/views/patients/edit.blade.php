@@ -19,7 +19,7 @@
     </div>
     <div class="row justify-content-center">
         <div class="col-12 col-xl-10">
-            <form action="{{ route('patients.update', $patient->id) }}" method="POST" class="needs-validation" novalidate>
+            <form action="{{ route('patients.update', $patient->id) }}" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
                 @csrf @method('PUT')
                 <input type="hidden" name="_supports_extended_medical_flags" value="1">
                 <div class="card border-0 shadow-sm">
@@ -66,11 +66,34 @@
                                         </div>
                                     </div>
                                     <div class="accordion-item border rounded-3 mb-3 overflow-hidden">
-                                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-procedures">{{ __('Procedures & notes') }}</button></h2>
+                                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-procedures">{{ __('Procedures, files & notes') }}</button></h2>
                                         <div id="collapse-procedures" class="accordion-collapse collapse" data-bs-parent="#medical-overview-accordion">
                                             <div class="accordion-body row g-3">
                                                 <div class="col-12"><label for="surgeries_history" class="form-label">{{ __('Surgeries') }}</label><textarea class="form-control @error('surgeries_history') is-invalid @enderror" id="surgeries_history" name="surgeries_history" rows="2">{{ old('surgeries_history', $patient->medicalOverview?->surgeries) }}</textarea>@error('surgeries_history')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
                                                 <div class="col-12"><label for="medical_history" class="form-label">{{ __('Medical History') }}</label><textarea class="form-control @error('medical_history') is-invalid @enderror" id="medical_history" name="medical_history" rows="3">{{ old('medical_history', $patient->medicalOverview?->medical_history) }}</textarea>@error('medical_history')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                                                <div class="col-12">
+                                                    <label for="medical_files" class="form-label">{{ __('Medical History Files') }}</label>
+                                                    <input type="file" class="form-control @error('medical_files.*') is-invalid @enderror" id="medical_files" name="medical_files[]" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                                    <small class="text-muted">{{ __('Upload reports, scans, or intake-related documents. Saved when you click Update Patient.') }}</small>
+                                                    @error('medical_files.*')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                                    @php($existingMedicalFiles = \App\Models\PatientFile::byPatient($patient->id)->byCategory('medical_report')->latest()->get())
+                                                    @if($existingMedicalFiles->count() > 0)
+                                                        <div class="mt-3">
+                                                            <div class="small text-muted fw-semibold mb-2"><i class="fas fa-paperclip me-1"></i>{{ __('Existing files') }} ({{ $existingMedicalFiles->count() }})</div>
+                                                            <ul class="list-group list-group-flush small">
+                                                                @foreach($existingMedicalFiles as $file)
+                                                                    <li class="list-group-item d-flex justify-content-between align-items-center px-2 py-2">
+                                                                        <span class="text-truncate me-2"><i class="fas fa-file-medical text-info me-1"></i><a href="{{ $file->file_url }}" target="_blank">{{ $file->original_name }}</a> <span class="text-muted">· {{ $file->file_size_human }} · {{ $file->created_at?->format('M d, Y') }}</span></span>
+                                                                        <form action="{{ route('patients.files.destroy', [$patient, $file]) }}" method="POST" class="d-inline" onsubmit="return confirm('{{ __('Delete this file?') }}')">
+                                                                            @csrf @method('DELETE')
+                                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ __('Delete') }}"><i class="fas fa-trash"></i></button>
+                                                                        </form>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        </div>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
