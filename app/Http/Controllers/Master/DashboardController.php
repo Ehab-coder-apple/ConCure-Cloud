@@ -159,17 +159,24 @@ class DashboardController extends Controller
         // prescription PDF path via autoLangToFont) — it ships with the
         // package, has full OTL support, and avoids the broken TTF entirely.
 
-        // Disable tatweel (kashida) insertion at the font level. mPDF reads
-        // useKashida per-font (see Mpdf::OTLrestrictToSyllable & friends);
-        // the bundled 'xbriyaz' default ships with kashida-based line
-        // stretching enabled, which renders as long horizontal strokes
-        // overlapping the baseline. Force it off so lines stay ragged-left
-        // and the words are no longer crossed by joining bars.
-        if (isset($fontData['xbriyaz']) && is_array($fontData['xbriyaz'])) {
-            $fontData['xbriyaz']['useKashida'] = 0;
-        } else {
-            $fontData['xbriyaz'] = ['useKashida' => 0];
+        // Disable tatweel (kashida) insertion across ALL Arabic-capable
+        // fonts. mPDF ships every Arabic font in its bundled fontdata with
+        // 'useKashida' => 75 (xbriyaz, lateef, kfgqpcuthmantahanaskh), and
+        // because we run with autoLangToFont => true mPDF is free to pick
+        // any of them for Arabic runs — overriding only 'xbriyaz' leaves
+        // the door open. Sweeping the whole array also future-proofs us
+        // against new Arabic fonts being added in mPDF upgrades.
+        //
+        // Visible symptom when this is on: long horizontal connector
+        // strokes (the tatweel ـ glyph) inserted between letter clusters
+        // to stretch each justified line, which read as a baseline bar
+        // crossing through the words.
+        foreach ($fontData as $family => &$cfg) {
+            if (is_array($cfg) && array_key_exists('useKashida', $cfg)) {
+                $cfg['useKashida'] = 0;
+            }
         }
+        unset($cfg);
 
         $mpdf = new \Mpdf\Mpdf([
             'mode'              => 'utf-8',
