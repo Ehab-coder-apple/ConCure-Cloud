@@ -150,11 +150,14 @@ class DashboardController extends Controller
 
         $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
         $fontData = $defaultFontConfig['fontdata'];
-        $fontData['amiri'] = [
-            'R'          => 'Amiri-Regular.ttf',
-            'useOTL'     => 0xFF,
-            'useKashida' => 75,
-        ];
+
+        // We deliberately do NOT register Amiri here. The Amiri-Regular.ttf
+        // build present in storage/fonts/ uses GPOS Lookup Type 5 Format 3,
+        // which mPDF's TTFontFile parser cannot decode (throws FontException
+        // at TTFontFile.php:1794). Instead we lean on mPDF's bundled Arabic
+        // shaping font 'xbriyaz' (already used implicitly by the working
+        // prescription PDF path via autoLangToFont) — it ships with the
+        // package, has full OTL support, and avoids the broken TTF entirely.
 
         $mpdf = new \Mpdf\Mpdf([
             'mode'              => 'utf-8',
@@ -162,7 +165,7 @@ class DashboardController extends Controller
             'tempDir'           => $tempDir,
             'fontDir'           => $fontDirs,
             'fontdata'          => $fontData,
-            'default_font'      => 'amiri',
+            'default_font'      => 'xbriyaz',
             'default_font_size' => 11,
             'autoScriptToLang'  => true,
             'autoLangToFont'    => true,

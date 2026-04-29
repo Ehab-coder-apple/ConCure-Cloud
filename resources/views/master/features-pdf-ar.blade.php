@@ -11,14 +11,14 @@
         @page :first { margin: 0; }
 
         body {
-            font-family: amiri, dejavusans, sans-serif;
+            font-family: xbriyaz, dejavusans, sans-serif;
             font-size: 11pt;
             line-height: 1.7;
             color: #1f2937;
             direction: rtl;
         }
         strong { color: #0b1220; font-weight: 700; }
-        h1, h2, h3, h4 { color: #0b1220; font-family: amiri, sans-serif; }
+        h1, h2, h3, h4 { color: #0b1220; font-family: xbriyaz, sans-serif; }
         p { margin-bottom: 6px; }
 
         /* ============ COVER PAGE ============ */
@@ -199,7 +199,7 @@
 {{-- Define the named footer used on body pages. The cover (page 1) keeps
      it OFF; we re-enable it right after the cover's <pagebreak />. --}}
 <htmlpagefooter name="brandFooter">
-    <table dir="rtl" width="100%" style="border-top:0.5pt solid #0b3a8c;padding-top:3mm;font-family:amiri;font-size:9pt;color:#4b5563;">
+    <table dir="rtl" width="100%" style="border-top:0.5pt solid #0b3a8c;padding-top:3mm;font-family:xbriyaz;font-size:9pt;color:#4b5563;">
         <tr>
             <td width="55%" align="right" style="vertical-align:middle;">
                 @if($footerLogoSrc)
