@@ -11,8 +11,8 @@
 
         body {
             font-family: 'Helvetica', 'DejaVu Sans', sans-serif;
-            font-size: 12.5px;
-            line-height: 1.65;
+            font-size: 14px;
+            line-height: 1.6;
             color: #1f2937;
         }
         strong { color: #0b1220; font-weight: 700; }
@@ -86,7 +86,10 @@
         }
 
         /* ============ SECTIONS ============ */
-        .section { margin-bottom: 20px; page-break-inside: avoid; }
+        /* Sections may span pages with the larger 14px body font; allow natural
+           page breaks but keep individual cards (.feature-module / .summary-card)
+           intact via their own page-break-inside rule below. */
+        .section { margin-bottom: 20px; }
         .section-header {
             background: #0b3a8c;
             color: #fff;
@@ -134,6 +137,7 @@
             border: 0.5pt solid #e1e6ef;
             border-top: 2pt solid #0b3a8c;
             padding: 10px 13px 11px 13px;
+            page-break-inside: avoid;
             -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
         .feature-module h3 {
@@ -145,7 +149,7 @@
         .feature-list { list-style: none; padding-left: 0; }
         .feature-list li {
             padding-left: 14px; margin-bottom: 4px; position: relative;
-            line-height: 1.55; color: #1f2937; font-size: 12px;
+            line-height: 1.55; color: #1f2937; font-size: 14px;
         }
         .feature-list li:before {
             content: ""; position: absolute;
@@ -164,7 +168,7 @@
         .role-list { list-style: none; padding-left: 0; }
         .role-list li {
             padding-left: 14px; margin-bottom: 4px; position: relative;
-            font-size: 12px; line-height: 1.55;
+            font-size: 14px; line-height: 1.55;
         }
         .role-list li:before {
             content: ""; position: absolute; left: 2px; top: 7px;

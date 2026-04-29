@@ -97,8 +97,14 @@ class SettingsController extends Controller
      * silently fails on hosts where sys_get_temp_dir() is not writable.
      * A flattened JPEG bypasses that entire code path.
      *
-     * Returns null when no logo is configured, GD is unavailable, or the
-     * file cannot be read.
+     * The flat JPEG is normally generated up-front in updateBrandingLogo();
+     * this method also lazy-generates it on first use as a fallback, then
+     * tries multiple writable target locations (public/images, then
+     * storage/app/public/images) so it works on hosts with restrictive
+     * permissions.
+     *
+     * Returns null when no logo is configured, GD is unavailable, or no
+     * writable location can be found.
      */
     public static function getMasterBrandingLogoFlatJpegPath(): ?string
     {
@@ -108,13 +114,30 @@ class SettingsController extends Controller
         }
 
         $sourceAbs = public_path($rel);
-        $flatAbs = public_path('images/concure-logo-flat.jpg');
 
-        if (file_exists($flatAbs) && filemtime($flatAbs) >= filemtime($sourceAbs)) {
-            return $flatAbs;
+        $candidates = [
+            public_path('images/concure-logo-flat.jpg'),
+            storage_path('app/public/concure-logo-flat.jpg'),
+        ];
+
+        foreach ($candidates as $flatAbs) {
+            if (file_exists($flatAbs) && @filemtime($flatAbs) >= @filemtime($sourceAbs)) {
+                return $flatAbs;
+            }
         }
 
+        return self::generateFlatJpeg($sourceAbs, $candidates);
+    }
+
+    /**
+     * Flatten a PNG/JPEG onto a white background and write it as a JPEG to
+     * the first writable location in $candidates. Returns the path on
+     * success, or null on failure.
+     */
+    private static function generateFlatJpeg(string $sourceAbs, array $candidates): ?string
+    {
         if (!extension_loaded('gd') || !function_exists('imagejpeg')) {
+            Log::warning('Master branding logo: GD/imagejpeg not available, footer logo disabled.');
             return null;
         }
 
@@ -127,6 +150,10 @@ class SettingsController extends Controller
             $img = @imagecreatefromjpeg($sourceAbs);
         }
         if (!$img) {
+            Log::warning('Master branding logo: could not decode source image.', [
+                'source' => $sourceAbs,
+                'mime' => $mime,
+            ]);
             return null;
         }
 
@@ -135,13 +162,29 @@ class SettingsController extends Controller
         $flat = imagecreatetruecolor($w, $h);
         $white = imagecolorallocate($flat, 255, 255, 255);
         imagefilledrectangle($flat, 0, 0, $w, $h, $white);
+        imagealphablending($flat, true);
         imagecopy($flat, $img, 0, 0, 0, 0, $w, $h);
 
-        $ok = @imagejpeg($flat, $flatAbs, 90);
+        $written = null;
+        foreach ($candidates as $target) {
+            $dir = dirname($target);
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+            if (@imagejpeg($flat, $target, 90)) {
+                $written = $target;
+                break;
+            }
+            Log::warning('Master branding logo: imagejpeg() failed to write target.', [
+                'target' => $target,
+                'dir_writable' => is_dir($dir) && is_writable($dir),
+            ]);
+        }
+
         imagedestroy($img);
         imagedestroy($flat);
 
-        return $ok ? $flatAbs : null;
+        return $written;
     }
 
     /**
@@ -206,6 +249,13 @@ class SettingsController extends Controller
             ]
         );
 
+        // Eagerly generate the flat JPEG sibling now while we have permission
+        // context, so the PDF renderer doesn't need to write it lazily later.
+        self::generateFlatJpeg(public_path($relativePath), [
+            public_path('images/concure-logo-flat.jpg'),
+            storage_path('app/public/concure-logo-flat.jpg'),
+        ]);
+
         return redirect()->route('master.settings')
             ->with('success', __('Branding logo updated successfully.'));
     }
@@ -237,6 +287,8 @@ class SettingsController extends Controller
         foreach ((array) glob(public_path('images') . DIRECTORY_SEPARATOR . 'concure-logo.*') as $oldFile) {
             @unlink($oldFile);
         }
+        // Also drop any flat-jpeg copy stored under storage/app/public.
+        @unlink(storage_path('app/public/concure-logo-flat.jpg'));
 
         DB::table('settings')
             ->whereNull('clinic_id')
