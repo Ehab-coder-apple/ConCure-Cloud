@@ -22,12 +22,15 @@
         /* ============ COVER PAGE ============ */
         .cover {
             page-break-after: always;
-            height: 297mm;
+            /* 295mm (not 297mm) avoids a DomPDF quirk where a full-height
+               colored block plus page-break-after spawns a blank extra page. */
+            height: 295mm;
             width: 210mm;
             position: relative;
             background: #0b3a8c;
             color: #fff;
             padding: 36mm 22mm 0 22mm;
+            overflow: hidden;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
