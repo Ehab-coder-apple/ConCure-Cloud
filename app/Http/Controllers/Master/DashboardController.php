@@ -178,6 +178,15 @@ class DashboardController extends Controller
             'margin_footer'     => 10,
         ]);
 
+        // Disable kashida/tatweel-based justification globally. With Arabic
+        // text and the default justify alignment, mPDF inserts long tatweel
+        // (ـ) characters between letters to stretch lines — they render as
+        // horizontal strokes that visually overlap the baseline of the
+        // surrounding letters and make the text hard to read. Setting both
+        // the kashida budget to 0 and forcing right alignment in CSS keeps
+        // letter-shaping intact while removing the bars.
+        $mpdf->useKashida = 0;
+
         $mpdf->SetDirectionality('rtl');
         $mpdf->SetTitle('ConCure Cloud - قائمة الميزات الكاملة');
 

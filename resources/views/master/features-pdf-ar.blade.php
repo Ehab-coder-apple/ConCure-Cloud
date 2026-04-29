@@ -16,10 +16,12 @@
             line-height: 1.7;
             color: #1f2937;
             direction: rtl;
+            text-align: right;
         }
         strong { color: #0b1220; font-weight: 700; }
-        h1, h2, h3, h4 { color: #0b1220; font-family: xbriyaz, sans-serif; }
-        p { margin-bottom: 6px; }
+        h1, h2, h3, h4 { color: #0b1220; font-family: xbriyaz, sans-serif; text-align: right; }
+        p { margin-bottom: 6px; text-align: right; }
+        ul, ol, li { text-align: right; }
 
         /* ============ COVER PAGE ============ */
         .cover {
@@ -110,6 +112,7 @@
         .feature-list li {
             padding-right: 12px; margin-bottom: 3px; position: relative;
             line-height: 1.7; color: #1f2937; font-size: 10.5pt;
+            text-align: right;
         }
         .feature-list li:before {
             content: "•"; position: absolute;
@@ -126,6 +129,7 @@
         .role-list li {
             padding-right: 12px; margin-bottom: 3px; position: relative;
             font-size: 10.5pt; line-height: 1.7;
+            text-align: right;
         }
         .role-list li:before {
             content: "•"; position: absolute; right: 2px; top: 0;
