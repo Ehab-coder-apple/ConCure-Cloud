@@ -16,9 +16,13 @@
                     <p class="text-muted mb-0">Comprehensive Clinic Management System</p>
                 </div>
                 <div>
-                    <a href="{{ route('master.features.pdf') }}" class="btn btn-danger me-2">
+                    <a href="{{ route('master.features.pdf', ['lang' => 'en']) }}" class="btn btn-danger me-2">
                         <i class="fas fa-file-pdf me-2"></i>
-                        Download PDF
+                        Download PDF (EN)
+                    </a>
+                    <a href="{{ route('master.features.pdf', ['lang' => 'ar']) }}" class="btn btn-warning me-2">
+                        <i class="fas fa-file-pdf me-2"></i>
+                        Download PDF (AR) &middot; <span style="font-family: 'Amiri', serif;">العربية</span>
                     </a>
                     <button onclick="window.print()" class="btn btn-primary">
                         <i class="fas fa-print me-2"></i>

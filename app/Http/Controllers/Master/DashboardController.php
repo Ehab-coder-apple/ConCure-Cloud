@@ -43,14 +43,20 @@ class DashboardController extends Controller
     /**
      * Generate PDF of features documentation.
      *
-     * Dispatches to the Arabic mPDF renderer when the active locale is 'ar'
-     * (DomPDF can't shape Arabic glyphs / handle bidi, so we keep two
-     * separate rendering paths). All other locales fall through to the
-     * DomPDF-based English layout below.
+     * The language is driven by an optional ?lang= query parameter (so the
+     * Master UI — which is English-only — can still offer a one-click Arabic
+     * download without switching the whole session locale). When ?lang is
+     * absent we fall back to the active app locale.
+     *
+     * Arabic dispatches to the mPDF renderer below — DomPDF can't shape
+     * Arabic glyphs or handle bidi. Everything else uses DomPDF.
      */
-    public function featuresPdf()
+    public function featuresPdf(\Illuminate\Http\Request $request)
     {
-        if (app()->getLocale() === 'ar') {
+        $lang = (string) $request->query('lang', '');
+        $lang = in_array($lang, ['en', 'ar'], true) ? $lang : app()->getLocale();
+
+        if ($lang === 'ar') {
             return $this->featuresPdfArabic();
         }
 
