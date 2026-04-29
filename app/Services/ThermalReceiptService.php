@@ -34,6 +34,7 @@ class ThermalReceiptService
     {
         $visit->loadMissing(['patient', 'creator', 'clinic']);
         $clinic = $visit->clinic ?: Clinic::find($visit->clinic_id);
+        $this->applyLocale($clinic);
 
         $title = __('Visit Receipt');
         $reference = sprintf('VISIT-%d', $visit->id);
@@ -75,6 +76,7 @@ class ThermalReceiptService
     {
         $appointment->loadMissing(['patient', 'doctor', 'clinic']);
         $clinic = $appointment->clinic ?: Clinic::find($appointment->clinic_id);
+        $this->applyLocale($clinic);
 
         $receipt = Receipt::where('clinic_id', $appointment->clinic_id)
             ->where('reference_number', (string) $appointment->id)
@@ -143,6 +145,7 @@ class ThermalReceiptService
     {
         $treatment->loadMissing(['patient', 'assignedDoctor', 'performedBy', 'clinic']);
         $clinic = $treatment->clinic ?: Clinic::find($treatment->clinic_id);
+        $this->applyLocale($clinic);
 
         $title = __('Dental Treatment Receipt');
         $reference = $treatment->treatment_number;
@@ -306,9 +309,14 @@ class ThermalReceiptService
     }
 
     /**
-     * Resolve the effective locale for a receipt: per-tenant override
-     * (`clinic.settings.receipt_language`) wins, otherwise the staff's
-     * current session locale, otherwise the configured default.
+     * Resolve the effective locale for a receipt. Resolution order:
+     *   1. Per-tenant receipt-only override (`clinic.settings.receipt_language`)
+     *      stored in the JSON `clinics.settings` column.
+     *   2. The clinic's `default_language` in the key/value `settings` table
+     *      (the value bound to the "Default Language" select in
+     *      Settings → General). This is the field tenants toggle when they
+     *      want their whole clinic — receipts included — in Arabic / Kurdish.
+     *   3. The current session locale (`app()->getLocale()`).
      */
     protected function effectiveLocale(?Clinic $clinic): string
     {
@@ -318,8 +326,31 @@ class ThermalReceiptService
             if (is_string($pref) && in_array($pref, $supported, true)) {
                 return $pref;
             }
+
+            $clinicDefault = DB::table('settings')
+                ->where('clinic_id', $clinic->id)
+                ->where('key', 'default_language')
+                ->value('value');
+            if (is_string($clinicDefault) && in_array($clinicDefault, $supported, true)) {
+                return $clinicDefault;
+            }
         }
         return app()->getLocale();
+    }
+
+    /**
+     * Apply the clinic-resolved locale to the application before we evaluate
+     * any __() strings. Without this, every __() call in buildFor*() and in
+     * the thermal blade resolves against the staff member's current session
+     * locale — causing receipts to render in English even when the clinic's
+     * Default Language is Arabic.
+     */
+    protected function applyLocale(?Clinic $clinic): void
+    {
+        $locale = $this->effectiveLocale($clinic);
+        if ($locale && $locale !== app()->getLocale()) {
+            app()->setLocale($locale);
+        }
     }
 
     protected function humanize(?string $value): string
