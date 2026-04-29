@@ -42,9 +42,18 @@ class DashboardController extends Controller
 
     /**
      * Generate PDF of features documentation.
+     *
+     * Dispatches to the Arabic mPDF renderer when the active locale is 'ar'
+     * (DomPDF can't shape Arabic glyphs / handle bidi, so we keep two
+     * separate rendering paths). All other locales fall through to the
+     * DomPDF-based English layout below.
      */
     public function featuresPdf()
     {
+        if (app()->getLocale() === 'ar') {
+            return $this->featuresPdfArabic();
+        }
+
         // Build a base64 data URI for the footer logo. Using base64 inside a
         // position:fixed HTML <img> bypasses both DomPDF's chroot URL check
         // and the $canvas->image() RGBA tempnam() path, which silently fail
@@ -108,6 +117,80 @@ class DashboardController extends Controller
 
         return $pdf->download('ConCure-Cloud-Features-' . date('Y-m-d') . '.pdf');
     }
+
+    /**
+     * Render the Features List PDF with Arabic content using mPDF.
+     *
+     * mPDF (already used for prescription PDFs in this codebase) handles
+     * Arabic glyph shaping and RTL bidi natively, both of which DomPDF
+     * lacks. The Amiri-Regular.ttf in storage/fonts/ is the same font
+     * used by the existing Kurdish/Arabic prescription path.
+     *
+     * The cover and content live in master/features-pdf-ar.blade.php. The
+     * per-page footer (logo + brand text + page numbers) is set via
+     * SetHTMLFooter(); first-page footer is suppressed by the @page :first
+     * rule inside the blade so the cover stays clean.
+     */
+    private function featuresPdfArabic()
+    {
+        $tempDir = storage_path('mpdf/temp');
+        if (!is_dir($tempDir)) {
+            @mkdir($tempDir, 0755, true);
+        }
+
+        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        $fontDirs = $defaultConfig['fontDir'];
+        $fontDirs[] = storage_path('fonts');
+
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
+        $fontData['amiri'] = [
+            'R'          => 'Amiri-Regular.ttf',
+            'useOTL'     => 0xFF,
+            'useKashida' => 75,
+        ];
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode'              => 'utf-8',
+            'format'            => 'A4',
+            'tempDir'           => $tempDir,
+            'fontDir'           => $fontDirs,
+            'fontdata'          => $fontData,
+            'default_font'      => 'amiri',
+            'default_font_size' => 11,
+            'autoScriptToLang'  => true,
+            'autoLangToFont'    => true,
+            'directionality'    => 'rtl',
+            'margin_left'       => 16,
+            'margin_right'      => 16,
+            'margin_top'        => 22,
+            'margin_bottom'     => 24,
+            'margin_header'     => 8,
+            'margin_footer'     => 10,
+        ]);
+
+        $mpdf->SetDirectionality('rtl');
+        $mpdf->SetTitle('ConCure Cloud - قائمة الميزات الكاملة');
+
+        $footerLogoSrc = self::buildFooterLogoDataUri();
+
+        // The named footer ("brandFooter") is declared inside the blade via
+        // <htmlpagefooter>, and toggled OFF on the cover / ON for body pages
+        // via <sethtmlpagefooter> directives — that lets a single WriteHTML
+        // call render both pages without us having to split the cover.
+        $html = view('master.features-pdf-ar', [
+            'footerLogoSrc' => $footerLogoSrc,
+        ])->render();
+
+        $mpdf->WriteHTML($html);
+
+        $filename = 'ConCure-Cloud-Features-AR-' . date('Y-m-d') . '.pdf';
+        return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
 
     /**
      * Build a base64 data URI for the per-page footer logo, preferring the
@@ -311,16 +394,16 @@ class DashboardController extends Controller
         for ($i = 11; $i >= 0; $i--) {
             $date = now()->subMonths($i);
             $months[] = $date->format('M Y');
-            
+
             $clinicData[] = Clinic::whereYear('created_at', $date->year)
                 ->whereMonth('created_at', $date->month)
                 ->count();
-                
+
             $userData[] = User::where('role', '!=', 'super_admin')
                 ->whereYear('created_at', $date->year)
                 ->whereMonth('created_at', $date->month)
                 ->count();
-                
+
             $patientData[] = Patient::whereYear('created_at', $date->year)
                 ->whereMonth('created_at', $date->month)
                 ->count();
@@ -397,11 +480,11 @@ class DashboardController extends Controller
             $diskSpace = disk_free_space(storage_path());
             $totalSpace = disk_total_space(storage_path());
             $usedPercentage = (($totalSpace - $diskSpace) / $totalSpace) * 100;
-            
+
             if ($usedPercentage > 90) {
                 return ['status' => 'warning', 'message' => 'Storage usage is high (' . round($usedPercentage, 1) . '%)'];
             }
-            
+
             return ['status' => 'healthy', 'message' => 'Storage usage is normal (' . round($usedPercentage, 1) . '%)'];
         } catch (\Exception $e) {
             return ['status' => 'error', 'message' => 'Unable to check storage'];
@@ -416,11 +499,11 @@ class DashboardController extends Controller
         try {
             cache()->put('health_check', 'test', 60);
             $value = cache()->get('health_check');
-            
+
             if ($value === 'test') {
                 return ['status' => 'healthy', 'message' => 'Cache is working'];
             }
-            
+
             return ['status' => 'warning', 'message' => 'Cache test failed'];
         } catch (\Exception $e) {
             return ['status' => 'error', 'message' => 'Cache connection failed'];
