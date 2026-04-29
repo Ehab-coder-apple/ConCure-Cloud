@@ -164,9 +164,14 @@
                                                 <small>{{ $treatment->created_at->format('M d, Y') }}</small>
                                             </td>
                                             <td class="text-end">
-                                                <a href="{{ url("/dental/treatments/{$treatment->id}") }}" class="btn btn-sm btn-outline-primary" title="{{ __('View') }}">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{{ url("/dental/treatments/{$treatment->id}") }}" class="btn btn-outline-primary" title="{{ __('View') }}">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ route('dental.treatments.receipt', $treatment->id) }}" class="btn btn-outline-primary" target="_blank" title="{{ __('Print Receipt') }}">
+                                                        <i class="fas fa-receipt"></i>
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach

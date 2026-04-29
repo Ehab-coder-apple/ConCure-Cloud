@@ -654,6 +654,20 @@
                                                 <label for="clinic_address" class="form-label">{{ __('Address') }}</label>
                                                 <textarea class="form-control" id="clinic_address" name="clinic_address" rows="3">{{ $clinicInfo['address'] ?? '' }}</textarea>
                                             </div>
+                                            <div class="col-md-6">
+                                                <label for="receipt_language" class="form-label">
+                                                    {{ __('Receipt Language') }}
+                                                    <i class="fas fa-info-circle text-muted ms-1"
+                                                       title="{{ __('Language used on printed receipts and patient-facing scanned receipts. Leave blank to follow each staff member\'s UI language.') }}"></i>
+                                                </label>
+                                                <select class="form-select" id="receipt_language" name="receipt_language">
+                                                    <option value="">{{ __('Follow staff language (default)') }}</option>
+                                                    <option value="en" @selected(($clinicInfo['receipt_language'] ?? null) === 'en')>English</option>
+                                                    <option value="ar" @selected(($clinicInfo['receipt_language'] ?? null) === 'ar')>العربية</option>
+                                                    <option value="ku" @selected(($clinicInfo['receipt_language'] ?? null) === 'ku')>کوردی</option>
+                                                </select>
+                                                <div class="form-text">{{ __('Affects thermal receipts and the QR-scanned patient view.') }}</div>
+                                            </div>
                                         </div>
                                         <div class="mt-3">
                                             <button type="submit" class="btn btn-primary">

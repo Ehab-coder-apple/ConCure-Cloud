@@ -239,6 +239,48 @@
                                 </ul>
                             </div>
                         </div>
+
+                        <!-- ENT Module -->
+                        <div class="col-md-6 mb-4">
+                            <div class="feature-module">
+                                <h5 class="text-success"><i class="fas fa-head-side-cough me-2"></i>ENT Module (Ear, Nose &amp; Throat)</h5>
+                                <ul class="list-unstyled ms-3">
+                                    <li><i class="fas fa-check text-success me-2"></i>Per-visit ENT encounter records (CRUD)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Chief complaint documentation</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Ear examination (otoscopy findings)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Nose examination (anterior/posterior rhinoscopy)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Throat examination (oropharynx, tonsils, larynx)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Neck examination (lymph nodes, thyroid, masses)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Cranial nerves assessment</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Diagnosis with ICD-10 coding</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Treatment plan &amp; prescribed medications</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Follow-up date scheduling</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Patient-level ENT profile (hearing, nasal, throat issues, dizziness)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>ENT-related file uploads (audiograms, scans, images)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Per-clinic module toggle</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Audiometry & Hearing Tests -->
+                        <div class="col-md-6 mb-4">
+                            <div class="feature-module">
+                                <h5 class="text-success"><i class="fas fa-volume-high me-2"></i>Audiometry &amp; Hearing Tests</h5>
+                                <ul class="list-unstyled ms-3">
+                                    <li><i class="fas fa-check text-success me-2"></i>Pure-tone audiometry (air &amp; bone conduction)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Speech audiometry with SRT (Speech Recognition Threshold)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Word Recognition Score (WRS) tracking</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Tympanometry results recording</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Bilateral ear data capture (left &amp; right)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Frequency-by-frequency threshold entry (250 Hz–8 kHz)</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Hearing-loss interpretation: normal, conductive, sensorineural, mixed</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Tests linked to ENT records or standalone per patient</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Test history timeline per patient</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Date-stamped, performer-tracked test records</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Multiple test types: pure tone, speech, tympanometry, other</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -558,6 +600,7 @@
                                         <li class="mb-2"><i class="fas fa-apple-alt text-primary me-2"></i><strong>Nutrition Planning:</strong> Food database, meal planning, calorie tracking, diet plans</li>
                                         <li class="mb-2"><i class="fas fa-tooth text-primary me-2"></i><strong>Dental Module:</strong> Interactive dental charts, condition tracking, treatment planning, PDF export</li>
                                         <li class="mb-2"><i class="fas fa-child text-primary me-2"></i><strong>Pediatric Growth:</strong> WHO/CDC growth charts, percentile tracking, corrected age support</li>
+                                        <li class="mb-2"><i class="fas fa-head-side-cough text-primary me-2"></i><strong>ENT Module:</strong> Ear/nose/throat examinations, ICD-10 diagnoses, audiometry &amp; tympanometry tests</li>
                                     </ul>
                                 </div>
                             </div>

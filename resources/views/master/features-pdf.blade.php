@@ -5,209 +5,183 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ConCure Cloud - Complete Features List</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4 portrait; margin: 18mm 14mm 22mm 14mm; }
+        @page :first { margin: 0; }
+
         body {
-            font-family: 'DejaVu Sans', sans-serif;
+            font-family: 'Helvetica', 'DejaVu Sans', sans-serif;
             font-size: 10px;
-            line-height: 1.4;
-            color: #333;
-            padding: 15mm 20mm;
-            margin: 0;
+            line-height: 1.55;
+            color: #1f2937;
         }
-        
-        .header {
-            text-align: center;
-            padding: 20px 0;
-            border-bottom: 3px solid #0d6efd;
-            margin-bottom: 20px;
-        }
-        
-        .header h1 {
-            font-size: 24px;
-            color: #0d6efd;
-            margin-bottom: 5px;
-        }
-        
-        .header p {
-            font-size: 12px;
-            color: #666;
-        }
-        
-        .section {
-            margin-bottom: 20px;
-            page-break-inside: avoid;
-            padding: 0 5px;
-        }
-        
-        .section-header {
-            background-color: #f8f9fa;
-            padding: 8px 15px;
-            border-left: 4px solid #0d6efd;
-            margin-bottom: 10px;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        
-        .section-header.success {
-            border-left-color: #198754;
-            background-color: #d1e7dd;
-        }
-        
-        .section-header.info {
-            border-left-color: #0dcaf0;
-            background-color: #cff4fc;
-        }
-        
-        .section-header.warning {
-            border-left-color: #ffc107;
-            background-color: #fff3cd;
-        }
-        
-        .section-header.danger {
-            border-left-color: #dc3545;
-            background-color: #f8d7da;
-        }
-        
-        .section-header.dark {
-            border-left-color: #212529;
-            background-color: #e2e3e5;
-        }
-        
-        .section-header.secondary {
-            border-left-color: #6c757d;
-            background-color: #e9ecef;
-        }
-        
-        .overview-grid {
-            display: table;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-        
-        .overview-item {
-            display: table-cell;
-            width: 33.33%;
-            padding: 10px;
-            vertical-align: top;
-        }
-        
-        .overview-item h3 {
-            font-size: 11px;
-            color: #0d6efd;
-            margin-bottom: 5px;
-        }
-        
-        .feature-grid {
-            display: table;
-            width: 100%;
-            margin-bottom: 10px;
-        }
+        strong { color: #111827; font-weight: 700; }
+        h1, h2, h3, h4 { color: #111827; }
 
-        .feature-column {
-            display: table-cell;
-            width: 50%;
-            padding: 0 10px;
-            vertical-align: top;
-        }
-
-        .feature-column:first-child {
-            padding-left: 0;
-        }
-
-        .feature-column:last-child {
-            padding-right: 0;
-        }
-        
-        .feature-module {
-            margin-bottom: 10px;
-        }
-        
-        .feature-module h3 {
-            font-size: 12px;
-            color: #198754;
-            margin-bottom: 5px;
-        }
-        
-        .feature-list {
-            list-style: none;
-            padding-left: 0;
-        }
-        
-        .feature-list li {
-            padding-left: 18px;
-            margin-bottom: 4px;
-            position: relative;
-            line-height: 1.5;
-        }
-        
-        .feature-list li:before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #198754;
-            font-weight: bold;
-        }
-        
-        .subsection {
-            margin-bottom: 12px;
-            padding: 0 5px;
-        }
-
-        .subsection h4 {
-            font-size: 11px;
-            margin-bottom: 6px;
-            color: #495057;
-            font-weight: bold;
-        }
-        
-        .role-list {
-            list-style: none;
-            padding-left: 0;
-        }
-        
-        .role-list li {
-            padding-left: 15px;
-            margin-bottom: 3px;
-            position: relative;
-        }
-        
-        .role-list li:before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            color: #dc3545;
-            font-weight: bold;
-        }
-        
-        .role-list strong {
-            color: #dc3545;
-        }
-        
-        .footer {
-            text-align: center;
-            padding: 15px 0;
-            border-top: 2px solid #dee2e6;
-            margin-top: 20px;
-            font-size: 9px;
-            color: #666;
-        }
-        
-        .page-break {
+        /* ============ COVER PAGE ============ */
+        .cover {
             page-break-after: always;
+            height: 297mm;
+            width: 210mm;
+            position: relative;
+            background: #0d6efd;
+            color: #fff;
+            padding: 38mm 22mm;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
+        .cover .brand-mark {
+            font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+            opacity: .85; margin-bottom: 22mm;
+        }
+        .cover h1 {
+            color: #fff;
+            font-size: 36px; line-height: 1.1; font-weight: 700;
+            margin-bottom: 6mm; max-width: 150mm;
+        }
+        .cover .subtitle {
+            font-size: 13px; line-height: 1.55; max-width: 150mm;
+            opacity: .92; font-weight: 300;
+        }
+        .cover .accent-bar {
+            position: absolute; left: 22mm; bottom: 56mm;
+            width: 32mm; height: 0.8mm; background: #fff; opacity: .85;
+        }
+        .cover .meta {
+            position: absolute; left: 22mm; bottom: 24mm; right: 22mm;
+            font-size: 10px; opacity: .92;
+            border-top: 0.4pt solid rgba(255,255,255,.45); padding-top: 6mm;
+        }
+        .cover .meta-row { display: table; width: 100%; }
+        .cover .meta-cell { display: table-cell; }
+        .cover .meta-cell.right { text-align: right; }
+        .cover .meta strong { color: #fff; font-weight: 700; }
+
+        /* ============ DOCUMENT HEADER (after cover) ============ */
+        .doc-header {
+            border-bottom: 0.5pt solid #e5e7eb;
+            padding-bottom: 6px; margin-bottom: 14px;
+        }
+        .doc-header .row { display: table; width: 100%; }
+        .doc-header .left, .doc-header .right { display: table-cell; vertical-align: middle; font-size: 8.5px; color: #6b7280; }
+        .doc-header .right { text-align: right; }
+        .doc-header .brand { color: #0d6efd; font-weight: 700; letter-spacing: 1px; }
+
+        /* ============ SECTIONS ============ */
+        .section { margin-bottom: 14px; page-break-inside: avoid; padding: 0 2px; }
+        .section-header {
+            background: #f3f4f6;
+            border-left: 3px solid #0d6efd;
+            padding: 7px 12px;
+            margin-bottom: 9px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #111827;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        /* Legacy variants normalized to a single restrained look. */
+        .section-header.success,
+        .section-header.info,
+        .section-header.warning,
+        .section-header.danger,
+        .section-header.dark,
+        .section-header.secondary {
+            background: #f3f4f6; border-left-color: #0d6efd; color: #111827;
+        }
+
+        .overview-grid { display: table; width: 100%; margin-bottom: 12px; }
+        .overview-item { display: table-cell; width: 33.33%; padding: 8px 10px; vertical-align: top;
+            border-right: 0.4pt solid #e5e7eb; }
+        .overview-item:last-child { border-right: 0; }
+        .overview-item h3 { font-size: 10.5px; color: #0d6efd; margin-bottom: 3px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .5px; }
+        .overview-item p { font-size: 10px; color: #4b5563; }
+
+        .feature-grid { display: table; width: 100%; margin-bottom: 4px; }
+        .feature-column { display: table-cell; width: 50%; padding: 0 8px; vertical-align: top; }
+        .feature-column:first-child { padding-left: 0; }
+        .feature-column:last-child { padding-right: 0; }
+
+        .feature-module { margin-bottom: 11px; }
+        .feature-module h3 {
+            font-size: 11.5px; color: #0f172a; margin-bottom: 5px; font-weight: 700;
+            border-bottom: 0.4pt solid #e5e7eb; padding-bottom: 3px;
+        }
+
+        .feature-list { list-style: none; padding-left: 0; }
+        .feature-list li {
+            padding-left: 12px; margin-bottom: 3px; position: relative;
+            line-height: 1.5; color: #1f2937;
+        }
+        .feature-list li:before {
+            content: ""; position: absolute;
+            left: 2px; top: 6px;
+            width: 3px; height: 3px;
+            background: #0d6efd;
+        }
+
+        .subsection { margin-bottom: 11px; padding: 0 2px; }
+        .subsection h4 {
+            font-size: 10.5px; margin-bottom: 5px; color: #374151; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .5px;
+        }
+
+        .role-list { list-style: none; padding-left: 0; }
+        .role-list li { padding-left: 13px; margin-bottom: 3px; position: relative; }
+        .role-list li:before { content: "·"; position: absolute; left: 4px; color: #0d6efd; font-weight: 700; }
+        .role-list strong { color: #111827; }
+
+        /* Stat cards (replaces broken CSS grid in summary). */
+        .stat-grid { display: table; width: 100%; margin-bottom: 10px; border-collapse: collapse; }
+        .stat-cell { display: table-cell; width: 25%; padding: 8px 6px; border: 0.5pt solid #e5e7eb; text-align: center; vertical-align: middle; }
+        .stat-cell .num { font-size: 16px; color: #0d6efd; font-weight: 700; display: block; margin-bottom: 2px; }
+        .stat-cell .label { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; }
+
+        .summary-card { border: 0.5pt solid #e5e7eb; padding: 10px 12px; margin-bottom: 8px; }
+        .summary-card h3 { font-size: 11.5px; color: #0d6efd; font-weight: 700;
+            border-bottom: 0.4pt solid #e5e7eb; padding-bottom: 3px; margin-bottom: 6px; }
+
+        .callout { background: #f8fafc; border-left: 3px solid #0d6efd;
+            padding: 10px 14px; margin-top: 12px;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .callout h3 { font-size: 12px; color: #0d6efd; margin-bottom: 6px; font-weight: 700; }
+
+        .footer-end { text-align: center; padding-top: 10px; margin-top: 18px;
+            border-top: 0.5pt solid #e5e7eb; font-size: 9px; color: #6b7280; }
+        .page-break { page-break-after: always; }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <h1>ConCure Cloud - Complete Features List</h1>
-        <p>Comprehensive Clinic Management System</p>
-        <p style="font-size: 10px; margin-top: 5px;">Generated on {{ date('F d, Y') }}</p>
+    {{-- ============== COVER PAGE ============== --}}
+    <div class="cover">
+        <div class="brand-mark">CONCURE&nbsp;&nbsp;CLOUD</div>
+        <h1>Complete<br>Feature&nbsp;List</h1>
+        <div class="subtitle">
+            A comprehensive multi-tenant SaaS clinic management system covering
+            clinical, operational, financial and administrative workflows.
+        </div>
+        <div class="accent-bar"></div>
+        <div class="meta">
+            <div class="meta-row">
+                <div class="meta-cell">
+                    Document reference<br>
+                    <strong>FEATURES&middot;{{ date('Ymd') }}</strong>
+                </div>
+                <div class="meta-cell right">
+                    Generated<br>
+                    <strong>{{ date('F d, Y') }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ============== DOCUMENT HEADER (every subsequent page) ============== --}}
+    <div class="doc-header">
+        <div class="row">
+            <div class="left"><span class="brand">CONCURE CLOUD</span> &nbsp;&middot;&nbsp; Complete Feature List</div>
+            <div class="right">{{ date('F Y') }}</div>
+        </div>
     </div>
 
     <!-- Application Overview -->
@@ -420,6 +394,55 @@
                         <li>Birth weight & gestational age tracking</li>
                         <li>Growth chart PDF export with formatted layout</li>
                         <li>Pediatric patient list with age filtering</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ENT Module -->
+    <div class="section">
+        <div class="section-header success">ENT Module (Ear, Nose & Throat)</div>
+
+        <div class="feature-grid">
+            <div class="feature-column">
+                <div class="feature-module">
+                    <h3>ENT Clinical Records</h3>
+                    <ul class="feature-list">
+                        <li>Per-visit ENT encounter records (CRUD)</li>
+                        <li>Chief complaint documentation</li>
+                        <li>Ear examination (otoscopy findings)</li>
+                        <li>Nose examination (anterior/posterior rhinoscopy)</li>
+                        <li>Throat examination (oropharynx, tonsils, larynx)</li>
+                        <li>Neck examination (lymph nodes, thyroid, masses)</li>
+                        <li>Cranial nerves assessment</li>
+                        <li>Diagnosis with ICD-10 coding</li>
+                        <li>Treatment plan and prescribed medications</li>
+                        <li>Follow-up date scheduling</li>
+                        <li>Patient-level ENT profile (hearing, nasal, throat issues, dizziness)</li>
+                        <li>ENT-related file uploads (audiograms, scans, images)</li>
+                        <li>Linked visit context for continuity of care</li>
+                        <li>Per-clinic module toggle (enable/disable)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-column">
+                <div class="feature-module">
+                    <h3>Audiometry &amp; Hearing Tests</h3>
+                    <ul class="feature-list">
+                        <li>Pure-tone audiometry (air & bone conduction)</li>
+                        <li>Speech audiometry with SRT (Speech Recognition Threshold)</li>
+                        <li>Word Recognition Score (WRS) tracking</li>
+                        <li>Tympanometry results recording</li>
+                        <li>Bilateral ear data capture (left & right)</li>
+                        <li>Frequency-by-frequency threshold entry (250 Hz–8 kHz)</li>
+                        <li>Hearing-loss interpretation per ear:
+                            normal, conductive, sensorineural, mixed</li>
+                        <li>Tests linked to ENT records or standalone per patient</li>
+                        <li>Test history timeline per patient</li>
+                        <li>Date-stamped, performer-tracked test records</li>
+                        <li>Multiple test types: pure tone, speech, tympanometry, other</li>
                     </ul>
                 </div>
             </div>
@@ -711,17 +734,12 @@
 
     <!-- Summary of Key Features -->
     <div class="section">
-        <div class="section-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-            <i class="fas fa-star"></i> Summary of Key Features
-        </div>
+        <div class="section-header">Summary of Key Features</div>
 
         <div class="feature-grid">
-            <!-- Core Modules -->
             <div class="feature-column">
-                <div class="feature-module" style="border: 2px solid #007bff; border-radius: 8px; padding: 15px;">
-                    <h3 style="color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 8px;">
-                        <i class="fas fa-hospital"></i> Core Clinical Modules
-                    </h3>
+                <div class="summary-card">
+                    <h3>Core Clinical Modules</h3>
                     <ul class="feature-list">
                         <li><strong>Patient Management:</strong> Complete profiles, medical history, vital signs, chronic conditions</li>
                         <li><strong>Prescription System:</strong> Digital prescriptions with drug database, PDF generation, multi-language support</li>
@@ -731,20 +749,18 @@
                         <li><strong>Nutrition Planning:</strong> Food database, meal planning, calorie tracking, diet plans</li>
                         <li><strong>Dental Module:</strong> Interactive dental charts, condition tracking, treatment planning, PDF export</li>
                         <li><strong>Pediatric Growth:</strong> WHO/CDC growth charts, percentile tracking, corrected age support</li>
+                        <li><strong>ENT Module:</strong> Ear/nose/throat examinations, ICD-10 diagnoses, audiometry &amp; tympanometry tests</li>
                     </ul>
                 </div>
             </div>
 
-            <!-- Business Features -->
             <div class="feature-column">
-                <div class="feature-module" style="border: 2px solid #28a745; border-radius: 8px; padding: 15px;">
-                    <h3 style="color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 8px;">
-                        <i class="fas fa-chart-line"></i> Business & Operations
-                    </h3>
+                <div class="summary-card">
+                    <h3>Business &amp; Operations</h3>
                     <ul class="feature-list">
                         <li><strong>Financial Management:</strong> Invoicing, payment tracking, expense management, profit/loss reports</li>
                         <li><strong>Marketing:</strong> Advertisement management, campaign tracking, analytics</li>
-                        <li><strong>Reports & Analytics:</strong> Patient statistics, revenue reports, activity tracking</li>
+                        <li><strong>Reports &amp; Analytics:</strong> Patient statistics, revenue reports, activity tracking</li>
                         <li><strong>User Management:</strong> Role-based access, permissions, activity logs</li>
                         <li><strong>System Settings:</strong> Clinic configuration, branding, customization</li>
                     </ul>
@@ -752,15 +768,12 @@
             </div>
         </div>
 
-        <div class="feature-grid" style="margin-top: 15px;">
-            <!-- Technical Capabilities -->
+        <div class="feature-grid">
             <div class="feature-column">
-                <div class="feature-module" style="border: 2px solid #17a2b8; border-radius: 8px; padding: 15px;">
-                    <h3 style="color: #17a2b8; border-bottom: 2px solid #17a2b8; padding-bottom: 8px;">
-                        <i class="fas fa-laptop-code"></i> Technical Capabilities
-                    </h3>
+                <div class="summary-card">
+                    <h3>Technical Capabilities</h3>
                     <ul class="feature-list">
-                        <li><strong>Multi-language:</strong> English, Arabic, Kurdish (Bahdini & Sorani)</li>
+                        <li><strong>Multi-language:</strong> English, Arabic, Kurdish (Bahdini &amp; Sorani)</li>
                         <li><strong>PDF Generation:</strong> Prescriptions, lab reports, invoices, diet plans</li>
                         <li><strong>Import/Export:</strong> Excel support for patients, medicines, food database</li>
                         <li><strong>Smart Search:</strong> Real-time search, advanced filtering, Select2 integration</li>
@@ -770,58 +783,43 @@
                 </div>
             </div>
 
-            <!-- Key Statistics -->
             <div class="feature-column">
-                <div class="feature-module" style="border: 2px solid #ffc107; border-radius: 8px; padding: 15px;">
-                    <h3 style="color: #856404; border-bottom: 2px solid #ffc107; padding-bottom: 8px;">
-                        <i class="fas fa-trophy"></i> System Highlights
-                    </h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                        <div style="background: #f8f9fa; padding: 10px; text-align: center; border-radius: 5px;">
-                            <h2 style="color: #007bff; margin: 0;">200+</h2>
-                            <small>Total Features</small>
-                        </div>
-                        <div style="background: #f8f9fa; padding: 10px; text-align: center; border-radius: 5px;">
-                            <h2 style="color: #28a745; margin: 0;">10</h2>
-                            <small>Core Modules</small>
-                        </div>
-                        <div style="background: #f8f9fa; padding: 10px; text-align: center; border-radius: 5px;">
-                            <h2 style="color: #17a2b8; margin: 0;">4</h2>
-                            <small>Languages</small>
-                        </div>
-                        <div style="background: #f8f9fa; padding: 10px; text-align: center; border-radius: 5px;">
-                            <h2 style="color: #ffc107; margin: 0;">100%</h2>
-                            <small>Cloud-Based</small>
-                        </div>
-                    </div>
-                    <ul class="feature-list" style="margin-top: 10px;">
-                        <li>✓ HIPAA Compliant Ready</li>
-                        <li>✓ Real-time Data Sync</li>
-                        <li>✓ Automated Backups</li>
-                        <li>✓ 24/7 Availability</li>
+                <div class="summary-card">
+                    <h3>System Highlights</h3>
+                    <table class="stat-grid" cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td class="stat-cell"><span class="num">200+</span><span class="label">Features</span></td>
+                            <td class="stat-cell"><span class="num">10</span><span class="label">Modules</span></td>
+                            <td class="stat-cell"><span class="num">4</span><span class="label">Languages</span></td>
+                            <td class="stat-cell"><span class="num">100%</span><span class="label">Cloud</span></td>
+                        </tr>
+                    </table>
+                    <ul class="feature-list">
+                        <li>HIPAA Compliant Ready</li>
+                        <li>Real-time Data Sync</li>
+                        <li>Automated Backups</li>
+                        <li>24/7 Availability</li>
                     </ul>
                 </div>
             </div>
         </div>
 
         <!-- Benefits Section -->
-        <div style="background: #e7f3ff; border: 2px solid #007bff; border-radius: 8px; padding: 15px; margin-top: 15px;">
-            <h3 style="color: #007bff; margin-top: 0;">
-                <i class="fas fa-lightbulb"></i> Why Choose ConCure Cloud?
-            </h3>
+        <div class="callout">
+            <h3>Why Choose ConCure Cloud?</h3>
             <div class="feature-grid">
                 <div class="feature-column">
                     <ul class="feature-list">
-                        <li><strong>⚡ Efficiency:</strong> Streamline clinic operations and reduce paperwork</li>
-                        <li><strong>❤️ Patient Care:</strong> Better patient management and treatment tracking</li>
-                        <li><strong>💰 Cost-Effective:</strong> Reduce operational costs and increase revenue</li>
+                        <li><strong>Efficiency:</strong> Streamline clinic operations and reduce paperwork</li>
+                        <li><strong>Patient Care:</strong> Better patient management and treatment tracking</li>
+                        <li><strong>Cost-Effective:</strong> Reduce operational costs and increase revenue</li>
                     </ul>
                 </div>
                 <div class="feature-column">
                     <ul class="feature-list">
-                        <li><strong>🔒 Secure:</strong> Enterprise-grade security and data protection</li>
-                        <li><strong>📈 Scalable:</strong> Grows with your clinic from small to large practices</li>
-                        <li><strong>🎧 Support:</strong> Dedicated customer support and training</li>
+                        <li><strong>Secure:</strong> Enterprise-grade security and data protection</li>
+                        <li><strong>Scalable:</strong> Grows with your clinic from small to large practices</li>
+                        <li><strong>Support:</strong> Dedicated customer support and training</li>
                     </ul>
                 </div>
             </div>
@@ -829,10 +827,10 @@
     </div>
 
     <!-- Footer -->
-    <div class="footer">
-        <p><strong>ConCure Cloud</strong> - Comprehensive Clinic Management System</p>
-        <p>Version 1.0 | © {{ date('Y') }} ConCure. All rights reserved.</p>
-        <p style="margin-top: 5px;">Total Features: 200+ | Generated: {{ date('F d, Y \a\t h:i A') }}</p>
+    <div class="footer-end">
+        <p><strong>ConCure Cloud</strong> &middot; Comprehensive Clinic Management System</p>
+        <p>Version 1.0 &nbsp;|&nbsp; &copy; {{ date('Y') }} ConCure. All rights reserved.</p>
+        <p>Total Features: 200+ &nbsp;|&nbsp; Generated {{ date('F d, Y \a\t h:i A') }}</p>
     </div>
 </body>
 </html>

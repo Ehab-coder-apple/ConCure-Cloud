@@ -58,6 +58,7 @@ class SettingsController extends Controller
                     'email' => $clinic->email,
                     'phone' => $clinic->phone,
                     'address' => $clinic->address,
+                    'receipt_language' => $clinic->getSetting('receipt_language'),
                 ];
 
                 // Get website from settings
@@ -448,6 +449,7 @@ class SettingsController extends Controller
             'clinic_phone' => 'nullable|string|max:20',
             'clinic_address' => 'nullable|string|max:500',
             'clinic_website' => 'nullable|url|max:255',
+            'receipt_language' => 'nullable|in:en,ar,ku',
         ]);
 
         try {
@@ -459,6 +461,12 @@ class SettingsController extends Controller
                 'phone' => $request->clinic_phone,
                 'address' => $request->clinic_address,
             ]);
+
+            // Per-tenant receipt language override (used by ThermalReceiptService).
+            // Empty value clears the override so receipts follow the staff locale.
+            $clinic->setSetting('receipt_language', $request->filled('receipt_language')
+                ? $request->receipt_language
+                : null);
 
             // Store website in settings if provided
             if ($request->clinic_website) {

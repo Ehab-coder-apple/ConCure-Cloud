@@ -9,7 +9,14 @@
             <h3 class="mb-1">{{ __('Visit Record') }}</h3>
             <p class="text-muted mb-0">{{ $patient->full_name }} • {{ optional($visit->visit_date)->format('M d, Y h:i A') }}</p>
         </div>
-        <a href="{{ route('patients.show', ['patient' => $patient->id]) }}" class="btn btn-outline-secondary">{{ __('Back to Patient Profile') }}</a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('patients.visits.receipt', ['patient' => $patient->id, 'visit' => $visit->id]) }}"
+               target="_blank"
+               class="btn btn-outline-primary">
+                <i class="fas fa-print me-1"></i> {{ __('Print Receipt') }}
+            </a>
+            <a href="{{ route('patients.show', ['patient' => $patient->id]) }}" class="btn btn-outline-secondary">{{ __('Back to Patient Profile') }}</a>
+        </div>
     </div>
 
     <div class="row g-4">

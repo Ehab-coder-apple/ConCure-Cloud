@@ -51,6 +51,10 @@
                                 </li>
                             </ul>
                         </div>
+                        <a href="{{ route('dental.treatments.receipt', $dentalTreatment->id) }}" class="btn btn-outline-primary" target="_blank">
+                            <i class="fas fa-receipt me-1"></i>
+                            {{ __('Print Receipt') }}
+                        </a>
                     @endif
                 </div>
             </div>
@@ -509,6 +513,11 @@
                                 </li>
                             </ul>
                         </div>
+
+                        <a href="{{ route('dental.treatments.receipt', $dentalTreatment->id) }}" class="btn btn-outline-primary w-100 mb-2" target="_blank">
+                            <i class="fas fa-receipt me-1"></i>
+                            {{ __('Print Receipt') }}
+                        </a>
 
                         @if(in_array(auth()->user()->role, ['admin', 'program_owner']))
                             <form method="POST" action="{{ url("/dental/treatments/{$dentalTreatment->id}") }}" onsubmit="return confirm('{{ __('Are you sure you want to delete this treatment plan?') }}')">

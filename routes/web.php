@@ -97,6 +97,14 @@ Route::post('/validate-activation-code', [ClinicActivationController::class, 'va
 Route::get('/invoice/{invoice}/pdf/{token}', [FinanceController::class, 'publicInvoicePDF'])->name('finance.invoices.public.pdf');
 Route::get('/invoice/{invoice}/view/{token}', [FinanceController::class, 'publicInvoiceView'])->name('finance.invoices.public.view');
 
+// Public signed receipt URLs (encoded in receipt QR codes).
+// Patients can scan the QR to view a read-only summary of their receipt.
+Route::middleware('signed')->prefix('r')->name('public.receipt.')->group(function () {
+    Route::get('/visit/{visit}', [App\Http\Controllers\PublicReceiptController::class, 'showVisit'])->name('visit');
+    Route::get('/appointment/{appointment}', [App\Http\Controllers\PublicReceiptController::class, 'showAppointment'])->name('appointment');
+    Route::get('/dental-treatment/{dentalTreatment}', [App\Http\Controllers\PublicReceiptController::class, 'showDentalTreatment'])->name('dental-treatment');
+});
+
 // Diagnostic route for production debugging
 Route::get('/finance-debug', function () {
     try {
@@ -226,6 +234,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/{patient}/medications', [App\Http\Controllers\PatientMedicationController::class, 'store'])->name('medications.store');
         Route::post('/{patient}/visits', [App\Http\Controllers\PatientVisitController::class, 'store'])->name('visits.store');
         Route::get('/{patient}/visits/{visit}', [App\Http\Controllers\PatientVisitController::class, 'show'])->name('visits.show');
+        Route::get('/{patient}/visits/{visit}/receipt', [App\Http\Controllers\ReceiptController::class, 'printVisit'])->name('visits.receipt');
         Route::get('/{patient}/dental', [App\Http\Controllers\PatientDentalController::class, 'show'])->name('dental.show');
         Route::put('/{patient}/dental', [App\Http\Controllers\PatientDentalController::class, 'update'])->name('dental.update');
         Route::middleware(['module:ent', 'section:ent'])->group(function () {
@@ -471,6 +480,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/', [AppointmentController::class, 'store'])->name('store');
         Route::get('/{appointment}', [AppointmentController::class, 'show'])->name('show');
         Route::get('/{appointment}/receipt/pdf', [AppointmentController::class, 'generateReceiptPDF'])->name('receipt-pdf');
+        Route::get('/{appointment}/receipt/thermal', [App\Http\Controllers\ReceiptController::class, 'printAppointment'])->name('receipt-thermal');
         Route::get('/{appointment}/edit', [AppointmentController::class, 'edit'])->name('edit');
         Route::put('/{appointment}', [AppointmentController::class, 'update'])->name('update');
         Route::delete('/{appointment}', [AppointmentController::class, 'destroy'])->name('destroy');
@@ -679,6 +689,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::delete('/{dentalTreatment}', [App\Http\Controllers\DentalTreatmentController::class, 'destroy'])->name('destroy');
             Route::post('/{dentalTreatment}/complete', [App\Http\Controllers\DentalTreatmentController::class, 'markAsCompleted'])->name('complete');
             Route::get('/{dentalTreatment}/pdf', [App\Http\Controllers\DentalTreatmentController::class, 'pdf'])->name('pdf');
+            Route::get('/{dentalTreatment}/receipt', [App\Http\Controllers\ReceiptController::class, 'printDentalTreatment'])->name('receipt');
 
             // Canal Treatment (Endodontic Worksheet)
             Route::get('/{dentalTreatment}/canals', [App\Http\Controllers\CanalTreatmentController::class, 'getWorksheet'])->name('canals.worksheet');

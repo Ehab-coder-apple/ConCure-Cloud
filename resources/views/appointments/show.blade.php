@@ -15,6 +15,10 @@
                     <p class="text-muted mb-0">{{ $appointment->appointment_number }}</p>
                 </div>
                 <div>
+                    <a href="{{ route('appointments.receipt-thermal', $appointment->id) }}" class="btn btn-outline-primary me-2" target="_blank">
+                        <i class="fas fa-print me-1"></i>
+                        {{ __('Print Receipt') }}
+                    </a>
                     <a href="{{ route('appointments.edit', $appointment->id) }}" class="btn btn-primary me-2">
                         <i class="fas fa-edit me-1"></i>
                         {{ __('Edit Appointment') }}
@@ -128,10 +132,14 @@
 	                                @endif
 	                            </div>
 
-	                            <div class="mt-3">
+	                            <div class="mt-3 d-flex gap-2 flex-wrap">
 	                                <a href="{{ route('appointments.receipt-pdf', $appointment->id) }}" class="btn btn-primary" target="_blank">
-	                                    <i class="fas fa-print me-2"></i>
-	                                    {{ __('Print Receipt') }}
+	                                    <i class="fas fa-file-pdf me-2"></i>
+	                                    {{ __('PDF Receipt') }}
+	                                </a>
+	                                <a href="{{ route('appointments.receipt-thermal', $appointment->id) }}" class="btn btn-outline-primary" target="_blank">
+	                                    <i class="fas fa-receipt me-2"></i>
+	                                    {{ __('Thermal Receipt') }}
 	                                </a>
 	                            </div>
 	                        </div>

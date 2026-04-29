@@ -47,15 +47,32 @@ class DashboardController extends Controller
     {
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('master.features-pdf');
 
-        // Set paper size and orientation
         $pdf->setPaper('a4', 'portrait');
 
-        // Set options for better rendering
         $pdf->setOptions([
             'isHtml5ParserEnabled' => true,
             'isRemoteEnabled' => true,
+            'isPhpEnabled' => true,
             'defaultFont' => 'sans-serif',
+            'dpi' => 120,
+            'defaultPaperSize' => 'a4',
         ]);
+
+        // Page numbering (skip cover page #1).
+        $dompdf = $pdf->getDomPDF();
+        $canvas = $dompdf->getCanvas();
+        $canvas->page_script(function ($pageNumber, $pageCount, $canvas, $fontMetrics) {
+            if ($pageNumber === 1) {
+                return;
+            }
+            $font = $fontMetrics->getFont('Helvetica', 'normal');
+            $size = 8;
+            $text = 'Page ' . ($pageNumber - 1) . ' of ' . ($pageCount - 1);
+            $width = $fontMetrics->getTextWidth($text, $font, $size);
+            $pageWidth = $canvas->get_width();
+            $canvas->text($pageWidth - $width - 40, $canvas->get_height() - 28, $text, $font, $size, [0.42, 0.45, 0.50]);
+            $canvas->text(40, $canvas->get_height() - 28, 'ConCure Cloud  ·  Complete Feature List', $font, $size, [0.42, 0.45, 0.50]);
+        });
 
         return $pdf->download('ConCure-Cloud-Features-' . date('Y-m-d') . '.pdf');
     }
