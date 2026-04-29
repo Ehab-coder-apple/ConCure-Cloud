@@ -59,8 +59,10 @@ class DashboardController extends Controller
         ]);
 
         // Per-page footer (logo + brand on left, page numbers on right). Cover page #1 is skipped.
-        $logoRel = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoForPdfRelPath();
-        $logoPath = $logoRel ? public_path($logoRel) : null;
+        // Use a flat JPEG (no alpha) so DomPDF's $canvas->image() avoids the
+        // RGBA tempnam() code path that silently fails on shared hosts where
+        // sys_get_temp_dir() is not writable.
+        $logoPath = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoFlatJpegPath();
         $hasLogo = $logoPath && file_exists($logoPath);
 
         $dompdf = $pdf->getDomPDF();

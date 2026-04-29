@@ -11,7 +11,7 @@
 
         body {
             font-family: 'Helvetica', 'DejaVu Sans', sans-serif;
-            font-size: 11.5px;
+            font-size: 12.5px;
             line-height: 1.65;
             color: #1f2937;
         }
@@ -92,7 +92,7 @@
             color: #fff;
             padding: 9px 16px;
             margin-bottom: 14px;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 700;
             letter-spacing: .3px;
             -webkit-print-color-adjust: exact;
@@ -118,10 +118,10 @@
         }
         .overview-item:last-child { border-right: 0; }
         .overview-item h3 {
-            font-size: 11px; color: #0b3a8c; margin-bottom: 4px; font-weight: 700;
+            font-size: 12px; color: #0b3a8c; margin-bottom: 4px; font-weight: 700;
             text-transform: uppercase; letter-spacing: .8px;
         }
-        .overview-item p { font-size: 11px; color: #374151; line-height: 1.55; }
+        .overview-item p { font-size: 12px; color: #374151; line-height: 1.55; }
 
         .feature-grid { display: table; width: 100%; margin-bottom: 8px; }
         .feature-column { display: table-cell; width: 50%; padding: 0 8px; vertical-align: top; }
@@ -137,7 +137,7 @@
             -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
         .feature-module h3 {
-            font-size: 13.5px; color: #0b3a8c;
+            font-size: 14.5px; color: #0b3a8c;
             margin-bottom: 7px; font-weight: 700;
             border-bottom: 0.5pt solid #d8e2f1; padding-bottom: 5px;
         }
@@ -145,7 +145,7 @@
         .feature-list { list-style: none; padding-left: 0; }
         .feature-list li {
             padding-left: 14px; margin-bottom: 4px; position: relative;
-            line-height: 1.55; color: #1f2937; font-size: 11px;
+            line-height: 1.55; color: #1f2937; font-size: 12px;
         }
         .feature-list li:before {
             content: ""; position: absolute;
@@ -156,7 +156,7 @@
 
         .subsection { margin-bottom: 14px; padding: 0 2px; }
         .subsection h4 {
-            font-size: 12px; margin-bottom: 7px; color: #0b3a8c; font-weight: 700;
+            font-size: 13px; margin-bottom: 7px; color: #0b3a8c; font-weight: 700;
             text-transform: uppercase; letter-spacing: .8px;
             border-bottom: 0.5pt solid #d8e2f1; padding-bottom: 4px;
         }
@@ -164,7 +164,7 @@
         .role-list { list-style: none; padding-left: 0; }
         .role-list li {
             padding-left: 14px; margin-bottom: 4px; position: relative;
-            font-size: 11px; line-height: 1.55;
+            font-size: 12px; line-height: 1.55;
         }
         .role-list li:before {
             content: ""; position: absolute; left: 2px; top: 7px;
@@ -197,7 +197,7 @@
             -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
         .summary-card h3 {
-            font-size: 13.5px; color: #0b3a8c; font-weight: 700;
+            font-size: 14.5px; color: #0b3a8c; font-weight: 700;
             border-bottom: 0.5pt solid #d8e2f1; padding-bottom: 5px; margin-bottom: 8px;
         }
 
@@ -431,6 +431,8 @@
             </div>
         </div>
     </div>
+
+    <div class="page-break"></div>
 
     <!-- Dental & Pediatric -->
     <div class="section">

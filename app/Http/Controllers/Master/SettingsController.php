@@ -91,6 +91,60 @@ class SettingsController extends Controller
     }
 
     /**
+     * Return an absolute path to a flat (no-alpha) JPEG version of the logo,
+     * suitable for $canvas->image() in DomPDF page scripts. RGBA PNGs go
+     * through addImagePngAlpha() which writes temp files via tempnam() and
+     * silently fails on hosts where sys_get_temp_dir() is not writable.
+     * A flattened JPEG bypasses that entire code path.
+     *
+     * Returns null when no logo is configured, GD is unavailable, or the
+     * file cannot be read.
+     */
+    public static function getMasterBrandingLogoFlatJpegPath(): ?string
+    {
+        $rel = self::getMasterBrandingLogoForPdfRelPath();
+        if (!$rel) {
+            return null;
+        }
+
+        $sourceAbs = public_path($rel);
+        $flatAbs = public_path('images/concure-logo-flat.jpg');
+
+        if (file_exists($flatAbs) && filemtime($flatAbs) >= filemtime($sourceAbs)) {
+            return $flatAbs;
+        }
+
+        if (!extension_loaded('gd') || !function_exists('imagejpeg')) {
+            return null;
+        }
+
+        $info = @getimagesize($sourceAbs);
+        $mime = $info['mime'] ?? '';
+        $img = null;
+        if ($mime === 'image/png') {
+            $img = @imagecreatefrompng($sourceAbs);
+        } elseif ($mime === 'image/jpeg') {
+            $img = @imagecreatefromjpeg($sourceAbs);
+        }
+        if (!$img) {
+            return null;
+        }
+
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $flat = imagecreatetruecolor($w, $h);
+        $white = imagecolorallocate($flat, 255, 255, 255);
+        imagefilledrectangle($flat, 0, 0, $w, $h, $white);
+        imagecopy($flat, $img, 0, 0, 0, 0, $w, $h);
+
+        $ok = @imagejpeg($flat, $flatAbs, 90);
+        imagedestroy($img);
+        imagedestroy($flat);
+
+        return $ok ? $flatAbs : null;
+    }
+
+    /**
      * Upload (or replace) the master branding logo used on PDFs and master pages.
      */
     public function updateBrandingLogo(Request $request)
@@ -116,6 +170,8 @@ class SettingsController extends Controller
         foreach ((array) glob($dir . DIRECTORY_SEPARATOR . 'concure-logo.*') as $oldFile) {
             @unlink($oldFile);
         }
+        // Drop the cached flat-jpeg sibling so it's regenerated next render.
+        @unlink($dir . DIRECTORY_SEPARATOR . 'concure-logo-flat.jpg');
 
         // Re-encode the upload to a clean RGBA PNG so DomPDF can always parse it.
         // DomPDF chokes on WebP, 16-bit / interlaced / indexed-alpha PNGs, etc.
