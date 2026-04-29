@@ -88,9 +88,10 @@ class DashboardController extends Controller
 
             // ---- Footer (bottom of page): brand text on left, page numbers on right ----
             // The logo itself is drawn by the position:fixed <img> in the
-            // blade. We just leave room for it on the left when present.
+            // blade (12mm ≈ 34pt wide). We just leave room for it on the
+            // left when present.
             $y = $canvas->get_height() - 30;
-            $textX = $hasLogo ? (45 + 16 + 6) : 45;
+            $textX = $hasLogo ? (45 + 34 + 6) : 45;
 
             $canvas->text($textX, $y, 'CONCURE CLOUD', $bold, $size, $brand);
             $canvas->text(

@@ -28,16 +28,16 @@
         .footer-logo-fixed {
             position: fixed;
             left: 16mm;
-            bottom: 8mm;
-            width: 6mm;
-            height: 6mm;
+            bottom: 5mm;
+            width: 12mm;
+            height: 12mm;
             margin: 0;
             padding: 0;
         }
         .footer-logo-fixed img {
             display: block;
-            width: 6mm;
-            height: 6mm;
+            width: 12mm;
+            height: 12mm;
         }
 
         /* ============ COVER PAGE ============ */
@@ -119,6 +119,10 @@
             font-size: 16px;
             font-weight: 700;
             letter-spacing: .3px;
+            /* Keep the section header glued to the first card under it so
+               we never get an orphan header at the bottom of a page with
+               its content pushed to the next page. */
+            page-break-after: avoid;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
