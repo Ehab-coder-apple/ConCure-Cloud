@@ -218,15 +218,29 @@
 </head>
 <body>
     @php
+        // Embed the cover logo as a base64 data URI so DomPDF's HTML <img>
+        // parser (which is restricted by the chroot security setting) doesn't
+        // need to resolve an absolute filesystem path. The per-page header
+        // uses $canvas->image() in the controller and bypasses chroot.
         $logoRel = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoForPdfRelPath();
         $logoPath = $logoRel ? public_path($logoRel) : null;
         $hasLogo = $logoPath && file_exists($logoPath);
+        $logoSrc = null;
+        if ($hasLogo) {
+            $bytes = @file_get_contents($logoPath);
+            if ($bytes !== false) {
+                $info = @getimagesize($logoPath);
+                $mime = $info['mime'] ?? 'image/png';
+                $logoSrc = 'data:' . $mime . ';base64,' . base64_encode($bytes);
+            }
+        }
+        $hasLogo = (bool) $logoSrc;
     @endphp
 
     {{-- ============== COVER PAGE ============== --}}
     <div class="cover">
         @if($hasLogo)
-            <img src="{{ $logoPath }}" alt="ConCure" class="cover-logo">
+            <img src="{{ $logoSrc }}" alt="ConCure" class="cover-logo">
         @endif
         <div class="brand-mark">CONCURE&nbsp;&nbsp;CLOUD</div>
         <h1>Complete<br>Feature&nbsp;List</h1>
