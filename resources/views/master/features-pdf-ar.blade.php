@@ -10,6 +10,16 @@
         @page { sheet-size: A4; margin: 22mm 16mm 24mm 16mm; }
         @page :first { margin: 0; }
 
+        /* Defensive resets — kill any inherited underline / bottom-border
+           artefacts. mPDF + xbriyaz + RTL has a tendency to render :before
+           pseudo bullets as stretched glyphs that visually read as a blue
+           underline under each line; force everything decoration-free,
+           border-free, and ragged-right at every level we use. */
+        body, p, h1, h2, h3, h4, ul, ol, li, table, tr, td, th, span, div, strong {
+            text-decoration: none;
+        }
+        ul, ol, li { border: 0; }
+
         body {
             font-family: xbriyaz, dejavusans, sans-serif;
             font-size: 11pt;
@@ -18,10 +28,10 @@
             direction: rtl;
             text-align: right;
         }
-        strong { color: #0b1220; font-weight: 700; }
-        h1, h2, h3, h4 { color: #0b1220; font-family: xbriyaz, sans-serif; text-align: right; }
-        p { margin-bottom: 6px; text-align: right; }
-        ul, ol, li { text-align: right; }
+        strong { color: #0b1220; font-weight: 700; text-decoration: none; }
+        h1, h2, h3, h4 { color: #0b1220; font-family: xbriyaz, sans-serif; text-align: right; text-decoration: none; }
+        p { margin-bottom: 6px; text-align: right; text-decoration: none; }
+        ul, ol, li { text-align: right; text-decoration: none; }
 
         /* ============ COVER PAGE ============ */
         .cover {
@@ -104,36 +114,32 @@
         }
         .feature-module h3 {
             font-size: 11pt; color: #0b3a8c;
-            margin-bottom: 6px; font-weight: 700;
-            border-bottom: 0.5pt solid #d8e2f1; padding-bottom: 4px;
+            margin-bottom: 8px; font-weight: 700;
+            padding-bottom: 4px;
         }
 
-        .feature-list { list-style: none; padding: 0; margin: 0; }
+        /* No :before pseudo bullets — mPDF + RTL renders them as
+           full-width stretched glyphs that read as a blue underline.
+           We rely on native list rendering with bullets on the right
+           side (automatic under dir="rtl"). */
+        .feature-list { list-style: disc; padding: 0; margin: 0 16px 0 0; }
         .feature-list li {
-            padding-right: 12px; margin-bottom: 3px; position: relative;
+            margin-bottom: 3px;
             line-height: 1.7; color: #1f2937; font-size: 10.5pt;
             text-align: right;
-        }
-        .feature-list li:before {
-            content: "•"; position: absolute;
-            right: 2px; top: 0; color: #0b3a8c; font-weight: bold;
         }
 
         .subsection { margin-bottom: 10px; }
         .subsection h4 {
             font-size: 10.5pt; margin-bottom: 6px; color: #0b3a8c; font-weight: 700;
-            border-bottom: 0.5pt solid #d8e2f1; padding-bottom: 3px;
+            padding-bottom: 3px;
         }
 
-        .role-list { list-style: none; padding: 0; margin: 0; }
+        .role-list { list-style: disc; padding: 0; margin: 0 16px 0 0; }
         .role-list li {
-            padding-right: 12px; margin-bottom: 3px; position: relative;
+            margin-bottom: 3px;
             font-size: 10.5pt; line-height: 1.7;
             text-align: right;
-        }
-        .role-list li:before {
-            content: "•"; position: absolute; right: 2px; top: 0;
-            color: #0b3a8c; font-weight: bold;
         }
         .role-list strong { color: #0b1220; }
 
@@ -161,7 +167,7 @@
 
         .summary-card h3 {
             font-size: 11pt; color: #0b3a8c; font-weight: 700;
-            border-bottom: 0.5pt solid #d8e2f1; padding-bottom: 4px; margin-bottom: 7px;
+            padding-bottom: 4px; margin-bottom: 7px;
         }
 
         .callout {
