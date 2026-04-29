@@ -159,6 +159,18 @@ class DashboardController extends Controller
         // prescription PDF path via autoLangToFont) — it ships with the
         // package, has full OTL support, and avoids the broken TTF entirely.
 
+        // Disable tatweel (kashida) insertion at the font level. mPDF reads
+        // useKashida per-font (see Mpdf::OTLrestrictToSyllable & friends);
+        // the bundled 'xbriyaz' default ships with kashida-based line
+        // stretching enabled, which renders as long horizontal strokes
+        // overlapping the baseline. Force it off so lines stay ragged-left
+        // and the words are no longer crossed by joining bars.
+        if (isset($fontData['xbriyaz']) && is_array($fontData['xbriyaz'])) {
+            $fontData['xbriyaz']['useKashida'] = 0;
+        } else {
+            $fontData['xbriyaz'] = ['useKashida' => 0];
+        }
+
         $mpdf = new \Mpdf\Mpdf([
             'mode'              => 'utf-8',
             'format'            => 'A4',
@@ -177,15 +189,6 @@ class DashboardController extends Controller
             'margin_header'     => 8,
             'margin_footer'     => 10,
         ]);
-
-        // Disable kashida/tatweel-based justification globally. With Arabic
-        // text and the default justify alignment, mPDF inserts long tatweel
-        // (ـ) characters between letters to stretch lines — they render as
-        // horizontal strokes that visually overlap the baseline of the
-        // surrounding letters and make the text hard to read. Setting both
-        // the kashida budget to 0 and forcing right alignment in CSS keeps
-        // letter-shaping intact while removing the bars.
-        $mpdf->useKashida = 0;
 
         $mpdf->SetDirectionality('rtl');
         $mpdf->SetTitle('ConCure Cloud - قائمة الميزات الكاملة');
