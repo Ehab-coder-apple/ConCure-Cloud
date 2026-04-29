@@ -45,7 +45,17 @@ class DashboardController extends Controller
      */
     public function featuresPdf()
     {
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('master.features-pdf');
+        // Build a base64 data URI for the footer logo. Using base64 inside a
+        // position:fixed HTML <img> bypasses both DomPDF's chroot URL check
+        // and the $canvas->image() RGBA tempnam() path, which silently fail
+        // on some shared hosts. The same technique already powers the cover
+        // logo. Prefer the flat JPEG (smaller, no alpha edge cases); fall
+        // back to the source PNG.
+        $footerLogoSrc = self::buildFooterLogoDataUri();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('master.features-pdf', [
+            'footerLogoSrc' => $footerLogoSrc,
+        ]);
 
         $pdf->setPaper('a4', 'portrait');
 
@@ -58,16 +68,14 @@ class DashboardController extends Controller
             'defaultPaperSize' => 'a4',
         ]);
 
-        // Per-page footer (logo + brand on left, page numbers on right). Cover page #1 is skipped.
-        // Use a flat JPEG (no alpha) so DomPDF's $canvas->image() avoids the
-        // RGBA tempnam() code path that silently fails on shared hosts where
-        // sys_get_temp_dir() is not writable.
-        $logoPath = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoFlatJpegPath();
-        $hasLogo = $logoPath && file_exists($logoPath);
+        // Per-page footer text + page numbers. Cover page #1 is skipped.
+        // The logo is rendered via a position:fixed <img> in the blade so we
+        // don't depend on $canvas->image() at all.
+        $hasLogo = (bool) $footerLogoSrc;
 
         $dompdf = $pdf->getDomPDF();
         $canvas = $dompdf->getCanvas();
-        $canvas->page_script(function ($pageNumber, $pageCount, $canvas, $fontMetrics) use ($logoPath, $hasLogo) {
+        $canvas->page_script(function ($pageNumber, $pageCount, $canvas, $fontMetrics) use ($hasLogo) {
             if ($pageNumber === 1) {
                 return;
             }
@@ -78,15 +86,12 @@ class DashboardController extends Controller
             $muted = [0.42, 0.45, 0.50];
             $pageWidth = $canvas->get_width();
 
-            // ---- Footer (bottom of page): logo + brand on left, page numbers on right ----
+            // ---- Footer (bottom of page): brand text on left, page numbers on right ----
+            // The logo itself is drawn by the position:fixed <img> in the
+            // blade. We just leave room for it on the left when present.
             $y = $canvas->get_height() - 30;
-            $textX = 45;
-            if ($hasLogo) {
-                $logoSize = 16;
-                // Vertically center the logo against the 9pt text baseline.
-                $canvas->image($logoPath, 45, $y - 11, $logoSize, $logoSize);
-                $textX = 45 + $logoSize + 6;
-            }
+            $textX = $hasLogo ? (45 + 16 + 6) : 45;
+
             $canvas->text($textX, $y, 'CONCURE CLOUD', $bold, $size, $brand);
             $canvas->text(
                 $textX + $fontMetrics->getTextWidth('CONCURE CLOUD', $bold, $size) + 6,
@@ -101,6 +106,44 @@ class DashboardController extends Controller
         });
 
         return $pdf->download('ConCure-Cloud-Features-' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Build a base64 data URI for the per-page footer logo, preferring the
+     * pre-flattened JPEG and falling back to the original PNG. Returns null
+     * when no logo is configured or the file cannot be read.
+     */
+    private static function buildFooterLogoDataUri(): ?string
+    {
+        $candidates = [];
+
+        $flat = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoFlatJpegPath();
+        if ($flat) {
+            $candidates[] = $flat;
+        }
+
+        $rel = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoForPdfRelPath();
+        if ($rel) {
+            $candidates[] = public_path($rel);
+        }
+
+        foreach ($candidates as $path) {
+            if (!is_string($path) || !file_exists($path) || !is_readable($path)) {
+                continue;
+            }
+            $bytes = @file_get_contents($path);
+            if ($bytes === false || $bytes === '') {
+                continue;
+            }
+            $info = @getimagesize($path);
+            $mime = $info['mime'] ?? null;
+            if (!in_array($mime, ['image/png', 'image/jpeg'], true)) {
+                continue;
+            }
+            return 'data:' . $mime . ';base64,' . base64_encode($bytes);
+        }
+
+        return null;
     }
 
     /**

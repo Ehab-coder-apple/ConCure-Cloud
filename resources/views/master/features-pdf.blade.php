@@ -19,6 +19,27 @@
         h1, h2, h3, h4 { color: #0b1220; }
         p { margin-bottom: 6px; }
 
+        /* ============ FIXED FOOTER LOGO ============ */
+        /* Repeats on every page via position:fixed. We render only the logo
+           here; the brand text and page-number string are still drawn by the
+           controller's $canvas->page_script() (which already works reliably
+           and skips the cover). The logo is positioned to sit just left of
+           where that text starts on pages 2+. */
+        .footer-logo-fixed {
+            position: fixed;
+            left: 16mm;
+            bottom: 8mm;
+            width: 6mm;
+            height: 6mm;
+            margin: 0;
+            padding: 0;
+        }
+        .footer-logo-fixed img {
+            display: block;
+            width: 6mm;
+            height: 6mm;
+        }
+
         /* ============ COVER PAGE ============ */
         .cover {
             page-break-after: always;
@@ -242,7 +263,20 @@
             }
         }
         $hasLogo = (bool) $logoSrc;
+        // The footer logo is passed in from DashboardController::featuresPdf().
+        // Fall back to the cover logo if the controller variable isn't set
+        // (defensive — the data URI is identical in shape).
+        $footerLogoSrc = $footerLogoSrc ?? $logoSrc;
     @endphp
+
+    {{-- Fixed-position footer logo: repeats on every page (DomPDF treats
+         position:fixed as page-repeating). The brand text and page number
+         beside it are drawn by $canvas->page_script() in the controller. --}}
+    @if($footerLogoSrc)
+        <div class="footer-logo-fixed">
+            <img src="{{ $footerLogoSrc }}" alt="">
+        </div>
+    @endif
 
     {{-- ============== COVER PAGE ============== --}}
     <div class="cover">
