@@ -34,7 +34,125 @@ class SettingsController extends Controller
         // Get clinics for SQL import dropdown
         $clinics = Clinic::orderBy('name')->get(['id', 'name']);
 
-        return view('master.settings.index', compact('masterTimezone', 'timezones', 'clinics'));
+        // Resolve master branding logo (uploaded via this page) for preview.
+        $brandingLogoRelPath = self::getMasterBrandingLogoRelPath();
+        $brandingLogoUrl = $brandingLogoRelPath && file_exists(public_path($brandingLogoRelPath))
+            ? asset($brandingLogoRelPath) . '?v=' . filemtime(public_path($brandingLogoRelPath))
+            : null;
+
+        return view('master.settings.index', compact(
+            'masterTimezone', 'timezones', 'clinics', 'brandingLogoUrl'
+        ));
+    }
+
+    /**
+     * Resolve the relative path (under public/) of the configured master branding logo.
+     * Falls back to images/concure-logo.png if a file exists there but no DB row is set.
+     */
+    public static function getMasterBrandingLogoRelPath(): ?string
+    {
+        $stored = DB::table('settings')
+            ->whereNull('clinic_id')
+            ->where('key', 'master_branding_logo_path')
+            ->value('value');
+
+        if ($stored && file_exists(public_path($stored))) {
+            return $stored;
+        }
+
+        $legacy = 'images/concure-logo.png';
+        if (file_exists(public_path($legacy))) {
+            return $legacy;
+        }
+
+        return null;
+    }
+
+    /**
+     * Upload (or replace) the master branding logo used on PDFs and master pages.
+     */
+    public function updateBrandingLogo(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            return redirect()->route('master.settings')
+                ->withErrors(['logo' => __('Unauthorized. Only super administrators can update branding.')]);
+        }
+
+        $request->validate([
+            'logo' => 'required|file|mimes:png,jpg,jpeg,webp|max:2048',
+        ]);
+
+        $file = $request->file('logo');
+        $ext = strtolower($file->getClientOriginalExtension());
+        if (!in_array($ext, ['png', 'jpg', 'jpeg', 'webp'], true)) {
+            $ext = 'png';
+        }
+
+        $dir = public_path('images');
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        // Remove any previous concure-logo.* so stale extensions don't linger.
+        foreach ((array) glob($dir . DIRECTORY_SEPARATOR . 'concure-logo.*') as $oldFile) {
+            @unlink($oldFile);
+        }
+
+        $filename = 'concure-logo.' . $ext;
+        $file->move($dir, $filename);
+
+        $relativePath = 'images/' . $filename;
+
+        DB::table('settings')->updateOrInsert(
+            ['clinic_id' => null, 'key' => 'master_branding_logo_path'],
+            [
+                'value' => $relativePath,
+                'type' => 'string',
+                'description' => 'Master branding logo path (relative to public/)',
+                'updated_at' => now(),
+            ]
+        );
+
+        return redirect()->route('master.settings')
+            ->with('success', __('Branding logo updated successfully.'));
+    }
+
+    /**
+     * Remove the master branding logo.
+     */
+    public function deleteBrandingLogo()
+    {
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            return redirect()->route('master.settings')
+                ->withErrors(['logo' => __('Unauthorized. Only super administrators can update branding.')]);
+        }
+
+        $stored = DB::table('settings')
+            ->whereNull('clinic_id')
+            ->where('key', 'master_branding_logo_path')
+            ->value('value');
+
+        if ($stored) {
+            $abs = public_path($stored);
+            if (file_exists($abs)) {
+                @unlink($abs);
+            }
+        }
+
+        // Clean up any concure-logo.* leftovers regardless.
+        foreach ((array) glob(public_path('images') . DIRECTORY_SEPARATOR . 'concure-logo.*') as $oldFile) {
+            @unlink($oldFile);
+        }
+
+        DB::table('settings')
+            ->whereNull('clinic_id')
+            ->where('key', 'master_branding_logo_path')
+            ->delete();
+
+        return redirect()->route('master.settings')
+            ->with('success', __('Branding logo removed.'));
     }
 
     /**

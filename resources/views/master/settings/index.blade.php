@@ -69,6 +69,88 @@
       <div class="card shadow-sm mb-4">
         <div class="card-header py-3">
           <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-image me-2"></i>Application Branding
+          </h6>
+        </div>
+        <div class="card-body">
+          <p class="text-muted mb-3">
+            Upload the application logo used on the cover and page headers of generated PDFs (e.g. the Features List).
+          </p>
+
+          <div class="row align-items-start">
+            <div class="col-md-4 text-center mb-3 mb-md-0">
+              @if($brandingLogoUrl)
+                <img src="{{ $brandingLogoUrl }}" alt="Current logo"
+                     style="max-width: 100%; max-height: 140px; background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 6px; padding: 10px;">
+                <div class="small text-muted mt-2">Current logo</div>
+              @else
+                <div class="d-flex flex-column align-items-center justify-content-center text-muted"
+                     style="height: 140px; background: #f8f9fc; border: 1px dashed #d1d3e2; border-radius: 6px;">
+                  <i class="fas fa-image fa-2x mb-2"></i>
+                  <div class="small">No logo uploaded</div>
+                </div>
+              @endif
+            </div>
+            <div class="col-md-8">
+              <form action="{{ route('master.settings.update-branding-logo') }}"
+                    method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="mb-3">
+                  <label for="logo" class="form-label">
+                    <i class="fas fa-upload me-1"></i>Upload Logo
+                  </label>
+                  <input type="file" class="form-control" id="logo" name="logo"
+                         accept="image/png,image/jpeg,image/webp" required>
+                  <small class="text-muted">
+                    PNG, JPG or WebP. Maximum 2&nbsp;MB. A square PNG with transparent background is recommended.
+                  </small>
+                </div>
+                <div class="d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i> Save Logo
+                  </button>
+                  @if($brandingLogoUrl)
+                    <button type="button" class="btn btn-outline-danger"
+                            data-bs-toggle="modal" data-bs-target="#removeLogoModal">
+                      <i class="fas fa-trash me-1"></i> Remove
+                    </button>
+                  @endif
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      @if($brandingLogoUrl)
+        <div class="modal fade" id="removeLogoModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Remove Branding Logo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                Are you sure you want to remove the current branding logo? PDFs will fall back to the text wordmark.
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ route('master.settings.delete-branding-logo') }}" method="POST" class="d-inline">
+                  @csrf
+                  @method('DELETE')
+                  <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash me-1"></i> Remove Logo
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      @endif
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
             <i class="fas fa-users me-2"></i>User Management
           </h6>
         </div>

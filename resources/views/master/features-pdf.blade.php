@@ -6,17 +6,18 @@
     <title>ConCure Cloud - Complete Features List</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        @page { size: A4 portrait; margin: 18mm 14mm 22mm 14mm; }
+        @page { size: A4 portrait; margin: 22mm 16mm 24mm 16mm; }
         @page :first { margin: 0; }
 
         body {
             font-family: 'Helvetica', 'DejaVu Sans', sans-serif;
-            font-size: 10px;
-            line-height: 1.55;
+            font-size: 11.5px;
+            line-height: 1.65;
             color: #1f2937;
         }
-        strong { color: #111827; font-weight: 700; }
-        h1, h2, h3, h4 { color: #111827; }
+        strong { color: #0b1220; font-weight: 700; }
+        h1, h2, h3, h4 { color: #0b1220; }
+        p { margin-bottom: 6px; }
 
         /* ============ COVER PAGE ============ */
         .cover {
@@ -24,137 +25,209 @@
             height: 297mm;
             width: 210mm;
             position: relative;
-            background: #0d6efd;
+            background: #0b3a8c;
             color: #fff;
-            padding: 38mm 22mm;
+            padding: 36mm 22mm 0 22mm;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
         .cover .brand-mark {
-            font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
-            opacity: .85; margin-bottom: 22mm;
+            font-size: 11px; letter-spacing: 6px; text-transform: uppercase;
+            opacity: .9; margin-bottom: 26mm; font-weight: 700;
+        }
+        .cover .cover-logo {
+            display: block;
+            width: 36mm; height: auto;
+            margin-bottom: 10mm;
+            background: #ffffff;
+            padding: 4mm;
+            border-radius: 3mm;
         }
         .cover h1 {
             color: #fff;
-            font-size: 36px; line-height: 1.1; font-weight: 700;
-            margin-bottom: 6mm; max-width: 150mm;
+            font-size: 46px; line-height: 1.05; font-weight: 700;
+            margin-bottom: 8mm; max-width: 160mm; letter-spacing: -0.5px;
         }
         .cover .subtitle {
-            font-size: 13px; line-height: 1.55; max-width: 150mm;
-            opacity: .92; font-weight: 300;
+            font-size: 14.5px; line-height: 1.6; max-width: 155mm;
+            opacity: .94; font-weight: 300;
         }
         .cover .accent-bar {
-            position: absolute; left: 22mm; bottom: 56mm;
-            width: 32mm; height: 0.8mm; background: #fff; opacity: .85;
+            position: absolute; left: 22mm; bottom: 62mm;
+            width: 38mm; height: 1.1mm; background: #ffffff;
         }
         .cover .meta {
-            position: absolute; left: 22mm; bottom: 24mm; right: 22mm;
-            font-size: 10px; opacity: .92;
-            border-top: 0.4pt solid rgba(255,255,255,.45); padding-top: 6mm;
+            position: absolute; left: 22mm; bottom: 26mm; right: 22mm;
+            font-size: 11px; opacity: .95;
+            border-top: 0.5pt solid rgba(255,255,255,.5); padding-top: 7mm;
         }
         .cover .meta-row { display: table; width: 100%; }
         .cover .meta-cell { display: table-cell; }
         .cover .meta-cell.right { text-align: right; }
-        .cover .meta strong { color: #fff; font-weight: 700; }
+        .cover .meta strong { color: #fff; font-weight: 700; font-size: 12px; }
 
         /* ============ DOCUMENT HEADER (after cover) ============ */
         .doc-header {
-            border-bottom: 0.5pt solid #e5e7eb;
-            padding-bottom: 6px; margin-bottom: 14px;
+            border-bottom: 1pt solid #0b3a8c;
+            padding-bottom: 8px; margin-bottom: 18px;
         }
         .doc-header .row { display: table; width: 100%; }
-        .doc-header .left, .doc-header .right { display: table-cell; vertical-align: middle; font-size: 8.5px; color: #6b7280; }
+        .doc-header .left, .doc-header .right {
+            display: table-cell; vertical-align: middle;
+            font-size: 9.5px; color: #4b5563;
+        }
         .doc-header .right { text-align: right; }
-        .doc-header .brand { color: #0d6efd; font-weight: 700; letter-spacing: 1px; }
+        .doc-header .brand {
+            color: #0b3a8c; font-weight: 700; letter-spacing: 1.5px;
+            font-size: 10.5px; text-transform: uppercase;
+        }
 
         /* ============ SECTIONS ============ */
-        .section { margin-bottom: 14px; page-break-inside: avoid; padding: 0 2px; }
+        .section { margin-bottom: 20px; page-break-inside: avoid; }
         .section-header {
-            background: #f3f4f6;
-            border-left: 3px solid #0d6efd;
-            padding: 7px 12px;
-            margin-bottom: 9px;
-            font-size: 13px;
+            background: #0b3a8c;
+            color: #fff;
+            padding: 9px 16px;
+            margin-bottom: 14px;
+            font-size: 15px;
             font-weight: 700;
-            color: #111827;
+            letter-spacing: .3px;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
-        /* Legacy variants normalized to a single restrained look. */
         .section-header.success,
         .section-header.info,
         .section-header.warning,
         .section-header.danger,
         .section-header.dark,
         .section-header.secondary {
-            background: #f3f4f6; border-left-color: #0d6efd; color: #111827;
+            background: #0b3a8c; color: #fff;
         }
 
-        .overview-grid { display: table; width: 100%; margin-bottom: 12px; }
-        .overview-item { display: table-cell; width: 33.33%; padding: 8px 10px; vertical-align: top;
-            border-right: 0.4pt solid #e5e7eb; }
+        .overview-grid {
+            display: table; width: 100%; margin-bottom: 12px;
+            background: #f7f9fc; border: 0.5pt solid #d8e2f1;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
+        .overview-item {
+            display: table-cell; width: 33.33%; padding: 12px 14px;
+            vertical-align: top; border-right: 0.5pt solid #d8e2f1;
+        }
         .overview-item:last-child { border-right: 0; }
-        .overview-item h3 { font-size: 10.5px; color: #0d6efd; margin-bottom: 3px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: .5px; }
-        .overview-item p { font-size: 10px; color: #4b5563; }
+        .overview-item h3 {
+            font-size: 11px; color: #0b3a8c; margin-bottom: 4px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .8px;
+        }
+        .overview-item p { font-size: 11px; color: #374151; line-height: 1.55; }
 
-        .feature-grid { display: table; width: 100%; margin-bottom: 4px; }
+        .feature-grid { display: table; width: 100%; margin-bottom: 8px; }
         .feature-column { display: table-cell; width: 50%; padding: 0 8px; vertical-align: top; }
         .feature-column:first-child { padding-left: 0; }
         .feature-column:last-child { padding-right: 0; }
 
-        .feature-module { margin-bottom: 11px; }
+        .feature-module {
+            margin-bottom: 14px;
+            background: #fafbfd;
+            border: 0.5pt solid #e1e6ef;
+            border-top: 2pt solid #0b3a8c;
+            padding: 10px 13px 11px 13px;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
         .feature-module h3 {
-            font-size: 11.5px; color: #0f172a; margin-bottom: 5px; font-weight: 700;
-            border-bottom: 0.4pt solid #e5e7eb; padding-bottom: 3px;
+            font-size: 13.5px; color: #0b3a8c;
+            margin-bottom: 7px; font-weight: 700;
+            border-bottom: 0.5pt solid #d8e2f1; padding-bottom: 5px;
         }
 
         .feature-list { list-style: none; padding-left: 0; }
         .feature-list li {
-            padding-left: 12px; margin-bottom: 3px; position: relative;
-            line-height: 1.5; color: #1f2937;
+            padding-left: 14px; margin-bottom: 4px; position: relative;
+            line-height: 1.55; color: #1f2937; font-size: 11px;
         }
         .feature-list li:before {
             content: ""; position: absolute;
-            left: 2px; top: 6px;
-            width: 3px; height: 3px;
-            background: #0d6efd;
+            left: 2px; top: 7px;
+            width: 4px; height: 4px;
+            background: #0b3a8c;
         }
 
-        .subsection { margin-bottom: 11px; padding: 0 2px; }
+        .subsection { margin-bottom: 14px; padding: 0 2px; }
         .subsection h4 {
-            font-size: 10.5px; margin-bottom: 5px; color: #374151; font-weight: 700;
-            text-transform: uppercase; letter-spacing: .5px;
+            font-size: 12px; margin-bottom: 7px; color: #0b3a8c; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .8px;
+            border-bottom: 0.5pt solid #d8e2f1; padding-bottom: 4px;
         }
 
         .role-list { list-style: none; padding-left: 0; }
-        .role-list li { padding-left: 13px; margin-bottom: 3px; position: relative; }
-        .role-list li:before { content: "·"; position: absolute; left: 4px; color: #0d6efd; font-weight: 700; }
-        .role-list strong { color: #111827; }
+        .role-list li {
+            padding-left: 14px; margin-bottom: 4px; position: relative;
+            font-size: 11px; line-height: 1.55;
+        }
+        .role-list li:before {
+            content: ""; position: absolute; left: 2px; top: 7px;
+            width: 4px; height: 4px; background: #0b3a8c;
+        }
+        .role-list strong { color: #0b1220; }
 
         /* Stat cards (replaces broken CSS grid in summary). */
-        .stat-grid { display: table; width: 100%; margin-bottom: 10px; border-collapse: collapse; }
-        .stat-cell { display: table-cell; width: 25%; padding: 8px 6px; border: 0.5pt solid #e5e7eb; text-align: center; vertical-align: middle; }
-        .stat-cell .num { font-size: 16px; color: #0d6efd; font-weight: 700; display: block; margin-bottom: 2px; }
-        .stat-cell .label { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; }
+        .stat-grid { display: table; width: 100%; margin-bottom: 12px; border-collapse: collapse; }
+        .stat-cell {
+            display: table-cell; width: 25%; padding: 12px 6px;
+            border: 0.5pt solid #d8e2f1; text-align: center; vertical-align: middle;
+            background: #f7f9fc;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
+        .stat-cell .num {
+            font-size: 22px; color: #0b3a8c; font-weight: 700;
+            display: block; margin-bottom: 3px; line-height: 1;
+        }
+        .stat-cell .label {
+            font-size: 9.5px; color: #4b5563;
+            text-transform: uppercase; letter-spacing: .8px;
+        }
 
-        .summary-card { border: 0.5pt solid #e5e7eb; padding: 10px 12px; margin-bottom: 8px; }
-        .summary-card h3 { font-size: 11.5px; color: #0d6efd; font-weight: 700;
-            border-bottom: 0.4pt solid #e5e7eb; padding-bottom: 3px; margin-bottom: 6px; }
+        .summary-card {
+            border: 0.5pt solid #d8e2f1;
+            border-top: 2.5pt solid #0b3a8c;
+            padding: 12px 14px; margin-bottom: 10px;
+            background: #fafbfd;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
+        .summary-card h3 {
+            font-size: 13.5px; color: #0b3a8c; font-weight: 700;
+            border-bottom: 0.5pt solid #d8e2f1; padding-bottom: 5px; margin-bottom: 8px;
+        }
 
-        .callout { background: #f8fafc; border-left: 3px solid #0d6efd;
-            padding: 10px 14px; margin-top: 12px;
-            -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .callout h3 { font-size: 12px; color: #0d6efd; margin-bottom: 6px; font-weight: 700; }
+        .callout {
+            background: #eef3fb; border-left: 4pt solid #0b3a8c;
+            padding: 14px 16px; margin-top: 14px;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
+        .callout h3 {
+            font-size: 14px; color: #0b3a8c;
+            margin-bottom: 8px; font-weight: 700;
+        }
 
-        .footer-end { text-align: center; padding-top: 10px; margin-top: 18px;
-            border-top: 0.5pt solid #e5e7eb; font-size: 9px; color: #6b7280; }
+        .footer-end {
+            text-align: center; padding-top: 14px; margin-top: 22px;
+            border-top: 1pt solid #0b3a8c; font-size: 10px; color: #4b5563;
+        }
+        .footer-end p { margin-bottom: 3px; }
         .page-break { page-break-after: always; }
     </style>
 </head>
 <body>
+    @php
+        $logoRel = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoRelPath();
+        $logoPath = $logoRel ? public_path($logoRel) : null;
+        $hasLogo = $logoPath && file_exists($logoPath);
+    @endphp
+
     {{-- ============== COVER PAGE ============== --}}
     <div class="cover">
+        @if($hasLogo)
+            <img src="{{ $logoPath }}" alt="ConCure" class="cover-logo">
+        @endif
         <div class="brand-mark">CONCURE&nbsp;&nbsp;CLOUD</div>
         <h1>Complete<br>Feature&nbsp;List</h1>
         <div class="subtitle">
@@ -176,13 +249,8 @@
         </div>
     </div>
 
-    {{-- ============== DOCUMENT HEADER (every subsequent page) ============== --}}
-    <div class="doc-header">
-        <div class="row">
-            <div class="left"><span class="brand">CONCURE CLOUD</span> &nbsp;&middot;&nbsp; Complete Feature List</div>
-            <div class="right">{{ date('F Y') }}</div>
-        </div>
-    </div>
+    {{-- The per-page header (logo + brand + date) is drawn on every page after the cover --}}
+    {{-- via $canvas->page_script() in DashboardController::featuresPdf(). --}}
 
     <!-- Application Overview -->
     <div class="section">

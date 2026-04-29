@@ -91,6 +91,8 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     // System Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::post('/settings/timezone', [SettingsController::class, 'updateTimezone'])->name('settings.update-timezone');
+    Route::post('/settings/branding-logo', [SettingsController::class, 'updateBrandingLogo'])->name('settings.update-branding-logo');
+    Route::delete('/settings/branding-logo', [SettingsController::class, 'deleteBrandingLogo'])->name('settings.delete-branding-logo');
     Route::post('/settings/import-sql', [SettingsController::class, 'importSql'])->name('settings.import-sql');
 
     // Features Documentation

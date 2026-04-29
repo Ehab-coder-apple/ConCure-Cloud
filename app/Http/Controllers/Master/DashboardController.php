@@ -58,20 +58,55 @@ class DashboardController extends Controller
             'defaultPaperSize' => 'a4',
         ]);
 
-        // Page numbering (skip cover page #1).
+        // Per-page header (logo + brand) and footer (page numbers). Cover page #1 is skipped.
+        $logoRel = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoRelPath();
+        $logoPath = $logoRel ? public_path($logoRel) : null;
+        $hasLogo = $logoPath && file_exists($logoPath);
+        $generatedAt = date('F Y');
+
         $dompdf = $pdf->getDomPDF();
         $canvas = $dompdf->getCanvas();
-        $canvas->page_script(function ($pageNumber, $pageCount, $canvas, $fontMetrics) {
+        $canvas->page_script(function ($pageNumber, $pageCount, $canvas, $fontMetrics) use ($logoPath, $hasLogo, $generatedAt) {
             if ($pageNumber === 1) {
                 return;
             }
-            $font = $fontMetrics->getFont('Helvetica', 'normal');
-            $size = 8;
-            $text = 'Page ' . ($pageNumber - 1) . ' of ' . ($pageCount - 1);
-            $width = $fontMetrics->getTextWidth($text, $font, $size);
+            $bold = $fontMetrics->getFont('Helvetica', 'bold');
+            $regular = $fontMetrics->getFont('Helvetica', 'normal');
+            $size = 9;
+            $brand = [0.043, 0.227, 0.549];
+            $muted = [0.42, 0.45, 0.50];
             $pageWidth = $canvas->get_width();
-            $canvas->text($pageWidth - $width - 40, $canvas->get_height() - 28, $text, $font, $size, [0.42, 0.45, 0.50]);
-            $canvas->text(40, $canvas->get_height() - 28, 'ConCure Cloud  ·  Complete Feature List', $font, $size, [0.42, 0.45, 0.50]);
+
+            // ---- Header (top of page) ----
+            $headerY = 28;
+            $headerTextY = $headerY + 6;
+            $textX = 45;
+            if ($hasLogo) {
+                $logoW = 22;
+                $logoH = 22;
+                $canvas->image($logoPath, 45, $headerY - 6, $logoW, $logoH);
+                $textX = 45 + $logoW + 8;
+            }
+            $canvas->text($textX, $headerTextY, 'CONCURE CLOUD', $bold, $size, $brand);
+            $canvas->text(
+                $textX + $fontMetrics->getTextWidth('CONCURE CLOUD', $bold, $size) + 6,
+                $headerTextY,
+                '·  Complete Feature List',
+                $regular, $size, $muted
+            );
+            $genWidth = $fontMetrics->getTextWidth($generatedAt, $regular, $size);
+            $canvas->text($pageWidth - $genWidth - 45, $headerTextY, $generatedAt, $regular, $size, $muted);
+            // Thin divider beneath the header.
+            $canvas->line(45, $headerY + 18, $pageWidth - 45, $headerY + 18, $brand, 0.5);
+
+            // ---- Footer (bottom of page) ----
+            $text = 'Page ' . ($pageNumber - 1) . ' of ' . ($pageCount - 1);
+            $width = $fontMetrics->getTextWidth($text, $regular, $size);
+            $y = $canvas->get_height() - 30;
+            $canvas->text($pageWidth - $width - 45, $y, $text, $regular, $size, $muted);
+            $canvas->text(45, $y, 'CONCURE CLOUD', $bold, $size, $brand);
+            $canvas->text(45 + $fontMetrics->getTextWidth('CONCURE CLOUD', $bold, $size) + 6, $y,
+                '·  Complete Feature List', $regular, $size, $muted);
         });
 
         return $pdf->download('ConCure-Cloud-Features-' . date('Y-m-d') . '.pdf');
