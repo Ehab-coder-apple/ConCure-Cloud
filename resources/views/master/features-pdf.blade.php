@@ -218,7 +218,7 @@
 </head>
 <body>
     @php
-        $logoRel = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoRelPath();
+        $logoRel = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoForPdfRelPath();
         $logoPath = $logoRel ? public_path($logoRel) : null;
         $hasLogo = $logoPath && file_exists($logoPath);
     @endphp

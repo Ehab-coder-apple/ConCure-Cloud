@@ -69,6 +69,28 @@ class SettingsController extends Controller
     }
 
     /**
+     * Like getMasterBrandingLogoRelPath() but only returns a path that DomPDF
+     * can definitely render (PNG or JPEG, valid getimagesize). Returns null
+     * for WebP, broken files, or formats DomPDF cannot parse, so the PDF
+     * silently omits the image instead of showing an error string.
+     */
+    public static function getMasterBrandingLogoForPdfRelPath(): ?string
+    {
+        $rel = self::getMasterBrandingLogoRelPath();
+        if (!$rel) {
+            return null;
+        }
+
+        $abs = public_path($rel);
+        $info = @getimagesize($abs);
+        if (!$info || empty($info['mime'])) {
+            return null;
+        }
+
+        return in_array($info['mime'], ['image/png', 'image/jpeg'], true) ? $rel : null;
+    }
+
+    /**
      * Upload (or replace) the master branding logo used on PDFs and master pages.
      */
     public function updateBrandingLogo(Request $request)
@@ -84,10 +106,6 @@ class SettingsController extends Controller
         ]);
 
         $file = $request->file('logo');
-        $ext = strtolower($file->getClientOriginalExtension());
-        if (!in_array($ext, ['png', 'jpg', 'jpeg', 'webp'], true)) {
-            $ext = 'png';
-        }
 
         $dir = public_path('images');
         if (!is_dir($dir)) {
@@ -99,8 +117,26 @@ class SettingsController extends Controller
             @unlink($oldFile);
         }
 
-        $filename = 'concure-logo.' . $ext;
-        $file->move($dir, $filename);
+        // Re-encode the upload to a clean RGBA PNG so DomPDF can always parse it.
+        // DomPDF chokes on WebP, 16-bit / interlaced / indexed-alpha PNGs, etc.
+        $targetPath = $dir . DIRECTORY_SEPARATOR . 'concure-logo.png';
+        $sourcePath = $file->getRealPath();
+        $normalized = self::normalizeImageToPng($sourcePath, $targetPath);
+
+        if (!$normalized) {
+            // Fallback: keep the original bytes with their real extension.
+            $ext = strtolower($file->getClientOriginalExtension()) ?: 'png';
+            if (!in_array($ext, ['png', 'jpg', 'jpeg', 'webp'], true)) {
+                $ext = 'png';
+            }
+            $filename = 'concure-logo.' . $ext;
+            $file->move($dir, $filename);
+            Log::warning('Master branding logo: GD normalization unavailable, stored as-is.', [
+                'extension' => $ext,
+            ]);
+        } else {
+            $filename = 'concure-logo.png';
+        }
 
         $relativePath = 'images/' . $filename;
 
@@ -153,6 +189,66 @@ class SettingsController extends Controller
 
         return redirect()->route('master.settings')
             ->with('success', __('Branding logo removed.'));
+    }
+
+    /**
+     * Re-encode an arbitrary uploaded image (PNG/JPG/WebP/GIF) into a clean
+     * 8-bit RGBA PNG suitable for DomPDF. Returns true on success.
+     */
+    private static function normalizeImageToPng(string $sourcePath, string $targetPath): bool
+    {
+        if (!extension_loaded('gd') || !function_exists('imagepng')) {
+            return false;
+        }
+
+        $info = @getimagesize($sourcePath);
+        if (!$info || empty($info['mime'])) {
+            return false;
+        }
+
+        $mime = $info['mime'];
+        $img = null;
+
+        switch ($mime) {
+            case 'image/png':
+                $img = @imagecreatefrompng($sourcePath);
+                break;
+            case 'image/jpeg':
+                $img = @imagecreatefromjpeg($sourcePath);
+                break;
+            case 'image/webp':
+                if (function_exists('imagecreatefromwebp')) {
+                    $img = @imagecreatefromwebp($sourcePath);
+                }
+                break;
+            case 'image/gif':
+                $img = @imagecreatefromgif($sourcePath);
+                break;
+        }
+
+        if (!$img) {
+            return false;
+        }
+
+        // Flatten onto a transparent canvas to guarantee a vanilla 32-bit PNG.
+        $width = imagesx($img);
+        $height = imagesy($img);
+        $canvas = imagecreatetruecolor($width, $height);
+        imagealphablending($canvas, false);
+        imagesavealpha($canvas, true);
+        $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
+        imagefilledrectangle($canvas, 0, 0, $width, $height, $transparent);
+        imagealphablending($canvas, true);
+        imagecopy($canvas, $img, 0, 0, 0, 0, $width, $height);
+        imagealphablending($canvas, false);
+        imagesavealpha($canvas, true);
+
+        $ok = @imagepng($canvas, $targetPath, 6);
+
+        imagedestroy($img);
+        imagedestroy($canvas);
+
+        return (bool) $ok;
     }
 
     /**

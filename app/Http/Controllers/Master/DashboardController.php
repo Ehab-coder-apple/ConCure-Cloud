@@ -59,7 +59,7 @@ class DashboardController extends Controller
         ]);
 
         // Per-page header (logo + brand) and footer (page numbers). Cover page #1 is skipped.
-        $logoRel = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoRelPath();
+        $logoRel = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoForPdfRelPath();
         $logoPath = $logoRel ? public_path($logoRel) : null;
         $hasLogo = $logoPath && file_exists($logoPath);
         $generatedAt = date('F Y');
