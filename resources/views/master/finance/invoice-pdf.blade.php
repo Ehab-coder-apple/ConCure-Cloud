@@ -33,25 +33,29 @@
             color: #007bff;
             margin: 0 0 5px 0;
         }
-        
+
         .company-info {
             font-size: 11px;
             color: #666;
             margin: 2px 0;
         }
-        
+
+        .invoice-label-row {
+            text-align: center;
+            margin-top: 18px;
+        }
+
         .invoice-title {
-            font-size: 28px;
+            font-size: 18px;
             font-weight: bold;
             color: #333;
-            text-align: right;
+            letter-spacing: 2px;
         }
-        
+
         .invoice-number {
-            font-size: 14px;
+            font-size: 13px;
             color: #666;
-            text-align: right;
-            margin-top: 5px;
+            margin-top: 3px;
         }
         
         .section-title {
@@ -196,21 +200,23 @@
     <div class="header">
         <table class="header-table">
             <tr>
-                <td style="width: 50%; vertical-align: middle;">
+                <td style="width: 50%; vertical-align: middle; text-align: left;">
                     @if(!empty($brandingLogoSrc))
                         <img src="{{ $brandingLogoSrc }}" alt="Logo"
-                             style="max-height: 60px; max-width: 200px; margin-bottom: 8px;">
+                             style="max-height: 110px; max-width: 260px;">
                     @endif
+                </td>
+                <td style="width: 50%; vertical-align: middle; text-align: right;">
                     <div class="company-name">ConCure Master</div>
                     <div class="company-info">SaaS Management Platform</div>
                     <div class="company-info">Billing Invoice</div>
                 </td>
-                <td style="width: 50%; vertical-align: middle;">
-                    <div class="invoice-title">INVOICE</div>
-                    <div class="invoice-number">#{{ $invoice->invoice_number }}</div>
-                </td>
             </tr>
         </table>
+        <div class="invoice-label-row">
+            <div class="invoice-title">INVOICE</div>
+            <div class="invoice-number">#{{ $invoice->invoice_number }}</div>
+        </div>
     </div>
 
     <table class="info-table">

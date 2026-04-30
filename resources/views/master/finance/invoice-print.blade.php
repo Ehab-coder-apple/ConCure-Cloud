@@ -22,10 +22,28 @@
             padding-bottom: 20px;
             margin-bottom: 30px;
         }
-        .invoice-title {
-            font-size: 32px;
+        .brand-name {
+            font-size: 28px;
             font-weight: bold;
             color: #007bff;
+            margin: 0 0 4px 0;
+        }
+        .brand-sub {
+            font-size: 13px;
+            color: #6c757d;
+            margin: 2px 0;
+        }
+        .invoice-label {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+        .invoice-label-num {
+            font-size: 13px;
+            color: #666;
+            margin: 4px 0 0 0;
         }
         .invoice-table th {
             background-color: #f8f9fa;
@@ -56,20 +74,28 @@
 
         <div class="invoice-header">
             <div class="row align-items-center">
-                <div class="col-md-6">
+                <div class="col-6 text-start">
                     @if(!empty($brandingLogoUrl))
                         <img src="{{ $brandingLogoUrl }}" alt="Logo"
-                             style="max-height: 70px; max-width: 220px; margin-bottom: 10px;">
+                             style="max-height: 110px; max-width: 260px;">
                     @endif
-                    <h1 class="invoice-title">ConCure Master</h1>
-                    <p class="mb-1">SaaS Management</p>
-                    <p class="mb-0 text-muted">Billing Invoice</p>
                 </div>
-                <div class="col-md-6 text-end">
-                    <h2>INVOICE</h2>
-                    <p class="mb-1"><strong>#{{ $invoice->invoice_number }}</strong></p>
-                    <p class="mb-1">Date: {{ $invoice->invoice_date->format('M d, Y') }}</p>
-                    <p class="mb-0">Due: {{ $invoice->due_date->format('M d, Y') }}</p>
+                <div class="col-6 text-end">
+                    <h1 class="brand-name">ConCure Master</h1>
+                    <p class="brand-sub mb-0">SaaS Management Platform</p>
+                    <p class="brand-sub mb-0">Billing Invoice</p>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col text-center">
+                    <p class="invoice-label">INVOICE</p>
+                    <p class="invoice-label-num">
+                        <strong>#{{ $invoice->invoice_number }}</strong>
+                        <span class="text-muted ms-3">
+                            Date: {{ $invoice->invoice_date->format('M d, Y') }}
+                            &middot; Due: {{ $invoice->due_date->format('M d, Y') }}
+                        </span>
+                    </p>
                 </div>
             </div>
         </div>
