@@ -555,8 +555,13 @@ class ClinicController extends Controller
                 // Best-effort manual cleanup for tables that may not have ON DELETE CASCADE.
                 $clinic->auditLogs()->delete();
                 $clinic->activationCodes()->delete();
-                $clinic->clinicSettings()->delete();
                 $clinic->communicationLogs()->delete();
+
+                // settings has no Eloquent model — clear it via raw query to avoid
+                // autoloading the non-existent App\Models\Setting class.
+                if (Schema::hasTable('settings')) {
+                    DB::table('settings')->where('clinic_id', $clinic->id)->delete();
+                }
 
                 // Remove users last (other clinic-scoped tables FK them) and let DB cascade
                 // handle remaining clinic_id-scoped tables when the clinic itself is removed.
