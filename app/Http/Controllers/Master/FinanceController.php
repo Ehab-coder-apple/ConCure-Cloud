@@ -531,7 +531,9 @@ class FinanceController extends Controller
     {
         $invoice->load('clinic', 'items');
 
-        return view('master.finance.invoice-print', compact('invoice'));
+        $brandingLogoUrl = $this->resolveBrandingLogoUrl();
+
+        return view('master.finance.invoice-print', compact('invoice', 'brandingLogoUrl'));
     }
 
     /**
@@ -541,9 +543,48 @@ class FinanceController extends Controller
     {
         $invoice->load('clinic', 'items');
 
-        $pdf = Pdf::loadView('master.finance.invoice-pdf', compact('invoice'));
+        $brandingLogoSrc = $this->resolveBrandingLogoDataUri();
+
+        $pdf = Pdf::loadView('master.finance.invoice-pdf', compact('invoice', 'brandingLogoSrc'));
 
         return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
+    }
+
+    /**
+     * Resolve the master branding logo as a public URL for HTML views.
+     * Returns null when no logo is configured.
+     */
+    private function resolveBrandingLogoUrl(): ?string
+    {
+        $rel = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoRelPath();
+        return $rel ? asset($rel) : null;
+    }
+
+    /**
+     * Resolve the master branding logo as a base64 data URI for DomPDF.
+     * Prefers the PDF-safe (PNG/JPEG) variant. Returns null when unavailable.
+     */
+    private function resolveBrandingLogoDataUri(): ?string
+    {
+        $rel = \App\Http\Controllers\Master\SettingsController::getMasterBrandingLogoForPdfRelPath();
+        if (!$rel) {
+            return null;
+        }
+
+        $abs = public_path($rel);
+        if (!file_exists($abs)) {
+            return null;
+        }
+
+        $bytes = @file_get_contents($abs);
+        if ($bytes === false) {
+            return null;
+        }
+
+        $info = @getimagesize($abs);
+        $mime = $info['mime'] ?? 'image/png';
+
+        return 'data:' . $mime . ';base64,' . base64_encode($bytes);
     }
 
     /**

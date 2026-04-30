@@ -196,12 +196,16 @@
     <div class="header">
         <table class="header-table">
             <tr>
-                <td style="width: 50%;">
+                <td style="width: 50%; vertical-align: middle;">
+                    @if(!empty($brandingLogoSrc))
+                        <img src="{{ $brandingLogoSrc }}" alt="Logo"
+                             style="max-height: 60px; max-width: 200px; margin-bottom: 8px;">
+                    @endif
                     <div class="company-name">ConCure Master</div>
                     <div class="company-info">SaaS Management Platform</div>
                     <div class="company-info">Billing Invoice</div>
                 </td>
-                <td style="width: 50%;">
+                <td style="width: 50%; vertical-align: middle;">
                     <div class="invoice-title">INVOICE</div>
                     <div class="invoice-number">#{{ $invoice->invoice_number }}</div>
                 </td>

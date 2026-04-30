@@ -55,8 +55,12 @@
         </div>
 
         <div class="invoice-header">
-            <div class="row">
+            <div class="row align-items-center">
                 <div class="col-md-6">
+                    @if(!empty($brandingLogoUrl))
+                        <img src="{{ $brandingLogoUrl }}" alt="Logo"
+                             style="max-height: 70px; max-width: 220px; margin-bottom: 10px;">
+                    @endif
                     <h1 class="invoice-title">ConCure Master</h1>
                     <p class="mb-1">SaaS Management</p>
                     <p class="mb-0 text-muted">Billing Invoice</p>
