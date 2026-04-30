@@ -510,43 +510,95 @@ class ClinicController extends Controller
      */
     public function destroy(Clinic $clinic)
     {
-        // Check if clinic has any data that would prevent deletion
-        $hasData = $clinic->patients()->exists() ||
-                   $clinic->prescriptions()->exists() ||
-                   $clinic->appointments()->exists() ||
-                   $clinic->medicines()->exists() ||
-                   $clinic->labTests()->exists() ||
-                   $clinic->invoices()->exists() ||
-                   $clinic->expenses()->exists() ||
-                   $clinic->advertisements()->exists();
+        $clinicId = $clinic->id;
+        $clinicName = $clinic->name;
 
-        if ($hasData) {
-            return back()->withErrors(['error' => 'Cannot delete clinic with existing data (patients, prescriptions, appointments, medicines, lab tests, invoices, expenses, or advertisements). Deactivate the clinic instead.']);
-        }
-
-        DB::beginTransaction();
         try {
-            // Delete related data that can be safely removed
-            $clinic->auditLogs()->delete();
-            $clinic->activationCodes()->delete();
-            $clinic->clinicSettings()->delete();
-            $clinic->communicationLogs()->delete();
+            // Block deletion if the clinic still has business data; deactivation is the safer path.
+            $blockers = [
+                'patients'       => fn () => $clinic->patients()->exists(),
+                'prescriptions'  => fn () => $clinic->prescriptions()->exists(),
+                'appointments'   => fn () => $clinic->appointments()->exists(),
+                'medicines'      => fn () => $clinic->medicines()->exists(),
+                'lab tests'      => fn () => $clinic->labTests()->exists(),
+                'invoices'       => fn () => $clinic->invoices()->exists(),
+                'expenses'       => fn () => $clinic->expenses()->exists(),
+                'advertisements' => fn () => $clinic->advertisements()->exists(),
+            ];
 
-            // Delete all users
-            $clinic->users()->delete();
+            $found = [];
+            foreach ($blockers as $label => $check) {
+                if ($check()) {
+                    $found[] = $label;
+                }
+            }
 
-            // Delete the clinic
-            $clinic->delete();
+            if (!empty($found)) {
+                return back()->withErrors([
+                    'error' => 'Cannot delete clinic with existing data (' . implode(', ', $found) . '). Deactivate the clinic instead.',
+                ]);
+            }
 
-            DB::commit();
+            DB::transaction(function () use ($clinic) {
+                $userIds = $clinic->users()->pluck('id')->all();
+
+                // Detach pivot/many-to-many rows that may not be covered by FK cascade.
+                if (!empty($userIds) && Schema::hasTable('doctor_assistant')) {
+                    DB::table('doctor_assistant')
+                        ->where(function ($q) use ($userIds) {
+                            $q->whereIn('doctor_id', $userIds)
+                              ->orWhereIn('assistant_id', $userIds);
+                        })
+                        ->delete();
+                }
+
+                // Best-effort manual cleanup for tables that may not have ON DELETE CASCADE.
+                $clinic->auditLogs()->delete();
+                $clinic->activationCodes()->delete();
+                $clinic->clinicSettings()->delete();
+                $clinic->communicationLogs()->delete();
+
+                // Remove users last (other clinic-scoped tables FK them) and let DB cascade
+                // handle remaining clinic_id-scoped tables when the clinic itself is removed.
+                $clinic->users()->delete();
+                $clinic->delete();
+            });
 
             return redirect()->route('master.clinics.index')
                 ->with('success', 'Clinic deleted successfully.');
 
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back()->withErrors(['error' => 'Failed to delete clinic: ' . $e->getMessage()]);
+        } catch (\Throwable $e) {
+            Log::error('Master\ClinicController@destroy failed', [
+                'clinic_id'   => $clinicId,
+                'clinic_name' => $clinicName,
+                'message'     => $e->getMessage(),
+                'exception'   => get_class($e),
+                'file'        => $e->getFile(),
+                'line'        => $e->getLine(),
+                'trace'       => collect(explode("\n", $e->getTraceAsString()))->take(10)->implode("\n"),
+            ]);
+
+            $hint = $this->humanizeDeleteError($e);
+
+            return back()->withErrors([
+                'error' => 'Failed to delete clinic: ' . $hint,
+            ]);
         }
+    }
+
+    /**
+     * Translate raw deletion exceptions into a hint the operator can act on.
+     */
+    protected function humanizeDeleteError(\Throwable $e): string
+    {
+        $msg = $e->getMessage();
+
+        if (stripos($msg, 'foreign key') !== false || stripos($msg, '1451') !== false) {
+            return 'A related record is preventing deletion (foreign key constraint). '
+                 . 'Deactivate the clinic instead, or contact engineering with the clinic ID.';
+        }
+
+        return $msg ?: 'Unexpected server error. Check storage/logs/laravel.log for details.';
     }
 
     /**
