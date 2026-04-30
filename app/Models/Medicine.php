@@ -41,7 +41,10 @@ class Medicine extends Model
     ];
 
     /**
-     * Medicine forms
+     * Built-in medicine forms.
+     *
+     * Use formsForClinic($clinicId) when rendering a dropdown so that
+     * tenant-defined custom forms (table: medicine_forms) are merged in.
      */
     const FORMS = [
         'tablet' => 'Tablet',
@@ -56,6 +59,42 @@ class Medicine extends Model
         'suppository' => 'Suppository',
         'other' => 'Other',
     ];
+
+    /**
+     * Per-request memo for formsForClinic().
+     */
+    protected static array $formsForClinicCache = [];
+
+    /**
+     * Returns the merged list of medicine forms (built-in + clinic-scoped
+     * custom forms) keyed by slug -> label, used to populate every
+     * Medicine Form dropdown.
+     *
+     * Custom forms are appended after the canonical list and before the
+     * trailing "Other" entry, so "Other" remains the last option for
+     * users who want to record an unnamed/free-form value.
+     */
+    public static function formsForClinic(?int $clinicId): array
+    {
+        if ($clinicId === null) {
+            return self::FORMS;
+        }
+
+        if (isset(self::$formsForClinicCache[$clinicId])) {
+            return self::$formsForClinicCache[$clinicId];
+        }
+
+        $custom = MedicineForm::byClinic($clinicId)
+            ->orderBy('label')
+            ->pluck('label', 'key')
+            ->toArray();
+
+        $builtIn = self::FORMS;
+        $other = ['other' => $builtIn['other']];
+        unset($builtIn['other']);
+
+        return self::$formsForClinicCache[$clinicId] = $builtIn + $custom + $other;
+    }
 
     /**
      * Get the clinic that owns the medicine.
@@ -90,11 +129,24 @@ class Medicine extends Model
     }
 
     /**
-     * Get the form display name.
+     * Get the form display name. Falls back to the clinic's custom form
+     * label when the slug is not part of the built-in FORMS list, then
+     * to the raw slug as a last resort.
      */
     public function getFormDisplayAttribute(): string
     {
-        return self::FORMS[$this->form] ?? $this->form;
+        if (isset(self::FORMS[$this->form])) {
+            return self::FORMS[$this->form];
+        }
+
+        if ($this->form && $this->clinic_id) {
+            $label = self::formsForClinic($this->clinic_id)[$this->form] ?? null;
+            if ($label) {
+                return $label;
+            }
+        }
+
+        return (string) $this->form;
     }
 
     /**

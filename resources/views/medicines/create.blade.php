@@ -89,7 +89,7 @@
                                         <label for="form" class="form-label">{{ __('Medicine Form') }} <span class="text-danger">*</span></label>
                                         <select class="form-select @error('form') is-invalid @enderror" id="form" name="form" required>
                                             <option value="">{{ __('Select Form') }}</option>
-                                            @foreach(\App\Models\Medicine::FORMS as $key => $label)
+                                            @foreach(\App\Models\Medicine::formsForClinic(auth()->user()->clinic_id) as $key => $label)
                                                 <option value="{{ $key }}" {{ old('form') == $key ? 'selected' : '' }}>
                                                     {{ __($label) }}
                                                 </option>
@@ -98,6 +98,28 @@
                                         @error('form')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
+
+                                        {{-- Custom form label: shown only when "Other" is selected. The
+                                             submitted value is persisted as a clinic-scoped MedicineForm
+                                             so it appears in the dropdown next time. --}}
+                                        <div id="newFormLabelWrap"
+                                             class="mt-2 {{ old('form') === 'other' && old('new_form_label') ? '' : 'd-none' }}">
+                                            <label for="new_form_label" class="form-label small text-muted mb-1">
+                                                {{ __('New form name') }}
+                                            </label>
+                                            <input type="text"
+                                                   class="form-control form-control-sm @error('new_form_label') is-invalid @enderror"
+                                                   id="new_form_label" name="new_form_label"
+                                                   value="{{ old('new_form_label') }}"
+                                                   maxlength="80"
+                                                   placeholder="{{ __('e.g., Gel, Lozenge, Mouthwash') }}">
+                                            <small class="text-muted">
+                                                {{ __('This will be added to your clinic\'s form list for future use.') }}
+                                            </small>
+                                            @error('new_form_label')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
                                     </div>
 
                                     <!-- Description -->
@@ -285,4 +307,26 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+(function () {
+    const formSelect = document.getElementById('form');
+    const customWrap = document.getElementById('newFormLabelWrap');
+    const customInput = document.getElementById('new_form_label');
+    if (!formSelect || !customWrap || !customInput) return;
+
+    function toggle() {
+        const showCustom = formSelect.value === 'other';
+        customWrap.classList.toggle('d-none', !showCustom);
+        if (!showCustom) {
+            customInput.value = '';
+        }
+    }
+
+    formSelect.addEventListener('change', toggle);
+    toggle();
+})();
+</script>
+@endpush
 @endsection

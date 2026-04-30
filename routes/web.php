@@ -440,6 +440,13 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/bulk-delete', [App\Http\Controllers\MedicineController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/clear-all', [App\Http\Controllers\MedicineController::class, 'clearAll'])->name('clear-all');
 
+        // Clinic-scoped custom forms (must be before {medicine} wildcards)
+        Route::prefix('forms')->name('forms.')->group(function () {
+            Route::get('/', [App\Http\Controllers\MedicineFormController::class, 'index'])->name('index');
+            Route::put('/{medicineForm}', [App\Http\Controllers\MedicineFormController::class, 'update'])->name('update');
+            Route::delete('/{medicineForm}', [App\Http\Controllers\MedicineFormController::class, 'destroy'])->name('destroy');
+        });
+
         // Sell and Purchase routes
         Route::get('/{medicine}/sell', [App\Http\Controllers\MedicineController::class, 'sellForm'])->name('sell');
         Route::post('/{medicine}/sell', [App\Http\Controllers\MedicineController::class, 'processSell'])->name('sell.process');

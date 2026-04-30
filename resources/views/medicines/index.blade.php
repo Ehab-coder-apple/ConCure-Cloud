@@ -27,6 +27,14 @@
                                     {{ __('Export to Excel') }}
                                 </a>
                             </li>
+                            @if(in_array(auth()->user()->role, ['super_admin', 'admin', 'pharmacist'], true))
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('medicines.forms.index') }}">
+                                        <i class="fas fa-layer-group text-info me-2"></i>
+                                        {{ __('Manage Forms') }}
+                                    </a>
+                                </li>
+                            @endif
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); confirmClearAllMedicines();">
@@ -102,7 +110,7 @@
                                 <label class="form-label">{{ __('Form') }}</label>
                                 <select class="form-select" name="form">
                                     <option value="">{{ __('All Forms') }}</option>
-                                    @foreach(\App\Models\Medicine::FORMS as $key => $label)
+                                    @foreach(\App\Models\Medicine::formsForClinic(auth()->user()->clinic_id) as $key => $label)
                                         <option value="{{ $key }}" {{ request('form') == $key ? 'selected' : '' }}>
                                             {{ __($label) }}
                                         </option>

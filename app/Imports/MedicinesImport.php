@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Medicine;
+use App\Models\MedicineForm;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -39,10 +40,11 @@ class MedicinesImport implements ToCollection, WithHeadingRow, WithBatchInserts,
                     continue;
                 }
 
-                // Validate required fields
+                // Validate required fields (form is resolved/created below, so
+                // only enforce its presence here, not membership in FORMS).
                 $validator = Validator::make($row->toArray(), [
                     'name' => 'required|string|max:255',
-                    'form' => 'required|string|in:' . implode(',', array_keys(Medicine::FORMS)),
+                    'form' => 'required|string|max:80',
                 ]);
 
                 if ($validator->fails()) {
@@ -51,23 +53,24 @@ class MedicinesImport implements ToCollection, WithHeadingRow, WithBatchInserts,
                     continue;
                 }
 
-                // Check for duplicate medicine in the same clinic
-                $exists = Medicine::where('clinic_id', $user->clinic_id)
-                    ->where('name', trim($row['name']))
-                    ->where('dosage', trim($row['dosage'] ?? ''))
-                    ->where('form', trim($row['form']))
-                    ->exists();
-
-                if ($exists) {
-                    $this->errors[] = "Row {$rowNumber}: Medicine '{$row['name']}' with same dosage and form already exists";
+                // Resolve the form: built-in slug, existing clinic-custom form,
+                // or auto-create a new MedicineForm from the free-text label.
+                $form = $this->resolveForm($row['form'], $user->clinic_id, $user->id);
+                if ($form === null) {
+                    $this->errors[] = "Row {$rowNumber}: Invalid form '{$row['form']}'.";
                     $this->skippedCount++;
                     continue;
                 }
 
-                // Validate form value
-                $form = strtolower(trim($row['form']));
-                if (!array_key_exists($form, Medicine::FORMS)) {
-                    $this->errors[] = "Row {$rowNumber}: Invalid form '{$row['form']}'. Valid forms: " . implode(', ', array_keys(Medicine::FORMS));
+                // Check for duplicate medicine in the same clinic
+                $exists = Medicine::where('clinic_id', $user->clinic_id)
+                    ->where('name', trim($row['name']))
+                    ->where('dosage', trim($row['dosage'] ?? ''))
+                    ->where('form', $form)
+                    ->exists();
+
+                if ($exists) {
+                    $this->errors[] = "Row {$rowNumber}: Medicine '{$row['name']}' with same dosage and form already exists";
                     $this->skippedCount++;
                     continue;
                 }
@@ -108,6 +111,68 @@ class MedicinesImport implements ToCollection, WithHeadingRow, WithBatchInserts,
                 $this->skippedCount++;
             }
         }
+    }
+
+    /**
+     * Resolve a form value from an imported row to a stored slug.
+     *
+     * Accepts (in priority order):
+     *   1. A built-in slug   ("tablet", "syrup", ...)
+     *   2. A built-in label  ("Tablet", "Syrup", ...) - matched case-insensitively
+     *   3. An existing custom MedicineForm key or label for this clinic
+     *   4. An unknown free-text label - auto-creates a clinic-scoped MedicineForm
+     *      and returns its slug, so subsequent rows hit case (3).
+     *
+     * Returns null only if the input is empty after trimming.
+     */
+    private function resolveForm($raw, ?int $clinicId, ?int $userId): ?string
+    {
+        $value = trim((string) $raw);
+        if ($value === '' || $clinicId === null) {
+            return null;
+        }
+
+        $lower = strtolower($value);
+
+        // 1. Built-in slug match
+        if (array_key_exists($lower, Medicine::FORMS)) {
+            return $lower;
+        }
+
+        // 2. Built-in label match (case-insensitive)
+        foreach (Medicine::FORMS as $slug => $label) {
+            if (strtolower($label) === $lower) {
+                return $slug;
+            }
+        }
+
+        // 3. Existing clinic-custom form (by key or label)
+        $existing = MedicineForm::byClinic($clinicId)
+            ->where(function ($q) use ($lower) {
+                $q->whereRaw('LOWER(key) = ?', [$lower])
+                  ->orWhereRaw('LOWER(label) = ?', [$lower]);
+            })
+            ->first();
+        if ($existing) {
+            return $existing->key;
+        }
+
+        // 4. Auto-create a new clinic-scoped form. Avoid shadowing a built-in
+        // slug if the generated key happens to collide.
+        $key = MedicineForm::makeKey($value);
+        if ($key === '') {
+            return null;
+        }
+        if (array_key_exists($key, Medicine::FORMS)) {
+            return $key;
+        }
+
+        MedicineForm::firstOrCreate(
+            ['clinic_id' => $clinicId, 'key' => $key],
+            ['label' => $value, 'created_by' => $userId]
+        );
+
+        return $key;
     }
 
     /**
@@ -163,7 +228,7 @@ class MedicinesImport implements ToCollection, WithHeadingRow, WithBatchInserts,
             'generic_name' => 'Generic Name',
             'brand_name' => 'Brand Name',
             'dosage' => 'Dosage (e.g., 500mg)',
-            'form' => 'Form (Required: ' . implode(', ', array_keys(Medicine::FORMS)) . ')',
+            'form' => 'Form (Required: ' . implode(', ', array_keys(Medicine::FORMS)) . ' - or any custom label, which will be added to your clinic\'s form list)',
             'description' => 'Description',
             'side_effects' => 'Side Effects',
             'contraindications' => 'Contraindications',

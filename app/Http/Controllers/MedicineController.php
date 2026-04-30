@@ -76,12 +76,15 @@ class MedicineController extends Controller
     {
         $user = Auth::user();
 
+        $validForms = array_keys(Medicine::formsForClinic($user->clinic_id));
+
         $request->validate([
             'name' => 'required|string|max:255',
             'generic_name' => 'nullable|string|max:255',
             'brand_name' => 'nullable|string|max:255',
             'dosage' => 'nullable|string|max:100',
-            'form' => 'required|string|in:' . implode(',', array_keys(Medicine::FORMS)),
+            'form' => 'required|string|in:' . implode(',', $validForms),
+            'new_form_label' => 'nullable|string|max:80',
             'description' => 'nullable|string|max:1000',
             'side_effects' => 'nullable|string|max:1000',
             'contraindications' => 'nullable|string|max:1000',
@@ -94,11 +97,13 @@ class MedicineController extends Controller
             'batch_number' => 'nullable|string|max:100',
         ]);
 
+        $form = $this->resolveCustomForm($request, $user->clinic_id, $user->id) ?? $request->form;
+
         // Check for duplicate medicine in the same clinic
         $exists = Medicine::where('clinic_id', $user->clinic_id)
             ->where('name', $request->name)
             ->where('dosage', $request->dosage)
-            ->where('form', $request->form)
+            ->where('form', $form)
             ->exists();
 
         if ($exists) {
@@ -111,7 +116,7 @@ class MedicineController extends Controller
             'generic_name' => $request->generic_name,
             'brand_name' => $request->brand_name,
             'dosage' => $request->dosage,
-            'form' => $request->form,
+            'form' => $form,
             'description' => $request->description,
             'side_effects' => $request->side_effects,
             'contraindications' => $request->contraindications,
@@ -128,6 +133,38 @@ class MedicineController extends Controller
 
         return redirect()->route('medicines.index')
             ->with('success', __('Medicine added to inventory successfully.'));
+    }
+
+    /**
+     * If the user typed a free-text form label (new_form_label), persist it
+     * as a clinic-scoped MedicineForm and return its slug. Returns null when
+     * no custom label was submitted, in which case the dropdown's selected
+     * value should be used as-is.
+     */
+    private function resolveCustomForm(Request $request, ?int $clinicId, ?int $userId): ?string
+    {
+        $label = trim((string) $request->input('new_form_label'));
+        if ($label === '' || $clinicId === null) {
+            return null;
+        }
+
+        $key = \App\Models\MedicineForm::makeKey($label);
+        if ($key === '') {
+            return null;
+        }
+
+        // Don't shadow a built-in form: if the slug collides with a canonical
+        // entry, just reuse the canonical key without creating a duplicate row.
+        if (array_key_exists($key, Medicine::FORMS)) {
+            return $key;
+        }
+
+        \App\Models\MedicineForm::firstOrCreate(
+            ['clinic_id' => $clinicId, 'key' => $key],
+            ['label' => $label, 'created_by' => $userId]
+        );
+
+        return $key;
     }
 
     /**
@@ -169,12 +206,15 @@ class MedicineController extends Controller
     {
         $this->authorize('update', $medicine);
 
+        $validForms = array_keys(Medicine::formsForClinic($medicine->clinic_id));
+
         $request->validate([
             'name' => 'required|string|max:255',
             'generic_name' => 'nullable|string|max:255',
             'brand_name' => 'nullable|string|max:255',
             'dosage' => 'nullable|string|max:100',
-            'form' => 'required|string|in:' . implode(',', array_keys(Medicine::FORMS)),
+            'form' => 'required|string|in:' . implode(',', $validForms),
+            'new_form_label' => 'nullable|string|max:80',
             'description' => 'nullable|string|max:1000',
             'side_effects' => 'nullable|string|max:1000',
             'contraindications' => 'nullable|string|max:1000',
@@ -187,11 +227,13 @@ class MedicineController extends Controller
             'batch_number' => 'nullable|string|max:100',
         ]);
 
+        $form = $this->resolveCustomForm($request, $medicine->clinic_id, Auth::id()) ?? $request->form;
+
         // Check for duplicate medicine in the same clinic (excluding current)
         $exists = Medicine::where('clinic_id', $medicine->clinic_id)
             ->where('name', $request->name)
             ->where('dosage', $request->dosage)
-            ->where('form', $request->form)
+            ->where('form', $form)
             ->where('id', '!=', $medicine->id)
             ->exists();
 
@@ -205,7 +247,7 @@ class MedicineController extends Controller
             'generic_name' => $request->generic_name,
             'brand_name' => $request->brand_name,
             'dosage' => $request->dosage,
-            'form' => $request->form,
+            'form' => $form,
             'description' => $request->description,
             'side_effects' => $request->side_effects,
             'contraindications' => $request->contraindications,
