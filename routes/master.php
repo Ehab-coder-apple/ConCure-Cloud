@@ -113,6 +113,12 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::get('/finance/invoice/{invoice}/print', [FinanceController::class, 'printInvoice'])->name('finance.invoice.print');
     Route::get('/finance/invoice/{invoice}/pdf', [FinanceController::class, 'downloadInvoicePDF'])->name('finance.invoice.pdf');
 
+    // Master expenses (platform operating costs - IQD only, super-admin only)
+    Route::get('/finance/expenses', [FinanceController::class, 'expenses'])->name('finance.expenses');
+    Route::post('/finance/expense/store', [FinanceController::class, 'storeExpense'])->name('finance.expense.store');
+    Route::put('/finance/expense/{expense}/update', [FinanceController::class, 'updateExpense'])->name('finance.expense.update');
+    Route::delete('/finance/expense/{expense}/delete', [FinanceController::class, 'deleteExpense'])->name('finance.expense.delete');
+
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
     Route::post('/reports/payments', [PaymentsController::class, 'store'])->name('reports.payments.store');

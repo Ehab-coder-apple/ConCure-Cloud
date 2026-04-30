@@ -130,7 +130,20 @@ class MasterInvoice extends Model
     }
 
     /**
-     * Calculate invoice totals.
+     * Calculate invoice totals and reconcile the status.
+     *
+     * Status resolution must be deterministic — the previous version
+     * stamped status='paid' on a brand-new empty invoice (balance defaults
+     * to 0 before items are added) and then never demoted it because the
+     * subsequent branches were gated on `status !== 'paid'`. That left
+     * unpaid invoices labelled "PAID" in the master finance list.
+     *
+     * The rules below converge to exactly one status every call:
+     *   - draft / cancelled  → preserved (manual states are not auto-changed)
+     *   - paid_amount >= total_amount AND total_amount > 0 → paid
+     *   - paid_amount > 0    → partial
+     *   - due_date in the past → overdue
+     *   - otherwise          → sent
      */
     public function calculateTotals(): void
     {
@@ -138,14 +151,26 @@ class MasterInvoice extends Model
         $this->total_amount = $this->subtotal + $this->tax_amount - $this->discount_amount;
         $this->balance = $this->total_amount - $this->paid_amount;
 
-        // Update status based on payment
-        if ($this->balance <= 0) {
-            $this->status = 'paid';
-        } elseif ($this->paid_amount > 0) {
-            $this->status = 'partial';
-        } elseif ($this->due_date && $this->due_date < now() && $this->status !== 'paid') {
-            $this->status = 'overdue';
+        if (in_array($this->status, ['draft', 'cancelled'], true)) {
+            return;
         }
+
+        if ((float) $this->total_amount > 0 && (float) $this->paid_amount >= (float) $this->total_amount) {
+            $this->status = 'paid';
+            return;
+        }
+
+        if ((float) $this->paid_amount > 0) {
+            $this->status = 'partial';
+            return;
+        }
+
+        if ($this->due_date && $this->due_date < now()->startOfDay()) {
+            $this->status = 'overdue';
+            return;
+        }
+
+        $this->status = 'sent';
     }
 
     /**

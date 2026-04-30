@@ -18,6 +18,10 @@
                 <i class="fas fa-list me-1"></i>
                 Manage Invoices
             </a>
+            <a href="{{ route('master.finance.expenses') }}" class="btn btn-outline-danger ms-2">
+                <i class="fas fa-receipt me-1"></i>
+                Manage Expenses
+            </a>
             <button type="button" class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#createInvoiceModal">
                 <i class="fas fa-file-invoice me-1"></i>
                 Create Invoice
@@ -25,6 +29,10 @@
             <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#createReceiptModal">
                 <i class="fas fa-receipt me-1"></i>
                 Record Payment
+            </button>
+            <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#createExpenseModal">
+                <i class="fas fa-money-bill-wave me-1"></i>
+                Record Expense
             </button>
         </div>
     </div>
@@ -146,7 +154,7 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 {{ $currencySymbol }}{{ number_format($stats['net_profit'], 2) }}
                             </div>
-                            <small class="text-muted">Revenue - Expenses</small>
+                            <small class="text-muted">Expenses (IQD): {{ number_format($stats['total_expenses'], 2) }}</small>
                         </div>
                         <div class="icon-circle bg-primary text-white">
                             <i class="fas fa-coins"></i>
@@ -315,6 +323,80 @@
                         <div class="text-center py-4 text-muted">
                             <i class="fas fa-inbox fa-3x mb-3"></i>
                             <p>No recent payments</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Expenses -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-danger">
+                        <i class="fas fa-money-bill-wave me-2"></i>
+                        Recent Expenses
+                        <span class="badge bg-secondary ms-2">IQD</span>
+                    </h6>
+                    <a href="{{ route('master.finance.expenses') }}" class="btn btn-sm btn-outline-secondary">
+                        View all
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    @if($recentExpenses->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Category</th>
+                                        <th>Description</th>
+                                        <th>Recorded By</th>
+                                        <th class="text-end">Amount (IQD)</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($recentExpenses as $expense)
+                                        <tr>
+                                            <td>{{ optional($expense->expense_date)->format('M d, Y') }}</td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">
+                                                    {{ $expenseCategories[$expense->category] ?? ucfirst($expense->category) }}
+                                                </span>
+                                            </td>
+                                            <td>{{ $expense->description }}</td>
+                                            <td>
+                                                @if($expense->creator)
+                                                    {{ trim($expense->creator->first_name . ' ' . $expense->creator->last_name) ?: '-' }}
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
+                                            <td class="text-end fw-semibold text-danger">
+                                                {{ number_format($expense->amount, 2) }}
+                                            </td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick='editExpense(@json($expense))' title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                        onclick="deleteExpense({{ $expense->id }})" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>No expenses recorded yet. Click <strong>Record Expense</strong> above to add one.</p>
                         </div>
                     @endif
                 </div>
@@ -563,6 +645,138 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-check me-1"></i> Record Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Record Expense Modal (IQD only, super-admin only) -->
+<div class="modal fade" id="createExpenseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="recordExpenseForm">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-money-bill-wave me-2 text-danger"></i>
+                        Record Expense
+                        <span class="badge bg-secondary ms-2">IQD</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="expense_category" class="form-label">Category <span class="text-danger">*</span></label>
+                        <select class="form-select" id="expense_category" name="category" required>
+                            <option value="">Select Category</option>
+                            @foreach($expenseCategories as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="expense_description" class="form-label">Description <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="expense_description" name="description" maxlength="255" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="expense_amount" class="form-label">Amount (IQD) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">IQD</span>
+                                <input type="number" class="form-control" id="expense_amount" name="amount" min="0.01" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="expense_date" class="form-label">Expense Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="expense_date" name="expense_date" value="{{ date('Y-m-d') }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="expense_payment_method" class="form-label">Payment Method</label>
+                        <select class="form-select" id="expense_payment_method" name="payment_method">
+                            <option value="">-</option>
+                            @foreach($expensePaymentMethods as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="expense_notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="expense_notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-save me-1"></i> Save Expense
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Expense Modal -->
+<div class="modal fade" id="editExpenseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editExpenseForm">
+                @csrf
+                <input type="hidden" id="edit_expense_id" name="expense_id">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit Expense
+                        <span class="badge bg-secondary ms-2">IQD</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_expense_category" class="form-label">Category <span class="text-danger">*</span></label>
+                        <select class="form-select" id="edit_expense_category" name="category" required>
+                            @foreach($expenseCategories as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_expense_description" class="form-label">Description <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_expense_description" name="description" maxlength="255" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_expense_amount" class="form-label">Amount (IQD) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">IQD</span>
+                                <input type="number" class="form-control" id="edit_expense_amount" name="amount" min="0.01" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_expense_date" class="form-label">Expense Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="edit_expense_date" name="expense_date" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_expense_payment_method" class="form-label">Payment Method</label>
+                        <select class="form-select" id="edit_expense_payment_method" name="payment_method">
+                            <option value="">-</option>
+                            @foreach($expensePaymentMethods as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_expense_notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="edit_expense_notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Update Expense
                     </button>
                 </div>
             </form>
@@ -922,6 +1136,121 @@ function deletePayment(paymentId) {
     .catch(error => {
         alert('Error deleting payment: ' + error.message);
         console.error('Full error:', error);
+    });
+}
+
+// ===== Master Expenses =====
+
+// Record Expense Form
+document.getElementById('recordExpenseForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = {
+        category: formData.get('category'),
+        description: formData.get('description'),
+        amount: formData.get('amount'),
+        expense_date: formData.get('expense_date'),
+        payment_method: formData.get('payment_method') || null,
+        notes: formData.get('notes') || null,
+    };
+
+    fetch('{{ route("master.finance.expense.store") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': formData.get('_token')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json().then(j => ({ ok: response.ok, json: j })))
+    .then(({ ok, json }) => {
+        if (ok && json.success) {
+            alert('Expense recorded successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + (json.message || 'Failed to record expense'));
+        }
+    })
+    .catch(error => {
+        alert('Error recording expense: ' + error.message);
+        console.error(error);
+    });
+});
+
+// Open Edit Expense modal
+function editExpense(expense) {
+    document.getElementById('edit_expense_id').value = expense.id;
+    document.getElementById('edit_expense_category').value = expense.category;
+    document.getElementById('edit_expense_description').value = expense.description;
+    document.getElementById('edit_expense_amount').value = expense.amount;
+    document.getElementById('edit_expense_date').value = expense.expense_date
+        ? String(expense.expense_date).split('T')[0].split(' ')[0]
+        : '';
+    document.getElementById('edit_expense_payment_method').value = expense.payment_method || '';
+    document.getElementById('edit_expense_notes').value = expense.notes || '';
+    new bootstrap.Modal(document.getElementById('editExpenseModal')).show();
+}
+
+// Submit Edit Expense
+document.getElementById('editExpenseForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit_expense_id').value;
+    const formData = new FormData(this);
+    const data = {
+        category: formData.get('category'),
+        description: formData.get('description'),
+        amount: formData.get('amount'),
+        expense_date: formData.get('expense_date'),
+        payment_method: formData.get('payment_method') || null,
+        notes: formData.get('notes') || null,
+    };
+
+    fetch(`/master/finance/expense/${id}/update`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': formData.get('_token')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json().then(j => ({ ok: response.ok, json: j })))
+    .then(({ ok, json }) => {
+        if (ok && json.success) {
+            alert('Expense updated successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + (json.message || 'Failed to update expense'));
+        }
+    })
+    .catch(error => {
+        alert('Error updating expense: ' + error.message);
+        console.error(error);
+    });
+});
+
+// Delete Expense
+function deleteExpense(id) {
+    if (!confirm('Delete this expense? This cannot be undone.')) return;
+
+    fetch(`/master/finance/expense/${id}/delete`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json().then(j => ({ ok: response.ok, json: j })))
+    .then(({ ok, json }) => {
+        if (ok && json.success) {
+            alert(json.message);
+            location.reload();
+        } else {
+            alert('Error: ' + (json.message || 'Failed to delete expense'));
+        }
+    })
+    .catch(error => {
+        alert('Error deleting expense: ' + error.message);
+        console.error(error);
     });
 }
 </script>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Master;
 use App\Http\Controllers\Controller;
 use App\Models\Clinic;
 use App\Models\User;
+use App\Models\MasterExpense;
 use App\Models\MasterInvoice;
 use App\Models\SubscriptionPayment;
 use Illuminate\Http\Request;
@@ -39,6 +40,7 @@ class FinanceController extends Controller
         // Get recent invoices and receipts
         $recentInvoices = $this->getRecentInvoices();
         $recentReceipts = $this->getRecentReceipts();
+        $recentExpenses = $this->getRecentExpenses();
 
         // Chart data for revenue trends
         $revenueChart = $this->getRevenueChartData($period, $from, $to);
@@ -46,6 +48,10 @@ class FinanceController extends Controller
         // Get the most used currency from actual payments
         $mostUsedCurrency = $this->getMostUsedCurrency();
         $currencySymbol = $this->getCurrencySymbol($mostUsedCurrency);
+
+        // Fixed expense category list for the Record Expense modal.
+        $expenseCategories = MasterExpense::CATEGORIES;
+        $expensePaymentMethods = MasterExpense::PAYMENT_METHODS;
 
         return view('master.finance.index', compact(
             'period',
@@ -55,9 +61,12 @@ class FinanceController extends Controller
             'tenantStats',
             'recentInvoices',
             'recentReceipts',
+            'recentExpenses',
             'revenueChart',
             'currencySymbol',
-            'mostUsedCurrency'
+            'mostUsedCurrency',
+            'expenseCategories',
+            'expensePaymentMethods'
         ));
     }
 
@@ -141,10 +150,14 @@ class FinanceController extends Controller
             ->whereBetween('service_charge_date', [$from, $to])
             ->sum('service_charge_amount');
 
-        // Calculate expenses (operational costs - if tracked)
-        $totalExpenses = 0; // Placeholder for future expense tracking
+        // Operational SaaS expenses recorded by super-admin (IQD only).
+        $totalExpenses = (float) MasterExpense::query()
+            ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()])
+            ->sum('amount');
 
-        // Net profit
+        // Net profit. Note: revenue can be multi-currency while expenses are
+        // IQD-only by design -- the master finance dashboard already mixes
+        // currencies for display, so we keep the same simple subtraction here.
         $netProfit = $totalRevenue - $totalExpenses;
 
         return [
@@ -271,13 +284,23 @@ class FinanceController extends Controller
 
     /**
      * Get revenue chart data.
-     * Excludes demo clinic payments.
+     * Excludes demo clinic payments. Expenses come from master_expenses
+     * (IQD-only platform operating costs).
      */
     private function getRevenueChartData(string $period, Carbon $from, Carbon $to): array
     {
         $labels = [];
         $revenueData = [];
         $expenseData = [];
+
+        $sumExpenses = function ($start, $end) {
+            return (float) DB::table('master_expenses')
+                ->whereBetween('expense_date', [
+                    $start instanceof Carbon ? $start->toDateString() : $start,
+                    $end instanceof Carbon ? $end->toDateString() : $end,
+                ])
+                ->sum('amount');
+        };
 
         switch ($period) {
             case 'week':
@@ -290,7 +313,7 @@ class FinanceController extends Controller
                         ->where('clinics.is_demo', false)
                         ->whereDate('subscription_payments.paid_at', $date)
                         ->sum('subscription_payments.amount');
-                    $expenseData[] = 0; // Placeholder
+                    $expenseData[] = $sumExpenses($date, $date);
                 }
                 break;
 
@@ -305,7 +328,7 @@ class FinanceController extends Controller
                         ->where('clinics.is_demo', false)
                         ->whereBetween('subscription_payments.paid_at', [$date, $weekEnd])
                         ->sum('subscription_payments.amount');
-                    $expenseData[] = 0; // Placeholder
+                    $expenseData[] = $sumExpenses($date, $weekEnd);
                 }
                 break;
 
@@ -320,7 +343,7 @@ class FinanceController extends Controller
                         ->where('clinics.is_demo', false)
                         ->whereBetween('subscription_payments.paid_at', [$date, $monthEnd])
                         ->sum('subscription_payments.amount');
-                    $expenseData[] = 0; // Placeholder
+                    $expenseData[] = $sumExpenses($date, $monthEnd);
                 }
                 break;
 
@@ -332,7 +355,7 @@ class FinanceController extends Controller
                     ->where('clinics.is_demo', false)
                     ->whereBetween('subscription_payments.paid_at', [$from, $to])
                     ->sum('subscription_payments.amount')];
-                $expenseData = [0];
+                $expenseData = [$sumExpenses($from, $to)];
         }
 
         return [
@@ -340,6 +363,18 @@ class FinanceController extends Controller
             'revenue' => $revenueData,
             'expenses' => $expenseData,
         ];
+    }
+
+    /**
+     * Recent platform-level expenses for the dashboard side panel.
+     */
+    private function getRecentExpenses()
+    {
+        return MasterExpense::with('creator:id,first_name,last_name')
+            ->orderBy('expense_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->limit(10)
+            ->get();
     }
 
     /**
@@ -711,6 +746,126 @@ class FinanceController extends Controller
                 'message' => 'Failed to delete payment: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Store a new master (platform) expense. IQD-only by spec.
+     */
+    public function storeExpense(Request $request)
+    {
+        $data = $request->validate([
+            'category' => 'required|string|in:' . implode(',', array_keys(MasterExpense::CATEGORIES)),
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0.01',
+            'expense_date' => 'required|date',
+            'payment_method' => 'nullable|string|in:' . implode(',', array_keys(MasterExpense::PAYMENT_METHODS)),
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            $expense = MasterExpense::create(array_merge($data, [
+                'created_by' => Auth::id(),
+            ]));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Expense recorded successfully',
+                'expense' => $expense,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record expense: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Update an existing master expense.
+     */
+    public function updateExpense(Request $request, MasterExpense $expense)
+    {
+        $data = $request->validate([
+            'category' => 'required|string|in:' . implode(',', array_keys(MasterExpense::CATEGORIES)),
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0.01',
+            'expense_date' => 'required|date',
+            'payment_method' => 'nullable|string|in:' . implode(',', array_keys(MasterExpense::PAYMENT_METHODS)),
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            $expense->update($data);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Expense updated successfully',
+                'expense' => $expense->fresh(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update expense: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a master expense.
+     */
+    public function deleteExpense(MasterExpense $expense)
+    {
+        try {
+            $expense->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Expense deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete expense: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * List master expenses with filters.
+     */
+    public function expenses(Request $request)
+    {
+        $query = MasterExpense::with('creator:id,first_name,last_name')
+            ->orderBy('expense_date', 'desc')
+            ->orderBy('id', 'desc');
+
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        if ($request->filled('from')) {
+            $query->whereDate('expense_date', '>=', $request->from);
+        }
+
+        if ($request->filled('to')) {
+            $query->whereDate('expense_date', '<=', $request->to);
+        }
+
+        $totalForFilter = (float) MasterExpense::query()
+            ->when($request->filled('category'), fn($q) => $q->where('category', $request->category))
+            ->when($request->filled('from'), fn($q) => $q->whereDate('expense_date', '>=', $request->from))
+            ->when($request->filled('to'), fn($q) => $q->whereDate('expense_date', '<=', $request->to))
+            ->sum('amount');
+
+        $expenses = $query->paginate(20)->withQueryString();
+
+        return view('master.finance.expenses', [
+            'expenses' => $expenses,
+            'expenseCategories' => MasterExpense::CATEGORIES,
+            'expensePaymentMethods' => MasterExpense::PAYMENT_METHODS,
+            'totalForFilter' => $totalForFilter,
+            'filters' => $request->only(['category', 'from', 'to']),
+        ]);
     }
 
     /**
