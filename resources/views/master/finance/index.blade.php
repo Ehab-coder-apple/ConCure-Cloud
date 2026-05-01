@@ -676,6 +676,11 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="mb-3 d-none" id="expense_new_category_wrapper">
+                        <label for="expense_new_category_label" class="form-label">New category name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="expense_new_category_label" name="new_category_label" maxlength="60" placeholder="e.g. Legal fees">
+                        <small class="text-muted">Saved as a reusable category for future expenses.</small>
+                    </div>
                     <div class="mb-3">
                         <label for="expense_description" class="form-label">Description <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="expense_description" name="description" maxlength="255" required>
@@ -741,6 +746,11 @@
                                 <option value="{{ $key }}">{{ $label }}</option>
                             @endforeach
                         </select>
+                    </div>
+                    <div class="mb-3 d-none" id="edit_expense_new_category_wrapper">
+                        <label for="edit_expense_new_category_label" class="form-label">New category name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_expense_new_category_label" name="new_category_label" maxlength="60" placeholder="e.g. Legal fees">
+                        <small class="text-muted">Saved as a reusable category for future expenses.</small>
                     </div>
                     <div class="mb-3">
                         <label for="edit_expense_description" class="form-label">Description <span class="text-danger">*</span></label>
@@ -1141,12 +1151,31 @@ function deletePayment(paymentId) {
 
 // ===== Master Expenses =====
 
+// Reveal the "New category name" input only when "Other" is selected.
+function bindMasterExpenseCategoryToggle(selectId, wrapperId, inputId) {
+    const sel = document.getElementById(selectId);
+    const wrap = document.getElementById(wrapperId);
+    const input = document.getElementById(inputId);
+    if (!sel || !wrap || !input) return;
+    const sync = () => {
+        const isOther = sel.value === 'other';
+        wrap.classList.toggle('d-none', !isOther);
+        input.required = isOther;
+        if (!isOther) input.value = '';
+    };
+    sel.addEventListener('change', sync);
+    sync();
+}
+bindMasterExpenseCategoryToggle('expense_category', 'expense_new_category_wrapper', 'expense_new_category_label');
+bindMasterExpenseCategoryToggle('edit_expense_category', 'edit_expense_new_category_wrapper', 'edit_expense_new_category_label');
+
 // Record Expense Form
 document.getElementById('recordExpenseForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const formData = new FormData(this);
     const data = {
         category: formData.get('category'),
+        new_category_label: formData.get('new_category_label') || null,
         description: formData.get('description'),
         amount: formData.get('amount'),
         expense_date: formData.get('expense_date'),
@@ -1180,7 +1209,10 @@ document.getElementById('recordExpenseForm').addEventListener('submit', function
 // Open Edit Expense modal
 function editExpense(expense) {
     document.getElementById('edit_expense_id').value = expense.id;
-    document.getElementById('edit_expense_category').value = expense.category;
+    const sel = document.getElementById('edit_expense_category');
+    sel.value = expense.category;
+    // Hide the new-category input when editing — the row already has a key.
+    sel.dispatchEvent(new Event('change'));
     document.getElementById('edit_expense_description').value = expense.description;
     document.getElementById('edit_expense_amount').value = expense.amount;
     document.getElementById('edit_expense_date').value = expense.expense_date
@@ -1198,6 +1230,7 @@ document.getElementById('editExpenseForm').addEventListener('submit', function(e
     const formData = new FormData(this);
     const data = {
         category: formData.get('category'),
+        new_category_label: formData.get('new_category_label') || null,
         description: formData.get('description'),
         amount: formData.get('amount'),
         expense_date: formData.get('expense_date'),

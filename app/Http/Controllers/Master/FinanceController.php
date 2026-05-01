@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Clinic;
 use App\Models\User;
 use App\Models\MasterExpense;
+use App\Models\MasterExpenseCategory;
 use App\Models\MasterInvoice;
 use App\Models\SubscriptionPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -49,8 +51,8 @@ class FinanceController extends Controller
         $mostUsedCurrency = $this->getMostUsedCurrency();
         $currencySymbol = $this->getCurrencySymbol($mostUsedCurrency);
 
-        // Fixed expense category list for the Record Expense modal.
-        $expenseCategories = MasterExpense::CATEGORIES;
+        // Built-in + custom expense categories for the Record Expense modal.
+        $expenseCategories = MasterExpense::categoriesAll();
         $expensePaymentMethods = MasterExpense::PAYMENT_METHODS;
 
         return view('master.finance.index', compact(
@@ -795,7 +797,8 @@ class FinanceController extends Controller
     public function storeExpense(Request $request)
     {
         $data = $request->validate([
-            'category' => 'required|string|in:' . implode(',', array_keys(MasterExpense::CATEGORIES)),
+            'category' => ['required', 'string', Rule::in(array_keys(MasterExpense::categoriesAll()))],
+            'new_category_label' => 'nullable|string|max:60',
             'description' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0.01',
             'expense_date' => 'required|date',
@@ -804,6 +807,12 @@ class FinanceController extends Controller
         ]);
 
         try {
+            $data['category'] = $this->resolveCustomCategory(
+                $data['category'],
+                $request->input('new_category_label')
+            );
+            unset($data['new_category_label']);
+
             $expense = MasterExpense::create(array_merge($data, [
                 'created_by' => Auth::id(),
             ]));
@@ -827,7 +836,8 @@ class FinanceController extends Controller
     public function updateExpense(Request $request, MasterExpense $expense)
     {
         $data = $request->validate([
-            'category' => 'required|string|in:' . implode(',', array_keys(MasterExpense::CATEGORIES)),
+            'category' => ['required', 'string', Rule::in(array_keys(MasterExpense::categoriesAll()))],
+            'new_category_label' => 'nullable|string|max:60',
             'description' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0.01',
             'expense_date' => 'required|date',
@@ -836,6 +846,12 @@ class FinanceController extends Controller
         ]);
 
         try {
+            $data['category'] = $this->resolveCustomCategory(
+                $data['category'],
+                $request->input('new_category_label')
+            );
+            unset($data['new_category_label']);
+
             $expense->update($data);
 
             return response()->json([
@@ -849,6 +865,45 @@ class FinanceController extends Controller
                 'message' => 'Failed to update expense: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * If the operator picked "Other" and supplied a free-text label, persist it
+     * as a MasterExpenseCategory and return its slug so the saved expense uses
+     * the new key (not 'other'). Reuses an existing built-in slug when the
+     * label collides with one (case-insensitive), to avoid silent duplication.
+     */
+    protected function resolveCustomCategory(string $category, ?string $newLabel): string
+    {
+        if ($category !== 'other') {
+            return $category;
+        }
+
+        $label = trim((string) $newLabel);
+        if ($label === '') {
+            return 'other';
+        }
+
+        // Reuse a built-in slug when the label matches a built-in category.
+        foreach (MasterExpense::CATEGORIES as $key => $builtInLabel) {
+            if (strcasecmp($builtInLabel, $label) === 0) {
+                return $key;
+            }
+        }
+
+        $key = MasterExpenseCategory::makeKey($label);
+        $existing = MasterExpenseCategory::where('key', $key)->first();
+        if ($existing) {
+            return $existing->key;
+        }
+
+        $row = MasterExpenseCategory::create([
+            'key' => $key,
+            'label' => $label,
+            'created_by' => Auth::id(),
+        ]);
+
+        return $row->key;
     }
 
     /**
@@ -902,7 +957,7 @@ class FinanceController extends Controller
 
         return view('master.finance.expenses', [
             'expenses' => $expenses,
-            'expenseCategories' => MasterExpense::CATEGORIES,
+            'expenseCategories' => MasterExpense::categoriesAll(),
             'expensePaymentMethods' => MasterExpense::PAYMENT_METHODS,
             'totalForFilter' => $totalForFilter,
             'filters' => $request->only(['category', 'from', 'to']),

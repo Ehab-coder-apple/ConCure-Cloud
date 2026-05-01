@@ -76,6 +76,41 @@ class MasterExpense extends Model
 
     public function getCategoryLabelAttribute(): string
     {
-        return self::CATEGORIES[$this->category] ?? ucfirst($this->category);
+        if (isset(self::CATEGORIES[$this->category])) {
+            return self::CATEGORIES[$this->category];
+        }
+
+        // Fall back to a custom category label when one is recorded.
+        if (\Illuminate\Support\Facades\Schema::hasTable('master_expense_categories')) {
+            $custom = MasterExpenseCategory::where('key', $this->category)->value('label');
+            if ($custom) {
+                return $custom;
+            }
+        }
+
+        return ucfirst((string) $this->category);
+    }
+
+    /**
+     * Merge the built-in CATEGORIES with custom platform categories so they all
+     * appear in the same dropdown. 'Other' is always rendered last so the new
+     * "add custom category" affordance has a stable home in the picker.
+     */
+    public static function categoriesAll(): array
+    {
+        $builtIn = self::CATEGORIES;
+        $other = $builtIn['other'] ?? 'Other';
+        unset($builtIn['other']);
+
+        $custom = [];
+        if (\Illuminate\Support\Facades\Schema::hasTable('master_expense_categories')) {
+            $custom = MasterExpenseCategory::orderBy('label')
+                ->pluck('label', 'key')
+                ->all();
+        }
+
+        // Custom keys win over built-ins of the same slug (built-ins shouldn't
+        // collide, but keep the operator's renamed value if they ever do).
+        return array_merge($builtIn, $custom, ['other' => $other]);
     }
 }
