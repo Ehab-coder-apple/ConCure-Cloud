@@ -18,8 +18,12 @@
                 <i class="fas fa-list me-1"></i>
                 Manage Invoices
             </a>
-            <a href="{{ route('master.finance.expenses') }}" class="btn btn-outline-danger ms-2">
+            <a href="{{ route('master.finance.payments') }}" class="btn btn-outline-success ms-2">
                 <i class="fas fa-receipt me-1"></i>
+                Manage Payments
+            </a>
+            <a href="{{ route('master.finance.expenses') }}" class="btn btn-outline-danger ms-2">
+                <i class="fas fa-money-bill-wave me-1"></i>
                 Manage Expenses
             </a>
             <button type="button" class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#createInvoiceModal">
@@ -330,6 +334,9 @@
                                             </div>
                                             <small class="text-muted">
                                                 {{ Carbon\Carbon::parse($receipt->paid_at)->format('M d, Y h:i A') }}
+                                                @if(isset($receipt->city) && $receipt->city)
+                                                    · <i class="fas fa-map-marker-alt"></i> {{ $receipt->city }}
+                                                @endif
                                             </small>
                                             @if(isset($receipt->note) && $receipt->note)
                                                 <small class="text-muted d-block mt-1">{{ $receipt->note }}</small>
@@ -524,6 +531,13 @@
     </div>
 </div>
 
+<!-- Shared city suggestions datalist (used by expense + payment modals) -->
+<datalist id="masterCityOptions">
+    @foreach(($cityOptions ?? []) as $city)
+        <option value="{{ $city }}"></option>
+    @endforeach
+</datalist>
+
 <!-- Edit Payment Modal -->
 <div class="modal fade" id="editPaymentModal" tabindex="-1">
     <div class="modal-dialog">
@@ -582,6 +596,13 @@
                     <div class="mb-3">
                         <label for="edit_payment_paid_at" class="form-label">Payment Date <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="edit_payment_paid_at" name="paid_at" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_payment_city" class="form-label">City</label>
+                        <input type="text" class="form-control" id="edit_payment_city" name="city"
+                               maxlength="80" list="masterCityOptions" placeholder="e.g. Erbil">
+                        <small class="text-muted">Auto-filled from the clinic when blank.</small>
                     </div>
 
                     <div class="mb-3">
@@ -660,6 +681,13 @@
                     </div>
 
                     <div class="mb-3">
+                        <label for="payment_city" class="form-label">City</label>
+                        <input type="text" class="form-control" id="payment_city" name="city"
+                               maxlength="80" list="masterCityOptions" placeholder="e.g. Erbil">
+                        <small class="text-muted">Auto-filled from the clinic when blank.</small>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="payment_note" class="form-label">Note</label>
                         <textarea class="form-control" id="payment_note" name="note" rows="3"></textarea>
                     </div>
@@ -721,14 +749,21 @@
                             <input type="date" class="form-control" id="expense_date" name="expense_date" value="{{ date('Y-m-d') }}" required>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="expense_payment_method" class="form-label">Payment Method</label>
-                        <select class="form-select" id="expense_payment_method" name="payment_method">
-                            <option value="">-</option>
-                            @foreach($expensePaymentMethods as $key => $label)
-                                <option value="{{ $key }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="expense_payment_method" class="form-label">Payment Method</label>
+                            <select class="form-select" id="expense_payment_method" name="payment_method">
+                                <option value="">-</option>
+                                @foreach($expensePaymentMethods as $key => $label)
+                                    <option value="{{ $key }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="expense_city" class="form-label">City</label>
+                            <input type="text" class="form-control" id="expense_city" name="city"
+                                   maxlength="80" list="masterCityOptions" placeholder="e.g. Erbil">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="expense_notes" class="form-label">Notes</label>
@@ -792,14 +827,21 @@
                             <input type="date" class="form-control" id="edit_expense_date" name="expense_date" required>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_expense_payment_method" class="form-label">Payment Method</label>
-                        <select class="form-select" id="edit_expense_payment_method" name="payment_method">
-                            <option value="">-</option>
-                            @foreach($expensePaymentMethods as $key => $label)
-                                <option value="{{ $key }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_expense_payment_method" class="form-label">Payment Method</label>
+                            <select class="form-select" id="edit_expense_payment_method" name="payment_method">
+                                <option value="">-</option>
+                                @foreach($expensePaymentMethods as $key => $label)
+                                    <option value="{{ $key }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_expense_city" class="form-label">City</label>
+                            <input type="text" class="form-control" id="edit_expense_city" name="city"
+                                   maxlength="80" list="masterCityOptions" placeholder="e.g. Erbil">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="edit_expense_notes" class="form-label">Notes</label>
@@ -1070,6 +1112,25 @@ document.getElementById('recordPaymentForm').addEventListener('submit', function
 // Store payments data for JavaScript access
 const paymentsData = @json($recentReceipts);
 
+// Clinic id -> city map. Used to auto-fill the City input on the payment
+// modals (Record + Edit) when the operator picks a clinic and hasn't typed
+// a city yet. Operators can still override by typing freely.
+const clinicCityMap = @json($clinicCityMap ?? []);
+
+function bindClinicCityAutofill(clinicSelectId, cityInputId) {
+    const clinicSel = document.getElementById(clinicSelectId);
+    const cityInput = document.getElementById(cityInputId);
+    if (!clinicSel || !cityInput) return;
+    clinicSel.addEventListener('change', function () {
+        const mapped = clinicCityMap[this.value];
+        if (mapped && cityInput.value.trim() === '') {
+            cityInput.value = mapped;
+        }
+    });
+}
+bindClinicCityAutofill('payment_clinic_id', 'payment_city');
+bindClinicCityAutofill('edit_payment_clinic_id', 'edit_payment_city');
+
 // Update currency symbol when currency changes (Edit Payment form)
 document.getElementById('edit_payment_currency').addEventListener('change', function() {
     const symbol = currencySymbols[this.value] || '$';
@@ -1091,6 +1152,7 @@ function editPayment(paymentId) {
     document.getElementById('edit_payment_amount').value = payment.amount;
     document.getElementById('edit_payment_method').value = payment.method || '';
     document.getElementById('edit_payment_paid_at').value = payment.paid_at ? payment.paid_at.split(' ')[0] : '';
+    document.getElementById('edit_payment_city').value = payment.city || '';
     document.getElementById('edit_payment_note').value = payment.note || '';
 
     // Update currency symbol
@@ -1119,6 +1181,7 @@ document.getElementById('editPaymentForm').addEventListener('submit', function(e
             amount: formData.get('amount'),
             payment_method: formData.get('payment_method'),
             paid_at: formData.get('paid_at'),
+            city: formData.get('city') || null,
             note: formData.get('note')
         })
     })
@@ -1203,6 +1266,7 @@ document.getElementById('recordExpenseForm').addEventListener('submit', function
         amount: formData.get('amount'),
         expense_date: formData.get('expense_date'),
         payment_method: formData.get('payment_method') || null,
+        city: formData.get('city') || null,
         notes: formData.get('notes') || null,
     };
 
@@ -1242,6 +1306,7 @@ function editExpense(expense) {
         ? String(expense.expense_date).split('T')[0].split(' ')[0]
         : '';
     document.getElementById('edit_expense_payment_method').value = expense.payment_method || '';
+    document.getElementById('edit_expense_city').value = expense.city || '';
     document.getElementById('edit_expense_notes').value = expense.notes || '';
     new bootstrap.Modal(document.getElementById('editExpenseModal')).show();
 }
@@ -1258,6 +1323,7 @@ document.getElementById('editExpenseForm').addEventListener('submit', function(e
         amount: formData.get('amount'),
         expense_date: formData.get('expense_date'),
         payment_method: formData.get('payment_method') || null,
+        city: formData.get('city') || null,
         notes: formData.get('notes') || null,
     };
 

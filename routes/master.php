@@ -109,6 +109,7 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::put('/finance/payment/{payment}/update', [FinanceController::class, 'updatePayment'])->name('finance.payment.update');
     Route::delete('/finance/payment/{payment}/delete', [FinanceController::class, 'deletePayment'])->name('finance.payment.delete');
     Route::get('/finance/invoices', [FinanceController::class, 'invoices'])->name('finance.invoices');
+    Route::get('/finance/payments', [FinanceController::class, 'payments'])->name('finance.payments');
     Route::get('/finance/invoice/{invoice}', [FinanceController::class, 'showInvoice'])->name('finance.invoice.show');
     Route::get('/finance/invoice/{invoice}/print', [FinanceController::class, 'printInvoice'])->name('finance.invoice.print');
     Route::get('/finance/invoice/{invoice}/pdf', [FinanceController::class, 'downloadInvoicePDF'])->name('finance.invoice.pdf');

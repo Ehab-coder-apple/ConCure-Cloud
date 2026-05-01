@@ -1,3 +1,14 @@
+<!-- Shared city suggestions datalist (used by expense + payment modals) -->
+@if(!empty($cityOptions ?? []))
+<datalist id="masterCityOptions">
+    @foreach($cityOptions as $city)
+        <option value="{{ $city }}"></option>
+    @endforeach
+</datalist>
+@else
+<datalist id="masterCityOptions"></datalist>
+@endif
+
 <!-- Record Expense Modal -->
 <div class="modal fade" id="createExpenseModal" tabindex="-1">
     <div class="modal-dialog">
@@ -44,14 +55,21 @@
                             <input type="date" class="form-control" id="expense_date" name="expense_date" value="{{ date('Y-m-d') }}" required>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="expense_payment_method" class="form-label">Payment Method</label>
-                        <select class="form-select" id="expense_payment_method" name="payment_method">
-                            <option value="">-</option>
-                            @foreach($expensePaymentMethods as $key => $label)
-                                <option value="{{ $key }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="expense_payment_method" class="form-label">Payment Method</label>
+                            <select class="form-select" id="expense_payment_method" name="payment_method">
+                                <option value="">-</option>
+                                @foreach($expensePaymentMethods as $key => $label)
+                                    <option value="{{ $key }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="expense_city" class="form-label">City</label>
+                            <input type="text" class="form-control" id="expense_city" name="city"
+                                   maxlength="80" list="masterCityOptions" placeholder="e.g. Erbil">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="expense_notes" class="form-label">Notes</label>
@@ -115,14 +133,21 @@
                             <input type="date" class="form-control" id="edit_expense_date" name="expense_date" required>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_expense_payment_method" class="form-label">Payment Method</label>
-                        <select class="form-select" id="edit_expense_payment_method" name="payment_method">
-                            <option value="">-</option>
-                            @foreach($expensePaymentMethods as $key => $label)
-                                <option value="{{ $key }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_expense_payment_method" class="form-label">Payment Method</label>
+                            <select class="form-select" id="edit_expense_payment_method" name="payment_method">
+                                <option value="">-</option>
+                                @foreach($expensePaymentMethods as $key => $label)
+                                    <option value="{{ $key }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_expense_city" class="form-label">City</label>
+                            <input type="text" class="form-control" id="edit_expense_city" name="city"
+                                   maxlength="80" list="masterCityOptions" placeholder="e.g. Erbil">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="edit_expense_notes" class="form-label">Notes</label>
@@ -174,6 +199,7 @@ if (typeof window.__masterExpenseHandlersLoaded === 'undefined') {
             amount: formData.get('amount'),
             expense_date: formData.get('expense_date'),
             payment_method: formData.get('payment_method') || null,
+            city: formData.get('city') || null,
             notes: formData.get('notes') || null,
         };
 
@@ -209,6 +235,7 @@ if (typeof window.__masterExpenseHandlersLoaded === 'undefined') {
             ? String(expense.expense_date).split('T')[0].split(' ')[0]
             : '';
         document.getElementById('edit_expense_payment_method').value = expense.payment_method || '';
+        document.getElementById('edit_expense_city').value = expense.city || '';
         document.getElementById('edit_expense_notes').value = expense.notes || '';
         new bootstrap.Modal(document.getElementById('editExpenseModal')).show();
     };
@@ -224,6 +251,7 @@ if (typeof window.__masterExpenseHandlersLoaded === 'undefined') {
             amount: formData.get('amount'),
             expense_date: formData.get('expense_date'),
             payment_method: formData.get('payment_method') || null,
+            city: formData.get('city') || null,
             notes: formData.get('notes') || null,
         };
 

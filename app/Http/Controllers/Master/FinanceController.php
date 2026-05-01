@@ -55,6 +55,11 @@ class FinanceController extends Controller
         $expenseCategories = MasterExpense::categoriesAll();
         $expensePaymentMethods = MasterExpense::PAYMENT_METHODS;
 
+        // City suggestions + clinic->city map (drives the datalists on both
+        // expense and payment modals; clinic map auto-fills payment city).
+        $clinicCityMap = $this->getClinicCityMap();
+        $cityOptions = $this->getCityOptions();
+
         return view('master.finance.index', compact(
             'period',
             'from',
@@ -68,8 +73,51 @@ class FinanceController extends Controller
             'currencySymbol',
             'mostUsedCurrency',
             'expenseCategories',
-            'expensePaymentMethods'
+            'expensePaymentMethods',
+            'clinicCityMap',
+            'cityOptions'
         ));
+    }
+
+    /**
+     * Map of non-demo clinic id -> city, used by the JS to auto-fill the
+     * city input on the Record/Edit Payment modals when a clinic is picked.
+     */
+    private function getClinicCityMap(): array
+    {
+        return Clinic::where('is_demo', false)
+            ->whereNotNull('city')
+            ->where('city', '!=', '')
+            ->pluck('city', 'id')
+            ->all();
+    }
+
+    /**
+     * Distinct city suggestions sourced from clinics + master_expenses +
+     * subscription_payments. Surfaced as a <datalist> on the modals and as
+     * the City filter dropdown on the listings.
+     */
+    private function getCityOptions(): array
+    {
+        $clinicCities = Clinic::where('is_demo', false)
+            ->whereNotNull('city')->where('city', '!=', '')
+            ->distinct()->pluck('city');
+
+        $expenseCities = MasterExpense::whereNotNull('city')->where('city', '!=', '')
+            ->distinct()->pluck('city');
+
+        $paymentCities = SubscriptionPayment::whereNotNull('city')->where('city', '!=', '')
+            ->distinct()->pluck('city');
+
+        return $clinicCities
+            ->merge($expenseCities)
+            ->merge($paymentCities)
+            ->map(fn ($c) => trim((string) $c))
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
     }
 
     /**
@@ -454,6 +502,7 @@ class FinanceController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|string',
             'paid_at' => 'required|date',
+            'city' => 'nullable|string|max:80',
             'note' => 'nullable|string',
         ]);
 
@@ -465,6 +514,7 @@ class FinanceController extends Controller
                 'currency' => $request->currency,
                 'paid_at' => $request->paid_at,
                 'method' => $request->payment_method,
+                'city' => $this->resolvePaymentCity($request->input('city'), $request->clinic_id),
                 'notes' => $request->note, // Fixed: column name is 'notes' not 'note'
             ]);
 
@@ -738,6 +788,7 @@ class FinanceController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|string',
             'paid_at' => 'required|date',
+            'city' => 'nullable|string|max:80',
             'note' => 'nullable|string',
         ]);
 
@@ -749,6 +800,7 @@ class FinanceController extends Controller
                 'currency' => $request->currency,
                 'paid_at' => $request->paid_at,
                 'method' => $request->payment_method,
+                'city' => $this->resolvePaymentCity($request->input('city'), $request->clinic_id),
                 'notes' => $request->note, // Fixed: column name is 'notes' not 'note'
             ]);
 
@@ -805,6 +857,7 @@ class FinanceController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'expense_date' => 'required|date',
             'payment_method' => 'nullable|string|in:' . implode(',', array_keys(MasterExpense::PAYMENT_METHODS)),
+            'city' => 'nullable|string|max:80',
             'notes' => 'nullable|string',
         ]);
 
@@ -814,6 +867,7 @@ class FinanceController extends Controller
                 $request->input('new_category_label')
             );
             unset($data['new_category_label']);
+            $data['city'] = $this->normalizeCity($data['city'] ?? null);
 
             $expense = MasterExpense::create(array_merge($data, [
                 'created_by' => Auth::id(),
@@ -844,6 +898,7 @@ class FinanceController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'expense_date' => 'required|date',
             'payment_method' => 'nullable|string|in:' . implode(',', array_keys(MasterExpense::PAYMENT_METHODS)),
+            'city' => 'nullable|string|max:80',
             'notes' => 'nullable|string',
         ]);
 
@@ -853,6 +908,7 @@ class FinanceController extends Controller
                 $request->input('new_category_label')
             );
             unset($data['new_category_label']);
+            $data['city'] = $this->normalizeCity($data['city'] ?? null);
 
             $expense->update($data);
 
@@ -941,6 +997,10 @@ class FinanceController extends Controller
             $query->where('category', $request->category);
         }
 
+        if ($request->filled('city')) {
+            $query->where('city', $request->city);
+        }
+
         if ($request->filled('from')) {
             $query->whereDate('expense_date', '>=', $request->from);
         }
@@ -951,6 +1011,7 @@ class FinanceController extends Controller
 
         $totalForFilter = (float) MasterExpense::query()
             ->when($request->filled('category'), fn($q) => $q->where('category', $request->category))
+            ->when($request->filled('city'), fn($q) => $q->where('city', $request->city))
             ->when($request->filled('from'), fn($q) => $q->whereDate('expense_date', '>=', $request->from))
             ->when($request->filled('to'), fn($q) => $q->whereDate('expense_date', '<=', $request->to))
             ->sum('amount');
@@ -962,8 +1023,95 @@ class FinanceController extends Controller
             'expenseCategories' => MasterExpense::categoriesAll(),
             'expensePaymentMethods' => MasterExpense::PAYMENT_METHODS,
             'totalForFilter' => $totalForFilter,
-            'filters' => $request->only(['category', 'from', 'to']),
+            'filters' => $request->only(['category', 'city', 'from', 'to']),
+            'cityOptions' => $this->getCityOptions(),
+            'clinicCityMap' => $this->getClinicCityMap(),
         ]);
+    }
+
+    /**
+     * List subscription payments with filters (clinic, city, currency, date range).
+     * Demo clinics are excluded so the figures match the dashboard.
+     */
+    public function payments(Request $request)
+    {
+        $query = SubscriptionPayment::with('clinic:id,name,city')
+            ->whereHas('clinic', fn ($q) => $q->where('is_demo', false))
+            ->orderBy('paid_at', 'desc')
+            ->orderBy('id', 'desc');
+
+        if ($request->filled('clinic_id')) {
+            $query->where('clinic_id', $request->clinic_id);
+        }
+
+        if ($request->filled('city')) {
+            $query->where('city', $request->city);
+        }
+
+        if ($request->filled('currency')) {
+            $query->where('currency', $request->currency);
+        }
+
+        if ($request->filled('method')) {
+            $query->where('method', $request->method);
+        }
+
+        if ($request->filled('from')) {
+            $query->whereDate('paid_at', '>=', $request->from);
+        }
+
+        if ($request->filled('to')) {
+            $query->whereDate('paid_at', '<=', $request->to);
+        }
+
+        // Per-currency totals so mixed currencies don't get summed nonsensically.
+        $totalsByCurrency = (clone $query)
+            ->reorder()
+            ->select('currency', DB::raw('SUM(amount) as total'))
+            ->groupBy('currency')
+            ->pluck('total', 'currency')
+            ->all();
+
+        $payments = $query->paginate(20)->withQueryString();
+
+        $clinics = Clinic::where('is_demo', false)
+            ->orderBy('name')
+            ->get(['id', 'name', 'city']);
+
+        return view('master.finance.payments', [
+            'payments' => $payments,
+            'clinics' => $clinics,
+            'totalsByCurrency' => $totalsByCurrency,
+            'filters' => $request->only(['clinic_id', 'city', 'currency', 'method', 'from', 'to']),
+            'cityOptions' => $this->getCityOptions(),
+            'clinicCityMap' => $this->getClinicCityMap(),
+        ]);
+    }
+
+    /**
+     * Trim a free-text city value, returning null when blank so we don't
+     * write empty strings (keeps the city index tidy and DISTINCT lookups clean).
+     */
+    protected function normalizeCity(?string $city): ?string
+    {
+        $city = trim((string) $city);
+        return $city === '' ? null : $city;
+    }
+
+    /**
+     * Resolve the city for a payment row: prefer the operator-supplied value;
+     * fall back to the clinic's registered city so historical filtering works
+     * even when the form is submitted without a city.
+     */
+    protected function resolvePaymentCity(?string $submittedCity, $clinicId): ?string
+    {
+        $normalized = $this->normalizeCity($submittedCity);
+        if ($normalized !== null) {
+            return $normalized;
+        }
+
+        $clinicCity = Clinic::where('id', $clinicId)->value('city');
+        return $this->normalizeCity($clinicCity);
     }
 
     /**

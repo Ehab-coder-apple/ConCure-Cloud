@@ -36,14 +36,23 @@
                     </select>
                 </div>
                 <div class="col-md-3">
+                    <label for="city" class="form-label">City</label>
+                    <select class="form-select" id="city" name="city">
+                        <option value="">All cities</option>
+                        @foreach(($cityOptions ?? []) as $city)
+                            <option value="{{ $city }}" {{ ($filters['city'] ?? '') === $city ? 'selected' : '' }}>{{ $city }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <label for="from" class="form-label">From</label>
                     <input type="date" class="form-control" id="from" name="from" value="{{ $filters['from'] ?? '' }}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="to" class="form-label">To</label>
                     <input type="date" class="form-control" id="to" name="to" value="{{ $filters['to'] ?? '' }}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-filter me-1"></i> Apply
                     </button>
@@ -74,6 +83,7 @@
                                 <th>Date</th>
                                 <th>Category</th>
                                 <th>Description</th>
+                                <th>City</th>
                                 <th>Payment Method</th>
                                 <th>Recorded By</th>
                                 <th class="text-end">Amount (IQD)</th>
@@ -93,6 +103,15 @@
                                         {{ $expense->description }}
                                         @if($expense->notes)
                                             <small class="d-block text-muted">{{ $expense->notes }}</small>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($expense->city)
+                                            <span class="badge bg-light text-dark">
+                                                <i class="fas fa-map-marker-alt me-1 text-muted"></i>{{ $expense->city }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                     <td>

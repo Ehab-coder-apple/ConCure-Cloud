@@ -24,6 +24,7 @@ class MasterExpense extends Model
         'amount',
         'expense_date',
         'payment_method',
+        'city',
         'notes',
         'created_by',
     ];

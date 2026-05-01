@@ -16,6 +16,7 @@ class SubscriptionPayment extends Model
         'currency',
         'paid_at',
         'method',
+        'city',
         'reference',
         'notes',
     ];
