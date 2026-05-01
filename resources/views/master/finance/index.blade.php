@@ -85,7 +85,7 @@
     <!-- Financial Statistics Cards -->
     <div class="row mb-4">
         <!-- Total Revenue -->
-        <div class="col-lg-3 col-md-6 mb-3">
+        <div class="col-xl col-lg-4 col-md-6 mb-3">
             <div class="card border-left-success h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -105,7 +105,7 @@
         </div>
 
         <!-- Expected Revenue -->
-        <div class="col-lg-3 col-md-6 mb-3">
+        <div class="col-xl col-lg-4 col-md-6 mb-3">
             <div class="card border-left-warning h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -125,7 +125,7 @@
         </div>
 
         <!-- Service Charges -->
-        <div class="col-lg-3 col-md-6 mb-3">
+        <div class="col-xl col-lg-4 col-md-6 mb-3">
             <div class="card border-left-info h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -144,8 +144,31 @@
             </div>
         </div>
 
+        <!-- Total Expenses -->
+        <div class="col-xl col-lg-4 col-md-6 mb-3">
+            <div class="card border-left-danger h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Expenses</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                IQD{{ number_format($stats['total_expenses'], 2) }}
+                            </div>
+                            <small class="text-muted">
+                                {{ $stats['expense_count'] ?? 0 }} {{ ($stats['expense_count'] ?? 0) === 1 ? 'entry' : 'entries' }}
+                                <a href="{{ route('master.finance.expenses') }}" class="ms-1">View</a>
+                            </small>
+                        </div>
+                        <div class="icon-circle bg-danger text-white">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Net Profit -->
-        <div class="col-lg-3 col-md-6 mb-3">
+        <div class="col-xl col-lg-4 col-md-6 mb-3">
             <div class="card border-left-primary h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -154,7 +177,7 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 {{ $currencySymbol }}{{ number_format($stats['net_profit'], 2) }}
                             </div>
-                            <small class="text-muted">Expenses (IQD): {{ number_format($stats['total_expenses'], 2) }}</small>
+                            <small class="text-muted">Revenue − Expenses (IQD)</small>
                         </div>
                         <div class="icon-circle bg-primary text-white">
                             <i class="fas fa-coins"></i>

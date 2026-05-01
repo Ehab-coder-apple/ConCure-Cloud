@@ -153,9 +153,10 @@ class FinanceController extends Controller
             ->sum('service_charge_amount');
 
         // Operational SaaS expenses recorded by super-admin (IQD only).
-        $totalExpenses = (float) MasterExpense::query()
-            ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()])
-            ->sum('amount');
+        $expensesQuery = MasterExpense::query()
+            ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()]);
+        $totalExpenses = (float) (clone $expensesQuery)->sum('amount');
+        $expenseCount = (int) (clone $expensesQuery)->count();
 
         // Net profit. Note: revenue can be multi-currency while expenses are
         // IQD-only by design -- the master finance dashboard already mixes
@@ -167,6 +168,7 @@ class FinanceController extends Controller
             'expected_revenue' => $expectedRevenue,
             'service_charges' => $serviceCharges,
             'total_expenses' => $totalExpenses,
+            'expense_count' => $expenseCount,
             'net_profit' => $netProfit,
             'payment_count' => $paymentCount,
             'collection_rate' => $expectedRevenue > 0 ? ($totalRevenue / $expectedRevenue) * 100 : 0,
