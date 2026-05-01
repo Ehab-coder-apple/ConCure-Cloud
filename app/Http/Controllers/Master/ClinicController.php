@@ -167,6 +167,7 @@ class ClinicController extends Controller
             'service_charge_amount' => 'nullable|numeric|min:0|max:10000000',
             'service_charge_date' => 'nullable|date',
             'service_charge_note' => 'nullable|string|max:500',
+            'contract_renewal_at' => 'nullable|date|after_or_equal:1900-01-01',
             'enabled_modules' => 'nullable|array',
             'enabled_modules.*' => ['string', Rule::in(array_keys(Clinic::AVAILABLE_MODULES))],
             // Admin
@@ -230,6 +231,7 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'service_charge_amount')) { $clinicData['service_charge_amount'] = $request->input('service_charge_amount'); }
             if (Schema::hasColumn('clinics', 'service_charge_date')) { $clinicData['service_charge_date'] = $request->input('service_charge_date'); }
             if (Schema::hasColumn('clinics', 'service_charge_note')) { $clinicData['service_charge_note'] = $request->input('service_charge_note'); }
+            if (Schema::hasColumn('clinics', 'contract_renewal_at')) { $clinicData['contract_renewal_at'] = $request->input('contract_renewal_at') ?: null; }
 
             $enabledModules = collect($request->input('enabled_modules', []))
                 ->filter(fn ($module) => is_string($module) && $module !== '')
@@ -341,6 +343,7 @@ class ClinicController extends Controller
             'service_charge_amount' => 'nullable|numeric|min:0|max:10000000',
             'service_charge_date' => 'nullable|date',
             'service_charge_note' => 'nullable|string|max:500',
+            'contract_renewal_at' => 'nullable|date|after_or_equal:1900-01-01',
             'enabled_modules' => 'nullable|array',
             'enabled_modules.*' => ['string', Rule::in(array_keys(Clinic::AVAILABLE_MODULES))],
         ];
@@ -416,6 +419,7 @@ class ClinicController extends Controller
             if (Schema::hasColumn('clinics', 'service_charge_amount')) { $updateData['service_charge_amount'] = $request->input('service_charge_amount'); }
             if (Schema::hasColumn('clinics', 'service_charge_date')) { $updateData['service_charge_date'] = $request->input('service_charge_date'); }
             if (Schema::hasColumn('clinics', 'service_charge_note')) { $updateData['service_charge_note'] = $request->input('service_charge_note'); }
+            if (Schema::hasColumn('clinics', 'contract_renewal_at')) { $updateData['contract_renewal_at'] = $request->input('contract_renewal_at') ?: null; }
 
             // Storage limit
             if (Schema::hasColumn('clinics', 'storage_limit') && $request->filled('storage_limit_gb')) {

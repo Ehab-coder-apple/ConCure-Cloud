@@ -10,6 +10,7 @@ use App\Models\Patient;
 use App\Models\Prescription;
 use App\Models\Appointment;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -26,10 +27,38 @@ class DashboardController extends Controller
         $recentClinics = $this->getRecentClinics();
         $recentUsers = $this->getRecentUsers();
 
+        // Clinics whose contract is up for renewal next calendar month
+        $upcomingRenewals = $this->getUpcomingRenewals();
+
         // Get growth data for charts
         $growthData = $this->getGrowthData();
 
-        return view('master.dashboard', compact('stats', 'recentClinics', 'recentUsers', 'growthData'));
+        return view('master.dashboard', compact('stats', 'recentClinics', 'recentUsers', 'upcomingRenewals', 'growthData'));
+    }
+
+    /**
+     * Clinics whose contract_renewal_at falls within next calendar month.
+     * Excludes demo clinics. Indexed column keeps this cheap on large datasets.
+     */
+    private function getUpcomingRenewals()
+    {
+        if (!Schema::hasColumn('clinics', 'contract_renewal_at')) {
+            return collect();
+        }
+
+        $start = Carbon::now()->addMonthNoOverflow()->startOfMonth()->toDateString();
+        $end   = Carbon::now()->addMonthNoOverflow()->endOfMonth()->toDateString();
+
+        $query = Clinic::query()
+            ->select(['id', 'name', 'email', 'city', 'is_active', 'contract_renewal_at'])
+            ->whereNotNull('contract_renewal_at')
+            ->whereBetween('contract_renewal_at', [$start, $end]);
+
+        if (Schema::hasColumn('clinics', 'is_demo')) {
+            $query->where('is_demo', false);
+        }
+
+        return $query->orderBy('contract_renewal_at')->limit(50)->get();
     }
 
     /**

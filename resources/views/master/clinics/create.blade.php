@@ -251,6 +251,16 @@
                                 @enderror
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="contract_renewal_at" class="form-label">Contract Renewal Date</label>
+                                <input type="date" class="form-control @error('contract_renewal_at') is-invalid @enderror" id="contract_renewal_at" name="contract_renewal_at" value="{{ old('contract_renewal_at') }}">
+                                @error('contract_renewal_at')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">Clinics due for renewal next month appear on the master dashboard.</div>
+                            </div>
+                        </div>
 
                         </div>
                         <div class="text-muted small">Note: Demo clinics are excluded from Master financial reports.</div>

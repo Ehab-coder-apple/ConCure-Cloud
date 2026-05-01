@@ -133,6 +133,79 @@
         </div>
     </div>
 
+    <!-- Upcoming Renewals -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow border-left-warning">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Contracts Renewing Next Month
+                        @if($upcomingRenewals->count() > 0)
+                            <span class="badge bg-warning text-dark ms-2">{{ $upcomingRenewals->count() }}</span>
+                        @endif
+                    </h6>
+                    <small class="text-muted">
+                        {{ \Carbon\Carbon::now()->addMonthNoOverflow()->format('F Y') }}
+                    </small>
+                </div>
+                <div class="card-body">
+                    @if($upcomingRenewals->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Clinic</th>
+                                        <th>Email</th>
+                                        <th>City</th>
+                                        <th>Renewal Date</th>
+                                        <th>Status</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($upcomingRenewals as $clinic)
+                                        <tr>
+                                            <td class="fw-bold">{{ $clinic->name }}</td>
+                                            <td class="text-muted small">{{ $clinic->email ?? '-' }}</td>
+                                            <td class="text-muted small">{{ $clinic->city ?? '-' }}</td>
+                                            <td>
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-calendar-day me-1"></i>
+                                                    {{ $clinic->contract_renewal_at->format('M d, Y') }}
+                                                </span>
+                                                <span class="text-muted small ms-1">
+                                                    ({{ $clinic->contract_renewal_at->diffForHumans() }})
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if($clinic->is_active)
+                                                    <span class="badge bg-success">Active</span>
+                                                @else
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{{ route('master.clinics.edit', $clinic) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-check-circle text-success me-1"></i>
+                            No clinic contracts are scheduled to renew in {{ \Carbon\Carbon::now()->addMonthNoOverflow()->format('F Y') }}.
+                        </p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Recent Activity -->
     <div class="row">
         <div class="col-lg-6 mb-4">

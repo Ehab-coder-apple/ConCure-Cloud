@@ -41,6 +41,7 @@ class Clinic extends Model
         'service_charge_amount',
         'service_charge_date',
         'service_charge_note',
+        'contract_renewal_at',
         'storage_limit',
         'storage_used',
         'country_id',
@@ -61,6 +62,7 @@ class Clinic extends Model
         'billing_user_price' => 'decimal:2',
         'service_charge_amount' => 'decimal:2',
         'service_charge_date' => 'date',
+        'contract_renewal_at' => 'date',
         'storage_limit' => 'integer',
         'storage_used' => 'integer',
     ];

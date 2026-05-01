@@ -113,6 +113,7 @@
 	                                <th>Address</th>
 	                                <th>Users</th>
 	                                <th>Status</th>
+	                                <th>Renewal</th>
 	                                <th>Created</th>
 	                                <th>Actions</th>
 	                            </tr>
@@ -171,6 +172,22 @@
                                                 <i class="fas fa-pause-circle me-1"></i>
                                                 Inactive
                                             </span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($clinic->contract_renewal_at)
+                                            @php
+                                                $renewal = $clinic->contract_renewal_at;
+                                                $today = \Carbon\Carbon::today();
+                                                $daysToRenewal = $today->diffInDays($renewal, false);
+                                                if ($daysToRenewal < 0) { $renewalClass = 'text-danger fw-bold'; $renewalLabel = 'Overdue'; }
+                                                elseif ($daysToRenewal <= 30) { $renewalClass = 'text-warning fw-bold'; $renewalLabel = 'Due soon'; }
+                                                else { $renewalClass = 'text-muted'; $renewalLabel = $renewal->diffForHumans(); }
+                                            @endphp
+                                            <div class="{{ $renewalClass }}">{{ $renewal->format('M d, Y') }}</div>
+                                            <div class="text-muted small">{{ $renewalLabel }}</div>
+                                        @else
+                                            <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                     <td>
