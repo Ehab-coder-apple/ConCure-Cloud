@@ -468,6 +468,13 @@
                         @enderror
                     </div>
 
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="print_after_dispense" name="print_after_dispense" value="1" checked>
+                        <label class="form-check-label" for="print_after_dispense">
+                            <i class="fas fa-print me-1"></i>{{ __('Print thermal receipt after dispensing') }}
+                        </label>
+                    </div>
+
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         <strong>{{ __('Important') }}:</strong> {{ __('This action cannot be undone. Make sure all medicines are available in inventory before proceeding.') }}
@@ -487,6 +494,15 @@
 
 @push('scripts')
 <script>
+@if(session('auto_print_url'))
+(function () {
+    try {
+        var url = @json(session('auto_print_url'));
+        if (url) { window.open(url, '_blank', 'noopener'); }
+    } catch (e) { /* popup blocker; ignore */ }
+})();
+@endif
+
 function shareSimplePrescriptionWhatsApp() {
   const patientName = "{{ ($prescription->patient->first_name ?? '') . ' ' . ($prescription->patient->last_name ?? '') }}".trim();
   const patientId = "{{ $prescription->patient->patient_id ?? '' }}";

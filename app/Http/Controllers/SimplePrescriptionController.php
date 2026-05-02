@@ -6,6 +6,8 @@ use App\Models\SimplePrescription;
 use App\Models\SimplePrescriptionMedicine;
 use App\Models\Patient;
 use App\Models\Medicine;
+use App\Models\MedicineSaleInvoice;
+use App\Models\MedicineTransaction;
 use App\Models\Clinic;
 use App\Models\User;
 use App\Services\PdfKurdishFontService;
@@ -730,26 +732,28 @@ class SimplePrescriptionController extends Controller
             return back()->with('error', 'Only active prescriptions can be dispensed. Current status: ' . $prescription->status);
         }
 
-        // Validate payment method
         $request->validate([
             'payment_method' => 'required|in:cash,card,credit,insurance,other',
+            'print_after_dispense' => 'nullable|boolean',
         ]);
 
         DB::beginTransaction();
         try {
             $unavailableMedicines = [];
             $insufficientStock = [];
-            $totalAmount = 0;
+            $matchedItems = [];
+            $subtotal = 0.0;
 
-            // First pass: Check all medicines availability and stock
+            // Single resolution pass — locks each matched stock row so a parallel
+            // sale on the same clinic cannot oversell while we dispense.
             foreach ($prescription->medicines as $prescribedMedicine) {
-                // Try to find matching medicine in inventory
                 $medicine = Medicine::where('clinic_id', $prescription->clinic_id)
                     ->where(function ($query) use ($prescribedMedicine) {
                         $query->where('name', 'LIKE', '%' . $prescribedMedicine->medicine_name . '%')
                             ->orWhere('generic_name', 'LIKE', '%' . $prescribedMedicine->medicine_name . '%');
                     })
                     ->where('is_active', true)
+                    ->lockForUpdate()
                     ->first();
 
                 if (!$medicine) {
@@ -757,18 +761,28 @@ class SimplePrescriptionController extends Controller
                     continue;
                 }
 
-                // Check stock quantity - support decimals for cosmetics/fillers
                 $quantityNeeded = (float) ($prescribedMedicine->quantity ?? 1);
-                if ($medicine->stock_quantity < $quantityNeeded) {
+                if ((float) $medicine->stock_quantity < $quantityNeeded) {
                     $insufficientStock[] = [
                         'name' => $medicine->name,
                         'needed' => $quantityNeeded,
-                        'available' => $medicine->stock_quantity,
+                        'available' => (float) $medicine->stock_quantity,
                     ];
+                    continue;
                 }
+
+                $unitPrice = (float) ($medicine->selling_price ?? 0);
+                $lineTotal = round($quantityNeeded * $unitPrice, 2);
+                $subtotal += $lineTotal;
+
+                $matchedItems[] = [
+                    'medicine'   => $medicine,
+                    'qty'        => $quantityNeeded,
+                    'unit_price' => $unitPrice,
+                    'line_total' => $lineTotal,
+                ];
             }
 
-            // If any medicines are unavailable or have insufficient stock, abort
             if (!empty($unavailableMedicines)) {
                 DB::rollBack();
                 return back()->with('error', 'The following medicines are not found in inventory: ' .
@@ -784,64 +798,75 @@ class SimplePrescriptionController extends Controller
                 return back()->with('error', $errorMessage);
             }
 
-            // Second pass: Create transactions and update stock
-            $dispenseReference = 'DISP-' . date('Ymd') . '-' . str_pad($prescription->id, 5, '0', STR_PAD_LEFT) . '-' . time();
+            $subtotal = round($subtotal, 2);
 
-            foreach ($prescription->medicines as $prescribedMedicine) {
-                // Find medicine again
-                $medicine = Medicine::where('clinic_id', $prescription->clinic_id)
-                    ->where(function ($query) use ($prescribedMedicine) {
-                        $query->where('name', 'LIKE', '%' . $prescribedMedicine->medicine_name . '%')
-                            ->orWhere('generic_name', 'LIKE', '%' . $prescribedMedicine->medicine_name . '%');
-                    })
-                    ->where('is_active', true)
-                    ->first();
+            // Create the sale invoice that ties all dispensed items together.
+            // clinic_id mirrors the prescription's clinic so stock and revenue
+            // attribution land on the same tenant.
+            $invoice = MedicineSaleInvoice::create([
+                'clinic_id'      => $prescription->clinic_id,
+                'user_id'        => $user->id,
+                'patient_id'     => $prescription->patient_id,
+                'invoice_number' => MedicineSaleInvoice::generateInvoiceNumber($prescription->clinic_id),
+                'payment_method' => $request->payment_method,
+                'subtotal'       => $subtotal,
+                'discount'       => 0,
+                'tax'            => 0,
+                'total'          => $subtotal,
+                'paid_amount'    => $subtotal,
+                'notes'          => 'Dispensed from prescription #' . $prescription->prescription_number,
+                'sold_at'        => now(),
+            ]);
 
-                // Support decimal quantities for cosmetics/fillers (e.g., 0.5 ml, 1.5 ml)
-                $quantityNeeded = (float) ($prescribedMedicine->quantity ?? 1);
-                $unitPrice = $medicine->selling_price ?? 0;
-                $itemTotal = $quantityNeeded * $unitPrice;
-                $totalAmount += $itemTotal;
+            foreach ($matchedItems as $item) {
+                $stockBefore = (float) $item['medicine']->stock_quantity;
 
-                // Record stock before transaction
-                $stockBefore = $medicine->stock_quantity;
-
-                // Create transaction record
-                \App\Models\MedicineTransaction::create([
-                    'medicine_id' => $medicine->id,
-                    'clinic_id' => $prescription->clinic_id,
-                    'user_id' => $user->id,
-                    'type' => 'sale',
-                    'quantity' => $quantityNeeded,
-                    'unit_price' => $unitPrice,
-                    'total_amount' => $itemTotal,
-                    'reference_number' => $dispenseReference,
-                    'patient_id' => $prescription->patient_id,
-                    'payment_method' => $request->payment_method,
-                    'stock_before' => $stockBefore,
-                    'stock_after' => $stockBefore - $quantityNeeded,
-                    'notes' => 'Dispensed from prescription #' . $prescription->prescription_number,
-                    'transaction_date' => now(),
+                MedicineTransaction::create([
+                    'medicine_id'              => $item['medicine']->id,
+                    'clinic_id'                => $prescription->clinic_id,
+                    'user_id'                  => $user->id,
+                    'medicine_sale_invoice_id' => $invoice->id,
+                    'type'                     => 'sale',
+                    'quantity'                 => $item['qty'],
+                    'unit_price'               => $item['unit_price'],
+                    'total_amount'             => $item['line_total'],
+                    'reference_number'         => $invoice->invoice_number,
+                    'patient_id'               => $prescription->patient_id,
+                    'payment_method'           => $request->payment_method,
+                    'stock_before'             => $stockBefore,
+                    'stock_after'              => $stockBefore - $item['qty'],
+                    'notes'                    => 'Dispensed from prescription #' . $prescription->prescription_number,
+                    'transaction_date'         => now(),
                 ]);
 
-                // Update medicine stock
-                $medicine->decrement('stock_quantity', $quantityNeeded);
+                $item['medicine']->decrement('stock_quantity', $item['qty']);
             }
 
-            // Mark prescription as dispensed
             $prescription->update([
-                'is_dispensed' => true,
-                'dispensed_at' => now(),
-                'dispensed_by' => $user->id,
-                'dispense_reference' => $dispenseReference,
-                'status' => 'completed',
+                'is_dispensed'       => true,
+                'dispensed_at'       => now(),
+                'dispensed_by'       => $user->id,
+                'dispense_reference' => $invoice->invoice_number,
+                'status'             => 'completed',
             ]);
 
             DB::commit();
 
-            return redirect()->route('simple-prescriptions.show', $prescription)
-                ->with('success', 'Prescription dispensed successfully! Total amount: ' . number_format($totalAmount, 2) .
-                    ' | Reference: ' . $dispenseReference);
+            $redirect = redirect()
+                ->route('simple-prescriptions.show', $prescription)
+                ->with('success', 'Prescription dispensed successfully! Invoice ' . $invoice->invoice_number .
+                    ' · Total ' . number_format($subtotal, 2));
+
+            // When the cashier ticked "Print thermal receipt after dispensing"
+            // (default ON), flash a URL the show page will pop open in a new tab.
+            if ($request->boolean('print_after_dispense', true)) {
+                $redirect->with('auto_print_url', route('medicines.sales.thermal', [
+                    'invoice' => $invoice->id,
+                    'width'   => 80,
+                ]));
+            }
+
+            return $redirect;
 
         } catch (\Exception $e) {
             DB::rollBack();

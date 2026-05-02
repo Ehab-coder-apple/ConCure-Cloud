@@ -209,11 +209,24 @@ class MedicineSaleController extends Controller
 
     /**
      * Authorize a clinic-scoped view of the invoice.
+     *
+     * Super admins see everything. Pharmacists are tenant-wide so they can
+     * print receipts created by sister clinics they cover. Everyone else is
+     * restricted to their own clinic_id.
      */
     protected function authorizeView(MedicineSaleInvoice $invoice): void
     {
         $user = Auth::user();
-        if ($invoice->clinic_id !== $user->clinic_id && !$user->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+        if ($user->role === 'pharmacist' && $user->clinic) {
+            $tenantClinicIds = $user->clinic->getTenantClinicIds();
+            if (in_array($invoice->clinic_id, $tenantClinicIds, true)) {
+                return;
+            }
+        }
+        if ($invoice->clinic_id !== $user->clinic_id) {
             abort(403);
         }
     }
