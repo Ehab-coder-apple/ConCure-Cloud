@@ -14,10 +14,33 @@
                             {{ __('Prescription Details') }}
                         </h5>
                         <div class="btn-group" role="group">
-                            <a href="{{ route('simple-prescriptions.print', $prescription->id) }}"
-                               class="btn btn-success btn-sm" target="_blank" title="{{ __('Print') }}">
-                                <i class="fas fa-print"></i>
-                            </a>
+                            <div class="btn-group">
+                                <a href="{{ route('simple-prescriptions.print', $prescription->id) }}"
+                                   class="btn btn-success btn-sm" target="_blank" title="{{ __('Print') }}">
+                                    <i class="fas fa-print"></i>
+                                </a>
+                                <button type="button" class="btn btn-success btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="visually-hidden">Toggle Print</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.print', $prescription->id) }}" target="_blank">
+                                            <i class="fas fa-print me-2"></i>{{ __('Browser Print') }}
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.thermal', [$prescription->id, 'width' => 80]) }}" target="_blank">
+                                            <i class="fas fa-receipt me-2"></i>{{ __('Thermal 80mm') }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.thermal', [$prescription->id, 'width' => 58]) }}" target="_blank">
+                                            <i class="fas fa-receipt me-2"></i>{{ __('Thermal 58mm') }}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                             <div class="btn-group">
                                 <a href="{{ route('simple-prescriptions.pdf', $prescription->id) }}"
                                    class="btn btn-danger btn-sm" title="{{ __('Default PDF') }}">
@@ -263,28 +286,49 @@
                                     <i class="fas fa-print me-1"></i>
                                     {{ __('Print') }}
                                 </a>
-                                <div class="btn-group">
-                                    <a href="{{ route('simple-prescriptions.pdf', $prescription->id) }}"
-                                       class="btn btn-danger btn-sm">
-                                        <i class="fas fa-file-pdf me-1"></i>
-                                        {{ __('PDF') }}
-                                    </a>
-                                    <button type="button" class="btn btn-danger btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <span class="visually-hidden">Toggle Dropdown</span>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <a class="dropdown-item" href="{{ route('simple-prescriptions.pdf', $prescription->id) }}">
-                                                <i class="fas fa-file-pdf me-2"></i>{{ __('Default PDF') }}
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="{{ route('simple-prescriptions.pdf', [$prescription->id, 'template' => 'custom']) }}">
-                                                <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
+                                <button type="button" class="btn btn-success btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="visually-hidden">Toggle Print</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.print', $prescription->id) }}" target="_blank">
+                                            <i class="fas fa-print me-2"></i>{{ __('Browser Print') }}
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.thermal', [$prescription->id, 'width' => 80]) }}" target="_blank">
+                                            <i class="fas fa-receipt me-2"></i>{{ __('Thermal 80mm') }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.thermal', [$prescription->id, 'width' => 58]) }}" target="_blank">
+                                            <i class="fas fa-receipt me-2"></i>{{ __('Thermal 58mm') }}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="btn-group">
+                                <a href="{{ route('simple-prescriptions.pdf', $prescription->id) }}"
+                                   class="btn btn-danger btn-sm">
+                                    <i class="fas fa-file-pdf me-1"></i>
+                                    {{ __('PDF') }}
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="visually-hidden">Toggle Dropdown</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.pdf', $prescription->id) }}">
+                                            <i class="fas fa-file-pdf me-2"></i>{{ __('Default PDF') }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.pdf', [$prescription->id, 'template' => 'custom']) }}">
+                                            <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
+                                        </a>
+                                    </li>
+                                </ul>
                             </div>
                             <a href="{{ route('simple-prescriptions.edit', $prescription->id) }}" class="btn btn-primary btn-sm">
                                 <i class="fas fa-edit me-1"></i>

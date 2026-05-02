@@ -160,17 +160,23 @@
 
         @if(!empty($items))
             <div class="section">
-                <h3>{{ __('Items') }}</h3>
+                <h3>{{ $items_title ?? __('Items') }}</h3>
                 @php $sym = $financials['currency_symbol'] ?? ''; @endphp
                 @foreach($items as $row)
                     <div class="row">
                         <span class="lbl">
                             {{ $row['name'] }}
-                            <small style="display:block; color:var(--muted); font-weight:400;">
-                                <bdi>{{ rtrim(rtrim(number_format((float) $row['qty'], 2), '0'), '.') }} × {{ number_format((float) $row['unit_price'], 2) }}</bdi>
-                            </small>
+                            @if(!empty($row['subtitle']))
+                                <small style="display:block; color:var(--muted); font-weight:400;">{{ $row['subtitle'] }}</small>
+                            @elseif(isset($row['qty']) && isset($row['unit_price']))
+                                <small style="display:block; color:var(--muted); font-weight:400;">
+                                    <bdi>{{ rtrim(rtrim(number_format((float) $row['qty'], 2), '0'), '.') }} × {{ number_format((float) $row['unit_price'], 2) }}</bdi>
+                                </small>
+                            @endif
                         </span>
-                        <span class="val"><bdi>{{ $sym }} {{ number_format((float) $row['total'], 2) }}</bdi></span>
+                        @if(isset($row['total']))
+                            <span class="val"><bdi>{{ $sym }} {{ number_format((float) $row['total'], 2) }}</bdi></span>
+                        @endif
                     </div>
                 @endforeach
             </div>

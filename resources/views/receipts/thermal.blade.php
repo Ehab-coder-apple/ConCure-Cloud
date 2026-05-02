@@ -142,15 +142,26 @@
 
         @if(!empty($items))
             <hr class="divider">
-            <div class="block-title">{{ __('Items') }}</div>
+            <div class="block-title">{{ $items_title ?? __('Items') }}</div>
             @php $sym = $financials['currency_symbol'] ?? ''; @endphp
             @foreach($items as $row)
                 <div class="item-row">
                     <div class="item-name">{{ $row['name'] }}</div>
-                    <div class="item-line">
-                        <span class="muted">{{ rtrim(rtrim(number_format((float) $row['qty'], 2), '0'), '.') }} × {{ number_format((float) $row['unit_price'], 2) }}</span>
-                        <span>{{ $sym }} {{ number_format((float) $row['total'], 2) }}</span>
-                    </div>
+                    @if(!empty($row['subtitle']))
+                        <div class="muted">{{ $row['subtitle'] }}</div>
+                    @endif
+                    @if(isset($row['qty']) || isset($row['total']))
+                        <div class="item-line">
+                            <span class="muted">
+                                @if(isset($row['qty']) && isset($row['unit_price']))
+                                    {{ rtrim(rtrim(number_format((float) $row['qty'], 2), '0'), '.') }} × {{ number_format((float) $row['unit_price'], 2) }}
+                                @endif
+                            </span>
+                            @if(isset($row['total']))
+                                <span>{{ $sym }} {{ number_format((float) $row['total'], 2) }}</span>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             @endforeach
         @endif

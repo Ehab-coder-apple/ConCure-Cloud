@@ -10,6 +10,7 @@ use App\Models\Clinic;
 use App\Models\User;
 use App\Services\PdfKurdishFontService;
 use App\Services\StorageQuotaService;
+use App\Services\ThermalReceiptService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -654,6 +655,41 @@ class SimplePrescriptionController extends Controller
         }
 
         return view('simple-prescriptions.print', compact('prescription'));
+    }
+
+    /**
+     * Render the prescription on a thermal-printer-friendly page (58mm / 80mm).
+     * The QR code encodes a signed public URL so patients can re-open the
+     * prescription details on their phone.
+     */
+    public function thermal(Request $request, $id, ThermalReceiptService $thermal)
+    {
+        $user = Auth::user();
+        $tenantClinicIds = $user->clinic ? $user->clinic->getTenantClinicIds() : [$user->clinic_id];
+
+        if ($user->role === 'pharmacist' || $user->isSuperAdmin()) {
+            $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
+                ->whereIn('clinic_id', $tenantClinicIds)
+                ->findOrFail($id);
+        } else {
+            $prescription = SimplePrescription::with(['patient', 'doctor', 'medicines', 'clinic'])
+                ->forClinic($user->clinic_id)
+                ->findOrFail($id);
+
+            if (!$user->isClinicAdmin() && $prescription->doctor_id !== $user->id) {
+                abort(403, 'You can only print your own prescriptions.');
+            }
+        }
+
+        $widthMm = (int) $request->query('width', 0);
+        if (!in_array($widthMm, ThermalReceiptService::ALLOWED_WIDTHS, true)) {
+            $widthMm = ThermalReceiptService::DEFAULT_WIDTH;
+        }
+
+        $payload = $thermal->buildForPrescription($prescription, $widthMm);
+        $payload['auto_print'] = $request->boolean('auto', true);
+
+        return view('receipts.thermal', $payload);
     }
 
     /**

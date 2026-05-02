@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\DentalTreatment;
 use App\Models\MedicineSaleInvoice;
 use App\Models\PatientVisit;
+use App\Models\SimplePrescription;
 use App\Services\ThermalReceiptService;
 use Illuminate\Http\Request;
 
@@ -51,6 +52,13 @@ class PublicReceiptController extends Controller
     {
         $this->applyLocale($request);
         $payload = $this->service->buildForMedicineSale($invoice);
+        return view('receipts.public', $this->finalize($payload));
+    }
+
+    public function showPrescription(Request $request, SimplePrescription $prescription)
+    {
+        $this->applyLocale($request);
+        $payload = $this->service->buildForPrescription($prescription);
         return view('receipts.public', $this->finalize($payload));
     }
 

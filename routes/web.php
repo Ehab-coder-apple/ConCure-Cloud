@@ -104,6 +104,7 @@ Route::middleware('signed')->prefix('r')->name('public.receipt.')->group(functio
     Route::get('/appointment/{appointment}', [App\Http\Controllers\PublicReceiptController::class, 'showAppointment'])->name('appointment');
     Route::get('/dental-treatment/{dentalTreatment}', [App\Http\Controllers\PublicReceiptController::class, 'showDentalTreatment'])->name('dental-treatment');
     Route::get('/medicine-sale/{invoice}', [App\Http\Controllers\PublicReceiptController::class, 'showMedicineSale'])->name('medicine-sale');
+    Route::get('/prescription/{prescription}', [App\Http\Controllers\PublicReceiptController::class, 'showPrescription'])->name('prescription');
 });
 
 // Diagnostic route for production debugging
@@ -421,6 +422,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::delete('/{prescription}', [SimplePrescriptionController::class, 'destroy'])->name('destroy');
         Route::get('/{prescription}/pdf', [SimplePrescriptionController::class, 'pdf'])->name('pdf');
         Route::get('/{prescription}/print', [SimplePrescriptionController::class, 'print'])->name('print');
+        Route::get('/{prescription}/thermal', [SimplePrescriptionController::class, 'thermal'])->name('thermal');
         Route::post('/{prescription}/dispense', [SimplePrescriptionController::class, 'convertToSale'])->name('dispense');
     });
 

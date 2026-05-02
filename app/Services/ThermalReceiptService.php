@@ -8,6 +8,7 @@ use App\Models\DentalTreatment;
 use App\Models\MedicineSaleInvoice;
 use App\Models\PatientVisit;
 use App\Models\Receipt;
+use App\Models\SimplePrescription;
 use App\Models\User;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
@@ -285,6 +286,55 @@ class ThermalReceiptService
             'items'        => $items,
             'financials'   => $financials,
             'qr_payload'   => $this->signedPublicUrl('public.receipt.medicine-sale', ['invoice' => $invoice->id], $invoice->invoice_number, $this->effectiveLocale($clinic)),
+            'width_mm'     => $this->normalizeWidth($widthMm, $clinic),
+        ], $clinic);
+    }
+
+    /**
+     * Build payload for a prescription (no financials; medicine list only).
+     */
+    public function buildForPrescription(SimplePrescription $prescription, ?int $widthMm = null): array
+    {
+        $prescription->loadMissing(['patient', 'doctor', 'medicines', 'clinic']);
+        $clinic = $prescription->clinic ?: Clinic::find($prescription->clinic_id);
+        $this->applyLocale($clinic);
+
+        $items = $prescription->medicines->map(function ($med) {
+            $bits = array_filter([
+                $med->dosage ?: null,
+                $med->frequency ?: null,
+                $med->duration ?: null,
+                $med->instructions ?: null,
+            ], fn ($v) => is_string($v) && trim($v) !== '');
+            return [
+                'name'     => $med->medicine_name,
+                'subtitle' => implode(' · ', $bits) ?: null,
+            ];
+        })->all();
+
+        $meta = [
+            ['label' => __('Prescription #'), 'value' => $prescription->prescription_number],
+            ['label' => __('Date'), 'value' => optional($prescription->prescribed_date)->format('Y-m-d') ?: '-'],
+            ['label' => __('Status'), 'value' => $this->humanize((string) $prescription->status) ?: '-'],
+        ];
+        if ($prescription->diagnosis) {
+            $meta[] = ['label' => __('Diagnosis'), 'value' => $prescription->diagnosis];
+        }
+
+        return $this->finalize([
+            'title'        => __('Prescription'),
+            'reference'    => $prescription->prescription_number,
+            'clinic'       => $clinic,
+            'patient'      => $prescription->patient,
+            'doctor_label' => __('Doctor'),
+            'doctor_name'  => optional($prescription->doctor)->full_name_with_title
+                ?: optional($prescription->doctor)->full_name,
+            'meta'         => $meta,
+            'services'     => [],
+            'items'        => $items,
+            'items_title'  => __('Medicines'),
+            'financials'   => null,
+            'qr_payload'   => $this->signedPublicUrl('public.receipt.prescription', ['prescription' => $prescription->id], $prescription->prescription_number, $this->effectiveLocale($clinic)),
             'width_mm'     => $this->normalizeWidth($widthMm, $clinic),
         ], $clinic);
     }
