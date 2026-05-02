@@ -15,9 +15,37 @@
                         {{ __('Sale Invoice') }} — {{ $invoice->invoice_number }}
                     </h5>
                     <div class="d-flex gap-2">
-                        <button onclick="window.print()" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-print me-1"></i>{{ __('Print') }}
-                        </button>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-print me-1"></i>{{ __('Print Receipt') }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('medicines.sales.pdf', $invoice) }}" target="_blank">
+                                        <i class="fas fa-file-pdf me-2 text-danger"></i>{{ __('Regular PDF (A4)') }}
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li class="dropdown-header">{{ __('Thermal Receipt') }}</li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('medicines.sales.thermal', ['invoice' => $invoice, 'width' => 80]) }}" target="_blank">
+                                        <i class="fas fa-receipt me-2 text-secondary"></i>{{ __('80mm') }}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('medicines.sales.thermal', ['invoice' => $invoice, 'width' => 58]) }}" target="_blank">
+                                        <i class="fas fa-receipt me-2 text-secondary"></i>{{ __('58mm') }}
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button type="button" class="dropdown-item" onclick="window.print()">
+                                        <i class="fas fa-print me-2"></i>{{ __('Browser Print') }}
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
                         <a href="{{ route('medicines.sales.create') }}" class="btn btn-sm btn-danger">
                             <i class="fas fa-cash-register me-1"></i>{{ __('New Sale') }}
                         </a>

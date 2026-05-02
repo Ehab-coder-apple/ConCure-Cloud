@@ -60,6 +60,10 @@
         }
         .fin-row { display: flex; justify-content: space-between; margin: 2px 0; }
         .fin-total { font-size: 14px; font-weight: 700; border-top: 1px dashed #000; padding-top: 4px; margin-top: 4px; }
+        .item-row { margin: 3px 0; }
+        .item-name { font-weight: 600; }
+        .item-line { display: flex; justify-content: space-between; font-size: 11px; }
+        .item-line .muted { color: #555; }
         .qr-wrap { text-align: center; margin-top: 6px; }
         .qr-wrap svg { width: 30mm; height: 30mm; }
         .footer-note { text-align: center; font-size: 11px; margin-top: 6px; }
@@ -136,12 +140,36 @@
             @endforeach
         @endif
 
+        @if(!empty($items))
+            <hr class="divider">
+            <div class="block-title">{{ __('Items') }}</div>
+            @php $sym = $financials['currency_symbol'] ?? ''; @endphp
+            @foreach($items as $row)
+                <div class="item-row">
+                    <div class="item-name">{{ $row['name'] }}</div>
+                    <div class="item-line">
+                        <span class="muted">{{ rtrim(rtrim(number_format((float) $row['qty'], 2), '0'), '.') }} × {{ number_format((float) $row['unit_price'], 2) }}</span>
+                        <span>{{ $sym }} {{ number_format((float) $row['total'], 2) }}</span>
+                    </div>
+                </div>
+            @endforeach
+        @endif
+
         @if(!empty($financials))
             <hr class="divider">
             <div class="block-title">{{ __('Payment') }}</div>
             <div class="fin-row"><span>{{ __('Method') }}</span><span>{{ $financials['method'] ?? '-' }}</span></div>
             @if(!empty($financials['receipt_number']))
                 <div class="fin-row"><span>{{ __('Receipt #') }}</span><span>{{ $financials['receipt_number'] }}</span></div>
+            @endif
+            @if(isset($financials['subtotal']))
+                <div class="fin-row"><span>{{ __('Subtotal') }}</span><span>{{ $financials['currency_symbol'] }} {{ number_format($financials['subtotal'], 2) }}</span></div>
+            @endif
+            @if(!empty($financials['discount']))
+                <div class="fin-row"><span>{{ __('Discount') }}</span><span>- {{ $financials['currency_symbol'] }} {{ number_format($financials['discount'], 2) }}</span></div>
+            @endif
+            @if(!empty($financials['tax']))
+                <div class="fin-row"><span>{{ __('Tax') }}</span><span>{{ $financials['currency_symbol'] }} {{ number_format($financials['tax'], 2) }}</span></div>
             @endif
             <div class="fin-row"><span>{{ __('Total') }}</span><span>{{ $financials['currency_symbol'] }} {{ number_format($financials['total'], 2) }}</span></div>
             <div class="fin-row"><span>{{ __('Paid') }}</span><span>{{ $financials['currency_symbol'] }} {{ number_format($financials['paid'], 2) }}</span></div>

@@ -452,6 +452,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::get('/create', [App\Http\Controllers\MedicineSaleController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\MedicineSaleController::class, 'store'])->name('store');
             Route::get('/{invoice}', [App\Http\Controllers\MedicineSaleController::class, 'show'])->name('show');
+            Route::get('/{invoice}/pdf', [App\Http\Controllers\MedicineSaleController::class, 'pdf'])->name('pdf');
+            Route::get('/{invoice}/thermal', [App\Http\Controllers\MedicineSaleController::class, 'thermal'])->name('thermal');
         });
 
         // Sell and Purchase routes
