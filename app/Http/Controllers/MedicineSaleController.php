@@ -13,7 +13,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Carbon;
 
 class MedicineSaleController extends Controller
 {
@@ -181,7 +180,7 @@ class MedicineSaleController extends Controller
         $invoice->load(['items.medicine:id,name,dosage,form', 'patient', 'user', 'clinic']);
 
         $clinic = $invoice->clinic ?: Clinic::find($invoice->clinic_id);
-        $currency = $this->resolveCurrency($invoice->clinic_id);
+        $currency = $this->currencySymbol($this->resolveCurrency($invoice->clinic_id));
 
         $pdf = Pdf::loadView('medicines.sales.pdf', compact('invoice', 'clinic', 'currency'))
             ->setPaper('a4');
@@ -191,72 +190,19 @@ class MedicineSaleController extends Controller
 
     /**
      * Render the invoice as a thermal printer-friendly receipt (58mm / 80mm).
+     * QR encodes a signed public URL so customers can scan and view the receipt.
      */
     public function thermal(Request $request, MedicineSaleInvoice $invoice, ThermalReceiptService $thermal)
     {
         $this->authorizeView($invoice);
-        $invoice->load(['items.medicine:id,name,dosage,form', 'patient', 'user', 'clinic']);
 
-        $clinic = $invoice->clinic ?: Clinic::find($invoice->clinic_id);
         $widthMm = (int) $request->query('width', 0);
         if (!in_array($widthMm, ThermalReceiptService::ALLOWED_WIDTHS, true)) {
             $widthMm = ThermalReceiptService::DEFAULT_WIDTH;
         }
 
-        $currency = $this->resolveCurrency($invoice->clinic_id);
-        $symbol = $this->currencySymbol($currency);
-
-        $items = $invoice->items->map(function ($item) {
-            $name = $item->medicine->name ?? __('Unknown');
-            if (!empty($item->medicine->dosage)) {
-                $name .= ' ' . $item->medicine->dosage;
-            }
-            return [
-                'name'       => $name,
-                'qty'        => (float) $item->quantity,
-                'unit_price' => (float) $item->unit_price,
-                'total'      => (float) $item->total_amount,
-            ];
-        })->all();
-
-        $financials = [
-            'currency'        => $currency,
-            'currency_symbol' => $symbol,
-            'subtotal'        => (float) $invoice->subtotal,
-            'discount'        => (float) $invoice->discount,
-            'tax'             => (float) $invoice->tax,
-            'total'           => (float) $invoice->total,
-            'paid'            => (float) $invoice->paid_amount,
-            'balance'         => (float) $invoice->total - (float) $invoice->paid_amount,
-            'method'          => ucfirst((string) $invoice->payment_method),
-            'receipt_number'  => $invoice->invoice_number,
-            'notes'           => $invoice->notes,
-        ];
-
-        $payload = [
-            'title'         => __('Pharmacy Receipt'),
-            'reference'     => $invoice->invoice_number,
-            'clinic'        => $clinic,
-            'patient'       => $invoice->patient,
-            'doctor_label'  => __('Cashier'),
-            'doctor_name'   => optional($invoice->user)->full_name ?: optional($invoice->user)->username,
-            'meta'          => [
-                ['label' => __('Invoice'), 'value' => $invoice->invoice_number],
-                ['label' => __('Date'), 'value' => $invoice->sold_at?->format('Y-m-d H:i') ?? '-'],
-            ],
-            'services'      => [],
-            'items'         => $items,
-            'financials'    => $financials,
-            'qr_payload'    => $invoice->invoice_number,
-            'qr_svg'        => $thermal->qrSvg($invoice->invoice_number),
-            'width_mm'      => $widthMm,
-            'printed_by'    => optional(Auth::user())->full_name ?: optional(Auth::user())->username,
-            'printed_at'    => Carbon::now(),
-            'thank_you'     => __('Thank you for your purchase'),
-            'locale'        => app()->getLocale(),
-            'is_rtl'        => in_array(app()->getLocale(), ['ar', 'ku', 'fa', 'he'], true),
-            'auto_print'    => $request->boolean('auto', true),
-        ];
+        $payload = $thermal->buildForMedicineSale($invoice, $widthMm);
+        $payload['auto_print'] = $request->boolean('auto', true);
 
         return view('receipts.thermal', $payload);
     }

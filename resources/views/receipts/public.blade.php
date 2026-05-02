@@ -158,6 +158,24 @@
             </div>
         @endif
 
+        @if(!empty($items))
+            <div class="section">
+                <h3>{{ __('Items') }}</h3>
+                @php $sym = $financials['currency_symbol'] ?? ''; @endphp
+                @foreach($items as $row)
+                    <div class="row">
+                        <span class="lbl">
+                            {{ $row['name'] }}
+                            <small style="display:block; color:var(--muted); font-weight:400;">
+                                <bdi>{{ rtrim(rtrim(number_format((float) $row['qty'], 2), '0'), '.') }} × {{ number_format((float) $row['unit_price'], 2) }}</bdi>
+                            </small>
+                        </span>
+                        <span class="val"><bdi>{{ $sym }} {{ number_format((float) $row['total'], 2) }}</bdi></span>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
         @if(!empty($financials))
             @php
                 $isFullyPaid = ($financials['balance'] ?? 0) <= 0 && ($financials['paid'] ?? 0) > 0;

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Appointment;
 use App\Models\Clinic;
 use App\Models\DentalTreatment;
+use App\Models\MedicineSaleInvoice;
 use App\Models\PatientVisit;
 use App\Models\Receipt;
 use App\Models\User;
@@ -223,6 +224,68 @@ class ThermalReceiptService
             'financials' => $financials,
             'qr_payload' => $this->signedPublicUrl('public.receipt.dental-treatment', ['dentalTreatment' => $treatment->id], $reference, $this->effectiveLocale($clinic)),
             'width_mm' => $this->normalizeWidth($widthMm, $clinic),
+        ], $clinic);
+    }
+
+    /**
+     * Build payload for a multi-item pharmacy sale invoice.
+     */
+    public function buildForMedicineSale(MedicineSaleInvoice $invoice, ?int $widthMm = null): array
+    {
+        $invoice->loadMissing(['items.medicine:id,name,dosage,form', 'patient', 'user', 'clinic']);
+        $clinic = $invoice->clinic ?: Clinic::find($invoice->clinic_id);
+        $this->applyLocale($clinic);
+
+        $currency = DB::table('settings')
+            ->where('clinic_id', $invoice->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $items = $invoice->items->map(function ($item) {
+            $name = $item->medicine->name ?? __('Unknown');
+            if (!empty($item->medicine->dosage)) {
+                $name .= ' ' . $item->medicine->dosage;
+            }
+            return [
+                'name'       => $name,
+                'qty'        => (float) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'total'      => (float) $item->total_amount,
+            ];
+        })->all();
+
+        $financials = [
+            'currency'        => $currency,
+            'currency_symbol' => $this->currencySymbol($currency),
+            'subtotal'        => (float) $invoice->subtotal,
+            'discount'        => (float) $invoice->discount,
+            'tax'             => (float) $invoice->tax,
+            'total'           => (float) $invoice->total,
+            'paid'            => (float) $invoice->paid_amount,
+            'balance'         => max(0.0, (float) $invoice->total - (float) $invoice->paid_amount),
+            'method'          => $this->humanize((string) $invoice->payment_method) ?: '-',
+            'receipt_number'  => $invoice->invoice_number,
+            'notes'           => $invoice->notes,
+        ];
+
+        return $this->finalize([
+            'title'        => __('Pharmacy Receipt'),
+            'reference'    => $invoice->invoice_number,
+            'clinic'       => $clinic,
+            'patient'      => $invoice->patient,
+            'doctor_label' => __('Cashier'),
+            'doctor_name'  => optional($invoice->user)->full_name_with_title
+                ?: optional($invoice->user)->full_name
+                ?: optional($invoice->user)->username,
+            'meta'         => [
+                ['label' => __('Invoice'), 'value' => $invoice->invoice_number],
+                ['label' => __('Date'), 'value' => optional($invoice->sold_at)->format('Y-m-d H:i') ?: '-'],
+            ],
+            'services'     => [],
+            'items'        => $items,
+            'financials'   => $financials,
+            'qr_payload'   => $this->signedPublicUrl('public.receipt.medicine-sale', ['invoice' => $invoice->id], $invoice->invoice_number, $this->effectiveLocale($clinic)),
+            'width_mm'     => $this->normalizeWidth($widthMm, $clinic),
         ], $clinic);
     }
 

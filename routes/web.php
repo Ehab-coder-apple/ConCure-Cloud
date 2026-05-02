@@ -103,6 +103,7 @@ Route::middleware('signed')->prefix('r')->name('public.receipt.')->group(functio
     Route::get('/visit/{visit}', [App\Http\Controllers\PublicReceiptController::class, 'showVisit'])->name('visit');
     Route::get('/appointment/{appointment}', [App\Http\Controllers\PublicReceiptController::class, 'showAppointment'])->name('appointment');
     Route::get('/dental-treatment/{dentalTreatment}', [App\Http\Controllers\PublicReceiptController::class, 'showDentalTreatment'])->name('dental-treatment');
+    Route::get('/medicine-sale/{invoice}', [App\Http\Controllers\PublicReceiptController::class, 'showMedicineSale'])->name('medicine-sale');
 });
 
 // Diagnostic route for production debugging
