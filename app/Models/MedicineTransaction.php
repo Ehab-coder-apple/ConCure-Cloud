@@ -14,6 +14,7 @@ class MedicineTransaction extends Model
         'medicine_id',
         'clinic_id',
         'user_id',
+        'medicine_sale_invoice_id',
         'type',
         'quantity',
         'unit_price',
@@ -67,6 +68,14 @@ class MedicineTransaction extends Model
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);
+    }
+
+    /**
+     * Multi-item sale invoice this transaction belongs to (nullable for legacy single-item sales).
+     */
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(MedicineSaleInvoice::class, 'medicine_sale_invoice_id');
     }
 
     /**

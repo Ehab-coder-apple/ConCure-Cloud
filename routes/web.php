@@ -447,6 +447,13 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::delete('/{medicineForm}', [App\Http\Controllers\MedicineFormController::class, 'destroy'])->name('destroy');
         });
 
+        // Multi-item sale (must be declared before the {medicine} wildcard routes)
+        Route::prefix('sales')->name('sales.')->group(function () {
+            Route::get('/create', [App\Http\Controllers\MedicineSaleController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\MedicineSaleController::class, 'store'])->name('store');
+            Route::get('/{invoice}', [App\Http\Controllers\MedicineSaleController::class, 'show'])->name('show');
+        });
+
         // Sell and Purchase routes
         Route::get('/{medicine}/sell', [App\Http\Controllers\MedicineController::class, 'sellForm'])->name('sell');
         Route::post('/{medicine}/sell', [App\Http\Controllers\MedicineController::class, 'processSell'])->name('sell.process');

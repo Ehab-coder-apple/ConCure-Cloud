@@ -44,6 +44,12 @@
                             </li>
                         </ul>
                     </div>
+                    @can('create', App\Models\Medicine::class)
+                    <a href="{{ route('medicines.sales.create') }}" class="btn btn-danger">
+                        <i class="fas fa-cash-register me-1"></i>
+                        {{ __('Create Sell') }}
+                    </a>
+                    @endcan
                     <a href="{{ route('medicines.import') }}" class="btn btn-success">
                         <i class="fas fa-file-import me-1"></i>
                         {{ __('Import') }}
