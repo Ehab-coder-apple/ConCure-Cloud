@@ -85,12 +85,17 @@
                                         @enderror
                                     </div>
 
-                                    <!-- Appointment Time -->
+                                    <!-- Appointment Time (optional; midnight = walk-in, render as empty) -->
+                                    @php
+                                        $apptTime = \Carbon\Carbon::parse($appointment->appointment_datetime);
+                                        $apptTimeValue = $apptTime->format('H:i:s') === '00:00:00' ? '' : $apptTime->format('H:i');
+                                    @endphp
                                     <div class="col-md-6 mb-3">
-                                        <label for="appointment_time" class="form-label">{{ __('Appointment Time') }} <span class="text-danger">*</span></label>
-                                        <input type="time" class="form-control @error('appointment_time') is-invalid @enderror" 
-                                               id="appointment_time" name="appointment_time" 
-                                               value="{{ old('appointment_time', \Carbon\Carbon::parse($appointment->appointment_datetime)->format('H:i')) }}" required>
+                                        <label for="appointment_time" class="form-label">{{ __('Appointment Time') }}</label>
+                                        <input type="time" class="form-control @error('appointment_time') is-invalid @enderror"
+                                               id="appointment_time" name="appointment_time"
+                                               value="{{ old('appointment_time', $apptTimeValue) }}">
+                                        <small class="form-text text-muted">{{ __('Leave empty for walk-in / first-come basis.') }}</small>
                                         @error('appointment_time')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -181,13 +186,13 @@
 
                                     <div class="col-md-4 mb-3" id="payment_method_wrapper">
                                         <label for="payment_method" class="form-label">{{ __('Payment Method') }}</label>
+                                        @php $apptPm = old('payment_method', $receipt ? $receipt->payment_method : 'cash'); @endphp
                                         <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method">
-                                            <option value="">{{ __('Select method...') }}</option>
-                                            <option value="cash" {{ old('payment_method', $receipt ? $receipt->payment_method : '') === 'cash' ? 'selected' : '' }}>{{ __('Cash') }}</option>
-                                            <option value="card" {{ old('payment_method', $receipt ? $receipt->payment_method : '') === 'card' ? 'selected' : '' }}>{{ __('Card') }}</option>
-                                            <option value="bank_transfer" {{ old('payment_method', $receipt ? $receipt->payment_method : '') === 'bank_transfer' ? 'selected' : '' }}>{{ __('Bank Transfer') }}</option>
-                                            <option value="check" {{ old('payment_method', $receipt ? $receipt->payment_method : '') === 'check' ? 'selected' : '' }}>{{ __('Check') }}</option>
-                                            <option value="other" {{ old('payment_method', $receipt ? $receipt->payment_method : '') === 'other' ? 'selected' : '' }}>{{ __('Other') }}</option>
+                                            <option value="cash" {{ $apptPm === 'cash' ? 'selected' : '' }}>{{ __('Cash') }}</option>
+                                            <option value="card" {{ $apptPm === 'card' ? 'selected' : '' }}>{{ __('Card') }}</option>
+                                            <option value="bank_transfer" {{ $apptPm === 'bank_transfer' ? 'selected' : '' }}>{{ __('Bank Transfer') }}</option>
+                                            <option value="check" {{ $apptPm === 'check' ? 'selected' : '' }}>{{ __('Check') }}</option>
+                                            <option value="other" {{ $apptPm === 'other' ? 'selected' : '' }}>{{ __('Other') }}</option>
                                         </select>
                                         @error('payment_method')
                                             <div class="invalid-feedback">{{ $message }}</div>

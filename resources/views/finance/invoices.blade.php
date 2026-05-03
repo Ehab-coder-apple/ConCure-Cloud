@@ -1091,8 +1091,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="mb-3">
                         <label for="payment_method" class="form-label">{{ __('Payment Method') }}</label>
                         <select class="form-select" id="payment_method" name="payment_method" required>
-                            <option value="">{{ __('Select Payment Method') }}</option>
-                            <option value="cash">{{ __('Cash') }}</option>
+                            <option value="cash" selected>{{ __('Cash') }}</option>
                             <option value="card">{{ __('Card') }}</option>
                             <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
                             <option value="check">{{ __('Check') }}</option>

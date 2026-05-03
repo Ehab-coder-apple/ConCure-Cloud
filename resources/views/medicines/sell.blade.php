@@ -104,8 +104,7 @@
                                 <select class="form-select @error('payment_method') is-invalid @enderror" 
                                         id="payment_method" name="payment_method" required
                                         {{ $medicine->stock_quantity <= 0 ? 'disabled' : '' }}>
-                                    <option value="">{{ __('Select payment method') }}</option>
-                                    <option value="cash" {{ old('payment_method') == 'cash' ? 'selected' : '' }}>{{ __('Cash') }}</option>
+                                    <option value="cash" {{ old('payment_method', 'cash') == 'cash' ? 'selected' : '' }}>{{ __('Cash') }}</option>
                                     <option value="card" {{ old('payment_method') == 'card' ? 'selected' : '' }}>{{ __('Card') }}</option>
                                     <option value="credit" {{ old('payment_method') == 'credit' ? 'selected' : '' }}>{{ __('Credit') }}</option>
                                     <option value="insurance" {{ old('payment_method') == 'insurance' ? 'selected' : '' }}>{{ __('Insurance') }}</option>

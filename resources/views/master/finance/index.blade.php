@@ -666,8 +666,7 @@
                     <div class="mb-3">
                         <label for="payment_method" class="form-label">Payment Method <span class="text-danger">*</span></label>
                         <select class="form-select" id="payment_method" name="payment_method" required>
-                            <option value="">Select Method</option>
-                            <option value="cash">Cash</option>
+                            <option value="cash" selected>Cash</option>
                             <option value="bank_transfer">Bank Transfer</option>
                             <option value="credit_card">Credit Card</option>
                             <option value="check">Check</option>
@@ -753,9 +752,8 @@
                         <div class="col-md-6 mb-3">
                             <label for="expense_payment_method" class="form-label">Payment Method</label>
                             <select class="form-select" id="expense_payment_method" name="payment_method">
-                                <option value="">-</option>
                                 @foreach($expensePaymentMethods as $key => $label)
-                                    <option value="{{ $key }}">{{ $label }}</option>
+                                    <option value="{{ $key }}" {{ $key === 'cash' ? 'selected' : '' }}>{{ $label }}</option>
                                 @endforeach
                             </select>
                         </div>

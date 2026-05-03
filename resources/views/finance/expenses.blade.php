@@ -462,9 +462,8 @@
                         <div class="col-md-6">
                             <label for="payment_method" class="form-label">{{ __('Payment Method') }} <span class="text-danger">*</span></label>
                             <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required>
-                                <option value="">{{ __('Select Payment Method') }}</option>
                                 @foreach(\App\Models\Expense::PAYMENT_METHODS as $key => $label)
-                                    <option value="{{ $key }}" {{ old('payment_method') == $key ? 'selected' : '' }}>
+                                    <option value="{{ $key }}" {{ old('payment_method', 'cash') == $key ? 'selected' : '' }}>
                                         {{ __($label) }}
                                     </option>
                                 @endforeach

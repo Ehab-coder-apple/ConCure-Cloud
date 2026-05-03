@@ -287,9 +287,8 @@
                             <div class="mb-3">
                                 <label for="payment_method" class="form-label">{{ __('Payment Method') }} <span class="text-danger">*</span></label>
                                 <select class="form-select" id="payment_method" name="payment_method" required>
-                                    <option value="">{{ __('Select Payment Method') }}</option>
                                     @foreach(\App\Models\Receipt::PAYMENT_METHODS as $key => $value)
-                                        <option value="{{ $key }}">{{ __($value) }}</option>
+                                        <option value="{{ $key }}" {{ $key === 'cash' ? 'selected' : '' }}>{{ __($value) }}</option>
                                     @endforeach
                                 </select>
                             </div>

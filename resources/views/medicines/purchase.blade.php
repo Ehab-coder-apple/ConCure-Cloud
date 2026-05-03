@@ -89,8 +89,7 @@
                                 <label for="payment_method" class="form-label">{{ __('Payment Method') }} <span class="text-danger">*</span></label>
                                 <select class="form-select @error('payment_method') is-invalid @enderror" 
                                         id="payment_method" name="payment_method" required>
-                                    <option value="">{{ __('Select payment method') }}</option>
-                                    <option value="cash" {{ old('payment_method') == 'cash' ? 'selected' : '' }}>{{ __('Cash') }}</option>
+                                    <option value="cash" {{ old('payment_method', 'cash') == 'cash' ? 'selected' : '' }}>{{ __('Cash') }}</option>
                                     <option value="card" {{ old('payment_method') == 'card' ? 'selected' : '' }}>{{ __('Card') }}</option>
                                     <option value="bank_transfer" {{ old('payment_method') == 'bank_transfer' ? 'selected' : '' }}>{{ __('Bank Transfer') }}</option>
                                     <option value="credit" {{ old('payment_method') == 'credit' ? 'selected' : '' }}>{{ __('Credit') }}</option>

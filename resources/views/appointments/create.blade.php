@@ -85,12 +85,13 @@
                                         @enderror
                                     </div>
 
-                                    <!-- Appointment Time -->
+                                    <!-- Appointment Time (optional for walk-in / first-come-first-served clinics) -->
                                     <div class="col-md-6 mb-3">
-                                        <label for="appointment_time" class="form-label">{{ __('Appointment Time') }} <span class="text-danger">*</span></label>
-                                        <input type="time" class="form-control @error('appointment_time') is-invalid @enderror" 
-                                               id="appointment_time" name="appointment_time" 
-                                               value="{{ old('appointment_time', '09:00') }}" required>
+                                        <label for="appointment_time" class="form-label">{{ __('Appointment Time') }}</label>
+                                        <input type="time" class="form-control @error('appointment_time') is-invalid @enderror"
+                                               id="appointment_time" name="appointment_time"
+                                               value="{{ old('appointment_time') }}">
+                                        <small class="form-text text-muted">{{ __('Leave empty for walk-in / first-come basis.') }}</small>
                                         @error('appointment_time')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -166,8 +167,7 @@
 	                                    <div class="col-md-4 mb-3" id="payment_method_wrapper">
 	                                        <label for="payment_method" class="form-label">{{ __('Payment Method') }}</label>
 	                                        <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method">
-	                                            <option value="">{{ __('Select method...') }}</option>
-	                                            <option value="cash" {{ old('payment_method') === 'cash' ? 'selected' : '' }}>{{ __('Cash') }}</option>
+	                                            <option value="cash" {{ old('payment_method', 'cash') === 'cash' ? 'selected' : '' }}>{{ __('Cash') }}</option>
 	                                            <option value="card" {{ old('payment_method') === 'card' ? 'selected' : '' }}>{{ __('Card') }}</option>
 	                                            <option value="bank_transfer" {{ old('payment_method') === 'bank_transfer' ? 'selected' : '' }}>{{ __('Bank Transfer') }}</option>
 	                                            <option value="check" {{ old('payment_method') === 'check' ? 'selected' : '' }}>{{ __('Check') }}</option>

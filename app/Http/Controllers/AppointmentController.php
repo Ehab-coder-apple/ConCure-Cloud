@@ -356,7 +356,9 @@ class AppointmentController extends Controller
             'patient_id' => 'required|exists:patients,id',
             'doctor_id' => 'required|exists:users,id',
             'appointment_date' => 'required|date|after_or_equal:today',
-            'appointment_time' => 'required',
+            // Time is optional: walk-in / first-come-first-served clinics
+            // leave it blank and we treat the slot as unscheduled (midnight sentinel).
+            'appointment_time' => 'nullable|date_format:H:i',
             'appointment_type' => 'nullable|string|max:100',
             'duration' => 'nullable|integer|min:15|max:240',
             'notes' => 'nullable|string|max:1000',
@@ -373,47 +375,53 @@ class AppointmentController extends Controller
 
         $validated = $validator->validate();
 
-        // Check for conflicts (support legacy schema)
-        $appointmentDateTime = Carbon::parse($request->appointment_date . ' ' . $request->appointment_time);
+        // When the cashier didn't pick a time we use 00:00 as the "walk-in"
+        // sentinel; views detect it and render "Walk-in" instead of 12:00 AM.
+        $timeStr = $request->filled('appointment_time') ? $request->appointment_time : '00:00';
+        $hasTime = $request->filled('appointment_time');
+
+        // Check for conflicts (support legacy schema). Walk-ins skip the
+        // conflict check entirely — they share the doctor's queue, not a slot.
+        $appointmentDateTime = Carbon::parse($request->appointment_date . ' ' . $timeStr);
         $duration = $request->duration ?? 30;
         $endTime = $appointmentDateTime->copy()->addMinutes($duration);
 
         $legacy = $this->isLegacyAppointments();
-        if ($legacy) {
-            $conflict = DB::table('appointments')
-                ->where('doctor_id', $request->doctor_id)
-                ->where('appointment_date', $request->appointment_date)
-                ->where('status', '!=', 'cancelled')
-                ->where(function ($query) use ($appointmentDateTime, $endTime) {
-                    $query->whereBetween('appointment_time', [
-                        $appointmentDateTime->format('H:i:s'),
-                        $endTime->format('H:i:s')
-                    ]);
-                })
-                ->exists();
-        } else {
-            // Overlap if start < existing_end AND end > existing_start
-            $driver = DB::getDriverName();
-            $endExpr = $driver === 'mysql'
-                ? DB::raw("DATE_ADD(appointment_datetime, INTERVAL COALESCE(duration_minutes, 30) MINUTE)")
-                : DB::raw("datetime(appointment_datetime, '+' || COALESCE(duration_minutes, 30) || ' minutes')");
+        $conflict = false;
+        if ($hasTime) {
+            if ($legacy) {
+                $conflict = DB::table('appointments')
+                    ->where('doctor_id', $request->doctor_id)
+                    ->where('appointment_date', $request->appointment_date)
+                    ->where('status', '!=', 'cancelled')
+                    ->where(function ($query) use ($appointmentDateTime, $endTime) {
+                        $query->whereBetween('appointment_time', [
+                            $appointmentDateTime->format('H:i:s'),
+                            $endTime->format('H:i:s')
+                        ]);
+                    })
+                    ->exists();
+            } else {
+                // Overlap if start < existing_end AND end > existing_start
+                $driver = DB::getDriverName();
+                $endExpr = $driver === 'mysql'
+                    ? DB::raw("DATE_ADD(appointment_datetime, INTERVAL COALESCE(duration_minutes, 30) MINUTE)")
+                    : DB::raw("datetime(appointment_datetime, '+' || COALESCE(duration_minutes, 30) || ' minutes')");
 
-            $conflict = DB::table('appointments')
-                ->where('doctor_id', $request->doctor_id)
-                ->whereDate('appointment_datetime', $appointmentDateTime->toDateString())
-                ->where('status', '!=', 'cancelled')
-                ->where('appointment_datetime', '<', $endTime->toDateTimeString())
-                ->where($endExpr, '>', $appointmentDateTime->toDateTimeString())
-                ->exists();
+                $conflict = DB::table('appointments')
+                    ->where('doctor_id', $request->doctor_id)
+                    ->whereDate('appointment_datetime', $appointmentDateTime->toDateString())
+                    ->where('status', '!=', 'cancelled')
+                    ->where('appointment_datetime', '<', $endTime->toDateTimeString())
+                    ->where($endExpr, '>', $appointmentDateTime->toDateTimeString())
+                    ->exists();
+            }
         }
 
         if ($conflict) {
             return back()->withInput()
                 ->with('error', __('The selected time slot conflicts with an existing appointment.'));
         }
-
-        // Combine date and time into datetime
-        $appointmentDateTime = Carbon::parse($request->appointment_date . ' ' . $request->appointment_time);
 
         // Generate appointment number
         $appointmentNumber = 'APT-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
@@ -736,7 +744,9 @@ class AppointmentController extends Controller
             'patient_id' => 'required|exists:patients,id',
             'doctor_id' => 'required|exists:users,id',
             'appointment_date' => 'required|date',
-            'appointment_time' => 'required',
+            // Time is optional: walk-in / first-come-first-served clinics
+            // leave it blank and the slot is treated as unscheduled.
+            'appointment_time' => 'nullable|date_format:H:i',
             'appointment_type' => 'nullable|string|max:100',
             'duration' => 'nullable|integer|min:15|max:240',
             'status' => 'required|in:scheduled,confirmed,completed,cancelled',
@@ -755,8 +765,10 @@ class AppointmentController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Combine date and time into datetime
-        $appointmentDateTime = Carbon::parse($request->appointment_date . ' ' . $request->appointment_time);
+        // Combine date and time into datetime; missing time becomes the
+        // 00:00 walk-in sentinel that views render as "Walk-in".
+        $timeStr = $request->filled('appointment_time') ? $request->appointment_time : '00:00';
+        $appointmentDateTime = Carbon::parse($request->appointment_date . ' ' . $timeStr);
 
         $legacy = $this->isLegacyAppointments();
         $data = [

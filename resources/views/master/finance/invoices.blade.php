@@ -235,8 +235,7 @@
                     <div class="mb-3">
                         <label for="invoice_payment_method" class="form-label">Payment Method <span class="text-danger">*</span></label>
                         <select class="form-select" id="invoice_payment_method" name="payment_method" required>
-                            <option value="">Select Method</option>
-                            <option value="cash">Cash</option>
+                            <option value="cash" selected>Cash</option>
                             <option value="bank_transfer">Bank Transfer</option>
                             <option value="credit_card">Credit Card</option>
                             <option value="check">Check</option>

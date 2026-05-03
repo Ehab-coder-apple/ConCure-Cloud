@@ -456,8 +456,7 @@
                     <div class="mb-3">
                         <label for="payment_method" class="form-label">{{ __('Payment Method') }} <span class="text-danger">*</span></label>
                         <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required>
-                            <option value="">{{ __('Select payment method') }}</option>
-                            <option value="cash">{{ __('Cash') }}</option>
+                            <option value="cash" selected>{{ __('Cash') }}</option>
                             <option value="card">{{ __('Card') }}</option>
                             <option value="credit">{{ __('Credit') }}</option>
                             <option value="insurance">{{ __('Insurance') }}</option>

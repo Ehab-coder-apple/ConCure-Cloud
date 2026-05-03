@@ -87,9 +87,19 @@
                                 <tbody>
                                     @foreach($appointments as $appointment)
                                     <tr>
+                                        @php
+                                            $rowDt = \Carbon\Carbon::parse($appointment->appointment_datetime ?? now());
+                                            $rowIsWalkIn = $rowDt->format('H:i:s') === '00:00:00';
+                                        @endphp
                                         <td>
-                                            <div class="fw-bold">{{ \Carbon\Carbon::parse($appointment->appointment_datetime ?? now())->format('M d, Y') }}</div>
-                                            <div class="text-primary">{{ \Carbon\Carbon::parse($appointment->appointment_datetime ?? now())->format('g:i A') }}</div>
+                                            <div class="fw-bold">{{ $rowDt->format('M d, Y') }}</div>
+                                            <div class="text-primary">
+                                                @if($rowIsWalkIn)
+                                                    <span class="badge bg-info-subtle text-info"><i class="fas fa-walking me-1"></i>{{ __('Walk-in') }}</span>
+                                                @else
+                                                    {{ $rowDt->format('g:i A') }}
+                                                @endif
+                                            </div>
                                             <small class="text-muted">{{ $appointment->duration_minutes ?? '30' }} {{ __('min') }}</small>
                                         </td>
                                         <td>
@@ -263,8 +273,7 @@
                         <div class="col-md-6" id="modal_payment_method_wrapper">
                             <label for="modal_payment_method" class="form-label">{{ __('Payment Method') }}</label>
                             <select class="form-select" id="modal_payment_method" name="payment_method">
-                                <option value="">{{ __('Select method...') }}</option>
-                                <option value="cash">{{ __('Cash') }}</option>
+                                <option value="cash" selected>{{ __('Cash') }}</option>
                                 <option value="card">{{ __('Card') }}</option>
                                 <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
                                 <option value="check">{{ __('Check') }}</option>

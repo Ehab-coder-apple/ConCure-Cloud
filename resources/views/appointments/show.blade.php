@@ -42,7 +42,9 @@
 	                        }
 
 	                        $apptDateStr = $apptDateTime ? $apptDateTime->format('F d, Y') : '-';
-	                        $apptTimeStr = $apptDateTime ? $apptDateTime->format('g:i A') : '-';
+	                        // Midnight is the walk-in sentinel — show a friendly label instead of 12:00 AM.
+	                        $isWalkIn = $apptDateTime && $apptDateTime->format('H:i:s') === '00:00:00';
+	                        $apptTimeStr = $apptDateTime ? ($isWalkIn ? __('Walk-in') : $apptDateTime->format('g:i A')) : '-';
 	                        $durationMinutes = $appointment->duration_minutes ?? $appointment->duration ?? null;
 	                    @endphp
 
