@@ -220,8 +220,9 @@
                             <input type="date" class="form-control" id="appointment_date" name="appointment_date" value="{{ date('Y-m-d') }}" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="appointment_time" class="form-label">{{ __('Time') }} <span class="text-danger">*</span></label>
-                            <input type="time" class="form-control" id="appointment_time" name="appointment_time" required>
+                            <label for="appointment_time" class="form-label">{{ __('Time') }}</label>
+                            <input type="time" class="form-control" id="appointment_time" name="appointment_time">
+                            <small class="form-text text-muted">{{ __('Leave empty for walk-in / first-come basis.') }}</small>
                         </div>
                         <div class="col-md-6">
                             <label for="appointment_type" class="form-label">{{ __('Type') }}</label>
