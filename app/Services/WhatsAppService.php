@@ -99,7 +99,7 @@ class WhatsAppService
 
         // Log provider selection for desktop application debugging
         if (config('whatsapp.desktop.enable_logging', true)) {
-            Log::info('WhatsApp Service Initialized', [
+            Log::debug('WhatsApp Service Initialized', [
                 'provider' => $this->provider,
                 'default_provider' => $defaultProvider,
                 'clinic_id' => $clinicId,
