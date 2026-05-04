@@ -104,10 +104,10 @@ class AppointmentController extends Controller
         }
 
         if ($legacy) {
-            $query->orderBy('appointments.appointment_date')
-                  ->orderBy('appointments.appointment_time');
+            $query->orderByDesc('appointments.appointment_date')
+                  ->orderByDesc('appointments.appointment_time');
         } else {
-            $query->orderBy('appointments.appointment_datetime');
+            $query->orderByDesc('appointments.appointment_datetime');
         }
         $appointments = $query->paginate(20);
 
