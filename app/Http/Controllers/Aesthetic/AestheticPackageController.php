@@ -7,6 +7,7 @@ use App\Models\AestheticPackage;
 use App\Models\AestheticTreatment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AestheticPackageController extends Controller
 {
@@ -58,7 +59,8 @@ class AestheticPackageController extends Controller
     public function create()
     {
         $treatments = $this->getTenantTreatments();
-        return view('aesthetic.packages.create', compact('treatments'));
+        $clinicCurrency = $this->resolveCurrency();
+        return view('aesthetic.packages.create', compact('treatments', 'clinicCurrency'));
     }
 
     /**
@@ -99,8 +101,9 @@ class AestheticPackageController extends Controller
 
         $treatments = $this->getTenantTreatments();
         $selectedTreatmentIds = $aestheticPackage->treatments->pluck('id')->toArray();
+        $clinicCurrency = $this->resolveCurrency();
 
-        return view('aesthetic.packages.edit', compact('aestheticPackage', 'treatments', 'selectedTreatmentIds'));
+        return view('aesthetic.packages.edit', compact('aestheticPackage', 'treatments', 'selectedTreatmentIds', 'clinicCurrency'));
     }
 
     /**
@@ -144,6 +147,18 @@ class AestheticPackageController extends Controller
 
         return redirect()->route('aesthetic.packages.index')
             ->with('success', __('Aesthetic package deleted successfully.'));
+    }
+
+    /**
+     * Resolve the clinic's configured currency code.
+     */
+    private function resolveCurrency(): string
+    {
+        $code = DB::table('settings')
+            ->where('clinic_id', Auth::user()->clinic_id)
+            ->where('key', 'currency')
+            ->value('value');
+        return is_string($code) && $code !== '' ? strtoupper($code) : 'USD';
     }
 
     /**

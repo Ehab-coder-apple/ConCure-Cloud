@@ -70,6 +70,7 @@ class AestheticInvoiceController extends Controller
         $patients = $this->getTenantPatients();
         $treatments = $this->getTenantTreatments();
         $sessions = $this->getTenantSessions();
+        $clinicCurrency = $this->resolveCurrency();
 
         $preselectedPatient = null;
         $preselectedSession = null;
@@ -96,7 +97,7 @@ class AestheticInvoiceController extends Controller
 
         return view('aesthetic.invoices.create', compact(
             'patients', 'treatments', 'sessions',
-            'preselectedPatient', 'preselectedSession', 'preselectedPackage', 'lineItems'
+            'preselectedPatient', 'preselectedSession', 'preselectedPackage', 'lineItems', 'clinicCurrency'
         ));
     }
 
@@ -170,8 +171,9 @@ class AestheticInvoiceController extends Controller
         $this->authorizeTenant($aestheticInvoice);
 
         $aestheticInvoice->load(['patient', 'session.patientPackage.package', 'patientPackage.package', 'items.treatment', 'creator']);
+        $clinicCurrency = $this->resolveCurrency();
 
-        return view('aesthetic.invoices.show', compact('aestheticInvoice'));
+        return view('aesthetic.invoices.show', compact('aestheticInvoice', 'clinicCurrency'));
     }
 
     /**
@@ -191,8 +193,9 @@ class AestheticInvoiceController extends Controller
         $sessions = $this->getTenantSessions();
 
         $aestheticInvoice->load('items');
+        $clinicCurrency = $this->resolveCurrency();
 
-        return view('aesthetic.invoices.edit', compact('aestheticInvoice', 'patients', 'treatments', 'sessions'));
+        return view('aesthetic.invoices.edit', compact('aestheticInvoice', 'patients', 'treatments', 'sessions', 'clinicCurrency'));
     }
 
     /**
@@ -363,6 +366,15 @@ class AestheticInvoiceController extends Controller
     }
 
     // ─── Helpers ────────────────────────────────────────────────
+
+    private function resolveCurrency(): string
+    {
+        $code = DB::table('settings')
+            ->where('clinic_id', Auth::user()->clinic_id)
+            ->where('key', 'currency')
+            ->value('value');
+        return is_string($code) && $code !== '' ? strtoupper($code) : 'USD';
+    }
 
     private function authorizeTenant(AestheticInvoice $invoice): void
     {

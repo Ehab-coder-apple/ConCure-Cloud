@@ -35,7 +35,7 @@
     <div class="col-md-6">
         <label for="default_price" class="form-label">{{ __('Default Price') }} <span class="text-danger">*</span></label>
         <div class="input-group">
-            <span class="input-group-text">$</span>
+            <span class="input-group-text">{{ $clinicCurrency ?? '$' }}</span>
             <input type="number" step="0.01" min="0"
                    class="form-control @error('default_price') is-invalid @enderror"
                    id="default_price" name="default_price"

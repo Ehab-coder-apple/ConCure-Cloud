@@ -125,7 +125,8 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <strong>{{ number_format($treatment->default_price, 2) }}</strong>
+                                            @php($currency = \DB::table('settings')->where('clinic_id', auth()->user()->clinic_id)->where('key', 'currency')->value('value') ?? 'USD')
+                                            <strong>{{ $currency }} {{ number_format($treatment->default_price, 2) }}</strong>
                                         </td>
                                         <td>
                                             @if($treatment->session_required)

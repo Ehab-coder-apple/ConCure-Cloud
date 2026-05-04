@@ -2,6 +2,8 @@
 
 @section('title', __('Aesthetic Invoices'))
 
+@php($currency = \DB::table('settings')->where('clinic_id', auth()->user()->clinic_id)->where('key', 'currency')->value('value') ?? 'USD')
+
 @section('content')
 <div class="container-fluid">
     <div class="row">
@@ -26,7 +28,7 @@
                     <div class="card border-success">
                         <div class="card-body text-center">
                             <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
-                            <h4 class="mb-1">{{ number_format($stats['total_revenue'], 2) }}</h4>
+                            <h4 class="mb-1">{{ $currency }} {{ number_format($stats['total_revenue'], 2) }}</h4>
                             <small class="text-muted">{{ __('Total Revenue') }}</small>
                         </div>
                     </div>
@@ -35,7 +37,7 @@
                     <div class="card border-warning">
                         <div class="card-body text-center">
                             <i class="fas fa-hourglass-half fa-2x text-warning mb-2"></i>
-                            <h4 class="mb-1">{{ number_format($stats['outstanding'], 2) }}</h4>
+                            <h4 class="mb-1">{{ $currency }} {{ number_format($stats['outstanding'], 2) }}</h4>
                             <small class="text-muted">{{ __('Outstanding') }}</small>
                         </div>
                     </div>
@@ -142,13 +144,13 @@
                                             <strong>{{ $invoice->patient->first_name }} {{ $invoice->patient->last_name }}</strong>
                                         </td>
                                         <td>{{ $invoice->invoice_date->format('M d, Y') }}</td>
-                                        <td><strong>{{ number_format($invoice->total_amount, 2) }}</strong></td>
-                                        <td>{{ number_format($invoice->paid_amount, 2) }}</td>
+                                        <td><strong>{{ $currency }} {{ number_format($invoice->total_amount, 2) }}</strong></td>
+                                        <td>{{ $currency }} {{ number_format($invoice->paid_amount, 2) }}</td>
                                         <td>
                                             @if($invoice->balance > 0)
-                                                <span class="text-danger">{{ number_format($invoice->balance, 2) }}</span>
+                                                <span class="text-danger">{{ $currency }} {{ number_format($invoice->balance, 2) }}</span>
                                             @else
-                                                <span class="text-success">0.00</span>
+                                                <span class="text-success">{{ $currency }} 0.00</span>
                                             @endif
                                         </td>
                                         <td>

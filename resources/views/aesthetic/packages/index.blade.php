@@ -137,12 +137,13 @@
                                             <span class="badge bg-info">{{ $package->total_sessions }} {{ __('sessions') }}</span>
                                         </td>
                                         <td>
-                                            <strong>{{ number_format($package->price, 2) }}</strong>
+                                            @php($currency = \DB::table('settings')->where('clinic_id', auth()->user()->clinic_id)->where('key', 'currency')->value('value') ?? 'USD')
+                                            <strong>{{ $currency }} {{ number_format($package->price, 2) }}</strong>
                                         </td>
                                         <td>
-                                            <strong class="text-success">{{ number_format($package->final_price, 2) }}</strong>
+                                            <strong class="text-success">{{ $currency }} {{ number_format($package->final_price, 2) }}</strong>
                                             @if($package->discount > 0)
-                                                <br><small class="text-muted">-{{ number_format($package->discount, 2) }}</small>
+                                                <br><small class="text-muted">-{{ $currency }} {{ number_format($package->discount, 2) }}</small>
                                             @endif
                                         </td>
                                         <td>

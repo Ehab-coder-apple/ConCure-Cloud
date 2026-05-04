@@ -145,19 +145,19 @@
                         </td>
                         <td>
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text">$</span>
+                                <span class="input-group-text">{{ $clinicCurrency ?? '$' }}</span>
                                 <input type="number" step="0.01" min="0" class="form-control price" name="items[{{ $i }}][unit_price]" value="{{ $item['unit_price'] ?? '' }}" required>
                             </div>
                         </td>
                         <td>
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text">$</span>
+                                <span class="input-group-text">{{ $clinicCurrency ?? '$' }}</span>
                                 <input type="number" step="0.01" min="0" class="form-control discount" name="items[{{ $i }}][discount]" value="{{ $item['discount'] ?? 0 }}">
                             </div>
                         </td>
                         <td>
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text">$</span>
+                                <span class="input-group-text">{{ $clinicCurrency ?? '$' }}</span>
                                 <input type="text" class="form-control line-total" readonly value="0.00">
                             </div>
                         </td>
@@ -193,7 +193,7 @@
                         <td>{{ __('Discount') }}</td>
                         <td class="text-end">
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text">$</span>
+                                <span class="input-group-text">{{ $clinicCurrency ?? '$' }}</span>
                                 <input type="number" step="0.01" min="0" class="form-control" id="discount_amount" name="discount_amount" value="{{ old('discount_amount', $aestheticInvoice->discount_amount ?? 0) }}">
                             </div>
                         </td>
@@ -210,6 +210,7 @@
 
 <script>
 (function () {
+    const currencySymbol = '{{ $clinicCurrency ?? '$' }}';
     const tbody = document.getElementById('items_body');
     const addBtn = document.getElementById('add_item_row');
     const taxRateInput = document.getElementById('tax_rate');
@@ -242,19 +243,19 @@
             </td>
             <td>
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text">$</span>
+                    <span class="input-group-text">${currencySymbol}</span>
                     <input type="number" step="0.01" min="0" class="form-control price" name="items[${idx}][unit_price]" value="0" required>
                 </div>
             </td>
             <td>
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text">$</span>
+                    <span class="input-group-text">${currencySymbol}</span>
                     <input type="number" step="0.01" min="0" class="form-control discount" name="items[${idx}][discount]" value="0">
                 </div>
             </td>
             <td>
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text">$</span>
+                    <span class="input-group-text">${currencySymbol}</span>
                     <input type="text" class="form-control line-total" readonly value="0.00">
                 </div>
             </td>

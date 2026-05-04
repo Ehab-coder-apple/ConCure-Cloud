@@ -84,7 +84,7 @@
     <div class="col-md-4">
         <label for="price" class="form-label">{{ __('Package Price') }} <span class="text-danger">*</span></label>
         <div class="input-group">
-            <span class="input-group-text">$</span>
+            <span class="input-group-text">{{ $clinicCurrency ?? '$' }}</span>
             <input type="number" step="0.01" min="0"
                    class="form-control @error('price') is-invalid @enderror"
                    id="price" name="price"
@@ -100,7 +100,7 @@
     <div class="col-md-4">
         <label for="discount" class="form-label">{{ __('Discount') }}</label>
         <div class="input-group">
-            <span class="input-group-text">$</span>
+            <span class="input-group-text">{{ $clinicCurrency ?? '$' }}</span>
             <input type="number" step="0.01" min="0"
                    class="form-control @error('discount') is-invalid @enderror"
                    id="discount" name="discount"

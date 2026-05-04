@@ -165,7 +165,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">{{ __('Amount') }}</label>
                                 <div class="input-group">
-                                    <span class="input-group-text">$</span>
+                                    <span class="input-group-text">{{ $clinicCurrency ?? '$' }}</span>
                                     <input type="number" step="0.01" min="0.01" max="{{ $aestheticInvoice->balance }}"
                                            class="form-control" name="amount" value="{{ number_format($aestheticInvoice->balance, 2) }}" required>
                                 </div>
