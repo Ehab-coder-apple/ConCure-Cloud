@@ -339,13 +339,14 @@ class MessagingController extends Controller
 
         $query = User::query()
             ->where('clinic_id', $user->clinic_id)
-            ->where('is_active', true)
-            ->where('id', '!=', $user->id);
+            ->where('is_active', true);
 
         // Optional role filter (e.g. 'doctor' for the Send-to-Doctor picker)
+        // Supports comma-separated roles (e.g. 'doctor,admin' to include both)
         $roleFilter = $request->input('role');
         if (is_string($roleFilter) && $roleFilter !== '') {
-            $query->where('role', $roleFilter);
+            $roles = array_map('trim', explode(',', $roleFilter));
+            $query->whereIn('role', $roles);
         }
 
         // Apply search if valid term provided

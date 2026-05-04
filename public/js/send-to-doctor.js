@@ -95,6 +95,7 @@
             window.ConCureSendToDoctor.send({
                 patientId: parseInt(btn.getAttribute('data-patient-id'), 10),
                 patientName: btn.getAttribute('data-patient-name') || '',
+                currentUserId: parseInt(btn.getAttribute('data-current-user-id'), 10) || 0,
             });
         });
     }
@@ -117,14 +118,19 @@
             var modal = new bootstrap.Modal(modalEl);
             modal.show();
 
-            getJson('/messages/recipients?role=doctor').then(function (data) {
+            getJson('/messages/recipients?role=doctor,admin').then(function (data) {
                 var list = (data && data.recipients) || [];
+                var currentUserId = parseInt(opts.currentUserId, 10) || 0;
                 if (!list.length) {
                     sel.innerHTML = '<option value="">No doctors found in your clinic</option>';
                     return;
                 }
                 sel.innerHTML = '<option value="">— Select a doctor —</option>' +
-                    list.map(function (r) { return '<option value="' + r.id + '">' + escapeHtml(r.name) + '</option>'; }).join('');
+                    list.map(function (r) {
+                        var label = escapeHtml(r.name);
+                        if (r.id === currentUserId) { label += ' (You)'; }
+                        return '<option value="' + r.id + '">' + label + '</option>';
+                    }).join('');
             }).catch(function () {
                 sel.innerHTML = '<option value="">Failed to load doctors</option>';
             });

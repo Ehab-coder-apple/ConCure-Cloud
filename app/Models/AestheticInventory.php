@@ -1,0 +1,154 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class AestheticInventory extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $table = 'aesthetic_inventory';
+
+    protected $fillable = [
+        'tenant_id',
+        'product_name',
+        'type',
+        'quantity',
+        'low_stock_threshold',
+        'expiry_date',
+    ];
+
+    protected $casts = [
+        'quantity' => 'integer',
+        'low_stock_threshold' => 'integer',
+        'expiry_date' => 'date',
+    ];
+
+    const TYPES = [
+        'consumable' => 'Consumable',
+        'equipment' => 'Equipment',
+        'medication' => 'Medication',
+        'other' => 'Other',
+    ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant', function (Builder $query) {
+            $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
+            if ($tenantId) {
+                $query->where('tenant_id', $tenantId);
+            }
+        });
+
+        static::creating(function ($item) {
+            $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
+            if ($tenantId) {
+                $item->tenant_id = $tenantId;
+            }
+        });
+    }
+
+    /**
+     * Get the session usages for this product.
+     */
+    public function sessionUsages(): HasMany
+    {
+        return $this->hasMany(SessionInventoryUsage::class, 'product_id');
+    }
+
+    /**
+     * Scope to filter by tenant.
+     */
+    public function scopeByTenant(Builder $query, ?string $tenantId): Builder
+    {
+        if ($tenantId === null) {
+            return $query->whereRaw('1 = 0');
+        }
+        return $query->where('tenant_id', $tenantId);
+    }
+
+    /**
+     * Scope to filter low stock items.
+     */
+    public function scopeLowStock(Builder $query): Builder
+    {
+        return $query->whereColumn('quantity', '<=', 'low_stock_threshold');
+    }
+
+    /**
+     * Scope to filter expired items.
+     */
+    public function scopeExpired(Builder $query): Builder
+    {
+        return $query->whereNotNull('expiry_date')
+                     ->where('expiry_date', '<', now()->toDateString());
+    }
+
+    /**
+     * Scope to filter items near expiry (within 30 days).
+     */
+    public function scopeNearExpiry(Builder $query): Builder
+    {
+        return $query->whereNotNull('expiry_date')
+                     ->whereBetween('expiry_date', [now()->toDateString(), now()->addDays(30)->toDateString()]);
+    }
+
+    /**
+     * Check if stock is low.
+     */
+    public function getIsLowStockAttribute(): bool
+    {
+        return $this->quantity <= $this->low_stock_threshold;
+    }
+
+    /**
+     * Check if item is expired.
+     */
+    public function getIsExpiredAttribute(): bool
+    {
+        if (!$this->expiry_date) {
+            return false;
+        }
+        return $this->expiry_date->isPast();
+    }
+
+    /**
+     * Check if item is near expiry.
+     */
+    public function getIsNearExpiryAttribute(): bool
+    {
+        if (!$this->expiry_date) {
+            return false;
+        }
+        return $this->expiry_date->isBetween(now(), now()->addDays(30));
+    }
+
+    /**
+     * Deduct quantity from stock.
+     */
+    public function deductStock(int $amount): bool
+    {
+        if ($this->quantity < $amount) {
+            return false;
+        }
+
+        $this->decrement('quantity', $amount);
+        return true;
+    }
+
+    /**
+     * Add quantity to stock.
+     */
+    public function addStock(int $amount): void
+    {
+        $this->increment('quantity', $amount);
+    }
+}

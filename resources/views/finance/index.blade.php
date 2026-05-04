@@ -432,13 +432,31 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label for="payment_amount" class="form-label">Payment Amount ({{ $currencySymbol ?? '$' }})</label>
+                            <input type="number" class="form-control" id="payment_amount" name="payment_amount"
+                                   step="0.01" min="0" value="0" placeholder="Amount paid now">
+                            <div class="form-text text-muted">Leave 0 if no payment at creation</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="payment_method" class="form-label">Payment Method</label>
+                            <select class="form-select" id="payment_method" name="payment_method">
+                                <option value="cash" selected>Cash</option>
+                                <option value="card">Credit/Debit Card</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="check">Check</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label for="notes" class="form-label">Notes</label>
                             <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
                         </div>
-                        <div class="col-md-6 mb-3">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
                             <label for="terms" class="form-label">Terms</label>
-                            <textarea class="form-control" id="terms" name="terms" rows="3" 
+                            <textarea class="form-control" id="terms" name="terms" rows="2"
                                       placeholder="Payment terms and conditions..."></textarea>
                         </div>
                     </div>

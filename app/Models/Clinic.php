@@ -355,6 +355,7 @@ class Clinic extends Model
             'modules' => [
                 'dental'        => 'Dental Module',
                 'ent'           => 'ENT Module',
+                'aesthetic'     => 'Aesthetic Module',
                 'nutrition'     => 'Nutrition & Diet Planning',
                 'food_database' => 'Food Database',
                 'pediatric'     => 'Pediatric Module',
@@ -395,6 +396,7 @@ class Clinic extends Model
         'forms'         => 'Forms',
         'dental'        => 'Dental Module',
         'ent'           => 'ENT Module',
+        'aesthetic'     => 'Aesthetic Module',
         'nutrition'     => 'Nutrition & Diet Planning',
         'food_database' => 'Food Database',
         'pediatric'     => 'Pediatric Module',
@@ -416,6 +418,7 @@ class Clinic extends Model
         'messages',
         'ent', // ENT module enabled by default
         'dental',
+        'aesthetic',
         'pediatric',
         'nutrition',
         'lab',

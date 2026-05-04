@@ -19,6 +19,7 @@ class CheckModuleAccess
         'recommendations/radiology' => 'radiology',
         'dental'                => 'dental',
         'ent'                   => 'ent',
+        'aesthetic'             => 'aesthetic',
         'nutrition'             => 'nutrition',
         'foods'                 => 'food_database',
         'food-groups'           => 'food_database',

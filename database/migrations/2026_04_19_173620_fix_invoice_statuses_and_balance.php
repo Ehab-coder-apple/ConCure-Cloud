@@ -20,13 +20,21 @@ return new class extends Migration {
             return;
         }
 
+        $driver = DB::getDriverName();
+        $balanceExpr = $driver === 'sqlite'
+            ? DB::raw("MAX(0, COALESCE(total_amount,0) - COALESCE(paid_amount,0))")
+            : DB::raw("GREATEST(0, COALESCE(total_amount,0) - COALESCE(paid_amount,0))");
+        $nowExpr = $driver === 'sqlite'
+            ? DB::raw("COALESCE(paid_at, datetime('now'))")
+            : DB::raw("COALESCE(paid_at, NOW())");
+
         // 1. Recompute balance for every row where it drifted from
         //    total_amount - paid_amount (covers rows where paid_amount
         //    was bumped without recomputing the stored balance).
         DB::table('invoices')
             ->whereRaw('ABS(COALESCE(balance,0) - (COALESCE(total_amount,0) - COALESCE(paid_amount,0))) > 0.01')
             ->update([
-                'balance' => DB::raw('GREATEST(0, COALESCE(total_amount,0) - COALESCE(paid_amount,0))'),
+                'balance' => $balanceExpr,
             ]);
 
         // 2. Promote draft/sent/overdue rows with a partial payment to
@@ -45,7 +53,7 @@ return new class extends Migration {
             ->whereColumn('paid_amount', '>=', 'total_amount')
             ->update([
                 'status' => 'paid',
-                'paid_at' => DB::raw('COALESCE(paid_at, NOW())'),
+                'paid_at' => $nowExpr,
             ]);
     }
 

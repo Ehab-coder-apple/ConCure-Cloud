@@ -56,6 +56,25 @@
                     <textarea name="notes" id="notes" class="form-control" rows="2"></textarea>
                 </div>
 
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="payment_amount" class="form-label">{{ __('Payment Amount') }} ({{ $currencySymbol ?? '$' }})</label>
+                        <input type="number" name="payment_amount" id="payment_amount" class="form-control"
+                               step="0.01" min="0" value="0" placeholder="{{ __('Amount paid now') }}">
+                        <div class="form-text text-muted">{{ __('Leave 0 if no payment at creation') }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="payment_method" class="form-label">{{ __('Payment Method') }}</label>
+                        <select name="payment_method" id="payment_method" class="form-select">
+                            <option value="cash" selected>{{ __('Cash') }}</option>
+                            <option value="card">{{ __('Credit/Debit Card') }}</option>
+                            <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
+                            <option value="check">{{ __('Check') }}</option>
+                            <option value="other">{{ __('Other') }}</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label">{{ __('Invoice Items') }}</label>
                     <div id="invoice-items">

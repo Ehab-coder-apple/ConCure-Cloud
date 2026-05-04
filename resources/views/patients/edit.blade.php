@@ -6,6 +6,7 @@
         filled(old('pediatric_birth_weight')) || filled(old('pediatric_gestational_age_weeks')) || filled(old('pediatric_current_weight_kg')) || filled(old('pediatric_current_height_cm')) || filled(old('pediatric_head_circumference_cm')) ? 'pediatric' : null,
         filled(old('nutrition_height')) || filled(old('nutrition_weight')) ? 'nutrition' : null,
         filled(old('ent_notes')) ? 'ent' : null,
+        filled(old('aesthetic_skin_type')) || filled(old('aesthetic_allergies')) || filled(old('aesthetic_previous_treatments')) || filled(old('aesthetic_notes')) ? 'aesthetic' : null,
     ])->filter()->unique()->values();
 @endphp
 @section('content')
@@ -139,6 +140,76 @@
                                                         <div class="row g-3"><div class="col-md-6"><label for="nutrition_height" class="form-label">{{ __('Height (cm)') }}</label><input type="number" id="nutrition_height" name="nutrition_height" min="50" max="300" step="0.1" class="form-control module-field @error('nutrition_height') is-invalid @enderror" value="{{ old('nutrition_height', $patient->nutritionProfile?->height) }}" {{ $isSelected ? '' : 'disabled' }}>@error('nutrition_height')<div class="invalid-feedback">{{ $message }}</div>@enderror</div><div class="col-md-6"><label for="nutrition_weight" class="form-label">{{ __('Weight (kg)') }}</label><input type="number" id="nutrition_weight" name="nutrition_weight" min="1" max="500" step="0.1" class="form-control module-field @error('nutrition_weight') is-invalid @enderror" value="{{ old('nutrition_weight', $patient->nutritionProfile?->weight) }}" {{ $isSelected ? '' : 'disabled' }}>@error('nutrition_weight')<div class="invalid-feedback">{{ $message }}</div>@enderror</div></div>
                                                     @elseif($module['key'] === 'ent')
                                                         <div><label for="ent_notes" class="form-label">{{ __('Notes') }}</label><textarea id="ent_notes" name="ent_notes" rows="4" class="form-control module-field @error('ent_notes') is-invalid @enderror" {{ $isSelected ? '' : 'disabled' }}>{{ old('ent_notes', $patient->entProfile?->notes) }}</textarea>@error('ent_notes')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                                                    @elseif($module['key'] === 'aesthetic')
+                                                        <div class="row g-3">
+                                                            <div class="col-md-6">
+                                                                <label for="aesthetic_skin_type" class="form-label">{{ __('Skin Type') }}</label>
+                                                                <select id="aesthetic_skin_type" name="aesthetic_skin_type" class="form-select module-field" {{ $isSelected ? '' : 'disabled' }}>
+                                                                    <option value="">{{ __('Select skin type') }}</option>
+                                                                    @foreach($aestheticSkinTypes ?? [] as $key => $label)
+                                                                        <option value="{{ $key }}" @selected(old('aesthetic_skin_type', $patient->aestheticProfile?->skin_type) === $key)>{{ __($label) }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label d-block">{{ __('Skin Concerns') }}</label>
+                                                                <div class="row g-2">
+                                                                    @php($savedConcerns = (array) old('aesthetic_skin_concerns', $patient->aestheticProfile?->skin_concerns ?? []))
+                                                                    @foreach($aestheticSkinConcerns ?? [] as $key => $label)
+                                                                        <div class="col-6">
+                                                                            <div class="form-check">
+                                                                                <input class="form-check-input module-field" type="checkbox" id="concern_{{ $key }}" name="aesthetic_skin_concerns[]" value="{{ $key }}" @checked(in_array($key, $savedConcerns)) {{ $isSelected ? '' : 'disabled' }}>
+                                                                                <label class="form-check-label" for="concern_{{ $key }}">{{ __($label) }}</label>
+                                                                            </div>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label for="aesthetic_sun_exposure" class="form-label">{{ __('Sun Exposure') }}</label>
+                                                                <select id="aesthetic_sun_exposure" name="aesthetic_sun_exposure" class="form-select module-field" {{ $isSelected ? '' : 'disabled' }}>
+                                                                    <option value="">{{ __('Select level') }}</option>
+                                                                    @foreach($aestheticSunExposure ?? [] as $key => $label)
+                                                                        <option value="{{ $key }}" @selected(old('aesthetic_sun_exposure', $patient->aestheticProfile?->sun_exposure) === $key)>{{ __($label) }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label d-block">{{ __('Important Flags') }}</label>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input module-field" type="checkbox" id="aesthetic_pregnant" name="aesthetic_is_pregnant_or_breastfeeding" value="1" @checked(old('aesthetic_is_pregnant_or_breastfeeding', $patient->aestheticProfile?->is_pregnant_or_breastfeeding)) {{ $isSelected ? '' : 'disabled' }}>
+                                                                    <label class="form-check-label" for="aesthetic_pregnant">{{ __('Pregnant / Breastfeeding') }}</label>
+                                                                </div>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input module-field" type="checkbox" id="aesthetic_photosensitive" name="aesthetic_photosensitivity" value="1" @checked(old('aesthetic_photosensitivity', $patient->aestheticProfile?->photosensitivity)) {{ $isSelected ? '' : 'disabled' }}>
+                                                                    <label class="form-check-label" for="aesthetic_photosensitive">{{ __('Photosensitivity') }}</label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <label for="aesthetic_allergies" class="form-label">{{ __('Product / Ingredient Allergies') }}</label>
+                                                                <textarea id="aesthetic_allergies" name="aesthetic_allergies" rows="2" class="form-control module-field" placeholder="e.g., lidocaine, hyaluronic acid, retinol..." {{ $isSelected ? '' : 'disabled' }}>{{ old('aesthetic_allergies', $patient->aestheticProfile?->allergies) }}</textarea>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <label for="aesthetic_previous_treatments" class="form-label">{{ __('Previous Aesthetic Treatments') }}</label>
+                                                                <textarea id="aesthetic_previous_treatments" name="aesthetic_previous_treatments" rows="2" class="form-control module-field" placeholder="Botox, fillers, laser, chemical peels..." {{ $isSelected ? '' : 'disabled' }}>{{ old('aesthetic_previous_treatments', $patient->aestheticProfile?->previous_treatments) }}</textarea>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <label for="aesthetic_current_skincare_routine" class="form-label">{{ __('Current Skincare Routine') }}</label>
+                                                                <textarea id="aesthetic_current_skincare_routine" name="aesthetic_current_skincare_routine" rows="2" class="form-control module-field" {{ $isSelected ? '' : 'disabled' }}>{{ old('aesthetic_current_skincare_routine', $patient->aestheticProfile?->current_skincare_routine) }}</textarea>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label for="aesthetic_desired_outcomes" class="form-label">{{ __('Desired Outcomes / Goals') }}</label>
+                                                                <textarea id="aesthetic_desired_outcomes" name="aesthetic_desired_outcomes" rows="2" class="form-control module-field" {{ $isSelected ? '' : 'disabled' }}>{{ old('aesthetic_desired_outcomes', $patient->aestheticProfile?->desired_outcomes) }}</textarea>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label for="aesthetic_medical_conditions" class="form-label">{{ __('Relevant Medical Conditions') }}</label>
+                                                                <textarea id="aesthetic_medical_conditions" name="aesthetic_medical_conditions" rows="2" class="form-control module-field" placeholder="Diabetes, autoimmune, keloid scarring..." {{ $isSelected ? '' : 'disabled' }}>{{ old('aesthetic_medical_conditions', $patient->aestheticProfile?->medical_conditions) }}</textarea>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <label for="aesthetic_notes" class="form-label">{{ __('Additional Notes') }}</label>
+                                                                <textarea id="aesthetic_notes" name="aesthetic_notes" rows="2" class="form-control module-field" {{ $isSelected ? '' : 'disabled' }}>{{ old('aesthetic_notes', $patient->aestheticProfile?->notes) }}</textarea>
+                                                            </div>
+                                                        </div>
                                                     @endif
                                                 </div>
                                             </div>

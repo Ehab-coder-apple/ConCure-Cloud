@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Models\AestheticInvoice;
 use App\Models\InvoiceItem;
 use App\Models\Expense;
 use App\Models\Receipt;
@@ -214,7 +215,7 @@ class FinanceController extends Controller
             abort(403, 'Access denied to create invoices.');
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'due_date' => 'nullable|date|after_or_equal:today',
             'tax_rate' => 'nullable|numeric|min:0|max:100',
@@ -222,6 +223,8 @@ class FinanceController extends Controller
             'discount_amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'terms' => 'nullable|string',
+            'payment_amount' => 'nullable|numeric|min:0',
+            'payment_method' => 'nullable|in:cash,card,bank_transfer,check,other',
             'items' => 'required|array|min:1',
             'items.*.description' => 'required|string|max:255',
             'items.*.quantity' => 'required|integer|min:1',
@@ -229,7 +232,10 @@ class FinanceController extends Controller
             'items.*.item_type' => 'required|in:consultation,procedure,medication,lab_test,other',
         ]);
 
-        DB::transaction(function () use ($request, $user) {
+        $paymentAmount = floatval($request->payment_amount ?? 0);
+        $paymentMethod = $request->payment_method ?? 'cash';
+
+        DB::transaction(function () use ($request, $user, $paymentAmount, $paymentMethod) {
             $invoice = Invoice::create([
                 'patient_id' => $request->patient_id,
                 'clinic_id' => $user->clinic_id,
@@ -251,6 +257,15 @@ class FinanceController extends Controller
                     'unit_price' => $itemData['unit_price'],
                     'item_type' => $itemData['item_type'],
                 ]);
+            }
+
+            // Refresh to get calculated totals
+            $invoice->refresh();
+
+            // Record payment if provided
+            if ($paymentAmount > 0) {
+                $paymentAmount = min($paymentAmount, (float) $invoice->total_amount);
+                $invoice->markAsPaid($paymentAmount, $paymentMethod);
             }
         });
 
@@ -1208,6 +1223,7 @@ class FinanceController extends Controller
 
         // Base queries - FILTER BY CLINIC
         $invoicesQuery = Invoice::where('clinic_id', $user->clinic_id);
+        $aestheticInvoicesQuery = AestheticInvoice::where('clinic_id', $user->clinic_id);
         $expensesQuery = Expense::where('clinic_id', $user->clinic_id);
         $receiptsQuery = Receipt::where('clinic_id', $user->clinic_id);
 
@@ -1226,8 +1242,13 @@ class FinanceController extends Controller
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('amount');
 
-        // Total revenue includes both invoices and receipts
-        $stats['monthlyRevenue'] = $monthlyInvoiceRevenue + $monthlyReceiptRevenue;
+        // Aesthetic invoice revenue
+        $monthlyAestheticRevenue = $aestheticInvoicesQuery->clone()
+            ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
+            ->sum('total_amount');
+
+        // Total revenue includes invoices, aesthetic invoices, and receipts
+        $stats['monthlyRevenue'] = $monthlyInvoiceRevenue + $monthlyAestheticRevenue + $monthlyReceiptRevenue;
         $stats['monthlyReceipts'] = $monthlyReceiptRevenue;
 
         $stats['monthlyExpenses'] = $expensesQuery->clone()
@@ -1242,13 +1263,26 @@ class FinanceController extends Controller
             ->whereIn('status', ['sent', 'overdue', 'partial_paid'])
             ->sum('balance');
 
+        // Aesthetic outstanding
+        $stats['outstandingInvoices'] += $aestheticInvoicesQuery->clone()
+            ->whereIn('status', ['sent', 'overdue', 'partial'])
+            ->sum('balance');
+
         // Partial payments balance (subset of outstanding)
         $stats['partialPaymentsBalance'] = $invoicesQuery->clone()
             ->where('status', 'partial_paid')
             ->sum('balance');
 
+        $stats['partialPaymentsBalance'] += $aestheticInvoicesQuery->clone()
+            ->where('status', 'partial')
+            ->sum('balance');
+
         $stats['partialPaymentsCount'] = $invoicesQuery->clone()
             ->where('status', 'partial_paid')
+            ->count();
+
+        $stats['partialPaymentsCount'] += $aestheticInvoicesQuery->clone()
+            ->where('status', 'partial')
             ->count();
 
         $stats['pendingReceipts'] = $receiptsQuery->clone()
@@ -1261,15 +1295,22 @@ class FinanceController extends Controller
 
         // Counts
         $stats['totalInvoices'] = $invoicesQuery->clone()->count();
+        $stats['totalInvoices'] += $aestheticInvoicesQuery->clone()->count();
+
         $stats['overdueInvoices'] = $invoicesQuery->clone()->overdue()->count();
+        $stats['overdueInvoices'] += $aestheticInvoicesQuery->clone()->overdue()->count();
         $stats['totalReceipts'] = $receiptsQuery->clone()->count();
         $stats['pendingReceiptCount'] = $receiptsQuery->clone()->pending()->count();
         $stats['pendingExpenseCount'] = $expensesQuery->clone()->pending()->count();
 
         // Monthly Cash flow calculation (current month only)
-        // Total cash in = Invoice payments + Other receipts (current month)
+        // Total cash in = Invoice payments + Aesthetic invoice payments + Other receipts (current month)
         $monthlyInvoicePayments = $invoicesQuery->clone()
             ->byDateRange($currentMonth, $currentMonthEnd)
+            ->sum('paid_amount');
+
+        $monthlyAestheticPayments = $aestheticInvoicesQuery->clone()
+            ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
             ->sum('paid_amount');
 
         $monthlyOtherReceipts = $receiptsQuery->clone()
@@ -1277,7 +1318,7 @@ class FinanceController extends Controller
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('amount');
 
-        $monthlyCashIn = $monthlyInvoicePayments + $monthlyOtherReceipts;
+        $monthlyCashIn = $monthlyInvoicePayments + $monthlyAestheticPayments + $monthlyOtherReceipts;
 
         // Total cash out = Expenses (current month)
         $monthlyCashOut = $expensesQuery->clone()
@@ -1348,10 +1389,13 @@ class FinanceController extends Controller
         $currentMonthEnd = now()->endOfMonth();
 
         $currentMonthInvoiceRevenue = $invoicesQuery->clone()->byDateRange($currentMonth, $currentMonthEnd)->sum('total_amount');
+        $currentMonthAestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
+            ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
+            ->sum('total_amount');
         $currentMonthReceiptRevenue = $receiptsQuery->clone()->approved()->byDateRange($currentMonth, $currentMonthEnd)->sum('amount');
 
         $data['currentMonth'] = [
-            'revenue' => $currentMonthInvoiceRevenue + $currentMonthReceiptRevenue,
+            'revenue' => $currentMonthInvoiceRevenue + $currentMonthAestheticRevenue + $currentMonthReceiptRevenue,
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($currentMonth, $currentMonthEnd)->sum('amount'),
         ];
         $data['currentMonth']['profit'] = $data['currentMonth']['revenue'] - $data['currentMonth']['expenses'];
@@ -1361,10 +1405,13 @@ class FinanceController extends Controller
         $previousMonthEnd = now()->subMonth()->endOfMonth();
 
         $previousMonthInvoiceRevenue = $invoicesQuery->clone()->byDateRange($previousMonth, $previousMonthEnd)->sum('total_amount');
+        $previousMonthAestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
+            ->byDateRange($previousMonth->toDateString(), $previousMonthEnd->toDateString())
+            ->sum('total_amount');
         $previousMonthReceiptRevenue = $receiptsQuery->clone()->approved()->byDateRange($previousMonth, $previousMonthEnd)->sum('amount');
 
         $data['previousMonth'] = [
-            'revenue' => $previousMonthInvoiceRevenue + $previousMonthReceiptRevenue,
+            'revenue' => $previousMonthInvoiceRevenue + $previousMonthAestheticRevenue + $previousMonthReceiptRevenue,
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($previousMonth, $previousMonthEnd)->sum('amount'),
         ];
         $data['previousMonth']['profit'] = $data['previousMonth']['revenue'] - $data['previousMonth']['expenses'];
@@ -1372,10 +1419,13 @@ class FinanceController extends Controller
         // Year to date
         $yearStart = now()->startOfYear();
         $yearToDateInvoiceRevenue = $invoicesQuery->clone()->byDateRange($yearStart, now())->sum('total_amount');
+        $yearToDateAestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
+            ->byDateRange($yearStart->toDateString(), now()->toDateString())
+            ->sum('total_amount');
         $yearToDateReceiptRevenue = $receiptsQuery->clone()->approved()->byDateRange($yearStart, now())->sum('amount');
 
         $data['yearToDate'] = [
-            'revenue' => $yearToDateInvoiceRevenue + $yearToDateReceiptRevenue,
+            'revenue' => $yearToDateInvoiceRevenue + $yearToDateAestheticRevenue + $yearToDateReceiptRevenue,
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($yearStart, now())->sum('amount'),
         ];
         $data['yearToDate']['profit'] = $data['yearToDate']['revenue'] - $data['yearToDate']['expenses'];
@@ -1390,9 +1440,17 @@ class FinanceController extends Controller
     {
         $data = [];
 
-        // Cash inflows (invoices + receipts)
+        // Cash inflows (invoices + receipts + aesthetic invoices)
         $invoiceInflows = Invoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($dateFrom, $dateTo)
+            ->selectRaw('DATE(created_at) as date, SUM(total_amount) as amount')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // Cash inflows from aesthetic invoices
+        $aestheticInflows = AestheticInvoice::where('clinic_id', $user->clinic_id)
+            ->byDateRange($dateFrom->toDateString(), $dateTo->toDateString())
             ->selectRaw('DATE(created_at) as date, SUM(total_amount) as amount')
             ->groupBy('date')
             ->orderBy('date')
@@ -1407,8 +1465,8 @@ class FinanceController extends Controller
             ->orderBy('date')
             ->get();
 
-        // Merge inflows from both invoices and receipts
-        $inflows = $this->mergeInflowsByDate($invoiceInflows, $receiptInflows);
+        // Merge inflows from invoices, receipts, and aesthetic invoices
+        $inflows = $this->mergeInflowsByDate($invoiceInflows, $receiptInflows, $aestheticInflows);
 
         // Cash outflows (expenses)
         $outflows = Expense::where('clinic_id', $user->clinic_id)
@@ -1479,11 +1537,16 @@ class FinanceController extends Controller
                 return $expenses->sum('amount');
             });
 
+        $aestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
+            ->byDateRange($dateFrom->toDateString(), $dateTo->toDateString())
+            ->get();
+
         $invoiceTotal = $revenue->sum('total_amount');
+        $aestheticTotal = $aestheticRevenue->sum('total_amount');
         $receiptTotal = $receipts->sum('amount');
 
         $data['revenue'] = [
-            'total' => $invoiceTotal + $receiptTotal,
+            'total' => $invoiceTotal + $aestheticTotal + $receiptTotal,
             'byType' => $revenueByType,
         ];
 
@@ -1503,7 +1566,7 @@ class FinanceController extends Controller
     /**
      * Merge inflows from invoices and receipts by date.
      */
-    private function mergeInflowsByDate($invoiceInflows, $receiptInflows)
+    private function mergeInflowsByDate($invoiceInflows, $receiptInflows, $aestheticInflows = null)
     {
         $merged = [];
 
@@ -1523,6 +1586,17 @@ class FinanceController extends Controller
                 $merged[$date] = 0;
             }
             $merged[$date] += $inflow->amount;
+        }
+
+        // Add aesthetic invoice inflows
+        if ($aestheticInflows) {
+            foreach ($aestheticInflows as $inflow) {
+                $date = $inflow->date;
+                if (!isset($merged[$date])) {
+                    $merged[$date] = 0;
+                }
+                $merged[$date] += $inflow->amount;
+            }
         }
 
         // Convert back to collection format

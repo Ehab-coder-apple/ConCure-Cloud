@@ -8,6 +8,7 @@ use App\Models\PatientCheckup;
 use App\Models\PatientDental;
 use App\Models\PatientEnt;
 use App\Models\PatientFile;
+use App\Models\PatientAesthetic;
 use App\Models\PatientImage;
 use App\Models\PatientMedicalOverview;
 use App\Models\PatientNutrition;
@@ -214,6 +215,9 @@ class PatientController extends Controller
             'medicalFlags' => PatientMedicalOverview::FLAG_LABELS,
             'dentalOralHygieneOptions' => PatientDental::ORAL_HYGIENE_STATUSES,
             'dentalSmokingStatusOptions' => PatientDental::SMOKING_STATUSES,
+            'aestheticSkinTypes' => PatientAesthetic::SKIN_TYPES,
+            'aestheticSkinConcerns' => PatientAesthetic::SKIN_CONCERNS,
+            'aestheticSunExposure' => PatientAesthetic::SUN_EXPOSURE,
             'availableClinics' => $user?->isSuperAdmin() ? Clinic::query()->orderBy('name')->get() : collect(),
         ];
     }
@@ -392,6 +396,21 @@ class PatientController extends Controller
                         'patient_id' => $patient->id,
                         'notes' => $request->ent_notes,
                     ]);
+                } elseif ($moduleName === 'aesthetic') {
+                    PatientAesthetic::create([
+                        'patient_id' => $patient->id,
+                        'skin_type' => $request->aesthetic_skin_type,
+                        'skin_concerns' => $request->input('aesthetic_skin_concerns', []),
+                        'allergies' => $request->aesthetic_allergies,
+                        'previous_treatments' => $request->aesthetic_previous_treatments,
+                        'current_skincare_routine' => $request->aesthetic_current_skincare_routine,
+                        'desired_outcomes' => $request->aesthetic_desired_outcomes,
+                        'sun_exposure' => $request->aesthetic_sun_exposure,
+                        'is_pregnant_or_breastfeeding' => $request->boolean('aesthetic_is_pregnant_or_breastfeeding'),
+                        'photosensitivity' => $request->boolean('aesthetic_photosensitivity'),
+                        'medical_conditions' => $request->aesthetic_medical_conditions,
+                        'notes' => $request->aesthetic_notes,
+                    ]);
                 }
             }
         } catch (\Exception $e) {
@@ -493,6 +512,7 @@ class PatientController extends Controller
             'entProfile',
             'pediatricProfile',
             'nutritionProfile',
+            'aestheticProfile',
         ]);
 
         $user = auth()->user();
@@ -797,6 +817,7 @@ class PatientController extends Controller
             'entProfile',
             'pediatricProfile',
             'nutritionProfile',
+            'aestheticProfile',
         ]);
 
         $selectedModuleKeys = $patient->activeModules()->pluck('module_name')->all();
@@ -948,6 +969,23 @@ class PatientController extends Controller
                     ['patient_id' => $patient->id],
                     [
                         'notes' => $request->ent_notes,
+                    ]
+                );
+            } elseif ($moduleName === 'aesthetic') {
+                PatientAesthetic::updateOrCreate(
+                    ['patient_id' => $patient->id],
+                    [
+                        'skin_type' => $request->aesthetic_skin_type,
+                        'skin_concerns' => $request->input('aesthetic_skin_concerns', []),
+                        'allergies' => $request->aesthetic_allergies,
+                        'previous_treatments' => $request->aesthetic_previous_treatments,
+                        'current_skincare_routine' => $request->aesthetic_current_skincare_routine,
+                        'desired_outcomes' => $request->aesthetic_desired_outcomes,
+                        'sun_exposure' => $request->aesthetic_sun_exposure,
+                        'is_pregnant_or_breastfeeding' => $request->boolean('aesthetic_is_pregnant_or_breastfeeding'),
+                        'photosensitivity' => $request->boolean('aesthetic_photosensitivity'),
+                        'medical_conditions' => $request->aesthetic_medical_conditions,
+                        'notes' => $request->aesthetic_notes,
                     ]
                 );
             }

@@ -101,7 +101,8 @@
                             <button type="button" class="btn btn-outline-primary btn-sm ms-1"
                                     data-concure-send-to-doctor
                                     data-patient-id="{{ (int) ($patient->id ?? 0) }}"
-                                    data-patient-name="{{ $patient->full_name ?? trim(($patient->first_name ?? '').' '.($patient->last_name ?? '')) }}">
+                                    data-patient-name="{{ $patient->full_name ?? trim(($patient->first_name ?? '').' '.($patient->last_name ?? '')) }}"
+                                    data-current-user-id="{{ auth()->id() }}">
                                 <i class="fas fa-user-md me-1"></i>
                                 {{ __('Send to Doctor') }}
                             </button>

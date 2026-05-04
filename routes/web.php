@@ -247,6 +247,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::put('/{patient}/pediatric', [App\Http\Controllers\PatientPediatricController::class, 'update'])->name('pediatric.update');
         Route::get('/{patient}/nutrition', [App\Http\Controllers\PatientNutritionController::class, 'show'])->name('nutrition.show');
         Route::put('/{patient}/nutrition', [App\Http\Controllers\PatientNutritionController::class, 'update'])->name('nutrition.update');
+        Route::get('/{patient}/aesthetic', [App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'patientShow'])->name('aesthetic.show');
         Route::get('/{patient}/visit-timeline', [PatientController::class, 'visitTimeline'])->name('visit-timeline');
 
         Route::get('/{patient}', [PatientController::class, 'show'])->name('show');
@@ -754,6 +755,76 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::delete('/{dentalLab}', [App\Http\Controllers\DentalExternalLabController::class, 'destroy'])->name('destroy');
             Route::patch('/{dentalLab}/toggle-status', [App\Http\Controllers\DentalExternalLabController::class, 'toggleStatus'])->name('toggle-status');
         });
+    });
+
+    // Aesthetic Treatments Routes
+    Route::prefix('aesthetic/treatments')->name('aesthetic.treatments.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'store'])->name('store');
+        Route::get('/{aestheticTreatment}/edit', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'edit'])->name('edit');
+        Route::put('/{aestheticTreatment}', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'update'])->name('update');
+        Route::delete('/{aestheticTreatment}', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'destroy'])->name('destroy');
+    });
+
+    // Aesthetic Packages Routes
+    Route::prefix('aesthetic/packages')->name('aesthetic.packages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Aesthetic\AestheticPackageController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Aesthetic\AestheticPackageController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Aesthetic\AestheticPackageController::class, 'store'])->name('store');
+        Route::get('/{aestheticPackage}/edit', [\App\Http\Controllers\Aesthetic\AestheticPackageController::class, 'edit'])->name('edit');
+        Route::put('/{aestheticPackage}', [\App\Http\Controllers\Aesthetic\AestheticPackageController::class, 'update'])->name('update');
+        Route::delete('/{aestheticPackage}', [\App\Http\Controllers\Aesthetic\AestheticPackageController::class, 'destroy'])->name('destroy');
+    });
+
+    // Aesthetic Patient Packages Routes
+    Route::prefix('aesthetic/patient-packages')->name('aesthetic.patient-packages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Aesthetic\AestheticPatientPackageController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Aesthetic\AestheticPatientPackageController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Aesthetic\AestheticPatientPackageController::class, 'store'])->name('store');
+        Route::get('/{patientPackage}/edit', [\App\Http\Controllers\Aesthetic\AestheticPatientPackageController::class, 'edit'])->name('edit');
+        Route::put('/{patientPackage}', [\App\Http\Controllers\Aesthetic\AestheticPatientPackageController::class, 'update'])->name('update');
+        Route::delete('/{patientPackage}', [\App\Http\Controllers\Aesthetic\AestheticPatientPackageController::class, 'destroy'])->name('destroy');
+        Route::post('/{patientPackage}/use-session', [\App\Http\Controllers\Aesthetic\AestheticPatientPackageController::class, 'useSession'])->name('use-session');
+    });
+
+    // Aesthetic Sessions Routes
+    Route::prefix('aesthetic/sessions')->name('aesthetic.sessions.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'store'])->name('store');
+        Route::get('/{aestheticSession}', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'show'])->name('show');
+        Route::get('/{aestheticSession}/edit', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'edit'])->name('edit');
+        Route::put('/{aestheticSession}', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'update'])->name('update');
+        Route::delete('/{aestheticSession}', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'destroy'])->name('destroy');
+        Route::post('/{aestheticSession}/images', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'uploadImages'])->name('images.store');
+        Route::delete('/{aestheticSession}/images/{sessionImage}', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'deleteImage'])->name('images.destroy');
+    });
+
+    // Aesthetic Inventory Routes
+    Route::prefix('aesthetic/inventory')->name('aesthetic.inventory.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'store'])->name('store');
+        Route::get('/{aestheticInventory}/edit', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'edit'])->name('edit');
+        Route::put('/{aestheticInventory}', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'update'])->name('update');
+        Route::delete('/{aestheticInventory}', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'destroy'])->name('destroy');
+        Route::post('/{aestheticInventory}/adjust-stock', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'adjustStock'])->name('adjust-stock');
+    });
+
+    // Aesthetic Invoice Routes
+    Route::prefix('aesthetic/invoices')->name('aesthetic.invoices.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'store'])->name('store');
+        Route::get('/{aestheticInvoice}', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'show'])->name('show');
+        Route::get('/{aestheticInvoice}/edit', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'edit'])->name('edit');
+        Route::put('/{aestheticInvoice}', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'update'])->name('update');
+        Route::delete('/{aestheticInvoice}', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'destroy'])->name('destroy');
+        Route::get('/{aestheticInvoice}/receipt', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'receipt'])->name('receipt');
+        Route::post('/{aestheticInvoice}/mark-paid', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'markAsPaid'])->name('mark-paid');
+        Route::post('/{aestheticInvoice}/send', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'send'])->name('send');
+        Route::post('/{aestheticInvoice}/cancel', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'cancel'])->name('cancel');
     });
 
     // ENT Module Routes

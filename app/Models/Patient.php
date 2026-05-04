@@ -232,6 +232,11 @@ class Patient extends Model
         return $this->hasOne(PatientEnt::class);
     }
 
+    public function aestheticProfile(): HasOne
+    {
+        return $this->hasOne(PatientAesthetic::class);
+    }
+
     /**
      * Get ENT records for this patient.
      */
@@ -280,6 +285,22 @@ class Patient extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * Get the aesthetic patient packages for the patient.
+     */
+    public function aestheticPatientPackages(): HasMany
+    {
+        return $this->hasMany(PatientPackage::class);
+    }
+
+    /**
+     * Get the aesthetic sessions for the patient (both package and direct).
+     */
+    public function aestheticSessions(): HasMany
+    {
+        return $this->hasMany(AestheticSession::class, 'patient_id');
     }
 
     /**
