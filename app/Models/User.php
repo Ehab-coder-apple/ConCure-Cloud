@@ -870,6 +870,47 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all available aesthetic permissions.
+     */
+    public static function getAestheticPermissions(): array
+    {
+        return [
+            'aesthetic_view' => 'View Aesthetic Records',
+            'aesthetic_create' => 'Create Aesthetic Sessions',
+            'aesthetic_edit' => 'Edit Aesthetic Sessions',
+            'aesthetic_delete' => 'Delete Aesthetic Records',
+            'aesthetic_treatments' => 'Manage Aesthetic Treatments',
+            'aesthetic_packages' => 'Manage Aesthetic Packages',
+            'aesthetic_inventory' => 'Manage Aesthetic Inventory',
+            'aesthetic_invoices' => 'Manage Aesthetic Invoices',
+            'aesthetic_manage' => 'Full Aesthetic Module Management',
+        ];
+    }
+
+    /**
+     * Check if user can view aesthetic records.
+     */
+    public function canViewAesthetic(): bool
+    {
+        return $this->hasAnyPermission([
+            'aesthetic_view', 'aesthetic_create', 'aesthetic_edit', 'aesthetic_delete',
+            'aesthetic_treatments', 'aesthetic_packages', 'aesthetic_inventory',
+            'aesthetic_invoices', 'aesthetic_manage',
+        ]);
+    }
+
+    /**
+     * Check if user can manage aesthetic module.
+     */
+    public function canManageAesthetic(): bool
+    {
+        return $this->hasAnyPermission([
+            'aesthetic_manage', 'aesthetic_treatments', 'aesthetic_packages',
+            'aesthetic_inventory', 'aesthetic_invoices',
+        ]);
+    }
+
+    /**
      * Get all available system permissions organized by section.
      */
     public static function getAllPermissions(): array
@@ -1014,6 +1055,17 @@ class User extends Authenticatable
                 'reports_export' => 'Export Reports',
                 'reports_audit' => 'View Audit Logs',
             ],
+            'aesthetic' => [
+                'aesthetic_view' => 'View Aesthetic Records',
+                'aesthetic_create' => 'Create Aesthetic Sessions',
+                'aesthetic_edit' => 'Edit Aesthetic Sessions',
+                'aesthetic_delete' => 'Delete Aesthetic Records',
+                'aesthetic_treatments' => 'Manage Aesthetic Treatments',
+                'aesthetic_packages' => 'Manage Aesthetic Packages',
+                'aesthetic_inventory' => 'Manage Aesthetic Inventory',
+                'aesthetic_invoices' => 'Manage Aesthetic Invoices',
+                'aesthetic_manage' => 'Full Aesthetic Module Management',
+            ],
             'ai_assistant' => [
                 'ai_assistant_access' => 'Access AI Medical Assistant',
             ],
@@ -1116,6 +1168,11 @@ class User extends Authenticatable
                 'icon' => 'fas fa-chart-bar',
                 'color' => 'info',
             ],
+            'aesthetic' => [
+                'name' => 'Aesthetic Module',
+                'icon' => 'fas fa-spa',
+                'color' => 'primary',
+            ],
             'ai_assistant' => [
                 'name' => 'AI Medical Assistant',
                 'icon' => 'fas fa-robot',
@@ -1139,6 +1196,7 @@ class User extends Authenticatable
                 'medicines_view', 'medicines_create', 'medicines_edit', 'medicines_delete', 'medicines_inventory',
                 'nutrition_view', 'nutrition_create', 'nutrition_edit', 'nutrition_delete', 'nutrition_manage',
                 'ent_view', 'ent_create', 'ent_edit', 'ent_delete', 'ent_audiometry', 'ent_manage',
+                'aesthetic_view', 'aesthetic_create', 'aesthetic_edit', 'aesthetic_delete', 'aesthetic_treatments', 'aesthetic_packages', 'aesthetic_inventory', 'aesthetic_invoices', 'aesthetic_manage',
                 'radiology_view', 'radiology_create', 'radiology_edit', 'radiology_delete', 'radiology_manage',
                 'food_database_view', 'food_database_create', 'food_database_edit', 'food_database_delete', 'food_database_import', 'food_database_export', 'food_database_groups', 'food_database_clear', 'food_database_manage',
                 'finance_view', 'finance_create', 'finance_edit', 'finance_delete', 'finance_reports', 'finance_approve',
@@ -1155,6 +1213,7 @@ class User extends Authenticatable
                 'medicines_view', 'medicines_create',
                 'nutrition_view', 'nutrition_create', 'nutrition_edit', 'nutrition_manage',
                 'ent_view', 'ent_create', 'ent_edit', 'ent_audiometry',
+                'aesthetic_view', 'aesthetic_create', 'aesthetic_edit', 'aesthetic_treatments', 'aesthetic_packages',
                 'radiology_view', 'radiology_create', 'radiology_edit', 'radiology_manage',
                 'food_database_view', 'food_database_create', 'food_database_edit', 'food_database_import', 'food_database_groups',
                 'reports_view', 'reports_generate',
@@ -1207,6 +1266,7 @@ class User extends Authenticatable
                 'medicines_view',
                 'ent_view',
                 'nutrition_view',
+                'aesthetic_view',
                 'food_database_view', 'food_database_create',
             ],
             'nurse' => [
@@ -1218,6 +1278,7 @@ class User extends Authenticatable
                 'medicines_view',
                 'ent_view',
                 'nutrition_view', 'nutrition_create',
+                'aesthetic_view',
                 'food_database_view', 'food_database_create',
             ],
             'accountant' => [
@@ -1225,6 +1286,7 @@ class User extends Authenticatable
                 'dashboard_view', 'dashboard_stats',
                 'patients_view',
                 'finance_view', 'finance_create', 'finance_edit', 'finance_reports',
+                'aesthetic_invoices',
                 'reports_view', 'reports_generate', 'reports_export',
             ],
             'patient' => [

@@ -1717,6 +1717,7 @@
                         @endif
 
                         <!-- Aesthetic Module -->
+                        @if(Auth::user()->canAccessSection('aesthetic') && Auth::user()->canAccessModule('aesthetic'))
                         <li class="nav-item has-submenu {{ request()->routeIs('aesthetic.*') ? 'active' : '' }}">
                             <a href="#" class="nav-link submenu-toggle">
                                 <i class="nav-icon fas fa-spa"></i>
@@ -1724,44 +1725,57 @@
                                 <i class="submenu-arrow fas fa-chevron-right"></i>
                             </a>
                             <ul class="submenu">
+                                @if(Auth::user()->hasAnyPermission(['aesthetic_view', 'aesthetic_treatments', 'aesthetic_manage']))
                                 <li class="submenu-item">
                                     <a href="{{ route('aesthetic.treatments.index') }}" class="submenu-link {{ request()->routeIs('aesthetic.treatments.*') ? 'active' : '' }}">
                                         <i class="submenu-icon fas fa-spa"></i>
                                         <span class="submenu-text">{{ __('Treatments') }}</span>
                                     </a>
                                 </li>
+                                @endif
+                                @if(Auth::user()->hasAnyPermission(['aesthetic_view', 'aesthetic_packages', 'aesthetic_manage']))
                                 <li class="submenu-item">
                                     <a href="{{ route('aesthetic.packages.index') }}" class="submenu-link {{ request()->routeIs('aesthetic.packages.*') ? 'active' : '' }}">
                                         <i class="submenu-icon fas fa-box-open"></i>
                                         <span class="submenu-text">{{ __('Packages') }}</span>
                                     </a>
                                 </li>
+                                @endif
+                                @if(Auth::user()->hasAnyPermission(['aesthetic_view', 'aesthetic_packages', 'aesthetic_manage']))
                                 <li class="submenu-item">
                                     <a href="{{ route('aesthetic.patient-packages.index') }}" class="submenu-link {{ request()->routeIs('aesthetic.patient-packages.*') ? 'active' : '' }}">
                                         <i class="submenu-icon fas fa-user-check"></i>
                                         <span class="submenu-text">{{ __('Patient Packages') }}</span>
                                     </a>
                                 </li>
+                                @endif
+                                @if(Auth::user()->hasAnyPermission(['aesthetic_view', 'aesthetic_create', 'aesthetic_manage']))
                                 <li class="submenu-item">
                                     <a href="{{ route('aesthetic.sessions.index') }}" class="submenu-link {{ request()->routeIs('aesthetic.sessions.*') ? 'active' : '' }}">
                                         <i class="submenu-icon fas fa-calendar-check"></i>
                                         <span class="submenu-text">{{ __('Sessions') }}</span>
                                     </a>
                                 </li>
+                                @endif
+                                @if(Auth::user()->hasAnyPermission(['aesthetic_view', 'aesthetic_inventory', 'aesthetic_manage']))
                                 <li class="submenu-item">
                                     <a href="{{ route('aesthetic.inventory.index') }}" class="submenu-link {{ request()->routeIs('aesthetic.inventory.*') ? 'active' : '' }}">
                                         <i class="submenu-icon fas fa-boxes"></i>
                                         <span class="submenu-text">{{ __('Inventory') }}</span>
                                     </a>
                                 </li>
+                                @endif
+                                @if(Auth::user()->hasAnyPermission(['aesthetic_view', 'aesthetic_invoices', 'aesthetic_manage']))
                                 <li class="submenu-item">
                                     <a href="{{ route('aesthetic.invoices.index') }}" class="submenu-link {{ request()->routeIs('aesthetic.invoices.*') ? 'active' : '' }}">
                                         <i class="submenu-icon fas fa-file-invoice-dollar"></i>
                                         <span class="submenu-text">{{ __('Invoices') }}</span>
                                     </a>
                                 </li>
+                                @endif
                             </ul>
                         </li>
+                        @endif
 
                         <!-- ENT Module -->
                         @if(Auth::user()->canAccessSection('ent') && Auth::user()->canAccessModule('ent'))
