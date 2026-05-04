@@ -183,7 +183,7 @@ class PatientController extends Controller
             }
         }
 
-        $patients = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        $patients = $query->orderBy('created_at', 'desc')->paginate(25)->withQueryString();
 
         return view('patients.index', array_merge(
             [
