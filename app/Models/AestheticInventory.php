@@ -44,10 +44,7 @@ class AestheticInventory extends Model
         static::addGlobalScope('tenant', function (Builder $query) {
             $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
             if ($tenantId) {
-                $query->where(function ($q) use ($tenantId) {
-                    $q->where('tenant_id', $tenantId)
-                      ->orWhere('tenant_id', 'TEN-1'); // built-in inventory visible to all clinics
-                });
+                $query->where('tenant_id', $tenantId);
             }
         });
 

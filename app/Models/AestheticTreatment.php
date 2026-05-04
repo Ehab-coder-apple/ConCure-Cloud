@@ -46,10 +46,7 @@ class AestheticTreatment extends Model
         static::addGlobalScope('tenant', function (Builder $query) {
             $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
             if ($tenantId) {
-                $query->where(function ($q) use ($tenantId) {
-                    $q->where('tenant_id', $tenantId)
-                      ->orWhere('tenant_id', 'TEN-1'); // built-in treatments visible to all clinics
-                });
+                $query->where('tenant_id', $tenantId);
             }
         });
 
@@ -59,6 +56,42 @@ class AestheticTreatment extends Model
                 $treatment->tenant_id = $tenantId;
             }
         });
+    }
+
+    /**
+     * Clone all built-in (TEN-1) treatments for a specific clinic tenant.
+     * Called once per clinic on their first visit to the treatments page.
+     */
+    public static function cloneBuiltInForTenant(string $tenantId): int
+    {
+        $builtIns = static::withoutGlobalScope('tenant')
+            ->where('tenant_id', 'TEN-1')
+            ->get();
+
+        $cloned = 0;
+        foreach ($builtIns as $treatment) {
+            $exists = static::withoutGlobalScope('tenant')
+                ->where('tenant_id', $tenantId)
+                ->where('name', $treatment->name)
+                ->where('category', $treatment->category)
+                ->exists();
+
+            if (!$exists) {
+                static::create([
+                    'tenant_id' => $tenantId,
+                    'name' => $treatment->name,
+                    'category' => $treatment->category,
+                    'default_price' => $treatment->default_price,
+                    'session_required' => $treatment->session_required,
+                    'sessions_count' => $treatment->sessions_count,
+                    'description' => $treatment->description,
+                    'is_active' => $treatment->is_active,
+                ]);
+                $cloned++;
+            }
+        }
+
+        return $cloned;
     }
 
     /**

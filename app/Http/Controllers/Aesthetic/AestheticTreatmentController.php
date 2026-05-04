@@ -17,6 +17,12 @@ class AestheticTreatmentController extends Controller
     {
         $user = Auth::user();
 
+        // Auto-clone built-in treatments for this clinic on first visit
+        $tenantId = $user->clinic?->tenant_id;
+        if ($tenantId && AestheticTreatment::where('tenant_id', $tenantId)->count() === 0) {
+            AestheticTreatment::cloneBuiltInForTenant($tenantId);
+        }
+
         $query = AestheticTreatment::query();
 
         if ($request->filled('search')) {
@@ -157,6 +163,12 @@ class AestheticTreatmentController extends Controller
     private function authorizeTenant(AestheticTreatment $treatment): void
     {
         $user = Auth::user();
+
+        // Superadmins bypass tenant check
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
         $userTenantId = $user->clinic?->tenant_id;
 
         if ($userTenantId && $treatment->tenant_id !== $userTenantId) {

@@ -356,6 +356,12 @@ class AestheticSessionController extends Controller
     private function authorizeTenant(AestheticSession $session): void
     {
         $user = Auth::user();
+
+        // Superadmins bypass tenant check
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
         $userTenantId = $user->clinic?->tenant_id;
 
         if ($userTenantId && $session->tenant_id !== $userTenantId) {
@@ -461,6 +467,12 @@ class AestheticSessionController extends Controller
     private function authorizeTenantInventory(AestheticInventory $item): void
     {
         $user = Auth::user();
+
+        // Superadmins bypass tenant check
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
         $userTenantId = $user->clinic?->tenant_id;
 
         if ($userTenantId && $item->tenant_id !== $userTenantId) {

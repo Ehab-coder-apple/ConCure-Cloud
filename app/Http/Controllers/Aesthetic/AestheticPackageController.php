@@ -167,6 +167,12 @@ class AestheticPackageController extends Controller
     private function authorizeTenant(AestheticPackage $package): void
     {
         $user = Auth::user();
+
+        // Superadmins bypass tenant check
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
         $userTenantId = $user->clinic?->tenant_id;
 
         if ($userTenantId && $package->tenant_id !== $userTenantId) {

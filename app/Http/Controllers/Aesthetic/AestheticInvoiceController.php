@@ -379,6 +379,12 @@ class AestheticInvoiceController extends Controller
     private function authorizeTenant(AestheticInvoice $invoice): void
     {
         $user = Auth::user();
+
+        // Superadmins bypass tenant check
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+
         $userTenantId = $user->clinic?->tenant_id;
 
         if ($userTenantId && $invoice->tenant_id !== $userTenantId) {
