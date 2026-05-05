@@ -427,6 +427,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/{prescription}/dispense', [SimplePrescriptionController::class, 'convertToSale'])->name('dispense');
     });
 
+    // Prescription Template Preview (demo)
+    Route::get('/prescription-template-preview', [SimplePrescriptionController::class, 'templatePreview'])->name('simple-prescriptions.template-preview');
+
     // Medicine Management
     Route::prefix('medicines')->name('medicines.')->group(function () {
         Route::get('/', [App\Http\Controllers\MedicineController::class, 'index'])->name('index');

@@ -878,4 +878,136 @@ class SimplePrescriptionController extends Controller
             return back()->with('error', 'Failed to dispense prescription: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Generate a demo prescription PDF using the clinic's custom template settings
+     * for preview purposes on the prescription template settings page.
+     */
+    public function templatePreview(Request $request)
+    {
+        $user = Auth::user();
+        $clinic = $user->clinic ? Clinic::find($user->clinic_id) : null;
+
+        if (!$clinic) {
+            return response()->json(['error' => __('No clinic found.')], 404);
+        }
+
+        $templatePath = $clinic->getSetting('rx_template_path', '');
+        $useCustomTemplate = $clinic->getSetting('rx_template_enabled', false) && $templatePath;
+        $paperSize = $clinic->getSetting('rx_paper_size', 'A4');
+
+        // Create demo prescription data
+        $demoPatient = new \stdClass();
+        $demoPatient->first_name = 'Ali';
+        $demoPatient->last_name = 'Adnan';
+        $demoPatient->date_of_birth = now()->subYears(25);
+        $demoPatient->latest_weight_kg = 72;
+        $demoPatient->latest_height = 175;
+        $demoPatient->age_formatted = '25 Years';
+
+        $demoPrescription = new \stdClass();
+        $demoPrescription->prescription_number = 'RX-DEMO-001';
+        $demoPrescription->diagnosis = 'Upper Respiratory Tract Infection';
+        $demoPrescription->notes = 'Take with food. Rest well and drink plenty of fluids.';
+        $demoPrescription->prescribed_date = now();
+        $demoPrescription->patient = $demoPatient;
+
+        // Demo medicines
+        $demoMedicines = collect([
+            (object) ['medicine_name' => 'Amoxicillin 500mg Capsule', 'dosage' => '1 capsule', 'frequency' => '3 times daily', 'duration' => '7 days', 'instructions' => 'Take after meals'],
+            (object) ['medicine_name' => 'Paracetamol 500mg Tablet', 'dosage' => '2 tablets', 'frequency' => 'Every 6 hours as needed', 'duration' => '5 days', 'instructions' => 'For fever or pain. Max 8 per day.'],
+            (object) ['medicine_name' => 'Vitamin C 1000mg', 'dosage' => '1 tablet', 'frequency' => 'Once daily', 'duration' => '14 days', 'instructions' => 'Take in the morning'],
+            (object) ['medicine_name' => 'Saline Nasal Spray', 'dosage' => '2 sprays', 'frequency' => '3 times daily', 'duration' => '7 days', 'instructions' => 'Each nostril'],
+        ]);
+
+        $rxSettings = [
+            'medicine_x' => (int) ($request->rx_medicine_x ?? $clinic->getSetting('rx_medicine_x', 40)),
+            'medicine_y' => (int) ($request->rx_medicine_y ?? $clinic->getSetting('rx_medicine_y', 200)),
+            'font_size' => (int) ($request->rx_font_size ?? $clinic->getSetting('rx_font_size', 11)),
+            'line_spacing' => (int) ($request->rx_line_spacing ?? $clinic->getSetting('rx_line_spacing', 22)),
+            'max_medicines' => (int) ($request->rx_max_medicines ?? $clinic->getSetting('rx_max_medicines', 12)),
+            'notes_y_bottom' => (int) ($request->rx_notes_y_bottom ?? $clinic->getSetting('rx_notes_y_bottom', 60)),
+            'notes_x_right' => (int) ($request->rx_notes_x_right ?? $clinic->getSetting('rx_notes_x_right', 40)),
+        ];
+
+        $mpdfConfig = ['default_font' => 'dejavusans', 'tempDir' => storage_path('mpdf/temp')];
+
+        if ($paperSize === 'A5') {
+            $mpdfConfig['format'] = [148, 210];
+        } elseif ($paperSize === 'B5') {
+            $mpdfConfig['format'] = [176, 250];
+        } else {
+            $mpdfConfig['format'] = 'A4';
+        }
+
+        $mpdf = new \Mpdf\Mpdf($mpdfConfig);
+
+        // Configure for Kurdish/Arabic support
+        $mpdf->autoScriptToLang = true;
+        $mpdf->autoLangToFont = true;
+
+        $templateLocalPath = null;
+        $templateIsPdf = false;
+        $pdfConvertedImagePath = null;
+
+        if ($useCustomTemplate && $templatePath) {
+            try {
+                $disk = config('filesystems.default');
+                $templateFullPath = Storage::disk($disk)->path($templatePath);
+                if (file_exists($templateFullPath)) {
+                    $templateLocalPath = storage_path('app/temp_rx_preview_' . $clinic->id . '.' . pathinfo($templateFullPath, PATHINFO_EXTENSION));
+                    copy($templateFullPath, $templateLocalPath);
+                    $templateIsPdf = strtolower(pathinfo($templateFullPath, PATHINFO_EXTENSION)) === 'pdf';
+
+                    if ($templateIsPdf) {
+                        $convertedImagePath = storage_path('app/temp_rx_preview_' . $clinic->id . '_converted.png');
+                        if (class_exists('\Imagick')) {
+                            $imagick = new \Imagick();
+                            $imagick->setResolution(150, 150);
+                            $imagick->readImage($templateLocalPath . '[0]');
+                            $imagick->setImageFormat('png');
+                            $imagick->writeImage($convertedImagePath);
+                            $imagick->clear();
+                            $imagick->destroy();
+                            $templateLocalPath = $convertedImagePath;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                $useCustomTemplate = false;
+            }
+        }
+
+        if ($useCustomTemplate && $templateLocalPath) {
+            $medicines = $demoMedicines->take($rxSettings['max_medicines']);
+            $templateImagePath = $templateIsPdf ? null : $templateLocalPath;
+            $html = view('simple-prescriptions.pdf-custom-template', [
+                'prescription' => $demoPrescription,
+                'templateImagePath' => $templateImagePath,
+                'rxSettings' => $rxSettings,
+                'medicines' => $medicines,
+            ])->render();
+        } else {
+            $html = view('simple-prescriptions.pdf', ['prescription' => $demoPrescription])->render();
+        }
+
+        $mpdf->WriteHTML($html);
+
+        // Cleanup
+        if ($templateLocalPath && file_exists($templateLocalPath)) {
+            @unlink($templateLocalPath);
+        }
+        if ($pdfConvertedImagePath && file_exists($pdfConvertedImagePath)) {
+            @unlink($pdfConvertedImagePath);
+        }
+        $origPdfTemp = storage_path('app/temp_rx_preview_' . ($clinic->id ?? 0) . '.pdf');
+        if (file_exists($origPdfTemp)) {
+            @unlink($origPdfTemp);
+        }
+
+        return response($mpdf->Output('', 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="prescription-template-preview.pdf"',
+        ]);
+    }
 }

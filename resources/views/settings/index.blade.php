@@ -1002,12 +1002,31 @@
                                             </div>
                                         </div>
 
-                                        <div class="mt-3">
+                                        <div class="mt-3 d-flex gap-2">
                                             <button type="submit" class="btn btn-success">
                                                 <i class="fas fa-save me-1"></i> {{ __('Save Settings') }}
                                             </button>
+                                            <a href="{{ route('simple-prescriptions.template-preview') }}" target="_blank" class="btn btn-outline-info" id="rxPreviewBtn">
+                                                <i class="fas fa-eye me-1"></i> {{ __('Preview Demo Prescription') }}
+                                            </a>
                                         </div>
                                     </form>
+
+                                    <script>
+                                    document.getElementById('rxPreviewBtn').addEventListener('click', function(e) {
+                                        e.preventDefault();
+                                        const baseUrl = this.href.split('?')[0];
+                                        const params = new URLSearchParams();
+                                        params.set('rx_medicine_x', document.getElementById('rx_medicine_x').value);
+                                        params.set('rx_medicine_y', document.getElementById('rx_medicine_y').value);
+                                        params.set('rx_font_size', document.getElementById('rx_font_size').value);
+                                        params.set('rx_line_spacing', document.getElementById('rx_line_spacing').value);
+                                        params.set('rx_max_medicines', document.getElementById('rx_max_medicines').value);
+                                        params.set('rx_notes_y_bottom', document.getElementById('rx_notes_y_bottom').value);
+                                        params.set('rx_notes_x_right', document.getElementById('rx_notes_x_right').value);
+                                        window.open(baseUrl + '?' + params.toString(), '_blank');
+                                    });
+                                    </script>
                                 </div>
                             </div>
                         </div>
