@@ -37,6 +37,15 @@ class PatientPackage extends Model
             $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
             if ($tenantId) {
                 $query->where('tenant_id', $tenantId);
+            } else {
+                $query->whereRaw('1 = 0'); // No tenant context = no data
+            }
+        });
+
+        static::creating(function ($package) {
+            $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
+            if ($tenantId) {
+                $package->tenant_id = $tenantId;
             }
         });
     }

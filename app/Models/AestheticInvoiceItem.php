@@ -12,6 +12,7 @@ class AestheticInvoiceItem extends Model
 
     protected $fillable = [
         'invoice_id',
+        'tenant_id',
         'treatment_id',
         'description',
         'quantity',
@@ -41,6 +42,27 @@ class AestheticInvoiceItem extends Model
     public function treatment(): BelongsTo
     {
         return $this->belongsTo(AestheticTreatment::class);
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant', function (\Illuminate\Database\Eloquent\Builder $query) {
+            $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
+            if ($tenantId) {
+                $query->where('aesthetic_invoice_items.tenant_id', $tenantId);
+            } else {
+                $query->whereRaw('1 = 0'); // No tenant context = no data
+            }
+        });
+
+        static::creating(function ($item) {
+            if (empty($item->tenant_id) && $item->invoice) {
+                $item->tenant_id = $item->invoice->tenant_id;
+            }
+        });
     }
 
     /**

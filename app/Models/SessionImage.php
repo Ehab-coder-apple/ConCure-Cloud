@@ -14,6 +14,7 @@ class SessionImage extends Model
 
     protected $fillable = [
         'session_id',
+        'tenant_id',
         'type',
         'image_path',
         'original_name',
@@ -29,6 +30,27 @@ class SessionImage extends Model
         'before' => 'Before',
         'after' => 'After',
     ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant', function (\Illuminate\Database\Eloquent\Builder $query) {
+            $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
+            if ($tenantId) {
+                $query->where('session_images.tenant_id', $tenantId);
+            } else {
+                $query->whereRaw('1 = 0'); // No tenant context = no data
+            }
+        });
+
+        static::creating(function ($image) {
+            if (empty($image->tenant_id) && $image->session) {
+                $image->tenant_id = $image->session->tenant_id;
+            }
+        });
+    }
 
     /**
      * Get the session this image belongs to.
