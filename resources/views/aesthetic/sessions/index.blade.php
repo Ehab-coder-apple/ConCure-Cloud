@@ -159,6 +159,23 @@
                                                    class="btn btn-sm btn-outline-primary" title="{{ __('View') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
+                                                @if($session->status !== 'completed' && $session->status !== 'cancelled')
+                                                <form method="POST" action="{{ route('aesthetic.sessions.update', $session) }}">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="hidden" name="session_mode" value="{{ $session->isPackageSession ? 'package' : 'direct' }}">
+                                                    <input type="hidden" name="patient_package_id" value="{{ $session->patient_package_id ?? '' }}">
+                                                    <input type="hidden" name="patient_id" value="{{ $session->patient_id ?? '' }}">
+                                                    <input type="hidden" name="treatment_id" value="{{ $session->treatment_id ?? '' }}">
+                                                    <input type="hidden" name="session_number" value="{{ $session->session_number }}">
+                                                    <input type="hidden" name="session_date" value="{{ $session->session_date->format('Y-m-d') }}">
+                                                    <input type="hidden" name="notes" value="{{ $session->notes ?? '' }}">
+                                                    <input type="hidden" name="status" value="completed">
+                                                    <button type="submit" class="btn btn-sm btn-success" title="{{ __('Mark as Completed') }}">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
+                                                @endif
                                                 <a href="{{ route('aesthetic.sessions.edit', $session) }}"
                                                    class="btn btn-sm btn-outline-info" title="{{ __('Edit') }}">
                                                     <i class="fas fa-edit"></i>

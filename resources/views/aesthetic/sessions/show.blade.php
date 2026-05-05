@@ -31,8 +31,13 @@
                         @endif
                     </p>
                 </div>
-                <div class="d-flex gap-2 align-items-center">
-                    <form method="POST" action="{{ route('aesthetic.sessions.update', $aestheticSession) }}" class="d-flex gap-2 align-items-center">
+                <div class="d-flex gap-2">
+                    <a href="{{ route('aesthetic.sessions.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        {{ __('Back') }}
+                    </a>
+                    @if($aestheticSession->status !== 'completed' && $aestheticSession->status !== 'cancelled')
+                    <form method="POST" action="{{ route('aesthetic.sessions.update', $aestheticSession) }}">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="session_mode" value="{{ $aestheticSession->isPackageSession ? 'package' : 'direct' }}">
@@ -42,18 +47,12 @@
                         <input type="hidden" name="session_number" value="{{ $aestheticSession->session_number }}">
                         <input type="hidden" name="session_date" value="{{ $aestheticSession->session_date->format('Y-m-d') }}">
                         <input type="hidden" name="notes" value="{{ $aestheticSession->notes ?? '' }}">
-
-                        <select name="status" class="form-select form-select-sm" style="width: 140px;" onchange="this.form.submit()">
-                            @foreach(\App\Models\AestheticSession::STATUSES as $key => $label)
-                                <option value="{{ $key }}" {{ $aestheticSession->status === $key ? 'selected' : '' }}>{{ __($label) }}</option>
-                            @endforeach
-                        </select>
+                        <input type="hidden" name="status" value="completed">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-check me-1"></i>{{ __('Complete') }}
+                        </button>
                     </form>
-
-                    <a href="{{ route('aesthetic.sessions.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left me-1"></i>
-                        {{ __('Back') }}
-                    </a>
+                    @endif
                     <a href="{{ route('aesthetic.sessions.edit', $aestheticSession) }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-edit me-1"></i>
                         {{ __('Edit') }}
