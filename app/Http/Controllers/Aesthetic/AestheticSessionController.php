@@ -258,15 +258,23 @@ class AestheticSessionController extends Controller
         }
 
         DB::transaction(function () use ($aestheticSession, $validated, $request) {
-            // Restore stock for any existing inventory usages and delete them
-            foreach ($aestheticSession->inventoryUsages as $usage) {
-                $usage->product->addStock($usage->quantity_used);
-            }
-            $aestheticSession->inventoryUsages()->delete();
+            // If inventory_items are submitted (full edit form), restore old stock,
+            // delete old usages, and re-record from the form.
+            if ($request->has('inventory_items')) {
+                foreach ($aestheticSession->inventoryUsages as $usage) {
+                    $usage->product->addStock($usage->quantity_used);
+                }
+                $aestheticSession->inventoryUsages()->delete();
 
-            // Re-record inventory from the form and deduct stock (unless cancelled)
-            if ($validated['status'] !== 'cancelled') {
-                $this->processInventoryUsage($aestheticSession, $request);
+                if ($validated['status'] !== 'cancelled') {
+                    $this->processInventoryUsage($aestheticSession, $request);
+                }
+            } elseif ($validated['status'] === 'cancelled') {
+                // Quick cancel: restore stock and clear usages even without inventory_items
+                foreach ($aestheticSession->inventoryUsages as $usage) {
+                    $usage->product->addStock($usage->quantity_used);
+                }
+                $aestheticSession->inventoryUsages()->delete();
             }
 
             $aestheticSession->update($validated);
