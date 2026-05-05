@@ -130,14 +130,14 @@
         @enderror
     </div>
 
-    <!-- Inventory Usage (only when completed) -->
+    <!-- Inventory Usage -->
     @if(isset($inventoryItems) && $inventoryItems->count() > 0)
     <div class="col-12" id="inventory_section">
         <hr class="my-3">
         <h6 class="mb-3">
             <i class="fas fa-boxes me-2 text-primary"></i>
             {{ __('Inventory Used') }}
-            <small class="text-muted">{{ __('(Only applied when session is marked Completed)') }}</small>
+            <small class="text-muted">{{ __('(Stock is deducted immediately when saved)') }}</small>
         </h6>
         <div class="table-responsive">
             <table class="table table-sm table-bordered" id="inventory_table">

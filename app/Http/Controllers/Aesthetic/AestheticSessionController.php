@@ -131,7 +131,8 @@ class AestheticSessionController extends Controller
         $session = DB::transaction(function () use ($validated, $request) {
             $session = AestheticSession::create($validated);
 
-            if ($validated['status'] === 'completed') {
+            // Always record inventory items from the form (stock deducted immediately)
+            if ($validated['status'] !== 'cancelled') {
                 $this->processInventoryUsage($session, $request);
             }
 
@@ -256,20 +257,15 @@ class AestheticSessionController extends Controller
             $validated['patient_package_id'] = null;
         }
 
-        $wasCompleted = $aestheticSession->status === 'completed';
-        $nowCompleted = $validated['status'] === 'completed';
-
-        DB::transaction(function () use ($aestheticSession, $validated, $request, $wasCompleted, $nowCompleted) {
-            // If session was previously completed but no longer is, restore stock
-            if ($wasCompleted && !$nowCompleted) {
-                foreach ($aestheticSession->inventoryUsages as $usage) {
-                    $usage->product->addStock($usage->quantity_used);
-                }
-                $aestheticSession->inventoryUsages()->delete();
+        DB::transaction(function () use ($aestheticSession, $validated, $request) {
+            // Restore stock for any existing inventory usages and delete them
+            foreach ($aestheticSession->inventoryUsages as $usage) {
+                $usage->product->addStock($usage->quantity_used);
             }
+            $aestheticSession->inventoryUsages()->delete();
 
-            // If session is now completed and wasn't before, deduct stock
-            if (!$wasCompleted && $nowCompleted) {
+            // Re-record inventory from the form and deduct stock (unless cancelled)
+            if ($validated['status'] !== 'cancelled') {
                 $this->processInventoryUsage($aestheticSession, $request);
             }
 

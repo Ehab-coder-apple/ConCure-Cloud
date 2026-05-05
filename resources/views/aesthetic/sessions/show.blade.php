@@ -297,10 +297,10 @@
                         <i class="fas fa-boxes me-2 text-primary"></i>
                         {{ __('Inventory Used') }}
                     </h6>
-                    @if($aestheticSession->status === 'completed')
+                    @if($aestheticSession->inventoryUsages->count() > 0)
                         <span class="badge bg-success">{{ __('Stock Deducted') }}</span>
                     @else
-                        <span class="badge bg-secondary">{{ __('Stock Not Yet Deducted') }}</span>
+                        <span class="badge bg-secondary">{{ __('No Items Recorded') }}</span>
                     @endif
                 </div>
                 <div class="card-body">
@@ -331,7 +331,7 @@
                         <div class="text-center py-4 text-muted">
                             <i class="fas fa-boxes fa-2x mb-2"></i>
                             <p class="mb-0">{{ __('No inventory items recorded for this session.') }}</p>
-                            <p class="mb-0 small">{{ __('Inventory is recorded when the session is marked as completed.') }}</p>
+                            <p class="mb-0 small">{{ __('Add inventory items when creating or editing the session.') }}</p>
                         </div>
                     @endif
                 </div>
