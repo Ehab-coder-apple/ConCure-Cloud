@@ -217,7 +217,7 @@
                                 default => 'bg-secondary',
                             };
                         @endphp
-                        <div class="col-md-3 col-sm-6">
+                        <div class="col-md col-sm-6" style="min-width: 200px;">
                             <div class="border rounded p-3 h-100">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="text-muted small">

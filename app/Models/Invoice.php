@@ -144,6 +144,14 @@ class Invoice extends Model
     }
 
     /**
+     * Get the dental treatment linked to this invoice.
+     */
+    public function dentalTreatment(): HasOne
+    {
+        return $this->hasOne(DentalTreatment::class, 'invoice_id');
+    }
+
+    /**
      * Get the status display name.
      */
     public function getStatusDisplayAttribute(): string

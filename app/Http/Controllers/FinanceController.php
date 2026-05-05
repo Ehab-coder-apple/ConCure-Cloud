@@ -1348,6 +1348,19 @@ class FinanceController extends Controller
                     ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
                     ->sum('paid_amount'),
             ],
+            'dental' => [
+                'label' => 'Dental',
+                'icon' => 'fa-tooth',
+                'color' => 'danger',
+                'revenue' => $invoicesQuery->clone()
+                    ->byDateRange($currentMonth, $currentMonthEnd)
+                    ->whereHas('dentalTreatment')
+                    ->sum('total_amount'),
+                'paid' => $invoicesQuery->clone()
+                    ->byDateRange($currentMonth, $currentMonthEnd)
+                    ->whereHas('dentalTreatment')
+                    ->sum('paid_amount'),
+            ],
             'medicine' => [
                 'label' => 'Medicine / Pharmacy',
                 'icon' => 'fa-pills',
@@ -1365,9 +1378,11 @@ class FinanceController extends Controller
                 'color' => 'info',
                 'revenue' => $invoicesQuery->clone()
                     ->byDateRange($currentMonth, $currentMonthEnd)
+                    ->whereDoesntHave('dentalTreatment')
                     ->sum('total_amount'),
                 'paid' => $invoicesQuery->clone()
                     ->byDateRange($currentMonth, $currentMonthEnd)
+                    ->whereDoesntHave('dentalTreatment')
                     ->sum('paid_amount'),
             ],
             'receipts' => [
