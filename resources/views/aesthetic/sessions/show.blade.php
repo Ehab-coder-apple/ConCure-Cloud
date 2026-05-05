@@ -36,23 +36,34 @@
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back') }}
                     </a>
-                    @if($aestheticSession->status !== 'completed' && $aestheticSession->status !== 'cancelled')
-                    <form method="POST" action="{{ route('aesthetic.sessions.update', $aestheticSession) }}">
-                        @csrf
-                        @method('PUT')
-                        <input type="hidden" name="session_mode" value="{{ $aestheticSession->isPackageSession ? 'package' : 'direct' }}">
-                        <input type="hidden" name="patient_package_id" value="{{ $aestheticSession->patient_package_id ?? '' }}">
-                        <input type="hidden" name="patient_id" value="{{ $aestheticSession->patient_id ?? '' }}">
-                        <input type="hidden" name="treatment_id" value="{{ $aestheticSession->treatment_id ?? '' }}">
-                        <input type="hidden" name="session_number" value="{{ $aestheticSession->session_number }}">
-                        <input type="hidden" name="session_date" value="{{ $aestheticSession->session_date->format('Y-m-d') }}">
-                        <input type="hidden" name="notes" value="{{ $aestheticSession->notes ?? '' }}">
-                        <input type="hidden" name="status" value="completed">
-                        <button type="submit" class="btn btn-success btn-sm">
-                            <i class="fas fa-check me-1"></i>{{ __('Complete') }}
+
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-check-double me-1"></i>{{ __('Status') }}
                         </button>
-                    </form>
-                    @endif
+                        <ul class="dropdown-menu">
+                            @foreach(\App\Models\AestheticSession::STATUSES as $key => $label)
+                                @if($key !== $aestheticSession->status)
+                                <li>
+                                    <form method="POST" action="{{ route('aesthetic.sessions.update', $aestheticSession) }}">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="session_mode" value="{{ $aestheticSession->isPackageSession ? 'package' : 'direct' }}">
+                                        <input type="hidden" name="patient_package_id" value="{{ $aestheticSession->patient_package_id ?? '' }}">
+                                        <input type="hidden" name="patient_id" value="{{ $aestheticSession->patient_id ?? '' }}">
+                                        <input type="hidden" name="treatment_id" value="{{ $aestheticSession->treatment_id ?? '' }}">
+                                        <input type="hidden" name="session_number" value="{{ $aestheticSession->session_number }}">
+                                        <input type="hidden" name="session_date" value="{{ $aestheticSession->session_date->format('Y-m-d') }}">
+                                        <input type="hidden" name="notes" value="{{ $aestheticSession->notes ?? '' }}">
+                                        <input type="hidden" name="status" value="{{ $key }}">
+                                        <button type="submit" class="dropdown-item">{{ __($label) }}</button>
+                                    </form>
+                                </li>
+                                @endif
+                            @endforeach
+                        </ul>
+                    </div>
+
                     <a href="{{ route('aesthetic.sessions.edit', $aestheticSession) }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-edit me-1"></i>
                         {{ __('Edit') }}
