@@ -16,6 +16,7 @@ class Invoice extends Model
         'invoice_number',
         'patient_id',
         'clinic_id',
+        'source_module',
         'invoice_date',
         'due_date',
         'subtotal',

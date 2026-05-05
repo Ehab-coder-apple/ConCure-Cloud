@@ -1333,6 +1333,60 @@ class FinanceController extends Controller
         // Set cashFlow to monthly cash flow for dashboard display
         $stats['cashFlow'] = $stats['monthlyCashFlow'];
 
+        // ──────────────────────────────────────────
+        // Revenue by Department / Module
+        // ──────────────────────────────────────────
+        $stats['deptRevenue'] = [
+            'aesthetic' => [
+                'label' => 'Aesthetic',
+                'icon' => 'fa-spa',
+                'color' => 'primary',
+                'revenue' => $aestheticInvoicesQuery->clone()
+                    ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
+                    ->sum('total_amount'),
+                'paid' => $aestheticInvoicesQuery->clone()
+                    ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
+                    ->sum('paid_amount'),
+            ],
+            'medicine' => [
+                'label' => 'Medicine / Pharmacy',
+                'icon' => 'fa-pills',
+                'color' => 'success',
+                'revenue' => \App\Models\MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
+                    ->whereBetween('sold_at', [$currentMonth, $currentMonthEnd])
+                    ->sum('total'),
+                'paid' => \App\Models\MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
+                    ->whereBetween('sold_at', [$currentMonth, $currentMonthEnd])
+                    ->sum('paid_amount'),
+            ],
+            'general' => [
+                'label' => 'General Clinic',
+                'icon' => 'fa-hospital',
+                'color' => 'info',
+                'revenue' => $invoicesQuery->clone()
+                    ->byDateRange($currentMonth, $currentMonthEnd)
+                    ->sum('total_amount'),
+                'paid' => $invoicesQuery->clone()
+                    ->byDateRange($currentMonth, $currentMonthEnd)
+                    ->sum('paid_amount'),
+            ],
+            'receipts' => [
+                'label' => 'Receipts',
+                'icon' => 'fa-receipt',
+                'color' => 'warning',
+                'revenue' => $receiptsQuery->clone()
+                    ->approved()
+                    ->byDateRange($currentMonth, $currentMonthEnd)
+                    ->sum('amount'),
+                'paid' => $receiptsQuery->clone()
+                    ->approved()
+                    ->byDateRange($currentMonth, $currentMonthEnd)
+                    ->sum('amount'),
+            ],
+        ];
+
+        $stats['deptTotalRevenue'] = collect($stats['deptRevenue'])->sum('revenue');
+
         // Recent activity
         $stats['recentInvoices'] = $invoicesQuery->clone()
             ->with(['patient'])

@@ -191,6 +191,59 @@
         </div>
     </div>
 
+    <!-- Revenue by Department / Module -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie text-info me-2"></i>
+                        {{ __('Revenue by Department') }}
+                        <small class="text-muted ms-2">{{ __('This Month') }}</small>
+                    </h5>
+                    <span class="badge bg-info">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($deptTotalRevenue, 2), '0'), '.') }} {{ __('Total') }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        @foreach($deptRevenue as $key => $dept)
+                        @php
+                            $pct = $deptTotalRevenue > 0 ? ($dept['revenue'] / $deptTotalRevenue) * 100 : 0;
+                            $barColor = match($dept['color']) {
+                                'primary' => 'bg-primary',
+                                'success' => 'bg-success',
+                                'info' => 'bg-info',
+                                'warning' => 'bg-warning',
+                                'danger' => 'bg-danger',
+                                default => 'bg-secondary',
+                            };
+                        @endphp
+                        <div class="col-md-3 col-sm-6">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted small">
+                                        <i class="fas {{ $dept['icon'] }} text-{{ $dept['color'] }}"></i>
+                                        {{ __($dept['label']) }}
+                                    </span>
+                                    <span class="badge {{ $barColor }}">{{ number_format($pct, 1) }}%</span>
+                                </div>
+                                <h5 class="mb-1">
+                                    {{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($dept['revenue'], 2), '0'), '.') }}
+                                </h5>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar {{ $barColor }}" role="progressbar" style="width: {{ $pct }}%" aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <small class="text-muted mt-1 d-block">
+                                    {{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($dept['paid'], 2), '0'), '.') }} {{ __('collected') }}
+                                </small>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Recent Activity -->
     <div class="row">
         <!-- Recent Invoices -->
