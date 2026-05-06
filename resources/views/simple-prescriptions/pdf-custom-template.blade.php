@@ -18,8 +18,8 @@
 <body>
     {{-- Background template image using fixed positioning for mPDF --}}
     @if($templateImagePath)
-        <div style="position: fixed; top: 0; left: 0; z-index: -1;">
-            <img src="{{ $templateImagePath }}" style="width: 210mm; height: 297mm;" />
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;">
+            <img src="{{ $templateImagePath }}" style="width: 100%; height: 100%;" />
         </div>
     @endif
 
@@ -30,32 +30,33 @@
         $lineSpacing = $rxSettings['line_spacing'] ?? 22;
         $patientY = max(5, $medY - 55);
         $diagnosisY = max(5, $medY - 28);
+        $contentRightMargin = 20; // pt from right edge
     @endphp
 
     {{-- Patient info --}}
-    <div style="position: fixed; top: {{ $patientY }}pt; left: {{ $medX }}pt; font-size: {{ $fontSize }}pt; color: #000;">
+    <div style="position: fixed; top: {{ $patientY }}pt; left: {{ $medX }}pt; right: {{ $contentRightMargin }}pt; font-size: {{ $fontSize }}pt; color: #000;">
         @if($prescription->patient)
-            <strong>Patient:</strong> {{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}
+            <span style="white-space: nowrap;"><strong>Patient:</strong> {{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}</span>
         @endif
-        &nbsp;&nbsp;|&nbsp;&nbsp;
-        <strong>Date:</strong> {{ $prescription->prescribed_date ? $prescription->prescribed_date->format('d/m/Y') : date('d/m/Y') }}
+        <span style="margin: 0 6pt;">|</span>
+        <span style="white-space: nowrap;"><strong>Date:</strong> {{ $prescription->prescribed_date ? $prescription->prescribed_date->format('d/m/Y') : date('d/m/Y') }}</span>
         @if($prescription->patient && $prescription->patient->date_of_birth)
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Age:</strong> {{ $prescription->patient->age_formatted }}
+            <span style="margin: 0 6pt;">|</span>
+            <span style="white-space: nowrap;"><strong>Age:</strong> {{ $prescription->patient->age_formatted }}</span>
         @endif
         @if($prescription->patient && $prescription->patient->latest_weight_kg)
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Weight:</strong> {{ $prescription->patient->latest_weight_kg }} kg
+            <span style="margin: 0 6pt;">|</span>
+            <span style="white-space: nowrap;"><strong>Weight:</strong> {{ $prescription->patient->latest_weight_kg }} kg</span>
         @endif
         @if($prescription->patient && $prescription->patient->latest_height)
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Height:</strong> {{ $prescription->patient->latest_height }} cm
+            <span style="margin: 0 6pt;">|</span>
+            <span style="white-space: nowrap;"><strong>Height:</strong> {{ $prescription->patient->latest_height }} cm</span>
         @endif
     </div>
 
     {{-- Diagnosis --}}
     @if($prescription->diagnosis)
-        <div style="position: fixed; top: {{ $diagnosisY }}pt; left: {{ $medX }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
+        <div style="position: fixed; top: {{ $diagnosisY }}pt; left: {{ $medX }}pt; right: {{ $contentRightMargin }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
             <strong>Dx:</strong> {{ $prescription->diagnosis }}
         </div>
     @endif
@@ -63,7 +64,7 @@
     {{-- Medicines overlay using fixed positioning with pt units for mPDF --}}
     @php $currentY = $medY; @endphp
     @foreach($medicines as $index => $medicine)
-        <div style="position: fixed; top: {{ $currentY }}pt; left: {{ $medX }}pt; font-size: {{ $fontSize }}pt; line-height: {{ $lineSpacing }}pt; color: #000;">
+        <div style="position: fixed; top: {{ $currentY }}pt; left: {{ $medX }}pt; right: {{ $contentRightMargin }}pt; font-size: {{ $fontSize }}pt; line-height: {{ $lineSpacing }}pt; color: #000;">
             <b>{{ $index + 1 }}. {{ $medicine->medicine_name }}</b>
             @if($medicine->dosage || $medicine->frequency || $medicine->duration)
                 <br>
