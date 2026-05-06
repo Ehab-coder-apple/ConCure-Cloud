@@ -893,8 +893,16 @@ class SimplePrescriptionController extends Controller
         }
 
         $templatePath = $clinic->getSetting('rx_template_path', '');
-        $useCustomTemplate = $clinic->getSetting('rx_template_enabled', false) && $templatePath;
+        $enabledRaw = $clinic->getSetting('rx_template_enabled', false);
+        $useCustomTemplate = $enabledRaw && $templatePath;
         $paperSize = $clinic->getSetting('rx_paper_size', 'A4');
+
+        \Log::info('templatePreview: settings check', [
+            'clinic_id' => $clinic->id,
+            'templatePath' => $templatePath,
+            'enabledRaw' => $enabledRaw,
+            'useCustomTemplate' => $useCustomTemplate,
+        ]);
 
         // Create demo prescription data
         $demoPatient = new \stdClass();
