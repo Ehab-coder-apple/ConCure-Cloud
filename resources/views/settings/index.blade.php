@@ -925,7 +925,7 @@
                                     <hr>
 
                                     <!-- Enable/Disable Toggle -->
-                                    <form id="rxTemplateSettingsForm">
+                                    <form method="POST" action="{{ route('settings.prescription-template.settings') }}" id="rxTemplateSettingsForm">
                                         @csrf
                                         <div class="mb-3">
                                             <div class="form-check form-switch">
