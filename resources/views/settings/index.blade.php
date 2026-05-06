@@ -869,6 +869,7 @@
                                         $rxNotesYBottom = $clinic ? $clinic->getSetting('rx_notes_y_bottom', 60) : 60;
                                         $rxNotesXRight = $clinic ? $clinic->getSetting('rx_notes_x_right', 40) : 40;
                                         $rxPaperSize = $clinic ? $clinic->getSetting('rx_paper_size', 'A4') : 'A4';
+                                        $rxOrientation = $clinic ? $clinic->getSetting('rx_orientation', 'portrait') : 'portrait';
                                     @endphp
 
                                     <div class="alert alert-info">
@@ -956,6 +957,19 @@
                                             <div class="form-text">{{ __('Choose the paper size for prescription PDFs. Default is A4.') }}</div>
                                         </div>
 
+                                        <!-- Orientation -->
+                                        <div class="mb-3">
+                                            <label for="rx_orientation" class="form-label">
+                                                <i class="fas fa-arrows-alt-h me-1"></i>
+                                                <strong>{{ __('Orientation') }}</strong>
+                                            </label>
+                                            <select class="form-select" id="rx_orientation" name="rx_orientation" style="max-width: 250px;">
+                                                <option value="portrait" {{ $rxOrientation == 'portrait' ? 'selected' : '' }}>{{ __('Portrait') }}</option>
+                                                <option value="landscape" {{ $rxOrientation == 'landscape' ? 'selected' : '' }}>{{ __('Landscape') }}</option>
+                                            </select>
+                                            <div class="form-text">{{ __('Portrait is tall, Landscape is wide. Match your uploaded template.') }}</div>
+                                        </div>
+
                                         <h6 class="mt-4"><i class="fas fa-sliders-h me-1"></i> {{ __('Medicine List Position & Formatting') }}</h6>
                                         <p class="text-muted small">{{ __('Adjust where the medicine list appears on your custom template. Values are in points (1 inch = 72 points). A4 is 595 x 842 points.') }}</p>
 
@@ -1024,6 +1038,7 @@
                                         params.set('rx_max_medicines', document.getElementById('rx_max_medicines').value);
                                         params.set('rx_notes_y_bottom', document.getElementById('rx_notes_y_bottom').value);
                                         params.set('rx_notes_x_right', document.getElementById('rx_notes_x_right').value);
+                                        params.set('rx_orientation', document.getElementById('rx_orientation').value);
                                         window.open(baseUrl + '?' + params.toString(), '_blank');
                                     });
                                     </script>

@@ -1227,6 +1227,7 @@ class SettingsController extends Controller
             $clinic->setSetting('rx_notes_y_bottom', (int) ($request->rx_notes_y_bottom ?? 60));
             $clinic->setSetting('rx_notes_x_right', (int) ($request->rx_notes_x_right ?? 40));
             $clinic->setSetting('rx_paper_size', $request->rx_paper_size ?? 'A4');
+            $clinic->setSetting('rx_orientation', in_array($request->rx_orientation, ['portrait', 'landscape']) ? $request->rx_orientation : 'portrait');
 
             return response()->json(['success' => true, 'message' => __('Settings saved successfully.')]);
         } catch (\Exception $e) {

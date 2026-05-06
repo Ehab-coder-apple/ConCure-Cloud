@@ -485,9 +485,23 @@ class SimplePrescriptionController extends Controller
             $paperSize = 'A4';
         }
 
+        $orientation = $clinic ? $clinic->getSetting('rx_orientation', 'portrait') : 'portrait';
+        $isLandscape = $orientation === 'landscape';
+
+        // Build format with orientation for mPDF
+        if ($paperSize === 'A5') {
+            $format = $isLandscape ? [210, 148] : [148, 210];
+        } elseif ($paperSize === 'A6') {
+            $format = $isLandscape ? [148, 105] : [105, 148];
+        } elseif ($paperSize === 'B5') {
+            $format = $isLandscape ? [250, 176] : [176, 250];
+        } else {
+            $format = $isLandscape ? ($paperSize . '-L') : $paperSize;
+        }
+
         $mpdfConfig = [
             'mode' => 'utf-8',
-            'format' => $paperSize,
+            'format' => $format,
             'tempDir' => $tempDir,
             'fontDir' => $fontDirs,
             'fontdata' => $fontData,
@@ -962,14 +976,20 @@ class SimplePrescriptionController extends Controller
             'notes_x_right' => (int) ($request->rx_notes_x_right ?? $clinic->getSetting('rx_notes_x_right', 40)),
         ];
 
+        $orientation = $request->rx_orientation ?? $clinic->getSetting('rx_orientation', 'portrait');
+        $isLandscape = $orientation === 'landscape';
+
         $mpdfConfig = ['default_font' => 'dejavusans', 'tempDir' => storage_path('mpdf/temp')];
 
+        // Build format with orientation
         if ($paperSize === 'A5') {
-            $mpdfConfig['format'] = [148, 210];
+            $mpdfConfig['format'] = $isLandscape ? [210, 148] : [148, 210];
+        } elseif ($paperSize === 'A6') {
+            $mpdfConfig['format'] = $isLandscape ? [148, 105] : [105, 148];
         } elseif ($paperSize === 'B5') {
-            $mpdfConfig['format'] = [176, 250];
+            $mpdfConfig['format'] = $isLandscape ? [250, 176] : [176, 250];
         } else {
-            $mpdfConfig['format'] = 'A4';
+            $mpdfConfig['format'] = $isLandscape ? ($paperSize . '-L') : $paperSize;
         }
 
         $mpdf = new \Mpdf\Mpdf($mpdfConfig);
