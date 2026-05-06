@@ -904,6 +904,26 @@ class SimplePrescriptionController extends Controller
         $demoPatient->latest_weight_kg = 72;
         $demoPatient->latest_height = 175;
         $demoPatient->age_formatted = '25 Years';
+        $demoPatient->gender = 'male';
+        $demoPatient->weight = 72;
+        $demoPatient->height = 175;
+
+        $demoDoctor = new \stdClass();
+        $demoDoctor->first_name = $user->first_name ?? 'Dr.';
+        $demoDoctor->last_name = $user->last_name ?? 'Demo';
+        $demoDoctor->email = $user->email ?? 'doctor@concure.app';
+        $demoDoctor->specialization = 'General Medicine';
+        $demoDoctor->specialization_font_size = null;
+        $demoDoctor->scientific_degree = null;
+        $demoDoctor->medical_degrees = null;
+        $demoDoctor->medical_degrees_font_size = null;
+        $demoDoctor->educational_institution = null;
+        $demoDoctor->professional_credentials = null;
+        $demoDoctor->professional_credentials_font_size = null;
+        $demoDoctor->phone = null;
+
+        $demoClinic = new \stdClass();
+        $demoClinic->name = $clinic->name ?? 'ConCure Clinic';
 
         $demoPrescription = new \stdClass();
         $demoPrescription->prescription_number = 'RX-DEMO-001';
@@ -911,6 +931,10 @@ class SimplePrescriptionController extends Controller
         $demoPrescription->notes = 'Take with food. Rest well and drink plenty of fluids.';
         $demoPrescription->prescribed_date = now();
         $demoPrescription->patient = $demoPatient;
+        $demoPrescription->doctor = $demoDoctor;
+        $demoPrescription->clinic = $demoClinic;
+        $demoPrescription->clinic_id = $clinic->id;
+        $demoPrescription->medicines = $demoMedicines;
 
         // Demo medicines
         $demoMedicines = collect([
