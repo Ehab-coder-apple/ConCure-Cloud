@@ -462,6 +462,9 @@ class SimplePrescriptionController extends Controller
                 'max_medicines' => (int) $clinic->getSetting('rx_max_medicines', 12),
                 'notes_y_bottom' => (int) $clinic->getSetting('rx_notes_y_bottom', 60),
                 'notes_x_right' => (int) $clinic->getSetting('rx_notes_x_right', 40),
+                'header_y' => (int) $clinic->getSetting('rx_header_y', 20),
+                'header_font_size' => (int) $clinic->getSetting('rx_header_font_size', 11),
+                'header_line_spacing' => (int) $clinic->getSetting('rx_header_line_spacing', 18),
             ];
         }
 
@@ -974,6 +977,9 @@ class SimplePrescriptionController extends Controller
             'max_medicines' => (int) ($request->rx_max_medicines ?? $clinic->getSetting('rx_max_medicines', 12)),
             'notes_y_bottom' => (int) ($request->rx_notes_y_bottom ?? $clinic->getSetting('rx_notes_y_bottom', 60)),
             'notes_x_right' => (int) ($request->rx_notes_x_right ?? $clinic->getSetting('rx_notes_x_right', 40)),
+            'header_y' => (int) ($request->rx_header_y ?? $clinic->getSetting('rx_header_y', 20)),
+            'header_font_size' => (int) ($request->rx_header_font_size ?? $clinic->getSetting('rx_header_font_size', 11)),
+            'header_line_spacing' => (int) ($request->rx_header_line_spacing ?? $clinic->getSetting('rx_header_line_spacing', 18)),
         ];
 
         $orientation = $request->rx_orientation ?? $clinic->getSetting('rx_orientation', 'portrait');

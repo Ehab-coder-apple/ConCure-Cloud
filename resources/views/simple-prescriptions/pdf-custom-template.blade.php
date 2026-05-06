@@ -28,14 +28,17 @@
         $medY = $rxSettings['medicine_y'] ?? 200;
         $fontSize = $rxSettings['font_size'] ?? 11;
         $lineSpacing = $rxSettings['line_spacing'] ?? 22;
-        // Header spacing is now proportional to line spacing so it responds to settings
-        $patientY = max(5, $medY - ($lineSpacing * 3));
-        $diagnosisY = max(5, $medY - $lineSpacing);
+        // Header section uses its own independent settings
+        $headerY = $rxSettings['header_y'] ?? 20;
+        $headerFontSize = $rxSettings['header_font_size'] ?? 11;
+        $headerLineSpacing = $rxSettings['header_line_spacing'] ?? 18;
+        $patientY = max(5, $headerY);
+        $diagnosisY = max(5, $patientY + $headerLineSpacing);
         $contentRightMargin = 20; // pt from right edge
     @endphp
 
     {{-- Patient info --}}
-    <div style="position: fixed; top: {{ $patientY }}pt; left: {{ $medX }}pt; right: {{ $contentRightMargin }}pt; font-size: {{ $fontSize }}pt; color: #000;">
+    <div style="position: fixed; top: {{ $patientY }}pt; left: {{ $medX }}pt; right: {{ $contentRightMargin }}pt; font-size: {{ $headerFontSize }}pt; color: #000;">
         @if($prescription->patient)
             <span style="white-space: nowrap;"><strong>Patient:</strong> {{ $prescription->patient->first_name }} {{ $prescription->patient->last_name }}</span>
         @endif
@@ -57,7 +60,7 @@
 
     {{-- Diagnosis --}}
     @if($prescription->diagnosis)
-        <div style="position: fixed; top: {{ $diagnosisY }}pt; left: {{ $medX }}pt; right: {{ $contentRightMargin }}pt; font-size: {{ max(8, $fontSize - 1) }}pt; color: #333;">
+        <div style="position: fixed; top: {{ $diagnosisY }}pt; left: {{ $medX }}pt; right: {{ $contentRightMargin }}pt; font-size: {{ max(8, $headerFontSize - 1) }}pt; color: #333;">
             <strong>Dx:</strong> {{ $prescription->diagnosis }}
         </div>
     @endif

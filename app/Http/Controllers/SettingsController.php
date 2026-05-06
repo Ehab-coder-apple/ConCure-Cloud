@@ -1213,6 +1213,9 @@ class SettingsController extends Controller
             'rx_notes_y_bottom' => 'nullable|integer|min:0|max:800',
             'rx_notes_x_right' => 'nullable|integer|min:0|max:500',
             'rx_paper_size' => 'nullable|string|in:A4,A5,A6,Letter,Legal,B5',
+            'rx_header_y' => 'nullable|integer|min:0|max:800',
+            'rx_header_font_size' => 'nullable|integer|min:6|max:24',
+            'rx_header_line_spacing' => 'nullable|integer|min:10|max:100',
         ]);
 
         try {
@@ -1228,6 +1231,9 @@ class SettingsController extends Controller
             $clinic->setSetting('rx_notes_x_right', (int) ($request->rx_notes_x_right ?? 40));
             $clinic->setSetting('rx_paper_size', $request->rx_paper_size ?? 'A4');
             $clinic->setSetting('rx_orientation', in_array($request->rx_orientation, ['portrait', 'landscape']) ? $request->rx_orientation : 'portrait');
+            $clinic->setSetting('rx_header_y', (int) ($request->rx_header_y ?? 20));
+            $clinic->setSetting('rx_header_font_size', (int) ($request->rx_header_font_size ?? 11));
+            $clinic->setSetting('rx_header_line_spacing', (int) ($request->rx_header_line_spacing ?? 18));
 
             return response()->json(['success' => true, 'message' => __('Settings saved successfully.')]);
         } catch (\Exception $e) {

@@ -870,6 +870,9 @@
                                         $rxNotesXRight = $clinic ? $clinic->getSetting('rx_notes_x_right', 40) : 40;
                                         $rxPaperSize = $clinic ? $clinic->getSetting('rx_paper_size', 'A4') : 'A4';
                                         $rxOrientation = $clinic ? $clinic->getSetting('rx_orientation', 'portrait') : 'portrait';
+                                        $rxHeaderY = $clinic ? $clinic->getSetting('rx_header_y', 20) : 20;
+                                        $rxHeaderFontSize = $clinic ? $clinic->getSetting('rx_header_font_size', 11) : 11;
+                                        $rxHeaderLineSpacing = $clinic ? $clinic->getSetting('rx_header_line_spacing', 18) : 18;
                                     @endphp
 
                                     <div class="alert alert-info">
@@ -970,6 +973,27 @@
                                             <div class="form-text">{{ __('Portrait is tall, Landscape is wide. Match your uploaded template.') }}</div>
                                         </div>
 
+                                        <h6 class="mt-4"><i class="fas fa-heading me-1"></i> {{ __('Header Section (Patient Info & Diagnosis)') }}</h6>
+                                        <p class="text-muted small">{{ __('Adjust the position and size of the patient information header at the top of the prescription. Separate from the medicine list below.') }}</p>
+
+                                        <div class="row g-3">
+                                            <div class="col-md-3">
+                                                <label for="rx_header_y" class="form-label">{{ __('Header Y Position') }}</label>
+                                                <input type="number" class="form-control" id="rx_header_y" name="rx_header_y" value="{{ $rxHeaderY }}" min="0" max="800">
+                                                <small class="text-muted">{{ __('pt from top') }}</small>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="rx_header_font_size" class="form-label">{{ __('Header Font Size') }}</label>
+                                                <input type="number" class="form-control" id="rx_header_font_size" name="rx_header_font_size" value="{{ $rxHeaderFontSize }}" min="6" max="24">
+                                                <small class="text-muted">{{ __('pt') }}</small>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="rx_header_line_spacing" class="form-label">{{ __('Header Line Spacing') }}</label>
+                                                <input type="number" class="form-control" id="rx_header_line_spacing" name="rx_header_line_spacing" value="{{ $rxHeaderLineSpacing }}" min="10" max="100">
+                                                <small class="text-muted">{{ __('pt gap between lines') }}</small>
+                                            </div>
+                                        </div>
+
                                         <h6 class="mt-4"><i class="fas fa-sliders-h me-1"></i> {{ __('Medicine List Position & Formatting') }}</h6>
                                         <p class="text-muted small">{{ __('Adjust where the medicine list appears on your custom template. Values are in points (1 inch = 72 points). A4 is 595 x 842 points.') }}</p>
 
@@ -1039,6 +1063,9 @@
                                         params.set('rx_notes_y_bottom', document.getElementById('rx_notes_y_bottom').value);
                                         params.set('rx_notes_x_right', document.getElementById('rx_notes_x_right').value);
                                         params.set('rx_orientation', document.getElementById('rx_orientation').value);
+                                        params.set('rx_header_y', document.getElementById('rx_header_y').value);
+                                        params.set('rx_header_font_size', document.getElementById('rx_header_font_size').value);
+                                        params.set('rx_header_line_spacing', document.getElementById('rx_header_line_spacing').value);
                                         window.open(baseUrl + '?' + params.toString(), '_blank');
                                     });
                                     </script>
