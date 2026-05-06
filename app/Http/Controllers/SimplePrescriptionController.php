@@ -978,14 +978,14 @@ class SimplePrescriptionController extends Controller
             try {
                 // Templates are stored on Spaces — download to local temp for mPDF
                 $existsOnSpaces = Storage::disk(StorageQuotaService::SPACES_DISK)->exists($templatePath);
-                \Log::debug('templatePreview: Spaces check', [
+                \Log::info('templatePreview: Spaces check', [
                     'templatePath' => $templatePath,
                     'existsOnSpaces' => $existsOnSpaces,
                     'disk' => StorageQuotaService::SPACES_DISK,
                 ]);
                 if ($existsOnSpaces) {
                     $contents = Storage::disk(StorageQuotaService::SPACES_DISK)->get($templatePath);
-                    \Log::debug('templatePreview: downloaded', ['size' => strlen($contents ?? '')]);
+                    \Log::info('templatePreview: downloaded', ['size' => strlen($contents ?? '')]);
                     if ($contents && strlen($contents) > 0) {
                         $ext = strtolower(pathinfo($templatePath, PATHINFO_EXTENSION));
                         $templateLocalPath = storage_path('app/temp_rx_preview_' . $clinic->id . '.' . $ext);
