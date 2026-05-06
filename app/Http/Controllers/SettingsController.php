@@ -1234,6 +1234,9 @@ class SettingsController extends Controller
             $clinic->setSetting('rx_header_y', (int) ($request->rx_header_y ?? 20));
             $clinic->setSetting('rx_header_font_size', (int) ($request->rx_header_font_size ?? 11));
             $clinic->setSetting('rx_header_line_spacing', (int) ($request->rx_header_line_spacing ?? 18));
+            $clinic->setSetting('rx_header_y', (int) ($request->rx_header_y ?? 20));
+            $clinic->setSetting('rx_header_font_size', (int) ($request->rx_header_font_size ?? 11));
+            $clinic->setSetting('rx_header_line_spacing', (int) ($request->rx_header_line_spacing ?? 18));
 
             return response()->json(['success' => true, 'message' => __('Settings saved successfully.')]);
         } catch (\Exception $e) {

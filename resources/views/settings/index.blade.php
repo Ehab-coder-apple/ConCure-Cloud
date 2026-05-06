@@ -873,6 +873,9 @@
                                         $rxHeaderY = $clinic ? $clinic->getSetting('rx_header_y', 20) : 20;
                                         $rxHeaderFontSize = $clinic ? $clinic->getSetting('rx_header_font_size', 11) : 11;
                                         $rxHeaderLineSpacing = $clinic ? $clinic->getSetting('rx_header_line_spacing', 18) : 18;
+                                        $rxHeaderY = $clinic ? $clinic->getSetting('rx_header_y', 20) : 20;
+                                        $rxHeaderFontSize = $clinic ? $clinic->getSetting('rx_header_font_size', 11) : 11;
+                                        $rxHeaderLineSpacing = $clinic ? $clinic->getSetting('rx_header_line_spacing', 18) : 18;
                                     @endphp
 
                                     <div class="alert alert-info">
@@ -992,6 +995,38 @@
                                                 <input type="number" class="form-control" id="rx_header_line_spacing" name="rx_header_line_spacing" value="{{ $rxHeaderLineSpacing }}" min="10" max="100">
                                                 <small class="text-muted">{{ __('pt gap between lines') }}</small>
                                             </div>
+                                        </div>
+
+                                        <h6 class="mt-4"><i class="fas fa-heading me-1"></i> {{ __('Patient Information Header Formatting') }}</h6>
+
+                                        <!-- Header Y Position -->
+                                        <div class="mb-3">
+                                            <label for="rx_header_y" class="form-label">
+                                                <i class="fas fa-arrows-alt-v me-1"></i>
+                                                <strong>{{ __('Header Y Position (from top)') }}</strong>
+                                            </label>
+                                            <input type="number" class="form-control" id="rx_header_y" name="rx_header_y" min="0" max="200" value="{{ $rxHeaderY }}" style="max-width: 100px;">
+                                            <div class="form-text">{{ __('Vertical position of patient info from top of page in pt. Default is 20pt.') }}</div>
+                                        </div>
+
+                                        <!-- Header Font Size -->
+                                        <div class="mb-3">
+                                            <label for="rx_header_font_size" class="form-label">
+                                                <i class="fas fa-text-height me-1"></i>
+                                                <strong>{{ __('Header Font Size') }}</strong>
+                                            </label>
+                                            <input type="number" class="form-control" id="rx_header_font_size" name="rx_header_font_size" min="7" max="16" value="{{ $rxHeaderFontSize }}" style="max-width: 100px;">
+                                            <div class="form-text">{{ __('Font size for patient info and diagnosis (Patient, Date, Age, Dx). Default is 11pt.') }}</div>
+                                        </div>
+
+                                        <!-- Header Line Spacing -->
+                                        <div class="mb-3">
+                                            <label for="rx_header_line_spacing" class="form-label">
+                                                <i class="fas fa-arrows-alt-v me-1"></i>
+                                                <strong>{{ __('Header Line Spacing') }}</strong>
+                                            </label>
+                                            <input type="number" class="form-control" id="rx_header_line_spacing" name="rx_header_line_spacing" min="12" max="40" step="2" value="{{ $rxHeaderLineSpacing }}" style="max-width: 100px;">
+                                            <div class="form-text">{{ __('Vertical space between header lines. Higher = more space. Default is 18pt.') }}</div>
                                         </div>
 
                                         <h6 class="mt-4"><i class="fas fa-sliders-h me-1"></i> {{ __('Medicine List Position & Formatting') }}</h6>
