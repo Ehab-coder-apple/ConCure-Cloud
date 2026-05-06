@@ -976,24 +976,28 @@ class SimplePrescriptionController extends Controller
 
         if ($useCustomTemplate && $templatePath) {
             try {
-                $disk = config('filesystems.default');
-                $templateFullPath = Storage::disk($disk)->path($templatePath);
-                if (file_exists($templateFullPath)) {
-                    $templateLocalPath = storage_path('app/temp_rx_preview_' . $clinic->id . '.' . pathinfo($templateFullPath, PATHINFO_EXTENSION));
-                    copy($templateFullPath, $templateLocalPath);
-                    $templateIsPdf = strtolower(pathinfo($templateFullPath, PATHINFO_EXTENSION)) === 'pdf';
+                // Templates are stored on Spaces — download to local temp for mPDF
+                $existsOnSpaces = Storage::disk(StorageQuotaService::SPACES_DISK)->exists($templatePath);
+                if ($existsOnSpaces) {
+                    $contents = Storage::disk(StorageQuotaService::SPACES_DISK)->get($templatePath);
+                    if ($contents && strlen($contents) > 0) {
+                        $ext = strtolower(pathinfo($templatePath, PATHINFO_EXTENSION));
+                        $templateLocalPath = storage_path('app/temp_rx_preview_' . $clinic->id . '.' . $ext);
+                        file_put_contents($templateLocalPath, $contents);
+                        $templateIsPdf = ($ext === 'pdf');
 
-                    if ($templateIsPdf) {
-                        $convertedImagePath = storage_path('app/temp_rx_preview_' . $clinic->id . '_converted.png');
-                        if (class_exists('\Imagick')) {
-                            $imagick = new \Imagick();
-                            $imagick->setResolution(150, 150);
-                            $imagick->readImage($templateLocalPath . '[0]');
-                            $imagick->setImageFormat('png');
-                            $imagick->writeImage($convertedImagePath);
-                            $imagick->clear();
-                            $imagick->destroy();
-                            $templateLocalPath = $convertedImagePath;
+                        if ($templateIsPdf) {
+                            $convertedImagePath = storage_path('app/temp_rx_preview_' . $clinic->id . '_converted.png');
+                            if (class_exists('\Imagick')) {
+                                $imagick = new \Imagick();
+                                $imagick->setResolution(150, 150);
+                                $imagick->readImage($templateLocalPath . '[0]');
+                                $imagick->setImageFormat('png');
+                                $imagick->writeImage($convertedImagePath);
+                                $imagick->clear();
+                                $imagick->destroy();
+                                $templateLocalPath = $convertedImagePath;
+                            }
                         }
                     }
                 }
