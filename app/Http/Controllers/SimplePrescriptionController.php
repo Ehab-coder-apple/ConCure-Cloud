@@ -925,6 +925,14 @@ class SimplePrescriptionController extends Controller
         $demoClinic = new \stdClass();
         $demoClinic->name = $clinic->name ?? 'ConCure Clinic';
 
+        // Demo medicines
+        $demoMedicines = collect([
+            (object) ['medicine_name' => 'Amoxicillin 500mg Capsule', 'dosage' => '1 capsule', 'frequency' => '3 times daily', 'duration' => '7 days', 'instructions' => 'Take after meals'],
+            (object) ['medicine_name' => 'Paracetamol 500mg Tablet', 'dosage' => '2 tablets', 'frequency' => 'Every 6 hours as needed', 'duration' => '5 days', 'instructions' => 'For fever or pain. Max 8 per day.'],
+            (object) ['medicine_name' => 'Vitamin C 1000mg', 'dosage' => '1 tablet', 'frequency' => 'Once daily', 'duration' => '14 days', 'instructions' => 'Take in the morning'],
+            (object) ['medicine_name' => 'Saline Nasal Spray', 'dosage' => '2 sprays', 'frequency' => '3 times daily', 'duration' => '7 days', 'instructions' => 'Each nostril'],
+        ]);
+
         $demoPrescription = new \stdClass();
         $demoPrescription->prescription_number = 'RX-DEMO-001';
         $demoPrescription->diagnosis = 'Upper Respiratory Tract Infection';
@@ -935,14 +943,6 @@ class SimplePrescriptionController extends Controller
         $demoPrescription->clinic = $demoClinic;
         $demoPrescription->clinic_id = $clinic->id;
         $demoPrescription->medicines = $demoMedicines;
-
-        // Demo medicines
-        $demoMedicines = collect([
-            (object) ['medicine_name' => 'Amoxicillin 500mg Capsule', 'dosage' => '1 capsule', 'frequency' => '3 times daily', 'duration' => '7 days', 'instructions' => 'Take after meals'],
-            (object) ['medicine_name' => 'Paracetamol 500mg Tablet', 'dosage' => '2 tablets', 'frequency' => 'Every 6 hours as needed', 'duration' => '5 days', 'instructions' => 'For fever or pain. Max 8 per day.'],
-            (object) ['medicine_name' => 'Vitamin C 1000mg', 'dosage' => '1 tablet', 'frequency' => 'Once daily', 'duration' => '14 days', 'instructions' => 'Take in the morning'],
-            (object) ['medicine_name' => 'Saline Nasal Spray', 'dosage' => '2 sprays', 'frequency' => '3 times daily', 'duration' => '7 days', 'instructions' => 'Each nostril'],
-        ]);
 
         $rxSettings = [
             'medicine_x' => (int) ($request->rx_medicine_x ?? $clinic->getSetting('rx_medicine_x', 40)),
