@@ -28,8 +28,9 @@
         $medY = $rxSettings['medicine_y'] ?? 200;
         $fontSize = $rxSettings['font_size'] ?? 11;
         $lineSpacing = $rxSettings['line_spacing'] ?? 22;
-        $patientY = max(5, $medY - 55);
-        $diagnosisY = max(5, $medY - 28);
+        // Header spacing is now proportional to line spacing so it responds to settings
+        $patientY = max(5, $medY - ($lineSpacing * 3));
+        $diagnosisY = max(5, $medY - $lineSpacing);
         $contentRightMargin = 20; // pt from right edge
     @endphp
 
