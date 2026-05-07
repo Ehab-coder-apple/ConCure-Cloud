@@ -54,6 +54,15 @@
                             </div>
                         @endif
 
+                        @if(session('session_terminated'))
+                            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                <i class="fas fa-lock me-2"></i>
+                                <strong>Security Notice</strong>
+                                <p class="mb-0">{{ session('termination_message', 'For your security, your session has been terminated. You were logged out because you signed in from another device.') }}</p>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
                         @if(session('error'))
                             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                 <i class="fas fa-exclamation-circle me-2"></i>

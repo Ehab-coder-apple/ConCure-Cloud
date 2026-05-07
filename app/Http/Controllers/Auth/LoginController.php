@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Services\SessionManagementService;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -141,6 +142,13 @@ class LoginController extends Controller
      */
     protected function authenticated(Request $request, $user)
     {
+        // Get the credential used (username or email)
+        $loginInput = $request->input($this->username());
+        $credential = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? $loginInput : $user->username;
+
+        // Create session record and terminate old sessions for this credential
+        SessionManagementService::createSession($user, $credential, $request);
+
         // Update last login timestamp
         $user->update(['last_login_at' => now()]);
 
@@ -179,8 +187,12 @@ class LoginController extends Controller
     public function logout(Request $request)
     {
         $user = Auth::user();
+        $sessionId = $request->session()->getId();
 
         if ($user) {
+            // Terminate the session record
+            SessionManagementService::terminateSessionBySessionId($sessionId, 'manual_logout');
+
             // Log logout
             AuditLog::create([
                 'user_id' => $user->id,
