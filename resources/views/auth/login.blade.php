@@ -55,12 +55,36 @@
                         @endif
 
                         @if(session('session_terminated'))
-                            <div class="alert alert-info alert-dismissible fade show" role="alert">
-                                <i class="fas fa-lock me-2"></i>
-                                <strong>Security Notice</strong>
-                                <p class="mb-0">{{ session('termination_message', 'For your security, your session has been terminated. You were logged out because you signed in from another device.') }}</p>
+                            <div class="alert alert-warning alert-dismissible fade show" role="alert" style="border-left: 4px solid #0d6efd; background-color: #e7f3ff;">
+                                <i class="fas fa-shield-alt me-2" style="color: #0d6efd; font-size: 1.2em;"></i>
+                                <strong style="color: #0d6efd;">
+                                    @if(app()->getLocale() === 'ar')
+                                        تنبيه أمني
+                                    @else
+                                        Security Alert
+                                    @endif
+                                </strong>
+                                <p class="mb-0" style="margin-top: 8px; color: #333;">
+                                    @if(app()->getLocale() === 'ar')
+                                        حرصاً على حماية بيانات العيادة والمرضى، تم إنهاء هذه الجلسة لأن الحساب تم فتحه على جهاز آخر.
+                                    @else
+                                        For your security, you have been logged out because your account was accessed from another device.
+                                    @endif
+                                </p>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
+                            <script>
+                                // Keep the alert visible - don't auto-dismiss
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    var alert = document.querySelector('.alert-warning[role="alert"]');
+                                    if (alert) {
+                                        // Remove auto-dismiss timeout
+                                        setTimeout(function() {
+                                            alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }, 100);
+                                    }
+                                });
+                            </script>
                         @endif
 
                         @if(session('error'))
