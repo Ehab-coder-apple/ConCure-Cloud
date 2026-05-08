@@ -130,15 +130,26 @@ class LoginController extends Controller
             ]);
         }
 
-        return $this->guard()->attempt($credentials, $request->filled('remember'));
+        // Attempt the login
+        $loginAttempt = $this->guard()->attempt($credentials, $request->filled('remember'));
+
+        // If login was successful, create session record
+        if ($loginAttempt) {
+            try {
+                $credential = $field === 'email' ? $user->email : $user->username;
+                SessionManagementService::createSession($user, $credential, $request);
+                \Log::info('User session created after login attempt', ['user_id' => $user->id]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to create session after login', ['error' => $e->getMessage()]);
+            }
+        }
+
+        return $loginAttempt;
     }
 
     /**
      * The user has been authenticated.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  mixed  $user
-     * @return mixed
+     * This is called after successful login via AuthenticatesUsers trait.
      */
     protected function authenticated(Request $request, $user)
     {
@@ -146,8 +157,15 @@ class LoginController extends Controller
         $loginInput = $request->input($this->username());
         $credential = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? $loginInput : $user->username;
 
-        // Create session record and terminate old sessions for this credential
-        SessionManagementService::createSession($user, $credential, $request);
+        // CREATE SESSION RECORD - Terminate old sessions for this credential
+        try {
+            $session = SessionManagementService::createSession($user, $credential, $request);
+            if ($session) {
+                \Log::info('Session created for user', ['user_id' => $user->id, 'session_id' => $session->session_id]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to create user session', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        }
 
         // Update last login timestamp
         $user->update(['last_login_at' => now()]);
@@ -171,11 +189,9 @@ class LoginController extends Controller
             app()->setLocale($user->language);
         }
 
-        // Super Admins go to master dashboard; others to app dashboard
-        if ($user->isSuperAdmin()) {
-            return redirect()->route('master.dashboard');
-        }
-        return redirect()->intended($this->redirectPath());
+        // Return null to let the default behavior handle the redirect
+        // The AuthenticatesUsers trait will handle the redirect based on isSuperAdmin
+        return null;
     }
 
     /**

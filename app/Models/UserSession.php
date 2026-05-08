@@ -10,6 +10,9 @@ class UserSession extends Model
 {
     use HasFactory;
 
+    // Enable timestamps
+    public $timestamps = true;
+
     protected $fillable = [
         'user_id',
         'credential_used',

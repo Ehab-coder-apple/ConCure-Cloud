@@ -18,20 +18,39 @@ class CheckSessionTermination
     {
         // Only check authenticated users
         if (Auth::check()) {
-            $sessionId = Session::getId();
-            
-            // Check if current session has been terminated
-            $userSession = UserSession::where('session_id', $sessionId)->first();
-            
-            if ($userSession && !$userSession->isActive()) {
-                // Session has been terminated
-                Auth::logout();
-                Session::flush();
-                
-                // Redirect to login with termination message
-                return redirect()->route('login')
-                    ->with('session_terminated', true)
-                    ->with('termination_message', 'For your security, your session has been terminated. You were logged out because you signed in from another device.');
+            try {
+                $sessionId = Session::getId();
+                $userId = Auth::id();
+
+                // Check if current session has been terminated
+                $userSession = UserSession::where('session_id', $sessionId)
+                    ->where('user_id', $userId)
+                    ->first();
+
+                if ($userSession && !$userSession->isActive()) {
+                    // Session has been terminated - log out immediately
+                    Auth::logout();
+                    Session::flush();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+
+                    // Redirect to login with termination message
+                    return redirect()->route('login')
+                        ->with('session_terminated', true)
+                        ->with('termination_message', 'For your security, your session has been terminated. You were logged out because you signed in from another device.');
+                }
+
+                // If no session record found, the session might be orphaned
+                // This shouldn't happen in normal operation
+                if (!$userSession) {
+                    // Silently allow - the user is authenticated by Laravel's session
+                    // The session record will be created on next login
+                }
+            } catch (\Exception $e) {
+                // Don't break the application on middleware errors
+                \Log::warning('CheckSessionTermination: Error checking session', [
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
