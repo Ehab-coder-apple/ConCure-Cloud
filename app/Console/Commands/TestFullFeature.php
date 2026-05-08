@@ -20,11 +20,11 @@ class TestFullFeature extends Command
         $this->info('✅ Database connection OK');
         
         // Check user_sessions table
-        $tables = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name='user_sessions'");
-        if (count($tables) > 0) {
+        try {
+            $sessionCount = UserSession::count();
             $this->info('✅ user_sessions table exists');
-        } else {
-            $this->error('❌ user_sessions table NOT found');
+        } catch (\Exception $e) {
+            $this->error('❌ user_sessions table NOT found: ' . $e->getMessage());
             return 1;
         }
         
