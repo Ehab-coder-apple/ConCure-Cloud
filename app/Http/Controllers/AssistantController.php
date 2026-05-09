@@ -106,16 +106,21 @@ class AssistantController extends Controller
         $locale = app()->getLocale();
         $patientId = $request->input('patient_id');
 
+        // Detect question language (Arabic or English)
+        $questionLang = $this->detectQuestionLanguage($userText);
+
         // Store user message
         AiChatMessage::create([
             'user_id' => $user->id,
             'role' => 'user',
             'content' => $userText,
-            'lang' => $locale,
+            'lang' => $questionLang,
             'patient_id' => $patientId,
         ]);
 
-        $assistantText = $this->callProvider($user, $locale, $patientId);
+        // Use question language for AI response, fallback to user's locale
+        $responseLang = $questionLang ?: $locale;
+        $assistantText = $this->callProvider($user, $responseLang, $patientId);
 
         // Store assistant message
         AiChatMessage::create([
@@ -233,6 +238,7 @@ PURPOSE & CAPABILITIES:
 - Provide clinic statistics and analytics
 - Support clinic operations (inventory, scheduling, finances)
 - Deliver analysis in the user's preferred language (English/Arabic)
+- Handle multilingual input (doctor may ask in Arabic while data is in English)
 
 IMPORTANT GUIDELINES:
 - You CAN analyze patient data that is securely provided in this context
@@ -242,6 +248,9 @@ IMPORTANT GUIDELINES:
 - For patient analysis: summarize history, identify patterns, suggest follow-up areas
 - NEVER request additional patient identifiers or private data
 - ALWAYS include appropriate disclaimers for clinical recommendations
+- RESPOND IN THE LANGUAGE OF THE QUESTION (if question is in Arabic, respond in Arabic; if English, respond in English)
+- EVEN IF the clinic data is in English, respond to the user's preferred language
+- Handle code-switching gracefully (mixed Arabic/English)
 
 PATIENT ANALYSIS EXAMPLES:
 - "What conditions should we screen for given this patient's history?"
@@ -300,6 +309,37 @@ TXT;
         return in_array($locale, ['ar', 'ku'])
             ? 'لم يتم ضبط مفتاح واجهة الذكاء الاصطناعي. الرجاء تزويد المفتاح في ملف البيئة (OPENAI_API_KEY).'
             : 'AI API key is not configured. Please set OPENAI_API_KEY in the environment.';
+    }
+
+    /**
+     * Detect if the question is in Arabic or English
+     * Returns 'ar' for Arabic, 'en' for English, null if mixed/unclear
+     */
+    protected function detectQuestionLanguage(string $text): ?string
+    {
+        // Count Arabic and English characters
+        $arabicCount = preg_match_all('/[\x{0600}-\x{06FF}]/u', $text);
+        $englishCount = preg_match_all('/[a-zA-Z]/u', $text);
+
+        // If more than 60% Arabic characters, it's Arabic
+        if ($arabicCount > 0 && $englishCount > 0) {
+            $total = $arabicCount + $englishCount;
+            $arabicPercent = ($arabicCount / $total) * 100;
+
+            if ($arabicPercent >= 60) {
+                return 'ar';
+            } elseif ($arabicPercent <= 40) {
+                return 'en';
+            }
+            // Mixed language - return null, let locale decide
+            return null;
+        } elseif ($arabicCount > 0) {
+            return 'ar';
+        } elseif ($englishCount > 0) {
+            return 'en';
+        }
+
+        return null;
     }
 }
 
