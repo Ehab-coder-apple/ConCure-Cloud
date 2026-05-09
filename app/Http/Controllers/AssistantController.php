@@ -132,11 +132,22 @@ class AssistantController extends Controller
         // Use question language for AI response, fallback to user's locale
         $responseLang = $questionLang ?: $locale;
 
+        Log::info('ASSISTANT_CALLING_PROVIDER', [
+            'response_lang' => $responseLang,
+            'question_lang' => $questionLang,
+            'ui_locale' => $locale
+        ]);
+
         // Pass the detected question language to the system prompt
         $assistantText = $this->callProvider($user, $responseLang, $patientId, $responseLang);
 
+        Log::info('ASSISTANT_GOT_RESPONSE', [
+            'response_length' => strlen($assistantText),
+            'response_preview' => substr($assistantText, 0, 100)
+        ]);
+
         // Store assistant message
-        AiChatMessage::create([
+        $msg = AiChatMessage::create([
             'user_id' => $user->id,
             'role' => 'assistant',
             'content' => $assistantText,
@@ -144,12 +155,25 @@ class AssistantController extends Controller
             'patient_id' => $patientId,
         ]);
 
+        Log::info('ASSISTANT_MESSAGE_STORED', ['message_id' => $msg->id]);
+
         return redirect()->route('assistant.index', ['_ts' => time()])->with('success', __('Response generated.'));
     }
 
     protected function callProvider($user, string $locale, ?int $patientId = null, ?string $detectedLanguage = null): string
     {
+        Log::info('CALL_PROVIDER_START', [
+            'locale' => $locale,
+            'detected_language' => $detectedLanguage,
+            'patient_id' => $patientId
+        ]);
+
         $systemPrompt = $this->systemPrompt($locale, $patientId, $detectedLanguage);
+
+        Log::info('SYSTEM_PROMPT_GENERATED', [
+            'prompt_length' => strlen($systemPrompt),
+            'prompt_preview' => substr($systemPrompt, 0, 200)
+        ]);
 
         // Get last 12 message pairs (24 messages) for context
         $history = AiChatMessage::where('user_id', $user->id)
@@ -188,14 +212,31 @@ class AssistantController extends Controller
                     $http = $http->withHeaders($headers);
                 }
 
+                Log::info('OPENAI_REQUEST_SENDING', [
+                    'model' => $model,
+                    'messages_count' => count($messages),
+                    'base_url' => $baseUrl
+                ]);
+
                 $resp = $http->post($baseUrl . '/chat/completions', [
                     'model' => $model,
                     'temperature' => 0.2,
                     'max_tokens' => 700,
                     'messages' => $messages,
                 ]);
+
+                Log::info('OPENAI_RESPONSE_RECEIVED', [
+                    'status' => $resp->status(),
+                    'successful' => $resp->successful()
+                ]);
+
                 if ($resp->successful()) {
-                    return (string) data_get($resp->json(), 'choices.0.message.content', $this->fallback($locale));
+                    $content = (string) data_get($resp->json(), 'choices.0.message.content', null);
+                    Log::info('OPENAI_CONTENT_EXTRACTED', [
+                        'content_length' => strlen($content),
+                        'content_preview' => substr($content, 0, 100)
+                    ]);
+                    return $content ?: $this->fallback($locale);
                 }
                 Log::warning('OpenAI chat/completions failed', [
                     'status' => $resp->status(),
@@ -205,6 +246,7 @@ class AssistantController extends Controller
             } catch (\Throwable $e) {
                 Log::error('OpenAI request exception', [
                     'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
                 ]);
                 return $this->fallback($locale);
             }
