@@ -28,15 +28,19 @@ class CheckSessionTermination
                     ->first();
 
                 if ($userSession && !$userSession->isActive()) {
+                    // Capture user's locale before logout
+                    $userLocale = Auth::user()->language ?? 'en';
+
                     // Session has been terminated - log out immediately
                     Auth::logout();
                     Session::flush();
                     $request->session()->invalidate();
                     $request->session()->regenerateToken();
 
-                    // Redirect to login with termination message
+                    // Redirect to login with termination message and locale
                     return redirect()->route('login')
                         ->with('session_terminated', true)
+                        ->with('user_locale', $userLocale)
                         ->with('termination_message', 'For your security, your session has been terminated. You were logged out because you signed in from another device.');
                 }
 

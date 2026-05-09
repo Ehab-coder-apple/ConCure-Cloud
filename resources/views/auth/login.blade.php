@@ -71,17 +71,23 @@
                                     var alert = document.getElementById('sessionTerminatedAlert');
                                     var isArabic = false;
 
-                                    // Check 1: HTML lang attribute
+                                    // Check 1: User's saved locale (passed from middleware)
+                                    var userLocale = '{{ session("user_locale", "") }}';
+                                    if (userLocale === 'ar') {
+                                        isArabic = true;
+                                    }
+
+                                    // Check 2: HTML lang attribute
                                     if (document.documentElement.lang === 'ar') {
                                         isArabic = true;
                                     }
 
-                                    // Check 2: Check if HTML dir is rtl
+                                    // Check 3: Check if HTML dir is rtl
                                     if (document.documentElement.dir === 'rtl') {
                                         isArabic = true;
                                     }
 
-                                    // Check 3: PHP locale value
+                                    // Check 4: PHP locale value
                                     var locale = '{{ app()->getLocale() }}';
                                     if (locale === 'ar') {
                                         isArabic = true;
