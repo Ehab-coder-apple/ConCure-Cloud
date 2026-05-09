@@ -83,92 +83,81 @@ class AssistantController extends Controller
 
     public function send(Request $request)
     {
-        Log::info('ASSISTANT_SEND_START', ['user' => Auth::id()]);
+        try {
+            Log::info('ASSISTANT_SEND_START', ['user' => Auth::id()]);
 
-        $request->validate([
-            'message' => 'required|string|max:2000',
-            'patient_id' => 'nullable|integer|exists:patients,id',
-        ]);
+            $request->validate([
+                'message' => 'required|string|max:2000',
+                'patient_id' => 'nullable|integer|exists:patients,id',
+            ]);
 
-        $user = Auth::user();
-        Log::info('ASSISTANT_USER_AUTH', ['user_id' => $user->id, 'email' => $user->email]);
+            $user = Auth::user();
+            Log::info('ASSISTANT_USER_AUTH', ['user_id' => $user->id]);
 
-        // Check permission for AI Assistant access
-        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
-            if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('ai_assistant_access')) {
-                abort(403, 'You do not have permission to access the AI Medical Assistant.');
+            // Check permission
+            if (!(config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
+                if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('ai_assistant_access')) {
+                    abort(403, 'Permission denied');
+                }
             }
+
+            $accepted = AiDisclaimerAcceptance::where('user_id', $user->id)->exists();
+            if (!$accepted) {
+                return redirect()->route('assistant.index')->with('error', __('Please accept the disclaimer to use the assistant.'));
+            }
+
+            $userText = trim($request->input('message'));
+            $locale = app()->getLocale();
+            $patientId = $request->input('patient_id');
+
+            // Store user message first
+            AiChatMessage::create([
+                'user_id' => $user->id,
+                'role' => 'user',
+                'content' => $userText,
+                'lang' => $locale,
+                'patient_id' => $patientId,
+            ]);
+
+            Log::info('ASSISTANT_USER_MESSAGE_STORED', ['user_id' => $user->id]);
+
+            // Get AI response
+            $assistantText = $this->callProvider($user, $locale, $patientId);
+
+            Log::info('ASSISTANT_GOT_RESPONSE', [
+                'length' => strlen($assistantText ?? '')
+            ]);
+
+            // Store assistant message
+            AiChatMessage::create([
+                'user_id' => $user->id,
+                'role' => 'assistant',
+                'content' => $assistantText,
+                'lang' => $locale,
+                'patient_id' => $patientId,
+            ]);
+
+            Log::info('ASSISTANT_RESPONSE_STORED', ['user_id' => $user->id]);
+
+            return redirect()->route('assistant.index', ['_ts' => time()])->with('success', __('Response generated.'));
+        } catch (\Exception $e) {
+            Log::error('ASSISTANT_SEND_ERROR', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            return redirect()->route('assistant.index')->with('error', 'Error: ' . $e->getMessage());
         }
-
-        $accepted = AiDisclaimerAcceptance::where('user_id', $user->id)->exists();
-        if (!$accepted) {
-            return redirect()->route('assistant.index')->with('error', __('Please accept the disclaimer to use the assistant.'));
-        }
-
-        $userText = trim($request->input('message'));
-        $locale = app()->getLocale();
-        $patientId = $request->input('patient_id');
-
-        // Detect question language (Arabic or English)
-        $questionLang = $this->detectQuestionLanguage($userText);
-
-        // Log the detection
-        Log::info('Question language detected', [
-            'user_id' => $user->id,
-            'detected_lang' => $questionLang,
-            'ui_locale' => $locale,
-            'text_preview' => substr($userText, 0, 100)
-        ]);
-
-        // Store user message
-        AiChatMessage::create([
-            'user_id' => $user->id,
-            'role' => 'user',
-            'content' => $userText,
-            'lang' => $questionLang,
-            'patient_id' => $patientId,
-        ]);
-
-        // Use question language for AI response, fallback to user's locale
-        $responseLang = $questionLang ?: $locale;
-
-        Log::info('ASSISTANT_CALLING_PROVIDER', [
-            'response_lang' => $responseLang,
-            'question_lang' => $questionLang,
-            'ui_locale' => $locale
-        ]);
-
-        // Pass the detected question language to the system prompt
-        $assistantText = $this->callProvider($user, $responseLang, $patientId, $responseLang);
-
-        Log::info('ASSISTANT_GOT_RESPONSE', [
-            'response_length' => strlen($assistantText),
-            'response_preview' => substr($assistantText, 0, 100)
-        ]);
-
-        // Store assistant message
-        $msg = AiChatMessage::create([
-            'user_id' => $user->id,
-            'role' => 'assistant',
-            'content' => $assistantText,
-            'lang' => $locale,
-            'patient_id' => $patientId,
-        ]);
-
-        Log::info('ASSISTANT_MESSAGE_STORED', ['message_id' => $msg->id]);
-
-        return redirect()->route('assistant.index', ['_ts' => time()])->with('success', __('Response generated.'));
     }
 
-    protected function callProvider($user, string $locale, ?int $patientId = null, ?string $detectedLanguage = null): string
+    protected function callProvider($user, string $locale, ?int $patientId = null): string
     {
         Log::info('CALL_PROVIDER_START', [
             'locale' => $locale,
-            'detected_language' => $detectedLanguage,
             'patient_id' => $patientId
         ]);
 
-        $systemPrompt = $this->systemPrompt($locale, $patientId, $detectedLanguage);
+        $systemPrompt = $this->systemPrompt($locale, $patientId);
 
         Log::info('SYSTEM_PROMPT_GENERATED', [
             'prompt_length' => strlen($systemPrompt),
@@ -256,17 +245,14 @@ class AssistantController extends Controller
         return $this->fallback($locale);
     }
 
-    protected function systemPrompt(string $locale, ?int $patientId = null, ?string $detectedLanguage = null): string
+    protected function systemPrompt(string $locale, ?int $patientId = null): string
     {
-        // Determine the response language based on detected question language
-        // If no language detected, use the UI locale
-        $responseLanguage = $detectedLanguage ?: $locale;
-
+        // Set response language based on UI locale
         $responseLanguageInstruction = '';
-        if ($responseLanguage === 'ar' || $responseLanguage === 'ku') {
-            $responseLanguageInstruction = "\n**LANGUAGE INSTRUCTION: You MUST respond entirely in ARABIC (العربية), even if clinic data is in English. Use proper Arabic grammar and terminology.**";
+        if (in_array($locale, ['ar', 'ku'])) {
+            $responseLanguageInstruction = "\n**LANGUAGE INSTRUCTION: Respond entirely in ARABIC (العربية). Use proper Arabic grammar and terminology.**";
         } else {
-            $responseLanguageInstruction = "\n**LANGUAGE INSTRUCTION: You MUST respond entirely in ENGLISH. Use clear, professional medical English.**";
+            $responseLanguageInstruction = "\n**LANGUAGE INSTRUCTION: Respond entirely in ENGLISH. Use clear, professional medical English.**";
         }
 
         // Add clinic context with error handling
