@@ -55,30 +55,49 @@
                         @endif
 
                         @if(session('session_terminated'))
-                            <div class="alert alert-warning alert-dismissible fade show" role="alert" style="border-left: 4px solid #0d6efd; background-color: #e7f3ff;">
+                            <div class="alert alert-warning alert-dismissible fade show" role="alert" style="border-left: 4px solid #0d6efd; background-color: #e7f3ff;" id="sessionTerminatedAlert">
                                 <i class="fas fa-shield-alt me-2" style="color: #0d6efd; font-size: 1.2em;"></i>
-                                <strong style="color: #0d6efd;">
-                                    @if(app()->getLocale() === 'ar')
-                                        تنبيه أمني
-                                    @else
-                                        Security Alert
-                                    @endif
-                                </strong>
-                                <p class="mb-0" style="margin-top: 8px; color: #333;">
-                                    @if(app()->getLocale() === 'ar')
-                                        حرصاً على حماية بيانات العيادة والمرضى، تم إنهاء هذه الجلسة لأن الحساب تم فتحه على جهاز آخر.
-                                    @else
-                                        For your security, you have been logged out because your account was accessed from another device.
-                                    @endif
+                                <strong style="color: #0d6efd;" id="alertTitle">Security Alert</strong>
+                                <p class="mb-0" style="margin-top: 8px; color: #333;" id="alertMessage">
+                                    For your security, you have been logged out because your account was accessed from another device.
                                 </p>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
                             <script>
-                                // Keep the alert visible - don't auto-dismiss
+                                // Check if user's locale is Arabic
                                 document.addEventListener('DOMContentLoaded', function() {
-                                    var alert = document.querySelector('.alert-warning[role="alert"]');
+                                    var alertTitle = document.getElementById('alertTitle');
+                                    var alertMessage = document.getElementById('alertMessage');
+                                    var alert = document.getElementById('sessionTerminatedAlert');
+                                    var isArabic = false;
+
+                                    // Check 1: HTML lang attribute
+                                    if (document.documentElement.lang === 'ar') {
+                                        isArabic = true;
+                                    }
+
+                                    // Check 2: Check if HTML dir is rtl
+                                    if (document.documentElement.dir === 'rtl') {
+                                        isArabic = true;
+                                    }
+
+                                    // Check 3: PHP locale value
+                                    var locale = '{{ app()->getLocale() }}';
+                                    if (locale === 'ar') {
+                                        isArabic = true;
+                                    }
+
+                                    if (isArabic) {
+                                        alertTitle.textContent = 'تنبيه أمني';
+                                        alertMessage.textContent = 'حرصاً على حماية بيانات العيادة والمرضى، تم إنهاء هذه الجلسة لأن الحساب تم فتحه على جهاز آخر.';
+                                        if (alert) {
+                                            alert.dir = 'rtl';
+                                            alert.style.textAlign = 'right';
+                                        }
+                                    }
+
                                     if (alert) {
-                                        // Remove auto-dismiss timeout
+                                        // Scroll alert into view
                                         setTimeout(function() {
                                             alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                         }, 100);
