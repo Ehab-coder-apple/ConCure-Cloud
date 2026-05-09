@@ -120,7 +120,9 @@ class AssistantController extends Controller
 
         // Use question language for AI response, fallback to user's locale
         $responseLang = $questionLang ?: $locale;
-        $assistantText = $this->callProvider($user, $responseLang, $patientId);
+
+        // Pass the detected question language to the system prompt
+        $assistantText = $this->callProvider($user, $responseLang, $patientId, $questionLang);
 
         // Store assistant message
         AiChatMessage::create([
@@ -134,9 +136,9 @@ class AssistantController extends Controller
         return redirect()->route('assistant.index', ['_ts' => time()])->with('success', __('Response generated.'));
     }
 
-    protected function callProvider($user, string $locale, ?int $patientId = null): string
+    protected function callProvider($user, string $locale, ?int $patientId = null, ?string $detectedLanguage = null): string
     {
-        $systemPrompt = $this->systemPrompt($locale, $patientId);
+        $systemPrompt = $this->systemPrompt($locale, $patientId, $detectedLanguage);
 
         // Get last 12 message pairs (24 messages) for context
         $history = AiChatMessage::where('user_id', $user->id)
@@ -201,8 +203,18 @@ class AssistantController extends Controller
         return $this->fallback($locale);
     }
 
-    protected function systemPrompt(string $locale, ?int $patientId = null): string
+    protected function systemPrompt(string $locale, ?int $patientId = null, ?string $detectedLanguage = null): string
     {
+        // Determine the response language based on detected question language
+        $responseLanguageInstruction = '';
+        if ($detectedLanguage === 'ar') {
+            $responseLanguageInstruction = "\n**IMPORTANT: The doctor's question is in ARABIC. You MUST respond entirely in ARABIC, even if clinic data is in English.**";
+        } elseif ($detectedLanguage === 'en') {
+            $responseLanguageInstruction = "\n**IMPORTANT: The doctor's question is in ENGLISH. You MUST respond entirely in ENGLISH.**";
+        } else {
+            $responseLanguageInstruction = "\n**IMPORTANT: Detect the language of the doctor's question and respond in that language (Arabic or English).**";
+        }
+
         // Add clinic context with error handling
         $contextData = '';
         try {
@@ -237,8 +249,15 @@ PURPOSE & CAPABILITIES:
 - Answer medical questions with evidence-based information
 - Provide clinic statistics and analytics
 - Support clinic operations (inventory, scheduling, finances)
-- Deliver analysis in the user's preferred language (English/Arabic)
-- Handle multilingual input (doctor may ask in Arabic while data is in English)
+- Deliver analysis in the doctor's preferred language (English/Arabic)
+- Handle multilingual input (doctor may ask in Arabic while data is in English)$responseLanguageInstruction
+
+RESPONSE LANGUAGE (CRITICAL):
+- ALWAYS respond in the SAME LANGUAGE as the doctor's question
+- If doctor asks in Arabic, respond ENTIRELY in Arabic (not English)
+- If doctor asks in English, respond ENTIRELY in English (not Arabic)
+- Do NOT mix languages in response unless the question itself is mixed
+- EVEN IF the clinic data is in English, match the doctor's language
 
 IMPORTANT GUIDELINES:
 - You CAN analyze patient data that is securely provided in this context
@@ -248,9 +267,7 @@ IMPORTANT GUIDELINES:
 - For patient analysis: summarize history, identify patterns, suggest follow-up areas
 - NEVER request additional patient identifiers or private data
 - ALWAYS include appropriate disclaimers for clinical recommendations
-- RESPOND IN THE LANGUAGE OF THE QUESTION (if question is in Arabic, respond in Arabic; if English, respond in English)
-- EVEN IF the clinic data is in English, respond to the user's preferred language
-- Handle code-switching gracefully (mixed Arabic/English)
+- Handle code-switching gracefully (mixed Arabic/English only if question is mixed)
 
 PATIENT ANALYSIS EXAMPLES:
 - "What conditions should we screen for given this patient's history?"
@@ -314,31 +331,49 @@ TXT;
     /**
      * Detect if the question is in Arabic or English
      * Returns 'ar' for Arabic, 'en' for English, null if mixed/unclear
+     * Uses character counting and threshold-based detection
      */
     protected function detectQuestionLanguage(string $text): ?string
     {
-        // Count Arabic and English characters
+        if (empty($text)) {
+            return null;
+        }
+
+        // Count Arabic and English characters (including numbers which are neutral)
         $arabicCount = preg_match_all('/[\x{0600}-\x{06FF}]/u', $text);
         $englishCount = preg_match_all('/[a-zA-Z]/u', $text);
 
-        // If more than 60% Arabic characters, it's Arabic
+        // Log for debugging
+        Log::debug('Language detection', [
+            'text_sample' => substr($text, 0, 50),
+            'arabic_count' => $arabicCount,
+            'english_count' => $englishCount
+        ]);
+
+        // If both languages present, use weighted calculation
         if ($arabicCount > 0 && $englishCount > 0) {
             $total = $arabicCount + $englishCount;
             $arabicPercent = ($arabicCount / $total) * 100;
+            $englishPercent = ($englishCount / $total) * 100;
 
-            if ($arabicPercent >= 60) {
+            // If one language is clearly dominant (>70%), use it
+            if ($arabicPercent >= 70) {
                 return 'ar';
-            } elseif ($arabicPercent <= 40) {
+            } elseif ($englishPercent >= 70) {
                 return 'en';
             }
             // Mixed language - return null, let locale decide
+            Log::info('Mixed language detected', ['arabic%' => $arabicPercent, 'english%' => $englishPercent]);
             return null;
         } elseif ($arabicCount > 0) {
+            // Pure Arabic
             return 'ar';
         } elseif ($englishCount > 0) {
+            // Pure English
             return 'en';
         }
 
+        // No recognized characters
         return null;
     }
 }
