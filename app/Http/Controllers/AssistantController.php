@@ -198,8 +198,14 @@ class AssistantController extends Controller
 
     protected function systemPrompt(string $locale, ?int $patientId = null): string
     {
-        // Add clinic context
-        $contextData = AiDataService::prepareContextData(['include_stats' => true, 'include_diagnoses' => true]);
+        // Add clinic context with error handling
+        $contextData = '';
+        try {
+            $contextData = AiDataService::prepareContextData(['include_stats' => true, 'include_diagnoses' => true]);
+        } catch (\Exception $e) {
+            Log::warning('Failed to load clinic context for AI: ' . $e->getMessage());
+            $contextData = "### Clinic Context Data\nClinical context temporarily unavailable.\n\n";
+        }
 
         // Add patient data if provided
         $patientContext = '';
@@ -214,7 +220,7 @@ class AssistantController extends Controller
                 $patientContext .= "Allergies: {$patientData['allergies']}\n";
                 $patientContext .= "Current Medications: {$patientData['current_medications']}\n";
             } catch (\Exception $e) {
-                // Silently fail if patient not found
+                Log::warning('Failed to load patient data for AI: ' . $e->getMessage());
             }
         }
 

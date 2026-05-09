@@ -79,15 +79,16 @@ class AiDataService
     {
         $user = Auth::user();
 
-        return DB::table('ent_records')
+        $results = DB::table('ent_records')
             ->where('clinic_id', $user->clinic_id)
             ->where('diagnosis', '!=', null)
             ->select('diagnosis', DB::raw('COUNT(*) as count'))
             ->groupBy('diagnosis')
             ->orderByDesc('count')
             ->limit($limit)
-            ->get()
-            ->toArray();
+            ->get();
+
+        return $results->map(fn($item) => ['diagnosis' => $item->diagnosis, 'count' => $item->count])->toArray();
     }
 
     /**
@@ -130,29 +131,46 @@ class AiDataService
      */
     public static function prepareContextData(array $options = []): string
     {
-        $user = Auth::user();
-        $context = "### Clinic Context Data\n";
-        $context .= "User: {$user->full_name} ({$user->role})\n";
-        $context .= "Clinic: {$user->clinic->name}\n\n";
+        try {
+            $user = Auth::user();
+            $context = "### Clinic Context Data\n";
+            $context .= "User: {$user->full_name} ({$user->role})\n";
+            $context .= "Clinic: {$user->clinic->name}\n\n";
 
-        if ($options['include_stats'] ?? true) {
-            $stats = self::getClinicStats();
-            $context .= "**Clinic Statistics:**\n";
-            $context .= "- Total Patients: {$stats['total_patients']}\n";
-            $context .= "- Active Patients This Month: {$stats['active_patients_this_month']}\n";
-            $context .= "- Appointments Today: {$stats['appointments_today']}\n";
-            $context .= "- Pending Appointments: {$stats['pending_appointments']}\n\n";
-        }
-
-        if ($options['include_diagnoses'] ?? false) {
-            $diagnoses = self::getTopDiagnoses(5);
-            $context .= "**Top Diagnoses This Month:**\n";
-            foreach ($diagnoses as $d) {
-                $context .= "- {$d->diagnosis}: {$d->count} cases\n";
+            if ($options['include_stats'] ?? true) {
+                try {
+                    $stats = self::getClinicStats();
+                    $context .= "**Clinic Statistics:**\n";
+                    $context .= "- Total Patients: {$stats['total_patients']}\n";
+                    $context .= "- Active Patients This Month: {$stats['active_patients_this_month']}\n";
+                    $context .= "- Appointments Today: {$stats['appointments_today']}\n";
+                    $context .= "- Pending Appointments: {$stats['pending_appointments']}\n\n";
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to get clinic stats: ' . $e->getMessage());
+                }
             }
-            $context .= "\n";
-        }
 
-        return $context;
+            if ($options['include_diagnoses'] ?? false) {
+                try {
+                    $diagnoses = self::getTopDiagnoses(5);
+                    if (!empty($diagnoses)) {
+                        $context .= "**Top Diagnoses This Month:**\n";
+                        foreach ($diagnoses as $d) {
+                            $diagnosis = $d['diagnosis'] ?? 'Unknown';
+                            $count = $d['count'] ?? 0;
+                            $context .= "- {$diagnosis}: {$count} cases\n";
+                        }
+                        $context .= "\n";
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to get diagnoses: ' . $e->getMessage());
+                }
+            }
+
+            return $context;
+        } catch (\Exception $e) {
+            \Log::error('Error in prepareContextData: ' . $e->getMessage());
+            return "### Clinic Context Data\nUnable to load clinic context at this time.\n\n";
+        }
     }
 }
