@@ -83,12 +83,15 @@ class AssistantController extends Controller
 
     public function send(Request $request)
     {
+        Log::info('ASSISTANT_SEND_START', ['user' => Auth::id()]);
+
         $request->validate([
             'message' => 'required|string|max:2000',
             'patient_id' => 'nullable|integer|exists:patients,id',
         ]);
 
         $user = Auth::user();
+        Log::info('ASSISTANT_USER_AUTH', ['user_id' => $user->id, 'email' => $user->email]);
 
         // Check permission for AI Assistant access
         if (!(config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
@@ -352,7 +355,7 @@ TXT;
         $arabicCount = preg_match_all('/[\x{0600}-\x{06FF}]/u', $text);
         $englishCount = preg_match_all('/[a-zA-Z]/u', $text);
 
-        Log::debug('Language detection', [
+        Log::info('LANG_DETECT_START', [
             'text_sample' => substr($text, 0, 100),
             'arabic_count' => $arabicCount,
             'english_count' => $englishCount
@@ -365,24 +368,24 @@ TXT;
 
             // If one language is clearly dominant (>50%), use it
             if ($arabicPercent > 50) {
-                Log::info('Detected Arabic (dominant)', ['percent' => $arabicPercent]);
+                Log::info('LANG_DETECT_RESULT: Arabic detected', ['percent' => $arabicPercent]);
                 return 'ar';
             } else {
-                Log::info('Detected English (dominant)', ['percent' => (100 - $arabicPercent)]);
+                Log::info('LANG_DETECT_RESULT: English detected', ['percent' => (100 - $arabicPercent)]);
                 return 'en';
             }
         } elseif ($arabicCount > 0) {
             // Pure Arabic
-            Log::info('Detected pure Arabic');
+            Log::info('LANG_DETECT_RESULT: Pure Arabic');
             return 'ar';
         } elseif ($englishCount > 0) {
             // Pure English
-            Log::info('Detected pure English');
+            Log::info('LANG_DETECT_RESULT: Pure English');
             return 'en';
         }
 
         // No recognized characters - return null to use locale
-        Log::warning('Could not detect language', ['text' => substr($text, 0, 50)]);
+        Log::info('LANG_DETECT_RESULT: Could not detect, using null', ['text' => substr($text, 0, 50)]);
         return null;
     }
 }
