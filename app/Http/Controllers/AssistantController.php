@@ -109,6 +109,14 @@ class AssistantController extends Controller
         // Detect question language (Arabic or English)
         $questionLang = $this->detectQuestionLanguage($userText);
 
+        // Log the detection
+        Log::info('Question language detected', [
+            'user_id' => $user->id,
+            'detected_lang' => $questionLang,
+            'ui_locale' => $locale,
+            'text_preview' => substr($userText, 0, 100)
+        ]);
+
         // Store user message
         AiChatMessage::create([
             'user_id' => $user->id,
@@ -122,7 +130,7 @@ class AssistantController extends Controller
         $responseLang = $questionLang ?: $locale;
 
         // Pass the detected question language to the system prompt
-        $assistantText = $this->callProvider($user, $responseLang, $patientId, $questionLang);
+        $assistantText = $this->callProvider($user, $responseLang, $patientId, $responseLang);
 
         // Store assistant message
         AiChatMessage::create([
@@ -206,13 +214,14 @@ class AssistantController extends Controller
     protected function systemPrompt(string $locale, ?int $patientId = null, ?string $detectedLanguage = null): string
     {
         // Determine the response language based on detected question language
+        // If no language detected, use the UI locale
+        $responseLanguage = $detectedLanguage ?: $locale;
+
         $responseLanguageInstruction = '';
-        if ($detectedLanguage === 'ar') {
-            $responseLanguageInstruction = "\n**IMPORTANT: The doctor's question is in ARABIC. You MUST respond entirely in ARABIC, even if clinic data is in English.**";
-        } elseif ($detectedLanguage === 'en') {
-            $responseLanguageInstruction = "\n**IMPORTANT: The doctor's question is in ENGLISH. You MUST respond entirely in ENGLISH.**";
+        if ($responseLanguage === 'ar' || $responseLanguage === 'ku') {
+            $responseLanguageInstruction = "\n**LANGUAGE INSTRUCTION: You MUST respond entirely in ARABIC (العربية), even if clinic data is in English. Use proper Arabic grammar and terminology.**";
         } else {
-            $responseLanguageInstruction = "\n**IMPORTANT: Detect the language of the doctor's question and respond in that language (Arabic or English).**";
+            $responseLanguageInstruction = "\n**LANGUAGE INSTRUCTION: You MUST respond entirely in ENGLISH. Use clear, professional medical English.**";
         }
 
         // Add clinic context with error handling
@@ -331,7 +340,7 @@ TXT;
     /**
      * Detect if the question is in Arabic or English
      * Returns 'ar' for Arabic, 'en' for English, null if mixed/unclear
-     * Uses character counting and threshold-based detection
+     * Uses character counting with lenient threshold
      */
     protected function detectQuestionLanguage(string $text): ?string
     {
@@ -339,13 +348,12 @@ TXT;
             return null;
         }
 
-        // Count Arabic and English characters (including numbers which are neutral)
+        // Count Arabic and English characters
         $arabicCount = preg_match_all('/[\x{0600}-\x{06FF}]/u', $text);
         $englishCount = preg_match_all('/[a-zA-Z]/u', $text);
 
-        // Log for debugging
         Log::debug('Language detection', [
-            'text_sample' => substr($text, 0, 50),
+            'text_sample' => substr($text, 0, 100),
             'arabic_count' => $arabicCount,
             'english_count' => $englishCount
         ]);
@@ -354,26 +362,27 @@ TXT;
         if ($arabicCount > 0 && $englishCount > 0) {
             $total = $arabicCount + $englishCount;
             $arabicPercent = ($arabicCount / $total) * 100;
-            $englishPercent = ($englishCount / $total) * 100;
 
-            // If one language is clearly dominant (>70%), use it
-            if ($arabicPercent >= 70) {
+            // If one language is clearly dominant (>50%), use it
+            if ($arabicPercent > 50) {
+                Log::info('Detected Arabic (dominant)', ['percent' => $arabicPercent]);
                 return 'ar';
-            } elseif ($englishPercent >= 70) {
+            } else {
+                Log::info('Detected English (dominant)', ['percent' => (100 - $arabicPercent)]);
                 return 'en';
             }
-            // Mixed language - return null, let locale decide
-            Log::info('Mixed language detected', ['arabic%' => $arabicPercent, 'english%' => $englishPercent]);
-            return null;
         } elseif ($arabicCount > 0) {
             // Pure Arabic
+            Log::info('Detected pure Arabic');
             return 'ar';
         } elseif ($englishCount > 0) {
             // Pure English
+            Log::info('Detected pure English');
             return 'en';
         }
 
-        // No recognized characters
+        // No recognized characters - return null to use locale
+        Log::warning('Could not detect language', ['text' => substr($text, 0, 50)]);
         return null;
     }
 }
