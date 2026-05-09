@@ -846,6 +846,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/', [App\Http\Controllers\EntController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\EntController::class, 'create'])->name('create');
         Route::post('/', [App\Http\Controllers\EntController::class, 'store'])->name('store');
+        Route::get('/{entRecord}/print', [App\Http\Controllers\EntController::class, 'print'])->name('print');
         Route::get('/{entRecord}', [App\Http\Controllers\EntController::class, 'show'])->name('show');
         Route::get('/{entRecord}/edit', [App\Http\Controllers\EntController::class, 'edit'])->name('edit');
         Route::put('/{entRecord}', [App\Http\Controllers\EntController::class, 'update'])->name('update');

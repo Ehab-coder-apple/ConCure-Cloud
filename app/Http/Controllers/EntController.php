@@ -141,6 +141,22 @@ class EntController extends Controller
     }
 
     /**
+     * Print the ENT record.
+     */
+    public function print(EntRecord $entRecord)
+    {
+        $user = Auth::user();
+
+        if ($entRecord->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to ENT record.');
+        }
+
+        $entRecord->load(['patient', 'doctor', 'audiometryTests.performer']);
+
+        return view('ent.print', compact('entRecord'));
+    }
+
+    /**
      * Show the form for editing the ENT record.
      */
     public function edit(EntRecord $entRecord)

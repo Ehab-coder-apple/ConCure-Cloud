@@ -15,6 +15,9 @@
                     </nav>
                 </div>
                 <div>
+                    <a href="{{ route('ent.print', $entRecord) }}" class="btn btn-info" target="_blank">
+                        <i class="fas fa-print me-1"></i>{{ __('Print') }}
+                    </a>
                     <a href="{{ route('ent.edit', $entRecord) }}" class="btn btn-warning">
                         <i class="fas fa-edit me-1"></i>{{ __('Edit') }}
                     </a>
