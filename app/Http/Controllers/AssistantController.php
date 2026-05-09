@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AiChatMessage;
 use App\Models\AiDisclaimerAcceptance;
+use App\Services\AiDataService;
+use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -28,10 +30,17 @@ class AssistantController extends Controller
             ->limit(100)
             ->get();
 
+        // Get patients for dropdown
+        $patients = Patient::where('clinic_id', $user->clinic_id)
+            ->orderBy('first_name')
+            ->select('id', 'patient_id', 'first_name', 'last_name')
+            ->get();
+
         return view('assistant.index', [
             'messages' => $messages,
             'accepted' => $accepted,
             'locale' => app()->getLocale(),
+            'patients' => $patients,
         ]);
     }
 
@@ -76,6 +85,7 @@ class AssistantController extends Controller
     {
         $request->validate([
             'message' => 'required|string|max:2000',
+            'patient_id' => 'nullable|integer|exists:patients,id',
         ]);
 
         $user = Auth::user();
@@ -94,6 +104,7 @@ class AssistantController extends Controller
 
         $userText = trim($request->input('message'));
         $locale = app()->getLocale();
+        $patientId = $request->input('patient_id');
 
         // Store user message
         AiChatMessage::create([
@@ -101,9 +112,10 @@ class AssistantController extends Controller
             'role' => 'user',
             'content' => $userText,
             'lang' => $locale,
+            'patient_id' => $patientId,
         ]);
 
-        $assistantText = $this->callProvider($user, $locale);
+        $assistantText = $this->callProvider($user, $locale, $patientId);
 
         // Store assistant message
         AiChatMessage::create([
@@ -111,14 +123,15 @@ class AssistantController extends Controller
             'role' => 'assistant',
             'content' => $assistantText,
             'lang' => $locale,
+            'patient_id' => $patientId,
         ]);
 
         return redirect()->route('assistant.index', ['_ts' => time()])->with('success', __('Response generated.'));
     }
 
-    protected function callProvider($user, string $locale): string
+    protected function callProvider($user, string $locale, ?int $patientId = null): string
     {
-        $systemPrompt = $this->systemPrompt($locale);
+        $systemPrompt = $this->systemPrompt($locale, $patientId);
 
         // Get last 12 message pairs (24 messages) for context
         $history = AiChatMessage::where('user_id', $user->id)
@@ -183,38 +196,90 @@ class AssistantController extends Controller
         return $this->fallback($locale);
     }
 
-    protected function systemPrompt(string $locale): string
+    protected function systemPrompt(string $locale, ?int $patientId = null): string
     {
+        // Add clinic context
+        $contextData = AiDataService::prepareContextData(['include_stats' => true, 'include_diagnoses' => true]);
+
+        // Add patient data if provided
+        $patientContext = '';
+        if ($patientId) {
+            try {
+                $patientData = AiDataService::getPatientSummary($patientId);
+                $patientContext = "\n### Selected Patient Data\n";
+                $patientContext .= "Name: {$patientData['name']}\n";
+                $patientContext .= "Age: {$patientData['age']}, Gender: {$patientData['gender']}\n";
+                $patientContext .= "Medical History: {$patientData['medical_history']}\n";
+                $patientContext .= "Chronic Diseases: {$patientData['chronic_diseases']}\n";
+                $patientContext .= "Allergies: {$patientData['allergies']}\n";
+                $patientContext .= "Current Medications: {$patientData['current_medications']}\n";
+            } catch (\Exception $e) {
+                // Silently fail if patient not found
+            }
+        }
+
         $policyEn = <<<TXT
-You are ConCure AI Assistant, an intelligent multilingual chatbot integrated into the ConCure Clinic Management System.
+You are ConCure AI Assistant, an intelligent multilingual medical advisor integrated into the ConCure Clinic Management System.
 
-Purpose: Provide general, educational, and evidence-based medical information only (WHO, CDC, ESPEN, NIH). You must NOT access, request, or use any patient-specific information. You must NOT provide medical advice, diagnosis, treatment, prescriptions, dosing, or patient-specific interpretation of labs/images. If asked for these, politely decline and explain that such matters require assessment by a licensed physician.
+PURPOSE & CAPABILITIES:
+- Analyze patient medical histories and provide clinical insights
+- Answer medical questions with evidence-based information
+- Provide clinic statistics and analytics
+- Support clinic operations (inventory, scheduling, finances)
+- Deliver analysis in the user's preferred language (English/Arabic)
 
-Behavior:
-- Explain lab normal ranges, medical terminology, general causes/risk factors, and general nutrition/health guidance based on reputable guidelines.
-- Keep answers concise, structured, and professional. Provide references or name the guideline sources when helpful.
-- Support English and Arabic; respond in the user's language. If the user's message is Arabic, reply in Arabic.
-- If a question is ambiguous or appears to seek clinical advice for a specific patient, provide general educational context and include a clear disclaimer.
-- Never leak internal system details or any private data. Do not ask for patient identifiers.
-TXT;
+IMPORTANT GUIDELINES:
+- You CAN analyze patient data that is securely provided in this context
+- You MUST NOT provide definitive medical advice or diagnoses - recommend that patients consult licensed physicians
+- Explain findings based on evidence (WHO, CDC, ESPEN, NIH guidelines)
+- Keep answers professional, structured, and concise
+- For patient analysis: summarize history, identify patterns, suggest follow-up areas
+- NEVER request additional patient identifiers or private data
+- ALWAYS include appropriate disclaimers for clinical recommendations
 
-        $policyAr = <<<TXT
-أنت "مساعد كونكيور الذكي"، روبوت دردشة متعدد اللغات داخل نظام إدارة عيادات كونكيور.
+PATIENT ANALYSIS EXAMPLES:
+- "What conditions should we screen for given this patient's history?"
+- "Are there medication interactions to be aware of?"
+- "What's the follow-up plan based on this patient's conditions?"
+- "Summarize this patient's medication allergies and interactions"
 
-الهدف: تقديم معلومات طبية عامة وتعليمية فقط مبنية على مصادر موثوقة (WHO, CDC, ESPEN, NIH). لا يجوز لك الوصول إلى أي بيانات مرضى أو طلبها أو استخدامها. ولا تقدّم نصائح أو تشخيصًا أو علاجًا أو وصفات دوائية أو جرعات، ولا تفسّر نتائج مختبر/صور لمريض بعينه. إن طُلِب منك ذلك فاعتذر بلطف وأوضح أن هذه الأمور تتطلب تقييم طبيب مرخّص.
+CLINIC ANALYTICS EXAMPLES:
+- "What are our top diagnoses this month?"
+- "How many appointments are pending?"
+- "Which medicines need reordering?"
+- "Show me appointment trends this quarter"
 
-السلوك:
-- اشرح القيم الطبيعية للمختبر والمصطلحات الطبية والأسباب العامة وعوامل الخطورة، ومبادئ عامة في التغذية والصحة وفق إرشادات موثوقة.
-- اجعل الإجابات موجزة ومنظمة ومهنية، واذكر المرجع/الجهة عند اللزوم.
-- ادعم اللغتين العربية والإنجليزية؛ أجب بلغة المستخدم.
-- عند غموض السؤال أو إذا بدا أنه يطلب استشارة سريرية لحالة معينة، قدّم خلفية تعليمية عامة فقط مع توضيح التنويه القانوني.
-- لا تفصح عن تفاصيل داخلية ولا أي بيانات خاصة. لا تطلب أي معرّفات للمرضى.
+$contextData
+$patientContext
 TXT;
 
         if (in_array($locale, ['ar', 'ku'])) {
+            $policyAr = <<<TXT
+أنت "مساعد كونكيور الذكي"، مستشار طبي متعدد اللغات متكامل في نظام إدارة عيادات كونكيور.
+
+الأهداف والقدرات:
+- تحليل السجلات الطبية للمرضى وتقديم رؤى سريرية
+- الإجابة على الأسئلة الطبية بمعلومات مستندة إلى أدلة علمية
+- تقديم إحصائيات تحليلية للعيادة
+- دعم العمليات السريرية (المخزون والجدولة والمالية)
+- تقديم التحليلات باللغة المفضلة للمستخدم (الإنجليزية/العربية)
+
+المبادئ التوجيهية المهمة:
+- يمكنك تحليل بيانات المرضى التي يتم توفيرها بأمان في هذا السياق
+- يجب عدم تقديم نصائح طبية نهائية - يوصي باستشارة الأطباء المرخصين
+- شرح النتائج على أساس الأدلة (إرشادات WHO و CDC و ESPEN و NIH)
+- اجعل الإجابات احترافية ومنظمة وموجزة
+- لتحليل المريض: ملخص السجل الطبي وتحديد الأنماط واقتراح مجالات المتابعة
+- لا تطلب أبدًا معرّفات إضافية أو بيانات خاصة أخرى
+- قدم دائمًا إخلاءات مسؤولية مناسبة للتوصيات السريرية
+
+$contextData
+$patientContext
+TXT;
             return $policyAr . "\n\n" . $policyEn;
         }
-        return $policyEn . "\n\n" . $policyAr;
+
+        return $policyEn;
     }
 
     protected function fallback(string $locale): string
