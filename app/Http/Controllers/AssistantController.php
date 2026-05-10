@@ -110,6 +110,8 @@ class AssistantController extends Controller
             $locale = app()->getLocale();
             $patientId = $request->input('patient_id');
 
+            Log::info('ASSISTANT_STORING_USER_MESSAGE', ['text_len' => strlen($userText)]);
+
             // Store user message first
             AiChatMessage::create([
                 'user_id' => $user->id,
@@ -140,11 +142,12 @@ class AssistantController extends Controller
             Log::info('ASSISTANT_RESPONSE_STORED', ['user_id' => $user->id]);
 
             return redirect()->route('assistant.index', ['_ts' => time()])->with('success', __('Response generated.'));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('ASSISTANT_SEND_ERROR', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
+                'class' => get_class($e)
             ]);
             return redirect()->route('assistant.index')->with('error', 'Error: ' . $e->getMessage());
         }
