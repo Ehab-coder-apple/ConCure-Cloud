@@ -83,6 +83,8 @@ class AssistantController extends Controller
 
     public function send(Request $request)
     {
+        Log::info('ASSISTANT_SEND_CALLED', ['method' => $request->method(), 'path' => $request->path()]);
+
         try {
             Log::info('ASSISTANT_SEND_START', ['user' => Auth::id()]);
 
