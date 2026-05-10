@@ -81,6 +81,38 @@ class AssistantController extends Controller
         return back()->with('success', __('Chat history cleared.'));
     }
 
+    public function exportPdf(Request $request)
+    {
+        $user = Auth::user();
+
+        // Check permission for AI Assistant access
+        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', false))) {
+            if (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('ai_assistant_access')) {
+                abort(403, 'You do not have permission to access the AI Medical Assistant.');
+            }
+        }
+
+        $messages = AiChatMessage::where('user_id', $user->id)
+            ->orderBy('created_at')
+            ->get();
+
+        if ($messages->isEmpty()) {
+            return back()->with('error', __('No chat history to export.'));
+        }
+
+        $clinic = $user->clinic;
+        $fileName = 'AI_Chat_History_' . now()->format('Y-m-d_His') . '.pdf';
+
+        $pdf = \PDF::loadView('assistant.export-pdf', [
+            'messages' => $messages,
+            'user' => $user,
+            'clinic' => $clinic,
+            'exportDate' => now(),
+        ]);
+
+        return $pdf->download($fileName);
+    }
+
     public function send(Request $request)
     {
         Log::info('ASSISTANT_SEND_CALLED', ['method' => $request->method(), 'path' => $request->path()]);
@@ -269,6 +301,28 @@ class AssistantController extends Controller
             $contextData = "### Clinic Context Data\nClinical context temporarily unavailable.\n\n";
         }
 
+        // Add financial insights to context
+        $financialContext = '';
+        try {
+            $financialData = AiDataService::getFinancialInsights();
+            if (!empty($financialData)) {
+                $financialContext = "\n### Financial Insights\n";
+                $financialContext .= "Revenue This Month: \${$financialData['revenue_this_month']}\n";
+                $financialContext .= "Revenue Last Month: \${$financialData['revenue_last_month']}\n";
+                $financialContext .= "Expenses This Month: \${$financialData['expenses_this_month']}\n";
+                $financialContext .= "Net Profit This Month: \${$financialData['net_profit_this_month']}\n";
+                $financialContext .= "Outstanding Invoices: \${$financialData['outstanding_invoices']}\n";
+                if (!empty($financialData['top_revenue_categories'])) {
+                    $financialContext .= "\nTop Revenue Categories:\n";
+                    foreach ($financialData['top_revenue_categories'] as $cat) {
+                        $financialContext .= "- {$cat['category']}: \${$cat['amount']}\n";
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to load financial insights for AI: ' . $e->getMessage());
+        }
+
         // Add patient data if provided
         $patientContext = '';
         if ($patientId) {
@@ -281,6 +335,32 @@ class AssistantController extends Controller
                 $patientContext .= "Chronic Diseases: {$patientData['chronic_diseases']}\n";
                 $patientContext .= "Allergies: {$patientData['allergies']}\n";
                 $patientContext .= "Current Medications: {$patientData['current_medications']}\n";
+
+                // Add prescription history
+                if (!empty($patientData['prescriptions'])) {
+                    $patientContext .= "\n**Recent Prescriptions:**\n";
+                    foreach (array_slice($patientData['prescriptions'], 0, 5) as $rx) {
+                        $patientContext .= "- Date: {$rx['date']}\n";
+                        $patientContext .= "  Diagnosis: {$rx['diagnosis']}\n";
+                        $patientContext .= "  Medicines: " . implode(', ', $rx['medicines']) . "\n";
+                    }
+                }
+
+                // Add lab results
+                if (!empty($patientData['lab_results'])) {
+                    $patientContext .= "\n**Recent Lab Results:**\n";
+                    foreach (array_slice($patientData['lab_results'], 0, 5) as $lab) {
+                        $patientContext .= "- {$lab['date']}: {$lab['test']} - {$lab['results']} ({$lab['status']})\n";
+                    }
+                }
+
+                // Add vital signs trends
+                if (!empty($patientData['vital_signs'])) {
+                    $patientContext .= "\n**Recent Vital Signs:**\n";
+                    foreach (array_slice($patientData['vital_signs'], 0, 5) as $vital) {
+                        $patientContext .= "- {$vital['date']}: BP={$vital['blood_pressure']}, HR={$vital['heart_rate']}, Temp={$vital['temperature']}, Weight={$vital['weight']}\n";
+                    }
+                }
             } catch (\Exception $e) {
                 Log::warning('Failed to load patient data for AI: ' . $e->getMessage());
             }
@@ -327,6 +407,7 @@ CLINIC ANALYTICS EXAMPLES:
 - "Show me appointment trends this quarter"
 
 $contextData
+$financialContext
 $patientContext
 TXT;
 

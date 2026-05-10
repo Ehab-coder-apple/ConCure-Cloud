@@ -20,7 +20,7 @@ class AiDataService
             ->where('clinic_id', $user->clinic_id)
             ->findOrFail($patientId);
 
-        return [
+        $data = [
             'patient_id' => $patient->patient_id,
             'name' => $patient->full_name,
             'age' => $patient->age,
@@ -38,6 +38,29 @@ class AiDataService
                 ->toArray(),
             'prescriptions_count' => $patient->prescriptions()->count(),
         ];
+
+        // Add enhanced prescription history
+        try {
+            $data['prescriptions'] = self::getPatientPrescriptions($patientId);
+        } catch (\Exception $e) {
+            \Log::warning('Failed to get patient prescriptions: ' . $e->getMessage());
+        }
+
+        // Add lab results
+        try {
+            $data['lab_results'] = self::getPatientLabResults($patientId);
+        } catch (\Exception $e) {
+            \Log::warning('Failed to get patient lab results: ' . $e->getMessage());
+        }
+
+        // Add vital signs trends
+        try {
+            $data['vital_signs'] = self::getPatientVitalSigns($patientId);
+        } catch (\Exception $e) {
+            \Log::warning('Failed to get patient vital signs: ' . $e->getMessage());
+        }
+
+        return $data;
     }
 
     /**
@@ -171,6 +194,166 @@ class AiDataService
         } catch (\Exception $e) {
             \Log::error('Error in prepareContextData: ' . $e->getMessage());
             return "### Clinic Context Data\nUnable to load clinic context at this time.\n\n";
+        }
+    }
+
+    /**
+     * Get patient prescription history (last 10)
+     */
+    public static function getPatientPrescriptions(int $patientId): array
+    {
+        $user = Auth::user();
+
+        $prescriptions = DB::table('prescriptions')
+            ->where('patient_id', $patientId)
+            ->where('clinic_id', $user->clinic_id)
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get(['id', 'created_at', 'diagnosis', 'notes']);
+
+        $results = [];
+        foreach ($prescriptions as $rx) {
+            // Get medicines for this prescription
+            $medicines = DB::table('prescription_medicines')
+                ->where('prescription_id', $rx->id)
+                ->get(['medicine_name', 'dosage', 'frequency', 'duration', 'instructions']);
+
+            $results[] = [
+                'date' => \Carbon\Carbon::parse($rx->created_at)->format('Y-m-d'),
+                'diagnosis' => $rx->diagnosis,
+                'medicines' => $medicines->map(fn($m) =>
+                    $m->medicine_name . ' - ' . $m->dosage . ', ' . $m->frequency . ' for ' . $m->duration
+                )->toArray(),
+                'notes' => $rx->notes,
+            ];
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get patient lab results (last 10)
+     */
+    public static function getPatientLabResults(int $patientId): array
+    {
+        $user = Auth::user();
+
+        if (!DB::getSchemaBuilder()->hasTable('lab_requests')) {
+            return [];
+        }
+
+        $labResults = DB::table('lab_requests')
+            ->where('patient_id', $patientId)
+            ->where('clinic_id', $user->clinic_id)
+            ->whereNotNull('results')
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get(['test_name', 'results', 'status', 'created_at']);
+
+        return $labResults->map(function($lab) {
+            return [
+                'date' => \Carbon\Carbon::parse($lab->created_at)->format('Y-m-d'),
+                'test' => $lab->test_name,
+                'results' => $lab->results,
+                'status' => $lab->status,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Get patient vital signs trends (last 10)
+     */
+    public static function getPatientVitalSigns(int $patientId): array
+    {
+        $user = Auth::user();
+
+        if (!DB::getSchemaBuilder()->hasTable('patient_vital_signs')) {
+            return [];
+        }
+
+        $vitals = DB::table('patient_vital_signs')
+            ->where('patient_id', $patientId)
+            ->where('clinic_id', $user->clinic_id)
+            ->orderByDesc('recorded_at')
+            ->limit(10)
+            ->get();
+
+        return $vitals->map(function($v) {
+            return [
+                'date' => \Carbon\Carbon::parse($v->recorded_at)->format('Y-m-d'),
+                'blood_pressure' => $v->blood_pressure ?? 'N/A',
+                'heart_rate' => $v->heart_rate ?? 'N/A',
+                'temperature' => $v->temperature ?? 'N/A',
+                'weight' => $v->weight ?? 'N/A',
+                'height' => $v->height ?? 'N/A',
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Get financial insights for clinic
+     */
+    public static function getFinancialInsights(): array
+    {
+        $user = Auth::user();
+        $clinicId = $user->clinic_id;
+        $thisMonth = now()->startOfMonth();
+        $lastMonth = now()->subMonth()->startOfMonth();
+
+        try {
+            // Revenue this month
+            $revenueThisMonth = DB::table('receipts')
+                ->where('clinic_id', $clinicId)
+                ->where('status', 'approved')
+                ->whereDate('receipt_date', '>=', $thisMonth)
+                ->sum('amount');
+
+            // Revenue last month
+            $revenueLastMonth = DB::table('receipts')
+                ->where('clinic_id', $clinicId)
+                ->where('status', 'approved')
+                ->whereDate('receipt_date', '>=', $lastMonth)
+                ->whereDate('receipt_date', '<', $thisMonth)
+                ->sum('amount');
+
+            // Expenses this month
+            $expensesThisMonth = DB::table('expenses')
+                ->where('clinic_id', $clinicId)
+                ->where('status', 'approved')
+                ->whereDate('expense_date', '>=', $thisMonth)
+                ->sum('amount');
+
+            // Outstanding invoices
+            $outstandingInvoices = DB::table('invoices')
+                ->where('clinic_id', $clinicId)
+                ->where('status', '!=', 'paid')
+                ->sum('balance');
+
+            // Top revenue categories
+            $topCategories = DB::table('receipts')
+                ->where('clinic_id', $clinicId)
+                ->where('status', 'approved')
+                ->whereDate('receipt_date', '>=', $thisMonth)
+                ->select('category', DB::raw('SUM(amount) as total'))
+                ->groupBy('category')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get();
+
+            return [
+                'revenue_this_month' => round($revenueThisMonth, 2),
+                'revenue_last_month' => round($revenueLastMonth, 2),
+                'expenses_this_month' => round($expensesThisMonth, 2),
+                'net_profit_this_month' => round($revenueThisMonth - $expensesThisMonth, 2),
+                'outstanding_invoices' => round($outstandingInvoices, 2),
+                'top_revenue_categories' => $topCategories->map(fn($c) => [
+                    'category' => $c->category,
+                    'amount' => round($c->total, 2)
+                ])->toArray(),
+            ];
+        } catch (\Exception $e) {
+            \Log::warning('Failed to get financial insights: ' . $e->getMessage());
+            return [];
         }
     }
 }

@@ -319,6 +319,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::post('/accept', [AssistantController::class, 'acceptDisclaimer'])->name('accept');
             Route::post('/send', [AssistantController::class, 'send'])->name('send');
             Route::delete('/clear', [AssistantController::class, 'clearHistory'])->name('clear');
+            Route::get('/export-pdf', [AssistantController::class, 'exportPdf'])->name('export-pdf');
         });
 
 
