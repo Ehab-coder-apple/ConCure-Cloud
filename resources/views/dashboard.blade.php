@@ -383,7 +383,7 @@
                         </div>
                         @endif
 
-                        @if(Auth::user()->hasPermission('medicines_create'))
+                        @if(Auth::user()->hasPermission('medicines_create') && Auth::user()->canAccessModule('medicines'))
                         <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
                             <a href="{{ route('medicines.create') }}" class="btn btn-outline-danger w-100">
                                 <i class="fas fa-pills d-block mb-1"></i>

@@ -1583,7 +1583,7 @@
                         @endif
 
                         <!-- Laboratory -->
-                        @if((Auth::user()->canViewLabRequests() && Auth::user()->canAccessModule('lab')) || in_array(Auth::user()->role, ['admin', 'program_owner']))
+                        @if(Auth::user()->canViewLabRequests() && Auth::user()->canAccessModule('lab'))
                         <li class="nav-item has-submenu {{ request()->routeIs('recommendations.lab-requests*') || request()->routeIs('external-labs.*') ? 'active' : '' }}">
                             <a href="#" class="nav-link submenu-toggle">
                                 <i class="nav-icon fas fa-flask"></i>
@@ -1591,7 +1591,7 @@
                                 <i class="submenu-arrow fas fa-chevron-right"></i>
                             </a>
                             <ul class="submenu">
-                                @if(Auth::user()->canViewLabRequests() && Auth::user()->canAccessModule('lab'))
+                                @if(Auth::user()->canViewLabRequests())
                                 <li class="submenu-item">
                                     <a href="{{ route('recommendations.lab-requests') }}" class="submenu-link {{ request()->routeIs('recommendations.lab-requests*') ? 'active' : '' }}">
                                         <i class="submenu-icon fas fa-list"></i>
@@ -1632,7 +1632,7 @@
                         @endif
 
                         <!-- Templates (under Clinical) -->
-                        @if(Auth::user()->canAccessSection('forms') && Auth::user()->canAccessModule('forms') || Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner')
+                        @if((Auth::user()->canAccessSection('forms') && Auth::user()->canAccessModule('forms')) || (in_array(Auth::user()->role, ['admin', 'doctor', 'program_owner']) && Auth::user()->canAccessModule('appointments')))
                         <li class="nav-item has-submenu {{ request()->is('forms*') || request()->routeIs('admin.custom-vital-signs.*') || request()->routeIs('admin.checkup-templates.*') ? 'active' : '' }}">
                             <a href="#" class="nav-link submenu-toggle">
                                 <i class="nav-icon fas fa-clipboard-list"></i>
@@ -1648,7 +1648,7 @@
                                     </a>
                                 </li>
                                 @endif
-                                @if(Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner')
+                                @if((Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner') && Auth::user()->canAccessModule('appointments'))
                                 <li class="submenu-item">
                                     <a href="{{ route('admin.custom-vital-signs.index') }}" class="submenu-link {{ request()->routeIs('admin.custom-vital-signs.*') ? 'active' : '' }}">
                                         <i class="submenu-icon fas fa-stethoscope"></i>
@@ -1656,7 +1656,7 @@
                                     </a>
                                 </li>
                                 @endif
-                                @if(Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner')
+                                @if((Auth::user()->role === 'admin' || Auth::user()->role === 'doctor' || Auth::user()->role === 'program_owner') && Auth::user()->canAccessModule('appointments'))
                                 <li class="submenu-item">
                                     <a href="{{ route('admin.checkup-templates.index') }}" class="submenu-link {{ request()->routeIs('admin.checkup-templates.*') ? 'active' : '' }}">
                                         <i class="submenu-icon fas fa-clipboard-list"></i>
