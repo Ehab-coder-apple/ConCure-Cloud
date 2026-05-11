@@ -16,6 +16,10 @@
                     <p class="text-muted mb-0">Clinic ID: {{ $clinic->id }}</p>
                 </div>
                 <div>
+                    <a href="{{ route('master.clinics.manage-contract', $clinic) }}" class="btn btn-warning me-2">
+                        <i class="fas fa-file-contract me-2"></i>
+                        Manage Contracts
+                    </a>
                     <a href="{{ route('master.clinics.edit', $clinic) }}" class="btn btn-primary me-2">
                         <i class="fas fa-edit me-2"></i>
                         Edit Clinic

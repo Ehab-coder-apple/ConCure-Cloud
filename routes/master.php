@@ -57,6 +57,11 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::post('/clinics/{clinic}/reset-admin-password', [ClinicController::class, 'resetAdminPassword'])->name('clinics.reset-admin-password');
     Route::post('/clinics/{clinic}/whatsapp-config', [ClinicController::class, 'configureWhatsApp'])->name('clinics.whatsapp-config');
 
+    // Contract Management for Existing Clinics
+    Route::get('/clinics/{clinic}/contracts', [ClinicController::class, 'manageContract'])->name('clinics.manage-contract');
+    Route::post('/clinics/{clinic}/contracts', [ClinicController::class, 'storeContract'])->name('clinics.store-contract');
+    Route::post('/clinics/{clinic}/contracts/{contract}/renew', [ClinicController::class, 'renewContract'])->name('clinics.renew-contract');
+
     // Storage Quota Management
     Route::post('/clinics/{clinic}/update-storage-limit', [StorageQuotaController::class, 'updateStorageLimit'])->name('clinics.update-storage-limit');
     Route::post('/clinics/{clinic}/sync-storage', [StorageQuotaController::class, 'syncStorage'])->name('clinics.sync-storage');

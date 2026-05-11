@@ -717,4 +717,105 @@ class ClinicController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Show form to add/manage contract for existing clinic.
+     */
+    public function manageContract(Clinic $clinic)
+    {
+        $contracts = $clinic->contracts()->latest()->get();
+        $defaultContractTemplate = \App\Http\Controllers\Master\SettingsController::getDefaultContractTemplate();
+
+        return view('master.clinics.manage-contract', compact('clinic', 'contracts', 'defaultContractTemplate'));
+    }
+
+    /**
+     * Store a new contract for existing clinic.
+     */
+    public function storeContract(Request $request, Clinic $clinic)
+    {
+        $request->validate([
+            'contract_title' => 'nullable|string|max:255',
+            'contract_content' => 'required|string|min:100',
+            'annual_fee' => 'nullable|numeric|min:0|max:10000000',
+            'contract_duration_months' => 'nullable|integer|min:1|max:120',
+            'start_date' => 'nullable|date',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $startDate = $request->start_date ? \Carbon\Carbon::parse($request->start_date) : now();
+            $contractDuration = $request->contract_duration_months ?? 12;
+            $endDate = $startDate->copy()->addMonths($contractDuration);
+
+            \App\Models\ClinicContract::create([
+                'clinic_id' => $clinic->id,
+                'contract_type' => 'service_agreement',
+                'contract_title' => $request->contract_title ?? 'ConCure Cloud Service Agreement',
+                'contract_content' => $request->contract_content,
+                'annual_fee' => $request->annual_fee,
+                'contract_duration_months' => $contractDuration,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'requires_renewal' => true,
+                'status' => 'pending',
+                'created_by' => auth()->id(),
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('master.clinics.manage-contract', $clinic)
+                ->with('success', 'Contract created successfully! The clinic admin must accept it on next login.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to create contract: ' . $e->getMessage()])
+                ->withInput();
+        }
+    }
+
+    /**
+     * Mark an existing contract as renewed.
+     */
+    public function renewContract(Request $request, Clinic $clinic, \App\Models\ClinicContract $contract)
+    {
+        $request->validate([
+            'annual_fee' => 'nullable|numeric|min:0|max:10000000',
+            'contract_duration_months' => 'nullable|integer|min:1|max:120',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Mark old contract as expired
+            $contract->update(['status' => 'expired']);
+
+            // Create new contract based on old one
+            $startDate = now();
+            $contractDuration = $request->contract_duration_months ?? $contract->contract_duration_months ?? 12;
+            $endDate = $startDate->copy()->addMonths($contractDuration);
+
+            $newContract = \App\Models\ClinicContract::create([
+                'clinic_id' => $clinic->id,
+                'contract_type' => $contract->contract_type,
+                'contract_title' => $contract->contract_title,
+                'contract_content' => $contract->contract_content,
+                'annual_fee' => $request->annual_fee ?? $contract->annual_fee,
+                'contract_duration_months' => $contractDuration,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'requires_renewal' => true,
+                'status' => 'pending',
+                'created_by' => auth()->id(),
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('master.clinics.manage-contract', $clinic)
+                ->with('success', 'Contract renewed successfully! The clinic admin must accept the renewed contract.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to renew contract: ' . $e->getMessage()]);
+        }
+    }
 }
