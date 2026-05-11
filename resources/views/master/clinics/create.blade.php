@@ -239,51 +239,7 @@
                                 <label for="contract_content" class="form-label fw-bold">Contract Terms and Conditions</label>
                                 <textarea class="form-control @error('contract_content') is-invalid @enderror"
                                           id="contract_content" name="contract_content" rows="12"
-                                          placeholder="Enter the complete contract terms and conditions here...">{{ old('contract_content', 'CONCURE CLOUD SERVICE AGREEMENT
-
-This Service Agreement ("Agreement") is entered into on the date of acceptance between:
-
-**SERVICE PROVIDER**: ConCure Cloud Medical Management System
-**CLIENT**: [Clinic Name]
-
-1. SERVICES PROVIDED
-ConCure Cloud will provide a comprehensive cloud-based medical management system including patient records management, appointment scheduling, billing, and reporting features.
-
-2. SERVICE LEVEL
-- 99.5% uptime guarantee
-- 24/7 technical support
-- Regular system updates and maintenance
-- Data backup and recovery services
-
-3. FEES AND PAYMENT
-- Monthly Fee: As specified in the billing section
-- Payment Terms: Monthly in advance
-- Late payment may result in service suspension
-
-4. DATA SECURITY
-- All patient data is encrypted and stored securely
-- HIPAA-compliant data handling
-- Regular security audits
-
-5. TERM AND TERMINATION
-- Initial term: 12 months from activation date
-- Automatic renewal unless terminated with 30 days notice
-- Data export available upon termination
-
-6. SUPPORT AND UPDATES
-- Email and phone support during business hours
-- Regular feature updates and improvements
-- Training and onboarding assistance
-
-7. LIMITATIONS AND LIABILITY
-- Service provided "as is"
-- Limited to direct damages only
-- Maximum liability: 3 months of service fees
-
-8. COMPLIANCE
-Client agrees to use the system in compliance with all applicable healthcare regulations and laws.
-
-By accepting this agreement, you acknowledge that you have read, understood, and agree to be bound by these terms.') }}</textarea>
+                                          placeholder="Enter the complete contract terms and conditions here...">{{ old('contract_content', $defaultContractTemplate ?? '') }}</textarea>
                                 @error('contract_content')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

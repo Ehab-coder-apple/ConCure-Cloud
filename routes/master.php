@@ -94,6 +94,8 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::post('/settings/branding-logo', [SettingsController::class, 'updateBrandingLogo'])->name('settings.update-branding-logo');
     Route::delete('/settings/branding-logo', [SettingsController::class, 'deleteBrandingLogo'])->name('settings.delete-branding-logo');
     Route::post('/settings/import-sql', [SettingsController::class, 'importSql'])->name('settings.import-sql');
+    Route::post('/settings/contract-template', [SettingsController::class, 'updateContractTemplate'])->name('settings.update-contract-template');
+    Route::post('/settings/contract-template/reset', [SettingsController::class, 'resetContractTemplate'])->name('settings.reset-contract-template');
 
     // Features Documentation
     Route::get('/features', [DashboardController::class, 'features'])->name('features');

@@ -148,6 +148,47 @@
         </div>
       @endif
 
+      <!-- Contract Template Management -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header py-3 bg-warning text-dark">
+          <h6 class="m-0 font-weight-bold">
+            <i class="fas fa-file-contract me-2"></i>Default Contract Template
+          </h6>
+        </div>
+        <div class="card-body">
+          <p class="text-muted mb-3">
+            Manage the default contract template used when creating new tenant clinics.
+            This template can be customized per clinic during creation.
+          </p>
+
+          <form id="contractTemplateForm">
+            @csrf
+            <div class="mb-3">
+              <label for="contract_template" class="form-label fw-bold">Contract Terms and Conditions</label>
+              <textarea class="form-control font-monospace" id="contract_template" name="contract_template"
+                        rows="20" style="font-size: 0.875rem;">{{ $defaultContractTemplate }}</textarea>
+              <small class="text-muted">
+                This template will be used as the default when creating new tenant clinics with contract requirements.
+              </small>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-success">
+                <i class="fas fa-save me-1"></i> Save Template
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="resetTemplateBtn">
+                <i class="fas fa-undo me-1"></i> Reset to Default
+              </button>
+              <button type="button" class="btn btn-outline-info" id="previewTemplateBtn">
+                <i class="fas fa-eye me-1"></i> Preview
+              </button>
+            </div>
+          </form>
+
+          <div id="templateMessage" class="mt-3" style="display: none;"></div>
+        </div>
+      </div>
+
       <div class="card shadow-sm mb-4">
         <div class="card-header py-3">
           <h6 class="m-0 font-weight-bold text-primary">
@@ -677,6 +718,129 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(() => { /* ignore poll errors, keep trying */ });
         }, 2000); // Poll every 2 seconds
+    }
+
+    // Contract Template Management
+    const contractForm = document.getElementById('contractTemplateForm');
+    const contractTextarea = document.getElementById('contract_template');
+    const resetBtn = document.getElementById('resetTemplateBtn');
+    const previewBtn = document.getElementById('previewTemplateBtn');
+    const messageDiv = document.getElementById('templateMessage');
+
+    // Save template
+    if (contractForm) {
+        contractForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const btn = contractForm.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
+
+            fetch('{{ route('master.settings.update-contract-template') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    contract_template: contractTextarea.value
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+
+                if (data.success) {
+                    messageDiv.className = 'mt-3 alert alert-success';
+                    messageDiv.innerHTML = '<i class="fas fa-check-circle me-1"></i> ' + data.message;
+                } else {
+                    messageDiv.className = 'mt-3 alert alert-danger';
+                    messageDiv.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> ' + data.message;
+                }
+                messageDiv.style.display = 'block';
+                setTimeout(() => { messageDiv.style.display = 'none'; }, 5000);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                messageDiv.className = 'mt-3 alert alert-danger';
+                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> Failed to save template.';
+                messageDiv.style.display = 'block';
+            });
+        });
+    }
+
+    // Reset to default
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            if (!confirm('Reset contract template to default? Any customizations will be lost.')) {
+                return;
+            }
+
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Resetting...';
+
+            fetch('{{ route('master.settings.reset-contract-template') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+
+                if (data.success) {
+                    contractTextarea.value = data.template;
+                    messageDiv.className = 'mt-3 alert alert-success';
+                    messageDiv.innerHTML = '<i class="fas fa-check-circle me-1"></i> ' + data.message;
+                } else {
+                    messageDiv.className = 'mt-3 alert alert-danger';
+                    messageDiv.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> ' + data.message;
+                }
+                messageDiv.style.display = 'block';
+                setTimeout(() => { messageDiv.style.display = 'none'; }, 5000);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                messageDiv.className = 'mt-3 alert alert-danger';
+                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> Failed to reset template.';
+                messageDiv.style.display = 'block';
+            });
+        });
+    }
+
+    // Preview template
+    if (previewBtn) {
+        previewBtn.addEventListener('click', function() {
+            const previewWindow = window.open('', 'Contract Preview', 'width=800,height=600');
+            previewWindow.document.write(`
+                <html>
+                <head>
+                    <title>Contract Preview</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; }
+                        h1 { color: #333; }
+                        pre { white-space: pre-wrap; word-wrap: break-word; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Contract Preview</h1>
+                    <hr>
+                    <pre>${contractTextarea.value}</pre>
+                </body>
+                </html>
+            `);
+        });
     }
 });
 </script>

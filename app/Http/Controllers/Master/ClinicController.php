@@ -142,7 +142,8 @@ class ClinicController extends Controller
         $availableModules = \App\Models\Clinic::AVAILABLE_MODULES;
         $moduleGroups = \App\Models\Clinic::MODULE_GROUPS;
         $countries = \App\Models\Country::where('is_active', true)->orderBy('name')->get();
-        return view('master.clinics.create', compact('specialities', 'availableModules', 'moduleGroups', 'countries'));
+        $defaultContractTemplate = \App\Http\Controllers\Master\SettingsController::getDefaultContractTemplate();
+        return view('master.clinics.create', compact('specialities', 'availableModules', 'moduleGroups', 'countries', 'defaultContractTemplate'));
     }
 
     /**

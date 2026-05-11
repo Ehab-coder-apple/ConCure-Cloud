@@ -40,8 +40,11 @@ class SettingsController extends Controller
             ? asset($brandingLogoRelPath) . '?v=' . filemtime(public_path($brandingLogoRelPath))
             : null;
 
+        // Get default contract template
+        $defaultContractTemplate = self::getDefaultContractTemplate();
+
         return view('master.settings.index', compact(
-            'masterTimezone', 'timezones', 'clinics', 'brandingLogoUrl'
+            'masterTimezone', 'timezones', 'clinics', 'brandingLogoUrl', 'defaultContractTemplate'
         ));
     }
 
@@ -946,6 +949,153 @@ class SettingsController extends Controller
             'America/Mexico_City' => 'Mexico City',
             'America/Toronto' => 'Toronto',
         ];
+    }
+
+    /**
+     * Get the default contract template from settings.
+     */
+    public static function getDefaultContractTemplate(): string
+    {
+        $stored = DB::table('settings')
+            ->whereNull('clinic_id')
+            ->where('key', 'default_contract_template')
+            ->value('value');
+
+        if ($stored) {
+            return $stored;
+        }
+
+        // Return default template
+        return self::getBuiltInContractTemplate();
+    }
+
+    /**
+     * Get the built-in default contract template.
+     */
+    public static function getBuiltInContractTemplate(): string
+    {
+        return 'CONCURE CLOUD SERVICE AGREEMENT
+
+This Service Agreement ("Agreement") is entered into on the date of acceptance between:
+
+**SERVICE PROVIDER**: ConCure Cloud Medical Management System
+**CLIENT**: [Clinic Name]
+
+1. SERVICES PROVIDED
+ConCure Cloud will provide a comprehensive cloud-based medical management system including patient records management, appointment scheduling, billing, and reporting features.
+
+2. SERVICE LEVEL
+- 99.5% uptime guarantee
+- 24/7 technical support
+- Regular system updates and maintenance
+- Data backup and recovery services
+
+3. FEES AND PAYMENT
+- Monthly Fee: As specified in the billing section
+- Payment Terms: Monthly in advance
+- Late payment may result in service suspension
+
+4. DATA SECURITY
+- All patient data is encrypted and stored securely
+- HIPAA-compliant data handling
+- Regular security audits
+
+5. TERM AND TERMINATION
+- Initial term: 12 months from activation date
+- Automatic renewal unless terminated with 30 days notice
+- Data export available upon termination
+
+6. SUPPORT AND UPDATES
+- Email and phone support during business hours
+- Regular feature updates and improvements
+- Training and onboarding assistance
+
+7. LIMITATIONS AND LIABILITY
+- Service provided "as is"
+- Limited to direct damages only
+- Maximum liability: 3 months of service fees
+
+8. COMPLIANCE
+Client agrees to use the system in compliance with all applicable healthcare regulations and laws.
+
+By accepting this agreement, you acknowledge that you have read, understood, and agree to be bound by these terms.';
+    }
+
+    /**
+     * Update the default contract template.
+     */
+    public function updateContractTemplate(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->isSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized.'
+            ], 403);
+        }
+
+        $request->validate([
+            'contract_template' => 'required|string|min:100',
+        ]);
+
+        try {
+            DB::table('settings')->updateOrInsert(
+                [
+                    'clinic_id' => null,
+                    'key' => 'default_contract_template'
+                ],
+                [
+                    'value' => $request->contract_template,
+                    'type' => 'text',
+                    'description' => 'Default contract template for new tenant clinics',
+                    'updated_at' => now()
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Contract template updated successfully!'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update contract template: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset contract template to default.
+     */
+    public function resetContractTemplate(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->isSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized.'
+            ], 403);
+        }
+
+        try {
+            DB::table('settings')
+                ->whereNull('clinic_id')
+                ->where('key', 'default_contract_template')
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Contract template reset to default!',
+                'template' => self::getBuiltInContractTemplate()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reset contract template: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
 
