@@ -186,7 +186,10 @@
                                                 @endif
                                             </td>
                                             <td class="text-end">
-                                                <a href="{{ route('master.clinics.edit', $clinic) }}" class="btn btn-sm btn-outline-primary">
+                                                <a href="{{ route('master.clinics.manage-contract', $clinic) }}" class="btn btn-sm btn-warning me-1" title="Manage Contract">
+                                                    <i class="fas fa-file-contract"></i> Renew
+                                                </a>
+                                                <a href="{{ route('master.clinics.edit', $clinic) }}" class="btn btn-sm btn-outline-primary" title="Edit Clinic">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                             </td>
