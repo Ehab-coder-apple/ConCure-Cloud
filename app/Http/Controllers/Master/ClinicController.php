@@ -293,7 +293,7 @@ class ClinicController extends Controller
                     'start_date' => $startDate,
                     'end_date' => $endDate,
                     'requires_renewal' => true,
-                    'status' => 'pending',
+                    'status' => 'draft', // Created as draft, must be sent by Master
                     'created_by' => auth()->id(),
                 ]);
             }
@@ -758,14 +758,14 @@ class ClinicController extends Controller
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'requires_renewal' => true,
-                'status' => 'pending',
+                'status' => 'draft', // Created as draft, must be sent
                 'created_by' => auth()->id(),
             ]);
 
             DB::commit();
 
             return redirect()->route('master.clinics.manage-contract', $clinic)
-                ->with('success', 'Contract created successfully! The clinic admin must accept it on next login.');
+                ->with('success', 'Contract created successfully as DRAFT! Click "Send Contract" to send it to the clinic.');
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -804,18 +804,75 @@ class ClinicController extends Controller
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'requires_renewal' => true,
-                'status' => 'pending',
+                'status' => 'draft', // Renewed as draft, must be sent
                 'created_by' => auth()->id(),
             ]);
 
             DB::commit();
 
             return redirect()->route('master.clinics.manage-contract', $clinic)
-                ->with('success', 'Contract renewed successfully! The clinic admin must accept the renewed contract.');
+                ->with('success', 'Contract renewed successfully as DRAFT! Click "Send Contract" to send it to the clinic.');
 
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Failed to renew contract: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Send a draft contract to the clinic (activates it).
+     */
+    public function sendContract(Clinic $clinic, \App\Models\ClinicContract $contract)
+    {
+        // Verify contract belongs to this clinic
+        if ($contract->clinic_id !== $clinic->id) {
+            abort(403, 'Contract does not belong to this clinic.');
+        }
+
+        // Can only send draft contracts
+        if ($contract->status !== 'draft') {
+            return back()->withErrors(['error' => 'Only draft contracts can be sent. Current status: ' . $contract->status]);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Change status from draft to pending
+            $contract->update(['status' => 'pending']);
+
+            DB::commit();
+
+            return redirect()->route('master.clinics.manage-contract', $clinic)
+                ->with('success', 'Contract sent successfully! The clinic admin must accept it on next login to access the system.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to send contract: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Delete a draft contract.
+     */
+    public function deleteContract(Clinic $clinic, \App\Models\ClinicContract $contract)
+    {
+        // Verify contract belongs to this clinic
+        if ($contract->clinic_id !== $clinic->id) {
+            abort(403, 'Contract does not belong to this clinic.');
+        }
+
+        // Can only delete draft contracts
+        if ($contract->status !== 'draft') {
+            return back()->withErrors(['error' => 'Only draft contracts can be deleted. Current status: ' . $contract->status]);
+        }
+
+        try {
+            $contract->delete();
+
+            return redirect()->route('master.clinics.manage-contract', $clinic)
+                ->with('success', 'Draft contract deleted successfully.');
+
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to delete contract: ' . $e->getMessage()]);
         }
     }
 }

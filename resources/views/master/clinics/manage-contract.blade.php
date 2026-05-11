@@ -53,8 +53,10 @@
                                         @endif
                                     </div>
                                     <div class="ms-3">
-                                        @if($contract->status === 'pending')
-                                            <span class="badge bg-warning">Pending</span>
+                                        @if($contract->status === 'draft')
+                                            <span class="badge bg-info">Draft</span>
+                                        @elseif($contract->status === 'pending')
+                                            <span class="badge bg-warning">Pending Acceptance</span>
                                         @elseif($contract->status === 'accepted')
                                             <span class="badge bg-success">Accepted</span>
                                         @elseif($contract->status === 'expired')
@@ -74,11 +76,35 @@
                                 </div>
                                 @endif
 
-                                @if($contract->status === 'accepted' || $contract->status === 'expired')
+                                <!-- Action Buttons Based on Status -->
                                 <div class="mt-2">
+                                    @if($contract->status === 'draft')
+                                    <!-- Send Contract Button -->
+                                    <form action="{{ route('master.clinics.send-contract', [$clinic, $contract]) }}" method="POST" class="d-inline"
+                                          onsubmit="return confirm('Send this contract to the clinic? The clinic admin will need to accept it to access the system.');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fas fa-paper-plane me-1"></i>Send Contract
+                                        </button>
+                                    </form>
+
+                                    <!-- Delete Draft Button -->
+                                    <form action="{{ route('master.clinics.delete-contract', [$clinic, $contract]) }}" method="POST" class="d-inline ms-2"
+                                          onsubmit="return confirm('Delete this draft contract?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash me-1"></i>Delete Draft
+                                        </button>
+                                    </form>
+                                    @endif
+
+                                    @if($contract->status === 'accepted' || $contract->status === 'expired')
+                                    <!-- Renew Contract Button -->
                                     <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#renewModal{{ $contract->id }}">
                                         <i class="fas fa-redo me-1"></i>Renew Contract
                                     </button>
+                                    @endif
                                 </div>
 
                                 <!-- Renew Modal -->

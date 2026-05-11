@@ -30,7 +30,7 @@ return new class extends Migration
             $table->boolean('requires_renewal')->default(true);
 
             // Acceptance
-            $table->enum('status', ['pending', 'accepted', 'rejected', 'expired'])->default('pending');
+            $table->enum('status', ['draft', 'pending', 'accepted', 'rejected', 'expired'])->default('draft');
             $table->timestamp('accepted_at')->nullable();
             $table->foreignId('accepted_by_user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('acceptance_ip', 45)->nullable();
