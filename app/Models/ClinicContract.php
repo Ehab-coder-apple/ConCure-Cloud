@@ -15,6 +15,7 @@ class ClinicContract extends Model
         'contract_type',
         'contract_title',
         'contract_content',
+        'annual_fee',
         'monthly_price',
         'yearly_price',
         'contract_duration_months',
@@ -30,6 +31,7 @@ class ClinicContract extends Model
     ];
 
     protected $casts = [
+        'annual_fee' => 'decimal:2',
         'monthly_price' => 'decimal:2',
         'yearly_price' => 'decimal:2',
         'contract_duration_months' => 'integer',

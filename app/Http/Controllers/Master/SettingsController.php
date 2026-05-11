@@ -991,9 +991,10 @@ ConCure Cloud will provide a comprehensive cloud-based medical management system
 - Data backup and recovery services
 
 3. FEES AND PAYMENT
-- Monthly Fee: As specified in the billing section
-- Payment Terms: Monthly in advance
+- Annual Subscription Fee: As specified in the contract
+- Payment Terms: Annually in advance
 - Late payment may result in service suspension
+- Renewal fees may be subject to adjustment
 
 4. DATA SECURITY
 - All patient data is encrypted and stored securely

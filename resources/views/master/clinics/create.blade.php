@@ -215,7 +215,7 @@
 
                         <div id="contractFields" style="display: none;">
                             <div class="row">
-                                <div class="col-md-8 mb-3">
+                                <div class="col-md-4 mb-3">
                                     <label for="contract_title" class="form-label">Contract Title</label>
                                     <input type="text" class="form-control @error('contract_title') is-invalid @enderror"
                                            id="contract_title" name="contract_title"
@@ -223,6 +223,16 @@
                                     @error('contract_title')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="annual_fee" class="form-label">Annual Fee (IQD)</label>
+                                    <input type="number" class="form-control @error('annual_fee') is-invalid @enderror"
+                                           id="annual_fee" name="annual_fee"
+                                           value="{{ old('annual_fee') }}" min="0" step="0.01" placeholder="e.g., 1000000">
+                                    @error('annual_fee')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="text-muted">Annual subscription fee</small>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label for="contract_duration_months" class="form-label">Duration (Months)</label>

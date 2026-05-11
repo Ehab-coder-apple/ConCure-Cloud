@@ -36,11 +36,11 @@
 
                     <!-- Contract Details -->
                     <div class="row mt-4">
-                        @if($contract->monthly_price)
+                        @if($contract->annual_fee)
                         <div class="col-md-4 mb-3">
                             <div class="p-3 bg-light rounded">
-                                <small class="text-muted d-block">Monthly Price</small>
-                                <strong class="text-success">{{ number_format($contract->monthly_price, 2) }} IQD</strong>
+                                <small class="text-muted d-block">Annual Subscription Fee</small>
+                                <strong class="text-success fs-5">{{ number_format($contract->annual_fee, 0) }} IQD</strong>
                             </div>
                         </div>
                         @endif

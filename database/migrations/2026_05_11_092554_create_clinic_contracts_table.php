@@ -21,8 +21,9 @@ return new class extends Migration
             $table->longText('contract_content'); // Rich text contract
 
             // Terms
-            $table->decimal('monthly_price', 10, 2)->nullable();
-            $table->decimal('yearly_price', 10, 2)->nullable();
+            $table->decimal('annual_fee', 10, 2)->nullable(); // Primary: Annual subscription fee
+            $table->decimal('monthly_price', 10, 2)->nullable(); // Optional: Monthly price if needed
+            $table->decimal('yearly_price', 10, 2)->nullable(); // Deprecated: kept for compatibility
             $table->integer('contract_duration_months')->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();

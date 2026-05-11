@@ -181,6 +181,7 @@ class ClinicController extends Controller
             'contract_content' => 'required_if:require_contract,1|string',
             'contract_title' => 'nullable|string|max:255',
             'contract_duration_months' => 'nullable|integer|min:1|max:120',
+            'annual_fee' => 'nullable|numeric|min:0|max:10000000',
         ]);
 
         DB::beginTransaction();
@@ -286,7 +287,8 @@ class ClinicController extends Controller
                     'contract_type' => 'service_agreement',
                     'contract_title' => $request->contract_title ?? 'ConCure Cloud Service Agreement',
                     'contract_content' => $request->contract_content,
-                    'monthly_price' => $request->billing_user_price,
+                    'annual_fee' => $request->annual_fee,
+                    'monthly_price' => $request->billing_user_price, // Kept for compatibility
                     'contract_duration_months' => $contractDuration,
                     'start_date' => $startDate,
                     'end_date' => $endDate,
