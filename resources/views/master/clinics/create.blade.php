@@ -192,6 +192,110 @@
 	                        </div>
                     </div>
                 </div>
+
+                <!-- Service Contract (Tenant Clinics Only) -->
+                <div class="card mb-4" id="contractCard" style="display: none;">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fas fa-file-contract me-2"></i>
+                            Service Agreement (Optional)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="require_contract" id="require_contract" value="1"
+                                   {{ old('require_contract') ? 'checked' : '' }}>
+                            <label class="form-check-label fw-bold" for="require_contract">
+                                <i class="fas fa-shield-alt me-1"></i> Require Contract Acceptance
+                            </label>
+                            <div class="form-text">
+                                When enabled, the clinic admin must review and digitally sign the contract before accessing the system.
+                            </div>
+                        </div>
+
+                        <div id="contractFields" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="contract_title" class="form-label">Contract Title</label>
+                                    <input type="text" class="form-control @error('contract_title') is-invalid @enderror"
+                                           id="contract_title" name="contract_title"
+                                           value="{{ old('contract_title', 'ConCure Cloud Service Agreement') }}">
+                                    @error('contract_title')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="contract_duration_months" class="form-label">Duration (Months)</label>
+                                    <input type="number" class="form-control @error('contract_duration_months') is-invalid @enderror"
+                                           id="contract_duration_months" name="contract_duration_months"
+                                           value="{{ old('contract_duration_months', 12) }}" min="1" max="120">
+                                    @error('contract_duration_months')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="contract_content" class="form-label fw-bold">Contract Terms and Conditions</label>
+                                <textarea class="form-control @error('contract_content') is-invalid @enderror"
+                                          id="contract_content" name="contract_content" rows="12"
+                                          placeholder="Enter the complete contract terms and conditions here...">{{ old('contract_content', 'CONCURE CLOUD SERVICE AGREEMENT
+
+This Service Agreement ("Agreement") is entered into on the date of acceptance between:
+
+**SERVICE PROVIDER**: ConCure Cloud Medical Management System
+**CLIENT**: [Clinic Name]
+
+1. SERVICES PROVIDED
+ConCure Cloud will provide a comprehensive cloud-based medical management system including patient records management, appointment scheduling, billing, and reporting features.
+
+2. SERVICE LEVEL
+- 99.5% uptime guarantee
+- 24/7 technical support
+- Regular system updates and maintenance
+- Data backup and recovery services
+
+3. FEES AND PAYMENT
+- Monthly Fee: As specified in the billing section
+- Payment Terms: Monthly in advance
+- Late payment may result in service suspension
+
+4. DATA SECURITY
+- All patient data is encrypted and stored securely
+- HIPAA-compliant data handling
+- Regular security audits
+
+5. TERM AND TERMINATION
+- Initial term: 12 months from activation date
+- Automatic renewal unless terminated with 30 days notice
+- Data export available upon termination
+
+6. SUPPORT AND UPDATES
+- Email and phone support during business hours
+- Regular feature updates and improvements
+- Training and onboarding assistance
+
+7. LIMITATIONS AND LIABILITY
+- Service provided "as is"
+- Limited to direct damages only
+- Maximum liability: 3 months of service fees
+
+8. COMPLIANCE
+Client agrees to use the system in compliance with all applicable healthcare regulations and laws.
+
+By accepting this agreement, you acknowledge that you have read, understood, and agree to be bound by these terms.') }}</textarea>
+                                @error('contract_content')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    This contract will be displayed to the clinic admin for review and digital signature before they can access the system.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Billing & Fees -->
                 <div class="card mb-4" id="billingCard">
                     <div class="card-header">
@@ -480,6 +584,7 @@
         document.querySelectorAll('input[name="clinic_type"]').forEach(r => {
             r.addEventListener('change', updateBillingVisibility);
             r.addEventListener('change', updateExportPermissionVisibility);
+            r.addEventListener('change', updateContractVisibility);
         });
         updateBillingVisibility();
 
@@ -492,6 +597,29 @@
             exportPermissionRow.style.display = isDemo ? '' : 'none';
         }
         updateExportPermissionVisibility();
+
+        // Show/hide contract card based on clinic type (tenant only, not demo)
+        const contractCard = document.getElementById('contractCard');
+        function updateContractVisibility() {
+            if (!contractCard) return;
+            const selected = document.querySelector('input[name="clinic_type"]:checked');
+            const isTenant = selected && selected.value === 'tenant';
+            contractCard.style.display = isTenant ? '' : 'none';
+        }
+        updateContractVisibility();
+
+        // Show/hide contract fields when "Require Contract" checkbox is toggled
+        const requireContractCheckbox = document.getElementById('require_contract');
+        const contractFields = document.getElementById('contractFields');
+        if (requireContractCheckbox && contractFields) {
+            requireContractCheckbox.addEventListener('change', function() {
+                contractFields.style.display = this.checked ? '' : 'none';
+            });
+            // Trigger on page load to reflect old value
+            if (requireContractCheckbox.checked) {
+                contractFields.style.display = '';
+            }
+        }
 
         // Module select/deselect all
         const selectAll = document.getElementById('selectAllModules');

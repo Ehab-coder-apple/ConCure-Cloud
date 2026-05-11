@@ -123,6 +123,24 @@ class Clinic extends Model
     }
 
     /**
+     * Get the contracts for the clinic.
+     */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(ClinicContract::class);
+    }
+
+    /**
+     * Get the active (pending or accepted) contract for the clinic.
+     */
+    public function activeContract()
+    {
+        return $this->hasOne(ClinicContract::class)
+            ->whereIn('status', ['pending', 'accepted'])
+            ->latest();
+    }
+
+    /**
      * Get the medicines for the clinic.
      */
     public function medicines(): HasMany

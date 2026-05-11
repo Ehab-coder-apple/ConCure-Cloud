@@ -38,8 +38,10 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\SetLocale::class, // Restore user's preferred language
             \App\Http\Middleware\SetClinicTimezone::class, // Set timezone based on clinic settings
+            \App\Http\Middleware\CheckSessionTermination::class, // Check if session was terminated elsewhere
             \App\Http\Middleware\AuditMiddleware::class,
             \App\Http\Middleware\CheckModuleAccess::class, // Block disabled modules via URL
+            \App\Http\Middleware\EnsureContractIsAccepted::class, // Block access if contract pending
             // \App\Http\Middleware\CheckInactivity::class, // Disabled for development
         ],
 
@@ -78,5 +80,6 @@ class Kernel extends HttpKernel
         'section' => \App\Http\Middleware\CheckSectionAccess::class,
         'storage.quota' => \App\Http\Middleware\CheckStorageQuota::class,
         'export.check' => \App\Http\Middleware\CheckExportPermission::class,
+        'contract.check' => \App\Http\Middleware\EnsureContractIsAccepted::class,
     ];
 }

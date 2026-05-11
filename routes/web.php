@@ -88,6 +88,13 @@ Route::get('/auth/login', function () { return redirect()->route('login'); });
 Route::post('/auth/login', function () { return redirect('/login'); });
 Route::post('/auth/logout', function () { return redirect('/'); });
 
+// Contract Review Routes (must be accessible even if contract pending)
+Route::middleware('auth')->prefix('contract')->name('contract.')->group(function () {
+    Route::get('/review', [App\Http\Controllers\ContractController::class, 'show'])->name('show');
+    Route::post('/accept', [App\Http\Controllers\ContractController::class, 'accept'])->name('accept');
+    Route::get('/view', [App\Http\Controllers\ContractController::class, 'view'])->name('view');
+});
+
 // Public clinic activation routes
 Route::get('/activate-clinic', [ClinicActivationController::class, 'showActivationForm'])->name('clinic.activate.form');
 Route::post('/activate-clinic', [ClinicActivationController::class, 'activate'])->name('clinic.activate');

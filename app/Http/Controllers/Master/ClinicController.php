@@ -175,6 +175,11 @@ class ClinicController extends Controller
             'admin_last_name' => 'required|string|max:255',
             'admin_email' => 'required|email|unique:users,email',
             'admin_password' => 'required|string|min:8',
+            // Contract (only for tenant clinics)
+            'require_contract' => 'nullable|boolean',
+            'contract_content' => 'required_if:require_contract,1|string',
+            'contract_title' => 'nullable|string|max:255',
+            'contract_duration_months' => 'nullable|integer|min:1|max:120',
         ]);
 
         DB::beginTransaction();
@@ -269,10 +274,36 @@ class ClinicController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
+            // Create contract if required (only for tenant clinics, not demos)
+            if ($request->has('require_contract') && $request->require_contract && $request->clinic_type !== 'demo') {
+                $startDate = now();
+                $contractDuration = $request->contract_duration_months ?? 12;
+                $endDate = $startDate->copy()->addMonths($contractDuration);
+
+                \App\Models\ClinicContract::create([
+                    'clinic_id' => $clinic->id,
+                    'contract_type' => 'service_agreement',
+                    'contract_title' => $request->contract_title ?? 'ConCure Cloud Service Agreement',
+                    'contract_content' => $request->contract_content,
+                    'monthly_price' => $request->billing_user_price,
+                    'contract_duration_months' => $contractDuration,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'requires_renewal' => true,
+                    'status' => 'pending',
+                    'created_by' => auth()->id(),
+                ]);
+            }
+
             DB::commit();
 
+            $message = 'Clinic created successfully with admin user.';
+            if ($request->has('require_contract') && $request->require_contract) {
+                $message .= ' The clinic admin must review and accept the contract before accessing the system.';
+            }
+
             return redirect()->route('master.clinics.index')
-                ->with('success', 'Clinic created successfully with admin user.');
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollback();
