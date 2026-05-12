@@ -24,7 +24,10 @@ class ContractController extends Controller
             ->where('status', 'pending')
             ->firstOrFail();
 
-        return view('contract.show', compact('contract', 'clinic'));
+        // Replace placeholders in contract content with actual clinic data
+        $contractContent = $this->replacePlaceholders($contract->contract_content, $clinic);
+
+        return view('contract.show', compact('contract', 'clinic', 'contractContent'));
     }
 
     /**
@@ -104,6 +107,32 @@ class ContractController extends Controller
             ->where('status', 'accepted')
             ->firstOrFail();
 
-        return view('contract.view', compact('contract', 'clinic'));
+        // Replace placeholders in contract content with actual clinic data
+        $contractContent = $this->replacePlaceholders($contract->contract_content, $clinic);
+
+        return view('contract.view', compact('contract', 'clinic', 'contractContent'));
+    }
+
+    /**
+     * Replace placeholders in contract content with actual clinic data.
+     */
+    private function replacePlaceholders(string $content, $clinic): string
+    {
+        $replacements = [
+            '[Clinic Name]' => $clinic->name,
+            '[CLINIC_NAME]' => $clinic->name,
+            '[Clinic Email]' => $clinic->email ?? 'N/A',
+            '[CLINIC_EMAIL]' => $clinic->email ?? 'N/A',
+            '[Clinic Phone]' => $clinic->phone ?? 'N/A',
+            '[CLINIC_PHONE]' => $clinic->phone ?? 'N/A',
+            '[Clinic Address]' => $clinic->address ?? 'N/A',
+            '[CLINIC_ADDRESS]' => $clinic->address ?? 'N/A',
+            '[Date]' => now()->format('Y-m-d'),
+            '[DATE]' => now()->format('Y-m-d'),
+            '[Year]' => now()->format('Y'),
+            '[YEAR]' => now()->format('Y'),
+        ];
+
+        return str_replace(array_keys($replacements), array_values($replacements), $content);
     }
 }

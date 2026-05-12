@@ -31,7 +31,7 @@
                 <div class="card-body">
                     <!-- Contract Content -->
                     <div class="contract-content p-4 bg-light border rounded" style="max-height: 500px; overflow-y: auto;">
-                        {!! nl2br(e($contract->contract_content)) !!}
+                        {!! nl2br(e($contractContent)) !!}
                     </div>
 
                     <!-- Contract Details -->
