@@ -363,7 +363,7 @@ class FinanceController extends Controller
                     $revenueData[] = DB::table('subscription_payments')
                         ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
                         ->where('clinics.is_demo', false)
-                        ->whereDate('subscription_payments.paid_at', $date)
+                        ->whereDate('subscription_payments.paid_at', $date->toDateString())
                         ->sum('subscription_payments.amount');
                     $expenseData[] = $sumExpenses($date, $date);
                 }
@@ -378,7 +378,7 @@ class FinanceController extends Controller
                     $revenueData[] = DB::table('subscription_payments')
                         ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
                         ->where('clinics.is_demo', false)
-                        ->whereBetween('subscription_payments.paid_at', [$date, $weekEnd])
+                        ->whereBetween('subscription_payments.paid_at', [$date->toDateString(), $weekEnd->toDateString()])
                         ->sum('subscription_payments.amount');
                     $expenseData[] = $sumExpenses($date, $weekEnd);
                 }
@@ -393,7 +393,7 @@ class FinanceController extends Controller
                     $revenueData[] = DB::table('subscription_payments')
                         ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
                         ->where('clinics.is_demo', false)
-                        ->whereBetween('subscription_payments.paid_at', [$date, $monthEnd])
+                        ->whereBetween('subscription_payments.paid_at', [$date->toDateString(), $monthEnd->toDateString()])
                         ->sum('subscription_payments.amount');
                     $expenseData[] = $sumExpenses($date, $monthEnd);
                 }
@@ -405,7 +405,7 @@ class FinanceController extends Controller
                 $revenueData = [DB::table('subscription_payments')
                     ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
                     ->where('clinics.is_demo', false)
-                    ->whereBetween('subscription_payments.paid_at', [$from, $to])
+                    ->whereBetween('subscription_payments.paid_at', [$from->toDateString(), $to->toDateString()])
                     ->sum('subscription_payments.amount')];
                 $expenseData = [$sumExpenses($from, $to)];
         }
