@@ -202,6 +202,9 @@
                                             <a href="{{ route('master.clinics.edit', $clinic) }}" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-edit me-1"></i> Edit
                                             </a>
+                                            <a href="{{ route('master.clinics.manage-contract', $clinic) }}" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-file-contract me-1"></i> Contract
+                                            </a>
 
                                             @if($clinic->is_active)
                                                 <form method="POST" action="{{ route('master.clinics.deactivate', $clinic) }}" class="d-inline">
