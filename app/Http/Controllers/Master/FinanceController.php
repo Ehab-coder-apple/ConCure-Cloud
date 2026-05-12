@@ -372,15 +372,28 @@ class FinanceController extends Controller
             case 'month':
             case 'quarter':
                 // Weekly breakdown
-                for ($date = $from->copy(); $date->lte($to); $date->addWeek()) {
-                    $weekEnd = $date->copy()->endOfWeek()->min($to);
-                    $labels[] = 'Week ' . $date->weekOfYear;
+                $currentDate = $from->copy()->startOfWeek();
+                while ($currentDate->lte($to)) {
+                    $weekStart = $currentDate->copy();
+                    $weekEnd = $currentDate->copy()->endOfWeek();
+
+                    // Clamp to the period boundaries
+                    if ($weekStart->lt($from)) {
+                        $weekStart = $from->copy();
+                    }
+                    if ($weekEnd->gt($to)) {
+                        $weekEnd = $to->copy();
+                    }
+
+                    $labels[] = 'Week ' . $weekStart->weekOfYear;
                     $revenueData[] = DB::table('subscription_payments')
                         ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
                         ->where('clinics.is_demo', false)
-                        ->whereBetween('subscription_payments.paid_at', [$date->toDateString(), $weekEnd->toDateString()])
+                        ->whereBetween('subscription_payments.paid_at', [$weekStart->toDateString(), $weekEnd->toDateString()])
                         ->sum('subscription_payments.amount');
-                    $expenseData[] = $sumExpenses($date, $weekEnd);
+                    $expenseData[] = $sumExpenses($weekStart, $weekEnd);
+
+                    $currentDate->addWeek();
                 }
                 break;
 
