@@ -83,6 +83,10 @@ Route::post('/register', function () { abort(404); })->name('welcome.store');
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+// Handle GET requests to logout (redirect to login with message)
+Route::get('/logout', function () {
+    return redirect()->route('login')->with('info', 'Please use the logout button to sign out.');
+});
 // Backward compatibility redirects
 Route::get('/auth/login', function () { return redirect()->route('login'); });
 Route::post('/auth/login', function () { return redirect('/login'); });
