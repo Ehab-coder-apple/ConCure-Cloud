@@ -71,7 +71,7 @@ class DiagnoseMasterRevenue extends Command
                 'clinics.is_demo',
                 'subscription_payments.amount',
                 'subscription_payments.paid_at',
-                'subscription_payments.payment_method'
+                'subscription_payments.method'
             ])
             ->orderBy('subscription_payments.paid_at', 'desc')
             ->limit(10)
@@ -85,7 +85,7 @@ class DiagnoseMasterRevenue extends Command
                     "{$payment->clinic_name}{$demo} | " .
                     "{$payment->amount} IQD | " .
                     "{$payment->paid_at} | " .
-                    "{$payment->payment_method}"
+                    "{$payment->method}"
                 );
             }
         } else {
