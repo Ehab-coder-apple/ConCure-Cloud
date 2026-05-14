@@ -1391,33 +1391,33 @@
                 {{ strtoupper(app()->getLocale()) }}
             </button>
             @php
-                // Build a safe list of language codes, regardless of how it's provided
-                $langs = [];
-                if (isset($supportedLanguages) && is_array($supportedLanguages)) {
-                    $langs = array_keys($supportedLanguages) === range(0, count($supportedLanguages) - 1)
-                        ? $supportedLanguages // already a flat list of codes
-                        : array_keys($supportedLanguages); // associative: take keys as codes
-                } else {
-                    $langs = array_keys(config('concure.supported_languages', ['en' => 'English', 'ar' => 'العربية', 'ku' => 'کوردی']));
-                }
+                $supportedLangs = config('concure.supported_languages', [
+                    'en' => 'English',
+                    'ar' => 'العربية',
+                    'ku-sorani' => 'کوردی سۆرانی',
+                    'ku-bahdini' => 'کوردی بادینی',
+                ]);
             @endphp
             <ul class="dropdown-menu dropdown-menu-end">
-                @foreach($langs as $lang)
+                @foreach($supportedLangs as $langCode => $langName)
                     <li>
-                        <a class="dropdown-item {{ app()->getLocale() === $lang ? 'active' : '' }}"
-                           href="{{ route('language.switch', $lang) }}">
-                            @switch($lang)
+                        <a class="dropdown-item {{ app()->getLocale() === $langCode ? 'active' : '' }}"
+                           href="{{ route('language.switch', $langCode) }}">
+                            @switch($langCode)
                                 @case('en')
-                                    <i class="fas fa-flag-usa me-2"></i> English
+                                    <i class="fas fa-flag-usa me-2"></i> {{ $langName }}
                                     @break
                                 @case('ar')
-                                    <i class="fas fa-flag me-2"></i> العربية
+                                    <i class="fas fa-flag me-2"></i> {{ $langName }}
                                     @break
-                                @case('ku')
-                                    <i class="fas fa-flag me-2"></i> کوردی
+                                @case('ku-sorani')
+                                    <i class="fas fa-flag me-2" style="color: #EE2A35;"></i> {{ $langName }}
+                                    @break
+                                @case('ku-bahdini')
+                                    <i class="fas fa-flag me-2" style="color: #EE2A35;"></i> {{ $langName }}
                                     @break
                                 @default
-                                    {{ strtoupper($lang) }}
+                                    <i class="fas fa-globe me-2"></i> {{ $langName }}
                             @endswitch
                         </a>
                     </li>

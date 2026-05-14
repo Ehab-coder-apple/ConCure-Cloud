@@ -194,7 +194,12 @@ return [
     'concure' => [
         'company_name' => env('CONCURE_COMPANY_NAME', 'Connect Pure'),
         'primary_color' => env('CONCURE_PRIMARY_COLOR', '#008080'),
-        'supported_languages' => explode(',', env('CONCURE_SUPPORTED_LANGUAGES', 'en,ar,ku')),
+        'supported_languages' => [
+            'en' => 'English',
+            'ar' => 'العربية',
+            'ku-sorani' => 'کوردی سۆرانی',
+            'ku-bahdini' => 'کوردی بادینی',
+        ],
         'max_file_size' => env('MAX_FILE_SIZE', 10240), // KB
         'allowed_file_types' => explode(',', env('ALLOWED_FILE_TYPES', 'pdf,jpg,jpeg,png,doc,docx')),
     ],

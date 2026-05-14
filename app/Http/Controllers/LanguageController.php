@@ -12,7 +12,12 @@ class LanguageController extends Controller
     public function switch(Request $request, string $language)
     {
         // Validate language against supported languages
-        $supportedLanguages = array_keys(config('concure.supported_languages', ['en' => 'English', 'ar' => 'العربية', 'ku' => 'کوردی']));
+        $supportedLanguages = array_keys(config('concure.supported_languages', [
+            'en' => 'English',
+            'ar' => 'العربية',
+            'ku-sorani' => 'کوردی سۆرانی',
+            'ku-bahdini' => 'کوردی بادینی',
+        ]));
 
         if (!in_array($language, $supportedLanguages)) {
             abort(404, 'Language not supported');
@@ -20,7 +25,7 @@ class LanguageController extends Controller
 
         // Set session locale
         session(['locale' => $language]);
-        
+
         // Update user's language preference if authenticated
         if (auth()->check()) {
             auth()->user()->update(['language' => $language]);
@@ -29,6 +34,6 @@ class LanguageController extends Controller
         // Set application locale
         app()->setLocale($language);
 
-        return back()->with('success', 'Language changed successfully.');
+        return back()->with('success', __('Language changed successfully.'));
     }
 }

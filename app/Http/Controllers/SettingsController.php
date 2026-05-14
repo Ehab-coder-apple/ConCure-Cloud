@@ -270,7 +270,7 @@ class SettingsController extends Controller
 
         // Simple validation without file validation
         $validatedData = $request->validate([
-            'default_language' => 'nullable|in:en,ar,ku',
+            'default_language' => 'nullable|in:en,ar,ku,ku-sorani,ku-bahdini',
             'timezone' => 'nullable|string|max:50',
             'date_format' => 'nullable|string|max:20',
             'time_format' => 'nullable|string|max:20',
@@ -449,7 +449,7 @@ class SettingsController extends Controller
             'clinic_phone' => 'nullable|string|max:20',
             'clinic_address' => 'nullable|string|max:500',
             'clinic_website' => 'nullable|url|max:255',
-            'receipt_language' => 'nullable|in:en,ar,ku',
+            'receipt_language' => 'nullable|in:en,ar,ku,ku-sorani,ku-bahdini',
         ]);
 
         try {

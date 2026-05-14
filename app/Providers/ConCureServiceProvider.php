@@ -31,7 +31,12 @@ class ConCureServiceProvider extends ServiceProvider
                         'appName' => config('app.name'),
                         'companyName' => config('concure.company_name', 'ConCure'),
                         'primaryColor' => config('concure.primary_color', '#008080'),
-                        'supportedLanguages' => config('concure.supported_languages', ['en' => 'English', 'ar' => 'العربية', 'ku' => 'کوردی']),
+                        'supportedLanguages' => config('concure.supported_languages', [
+                            'en' => 'English',
+                            'ar' => 'العربية',
+                            'ku-sorani' => 'کوردی سۆرانی',
+                            'ku-bahdini' => 'کوردی بادینی',
+                        ]),
                     ]);
                 });
             } catch (\Exception $e) {
@@ -337,7 +342,12 @@ class ConCureServiceProvider extends ServiceProvider
     private function setLocale(): void
     {
         try {
-            $supportedLanguages = array_keys(config('concure.supported_languages', ['en' => 'English', 'ar' => 'العربية', 'ku' => 'کوردی']));
+            $supportedLanguages = array_keys(config('concure.supported_languages', [
+                'en' => 'English',
+                'ar' => 'العربية',
+                'ku-sorani' => 'کوردی سۆرانی',
+                'ku-bahdini' => 'کوردی بادینی',
+            ]));
 
             // Check session for locale
             if (session()->has('locale')) {
@@ -359,7 +369,7 @@ class ConCureServiceProvider extends ServiceProvider
             }
 
             // Fall back to default locale
-            app()->setLocale(config('concure.default_language', 'en'));
+            app()->setLocale(config('app.locale', 'en'));
         } catch (\Exception $e) {
             // Fallback to English if anything goes wrong
             app()->setLocale('en');
