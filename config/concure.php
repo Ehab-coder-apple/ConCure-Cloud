@@ -19,7 +19,8 @@ return [
     'supported_languages' => [
         'en' => 'English',
         'ar' => 'العربية',
-        'ku' => 'کوردی',
+        'ku-sorani' => 'کوردی سۆرانی',
+        'ku-bahdini' => 'کوردی بادینی',
     ],
     
     'default_language' => env('CONCURE_DEFAULT_LANGUAGE', 'en'),

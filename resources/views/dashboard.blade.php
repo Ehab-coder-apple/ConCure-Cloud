@@ -51,10 +51,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between no-divider">
                         <div>
-                            <h6 class="card-title">Total Patients</h6>
+                            <h6 class="card-title">{{ __('Total Patients') }}</h6>
                             <h2 class="mb-0">{{ number_format($totalPatients) }}</h2>
                             @if(isset($newPatientsThisMonth) && $newPatientsThisMonth > 0)
-                            <small>+{{ $newPatientsThisMonth }} {{ $periodPhrase ?? 'this month' }}</small>
+                            <small>+{{ $newPatientsThisMonth }} {{ $periodPhrase ?? __('this month') }}</small>
                             @endif
                         </div>
                         <div class="align-self-center">
@@ -72,7 +72,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between no-divider">
                         <div>
-                            <h6 class="card-title">New Patients Today</h6>
+                            <h6 class="card-title">{{ __('New Patients Today') }}</h6>
                             <h2 class="mb-0">{{ number_format($newPatientsToday) }}</h2>
                             <small>
                                 <i class="fas fa-calendar-day me-1"></i>
@@ -94,10 +94,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between no-divider">
                         <div>
-                            <h6 class="card-title">Active Prescriptions</h6>
+                            <h6 class="card-title">{{ __('Active Prescriptions') }}</h6>
                             <h2 class="mb-0">{{ number_format($activePrescriptions) }}</h2>
                             @if(isset($prescriptionsThisMonth) && $prescriptionsThisMonth > 0)
-                            <small>{{ $prescriptionsThisMonth }} {{ $periodPhrase ?? 'this month' }}</small>
+                            <small>{{ $prescriptionsThisMonth }} {{ $periodPhrase ?? __('this month') }}</small>
                             @endif
                         </div>
                         <div class="align-self-center">
@@ -115,9 +115,9 @@
 	                <div class="card-body">
 	                    <div class="d-flex justify-content-between no-divider">
 	                        <div>
-	                            <h6 class="card-title">Completed Dental Lab Requests</h6>
+	                            <h6 class="card-title">{{ __('Completed Dental Lab Requests') }}</h6>
 	                            <h2 class="mb-0">{{ number_format($completedDentalLabRequests) }}</h2>
-	                            <small>{{ number_format($pendingDentalLabRequests ?? 0) }} pending requests</small>
+	                            <small>{{ number_format($pendingDentalLabRequests ?? 0) }} {{ __('pending requests') }}</small>
 	                        </div>
 	                        <div class="align-self-center">
 	                            <i class="fas fa-tooth fa-2x opacity-75"></i>
@@ -134,13 +134,13 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between no-divider">
                         <div>
-                            <h6 class="card-title">Completed Lab Results</h6>
+                            <h6 class="card-title">{{ __('Completed Lab Results') }}</h6>
                             <h2 class="mb-0">{{ number_format($completedLabRequests) }}</h2>
 	                            <small>
 	                                @if(($pendingLabRequests ?? 0) > 0)
-	                                    {{ number_format($pendingLabRequests) }} pending requests
+	                                    {{ number_format($pendingLabRequests) }} {{ __('pending requests') }}
 	                                @else
-	                                    {{ $completedLabRequests > 0 ? 'Ready for review' : 'No results ready' }}
+	                                    {{ $completedLabRequests > 0 ? __('Ready for review') : __('No results ready') }}
 	                                @endif
 	                            </small>
                         </div>
@@ -159,10 +159,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between no-divider">
                         <div>
-                            <h6 class="card-title">Today's Appointments</h6>
+                            <h6 class="card-title">{{ __("Today's Appointments") }}</h6>
                             <h2 class="mb-0">{{ number_format($todayAppointments ?? 0) }}</h2>
                             @if(isset($upcomingAppointments) && $upcomingAppointments > 0)
-                            <small>{{ $upcomingAppointments }} upcoming</small>
+                            <small>{{ $upcomingAppointments }} {{ __('upcoming') }}</small>
                             @endif
                         </div>
                         <div class="align-self-center">
@@ -180,10 +180,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between no-divider">
                         <div>
-                            <h6 class="card-title">Nutrition Plans</h6>
+                            <h6 class="card-title">{{ __('Nutrition Plans') }}</h6>
                             <h2 class="mb-0">{{ number_format($activeNutritionPlans ?? 0) }}</h2>
                             @if(isset($thisMonthNutritionPlans) && $thisMonthNutritionPlans > 0)
-                            <small>{{ $thisMonthNutritionPlans }} {{ $periodPhrase ?? 'this month' }}</small>
+                            <small>{{ $thisMonthNutritionPlans }} {{ $periodPhrase ?? __('this month') }}</small>
                             @endif
                         </div>
                         <div class="align-self-center">
@@ -201,10 +201,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between no-divider">
                         <div>
-                            <h6 class="card-title">Revenue ({{ ucfirst($selectedPeriod ?? 'month') }})</h6>
+                            <h6 class="card-title">{{ __('Revenue') }} ({{ ucfirst(__($selectedPeriod ?? 'month')) }})</h6>
                             <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($totalRevenue, 2), '0'), '.') }}</h2>
                             @if(isset($pendingInvoices) && $pendingInvoices > 0)
-                            <small>{{ $pendingInvoices }} pending invoices</small>
+                            <small>{{ $pendingInvoices }} {{ __('pending invoices') }}</small>
                             @endif
                         </div>
                         <div class="align-self-center">
@@ -537,14 +537,14 @@
                                         <h6 class="mb-0 {{ $dateGroup['is_today'] ? 'text-primary fw-bold' : 'text-dark' }}">
                                             @if($dateGroup['is_today'])
                                                 <i class="fas fa-calendar-day me-1 text-primary"></i>
-                                                Today - {{ $dateGroup['date_label'] }}
+                                                {{ __('Today') }} - {{ $dateGroup['date_label'] }}
                                             @else
                                                 <i class="fas fa-calendar me-1 text-muted"></i>
                                                 {{ $dateGroup['date_label'] }}
                                             @endif
                                         </h6>
                                         <span class="badge {{ $dateGroup['count'] > 0 ? 'bg-primary' : 'bg-secondary' }}">
-                                            {{ $dateGroup['count'] }} {{ Str::plural('appointment', $dateGroup['count']) }}
+                                            {{ $dateGroup['count'] }} {{ $dateGroup['count'] == 1 ? __('appointment') : __('appointments') }}
                                         </span>
                                     </div>
 
@@ -625,7 +625,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-chart-line"></i>
-                        {{ ucfirst($selectedPeriod ?? 'month') }} Trends
+                        {{ ucfirst(__($selectedPeriod ?? 'month')) }} {{ __('Trends') }}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -656,21 +656,21 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: labels,
             datasets: [
                 {
-                    label: 'New Patients',
+                    label: '{{ __("New Patients") }}',
                     data: patientsData,
                     borderColor: 'rgb(54, 162, 235)',
                     backgroundColor: 'rgba(54, 162, 235, 0.1)',
                     tension: 0.1
                 },
                 {
-                    label: 'Prescriptions',
+                    label: '{{ __("Prescriptions") }}',
                     data: prescriptionsData,
                     borderColor: 'rgb(75, 192, 192)',
                     backgroundColor: 'rgba(75, 192, 192, 0.1)',
                     tension: 0.1
                 },
                 {
-                    label: 'Revenue ($)',
+                    label: '{{ __("Revenue") }} ({{ $currencySymbol ?? "$" }})',
                     data: revenueData,
                     borderColor: 'rgb(255, 99, 132)',
                     backgroundColor: 'rgba(255, 99, 132, 0.1)',
