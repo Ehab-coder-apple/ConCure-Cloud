@@ -888,11 +888,19 @@ class ClinicController extends Controller
 
         DB::beginTransaction();
         try {
-            // Delete all user-generated data for this clinic
-            // Keep the clinic itself and admin users, but reset all other data
+            // Get patient IDs before deleting patients (for tables that don't have clinic_id)
+            $patientIds = $clinic->patients()->pluck('id')->toArray();
 
-            // Delete patients and all related data (cascade deletes will handle related records)
-            $clinic->patients()->delete();
+            // Delete data in tables that might not have clinic_id but have patient_id
+            // Do this BEFORE deleting patients
+            if (!empty($patientIds)) {
+                // Delete nutrition plans (no clinic_id, only patient_id)
+                if (Schema::hasTable('nutrition_plans') && Schema::hasColumn('nutrition_plans', 'patient_id')) {
+                    DB::table('nutrition_plans')->whereIn('patient_id', $patientIds)->delete();
+                }
+            }
+
+            // Now delete clinic-level data
 
             // Delete prescriptions
             $clinic->prescriptions()->delete();
@@ -914,7 +922,7 @@ class ClinicController extends Controller
             }
 
             // Delete receipts
-            if (Schema::hasTable('receipts')) {
+            if (Schema::hasTable('receipts') && Schema::hasColumn('receipts', 'clinic_id')) {
                 DB::table('receipts')->where('clinic_id', $clinic->id)->delete();
             }
 
@@ -929,48 +937,50 @@ class ClinicController extends Controller
             }
 
             // Delete dental charts and related data
-            if (Schema::hasTable('dental_charts')) {
+            if (Schema::hasTable('dental_charts') && Schema::hasColumn('dental_charts', 'clinic_id')) {
                 DB::table('dental_charts')->where('clinic_id', $clinic->id)->delete();
             }
 
             // Delete dental treatments
-            if (Schema::hasTable('dental_treatments')) {
+            if (Schema::hasTable('dental_treatments') && Schema::hasColumn('dental_treatments', 'clinic_id')) {
                 DB::table('dental_treatments')->where('clinic_id', $clinic->id)->delete();
             }
 
-            // Delete nutrition plans
-            if (Schema::hasTable('nutrition_plans')) {
-                DB::table('nutrition_plans')->where('clinic_id', $clinic->id)->delete();
-            }
-
             // Delete aesthetic sessions
-            if (Schema::hasTable('aesthetic_sessions')) {
+            if (Schema::hasTable('aesthetic_sessions') && Schema::hasColumn('aesthetic_sessions', 'clinic_id')) {
                 DB::table('aesthetic_sessions')->where('clinic_id', $clinic->id)->delete();
             }
 
             // Delete custom checkups
-            if (Schema::hasTable('checkups')) {
+            if (Schema::hasTable('checkups') && Schema::hasColumn('checkups', 'clinic_id')) {
                 DB::table('checkups')->where('clinic_id', $clinic->id)->delete();
             }
 
             // Delete patient images
-            if (Schema::hasTable('patient_images')) {
+            if (Schema::hasTable('patient_images') && Schema::hasColumn('patient_images', 'clinic_id')) {
                 DB::table('patient_images')->where('clinic_id', $clinic->id)->delete();
             }
 
             // Delete patient videos
-            if (Schema::hasTable('patient_videos')) {
+            if (Schema::hasTable('patient_videos') && Schema::hasColumn('patient_videos', 'clinic_id')) {
                 DB::table('patient_videos')->where('clinic_id', $clinic->id)->delete();
             }
 
             // Delete communication logs
-            $clinic->communicationLogs()->delete();
+            if (method_exists($clinic, 'communicationLogs')) {
+                $clinic->communicationLogs()->delete();
+            }
 
             // Delete audit logs
-            $clinic->auditLogs()->delete();
+            if (method_exists($clinic, 'auditLogs')) {
+                $clinic->auditLogs()->delete();
+            }
 
             // Delete non-admin users
             $clinic->users()->where('role', '!=', 'admin')->delete();
+
+            // Delete patients last (cascade deletes will handle many related records)
+            $clinic->patients()->delete();
 
             // Reset storage usage
             $clinic->update(['storage_used' => 0]);
