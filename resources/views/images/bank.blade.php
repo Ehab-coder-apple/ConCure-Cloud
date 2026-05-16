@@ -87,8 +87,13 @@
                   <div class="btn-group btn-group-sm" role="group">
                     <a href="{{ $img->url }}" target="_blank" class="btn btn-outline-info" title="{{ __('Open') }}"><i class="fas fa-external-link-alt"></i></a>
                     <button type="button" class="btn btn-outline-secondary" onclick="openAndPrint('{{ $img->url }}')" title="{{ __('Print') }}"><i class="fas fa-print"></i></button>
+                    <button type="button" class="btn btn-outline-danger" onclick="confirmDelete({{ $img->id }})" title="{{ __('Delete') }}"><i class="fas fa-trash"></i></button>
                   </div>
                 </div>
+                <form id="delete-form-{{ $img->id }}" action="{{ route('image-bank.destroy', $img->id) }}" method="POST" style="display: none;">
+                  @csrf
+                  @method('DELETE')
+                </form>
               </div>
             </div>
           @endforeach
@@ -109,6 +114,12 @@ function openAndPrint(url){
   const tryPrint = () => { try { w.focus(); w.print(); } catch(e){} };
   w.onload = tryPrint;
   setTimeout(tryPrint, 1200);
+}
+
+function confirmDelete(imageId) {
+  if (confirm('{{ __("Are you sure you want to delete this image? This action cannot be undone.") }}')) {
+    document.getElementById('delete-form-' + imageId).submit();
+  }
 }
 </script>
 @endsection

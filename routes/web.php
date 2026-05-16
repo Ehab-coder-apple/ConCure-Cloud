@@ -323,6 +323,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     // Medical Image Bank (top-level)
     Route::get('/image-bank', [App\Http\Controllers\ImageBankController::class, 'index'])->name('image-bank.index');
+    Route::delete('/image-bank/{patientImage}', [App\Http\Controllers\ImageBankController::class, 'destroy'])->name('image-bank.destroy');
 
         // AI Medical Assistant (top-level)
         Route::prefix('ai-assistant')->name('assistant.')->group(function () {

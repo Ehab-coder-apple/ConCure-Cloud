@@ -144,5 +144,31 @@ class ImageBankController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Delete an image from the medical image bank.
+     */
+    public function destroy(PatientImage $patientImage)
+    {
+        $user = auth()->user();
+
+        // Check permissions
+        if (!(config('app.debug') || env('DISABLE_PERMISSIONS', true))) {
+            if (!$user || (!$user->isSuperAdmin() && !$user->isClinicAdmin() && !$user->hasPermission('patients_images'))) {
+                abort(403, 'You do not have permission to delete images.');
+            }
+        }
+
+        // Check clinic access
+        if ($user && $user->clinic_id && $patientImage->clinic_id !== $user->clinic_id) {
+            abort(403, 'Unauthorized access to this image.');
+        }
+
+        // Delete the image
+        $patientImage->delete();
+
+        return redirect()->route('image-bank.index')
+            ->with('success', __('Image deleted successfully.'));
+    }
 }
 
