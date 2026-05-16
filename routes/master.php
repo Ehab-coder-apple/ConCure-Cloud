@@ -56,6 +56,7 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::patch('/clinics/{clinic}/deactivate', [ClinicController::class, 'deactivate'])->name('clinics.deactivate');
     Route::post('/clinics/{clinic}/reset-admin-password', [ClinicController::class, 'resetAdminPassword'])->name('clinics.reset-admin-password');
     Route::post('/clinics/{clinic}/whatsapp-config', [ClinicController::class, 'configureWhatsApp'])->name('clinics.whatsapp-config');
+    Route::post('/clinics/{clinic}/reset-demo', [ClinicController::class, 'resetDemoClinic'])->name('clinics.reset-demo');
 
     // Contract Management for Existing Clinics
     Route::get('/clinics/{clinic}/contracts', [ClinicController::class, 'manageContract'])->name('clinics.manage-contract');

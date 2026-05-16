@@ -225,6 +225,16 @@
                                                 </form>
                                             @endif
 
+                                            @if($clinic->is_demo)
+                                                <form method="POST" action="{{ route('master.clinics.reset-demo', $clinic) }}" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                            onclick="return confirm('Are you sure you want to reset this demo clinic? All user-generated data will be permanently deleted. This action cannot be undone.')">
+                                                        <i class="fas fa-redo me-1"></i> Reset Demo
+                                                    </button>
+                                                </form>
+                                            @endif
+
                                             <form method="POST" action="{{ route('master.clinics.destroy', $clinic) }}" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')

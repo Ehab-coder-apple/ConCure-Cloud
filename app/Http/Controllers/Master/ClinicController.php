@@ -875,4 +875,126 @@ class ClinicController extends Controller
             return back()->withErrors(['error' => 'Failed to delete contract: ' . $e->getMessage()]);
         }
     }
+
+    /**
+     * Reset a demo clinic by deleting all user-generated data.
+     */
+    public function resetDemoClinic(Clinic $clinic)
+    {
+        // Only allow resetting demo clinics
+        if (!$clinic->is_demo) {
+            return back()->withErrors(['error' => 'Only demo clinics can be reset.']);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Delete all user-generated data for this clinic
+            // Keep the clinic itself and admin users, but reset all other data
+
+            // Delete patients and all related data (cascade deletes will handle related records)
+            $clinic->patients()->delete();
+
+            // Delete prescriptions
+            $clinic->prescriptions()->delete();
+
+            // Delete appointments
+            $clinic->appointments()->delete();
+
+            // Delete medicines
+            $clinic->medicines()->delete();
+
+            // Delete lab tests
+            if (method_exists($clinic, 'labTests')) {
+                $clinic->labTests()->delete();
+            }
+
+            // Delete invoices
+            if (method_exists($clinic, 'invoices')) {
+                $clinic->invoices()->delete();
+            }
+
+            // Delete receipts
+            if (Schema::hasTable('receipts')) {
+                DB::table('receipts')->where('clinic_id', $clinic->id)->delete();
+            }
+
+            // Delete expenses
+            if (method_exists($clinic, 'expenses')) {
+                $clinic->expenses()->delete();
+            }
+
+            // Delete advertisements
+            if (method_exists($clinic, 'advertisements')) {
+                $clinic->advertisements()->delete();
+            }
+
+            // Delete dental charts and related data
+            if (Schema::hasTable('dental_charts')) {
+                DB::table('dental_charts')->where('clinic_id', $clinic->id)->delete();
+            }
+
+            // Delete dental treatments
+            if (Schema::hasTable('dental_treatments')) {
+                DB::table('dental_treatments')->where('clinic_id', $clinic->id)->delete();
+            }
+
+            // Delete nutrition plans
+            if (Schema::hasTable('nutrition_plans')) {
+                DB::table('nutrition_plans')->where('clinic_id', $clinic->id)->delete();
+            }
+
+            // Delete aesthetic sessions
+            if (Schema::hasTable('aesthetic_sessions')) {
+                DB::table('aesthetic_sessions')->where('clinic_id', $clinic->id)->delete();
+            }
+
+            // Delete custom checkups
+            if (Schema::hasTable('checkups')) {
+                DB::table('checkups')->where('clinic_id', $clinic->id)->delete();
+            }
+
+            // Delete patient images
+            if (Schema::hasTable('patient_images')) {
+                DB::table('patient_images')->where('clinic_id', $clinic->id)->delete();
+            }
+
+            // Delete patient videos
+            if (Schema::hasTable('patient_videos')) {
+                DB::table('patient_videos')->where('clinic_id', $clinic->id)->delete();
+            }
+
+            // Delete communication logs
+            $clinic->communicationLogs()->delete();
+
+            // Delete audit logs
+            $clinic->auditLogs()->delete();
+
+            // Delete non-admin users
+            $clinic->users()->where('role', '!=', 'admin')->delete();
+
+            // Reset storage usage
+            $clinic->update(['storage_used' => 0]);
+
+            DB::commit();
+
+            \Log::info('Demo clinic reset', [
+                'clinic_id' => $clinic->id,
+                'clinic_name' => $clinic->name,
+                'reset_by' => auth()->id(),
+            ]);
+
+            return back()->with('success', 'Demo clinic "' . $clinic->name . '" has been reset successfully. All user-generated data has been deleted.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            \Log::error('Failed to reset demo clinic', [
+                'clinic_id' => $clinic->id,
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+            ]);
+
+            return back()->withErrors(['error' => 'Failed to reset demo clinic: ' . $e->getMessage()]);
+        }
+    }
 }
