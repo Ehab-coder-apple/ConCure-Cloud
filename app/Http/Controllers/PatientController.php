@@ -151,8 +151,9 @@ class PatientController extends Controller
         }
 
         // Build the list of doctors available for the filter dropdown
-        // (active users with doctor or dental_dept roles, scoped to the clinic)
-        $doctorsQuery = User::whereIn('role', ['doctor', 'dental_dept'])
+        // (active users with doctor, dental_dept, or admin roles, scoped to the clinic)
+        // Admins are included because they often work as doctors too
+        $doctorsQuery = User::whereIn('role', ['doctor', 'dental_dept', 'admin'])
             ->where('is_active', true);
         if ($user->clinic_id) {
             $doctorsQuery->where('clinic_id', $user->clinic_id);
