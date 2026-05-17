@@ -181,58 +181,77 @@ class DentalTreatmentController extends Controller
             $procedures = DentalProcedure::whereIn('id', $request->procedure_ids)->get();
             $procedureCosts = $request->procedure_costs ?? [];
             $procedureDurations = $request->procedure_durations ?? [];
-            $createdTreatments = [];
 
-            // Create a treatment plan for each selected procedure
+            // Combine all procedures into a single treatment plan
+            $procedureNames = [];
+            $procedureCodes = [];
+            $procedureDescriptions = [];
+            $totalCost = 0;
+            $totalDuration = 0;
+
             foreach ($procedures as $index => $procedure) {
                 // Use custom cost/duration if provided, otherwise use defaults
-                $estimatedCost = isset($procedureCosts[$index]) ? floatval($procedureCosts[$index]) : ($procedure->default_cost ?? 0);
-                $estimatedDuration = isset($procedureDurations[$index]) ? intval($procedureDurations[$index]) : ($procedure->estimated_duration_minutes ?? 0);
+                $cost = isset($procedureCosts[$index]) ? floatval($procedureCosts[$index]) : ($procedure->default_cost ?? 0);
+                $duration = isset($procedureDurations[$index]) ? intval($procedureDurations[$index]) : ($procedure->estimated_duration_minutes ?? 0);
 
-                $treatment = DentalTreatment::create([
-                    'patient_id' => $request->patient_id,
-                    'clinic_id' => $user->clinic_id,
-                    'dental_chart_id' => $request->dental_chart_id,
-                    'tooth_number' => $request->tooth_number,
-                    'tooth_numbers' => $toothNumbers,
-                    'procedure_name' => $procedure->name,
-                    'procedure_code' => $procedure->code,
-                    'diagnosis' => $request->diagnosis,
-                    'icd10_code' => $request->icd10_code,
-                    'surfaces_affected' => $request->surfaces_affected,
-                    'description' => $request->description ?: $procedure->description,
-                    'estimated_cost' => $estimatedCost,
-                    'currency' => $clinicCurrency,
-                    'estimated_duration_minutes' => $estimatedDuration,
-                    'status' => $request->status,
-                    'priority' => $request->priority,
-                    'severity' => $request->severity,
-                    'scheduled_date' => $request->scheduled_date,
-                    'assigned_doctor_id' => $request->assigned_doctor_id ?? $user->id,
-                    'payment_status' => 'unpaid',
-                    'paid_amount' => 0,
-                    'notes' => $request->notes,
-                    'created_by' => $user->id,
-                ]);
-
-                // Sync financial data with Finance module if cost is provided
-                if ($treatment->estimated_cost > 0) {
-                    $this->syncTreatmentFinancialData($treatment, $user);
+                $procedureNames[] = $procedure->name;
+                if ($procedure->code) {
+                    $procedureCodes[] = $procedure->code;
+                }
+                if ($procedure->description) {
+                    $procedureDescriptions[] = "• {$procedure->name}: {$procedure->description}";
                 }
 
-                $createdTreatments[] = $treatment;
+                $totalCost += $cost;
+                $totalDuration += $duration;
             }
 
-            // Save canal treatment data if provided (only for the first treatment if root canal)
-            if ($request->has('canals') && is_array($request->canals) && count($createdTreatments) > 0) {
-                $firstTreatment = $createdTreatments[0];
+            // Combine names and codes
+            $combinedProcedureName = implode(', ', $procedureNames);
+            $combinedProcedureCode = !empty($procedureCodes) ? implode(', ', $procedureCodes) : null;
+            $combinedDescription = $request->description ?: (!empty($procedureDescriptions) ? implode("\n", $procedureDescriptions) : null);
+
+            // Create a single treatment plan with all procedures combined
+            $treatment = DentalTreatment::create([
+                'patient_id' => $request->patient_id,
+                'clinic_id' => $user->clinic_id,
+                'dental_chart_id' => $request->dental_chart_id,
+                'tooth_number' => $request->tooth_number,
+                'tooth_numbers' => $toothNumbers,
+                'procedure_name' => $combinedProcedureName,
+                'procedure_code' => $combinedProcedureCode,
+                'diagnosis' => $request->diagnosis,
+                'icd10_code' => $request->icd10_code,
+                'surfaces_affected' => $request->surfaces_affected,
+                'description' => $combinedDescription,
+                'estimated_cost' => $totalCost,
+                'currency' => $clinicCurrency,
+                'estimated_duration_minutes' => $totalDuration,
+                'status' => $request->status,
+                'priority' => $request->priority,
+                'severity' => $request->severity,
+                'scheduled_date' => $request->scheduled_date,
+                'assigned_doctor_id' => $request->assigned_doctor_id ?? $user->id,
+                'payment_status' => 'unpaid',
+                'paid_amount' => 0,
+                'notes' => $request->notes,
+                'created_by' => $user->id,
+            ]);
+
+            // Sync financial data with Finance module if cost is provided
+            if ($treatment->estimated_cost > 0) {
+                $this->syncTreatmentFinancialData($treatment, $user);
+            }
+
+            // Save canal treatment data if provided (for root canal treatments)
+            if ($request->has('canals') && is_array($request->canals)) {
                 foreach ($request->canals as $canalData) {
                     if (empty($canalData['canal_name']) || empty($canalData['tooth_number'])) continue;
 
                     CanalTreatment::create([
-                        'dental_treatment_id' => $firstTreatment->id,
-                        'patient_id' => $firstTreatment->patient_id,
-                        'clinic_id' => $firstTreatment->clinic_id,
+                        'dental_treatment_id' => $treatment->id,
+                        'patient_id' => $treatment->patient_id,
+                        'clinic_id' => $treatment->clinic_id,
                         'tooth_number' => $canalData['tooth_number'],
                         'canal_name' => $canalData['canal_name'],
                         'working_length' => $canalData['working_length'] ?? null,
@@ -248,19 +267,13 @@ class DentalTreatmentController extends Controller
 
             DB::commit();
 
-            $count = count($createdTreatments);
-            $message = $count === 1
+            $procedureCount = count($procedures);
+            $message = $procedureCount === 1
                 ? 'Treatment plan created successfully.'
-                : "{$count} treatment plans created successfully.";
+                : "Treatment plan created successfully with {$procedureCount} procedures.";
 
-            // Redirect to the index page if multiple treatments, or to the single treatment if only one
-            if ($count === 1) {
-                return redirect()->route('dental.treatments.show', $createdTreatments[0])
-                               ->with('success', $message);
-            } else {
-                return redirect()->route('dental.treatments.index')
-                               ->with('success', $message);
-            }
+            return redirect()->route('dental.treatments.show', $treatment)
+                           ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
