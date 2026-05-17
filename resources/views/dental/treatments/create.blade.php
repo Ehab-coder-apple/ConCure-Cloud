@@ -77,32 +77,37 @@
 
                         <!-- Procedure Selection -->
                         <div class="mb-3">
-                            <label for="procedure_id" class="form-label">{{ __('Procedure') }} <span class="text-danger">*</span></label>
-                            <select name="procedure_id" id="procedure_id" class="form-select @error('procedure_name') is-invalid @enderror" required>
-                                <option value="">{{ __('Select Procedure') }}</option>
-                                @foreach($procedures->groupBy('category') as $category => $categoryProcedures)
-                                    <optgroup label="{{ \App\Models\DentalProcedure::CATEGORIES[$category] ?? $category }}">
-                                        @foreach($categoryProcedures as $procedure)
-                                            <option value="{{ $procedure->id }}" 
-                                                    data-name="{{ $procedure->name }}"
-                                                    data-code="{{ $procedure->code }}"
-                                                    data-cost="{{ $procedure->default_cost }}"
-                                                    data-duration="{{ $procedure->estimated_duration_minutes }}"
-                                                    data-description="{{ $procedure->description }}">
-                                                {{ $procedure->name }} @if($procedure->code)({{ $procedure->code }})@endif
-                                            </option>
-                                        @endforeach
-                                    </optgroup>
-                                @endforeach
-                            </select>
-                            @error('procedure_name')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                            <label class="form-label">{{ __('Procedure(s)') }} <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-2 mb-2">
+                                <select id="procedure_selector" class="form-select">
+                                    <option value="">{{ __('Select Procedure') }}</option>
+                                    @foreach($procedures->groupBy('category') as $category => $categoryProcedures)
+                                        <optgroup label="{{ \App\Models\DentalProcedure::CATEGORIES[$category] ?? $category }}">
+                                            @foreach($categoryProcedures as $procedure)
+                                                <option value="{{ $procedure->id }}"
+                                                        data-name="{{ $procedure->name }}"
+                                                        data-code="{{ $procedure->code }}"
+                                                        data-cost="{{ $procedure->default_cost }}"
+                                                        data-duration="{{ $procedure->estimated_duration_minutes }}"
+                                                        data-description="{{ $procedure->description }}">
+                                                    {{ $procedure->name }} @if($procedure->code)({{ $procedure->code }})@endif
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-primary" onclick="addProcedure()">
+                                    <i class="fas fa-plus"></i> {{ __('Add') }}
+                                </button>
+                            </div>
+
+                            <div id="selected_procedures" class="border rounded p-3 bg-light">
+                                <p class="text-muted mb-0" id="no_procedures_msg">{{ __('No procedures selected. Select from dropdown and click Add.') }}</p>
+                            </div>
+                            @error('procedures')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
                         </div>
-
-                        <!-- Hidden fields for procedure details -->
-                        <input type="hidden" name="procedure_name" id="procedure_name">
-                        <input type="hidden" name="procedure_code" id="procedure_code">
 
                         <!-- Tooth Number(s) -->
                         <div class="row">
@@ -367,21 +372,97 @@
 
 @push('scripts')
 <script>
-// Auto-fill procedure details when selected
-document.getElementById('procedure_id').addEventListener('change', function() {
-    const selectedOption = this.options[this.selectedIndex];
+// Track selected procedures
+let selectedProcedures = [];
 
-    if (selectedOption.value) {
-        document.getElementById('procedure_name').value = selectedOption.dataset.name || '';
-        document.getElementById('procedure_code').value = selectedOption.dataset.code || '';
-        document.getElementById('estimated_cost').value = selectedOption.dataset.cost || '';
-        document.getElementById('estimated_duration_minutes').value = selectedOption.dataset.duration || '';
-        document.getElementById('description').value = selectedOption.dataset.description || '';
-    } else {
-        document.getElementById('procedure_name').value = '';
-        document.getElementById('procedure_code').value = '';
+// Add procedure to selection
+function addProcedure() {
+    const selector = document.getElementById('procedure_selector');
+    const selectedOption = selector.options[selector.selectedIndex];
+
+    if (!selectedOption.value) {
+        return;
     }
-});
+
+    const procedureId = selectedOption.value;
+
+    // Check if already added
+    if (selectedProcedures.find(p => p.id === procedureId)) {
+        alert('{{ __("This procedure is already selected") }}');
+        return;
+    }
+
+    // Add to array
+    const procedure = {
+        id: procedureId,
+        name: selectedOption.dataset.name || '',
+        code: selectedOption.dataset.code || '',
+        cost: parseFloat(selectedOption.dataset.cost) || 0,
+        duration: parseInt(selectedOption.dataset.duration) || 0,
+        description: selectedOption.dataset.description || ''
+    };
+
+    selectedProcedures.push(procedure);
+
+    // Update UI
+    renderSelectedProcedures();
+    updateTotals();
+
+    // Reset selector
+    selector.value = '';
+}
+
+// Remove procedure from selection
+function removeProcedure(procedureId) {
+    selectedProcedures = selectedProcedures.filter(p => p.id !== procedureId);
+    renderSelectedProcedures();
+    updateTotals();
+}
+
+// Render selected procedures list
+function renderSelectedProcedures() {
+    const container = document.getElementById('selected_procedures');
+    const noMsg = document.getElementById('no_procedures_msg');
+
+    if (selectedProcedures.length === 0) {
+        noMsg.classList.remove('d-none');
+        return;
+    }
+
+    noMsg.classList.add('d-none');
+
+    let html = '<div class="list-group">';
+    selectedProcedures.forEach(proc => {
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${proc.name}</strong>
+                    ${proc.code ? `<span class="badge bg-secondary ms-2">${proc.code}</span>` : ''}
+                    <div class="small text-muted">
+                        ${proc.cost > 0 ? `Cost: ${proc.cost.toFixed(2)} | ` : ''}
+                        ${proc.duration > 0 ? `Duration: ${proc.duration} min` : ''}
+                    </div>
+                    <input type="hidden" name="procedure_ids[]" value="${proc.id}">
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeProcedure('${proc.id}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+    });
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
+// Update totals
+function updateTotals() {
+    const totalCost = selectedProcedures.reduce((sum, p) => sum + p.cost, 0);
+    const totalDuration = selectedProcedures.reduce((sum, p) => sum + p.duration, 0);
+
+    document.getElementById('estimated_cost').value = totalCost > 0 ? totalCost.toFixed(2) : '';
+    document.getElementById('estimated_duration_minutes').value = totalDuration > 0 ? totalDuration : '';
+}
 
 // Load dental charts when patient is selected
 document.getElementById('patient_id').addEventListener('change', function() {

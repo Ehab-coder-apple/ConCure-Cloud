@@ -146,8 +146,8 @@ class DentalTreatmentController extends Controller
             'dental_chart_id' => 'nullable|exists:dental_charts,id',
             'tooth_number' => 'nullable|string',
             'tooth_numbers' => 'nullable', // Accept both string and array
-            'procedure_name' => 'required|string|max:255',
-            'procedure_code' => 'nullable|string|max:50',
+            'procedure_ids' => 'required|array|min:1',
+            'procedure_ids.*' => 'required|exists:dental_procedures,id',
             'diagnosis' => 'nullable|string',
             'icd10_code' => 'nullable|string|max:20',
             'surfaces_affected' => 'nullable|array',
@@ -163,6 +163,8 @@ class DentalTreatmentController extends Controller
             'notes' => 'nullable|string',
         ], [
             'currency.in' => 'The currency must match the clinic\'s configured currency (' . $clinicCurrency . ').',
+            'procedure_ids.required' => 'Please select at least one procedure.',
+            'procedure_ids.min' => 'Please select at least one procedure.',
         ]);
 
         // Normalize tooth_numbers (accept string "11,12" or array; store null when empty)
@@ -171,41 +173,56 @@ class DentalTreatmentController extends Controller
         try {
             DB::beginTransaction();
 
-            $treatment = DentalTreatment::create([
-                'patient_id' => $request->patient_id,
-                'clinic_id' => $user->clinic_id,
-                'dental_chart_id' => $request->dental_chart_id,
-                'tooth_number' => $request->tooth_number,
-                'tooth_numbers' => $toothNumbers,
-                'procedure_name' => $request->procedure_name,
-                'procedure_code' => $request->procedure_code,
-                'diagnosis' => $request->diagnosis,
-                'icd10_code' => $request->icd10_code,
-                'surfaces_affected' => $request->surfaces_affected,
-                'description' => $request->description,
-                'estimated_cost' => $request->estimated_cost,
-                'currency' => $clinicCurrency,
-                'estimated_duration_minutes' => $request->estimated_duration_minutes,
-                'status' => $request->status,
-                'priority' => $request->priority,
-                'severity' => $request->severity,
-                'scheduled_date' => $request->scheduled_date,
-                'assigned_doctor_id' => $request->assigned_doctor_id ?? $user->id,
-                'payment_status' => 'unpaid',
-                'paid_amount' => 0,
-                'notes' => $request->notes,
-                'created_by' => $user->id,
-            ]);
+            // Get all selected procedures
+            $procedures = DentalProcedure::whereIn('id', $request->procedure_ids)->get();
+            $createdTreatments = [];
 
-            // Save canal treatment data if provided
-            if ($request->has('canals') && is_array($request->canals)) {
+            // Create a treatment plan for each selected procedure
+            foreach ($procedures as $procedure) {
+                $treatment = DentalTreatment::create([
+                    'patient_id' => $request->patient_id,
+                    'clinic_id' => $user->clinic_id,
+                    'dental_chart_id' => $request->dental_chart_id,
+                    'tooth_number' => $request->tooth_number,
+                    'tooth_numbers' => $toothNumbers,
+                    'procedure_name' => $procedure->name,
+                    'procedure_code' => $procedure->code,
+                    'diagnosis' => $request->diagnosis,
+                    'icd10_code' => $request->icd10_code,
+                    'surfaces_affected' => $request->surfaces_affected,
+                    'description' => $request->description ?: $procedure->description,
+                    'estimated_cost' => $procedure->default_cost ?? 0,
+                    'currency' => $clinicCurrency,
+                    'estimated_duration_minutes' => $procedure->estimated_duration_minutes,
+                    'status' => $request->status,
+                    'priority' => $request->priority,
+                    'severity' => $request->severity,
+                    'scheduled_date' => $request->scheduled_date,
+                    'assigned_doctor_id' => $request->assigned_doctor_id ?? $user->id,
+                    'payment_status' => 'unpaid',
+                    'paid_amount' => 0,
+                    'notes' => $request->notes,
+                    'created_by' => $user->id,
+                ]);
+
+                // Sync financial data with Finance module if cost is provided
+                if ($treatment->estimated_cost > 0) {
+                    $this->syncTreatmentFinancialData($treatment, $user);
+                }
+
+                $createdTreatments[] = $treatment;
+            }
+
+            // Save canal treatment data if provided (only for the first treatment if root canal)
+            if ($request->has('canals') && is_array($request->canals) && count($createdTreatments) > 0) {
+                $firstTreatment = $createdTreatments[0];
                 foreach ($request->canals as $canalData) {
                     if (empty($canalData['canal_name']) || empty($canalData['tooth_number'])) continue;
 
                     CanalTreatment::create([
-                        'dental_treatment_id' => $treatment->id,
-                        'patient_id' => $treatment->patient_id,
-                        'clinic_id' => $treatment->clinic_id,
+                        'dental_treatment_id' => $firstTreatment->id,
+                        'patient_id' => $firstTreatment->patient_id,
+                        'clinic_id' => $firstTreatment->clinic_id,
                         'tooth_number' => $canalData['tooth_number'],
                         'canal_name' => $canalData['canal_name'],
                         'working_length' => $canalData['working_length'] ?? null,
@@ -219,15 +236,21 @@ class DentalTreatmentController extends Controller
                 }
             }
 
-            // Sync financial data with Finance module if cost is provided
-            if ($request->filled('estimated_cost') || $request->filled('actual_cost')) {
-                $this->syncTreatmentFinancialData($treatment, $user);
-            }
-
             DB::commit();
 
-            return redirect()->route('dental.treatments.show', $treatment)
-                           ->with('success', 'Treatment plan created successfully.');
+            $count = count($createdTreatments);
+            $message = $count === 1
+                ? 'Treatment plan created successfully.'
+                : "{$count} treatment plans created successfully.";
+
+            // Redirect to the index page if multiple treatments, or to the single treatment if only one
+            if ($count === 1) {
+                return redirect()->route('dental.treatments.show', $createdTreatments[0])
+                               ->with('success', $message);
+            } else {
+                return redirect()->route('dental.treatments.index')
+                               ->with('success', $message);
+            }
 
         } catch (\Exception $e) {
             DB::rollBack();
