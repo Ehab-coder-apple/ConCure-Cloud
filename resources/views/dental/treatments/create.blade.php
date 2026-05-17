@@ -425,12 +425,23 @@ function renderSelectedProcedures() {
     const noMsg = document.getElementById('no_procedures_msg');
 
     if (selectedProcedures.length === 0) {
-        noMsg.classList.remove('d-none');
+        if (noMsg) {
+            noMsg.style.display = 'block';
+        }
+        // Remove any existing list
+        const existingList = container.querySelector('.list-group');
+        if (existingList) {
+            existingList.remove();
+        }
         return;
     }
 
-    noMsg.classList.add('d-none');
+    // Hide the "no procedures" message
+    if (noMsg) {
+        noMsg.style.display = 'none';
+    }
 
+    // Build the procedures list
     let html = '<div class="list-group">';
     selectedProcedures.forEach(proc => {
         html += `
@@ -452,7 +463,14 @@ function renderSelectedProcedures() {
     });
     html += '</div>';
 
-    container.innerHTML = html;
+    // Remove existing list if present
+    const existingList = container.querySelector('.list-group');
+    if (existingList) {
+        existingList.remove();
+    }
+
+    // Add the new list
+    container.insertAdjacentHTML('beforeend', html);
 }
 
 // Update totals
