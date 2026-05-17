@@ -443,21 +443,44 @@ function renderSelectedProcedures() {
 
     // Build the procedures list
     let html = '<div class="list-group">';
-    selectedProcedures.forEach(proc => {
+    selectedProcedures.forEach((proc, index) => {
         html += `
-            <div class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>${proc.name}</strong>
-                    ${proc.code ? `<span class="badge bg-secondary ms-2">${proc.code}</span>` : ''}
-                    <div class="small text-muted">
-                        ${proc.cost > 0 ? `Cost: ${proc.cost.toFixed(2)} | ` : ''}
-                        ${proc.duration > 0 ? `Duration: ${proc.duration} min` : ''}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <strong>${proc.name}</strong>
+                        ${proc.code ? `<span class="badge bg-secondary ms-2">${proc.code}</span>` : ''}
                     </div>
-                    <input type="hidden" name="procedure_ids[]" value="${proc.id}">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeProcedure('${proc.id}')">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <button type="button" class="btn btn-sm btn-danger" onclick="removeProcedure('${proc.id}')">
-                    <i class="fas fa-times"></i>
-                </button>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label small mb-1">{{ __('Cost') }}</label>
+                        <input type="number"
+                               class="form-control form-control-sm procedure-cost"
+                               data-proc-id="${proc.id}"
+                               value="${proc.cost}"
+                               step="0.01"
+                               min="0"
+                               placeholder="0.00"
+                               onchange="updateProcedureCost('${proc.id}', this.value)">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small mb-1">{{ __('Duration (min)') }}</label>
+                        <input type="number"
+                               class="form-control form-control-sm procedure-duration"
+                               data-proc-id="${proc.id}"
+                               value="${proc.duration}"
+                               min="0"
+                               placeholder="0"
+                               onchange="updateProcedureDuration('${proc.id}', this.value)">
+                    </div>
+                </div>
+                <input type="hidden" name="procedure_ids[]" value="${proc.id}">
+                <input type="hidden" name="procedure_costs[]" value="${proc.cost}">
+                <input type="hidden" name="procedure_durations[]" value="${proc.duration}">
             </div>
         `;
     });
@@ -471,6 +494,36 @@ function renderSelectedProcedures() {
 
     // Add the new list
     container.insertAdjacentHTML('beforeend', html);
+}
+
+// Update procedure cost
+function updateProcedureCost(procedureId, newCost) {
+    const proc = selectedProcedures.find(p => p.id === procedureId);
+    if (proc) {
+        proc.cost = parseFloat(newCost) || 0;
+        updateTotals();
+        // Update hidden input
+        const hiddenInputs = document.querySelectorAll('input[name="procedure_costs[]"]');
+        const index = selectedProcedures.findIndex(p => p.id === procedureId);
+        if (hiddenInputs[index]) {
+            hiddenInputs[index].value = proc.cost;
+        }
+    }
+}
+
+// Update procedure duration
+function updateProcedureDuration(procedureId, newDuration) {
+    const proc = selectedProcedures.find(p => p.id === procedureId);
+    if (proc) {
+        proc.duration = parseInt(newDuration) || 0;
+        updateTotals();
+        // Update hidden input
+        const hiddenInputs = document.querySelectorAll('input[name="procedure_durations[]"]');
+        const index = selectedProcedures.findIndex(p => p.id === procedureId);
+        if (hiddenInputs[index]) {
+            hiddenInputs[index].value = proc.duration;
+        }
+    }
 }
 
 // Update totals

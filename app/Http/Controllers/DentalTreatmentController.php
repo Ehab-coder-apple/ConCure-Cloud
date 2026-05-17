@@ -148,6 +148,10 @@ class DentalTreatmentController extends Controller
             'tooth_numbers' => 'nullable', // Accept both string and array
             'procedure_ids' => 'required|array|min:1',
             'procedure_ids.*' => 'required|exists:dental_procedures,id',
+            'procedure_costs' => 'nullable|array',
+            'procedure_costs.*' => 'nullable|numeric|min:0',
+            'procedure_durations' => 'nullable|array',
+            'procedure_durations.*' => 'nullable|integer|min:0',
             'diagnosis' => 'nullable|string',
             'icd10_code' => 'nullable|string|max:20',
             'surfaces_affected' => 'nullable|array',
@@ -175,10 +179,16 @@ class DentalTreatmentController extends Controller
 
             // Get all selected procedures
             $procedures = DentalProcedure::whereIn('id', $request->procedure_ids)->get();
+            $procedureCosts = $request->procedure_costs ?? [];
+            $procedureDurations = $request->procedure_durations ?? [];
             $createdTreatments = [];
 
             // Create a treatment plan for each selected procedure
-            foreach ($procedures as $procedure) {
+            foreach ($procedures as $index => $procedure) {
+                // Use custom cost/duration if provided, otherwise use defaults
+                $estimatedCost = isset($procedureCosts[$index]) ? floatval($procedureCosts[$index]) : ($procedure->default_cost ?? 0);
+                $estimatedDuration = isset($procedureDurations[$index]) ? intval($procedureDurations[$index]) : ($procedure->estimated_duration_minutes ?? 0);
+
                 $treatment = DentalTreatment::create([
                     'patient_id' => $request->patient_id,
                     'clinic_id' => $user->clinic_id,
@@ -191,9 +201,9 @@ class DentalTreatmentController extends Controller
                     'icd10_code' => $request->icd10_code,
                     'surfaces_affected' => $request->surfaces_affected,
                     'description' => $request->description ?: $procedure->description,
-                    'estimated_cost' => $procedure->default_cost ?? 0,
+                    'estimated_cost' => $estimatedCost,
                     'currency' => $clinicCurrency,
-                    'estimated_duration_minutes' => $procedure->estimated_duration_minutes,
+                    'estimated_duration_minutes' => $estimatedDuration,
                     'status' => $request->status,
                     'priority' => $request->priority,
                     'severity' => $request->severity,
