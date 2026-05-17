@@ -145,7 +145,7 @@ class ThermalReceiptService
      */
     public function buildForDentalTreatment(DentalTreatment $treatment, ?int $widthMm = null): array
     {
-        $treatment->loadMissing(['patient', 'assignedDoctor', 'performedBy', 'clinic']);
+        $treatment->loadMissing(['patient', 'assignedDoctor', 'performedBy', 'clinic', 'invoice.items']);
         $clinic = $treatment->clinic ?: Clinic::find($treatment->clinic_id);
         $this->applyLocale($clinic);
 
@@ -170,10 +170,25 @@ class ThermalReceiptService
             $meta[] = ['label' => __('Completed'), 'value' => $treatment->completed_date->format('Y-m-d')];
         }
 
-        $services = [
-            ['label' => __('Procedure'), 'value' => trim(($treatment->procedure_name ?? '') . ($treatment->procedure_code ? ' (' . $treatment->procedure_code . ')' : '')) ?: '-'],
-            ['label' => __('Tooth'), 'value' => $teeth],
-        ];
+        // Check if we have invoice items (itemized procedures) or use combined procedure name
+        $services = [];
+        if ($treatment->invoice && $treatment->invoice->items && $treatment->invoice->items->count() > 0) {
+            // Show itemized procedures from invoice
+            $services[] = ['label' => __('Procedures'), 'value' => ''];
+            foreach ($treatment->invoice->items as $item) {
+                $services[] = [
+                    'label' => '',
+                    'value' => $item->description,
+                    'price' => $item->unit_price,
+                ];
+            }
+        } else {
+            // Fallback to combined procedure name
+            $services[] = ['label' => __('Procedure'), 'value' => trim(($treatment->procedure_name ?? '') . ($treatment->procedure_code ? ' (' . $treatment->procedure_code . ')' : '')) ?: '-'];
+        }
+
+        $services[] = ['label' => __('Tooth'), 'value' => $teeth];
+
         if ($surfaces) {
             $services[] = ['label' => __('Surfaces'), 'value' => $surfaces];
         }

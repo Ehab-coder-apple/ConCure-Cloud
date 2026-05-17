@@ -135,8 +135,18 @@
 
         @if(!empty($services))
             <hr class="divider">
+            @php $currencySym = $financials['currency'] ?? 'IQD'; @endphp
             @foreach($services as $row)
-                <div class="meta-row"><span class="label">{{ $row['label'] }}:</span><span class="value">{{ $row['value'] }}</span></div>
+                @if(isset($row['price']))
+                    {{-- Show itemized procedure with price --}}
+                    <div class="meta-row">
+                        <span class="label" style="max-width: 60%;">{{ $row['value'] }}</span>
+                        <span class="value">{{ $currencySym }} {{ number_format((float) $row['price'], 2) }}</span>
+                    </div>
+                @else
+                    {{-- Regular meta row --}}
+                    <div class="meta-row"><span class="label">{{ $row['label'] }}:</span><span class="value">{{ $row['value'] }}</span></div>
+                @endif
             @endforeach
         @endif
 
