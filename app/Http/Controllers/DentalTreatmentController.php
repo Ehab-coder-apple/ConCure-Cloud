@@ -240,7 +240,17 @@ class DentalTreatmentController extends Controller
 
             // Sync financial data with Finance module if cost is provided
             if ($treatment->estimated_cost > 0) {
-                $this->syncTreatmentFinancialData($treatment, $user);
+                // Build procedure details array for invoice items
+                $procedureDetails = [];
+                foreach ($procedures as $index => $procedure) {
+                    $cost = isset($procedureCosts[$index]) ? floatval($procedureCosts[$index]) : ($procedure->default_cost ?? 0);
+                    $procedureDetails[] = [
+                        'name' => $procedure->name,
+                        'code' => $procedure->code,
+                        'cost' => $cost,
+                    ];
+                }
+                $this->syncTreatmentFinancialData($treatment, $user, $procedureDetails);
             }
 
             // Save canal treatment data if provided (for root canal treatments)
@@ -451,7 +461,7 @@ class DentalTreatmentController extends Controller
      * Sync dental treatment financial data with the Finance module.
      * Creates or updates Invoice and Receipt records based on treatment costs and payments.
      */
-    private function syncTreatmentFinancialData(DentalTreatment $treatment, User $user): void
+    private function syncTreatmentFinancialData(DentalTreatment $treatment, User $user, array $procedureDetails = []): void
     {
         // Only sync if there's financial data
         $totalCost = $treatment->actual_cost ?? $treatment->estimated_cost ?? 0;
@@ -466,13 +476,25 @@ class DentalTreatmentController extends Controller
             // Update existing invoice
             $invoice = Invoice::find($treatment->invoice_id);
             if ($invoice) {
-                // Update invoice item
-                $item = $invoice->items()->first();
-                if ($item) {
-                    $item->update([
+                // Remove old items
+                $invoice->items()->delete();
+
+                // Add new items (either individual procedures or combined)
+                if (!empty($procedureDetails)) {
+                    foreach ($procedureDetails as $proc) {
+                        $invoice->addItem([
+                            'description' => "{$proc['name']}" . ($proc['code'] ? " ({$proc['code']})" : ''),
+                            'quantity' => 1,
+                            'unit_price' => $proc['cost'],
+                            'item_type' => 'procedure',
+                        ]);
+                    }
+                } else {
+                    $invoice->addItem([
                         'description' => "Dental Treatment: {$treatment->procedure_name}",
                         'quantity' => 1,
                         'unit_price' => $totalCost,
+                        'item_type' => 'procedure',
                     ]);
                 }
 
@@ -499,13 +521,24 @@ class DentalTreatmentController extends Controller
                 'created_by' => $user->id,
             ]);
 
-            // Add invoice item
-            $invoice->addItem([
-                'description' => "Dental Treatment: {$treatment->procedure_name}",
-                'quantity' => 1,
-                'unit_price' => $totalCost,
-                'item_type' => 'procedure',
-            ]);
+            // Add invoice items (either individual procedures or combined)
+            if (!empty($procedureDetails)) {
+                foreach ($procedureDetails as $proc) {
+                    $invoice->addItem([
+                        'description' => "{$proc['name']}" . ($proc['code'] ? " ({$proc['code']})" : ''),
+                        'quantity' => 1,
+                        'unit_price' => $proc['cost'],
+                        'item_type' => 'procedure',
+                    ]);
+                }
+            } else {
+                $invoice->addItem([
+                    'description' => "Dental Treatment: {$treatment->procedure_name}",
+                    'quantity' => 1,
+                    'unit_price' => $totalCost,
+                    'item_type' => 'procedure',
+                ]);
+            }
 
             // Update invoice status based on payment
             $invoice->updateStatus();
