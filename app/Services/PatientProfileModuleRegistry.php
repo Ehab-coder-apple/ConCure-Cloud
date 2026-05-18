@@ -16,6 +16,11 @@ class PatientProfileModuleRegistry
                 'icon' => 'fas fa-tooth',
                 'description' => __('Dental summary, charts, treatments, and imaging linked to the patient.'),
             ],
+            'orthodontics' => [
+                'label' => __('Orthodontics'),
+                'icon' => 'fas fa-teeth',
+                'description' => __('Orthodontic cases, treatment progress, visits, photos, and payment tracking.'),
+            ],
             'aesthetic' => [
                 'label' => __('Aesthetic'),
                 'icon' => 'fas fa-spa',
@@ -125,7 +130,7 @@ class PatientProfileModuleRegistry
 
     public static function defaultActiveModulesForPatient(Patient $patient): array
     {
-        return collect(['dental', 'aesthetic', 'nutrition', 'ent', 'pediatric'])
+        return collect(['dental', 'orthodontics', 'aesthetic', 'nutrition', 'ent', 'pediatric'])
             ->filter(fn (string $module) => static::isAvailableForPatient($patient, $module))
             ->values()
             ->all();
@@ -138,6 +143,11 @@ class PatientProfileModuleRegistry
                 ['label' => __('Charts'), 'value' => data_get($patient, 'dental_charts_count') ?? $patient->dentalCharts()->count()],
                 ['label' => __('Treatments'), 'value' => data_get($patient, 'dental_treatments_count') ?? $patient->dentalTreatments()->count()],
                 ['label' => __('Last Visit'), 'value' => data_get($patient, 'dental_last_visit_label', __('Not recorded'))],
+            ],
+            'orthodontics' => [
+                ['label' => __('Active Cases'), 'value' => $patient->orthodonticCases()->where('status', 'active')->count()],
+                ['label' => __('Total Visits'), 'value' => \App\Models\OrthodonticVisit::where('patient_id', $patient->id)->count()],
+                ['label' => __('Photos'), 'value' => \App\Models\OrthodonticPhoto::where('patient_id', $patient->id)->count()],
             ],
             'aesthetic' => [
                 ['label' => __('Sessions'), 'value' => $patient->aestheticSessions()->count()],
@@ -174,6 +184,10 @@ class PatientProfileModuleRegistry
                 ['label' => __('Dental Charts'), 'url' => route('dental.charts.index', ['patient' => $patient->id])],
                 ['label' => __('Procedure History'), 'url' => route('dental.treatments.index', ['patient_id' => $patient->id])],
                 ['label' => __('Dental History'), 'url' => route('dental.history', ['patient' => $patient->id])],
+            ],
+            'orthodontics' => [
+                ['label' => __('Orthodontic Cases'), 'url' => route('orthodontics.index', ['patient_id' => $patient->id])],
+                ['label' => __('Create New Case'), 'url' => route('orthodontics.create', ['patient_id' => $patient->id])],
             ],
             'aesthetic' => [
                 ['label' => __('Open Full Aesthetic Module'), 'url' => route('patients.aesthetic.show', ['patient' => $patient->id])],

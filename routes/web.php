@@ -773,6 +773,34 @@ Route::middleware(['auth', 'activation'])->group(function () {
         });
     });
 
+    // Orthodontics Module Routes
+    Route::prefix('orthodontics')->name('orthodontics.')->group(function () {
+        Route::get('/', [App\Http\Controllers\OrthodonticCaseController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\OrthodonticCaseController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\OrthodonticCaseController::class, 'store'])->name('store');
+        Route::get('/{orthodonticCase}', [App\Http\Controllers\OrthodonticCaseController::class, 'show'])->name('show');
+        Route::get('/{orthodonticCase}/edit', [App\Http\Controllers\OrthodonticCaseController::class, 'edit'])->name('edit');
+        Route::put('/{orthodonticCase}', [App\Http\Controllers\OrthodonticCaseController::class, 'update'])->name('update');
+        Route::delete('/{orthodonticCase}', [App\Http\Controllers\OrthodonticCaseController::class, 'destroy'])->name('destroy');
+
+        // Visit Management
+        Route::post('/{orthodonticCase}/visits', [App\Http\Controllers\OrthodonticCaseController::class, 'storeVisit'])->name('visits.store');
+        Route::get('/{orthodonticCase}/visits/{visit}', [App\Http\Controllers\OrthodonticCaseController::class, 'getVisit'])->name('visits.show');
+
+        // Photo Management
+        Route::post('/{orthodonticCase}/photos', [App\Http\Controllers\OrthodonticCaseController::class, 'storePhoto'])->name('photos.store');
+        Route::delete('/{orthodonticCase}/photos/{photo}', [App\Http\Controllers\OrthodonticCaseController::class, 'deletePhoto'])->name('photos.destroy');
+
+        // Payment Management
+        Route::post('/{orthodonticCase}/payments', [App\Http\Controllers\OrthodonticCaseController::class, 'storePayment'])->name('payments.store');
+
+        // Tooth Chart Management
+        Route::post('/{orthodonticCase}/tooth-chart', [App\Http\Controllers\OrthodonticCaseController::class, 'updateToothChart'])->name('tooth-chart.update');
+
+        // Treatment Phase Management
+        Route::post('/{orthodonticCase}/phase', [App\Http\Controllers\OrthodonticCaseController::class, 'updatePhase'])->name('phase.update');
+    });
+
     // Aesthetic Treatments Routes
     Route::prefix('aesthetic/treatments')->name('aesthetic.treatments.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'index'])->name('index');

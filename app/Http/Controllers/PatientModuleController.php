@@ -63,6 +63,10 @@ class PatientModuleController extends Controller
             return redirect()->route('patients.dental.show', ['patient' => $patient->id]);
         }
 
+        if ($module === 'orthodontics') {
+            return redirect()->route('orthodontics.index', ['patient_id' => $patient->id]);
+        }
+
         if ($module === 'ent') {
             return redirect()->route('patients.ent.show', ['patient' => $patient->id]);
         }

@@ -1716,6 +1716,16 @@
                         </li>
                         @endif
 
+                        <!-- Orthodontic Module -->
+                        @if(Auth::user()->canAccessSection('dental') && Auth::user()->canAccessModule('dental'))
+                        <li class="nav-item {{ request()->routeIs('orthodontics.*') ? 'active' : '' }}">
+                            <a href="{{ route('orthodontics.index') }}" class="nav-link {{ request()->routeIs('orthodontics.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-teeth"></i>
+                                <span class="nav-text">{{ __('Orthodontics') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
                         <!-- Aesthetic Module -->
                         @if(Auth::user()->canAccessSection('aesthetic') && Auth::user()->canAccessModule('aesthetic'))
                         <li class="nav-item has-submenu {{ request()->routeIs('aesthetic.*') ? 'active' : '' }}">

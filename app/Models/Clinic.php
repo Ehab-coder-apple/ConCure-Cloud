@@ -372,6 +372,7 @@ class Clinic extends Model
             'icon'  => 'fas fa-puzzle-piece',
             'modules' => [
                 'dental'        => 'Dental Module',
+                'orthodontics'  => 'Orthodontic Module',
                 'ent'           => 'ENT Module',
                 'aesthetic'     => 'Aesthetic Module',
                 'nutrition'     => 'Nutrition & Diet Planning',
@@ -413,6 +414,7 @@ class Clinic extends Model
         'image_bank'    => 'Medical Image Bank',
         'forms'         => 'Forms',
         'dental'        => 'Dental Module',
+        'orthodontics'  => 'Orthodontics Module',
         'ent'           => 'ENT Module',
         'aesthetic'     => 'Aesthetic Module',
         'nutrition'     => 'Nutrition & Diet Planning',
@@ -436,6 +438,7 @@ class Clinic extends Model
         'messages',
         'ent', // ENT module enabled by default
         'dental',
+        'orthodontics', // Orthodontics module enabled by default
         'aesthetic',
         'pediatric',
         'nutrition',
