@@ -265,20 +265,20 @@
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <div class="bg-light border rounded p-3 h-100">
-                                        <small class="text-muted d-block">{{ __('Hearing Issues') }}</small>
-                                        <div>{{ $entProfile->hearing_issues ?: __('No hearing issues recorded.') }}</div>
+                                        <small class="text-muted d-block">{{ __('Ear Examination') }}</small>
+                                        <div>{{ $entProfile->hearing_issues ?: __('No ear examination recorded.') }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="bg-light border rounded p-3 h-100">
-                                        <small class="text-muted d-block">{{ __('Nasal Obstruction') }}</small>
-                                        <div>{{ $entProfile->nasal_issues ?: __('No nasal issues recorded.') }}</div>
+                                        <small class="text-muted d-block">{{ __('Nose Examination') }}</small>
+                                        <div>{{ $entProfile->nasal_issues ?: __('No nose examination recorded.') }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="bg-light border rounded p-3 h-100">
-                                        <small class="text-muted d-block">{{ __('Throat Problems') }}</small>
-                                        <div>{{ $entProfile->throat_issues ?: __('No throat problems recorded.') }}</div>
+                                        <small class="text-muted d-block">{{ __('Throat Examination') }}</small>
+                                        <div>{{ $entProfile->throat_issues ?: __('No throat examination recorded.') }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">

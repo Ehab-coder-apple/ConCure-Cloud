@@ -34,9 +34,9 @@
                     <form method="POST" action="{{ route('patients.ent.update', ['patient' => $patient->id]) }}">
                         @csrf
                         @method('PUT')
-                        <div class="mb-3"><label class="form-label">{{ __('Hearing Issues') }}</label><textarea class="form-control" name="hearing_issues" rows="3">{{ old('hearing_issues', $entProfile->hearing_issues) }}</textarea></div>
-                        <div class="mb-3"><label class="form-label">{{ __('Nasal Obstruction / Nasal Issues') }}</label><textarea class="form-control" name="nasal_issues" rows="3">{{ old('nasal_issues', $entProfile->nasal_issues) }}</textarea></div>
-                        <div class="mb-3"><label class="form-label">{{ __('Throat Problems') }}</label><textarea class="form-control" name="throat_issues" rows="3">{{ old('throat_issues', $entProfile->throat_issues) }}</textarea></div>
+                        <div class="mb-3"><label class="form-label">{{ __('Ear Examination') }}</label><textarea class="form-control" name="hearing_issues" rows="3">{{ old('hearing_issues', $entProfile->hearing_issues) }}</textarea></div>
+                        <div class="mb-3"><label class="form-label">{{ __('Nose Examination') }}</label><textarea class="form-control" name="nasal_issues" rows="3">{{ old('nasal_issues', $entProfile->nasal_issues) }}</textarea></div>
+                        <div class="mb-3"><label class="form-label">{{ __('Throat Examination') }}</label><textarea class="form-control" name="throat_issues" rows="3">{{ old('throat_issues', $entProfile->throat_issues) }}</textarea></div>
                         <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="dizziness" name="dizziness" value="1" {{ old('dizziness', $entProfile->dizziness) ? 'checked' : '' }}><label class="form-check-label" for="dizziness">{{ __('Dizziness / Vertigo') }}</label></div>
                         <div class="mb-3"><label class="form-label">{{ __('ENT Notes') }}</label><textarea class="form-control" name="notes" rows="4">{{ old('notes', $entProfile->notes) }}</textarea></div>
                         <button class="btn btn-primary" type="submit">{{ __('Save ENT Summary') }}</button>
@@ -83,9 +83,9 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <h5 class="mb-3">{{ __('ENT Findings Summary') }}</h5>
-                            <div class="border rounded p-3 mb-2"><small class="text-muted d-block">{{ __('Hearing Issues') }}</small><div>{{ $entProfile->hearing_issues ?: __('No hearing issues recorded.') }}</div></div>
-                            <div class="border rounded p-3 mb-2"><small class="text-muted d-block">{{ __('Nasal Obstruction') }}</small><div>{{ $entProfile->nasal_issues ?: __('No nasal issues recorded.') }}</div></div>
-                            <div class="border rounded p-3"><small class="text-muted d-block">{{ __('Throat Problems') }}</small><div>{{ $entProfile->throat_issues ?: __('No throat problems recorded.') }}</div></div>
+                            <div class="border rounded p-3 mb-2"><small class="text-muted d-block">{{ __('Ear Examination') }}</small><div>{{ $entProfile->hearing_issues ?: __('No ear examination recorded.') }}</div></div>
+                            <div class="border rounded p-3 mb-2"><small class="text-muted d-block">{{ __('Nose Examination') }}</small><div>{{ $entProfile->nasal_issues ?: __('No nose examination recorded.') }}</div></div>
+                            <div class="border rounded p-3"><small class="text-muted d-block">{{ __('Throat Examination') }}</small><div>{{ $entProfile->throat_issues ?: __('No throat examination recorded.') }}</div></div>
                         </div>
                     </div>
                 </div>
