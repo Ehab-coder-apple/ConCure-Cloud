@@ -37,11 +37,10 @@ class ContractController extends Controller
     {
         $request->validate([
             'signature_name' => 'required|string|max:255',
-            'agree' => 'required|accepted',
+            'agree' => 'required',
         ], [
             'signature_name.required' => 'Please type your full name to sign the contract.',
             'agree.required' => 'You must agree to the terms and conditions.',
-            'agree.accepted' => 'You must agree to the terms and conditions.',
         ]);
 
         $user = auth()->user();
