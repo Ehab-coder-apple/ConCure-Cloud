@@ -543,10 +543,10 @@ class SimplePrescriptionController extends Controller
                     if (class_exists('Imagick')) {
                         try {
                             $imagick = new \Imagick();
-                            $imagick->setResolution(150, 150);
+                            $imagick->setResolution(300, 300);
                             $imagick->readImage($templateLocalPath . '[0]'); // first page only
                             $imagick->setImageFormat('png');
-                            $imagick->setImageCompressionQuality(95);
+                            $imagick->setImageCompressionQuality(100);
                             $imagick->writeImage($convertedImagePath);
                             $imagick->clear();
                             $imagick->destroy();
@@ -1030,7 +1030,7 @@ class SimplePrescriptionController extends Controller
                             $convertedImagePath = storage_path('app/temp_rx_preview_' . $clinic->id . '_converted.png');
                             if (class_exists('\Imagick')) {
                                 $imagick = new \Imagick();
-                                $imagick->setResolution(150, 150);
+                                $imagick->setResolution(300, 300);
                                 $imagick->readImage($templateLocalPath . '[0]');
                                 $imagick->setImageFormat('png');
                                 $imagick->writeImage($convertedImagePath);
