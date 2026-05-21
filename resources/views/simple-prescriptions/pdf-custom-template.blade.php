@@ -16,10 +16,15 @@
     </style>
 </head>
 <body>
+    @php
+        $pageWidthPt = $rxSettings['page_width_pt'] ?? 595.28;
+        $pageHeightPt = $rxSettings['page_height_pt'] ?? 841.89;
+    @endphp
+
     {{-- Background template image using fixed positioning for mPDF --}}
     @if($templateImagePath)
-        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;">
-            <img src="{{ $templateImagePath }}" style="width: 100%; height: 100%;" />
+        <div style="position: fixed; top: 0; left: 0; width: {{ $pageWidthPt }}pt; height: {{ $pageHeightPt }}pt; overflow: hidden;">
+            <img src="{{ $templateImagePath }}" style="width: {{ $pageWidthPt }}pt; height: {{ $pageHeightPt }}pt; max-width: none; max-height: none;" />
         </div>
     @endif
 

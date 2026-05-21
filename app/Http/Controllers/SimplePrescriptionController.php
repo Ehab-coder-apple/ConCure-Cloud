@@ -495,6 +495,10 @@ class SimplePrescriptionController extends Controller
 
         $orientation = $clinic ? $clinic->getSetting('rx_orientation', 'portrait') : 'portrait';
         $isLandscape = $orientation === 'landscape';
+        [$pageWidthPt, $pageHeightPt] = $this->getPrescriptionPageSizePoints($paperSize, $isLandscape);
+
+        $rxSettings['page_width_pt'] = $pageWidthPt;
+        $rxSettings['page_height_pt'] = $pageHeightPt;
 
         // Build format with orientation for mPDF
         if ($paperSize === 'A5') {
@@ -1000,6 +1004,10 @@ class SimplePrescriptionController extends Controller
 
         $orientation = $request->rx_orientation ?? $clinic->getSetting('rx_orientation', 'portrait');
         $isLandscape = $orientation === 'landscape';
+        [$pageWidthPt, $pageHeightPt] = $this->getPrescriptionPageSizePoints($paperSize, $isLandscape);
+
+        $rxSettings['page_width_pt'] = $pageWidthPt;
+        $rxSettings['page_height_pt'] = $pageHeightPt;
 
         $mpdfConfig = ['default_font' => 'dejavusans', 'tempDir' => storage_path('mpdf/temp')];
 
@@ -1053,7 +1061,7 @@ class SimplePrescriptionController extends Controller
                             $convertedImagePath = storage_path('app/temp_rx_preview_' . $clinic->id . '_converted.png');
                             $pdfConverted = false;
 
-	                            if (class_exists('\Imagick')) {
+                            if (class_exists('\Imagick')) {
                                 try {
                                     $imagick = new \Imagick();
                                     // Use 300 DPI for high-quality rendering
@@ -1086,7 +1094,7 @@ class SimplePrescriptionController extends Controller
                                 }
                             }
 
-	                            if ($pdfConverted) {
+                            if ($pdfConverted) {
                                 $templateLocalPath = $convertedImagePath;
                                 $pdfConvertedImagePath = $convertedImagePath;
                                 $templateIsPdf = false;
@@ -1137,5 +1145,30 @@ class SimplePrescriptionController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="prescription-template-preview.pdf"',
         ]);
+    }
+
+    /**
+     * Return selected prescription page size in PDF points.
+     */
+    private function getPrescriptionPageSizePoints(string $paperSize, bool $isLandscape): array
+    {
+        $sizesMm = [
+            'A4' => [210, 297],
+            'A5' => [148, 210],
+            'A6' => [105, 148],
+            'B5' => [176, 250],
+            'Letter' => [215.9, 279.4],
+            'Legal' => [215.9, 355.6],
+        ];
+
+        [$widthMm, $heightMm] = $sizesMm[$paperSize] ?? $sizesMm['A4'];
+
+        if ($isLandscape) {
+            [$widthMm, $heightMm] = [$heightMm, $widthMm];
+        }
+
+        $mmToPt = 72 / 25.4;
+
+        return [$widthMm * $mmToPt, $heightMm * $mmToPt];
     }
 }
