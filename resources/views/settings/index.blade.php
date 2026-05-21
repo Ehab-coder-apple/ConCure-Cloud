@@ -1065,6 +1065,7 @@
                                         params.set('rx_max_medicines', document.getElementById('rx_max_medicines').value);
                                         params.set('rx_notes_y_bottom', document.getElementById('rx_notes_y_bottom').value);
                                         params.set('rx_notes_x_right', document.getElementById('rx_notes_x_right').value);
+                                        params.set('rx_paper_size', document.getElementById('rx_paper_size').value);
                                         params.set('rx_orientation', document.getElementById('rx_orientation').value);
                                         params.set('rx_header_y', document.getElementById('rx_header_y').value);
                                         params.set('rx_header_font_size', document.getElementById('rx_header_font_size').value);

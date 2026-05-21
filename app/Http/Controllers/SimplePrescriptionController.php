@@ -384,8 +384,11 @@ class SimplePrescriptionController extends Controller
             }
         }
 
-        // Check if user explicitly requested custom template via query param
-        $clinic = Clinic::find($user->clinic_id);
+        // Check if user explicitly requested custom template via query param.
+        // Important: use the prescription's clinic, not the logged-in user's clinic.
+        // This keeps custom templates correct for clinics with similar names and
+        // for pharmacist/super-admin cross-clinic prescription access.
+        $clinic = $prescription->clinic ?: Clinic::find($prescription->clinic_id);
         $useCustomTemplate = false;
         $templateLocalPath = null;
         $templateIsPdf = false;
@@ -401,6 +404,8 @@ class SimplePrescriptionController extends Controller
 
             \Log::info('RX PDF: template check', [
                 'clinic_id' => $clinic->id,
+                'prescription_clinic_id' => $prescription->clinic_id,
+                'user_clinic_id' => $user->clinic_id,
                 'requestedCustom' => $requestedCustom,
                 'settingEnabled' => $settingEnabled,
                 'useCustomTemplate' => $useCustomTemplate,
@@ -543,9 +548,11 @@ class SimplePrescriptionController extends Controller
                     if (class_exists('Imagick')) {
                         try {
                             $imagick = new \Imagick();
+                            // Use 300 DPI for high-quality rendering
                             $imagick->setResolution(300, 300);
                             $imagick->readImage($templateLocalPath . '[0]'); // first page only
                             $imagick->setImageFormat('png');
+                            // Use maximum quality for crisp prescription text
                             $imagick->setImageCompressionQuality(100);
                             $imagick->writeImage($convertedImagePath);
                             $imagick->clear();
@@ -603,7 +610,9 @@ class SimplePrescriptionController extends Controller
         } catch (\Exception $e) {
             \Log::error('RX PDF rendering failed', [
                 'prescription_id' => $id,
-                'clinic_id' => $user->clinic_id,
+                'clinic_id' => $clinic?->id,
+                'prescription_clinic_id' => $prescription->clinic_id,
+                'user_clinic_id' => $user->clinic_id,
                 'custom_template' => $useCustomTemplate,
                 'error' => $e->getMessage(),
             ]);
@@ -911,14 +920,21 @@ class SimplePrescriptionController extends Controller
 
         $templatePath = $clinic->getSetting('rx_template_path', '');
         $enabledRaw = $clinic->getSetting('rx_template_enabled', false);
-        $useCustomTemplate = $enabledRaw && $templatePath;
-        $paperSize = $clinic->getSetting('rx_paper_size', 'A4');
+        $settingEnabled = filter_var($enabledRaw, FILTER_VALIDATE_BOOLEAN);
+
+        // This endpoint is specifically the settings-page preview, so show the
+        // uploaded template whenever it exists. The saved enabled/disabled flag
+        // is still respected by real prescription PDFs.
+        $useCustomTemplate = !empty($templatePath);
+        $paperSize = $request->rx_paper_size ?? $clinic->getSetting('rx_paper_size', 'A4');
 
         \Log::info('templatePreview: settings check', [
             'clinic_id' => $clinic->id,
             'templatePath' => $templatePath,
             'enabledRaw' => $enabledRaw,
+            'settingEnabled' => $settingEnabled,
             'useCustomTemplate' => $useCustomTemplate,
+            'paperSize' => $paperSize,
         ]);
 
         // Create demo prescription data
@@ -987,6 +1003,13 @@ class SimplePrescriptionController extends Controller
 
         $mpdfConfig = ['default_font' => 'dejavusans', 'tempDir' => storage_path('mpdf/temp')];
 
+        if ($useCustomTemplate) {
+            $mpdfConfig['margin_top'] = 0;
+            $mpdfConfig['margin_bottom'] = 0;
+            $mpdfConfig['margin_left'] = 0;
+            $mpdfConfig['margin_right'] = 0;
+        }
+
         // Build format with orientation
         if ($paperSize === 'A5') {
             $mpdfConfig['format'] = $isLandscape ? [210, 148] : [148, 210];
@@ -1028,15 +1051,48 @@ class SimplePrescriptionController extends Controller
 
                         if ($templateIsPdf) {
                             $convertedImagePath = storage_path('app/temp_rx_preview_' . $clinic->id . '_converted.png');
-                            if (class_exists('\Imagick')) {
-                                $imagick = new \Imagick();
-                                $imagick->setResolution(300, 300);
-                                $imagick->readImage($templateLocalPath . '[0]');
-                                $imagick->setImageFormat('png');
-                                $imagick->writeImage($convertedImagePath);
-                                $imagick->clear();
-                                $imagick->destroy();
+                            $pdfConverted = false;
+
+	                            if (class_exists('\Imagick')) {
+                                try {
+                                    $imagick = new \Imagick();
+                                    // Use 300 DPI for high-quality rendering
+                                    $imagick->setResolution(300, 300);
+                                    $imagick->readImage($templateLocalPath . '[0]');
+                                    $imagick->setImageFormat('png');
+                                    // Set compression quality to maximum
+                                    $imagick->setImageCompressionQuality(100);
+                                    $imagick->writeImage($convertedImagePath);
+                                    $imagick->clear();
+                                    $imagick->destroy();
+
+                                    $pdfConverted = file_exists($convertedImagePath) && filesize($convertedImagePath) > 0;
+                                } catch (\Exception $imgE) {
+                                    \Log::warning('templatePreview: Imagick conversion failed', ['error' => $imgE->getMessage()]);
+                                }
+                            }
+
+                            if (!$pdfConverted) {
+                                $gsCmd = 'gs -sDEVICE=png16m -dNOPAUSE -dBATCH -dFirstPage=1 -dLastPage=1 -r150 -sOutputFile=' .
+                                    escapeshellarg($convertedImagePath) . ' ' . escapeshellarg($templateLocalPath) . ' 2>&1';
+                                @exec($gsCmd, $gsOutput, $gsReturn);
+                                $pdfConverted = $gsReturn === 0 && file_exists($convertedImagePath) && filesize($convertedImagePath) > 0;
+
+                                if (!$pdfConverted) {
+                                    \Log::warning('templatePreview: Ghostscript conversion failed', [
+                                        'returnCode' => $gsReturn,
+                                        'output' => implode("\n", $gsOutput ?? []),
+                                    ]);
+                                }
+                            }
+
+	                            if ($pdfConverted) {
                                 $templateLocalPath = $convertedImagePath;
+                                $pdfConvertedImagePath = $convertedImagePath;
+                                $templateIsPdf = false;
+                            } else {
+                                // Last resort: let mPDF use the original PDF as page template.
+                                $mpdf->SetDocTemplate($templateLocalPath, true);
                             }
                         }
                     }
