@@ -28,6 +28,11 @@
                                             <i class="fas fa-print me-2"></i>{{ __('Browser Print') }}
                                         </a>
                                     </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.pdf', [$prescription->id, 'template' => 'custom']) }}" target="_blank">
+                                            <i class="fas fa-image me-2"></i>{{ __('Custom Template Print') }}
+                                        </a>
+                                    </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item" href="{{ route('simple-prescriptions.thermal', [$prescription->id, 'width' => 80]) }}" target="_blank">
@@ -293,6 +298,11 @@
                                     <li>
                                         <a class="dropdown-item" href="{{ route('simple-prescriptions.print', $prescription->id) }}" target="_blank">
                                             <i class="fas fa-print me-2"></i>{{ __('Browser Print') }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('simple-prescriptions.pdf', [$prescription->id, 'template' => 'custom']) }}" target="_blank">
+                                            <i class="fas fa-image me-2"></i>{{ __('Custom Template Print') }}
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
