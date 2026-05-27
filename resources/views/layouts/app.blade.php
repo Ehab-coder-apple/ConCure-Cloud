@@ -2195,7 +2195,7 @@
 
 	    @auth
 	    <script>
-	        (function () {
+	        document.addEventListener('DOMContentLoaded', function() {
 	            console.log('ConCure PWA: Script loaded and executing');
 	            let deferredInstallPrompt = null;
 	            const installBtn = document.getElementById('pwaInstallBtn');
@@ -2288,7 +2288,7 @@
 	                if (installBtn) installBtn.style.display = 'none';
 	                if (helpBox) helpBox.style.display = 'none';
 	            });
-	        })();
+	        });
 	    </script>
 	    @endauth
 
