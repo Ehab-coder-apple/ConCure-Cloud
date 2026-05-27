@@ -2196,14 +2196,18 @@
 	    @auth
 	    <script>
 	        (function () {
+	            console.log('ConCure PWA: Script loaded and executing');
 	            let deferredInstallPrompt = null;
 	            const installBtn = document.getElementById('pwaInstallBtn');
 	            const helpBox = document.getElementById('pwaInstallHelp');
 	            const helpText = document.getElementById('pwaInstallHelpText');
 	            const closeBtn = document.getElementById('pwaInstallHelpClose');
 
+	            console.log('ConCure PWA: Install button found:', !!installBtn);
+
 	            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 	            if (isStandalone) {
+	                console.log('ConCure PWA: Already running in standalone mode');
 	                return;
 	            }
 
@@ -2255,7 +2259,9 @@
 	            window.setTimeout(showInstallButton, 1500);
 
 	            if (installBtn) {
+	                console.log('ConCure PWA: Attaching click event to install button');
 	                installBtn.addEventListener('click', async function () {
+	                    console.log('ConCure PWA: Install button clicked!');
 	                    if (deferredInstallPrompt) {
 	                        console.log('ConCure PWA: Showing install prompt');
 	                        deferredInstallPrompt.prompt();
@@ -2268,6 +2274,8 @@
 	                        showFallbackHelp();
 	                    }
 	                });
+	            } else {
+	                console.warn('ConCure PWA: Install button element not found!');
 	            }
 
 	            if (closeBtn && helpBox) {
