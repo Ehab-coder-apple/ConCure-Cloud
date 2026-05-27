@@ -2208,10 +2208,16 @@
 	            }
 
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').catch(function (error) {
-                    console.warn('ConCure PWA service worker registration failed', error);
-                });
-	            }
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ConCure PWA: Service Worker registered successfully', registration);
+                    })
+                    .catch(function (error) {
+                        console.error('ConCure PWA: Service worker registration failed', error);
+                    });
+	            } else {
+                console.warn('ConCure PWA: Service Workers not supported in this browser');
+            }
 
 	            function showInstallButton() {
 	                if (installBtn) {
@@ -2238,6 +2244,7 @@
 	            }
 
 	            window.addEventListener('beforeinstallprompt', function (event) {
+	                console.log('ConCure PWA: beforeinstallprompt event fired');
 	                event.preventDefault();
 	                deferredInstallPrompt = event;
 	                showInstallButton();
@@ -2250,11 +2257,14 @@
 	            if (installBtn) {
 	                installBtn.addEventListener('click', async function () {
 	                    if (deferredInstallPrompt) {
+	                        console.log('ConCure PWA: Showing install prompt');
 	                        deferredInstallPrompt.prompt();
-	                        await deferredInstallPrompt.userChoice;
+	                        const choiceResult = await deferredInstallPrompt.userChoice;
+	                        console.log('ConCure PWA: User choice:', choiceResult.outcome);
 	                        deferredInstallPrompt = null;
 	                        installBtn.style.display = 'none';
 	                    } else {
+	                        console.log('ConCure PWA: No deferred prompt, showing fallback help');
 	                        showFallbackHelp();
 	                    }
 	                });

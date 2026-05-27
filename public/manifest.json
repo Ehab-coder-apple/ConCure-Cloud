@@ -3,7 +3,7 @@
     "short_name": "ConCure",
     "description": "Smart Clinic Management Platform",
     "id": "/",
-    "start_url": "/dashboard?source=pwa",
+    "start_url": "/?source=pwa",
     "display": "standalone",
     "background_color": "#F8FAFC",
     "theme_color": "#008080",
