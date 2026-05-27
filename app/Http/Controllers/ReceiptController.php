@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesPatientAccess;
 use App\Models\Appointment;
 use App\Models\DentalTreatment;
+use App\Models\OrthodonticCase;
 use App\Models\Patient;
 use App\Models\PatientVisit;
 use App\Services\ThermalReceiptService;
@@ -71,6 +72,25 @@ class ReceiptController extends Controller
         }
 
         $payload = $this->service->buildForDentalTreatment($dentalTreatment, $this->resolveWidth($request));
+        $payload['auto_print'] = $request->boolean('auto', true);
+
+        return view('receipts.thermal', $payload);
+    }
+
+    /**
+     * Print a thermal receipt for an orthodontic case financial summary.
+     */
+    public function printOrthodonticCase(Request $request, OrthodonticCase $orthodonticCase)
+    {
+        $user = Auth::user();
+
+        if (!$user->isSuperAdmin()) {
+            if ($user->clinic_id && $orthodonticCase->clinic_id !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to orthodontic case.');
+            }
+        }
+
+        $payload = $this->service->buildForOrthodonticCase($orthodonticCase, $this->resolveWidth($request));
         $payload['auto_print'] = $request->boolean('auto', true);
 
         return view('receipts.thermal', $payload);

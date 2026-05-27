@@ -114,6 +114,7 @@ Route::middleware('signed')->prefix('r')->name('public.receipt.')->group(functio
     Route::get('/visit/{visit}', [App\Http\Controllers\PublicReceiptController::class, 'showVisit'])->name('visit');
     Route::get('/appointment/{appointment}', [App\Http\Controllers\PublicReceiptController::class, 'showAppointment'])->name('appointment');
     Route::get('/dental-treatment/{dentalTreatment}', [App\Http\Controllers\PublicReceiptController::class, 'showDentalTreatment'])->name('dental-treatment');
+    Route::get('/orthodontic-case/{orthodonticCase}', [App\Http\Controllers\PublicReceiptController::class, 'showOrthodonticCase'])->name('orthodontic-case');
     Route::get('/medicine-sale/{invoice}', [App\Http\Controllers\PublicReceiptController::class, 'showMedicineSale'])->name('medicine-sale');
     Route::get('/prescription/{prescription}', [App\Http\Controllers\PublicReceiptController::class, 'showPrescription'])->name('prescription');
 });
@@ -779,6 +780,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/create', [App\Http\Controllers\OrthodonticCaseController::class, 'create'])->name('create');
         Route::post('/', [App\Http\Controllers\OrthodonticCaseController::class, 'store'])->name('store');
         Route::get('/{orthodonticCase}', [App\Http\Controllers\OrthodonticCaseController::class, 'show'])->name('show');
+        Route::get('/{orthodonticCase}/invoice', [App\Http\Controllers\OrthodonticCaseController::class, 'invoice'])->name('invoice');
+        Route::get('/{orthodonticCase}/receipt', [App\Http\Controllers\ReceiptController::class, 'printOrthodonticCase'])->name('receipt');
         Route::get('/{orthodonticCase}/edit', [App\Http\Controllers\OrthodonticCaseController::class, 'edit'])->name('edit');
         Route::put('/{orthodonticCase}', [App\Http\Controllers\OrthodonticCaseController::class, 'update'])->name('update');
         Route::delete('/{orthodonticCase}', [App\Http\Controllers\OrthodonticCaseController::class, 'destroy'])->name('destroy');

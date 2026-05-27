@@ -180,6 +180,12 @@
             <hr class="divider">
             <div class="block-title">{{ __('Payment') }}</div>
             <div class="fin-row"><span>{{ __('Method') }}</span><span>{{ $financials['method'] ?? '-' }}</span></div>
+            @if(!empty($financials['payment_plan']))
+                <div class="fin-row"><span>{{ __('Payment Plan') }}</span><span>{{ $financials['payment_plan'] }}</span></div>
+            @endif
+            @if(!empty($financials['last_payment_date']))
+                <div class="fin-row"><span>{{ __('Last Payment') }}</span><span>{{ $financials['last_payment_date'] }}</span></div>
+            @endif
             @if(!empty($financials['receipt_number']))
                 <div class="fin-row"><span>{{ __('Receipt #') }}</span><span>{{ $financials['receipt_number'] }}</span></div>
             @endif

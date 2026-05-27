@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\DentalTreatment;
 use App\Models\MedicineSaleInvoice;
+use App\Models\OrthodonticCase;
 use App\Models\PatientVisit;
 use App\Models\SimplePrescription;
 use App\Services\ThermalReceiptService;
@@ -45,6 +46,13 @@ class PublicReceiptController extends Controller
     {
         $this->applyLocale($request);
         $payload = $this->service->buildForDentalTreatment($dentalTreatment);
+        return view('receipts.public', $this->finalize($payload));
+    }
+
+    public function showOrthodonticCase(Request $request, OrthodonticCase $orthodonticCase)
+    {
+        $this->applyLocale($request);
+        $payload = $this->service->buildForOrthodonticCase($orthodonticCase);
         return view('receipts.public', $this->finalize($payload));
     }
 

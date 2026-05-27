@@ -16,6 +16,11 @@ class CheckSessionTermination
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Skip session termination check for contract routes
+        if ($request->is('contract/*')) {
+            return $next($request);
+        }
+
         // Only check authenticated users
         // Skip session termination check for contract routes
         if ($request->is("contract/*")) {

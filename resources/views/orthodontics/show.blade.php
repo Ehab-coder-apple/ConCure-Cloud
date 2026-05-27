@@ -907,6 +907,29 @@
                         <i class="fas fa-arrow-left me-1"></i>
                         {{ __('Back') }}
                     </a>
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-print me-1"></i>{{ __('Print') }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('orthodontics.invoice', [$orthodonticCase, 'auto' => 1]) }}" target="_blank">
+                                    <i class="fas fa-file-invoice me-2"></i>{{ __('Regular Invoice') }}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('orthodontics.receipt', [$orthodonticCase, 'width' => 80]) }}" target="_blank">
+                                    <i class="fas fa-receipt me-2"></i>{{ __('Thermal Receipt 80mm') }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('orthodontics.receipt', [$orthodonticCase, 'width' => 58]) }}" target="_blank">
+                                    <i class="fas fa-receipt me-2"></i>{{ __('Thermal Receipt 58mm') }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <a href="{{ route('orthodontics.edit', $orthodonticCase) }}" class="btn btn-warning">
                         <i class="fas fa-edit me-1"></i>
                         {{ __('Edit Case') }}

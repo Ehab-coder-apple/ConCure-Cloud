@@ -12,38 +12,52 @@ class SessionManagementService
     /**
      * Create a new session record and terminate any conflicting sessions
      */
-    public static function createSession(User $user, string $credential, Request $request): UserSession
+    public static function createSession(User $user, string $credential, Request $request): ?UserSession
     {
-        $deviceInfo = DeviceFingerprintService::getDeviceInfo($request);
-        $sessionId = Session::getId();
+        try {
+            $deviceInfo = DeviceFingerprintService::getDeviceInfo($request);
+            $sessionId = Session::getId();
 
-        // Terminate any other active sessions for this user + credential combination
-        $oldSessions = UserSession::forCredential($user->id, $credential)
-            ->active()
-            ->get();
+            \Log::info('SessionManagement: Creating session', [
+                'user_id' => $user->id,
+                'credential' => $credential,
+                'session_id' => $sessionId,
+            ]);
 
-        foreach ($oldSessions as $oldSession) {
-            $oldSession->terminate('new_login_elsewhere', $sessionId);
-            // Log the termination
-            static::logSessionEvent($oldSession, 'session_terminated', 'Old session terminated due to new login');
+            // Terminate any other active sessions for this user + credential combination
+            $oldSessions = UserSession::forCredential($user->id, $credential)
+                ->active()
+                ->get();
+
+            \Log::info('SessionManagement: Found old sessions', ['count' => $oldSessions->count()]);
+
+            foreach ($oldSessions as $oldSession) {
+                $oldSession->terminate('new_login_elsewhere', $sessionId);
+                \Log::info('SessionManagement: Terminated old session', ['session_id' => $oldSession->session_id]);
+            }
+
+            // Create new session record
+            $newSession = UserSession::create([
+                'user_id' => $user->id,
+                'credential_used' => $credential,
+                'session_id' => $sessionId,
+                'ip_address' => $deviceInfo['ip_address'],
+                'device_fingerprint' => $deviceInfo['fingerprint'],
+                'user_agent' => $deviceInfo['user_agent'],
+                'browser' => $deviceInfo['browser'],
+                'os' => $deviceInfo['os'],
+            ]);
+
+            \Log::info('SessionManagement: Created new session', ['session_id' => $newSession->session_id]);
+
+            return $newSession;
+        } catch (\Exception $e) {
+            \Log::error('SessionManagement: Error creating session', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return null;
         }
-
-        // Create new session record
-        $newSession = UserSession::create([
-            'user_id' => $user->id,
-            'credential_used' => $credential,
-            'session_id' => $sessionId,
-            'ip_address' => $deviceInfo['ip_address'],
-            'device_fingerprint' => $deviceInfo['fingerprint'],
-            'user_agent' => $deviceInfo['user_agent'],
-            'browser' => $deviceInfo['browser'],
-            'os' => $deviceInfo['os'],
-        ]);
-
-        // Log the new session creation
-        static::logSessionEvent($newSession, 'session_created', 'User logged in');
-
-        return $newSession;
     }
 
     /**

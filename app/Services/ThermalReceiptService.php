@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\Clinic;
 use App\Models\DentalTreatment;
 use App\Models\MedicineSaleInvoice;
+use App\Models\OrthodonticCase;
 use App\Models\PatientVisit;
 use App\Models\Receipt;
 use App\Models\SimplePrescription;
@@ -239,6 +240,57 @@ class ThermalReceiptService
             'services' => $services,
             'financials' => $financials,
             'qr_payload' => $this->signedPublicUrl('public.receipt.dental-treatment', ['dentalTreatment' => $treatment->id], $reference, $this->effectiveLocale($clinic)),
+            'width_mm' => $this->normalizeWidth($widthMm, $clinic),
+        ], $clinic);
+    }
+
+    /**
+     * Build payload for an orthodontic case financial summary.
+     */
+    public function buildForOrthodonticCase(OrthodonticCase $case, ?int $widthMm = null): array
+    {
+        $case->loadMissing(['patient', 'doctor', 'clinic', 'payments']);
+        $clinic = $case->clinic ?: Clinic::find($case->clinic_id);
+        $this->applyLocale($clinic);
+
+        $latestPayment = $case->payments->sortByDesc('payment_date')->first();
+        $currency = $case->currency ?: (DB::table('settings')
+            ->where('clinic_id', $case->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD');
+
+        $financials = [
+            'currency' => $currency,
+            'currency_symbol' => $this->currencySymbol($currency),
+            'total' => (float) $case->total_cost,
+            'paid' => (float) $case->paid_amount,
+            'balance' => max(0.0, (float) $case->balance),
+            'method' => $latestPayment ? $this->humanize($latestPayment->payment_method) : '-',
+            'receipt_number' => $latestPayment?->receipt_number,
+            'payment_plan' => OrthodonticCase::PAYMENT_PLANS[$case->payment_plan] ?? $this->humanize($case->payment_plan),
+            'last_payment_date' => optional($latestPayment?->payment_date)->format('Y-m-d'),
+            'notes' => $latestPayment?->notes,
+        ];
+
+        return $this->finalize([
+            'title' => __('Orthodontic Financial Receipt'),
+            'reference' => $case->case_number,
+            'clinic' => $clinic,
+            'patient' => $case->patient,
+            'doctor_label' => __('Doctor'),
+            'doctor_name' => optional($case->doctor)->full_name_with_title ?: optional($case->doctor)->full_name,
+            'meta' => [
+                ['label' => __('Case #'), 'value' => $case->case_number],
+                ['label' => __('Start Date'), 'value' => optional($case->start_date)->format('Y-m-d') ?: '-'],
+                ['label' => __('Treatment'), 'value' => $case->treatment_type_display ?: '-'],
+                ['label' => __('Status'), 'value' => $case->status_display ?: '-'],
+            ],
+            'services' => [
+                ['label' => __('Current Phase'), 'value' => $case->current_phase_display ?: '-'],
+                ['label' => __('Duration'), 'value' => ($case->estimated_duration_months ?: 0) . ' ' . __('months')],
+            ],
+            'financials' => $financials,
+            'qr_payload' => $this->signedPublicUrl('public.receipt.orthodontic-case', ['orthodonticCase' => $case->id], $case->case_number, $this->effectiveLocale($clinic)),
             'width_mm' => $this->normalizeWidth($widthMm, $clinic),
         ], $clinic);
     }

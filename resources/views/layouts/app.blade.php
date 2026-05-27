@@ -4,6 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#008080">
+    <meta name="description" content="Smart Clinic Management Platform">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="ConCure">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <link rel="manifest" href="{{ asset('manifest.json') }}?v=4">
+    <link rel="apple-touch-icon" href="{{ asset('images/icons/icon-180x180.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/icons/icon-192x192.png') }}">
 
     <title>{{ config('app.name', 'ConCure') }}</title>
 
@@ -470,6 +480,31 @@
             height: 32px;
             background: var(--primary-color);
             font-size: 1rem;
+        }
+
+        .pwa-install-btn {
+            display: none;
+            align-items: center;
+            gap: 0.35rem;
+            border-radius: 999px;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .pwa-install-help {
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            max-width: 340px;
+            z-index: 1100;
+            display: none;
+        }
+
+        @media (max-width: 575.98px) {
+            .pwa-install-btn span {
+                display: none;
+            }
         }
 
         @media (max-width: 991.98px) {
@@ -2014,6 +2049,11 @@
                     </div>
                 </div>
                 <div class="topbar-right">
+	                    <button type="button" class="btn btn-outline-primary btn-sm pwa-install-btn me-3" id="pwaInstallBtn">
+	                        <i class="fas fa-desktop"></i>
+	                        <span>{{ __('Install App') }}</span>
+	                    </button>
+
                     <div class="dropdown me-3" id="appointmentsBellWrap">
                         <a href="#" class="text-secondary" id="appointmentsBell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-bell"></i>
@@ -2119,6 +2159,20 @@
         </footer>
     </div>
 
+	    @auth
+	    <div class="alert alert-info shadow pwa-install-help" id="pwaInstallHelp" role="alert">
+	        <div class="d-flex justify-content-between align-items-start gap-2">
+	            <div>
+	                <strong>{{ __('Install ConCure App') }}</strong>
+	                <div class="small mt-1" id="pwaInstallHelpText">
+	                    {{ __('Use your browser menu and choose Install app or Add to Home Screen.') }}
+	                </div>
+	            </div>
+	            <button type="button" class="btn-close" aria-label="Close" id="pwaInstallHelpClose"></button>
+	        </div>
+	    </div>
+	    @endauth
+
     <!-- jQuery (required for Select2) -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
@@ -2138,6 +2192,87 @@
     </script>
     <script src="{{ asset('js/auto-logout.js') }}" onerror="console.error('❌ Failed to load auto-logout.js')"></script>
     @endauth
+
+	    @auth
+	    <script>
+	        (function () {
+	            let deferredInstallPrompt = null;
+	            const installBtn = document.getElementById('pwaInstallBtn');
+	            const helpBox = document.getElementById('pwaInstallHelp');
+	            const helpText = document.getElementById('pwaInstallHelpText');
+	            const closeBtn = document.getElementById('pwaInstallHelpClose');
+
+	            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+	            if (isStandalone) {
+	                return;
+	            }
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').catch(function (error) {
+                    console.warn('ConCure PWA service worker registration failed', error);
+                });
+	            }
+
+	            function showInstallButton() {
+	                if (installBtn) {
+	                    installBtn.style.display = 'inline-flex';
+	                }
+	            }
+
+	            function showFallbackHelp() {
+	                if (!helpBox || !helpText) return;
+
+	                const ua = window.navigator.userAgent.toLowerCase();
+	                const isIOS = /iphone|ipad|ipod/.test(ua);
+	                const isMacSafari = ua.includes('safari') && !ua.includes('chrome') && !ua.includes('chromium') && !ua.includes('android');
+
+                if (isIOS) {
+	                    helpText.textContent = '{{ __('On iPhone/iPad: tap Share, then choose Add to Home Screen.') }}';
+	                } else if (isMacSafari) {
+	                    helpText.textContent = '{{ __('On Safari: use File > Add to Dock, or Share > Add to Dock.') }}';
+	                } else {
+                    helpText.textContent = '{{ __('If Chrome shows Open in app in the address bar, ConCure is already installed. Click Open in app, or uninstall the old app first and then install again. Otherwise use the browser menu and choose Install app or Create shortcut.') }}';
+	                }
+
+	                helpBox.style.display = 'block';
+	            }
+
+	            window.addEventListener('beforeinstallprompt', function (event) {
+	                event.preventDefault();
+	                deferredInstallPrompt = event;
+	                showInstallButton();
+	            });
+
+	            // Always show the button for logged-in users. On browsers that do
+	            // not expose the install prompt, clicking it shows clear steps.
+	            window.setTimeout(showInstallButton, 1500);
+
+	            if (installBtn) {
+	                installBtn.addEventListener('click', async function () {
+	                    if (deferredInstallPrompt) {
+	                        deferredInstallPrompt.prompt();
+	                        await deferredInstallPrompt.userChoice;
+	                        deferredInstallPrompt = null;
+	                        installBtn.style.display = 'none';
+	                    } else {
+	                        showFallbackHelp();
+	                    }
+	                });
+	            }
+
+	            if (closeBtn && helpBox) {
+	                closeBtn.addEventListener('click', function () {
+	                    helpBox.style.display = 'none';
+	                });
+	            }
+
+	            window.addEventListener('appinstalled', function () {
+	                if (installBtn) installBtn.style.display = 'none';
+	                if (helpBox) helpBox.style.display = 'none';
+	            });
+	        })();
+	    </script>
+	    @endauth
 
     <!-- Sidebar JS -->
     <script>

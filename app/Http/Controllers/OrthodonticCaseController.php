@@ -200,6 +200,25 @@ class OrthodonticCaseController extends Controller
     }
 
     /**
+     * Print regular invoice / financial summary for the orthodontic case.
+     */
+    public function invoice(Request $request, OrthodonticCase $orthodonticCase)
+    {
+        $user = Auth::user();
+
+        if ($orthodonticCase->clinic_id !== $user->clinic_id && !$user->isSuperAdmin()) {
+            abort(403, 'Unauthorized access to this case.');
+        }
+
+        $orthodonticCase->load(['patient', 'doctor', 'clinic', 'payments.receiver']);
+
+        return view('orthodontics.invoice', [
+            'orthodonticCase' => $orthodonticCase,
+            'autoPrint' => $request->boolean('auto', false),
+        ]);
+    }
+
+    /**
      * Show the form for editing the case.
      */
     public function edit(OrthodonticCase $orthodonticCase)

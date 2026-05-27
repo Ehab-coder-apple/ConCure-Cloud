@@ -1,48 +1,36 @@
-// ConCure Service Worker for PWA functionality
-const CACHE_NAME = 'concure-v1.0.0';
-const urlsToCache = [
-    '/',
-    '/css/app.css',
-    '/js/app.js',
+// ConCure Service Worker for PWA installability.
+const CACHE_NAME = 'concure-pwa-v3';
+const STATIC_ASSETS = [
     '/manifest.json',
-    // Add other static assets as needed
+    '/images/icons/icon-192x192.png',
+    '/images/icons/icon-512x512.png',
+    '/images/screenshots/desktop-dashboard.png',
+    '/images/screenshots/mobile-patients.png'
 ];
 
-// Install event
 self.addEventListener('install', event => {
+    self.skipWaiting();
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('Opened cache');
-                return cache.addAll(urlsToCache);
-            })
+        caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
     );
 });
 
-// Fetch event
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                // Return cached version or fetch from network
-                return response || fetch(event.request);
-            }
-        )
-    );
-});
-
-// Activate event
 self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
+        caches.keys().then(cacheNames => Promise.all(
+            cacheNames
+                .filter(cacheName => cacheName !== CACHE_NAME)
+                .map(cacheName => caches.delete(cacheName))
+        )).then(() => self.clients.claim())
+    );
+});
+
+self.addEventListener('fetch', event => {
+    if (event.request.method !== 'GET') {
+        return;
+    }
+
+    event.respondWith(
+        fetch(event.request).catch(() => caches.match(event.request))
     );
 });

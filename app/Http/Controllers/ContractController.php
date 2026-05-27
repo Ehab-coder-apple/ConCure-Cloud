@@ -35,6 +35,8 @@ class ContractController extends Controller
      */
     public function accept(Request $request)
     {
+        \Log::info('About to validate');
+
         $request->validate([
             'signature_name' => 'required|string|max:255',
             'agree' => 'required',
@@ -43,16 +45,30 @@ class ContractController extends Controller
             'agree.required' => 'You must agree to the terms and conditions.',
         ]);
 
+        \Log::info('Validation completed successfully!');
+
+        \Log::info('Validation passed, getting user');
+
         $user = auth()->user();
+        \Log::info('Got user', ['user_id' => $user ? $user->id : 'null']);
         $clinic = $user->clinic;
 
         if (!$clinic) {
+            \Log::error('User has no clinic association', ['user_id' => $user->id]);
             return back()->withErrors(['error' => 'You are not associated with any clinic.']);
         }
 
-        $contract = $clinic->activeContract()
-            ->where('status', 'pending')
-            ->firstOrFail();
+        \Log::info('Looking for pending contract', ['clinic_id' => $clinic->id, 'clinic_name' => $clinic->name]);
+
+        try {
+            $contract = $clinic->activeContract()
+                ->where('status', 'pending')
+                ->firstOrFail();
+            \Log::info('Found pending contract', ['contract_id' => $contract->id]);
+        } catch (\Exception $e) {
+            \Log::error('No pending contract found', ['clinic_id' => $clinic->id, 'error' => $e->getMessage()]);
+            return back()->withErrors(['error' => 'No pending contract found for your clinic.']);
+        }
 
         DB::beginTransaction();
         try {
