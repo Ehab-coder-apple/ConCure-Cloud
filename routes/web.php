@@ -42,6 +42,22 @@ use Illuminate\Support\Facades\DB;
 |
 */
 
+// PWA Manifest and Service Worker routes
+Route::get('/manifest.json', function () {
+    return response()->file(public_path('manifest.json'), [
+        'Content-Type' => 'application/manifest+json',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+    ]);
+})->name('pwa.manifest');
+
+Route::get('/sw.js', function () {
+    return response()->file(public_path('sw.js'), [
+        'Content-Type' => 'application/javascript',
+        'Service-Worker-Allowed' => '/',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+    ]);
+})->name('pwa.sw');
+
 // CSRF Token Refresh Route (for preventing 419 errors)
 Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);

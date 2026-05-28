@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="ConCure">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-    <link rel="manifest" href="{{ asset('manifest.json') }}?v=4">
+    <link rel="manifest" href="{{ asset('manifest.json') }}" crossorigin="use-credentials">
     <link rel="apple-touch-icon" href="{{ asset('images/icons/icon-180x180.png') }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/icons/icon-192x192.png') }}">
 
