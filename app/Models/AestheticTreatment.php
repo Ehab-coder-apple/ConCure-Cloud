@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AestheticTreatment extends Model
 {
@@ -70,6 +72,11 @@ class AestheticTreatment extends Model
             ->where('tenant_id', 'TEN-1')
             ->get();
 
+        if ($builtIns->isEmpty()) {
+            Log::warning('No built-in treatments (TEN-1) found to clone for tenant: ' . $tenantId);
+            return 0;
+        }
+
         $cloned = 0;
         foreach ($builtIns as $treatment) {
             $exists = static::withoutGlobalScope('tenant')
@@ -79,20 +86,30 @@ class AestheticTreatment extends Model
                 ->exists();
 
             if (!$exists) {
-                static::create([
-                    'tenant_id' => $tenantId,
-                    'name' => $treatment->name,
-                    'category' => $treatment->category,
-                    'default_price' => $treatment->default_price,
-                    'session_required' => $treatment->session_required,
-                    'sessions_count' => $treatment->sessions_count,
-                    'description' => $treatment->description,
-                    'is_active' => $treatment->is_active,
-                ]);
-                $cloned++;
+                try {
+                    // Use DB insert to bypass model events and global scopes
+                    DB::table('aesthetic_treatments')->insert([
+                        'tenant_id' => $tenantId,
+                        'name' => $treatment->name,
+                        'category' => $treatment->category,
+                        'default_price' => $treatment->default_price,
+                        'session_required' => $treatment->session_required,
+                        'sessions_count' => $treatment->sessions_count,
+                        'description' => $treatment->description,
+                        'is_active' => $treatment->is_active,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    $cloned++;
+                } catch (\Exception $e) {
+                    Log::error('Failed to clone treatment: ' . $treatment->name . ' for tenant: ' . $tenantId, [
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
         }
 
+        Log::info('Cloned ' . $cloned . ' treatments for tenant: ' . $tenantId);
         return $cloned;
     }
 
