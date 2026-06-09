@@ -19,7 +19,7 @@ class AestheticTreatmentController extends Controller
         $user = Auth::user();
 
         // Auto-clone built-in treatments for this clinic on first visit
-        $tenantId = $user->clinic?->tenant_id;
+        $tenantId = $user->clinic?->ensureTenantId();
 
         if ($tenantId) {
             try {
@@ -71,12 +71,14 @@ class AestheticTreatmentController extends Controller
     public function create()
     {
         $user = Auth::user();
+        $clinic = $user->clinic;
 
-        // Ensure user has a valid clinic and tenant
-        if (!$user->clinic_id || !$user->clinic?->tenant_id) {
+        if (!$user->clinic_id || !$clinic) {
             return redirect()->route('aesthetic.treatments.index')
                 ->withErrors(['error' => __('Unable to create treatment. User clinic or tenant not found. Please contact support.')]);
         }
+
+        $clinic->ensureTenantId();
 
         $existingCategories = $this->getExistingCategories();
         $clinicCurrency = $this->resolveCurrency();
@@ -106,7 +108,7 @@ class AestheticTreatmentController extends Controller
         }
 
         $user = Auth::user();
-        $tenantId = $user->clinic?->tenant_id;
+        $tenantId = $user->clinic?->ensureTenantId();
 
         // Ensure user has a valid tenant
         if (!$tenantId) {

@@ -320,6 +320,25 @@ class Clinic extends Model
     }
 
     /**
+     * Ensure the clinic has a tenant identifier and persist it if missing.
+     */
+    public function ensureTenantId(): ?string
+    {
+        if (!$this->exists) {
+            return $this->tenant_id;
+        }
+
+        if (!empty($this->tenant_id)) {
+            return $this->tenant_id;
+        }
+
+        $this->tenant_id = 'TEN-' . $this->id;
+        $this->save();
+
+        return $this->tenant_id;
+    }
+
+    /**
      * Display-friendly address using the structured fields when present.
      * Falls back to legacy `address`.
      */
