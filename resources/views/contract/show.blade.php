@@ -29,6 +29,16 @@
                     </h4>
                 </div>
                 <div class="card-body">
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0 ps-3">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <!-- Contract Content -->
                     <div class="contract-content p-4 bg-light border rounded" style="max-height: 500px; overflow-y: auto;">
                         {!! nl2br(e($contractContent)) !!}
@@ -70,7 +80,7 @@
 
                         <!-- Agreement Checkbox -->
                         <div class="form-check mb-3 p-3 bg-light rounded">
-                            <input class="form-check-input" type="checkbox" name="agree" id="agree" value="1" required>
+                            <input class="form-check-input" type="checkbox" name="agree" id="agree" value="1" required {{ old('agree') ? 'checked' : '' }}>
                             <label class="form-check-label fw-bold" for="agree">
                                 I have read and agree to the terms and conditions outlined in this service agreement.
                             </label>
@@ -89,6 +99,7 @@
                                 class="form-control form-control-lg @error('signature_name') is-invalid @enderror" 
                                 id="signature_name" 
                                 name="signature_name" 
+                                value="{{ old('signature_name') }}"
                                 placeholder="Type your full name to sign" 
                                 required
                                 autocomplete="name"
@@ -132,12 +143,4 @@
         </div>
     </div>
 </div>
-
-@if ($errors->any())
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        alert('Please fill in all required fields correctly.');
-    });
-</script>
-@endif
 @endsection

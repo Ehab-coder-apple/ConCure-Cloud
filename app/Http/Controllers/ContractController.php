@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ClinicContract;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ContractController extends Controller
 {
@@ -35,9 +36,7 @@ class ContractController extends Controller
      */
     public function accept(Request $request)
     {
-        \Log::info('About to validate');
-
-        $request->validate([
+        $validated = $request->validate([
             'signature_name' => 'required|string|max:255',
             'agree' => 'required',
         ], [
@@ -45,42 +44,52 @@ class ContractController extends Controller
             'agree.required' => 'You must agree to the terms and conditions.',
         ]);
 
-        \Log::info('Validation completed successfully!');
-
-        \Log::info('Validation passed, getting user');
-
         $user = auth()->user();
-        \Log::info('Got user', ['user_id' => $user ? $user->id : 'null']);
         $clinic = $user->clinic;
 
         if (!$clinic) {
-            \Log::error('User has no clinic association', ['user_id' => $user->id]);
             return back()->withErrors(['error' => 'You are not associated with any clinic.']);
         }
-
-        \Log::info('Looking for pending contract', ['clinic_id' => $clinic->id, 'clinic_name' => $clinic->name]);
 
         try {
             $contract = $clinic->activeContract()
                 ->where('status', 'pending')
                 ->firstOrFail();
-            \Log::info('Found pending contract', ['contract_id' => $contract->id]);
-        } catch (\Exception $e) {
-            \Log::error('No pending contract found', ['clinic_id' => $clinic->id, 'error' => $e->getMessage()]);
+        } catch (\Throwable $e) {
             return back()->withErrors(['error' => 'No pending contract found for your clinic.']);
         }
 
-        DB::beginTransaction();
         try {
-            // Accept the contract
-            $contract->accept(
-                $user,
-                $request->signature_name,
-                $request->ip()
-            );
+            DB::transaction(function () use ($contract, $user, $validated, $request) {
+                $contract->accept(
+                    $user,
+                    $validated['signature_name'],
+                    $request->ip()
+                );
+            });
 
-            // Create a system notification for master admin
+            $this->storeAcceptanceNotification($contract, $clinic, $user);
+
+            return redirect()->route('dashboard')
+                ->with('success', 'Contract accepted successfully! Welcome to ConCure Cloud.');
+
+        } catch (\Throwable $e) {
+            return back()->withErrors(['error' => 'Failed to accept contract: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Store a database notification for the contract creator.
+     */
+    private function storeAcceptanceNotification(ClinicContract $contract, $clinic, $user): void
+    {
+        if (!$contract->created_by) {
+            return;
+        }
+
+        try {
             DB::table('notifications')->insert([
+                'id' => (string) Str::uuid(),
                 'type' => 'App\\Notifications\\ContractAccepted',
                 'notifiable_type' => 'App\\Models\\User',
                 'notifiable_id' => $contract->created_by,
@@ -94,15 +103,12 @@ class ContractController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-
-            DB::commit();
-
-            return redirect()->route('dashboard')
-                ->with('success', 'Contract accepted successfully! Welcome to ConCure Cloud.');
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back()->withErrors(['error' => 'Failed to accept contract: ' . $e->getMessage()]);
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to store contract acceptance notification.', [
+                'contract_id' => $contract->id,
+                'created_by' => $contract->created_by,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
