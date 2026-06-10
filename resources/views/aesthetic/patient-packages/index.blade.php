@@ -114,23 +114,39 @@
                                 </thead>
                                 <tbody>
                                     @foreach($packages as $patientPackage)
+                                    @php
+                                        $patient = $patientPackage->patient;
+                                        $package = $patientPackage->package;
+                                    @endphp
                                     <tr>
                                         <td>
-                                            <strong>{{ $patientPackage->patient->first_name }} {{ $patientPackage->patient->last_name }}</strong>
-                                            @if($patientPackage->patient->phone)
-                                                <small class="text-muted d-block">{{ $patientPackage->patient->phone }}</small>
+                                            @if($patient)
+                                                <strong>{{ trim($patient->first_name . ' ' . $patient->last_name) }}</strong>
+                                                @if($patient->phone)
+                                                    <small class="text-muted d-block">{{ $patient->phone }}</small>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">{{ __('Patient unavailable') }}</span>
                                             @endif
                                         </td>
                                         <td>
-                                            <strong>{{ $patientPackage->package->name }}</strong>
-                                            @if($patientPackage->package->treatments->count() > 0)
+                                            @if($package)
+                                                <strong>{{ $package->name }}</strong>
+                                                @if(method_exists($package, 'trashed') && $package->trashed())
+                                                    <small class="badge bg-warning text-dark ms-2">{{ __('Archived') }}</small>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">{{ __('Package unavailable') }}</span>
+                                            @endif
+
+                                            @if($package && $package->treatments->count() > 0)
                                                 <small class="d-block text-muted">
-                                                    @foreach($patientPackage->package->treatments as $pt)
+                                                    @foreach($package->treatments as $pt)
                                                         {{ $pt->name }}{{ !$loop->last ? ', ' : '' }}
                                                     @endforeach
                                                 </small>
-                                            @elseif($patientPackage->package->treatment)
-                                                <small class="d-block text-muted">{{ $patientPackage->package->treatment->name }}</small>
+                                            @elseif($package && $package->treatment)
+                                                <small class="d-block text-muted">{{ $package->treatment->name }}</small>
                                             @endif
                                         </td>
                                         <td style="min-width: 150px;">
@@ -155,7 +171,7 @@
                                             @endif
                                         </td>
                                         <td>
-                                            {{ $patientPackage->purchase_date->format('M d, Y') }}
+                                            {{ optional($patientPackage->purchase_date)->format('M d, Y') ?? '—' }}
                                         </td>
                                         <td>
                                             @if($patientPackage->is_active)

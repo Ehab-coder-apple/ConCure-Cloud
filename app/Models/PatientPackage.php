@@ -63,7 +63,7 @@ class PatientPackage extends Model
      */
     public function package(): BelongsTo
     {
-        return $this->belongsTo(AestheticPackage::class);
+        return $this->belongsTo(AestheticPackage::class)->withTrashed();
     }
 
     /**

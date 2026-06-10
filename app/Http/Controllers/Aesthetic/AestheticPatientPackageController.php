@@ -17,7 +17,7 @@ class AestheticPatientPackageController extends Controller
      */
     public function index(Request $request)
     {
-        $query = PatientPackage::with(['patient', 'package.treatments']);
+        $query = PatientPackage::with(['patient', 'package.treatments', 'package.treatment']);
 
         if ($request->filled('search')) {
             $search = $request->search;
