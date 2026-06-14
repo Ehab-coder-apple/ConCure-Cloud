@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Aesthetic\AestheticInvoiceController;
+use App\Models\AestheticInvoice;
 use App\Http\Middleware\ActivationMiddleware;
 use App\Http\Middleware\AuditMiddleware;
 use App\Http\Middleware\EnsureContractIsAccepted;
@@ -13,6 +14,7 @@ use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use Tests\TestCase;
@@ -222,5 +224,63 @@ class AestheticInvoiceTenantResolutionTest extends TestCase
             'tenant_id' => $clinic->tenant_id,
             'clinic_id' => $clinic->id,
         ]);
+    }
+
+    public function test_generate_invoice_number_is_global_across_tenants(): void
+    {
+        $firstClinic = Clinic::create([
+            'name' => 'First Invoice Clinic',
+            'tenant_id' => 'TEN-1',
+            'enabled_modules' => ['aesthetic'],
+        ]);
+
+        $secondClinic = Clinic::create([
+            'name' => 'Second Invoice Clinic',
+            'tenant_id' => 'TEN-2',
+            'enabled_modules' => ['aesthetic'],
+        ]);
+
+        $user = User::create([
+            'username' => 'second_clinic_invoice_admin',
+            'email' => 'second-clinic-invoice-admin@example.test',
+            'password' => 'secret',
+            'first_name' => 'Second',
+            'last_name' => 'Admin',
+            'role' => 'admin',
+            'clinic_id' => $secondClinic->id,
+            'is_active' => true,
+            'activated_at' => now(),
+        ]);
+
+        $patient = Patient::create([
+            'clinic_id' => $firstClinic->id,
+            'first_name' => 'Existing',
+            'last_name' => 'Invoice',
+        ]);
+
+        $today = now()->toDateString();
+        $todayPrefix = now()->format('Ymd');
+
+        DB::table('aesthetic_invoices')->insert([
+            'tenant_id' => $firstClinic->tenant_id,
+            'clinic_id' => $firstClinic->id,
+            'invoice_number' => "AEST-{$todayPrefix}-0001",
+            'patient_id' => $patient->id,
+            'invoice_date' => $today,
+            'subtotal' => 0,
+            'tax_rate' => 0,
+            'tax_amount' => 0,
+            'discount_amount' => 0,
+            'total_amount' => 0,
+            'paid_amount' => 0,
+            'balance' => 0,
+            'status' => 'draft',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $this->assertSame("AEST-{$todayPrefix}-0002", AestheticInvoice::generateInvoiceNumber());
     }
 }

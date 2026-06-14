@@ -113,8 +113,11 @@ class AestheticInvoice extends Model
     {
         $prefix = 'AEST-';
         $date = now()->format('Ymd');
-        $lastInvoice = self::withTrashed()
+
+        $lastInvoice = self::withoutGlobalScope('tenant')
+            ->withTrashed()
             ->where('invoice_number', 'like', "{$prefix}{$date}%")
+            ->lockForUpdate()
             ->orderBy('id', 'desc')
             ->first();
 
