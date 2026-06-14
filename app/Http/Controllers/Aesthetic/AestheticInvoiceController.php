@@ -67,6 +67,11 @@ class AestheticInvoiceController extends Controller
      */
     public function create(Request $request)
     {
+        if (!$this->ensureClinicTenantId()) {
+            return redirect()->route('aesthetic.invoices.index')
+                ->withErrors(['error' => __('Unable to create invoice. User clinic or tenant not found. Please contact support.')]);
+        }
+
         $patients = $this->getTenantPatients();
         $treatments = $this->getTenantTreatments();
         $sessions = $this->getTenantSessions();
@@ -106,6 +111,11 @@ class AestheticInvoiceController extends Controller
      */
     public function store(Request $request)
     {
+        if (!$this->ensureClinicTenantId()) {
+            return back()->withInput()
+                ->withErrors(['error' => __('Unable to create invoice. User clinic or tenant not found. Please contact support.')]);
+        }
+
         $validated = $request->validate([
             'patient_id' => 'required|integer|exists:patients,id',
             'session_id' => 'nullable|integer|exists:aesthetic_sessions,id',
@@ -204,6 +214,11 @@ class AestheticInvoiceController extends Controller
     public function update(Request $request, AestheticInvoice $aestheticInvoice)
     {
         $this->authorizeTenant($aestheticInvoice);
+
+        if (!$this->ensureClinicTenantId()) {
+            return back()->withInput()
+                ->withErrors(['error' => __('Unable to update invoice. User clinic or tenant not found. Please contact support.')]);
+        }
 
         if (in_array($aestheticInvoice->status, ['paid', 'cancelled'])) {
             return redirect()->route('aesthetic.invoices.show', $aestheticInvoice)
@@ -369,11 +384,29 @@ class AestheticInvoiceController extends Controller
 
     private function resolveCurrency(): string
     {
+        $clinicId = Auth::user()?->clinic_id;
+
+        if (!$clinicId) {
+            return 'USD';
+        }
+
         $code = DB::table('settings')
-            ->where('clinic_id', Auth::user()->clinic_id)
+            ->where('clinic_id', $clinicId)
             ->where('key', 'currency')
             ->value('value');
         return is_string($code) && $code !== '' ? strtoupper($code) : 'USD';
+    }
+
+    private function ensureClinicTenantId(): ?string
+    {
+        $user = Auth::user();
+        $clinic = $user?->clinic;
+
+        if (!$user || !$user->clinic_id || !$clinic) {
+            return null;
+        }
+
+        return $clinic->ensureTenantId();
     }
 
     private function authorizeTenant(AestheticInvoice $invoice): void
