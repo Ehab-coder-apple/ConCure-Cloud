@@ -125,6 +125,12 @@
                                         @else
                                             <span class="text-muted small">No clinics assigned</span>
                                         @endif
+                                        <div class="text-muted small mt-1">
+                                            Created quota: {{ $user->createdManagedClinicsCount() }}/{{ $user->getManagedClinicCreationLimit() }}
+                                            @if($user->getManagedClinicCreationLimit() > 0)
+                                                · {{ $user->remainingManagedClinicCreationSlots() }} remaining
+                                            @endif
+                                        </div>
                                     </td>
                                     <td>
                                         @if($user->is_active)

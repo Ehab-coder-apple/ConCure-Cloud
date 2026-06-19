@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
 use App\Http\Traits\SmartSearch;
-use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\Clinic;
 use App\Models\Patient;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -84,11 +85,21 @@ class UserController extends Controller
             'language' => 'required|in:en,ar,ku',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|in:' . implode(',', array_keys(User::MASTER_PERMISSIONS)),
-            'clinic_ids' => 'required|array|min:1',
+            'clinic_ids' => 'nullable|array',
             'clinic_ids.*' => 'integer|exists:clinics,id',
+            'managed_clinic_limit' => 'nullable|integer|min:0|max:1000',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $clinicIds = $this->sanitizeClinicIds($request->input('clinic_ids', []));
+        $managedClinicLimit = max(0, (int) $request->input('managed_clinic_limit', 0));
+
+        if ($clinicIds === [] && $managedClinicLimit === 0) {
+            throw ValidationException::withMessages([
+                'clinic_ids' => 'Assign at least one clinic or allow the Super Admin to create at least one clinic.',
+            ]);
+        }
+
+        DB::transaction(function () use ($request, $clinicIds, $managedClinicLimit) {
             $user = User::create([
                 'username' => $request->username,
                 'email' => $request->email,
@@ -104,11 +115,12 @@ class UserController extends Controller
                 'activated_at' => now(),
                 'language' => $request->language,
                 'permissions' => $request->input('permissions', []),
+                'metadata' => $this->buildManagedClinicMetadata([], $managedClinicLimit),
                 'clinic_id' => null,
                 'created_by' => auth()->id(),
             ]);
 
-            $user->superAdminClinics()->sync($this->sanitizeClinicIds($request->input('clinic_ids', [])));
+            $user->superAdminClinics()->sync($clinicIds);
         });
 
         return redirect()->route('master.users.index')
@@ -131,6 +143,9 @@ class UserController extends Controller
         
         $stats = [
             'allocated_clinics' => count($clinicIds),
+            'created_clinics' => $user->createdManagedClinicsCount(),
+            'managed_clinic_limit' => $user->getManagedClinicCreationLimit(),
+            'remaining_creation_slots' => $user->remainingManagedClinicCreationSlots(),
             'clinic_users' => $clinicIds === [] ? 0 : User::whereIn('clinic_id', $clinicIds)->count(),
             'active_clinic_users' => $clinicIds === [] ? 0 : User::whereIn('clinic_id', $clinicIds)->where('is_active', true)->count(),
             'clinic_patients' => $clinicIds === [] ? 0 : Patient::withoutGlobalScopes()->whereIn('clinic_id', $clinicIds)->count(),
@@ -180,9 +195,19 @@ class UserController extends Controller
             'language' => 'required|in:en,ar,ku',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|in:' . implode(',', array_keys(User::MASTER_PERMISSIONS)),
-            'clinic_ids' => 'required|array|min:1',
+            'clinic_ids' => 'nullable|array',
             'clinic_ids.*' => 'integer|exists:clinics,id',
+            'managed_clinic_limit' => 'nullable|integer|min:0|max:1000',
         ]);
+
+        $clinicIds = $this->sanitizeClinicIds($request->input('clinic_ids', []));
+        $managedClinicLimit = max(0, (int) $request->input('managed_clinic_limit', 0));
+
+        if ($clinicIds === [] && $managedClinicLimit === 0) {
+            throw ValidationException::withMessages([
+                'clinic_ids' => 'Assign at least one clinic or allow the Super Admin to create at least one clinic.',
+            ]);
+        }
 
         $updateData = [
             'username' => $request->username,
@@ -197,6 +222,7 @@ class UserController extends Controller
             'is_active' => $request->boolean('is_active', true),
             'language' => $request->language,
             'permissions' => $request->input('permissions', []),
+            'metadata' => $this->buildManagedClinicMetadata($user->metadata, $managedClinicLimit),
             'clinic_id' => null, // Master users don't belong to any clinic
         ];
 
@@ -204,9 +230,9 @@ class UserController extends Controller
             $updateData['password'] = bcrypt($request->password);
         }
 
-        DB::transaction(function () use ($user, $updateData, $request) {
+        DB::transaction(function () use ($user, $updateData, $clinicIds) {
             $user->update($updateData);
-            $user->superAdminClinics()->sync($this->sanitizeClinicIds($request->input('clinic_ids', [])));
+            $user->superAdminClinics()->sync($clinicIds);
         });
 
         return redirect()->route('master.users.show', $user)
@@ -363,5 +389,13 @@ class UserController extends Controller
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function buildManagedClinicMetadata(?array $metadata, int $managedClinicLimit): array
+    {
+        $metadata = is_array($metadata) ? $metadata : [];
+        $metadata[User::METADATA_MANAGED_CLINIC_LIMIT] = $managedClinicLimit;
+
+        return $metadata;
     }
 }

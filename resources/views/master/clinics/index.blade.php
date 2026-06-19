@@ -13,9 +13,14 @@
                         <i class="fas fa-hospital me-2"></i>
                         Clinic Management
                     </h1>
-                    <p class="text-muted mb-0">Manage all registered clinics</p>
+                    <p class="text-muted mb-0">
+                        Manage all registered clinics
+                        @if(auth()->user()?->isMasterAdmin())
+                            · You can create {{ auth()->user()->remainingManagedClinicCreationSlots() }} more clinic(s) under your assigned quota
+                        @endif
+                    </p>
                 </div>
-                @if(auth()->user()?->isSuperAdmin())
+                @if(auth()->user()?->canCreateManagedClinic())
                     <div>
                         <a href="{{ route('master.clinics.create') }}" class="btn btn-primary">
                             <i class="fas fa-plus me-2"></i>
@@ -237,14 +242,16 @@
                                                 </form>
                                             @endif
 
-                                            <form method="POST" action="{{ route('master.clinics.destroy', $clinic) }}" class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                        onclick="return confirm('Are you sure you want to delete this clinic? This action cannot be undone.')">
-                                                    <i class="fas fa-trash me-1"></i> Delete
-                                                </button>
-                                            </form>
+                                            @if(auth()->user()?->ownsManagedClinic($clinic))
+                                                <form method="POST" action="{{ route('master.clinics.destroy', $clinic) }}" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                            onclick="return confirm('Are you sure you want to delete this clinic? This action cannot be undone.')">
+                                                        <i class="fas fa-trash me-1"></i> Delete
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -271,7 +278,7 @@
                             No clinics have been registered yet.
                         @endif
                     </p>
-	                    @if(auth()->user()?->isSuperAdmin() && !request()->hasAny(['search', 'status', 'clinic_type', 'speciality', 'city', 'area', 'street']))
+	                    @if(auth()->user()?->canCreateManagedClinic() && !request()->hasAny(['search', 'status', 'clinic_type', 'speciality', 'city', 'area', 'street']))
 	                        <a href="{{ route('master.clinics.create') }}" class="btn btn-primary">
 	                            <i class="fas fa-plus me-2"></i>
 	                            Add First Clinic

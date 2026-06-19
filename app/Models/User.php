@@ -14,6 +14,9 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    public const METADATA_MANAGED_CLINIC_LIMIT = 'managed_clinic_creation_limit';
+    public const CLINIC_SETTINGS_SCOPED_OWNER_ID = 'scoped_super_admin_owner_id';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -299,6 +302,90 @@ class User extends Authenticatable
     public function hasAdministrativeClinicAccess(): bool
     {
         return $this->isSuperAdmin() || $this->isMasterAdmin() || $this->isClinicAdmin();
+    }
+
+    /**
+     * Get the number of additional clinics this scoped Super Admin may create.
+     */
+    public function getManagedClinicCreationLimit(): int
+    {
+        return max(0, (int) data_get($this->metadata ?? [], self::METADATA_MANAGED_CLINIC_LIMIT, 0));
+    }
+
+    /**
+     * Get the clinic IDs created by this scoped Super Admin under their quota.
+     */
+    public function createdManagedClinicIds(): array
+    {
+        if (!$this->isMasterAdmin()) {
+            return [];
+        }
+
+        return Clinic::query()
+            ->get(['id', 'settings'])
+            ->filter(function (Clinic $clinic) {
+                return (int) data_get($clinic->settings ?? [], self::CLINIC_SETTINGS_SCOPED_OWNER_ID) === (int) $this->id;
+            })
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Get the count of clinics created by this scoped Super Admin.
+     */
+    public function createdManagedClinicsCount(): int
+    {
+        return count($this->createdManagedClinicIds());
+    }
+
+    /**
+     * Get the remaining number of clinics this scoped Super Admin can create.
+     */
+    public function remainingManagedClinicCreationSlots(): ?int
+    {
+        if ($this->isSuperAdmin()) {
+            return null;
+        }
+
+        if (!$this->isMasterAdmin()) {
+            return 0;
+        }
+
+        return max(0, $this->getManagedClinicCreationLimit() - $this->createdManagedClinicsCount());
+    }
+
+    /**
+     * Check if the user can create another managed clinic.
+     */
+    public function canCreateManagedClinic(): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if (!$this->isMasterAdmin()) {
+            return false;
+        }
+
+        return $this->remainingManagedClinicCreationSlots() > 0;
+    }
+
+    /**
+     * Check if this scoped Super Admin owns a quota-created clinic.
+     */
+    public function ownsManagedClinic(Clinic $clinic): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if (!$this->isMasterAdmin()) {
+            return false;
+        }
+
+        return (int) data_get($clinic->settings ?? [], self::CLINIC_SETTINGS_SCOPED_OWNER_ID) === (int) $this->id;
     }
 
     /**

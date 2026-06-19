@@ -140,7 +140,7 @@ class ClinicController extends Controller
      */
     public function create()
     {
-        $this->authorizeGlobalRoot();
+        $this->authorizeClinicCreationAccess();
 
         $specialities = $this->specialityOptions();
         $availableModules = \App\Models\Clinic::AVAILABLE_MODULES;
@@ -155,7 +155,9 @@ class ClinicController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorizeGlobalRoot();
+        $this->authorizeClinicCreationAccess();
+
+        $creator = auth()->user();
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -257,7 +259,18 @@ class ClinicController extends Controller
                 $clinicData['enabled_modules'] = $enabledModules !== [] ? $enabledModules : null;
             }
 
+            if (Schema::hasColumn('clinics', 'settings') && $creator?->isMasterAdmin()) {
+                $clinicData['settings'] = array_merge(
+                    is_array($clinicData['settings'] ?? null) ? $clinicData['settings'] : [],
+                    [User::CLINIC_SETTINGS_SCOPED_OWNER_ID => $creator->id]
+                );
+            }
+
             $clinic = Clinic::create($clinicData);
+
+            if ($creator?->isMasterAdmin()) {
+                $creator->superAdminClinics()->syncWithoutDetaching([$clinic->id]);
+            }
 
             // Create admin user for the clinic
             $adminUsername = strtolower(str_replace(' ', '', $request->admin_first_name . $request->admin_last_name));
@@ -566,7 +579,7 @@ class ClinicController extends Controller
      */
     public function destroy(Clinic $clinic)
     {
-        $this->authorizeGlobalRoot();
+        $this->authorizeClinicDeletion($clinic);
 
         $clinicId = $clinic->id;
         $clinicName = $clinic->name;
@@ -1071,5 +1084,35 @@ class ClinicController extends Controller
         if (!auth()->user()?->isSuperAdmin()) {
             abort(403, 'Only the Master Admin can perform this action.');
         }
+    }
+
+    private function authorizeClinicCreationAccess(): void
+    {
+        $user = auth()->user();
+
+        if ($user?->isSuperAdmin()) {
+            return;
+        }
+
+        if ($user?->isMasterAdmin() && $user->canCreateManagedClinic()) {
+            return;
+        }
+
+        abort(403, 'You are not allowed to create additional clinics.');
+    }
+
+    private function authorizeClinicDeletion(Clinic $clinic): void
+    {
+        $user = auth()->user();
+
+        if ($user?->isSuperAdmin()) {
+            return;
+        }
+
+        if ($user?->isMasterAdmin() && $user->ownsManagedClinic($clinic)) {
+            return;
+        }
+
+        abort(403, 'You can only delete clinics that you created within your assigned quota.');
     }
 }

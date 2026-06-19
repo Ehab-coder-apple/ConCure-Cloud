@@ -212,25 +212,41 @@
 
                             <div class="col-12 mt-3">
                                 <div class="mb-3">
-                                    <label for="clinic_ids" class="form-label">Allocated Clinics <span class="text-danger">*</span></label>
+                                    <label for="clinic_ids" class="form-label">Allocated Clinics</label>
                                     <select class="form-select @error('clinic_ids') is-invalid @enderror @error('clinic_ids.*') is-invalid @enderror"
                                             id="clinic_ids"
                                             name="clinic_ids[]"
                                             multiple
-                                            size="8"
-                                            required>
+                                            size="8">
                                         @foreach($clinics as $clinic)
                                             <option value="{{ $clinic->id }}" {{ in_array($clinic->id, old('clinic_ids', [])) ? 'selected' : '' }}>
                                                 {{ $clinic->name }}@if($clinic->city) — {{ $clinic->city }}@endif{{ !$clinic->is_active ? ' (Inactive)' : '' }}
                                             </option>
                                         @endforeach
                                     </select>
-                                    <div class="form-text">Hold Ctrl/Cmd to select multiple clinics. This defines the full scope this Super Admin can manage.</div>
+                                    <div class="form-text">Optional: assign existing clinics from the current list. Hold Ctrl/Cmd to select multiple clinics.</div>
                                     @error('clinic_ids')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                     @error('clinic_ids.*')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <div class="mb-3">
+                                    <label for="managed_clinic_limit" class="form-label">Additional Clinics They Can Create</label>
+                                    <input type="number"
+                                           min="0"
+                                           max="1000"
+                                           class="form-control @error('managed_clinic_limit') is-invalid @enderror"
+                                           id="managed_clinic_limit"
+                                           name="managed_clinic_limit"
+                                           value="{{ old('managed_clinic_limit', 0) }}">
+                                    <div class="form-text">Set how many new clinics this Super Admin is allowed to create, manage, and delete in addition to any allocated clinics.</div>
+                                    @error('managed_clinic_limit')
+                                        <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>

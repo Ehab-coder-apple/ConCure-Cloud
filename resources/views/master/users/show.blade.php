@@ -144,6 +144,14 @@
                             </td>
                         </tr>
                         <tr>
+                            <td class="font-weight-bold">Additional Clinic Capacity:</td>
+                            <td>{{ $user->getManagedClinicCreationLimit() }}</td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Created Under Capacity:</td>
+                            <td>{{ $stats['created_clinics'] }} clinic(s) · {{ $stats['remaining_creation_slots'] }} remaining</td>
+                        </tr>
+                        <tr>
                             <td class="font-weight-bold">Created:</td>
                             <td>{{ $user->created_at->format('M d, Y H:i') }}</td>
                         </tr>
@@ -217,19 +225,33 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <div class="text-center">
-                                <div class="h4 mb-0 font-weight-bold text-success">{{ $stats['clinic_users'] }}</div>
+                                <div class="h4 mb-0 font-weight-bold text-success">{{ $stats['created_clinics'] }}</div>
+                                <div class="text-muted small">Created Clinics</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <div class="h4 mb-0 font-weight-bold text-info">{{ $stats['remaining_creation_slots'] }}</div>
+                                <div class="text-muted small">Creation Slots Left</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <div class="h4 mb-0 font-weight-bold text-warning">{{ $stats['clinic_users'] }}</div>
                                 <div class="text-muted small">Users in Scope</div>
                             </div>
                         </div>
-                        <div class="col-md-3 mb-3">
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6 mb-3">
                             <div class="text-center">
-                                <div class="h4 mb-0 font-weight-bold text-info">{{ $stats['clinic_patients'] }}</div>
+                                <div class="h4 mb-0 font-weight-bold text-secondary">{{ $stats['clinic_patients'] }}</div>
                                 <div class="text-muted small">Patients in Scope</div>
                             </div>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-6 mb-3">
                             <div class="text-center">
-                                <div class="h4 mb-0 font-weight-bold text-warning">{{ $stats['account_age'] }}</div>
+                                <div class="h4 mb-0 font-weight-bold text-dark">{{ $stats['account_age'] }}</div>
                                 <div class="text-muted small">Account Age</div>
                             </div>
                         </div>
