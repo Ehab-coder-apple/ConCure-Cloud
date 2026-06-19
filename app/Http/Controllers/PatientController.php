@@ -199,9 +199,12 @@ class PatientController extends Controller
     /**
      * Show the form for creating a new patient.
      */
-    public function create()
+    public function create(Request $request)
     {
-        return view('patients.create', $this->patientFormViewData(auth()->user()));
+        return view('patients.create', array_merge(
+            $this->patientFormViewData(auth()->user()),
+            ['returnTo' => $request->query('return_to')]
+        ));
     }
 
     private function patientFormViewData($user): array
@@ -460,8 +463,46 @@ class PatientController extends Controller
             ]);
         }
 
+        if ($returnTo = $this->resolveSafeReturnTo($request->input('return_to'), $patient)) {
+            return redirect()->to($returnTo)
+                ->with('success', 'Patient created successfully. You can continue creating the treatment session.');
+        }
+
         return redirect()->route('patients.show', $patient)
                         ->with('success', 'Patient created successfully.');
+    }
+
+    private function resolveSafeReturnTo(?string $returnTo, ?Patient $patient = null): ?string
+    {
+        if (!$returnTo) {
+            return null;
+        }
+
+        $parsed = parse_url($returnTo);
+        if ($parsed === false) {
+            return null;
+        }
+
+        $path = $parsed['path'] ?? null;
+        if (!$path || !str_starts_with($path, '/')) {
+            return null;
+        }
+
+        $appHost = parse_url(config('app.url'), PHP_URL_HOST);
+        if (isset($parsed['host']) && $appHost && $parsed['host'] !== $appHost) {
+            return null;
+        }
+
+        parse_str($parsed['query'] ?? '', $query);
+
+        if ($patient) {
+            $query['patient_id'] = $patient->id;
+            $query['session_mode'] = $query['session_mode'] ?? 'direct';
+        }
+
+        $queryString = http_build_query($query);
+
+        return $path . ($queryString !== '' ? '?' . $queryString : '');
     }
 
     /**

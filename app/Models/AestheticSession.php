@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\User;
 
 class AestheticSession extends Model
 {
@@ -18,8 +19,10 @@ class AestheticSession extends Model
         'patient_package_id',
         'patient_id',
         'treatment_id',
+        'assigned_user_id',
         'session_number',
         'session_date',
+        'next_due_date',
         'status',
         'notes',
     ];
@@ -27,10 +30,14 @@ class AestheticSession extends Model
     protected $casts = [
         'session_number' => 'integer',
         'session_date' => 'date',
+        'next_due_date' => 'date',
     ];
+
+    public const DEFAULT_PACKAGE_FOLLOW_UP_INTERVAL_DAYS = 28;
 
     const STATUSES = [
         'scheduled' => 'Scheduled',
+        'started' => 'Started',
         'completed' => 'Completed',
         'cancelled' => 'Cancelled',
         'no_show' => 'No Show',
@@ -38,6 +45,7 @@ class AestheticSession extends Model
 
     const STATUS_COLORS = [
         'scheduled' => 'warning',
+        'started' => 'primary',
         'completed' => 'success',
         'cancelled' => 'secondary',
         'no_show' => 'danger',
@@ -103,6 +111,14 @@ class AestheticSession extends Model
     }
 
     /**
+     * Get the user assigned to run this session.
+     */
+    public function assignedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_user_id');
+    }
+
+    /**
      * Check if this is a package-based session.
      */
     public function getIsPackageSessionAttribute(): bool
@@ -130,6 +146,83 @@ class AestheticSession extends Model
             return $this->treatment->name;
         }
         return __('Direct Treatment');
+    }
+
+    /**
+     * Resolve the patient for either package or direct sessions.
+     */
+    public function getResolvedPatientAttribute(): ?Patient
+    {
+        return $this->patient ?: $this->patientPackage?->patient;
+    }
+
+    /**
+     * Get a display-friendly patient name for this session.
+     */
+    public function getPatientDisplayAttribute(): string
+    {
+        return $this->resolvedPatient?->full_name ?? __('Unknown Patient');
+    }
+
+    /**
+     * Display-friendly assigned person label.
+     */
+    public function getAssignedPersonDisplayAttribute(): string
+    {
+        return $this->assignedUser?->full_name ?? __('Unassigned');
+    }
+
+    /**
+     * Suggested next due date for package follow-up.
+     */
+    public function getSuggestedNextDueDateAttribute()
+    {
+        return $this->isPackageSession && $this->session_date
+            ? $this->session_date->copy()->addDays(self::DEFAULT_PACKAGE_FOLLOW_UP_INTERVAL_DAYS)
+            : null;
+    }
+
+    /**
+     * Whether this package session still has a future slot to follow up on.
+     */
+    public function getHasPendingFollowUpSlotAttribute(): bool
+    {
+        if (!$this->isPackageSession || !$this->patientPackage) {
+            return false;
+        }
+
+        if ($this->patientPackage->sessions_remaining > 0) {
+            return true;
+        }
+
+        return $this->session_number < $this->patientPackage->total_sessions;
+    }
+
+    /**
+     * Whether a later session already exists in this package.
+     */
+    public function getHasSubsequentPackageSessionAttribute(): bool
+    {
+        if (!$this->isPackageSession || !$this->patient_package_id) {
+            return false;
+        }
+
+        return self::query()
+            ->where('patient_package_id', $this->patient_package_id)
+            ->where('session_number', '>', $this->session_number)
+            ->exists();
+    }
+
+    /**
+     * Whether this session currently represents an open follow-up reminder.
+     */
+    public function getHasOpenReminderAttribute(): bool
+    {
+        return $this->status === 'completed'
+            && $this->isPackageSession
+            && !is_null($this->next_due_date)
+            && $this->has_pending_follow_up_slot
+            && !$this->has_subsequent_package_session;
     }
 
     /**
@@ -162,6 +255,22 @@ class AestheticSession extends Model
     public function inventoryUsages(): HasMany
     {
         return $this->hasMany(SessionInventoryUsage::class, 'session_id');
+    }
+
+    /**
+     * Get consent forms linked to this session.
+     */
+    public function consentForms(): HasMany
+    {
+        return $this->hasMany(ConsentForm::class, 'session_id');
+    }
+
+    /**
+     * Get aftercare issues linked to this session.
+     */
+    public function aftercareIssues(): HasMany
+    {
+        return $this->hasMany(AestheticAftercareIssue::class, 'session_id');
     }
 
     /**

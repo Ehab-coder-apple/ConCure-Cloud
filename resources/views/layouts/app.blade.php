@@ -1802,6 +1802,14 @@
                                     </a>
                                 </li>
                                 @endif
+                                @if(Auth::user()->hasAnyPermission(['aesthetic_view', 'aesthetic_manage']))
+                                <li class="submenu-item">
+                                    <a href="{{ route('aesthetic.aftercare-templates.index') }}" class="submenu-link {{ request()->routeIs('aesthetic.aftercare-templates.*') ? 'active' : '' }}">
+                                        <i class="submenu-icon fas fa-file-medical"></i>
+                                        <span class="submenu-text">{{ __('Aftercare Templates') }}</span>
+                                    </a>
+                                </li>
+                                @endif
                                 @if(Auth::user()->hasAnyPermission(['aesthetic_view', 'aesthetic_inventory', 'aesthetic_manage']))
                                 <li class="submenu-item">
                                     <a href="{{ route('aesthetic.inventory.index') }}" class="submenu-link {{ request()->routeIs('aesthetic.inventory.*') ? 'active' : '' }}">

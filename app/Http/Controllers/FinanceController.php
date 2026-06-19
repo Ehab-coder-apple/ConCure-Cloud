@@ -186,6 +186,38 @@ class FinanceController extends Controller
 
         $invoices = $query->latest()->paginate(15);
 
+        $aestheticInvoicesQuery = AestheticInvoice::with([
+            'patient',
+            'creator',
+            'session.patientPackage.package',
+            'session.patientPackage.patient',
+            'session.patient',
+            'session.treatment',
+        ])->where('clinic_id', $user->clinic_id);
+
+        if ($request->filled('status')) {
+            $aestheticStatus = $request->status === 'partial_paid' ? 'partial' : $request->status;
+            $aestheticInvoicesQuery->byStatus($aestheticStatus);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $aestheticInvoicesQuery->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhereHas('patient', function ($pq) use ($search) {
+                        $pq->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere('patient_id', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $aestheticInvoicesQuery->byDateRange($request->date_from, $request->date_to);
+        }
+
+        $aestheticInvoices = $aestheticInvoicesQuery->latest()->paginate(10, ['*'], 'aesthetic_page');
+
         // Get patients for the create invoice form
         $patients = Patient::where('clinic_id', $user->clinic_id)
                           ->where('is_active', true)
@@ -201,7 +233,7 @@ class FinanceController extends Controller
 
         $currencySymbol = $this->getCurrencySymbol($currency);
 
-        return view('finance.invoices', compact('invoices', 'patients', 'currency', 'currencySymbol'));
+        return view('finance.invoices', compact('invoices', 'aestheticInvoices', 'patients', 'currency', 'currencySymbol'));
     }
 
     /**
@@ -1215,6 +1247,61 @@ class FinanceController extends Controller
     }
 
     /**
+     * Generate per-user financial performance report.
+     */
+    public function userPerformanceReport(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to user financial reports.');
+        }
+
+        $request->validate([
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'user_id' => 'nullable|integer|exists:users,id',
+            'module' => 'nullable|string|max:100',
+        ]);
+
+        $dateFrom = $request->date_from ? 
+            \Carbon\Carbon::parse($request->date_from)->startOfDay() : now()->startOfMonth();
+        $dateTo = $request->date_to ? 
+            \Carbon\Carbon::parse($request->date_to)->endOfDay() : now()->endOfMonth();
+
+        $selectedUserId = $request->filled('user_id') ? (int) $request->user_id : null;
+        $selectedModule = filled($request->module) ? trim((string) $request->module) : null;
+
+        $reportData = $this->getUserPerformanceData($user, $dateFrom, $dateTo, $selectedUserId, $selectedModule);
+
+        if ($request->wantsJson()) {
+            return response()->json($reportData);
+        }
+
+        $users = User::where('clinic_id', $user->clinic_id)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get();
+
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.reports.user-performance', compact(
+            'reportData',
+            'dateFrom',
+            'dateTo',
+            'users',
+            'currencySymbol',
+            'selectedUserId',
+            'selectedModule'
+        ));
+    }
+
+    /**
      * Get financial statistics.
      */
     private function getFinancialStats($user): array
@@ -1247,9 +1334,26 @@ class FinanceController extends Controller
             ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
             ->sum('total_amount');
 
-        // Total revenue includes invoices, aesthetic invoices, and receipts
-        $stats['monthlyRevenue'] = $monthlyInvoiceRevenue + $monthlyAestheticRevenue + $monthlyReceiptRevenue;
+        $monthlyInvoicePayments = $invoicesQuery->clone()
+            ->byDateRange($currentMonth, $currentMonthEnd)
+            ->sum('paid_amount');
+
+        $monthlyAestheticPayments = $aestheticInvoicesQuery->clone()
+            ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
+            ->sum('paid_amount');
+
+        $monthlyRevenueSummary = $this->buildClinicRevenueSummary(
+            $monthlyInvoiceRevenue,
+            $monthlyAestheticRevenue,
+            $monthlyReceiptRevenue,
+            $monthlyInvoicePayments,
+            $monthlyAestheticPayments,
+        );
+
+        // Total clinic revenue includes invoice totals, aesthetic invoice totals, receipts, and tracked paid amounts.
+        $stats['monthlyRevenue'] = $monthlyRevenueSummary['total'];
         $stats['monthlyReceipts'] = $monthlyReceiptRevenue;
+        $stats['monthlyCollectedPayments'] = $monthlyRevenueSummary['invoice_payments'] + $monthlyRevenueSummary['aesthetic_payments'];
 
         $stats['monthlyExpenses'] = $expensesQuery->clone()
             ->approved()
@@ -1305,14 +1409,6 @@ class FinanceController extends Controller
 
         // Monthly Cash flow calculation (current month only)
         // Total cash in = Invoice payments + Aesthetic invoice payments + Other receipts (current month)
-        $monthlyInvoicePayments = $invoicesQuery->clone()
-            ->byDateRange($currentMonth, $currentMonthEnd)
-            ->sum('paid_amount');
-
-        $monthlyAestheticPayments = $aestheticInvoicesQuery->clone()
-            ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
-            ->sum('paid_amount');
-
         $monthlyOtherReceipts = $receiptsQuery->clone()
             ->approved()
             ->byDateRange($currentMonth, $currentMonthEnd)
@@ -1461,10 +1557,22 @@ class FinanceController extends Controller
         $currentMonthAestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
             ->sum('total_amount');
+        $currentMonthInvoicePayments = $invoicesQuery->clone()->byDateRange($currentMonth, $currentMonthEnd)->sum('paid_amount');
+        $currentMonthAestheticPayments = AestheticInvoice::where('clinic_id', $user->clinic_id)
+            ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
+            ->sum('paid_amount');
         $currentMonthReceiptRevenue = $receiptsQuery->clone()->approved()->byDateRange($currentMonth, $currentMonthEnd)->sum('amount');
 
+        $currentMonthRevenueSummary = $this->buildClinicRevenueSummary(
+            $currentMonthInvoiceRevenue,
+            $currentMonthAestheticRevenue,
+            $currentMonthReceiptRevenue,
+            $currentMonthInvoicePayments,
+            $currentMonthAestheticPayments,
+        );
+
         $data['currentMonth'] = [
-            'revenue' => $currentMonthInvoiceRevenue + $currentMonthAestheticRevenue + $currentMonthReceiptRevenue,
+            'revenue' => $currentMonthRevenueSummary['total'],
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($currentMonth, $currentMonthEnd)->sum('amount'),
         ];
         $data['currentMonth']['profit'] = $data['currentMonth']['revenue'] - $data['currentMonth']['expenses'];
@@ -1477,10 +1585,22 @@ class FinanceController extends Controller
         $previousMonthAestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($previousMonth->toDateString(), $previousMonthEnd->toDateString())
             ->sum('total_amount');
+        $previousMonthInvoicePayments = $invoicesQuery->clone()->byDateRange($previousMonth, $previousMonthEnd)->sum('paid_amount');
+        $previousMonthAestheticPayments = AestheticInvoice::where('clinic_id', $user->clinic_id)
+            ->byDateRange($previousMonth->toDateString(), $previousMonthEnd->toDateString())
+            ->sum('paid_amount');
         $previousMonthReceiptRevenue = $receiptsQuery->clone()->approved()->byDateRange($previousMonth, $previousMonthEnd)->sum('amount');
 
+        $previousMonthRevenueSummary = $this->buildClinicRevenueSummary(
+            $previousMonthInvoiceRevenue,
+            $previousMonthAestheticRevenue,
+            $previousMonthReceiptRevenue,
+            $previousMonthInvoicePayments,
+            $previousMonthAestheticPayments,
+        );
+
         $data['previousMonth'] = [
-            'revenue' => $previousMonthInvoiceRevenue + $previousMonthAestheticRevenue + $previousMonthReceiptRevenue,
+            'revenue' => $previousMonthRevenueSummary['total'],
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($previousMonth, $previousMonthEnd)->sum('amount'),
         ];
         $data['previousMonth']['profit'] = $data['previousMonth']['revenue'] - $data['previousMonth']['expenses'];
@@ -1491,10 +1611,22 @@ class FinanceController extends Controller
         $yearToDateAestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($yearStart->toDateString(), now()->toDateString())
             ->sum('total_amount');
+        $yearToDateInvoicePayments = $invoicesQuery->clone()->byDateRange($yearStart, now())->sum('paid_amount');
+        $yearToDateAestheticPayments = AestheticInvoice::where('clinic_id', $user->clinic_id)
+            ->byDateRange($yearStart->toDateString(), now()->toDateString())
+            ->sum('paid_amount');
         $yearToDateReceiptRevenue = $receiptsQuery->clone()->approved()->byDateRange($yearStart, now())->sum('amount');
 
+        $yearToDateRevenueSummary = $this->buildClinicRevenueSummary(
+            $yearToDateInvoiceRevenue,
+            $yearToDateAestheticRevenue,
+            $yearToDateReceiptRevenue,
+            $yearToDateInvoicePayments,
+            $yearToDateAestheticPayments,
+        );
+
         $data['yearToDate'] = [
-            'revenue' => $yearToDateInvoiceRevenue + $yearToDateAestheticRevenue + $yearToDateReceiptRevenue,
+            'revenue' => $yearToDateRevenueSummary['total'],
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($yearStart, now())->sum('amount'),
         ];
         $data['yearToDate']['profit'] = $data['yearToDate']['revenue'] - $data['yearToDate']['expenses'];
@@ -1612,10 +1744,32 @@ class FinanceController extends Controller
 
         $invoiceTotal = $revenue->sum('total_amount');
         $aestheticTotal = $aestheticRevenue->sum('total_amount');
+        $invoicePaymentsTotal = $revenue->sum('paid_amount');
+        $aestheticPaymentsTotal = $aestheticRevenue->sum('paid_amount');
         $receiptTotal = $receipts->sum('amount');
 
+        if ($aestheticTotal > 0) {
+            $revenueByType['aesthetic_invoices'] = ($revenueByType['aesthetic_invoices'] ?? 0) + $aestheticTotal;
+        }
+
+        if ($invoicePaymentsTotal > 0) {
+            $revenueByType['invoice_payments'] = ($revenueByType['invoice_payments'] ?? 0) + $invoicePaymentsTotal;
+        }
+
+        if ($aestheticPaymentsTotal > 0) {
+            $revenueByType['aesthetic_payments'] = ($revenueByType['aesthetic_payments'] ?? 0) + $aestheticPaymentsTotal;
+        }
+
+        $revenueSummary = $this->buildClinicRevenueSummary(
+            $invoiceTotal,
+            $aestheticTotal,
+            $receiptTotal,
+            $invoicePaymentsTotal,
+            $aestheticPaymentsTotal,
+        );
+
         $data['revenue'] = [
-            'total' => $invoiceTotal + $aestheticTotal + $receiptTotal,
+            'total' => $revenueSummary['total'],
             'byType' => $revenueByType,
         ];
 
@@ -1630,6 +1784,218 @@ class FinanceController extends Controller
             : 0;
 
         return $data;
+    }
+
+    /**
+     * Build a per-user financial summary for the requested date range.
+     */
+    private function getUserPerformanceData($user, $dateFrom, $dateTo, ?int $selectedUserId = null, ?string $selectedModule = null): array
+    {
+        $clinicUsers = User::where('clinic_id', $user->clinic_id)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get()
+            ->keyBy('id');
+
+        $rows = [];
+        $availableModules = [];
+
+        $ensureRow = function ($userId, ?User $responsibleUser = null) use (&$rows, $clinicUsers) {
+            $key = $userId ?: 'unassigned';
+
+            if (!isset($rows[$key])) {
+                $responsibleUser = $responsibleUser ?: ($userId ? $clinicUsers->get($userId) : null);
+                $rows[$key] = [
+                    'user_id' => $userId,
+                    'user_name' => $responsibleUser?->full_name ?? __('Unassigned'),
+                    'role' => $responsibleUser?->role ?? __('unassigned'),
+                    'billed_revenue' => 0.0,
+                    'collected_payments' => 0.0,
+                    'other_receipts' => 0.0,
+                    'total_revenue' => 0.0,
+                    'expenses' => 0.0,
+                    'net_total' => 0.0,
+                    'invoice_count' => 0,
+                    'receipt_count' => 0,
+                    'expense_count' => 0,
+                    'modules' => [],
+                ];
+            }
+
+            return $key;
+        };
+
+        $addModuleMetrics = function (array &$row, string $moduleKey, float $billed = 0.0, float $collected = 0.0, float $receipts = 0.0, float $expenses = 0.0): void {
+            if (!isset($row['modules'][$moduleKey])) {
+                $row['modules'][$moduleKey] = [
+                    'label' => ucfirst(str_replace('_', ' ', $moduleKey)),
+                    'billed' => 0.0,
+                    'collected' => 0.0,
+                    'receipts' => 0.0,
+                    'expenses' => 0.0,
+                ];
+            }
+
+            $row['modules'][$moduleKey]['billed'] += $billed;
+            $row['modules'][$moduleKey]['collected'] += $collected;
+            $row['modules'][$moduleKey]['receipts'] += $receipts;
+            $row['modules'][$moduleKey]['expenses'] += $expenses;
+        };
+
+        $standardInvoices = Invoice::with(['creator', 'dentalTreatment.assignedDoctor'])
+            ->where('clinic_id', $user->clinic_id)
+            ->byDateRange($dateFrom, $dateTo)
+            ->get();
+
+        foreach ($standardInvoices as $invoice) {
+            $moduleKey = $invoice->dentalTreatment ? 'dental' : ($invoice->source_module ?: 'finance');
+
+            if ($selectedModule && $selectedModule !== $moduleKey) {
+                continue;
+            }
+
+            $availableModules[$moduleKey] = true;
+            $responsibleUser = $invoice->dentalTreatment?->assignedDoctor ?: $invoice->creator;
+
+            if ($selectedUserId && ($responsibleUser?->id !== $selectedUserId)) {
+                continue;
+            }
+
+            $rowKey = $ensureRow($responsibleUser?->id, $responsibleUser);
+            $rows[$rowKey]['billed_revenue'] += (float) $invoice->total_amount;
+            $rows[$rowKey]['collected_payments'] += (float) $invoice->paid_amount;
+            $rows[$rowKey]['total_revenue'] += (float) $invoice->total_amount + (float) $invoice->paid_amount;
+            $rows[$rowKey]['invoice_count']++;
+            $addModuleMetrics($rows[$rowKey], $moduleKey, (float) $invoice->total_amount, (float) $invoice->paid_amount);
+        }
+
+        $aestheticInvoices = AestheticInvoice::with(['creator', 'session.assignedUser'])
+            ->where('clinic_id', $user->clinic_id)
+            ->byDateRange($dateFrom->toDateString(), $dateTo->toDateString())
+            ->get();
+
+        foreach ($aestheticInvoices as $invoice) {
+            $moduleKey = 'aesthetic';
+
+            if ($selectedModule && $selectedModule !== $moduleKey) {
+                continue;
+            }
+
+            $availableModules[$moduleKey] = true;
+            $responsibleUser = $invoice->session?->assignedUser ?: $invoice->creator;
+
+            if ($selectedUserId && ($responsibleUser?->id !== $selectedUserId)) {
+                continue;
+            }
+
+            $rowKey = $ensureRow($responsibleUser?->id, $responsibleUser);
+            $rows[$rowKey]['billed_revenue'] += (float) $invoice->total_amount;
+            $rows[$rowKey]['collected_payments'] += (float) $invoice->paid_amount;
+            $rows[$rowKey]['total_revenue'] += (float) $invoice->total_amount + (float) $invoice->paid_amount;
+            $rows[$rowKey]['invoice_count']++;
+            $addModuleMetrics($rows[$rowKey], $moduleKey, (float) $invoice->total_amount, (float) $invoice->paid_amount);
+        }
+
+        $receipts = Receipt::with('creator')
+            ->where('clinic_id', $user->clinic_id)
+            ->approved()
+            ->byDateRange($dateFrom, $dateTo)
+            ->get();
+
+        foreach ($receipts as $receipt) {
+            $moduleKey = 'finance';
+
+            if ($selectedModule && $selectedModule !== $moduleKey) {
+                continue;
+            }
+
+            $availableModules[$moduleKey] = true;
+            $responsibleUser = $receipt->creator;
+
+            if ($selectedUserId && ($responsibleUser?->id !== $selectedUserId)) {
+                continue;
+            }
+
+            $rowKey = $ensureRow($responsibleUser?->id, $responsibleUser);
+            $rows[$rowKey]['other_receipts'] += (float) $receipt->amount;
+            $rows[$rowKey]['total_revenue'] += (float) $receipt->amount;
+            $rows[$rowKey]['receipt_count']++;
+            $addModuleMetrics($rows[$rowKey], $moduleKey, 0.0, 0.0, (float) $receipt->amount);
+        }
+
+        $expenses = Expense::with('creator')
+            ->where('clinic_id', $user->clinic_id)
+            ->approved()
+            ->byDateRange($dateFrom, $dateTo)
+            ->get();
+
+        foreach ($expenses as $expense) {
+            $moduleKey = 'finance';
+
+            if ($selectedModule && $selectedModule !== $moduleKey) {
+                continue;
+            }
+
+            $availableModules[$moduleKey] = true;
+            $responsibleUser = $expense->creator;
+
+            if ($selectedUserId && ($responsibleUser?->id !== $selectedUserId)) {
+                continue;
+            }
+
+            $rowKey = $ensureRow($responsibleUser?->id, $responsibleUser);
+            $rows[$rowKey]['expenses'] += (float) $expense->amount;
+            $rows[$rowKey]['expense_count']++;
+            $addModuleMetrics($rows[$rowKey], $moduleKey, 0.0, 0.0, 0.0, (float) $expense->amount);
+        }
+
+        if ($selectedUserId && !collect($rows)->contains(fn ($row) => $row['user_id'] === $selectedUserId)) {
+            $ensureRow($selectedUserId, $clinicUsers->get($selectedUserId));
+        }
+
+        $rows = collect($rows)
+            ->map(function ($row) {
+                $row['net_total'] = $row['total_revenue'] - $row['expenses'];
+                ksort($row['modules']);
+                return $row;
+            })
+            ->sortByDesc('total_revenue')
+            ->values();
+
+        return [
+            'summary' => [
+                'people_count' => $rows->count(),
+                'billed_revenue' => $rows->sum('billed_revenue'),
+                'collected_payments' => $rows->sum('collected_payments'),
+                'other_receipts' => $rows->sum('other_receipts'),
+                'total_revenue' => $rows->sum('total_revenue'),
+                'expenses' => $rows->sum('expenses'),
+                'net_total' => $rows->sum('net_total'),
+            ],
+            'rows' => $rows->all(),
+            'available_modules' => collect(array_keys($availableModules))->sort()->values()->all(),
+            'attribution_note' => __('Dental-linked invoices use the assigned doctor when available. All other records are attributed to the creator recorded by the system.'),
+        ];
+    }
+
+    /**
+     * Build a consistent clinic revenue summary from billed revenue, receipts, and tracked paid amounts.
+     */
+    private function buildClinicRevenueSummary(
+        float $invoiceRevenue,
+        float $aestheticRevenue,
+        float $receiptRevenue,
+        float $invoicePayments = 0.0,
+        float $aestheticPayments = 0.0,
+    ): array {
+        return [
+            'invoice_revenue' => $invoiceRevenue,
+            'aesthetic_revenue' => $aestheticRevenue,
+            'receipt_revenue' => $receiptRevenue,
+            'invoice_payments' => $invoicePayments,
+            'aesthetic_payments' => $aestheticPayments,
+            'total' => $invoiceRevenue + $aestheticRevenue + $receiptRevenue + $invoicePayments + $aestheticPayments,
+        ];
     }
 
     /**

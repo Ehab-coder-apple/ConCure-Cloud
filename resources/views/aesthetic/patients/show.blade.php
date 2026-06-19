@@ -156,6 +156,15 @@
                                             @endif
                                         </p>
                                         <span class="badge bg-{{ $session->status_color }}">{{ $session->status_display }}</span>
+                                        @if($session->consentForms->count() > 0)
+                                            <span class="badge bg-success ms-1"><i class="fas fa-file-signature me-1"></i>{{ __('Consent') }}</span>
+                                        @endif
+                                        @if($session->aftercareIssues->count() > 0)
+                                            <span class="badge bg-info ms-1"><i class="fas fa-file-medical me-1"></i>{{ $session->aftercareIssues->count() }} {{ __('aftercare') }}</span>
+                                        @endif
+                                        @if($session->next_due_date)
+                                            <span class="badge bg-warning text-dark ms-1"><i class="fas fa-bell me-1"></i>{{ __('Next Due :date', ['date' => $session->next_due_date->format('M d')]) }}</span>
+                                        @endif
                                         @if($session->has_comparison)
                                             <span class="badge bg-success ms-1"><i class="fas fa-images me-1"></i>{{ __('Before/After') }}</span>
                                         @elseif($session->images->count() > 0)
@@ -201,6 +210,11 @@
                             <div>
                                 <div class="fw-semibold">{{ $pp->package?->name ?? __('Package') }}</div>
                                 <small class="text-muted">{{ $pp->sessions_used }} / {{ $pp->total_sessions }} {{ __('sessions used') }}</small>
+                                @if(($followUpReminderMap[$pp->id] ?? null)?->next_due_date)
+                                    <div class="small text-warning mt-1">
+                                        <i class="fas fa-bell me-1"></i>{{ __('Next due') }} {{ $followUpReminderMap[$pp->id]->next_due_date->format('M d, Y') }}
+                                    </div>
+                                @endif
                             </div>
                             <span class="badge bg-{{ $pp->remaining_sessions > 0 ? 'success' : 'danger' }}">
                                 {{ $pp->remaining_sessions }} {{ __('left') }}
@@ -211,6 +225,81 @@
                             <p class="mb-0 small">{{ __('No packages assigned yet.') }}</p>
                         </div>
                     @endforelse
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-bell me-2 text-warning"></i>{{ __('Next Due Follow-ups') }}</h5>
+                    <span class="badge bg-warning text-dark">{{ $followUpReminders->count() ?? 0 }}</span>
+                </div>
+                <div class="card-body">
+                    @if(($followUpReminders->isEmpty() ?? true))
+                        <div class="text-center py-3 text-muted">
+                            <p class="mb-0 small">{{ __('No open follow-up reminders for this patient right now.') }}</p>
+                        </div>
+                    @else
+                        @foreach($followUpReminders as $reminder)
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2 pb-2 border-bottom">
+                                <div>
+                                    <div class="fw-semibold">{{ __('Session :number', ['number' => $reminder->session_number]) }}</div>
+                                    <small class="text-muted">{{ $reminder->patientPackage?->package?->name ?? __('Package') }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-semibold text-warning">{{ $reminder->next_due_date?->format('M d, Y') }}</div>
+                                    <a href="{{ route('aesthetic.sessions.show', $reminder) }}" class="btn btn-sm btn-outline-primary mt-1">{{ __('Open') }}</a>
+                                </div>
+                            </div>
+                        @endforeach
+                    @endif
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-file-signature me-2 text-primary"></i>{{ __('Consent & Aftercare PDFs') }}</h5>
+                    <span class="badge bg-primary">{{ ($consentForms->count() ?? 0) + ($aftercareIssues->count() ?? 0) }}</span>
+                </div>
+                <div class="card-body">
+                    @if(($consentForms->isEmpty() ?? true) && ($aftercareIssues->isEmpty() ?? true))
+                        <div class="text-center py-3 text-muted">
+                            <p class="mb-0 small">{{ __('No consent or aftercare PDFs have been generated for this patient yet.') }}</p>
+                        </div>
+                    @else
+                        @if(($consentForms->isNotEmpty() ?? false))
+                            <div class="mb-3">
+                                <h6 class="text-muted text-uppercase small mb-2">{{ __('Consent Forms') }}</h6>
+                                @foreach($consentForms as $consent)
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2 pb-2 border-bottom">
+                                        <div>
+                                            <div class="fw-semibold">{{ $consent->title }}</div>
+                                            <small class="text-muted">{{ $consent->signed_at?->format('M d, Y h:i A') }}</small>
+                                        </div>
+                                        @if($consent->pdf_url)
+                                            <a href="{{ $consent->pdf_url }}" target="_blank" class="btn btn-sm btn-outline-primary">{{ __('Open PDF') }}</a>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if(($aftercareIssues->isNotEmpty() ?? false))
+                            <div>
+                                <h6 class="text-muted text-uppercase small mb-2">{{ __('Aftercare Forms') }}</h6>
+                                @foreach($aftercareIssues as $issue)
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2 pb-2 border-bottom">
+                                        <div>
+                                            <div class="fw-semibold">{{ $issue->template_name }}</div>
+                                            <small class="text-muted">{{ $issue->issued_at?->format('M d, Y h:i A') }}</small>
+                                        </div>
+                                        @if($issue->pdf_url)
+                                            <a href="{{ $issue->pdf_url }}" target="_blank" class="btn btn-sm btn-outline-primary">{{ __('Open PDF') }}</a>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    @endif
                 </div>
             </div>
 
@@ -243,6 +332,12 @@
                             <div class="border rounded p-2">
                                 <h4 class="mb-0 text-info">{{ $stats['packages'] }}</h4>
                                 <small class="text-muted">{{ __('Packages') }}</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <h4 class="mb-0 text-warning">{{ $stats['follow_up_due'] }}</h4>
+                                <small class="text-muted">{{ __('Next Due') }}</small>
                             </div>
                         </div>
                     </div>

@@ -137,7 +137,7 @@
                                         <td>
                                             <strong>{{ $invoice->invoice_number }}</strong>
                                             @if($invoice->session)
-                                                <small class="d-block text-muted">{{ $invoice->session->patientPackage->package->name ?? '-' }}</small>
+                                                <small class="d-block text-muted">{{ $invoice->session->session_context }}</small>
                                             @endif
                                         </td>
                                         <td>

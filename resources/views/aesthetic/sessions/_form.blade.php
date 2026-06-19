@@ -1,5 +1,8 @@
 @php
-    $isPackage = old('session_mode', $aestheticSession->isPackageSession ?? true) === 'package' || (isset($aestheticSession) && $aestheticSession->isPackageSession);
+    $initialSessionMode = old('session_mode', isset($aestheticSession)
+        ? ($aestheticSession->isPackageSession ? 'package' : 'direct')
+        : ($defaultSessionMode ?? 'package'));
+    $isPackage = $initialSessionMode === 'package';
 @endphp
 
 <!-- Session Mode Toggle -->
@@ -20,7 +23,12 @@
 <div class="row g-3" id="package-fields" style="display: {{ $isPackage ? 'flex' : 'none' }};">
     <!-- Patient Package -->
     <div class="col-md-6">
-        <label for="patient_package_id" class="form-label">{{ __('Patient Package') }} <span class="text-danger">*</span></label>
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
+            <label for="patient_package_id" class="form-label mb-0">{{ __('Patient Package') }} <span class="text-danger">*</span></label>
+            <a href="{{ route('patients.create', ['return_to' => route('aesthetic.sessions.create', ['session_mode' => 'package'], false)]) }}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-user-plus me-1"></i>{{ __('Create New Patient') }}
+            </a>
+        </div>
         <select class="form-select @error('patient_package_id') is-invalid @enderror"
                 id="patient_package_id" name="patient_package_id"
                 onchange="window.location.href='?patient_package_id='+this.value">
@@ -36,18 +44,26 @@
         @error('patient_package_id')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
+        <small class="form-text text-muted">
+            {{ __('After creating the patient, assign an aesthetic package, then return here to select it.') }}
+        </small>
     </div>
 </div>
 
 <div class="row g-3" id="direct-fields" style="display: {{ !$isPackage ? 'flex' : 'none' }};">
     <!-- Patient (Direct) -->
     <div class="col-md-6">
-        <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
+            <label for="patient_id" class="form-label mb-0">{{ __('Patient') }} <span class="text-danger">*</span></label>
+            <a href="{{ route('patients.create', ['return_to' => route('aesthetic.sessions.create', ['session_mode' => 'direct'], false)]) }}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-user-plus me-1"></i>{{ __('Create New Patient') }}
+            </a>
+        </div>
         <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id">
             <option value="">{{ __('Select Patient') }}</option>
             @foreach($patients as $patient)
                 <option value="{{ $patient->id }}"
-                    {{ old('patient_id', $aestheticSession->patient_id ?? '') == $patient->id ? 'selected' : '' }}>
+                    {{ old('patient_id', $aestheticSession->patient_id ?? ($selectedPatientId ?? '')) == $patient->id ? 'selected' : '' }}>
                     {{ $patient->first_name }} {{ $patient->last_name }}
                     @if($patient->phone)<small class="text-muted">({{ $patient->phone }})</small>@endif
                 </option>
@@ -74,6 +90,9 @@
         @error('treatment_id')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
+        <small class="form-text text-muted">
+            {{ __('Choose a treatment if you want the Create Invoice shortcut to auto-fill the invoice item and price.') }}
+        </small>
     </div>
 </div>
 
@@ -105,7 +124,7 @@
     </div>
 
     <!-- Status -->
-    <div class="col-md-6">
+    <div class="col-md-3">
         <label for="status" class="form-label">{{ __('Status') }} <span class="text-danger">*</span></label>
         <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" required>
             @foreach(\App\Models\AestheticSession::STATUSES as $key => $label)
@@ -117,6 +136,28 @@
         @error('status')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
+        <small class="form-text text-muted">
+            {{ __('Sessions should remain Scheduled until patient consent has been signed on the session screen. Started and Completed statuses require a consent record.') }}
+        </small>
+    </div>
+
+    <!-- Assigned Person -->
+    <div class="col-md-3">
+        <label for="assigned_user_id" class="form-label">{{ __('Assigned Person') }}</label>
+        <select class="form-select @error('assigned_user_id') is-invalid @enderror" id="assigned_user_id" name="assigned_user_id">
+            <option value="">{{ __('Select Assigned Person') }}</option>
+            @foreach($assignableUsers as $assignableUser)
+                <option value="{{ $assignableUser->id }}" {{ old('assigned_user_id', $aestheticSession->assigned_user_id ?? '') == $assignableUser->id ? 'selected' : '' }}>
+                    {{ $assignableUser->full_name }}
+                </option>
+            @endforeach
+        </select>
+        @error('assigned_user_id')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <small class="form-text text-muted">
+            {{ __('Choose the person responsible for running this session.') }}
+        </small>
     </div>
 
     <!-- Notes -->

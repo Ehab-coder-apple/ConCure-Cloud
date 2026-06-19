@@ -23,8 +23,8 @@
             <option value="">{{ __('No Session') }}</option>
             @foreach($sessions as $session)
                 <option value="{{ $session->id }}" {{ old('session_id', $aestheticInvoice->session_id ?? ($preselectedSession->id ?? '')) == $session->id ? 'selected' : '' }}>
-                    {{ $session->patientPackage->patient->first_name }} {{ $session->patientPackage->patient->last_name }}
-                    - {{ $session->patientPackage->package->name ?? '-' }} (Session #{{ $session->session_number }})
+                    {{ $session->patient_display }}
+                    - {{ $session->session_context }} ({{ __('Session #:number', ['number' => $session->session_number]) }})
                 </option>
             @endforeach
         </select>
@@ -208,18 +208,94 @@
     </div>
 </div>
 
+@php
+    $currencySymbol = $clinicCurrency ?? '$';
+    $treatmentMeta = $treatments->map(fn($treatment) => [
+        'id' => $treatment->id,
+        'name' => $treatment->name,
+        'price' => (float) $treatment->default_price,
+    ])->values();
+
+    $sessionMeta = $sessions->map(fn($session) => [
+        'id' => $session->id,
+        'patient_id' => $session->resolved_patient?->id,
+        'description' => $session->session_context . ' - Session #' . $session->session_number,
+        'treatment_id' => $session->isPackageSession ? $session->patientPackage?->package?->treatment_id : $session->treatment_id,
+        'unit_price' => (float) ($session->isPackageSession ? ($session->patientPackage?->package?->final_price ?? 0) : ($session->treatment?->default_price ?? 0)),
+    ])->values();
+@endphp
+
 <script>
 (function () {
-    const currencySymbol = '{{ $clinicCurrency ?? '$' }}';
+    const currencySymbol = @json($currencySymbol);
     const tbody = document.getElementById('items_body');
     const addBtn = document.getElementById('add_item_row');
     const taxRateInput = document.getElementById('tax_rate');
     const discountInput = document.getElementById('discount_amount');
+    const sessionSelect = document.getElementById('session_id');
+    const patientSelect = document.getElementById('patient_id');
 
-    const treatments = @json($treatments->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'price' => (float) $t->default_price]));
+    const treatments = @json($treatmentMeta);
+    const sessions = @json($sessionMeta);
 
     function buildOptions() {
         return treatments.map(t => `<option value="${t.id}" data-price="${t.price}">${t.name}</option>`).join('');
+    }
+
+    function getSessionMeta(sessionId) {
+        return sessions.find(session => String(session.id) === String(sessionId));
+    }
+
+    function isRowBlank(row) {
+        const description = row.querySelector('input[name*="[description]"]')?.value?.trim() || '';
+        const treatmentId = row.querySelector('select[name*="[treatment_id]"]')?.value || '';
+        const price = parseFloat(row.querySelector('.price')?.value || 0);
+        const discount = parseFloat(row.querySelector('.discount')?.value || 0);
+        const qty = parseFloat(row.querySelector('.qty')?.value || 0);
+
+        return description === '' && treatmentId === '' && price === 0 && discount === 0 && (qty === 0 || qty === 1);
+    }
+
+    function populateRowFromSession(row, sessionMeta, force = false) {
+        if (!row || !sessionMeta) {
+            return;
+        }
+
+        if (!force && !isRowBlank(row)) {
+            return;
+        }
+
+        const descriptionInput = row.querySelector('input[name*="[description]"]');
+        const treatmentSelect = row.querySelector('select[name*="[treatment_id]"]');
+        const priceInput = row.querySelector('.price');
+        const qtyInput = row.querySelector('.qty');
+        const discountInput = row.querySelector('.discount');
+
+        if (descriptionInput) {
+            descriptionInput.value = sessionMeta.description || descriptionInput.value;
+        }
+
+        if (treatmentSelect && sessionMeta.treatment_id) {
+            treatmentSelect.value = String(sessionMeta.treatment_id);
+        }
+
+        if (priceInput && Number(sessionMeta.unit_price) > 0) {
+            priceInput.value = Number(sessionMeta.unit_price).toFixed(2);
+        }
+
+        if (qtyInput && (!qtyInput.value || Number(qtyInput.value) <= 0)) {
+            qtyInput.value = 1;
+        }
+
+        if (discountInput && !discountInput.value) {
+            discountInput.value = 0;
+        }
+
+        if (patientSelect && sessionMeta.patient_id) {
+            patientSelect.value = String(sessionMeta.patient_id);
+        }
+
+        recalc();
     }
 
     let rowCount = tbody.querySelectorAll('.item-row').length;
@@ -322,7 +398,14 @@
     taxRateInput?.addEventListener('input', recalc);
     discountInput?.addEventListener('input', recalc);
 
+    sessionSelect?.addEventListener('change', function () {
+        const meta = getSessionMeta(this.value);
+        const firstRow = tbody.querySelector('.item-row');
+        populateRowFromSession(firstRow, meta, true);
+    });
+
     tbody.querySelectorAll('.item-row').forEach(bindRow);
+    populateRowFromSession(tbody.querySelector('.item-row'), getSessionMeta(sessionSelect?.value), false);
     recalc();
 })();
 </script>

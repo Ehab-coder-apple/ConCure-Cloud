@@ -857,11 +857,25 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/create', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'store'])->name('store');
         Route::get('/{aestheticSession}', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'show'])->name('show');
+        Route::post('/{aestheticSession}/send-whatsapp-reminder', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'sendWhatsAppReminder'])->name('send-whatsapp-reminder');
         Route::get('/{aestheticSession}/edit', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'edit'])->name('edit');
         Route::put('/{aestheticSession}', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'update'])->name('update');
         Route::delete('/{aestheticSession}', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'destroy'])->name('destroy');
+        Route::post('/{aestheticSession}/consent', [\App\Http\Controllers\Aesthetic\AestheticConsentController::class, 'store'])->name('consent.store');
+        Route::post('/{aestheticSession}/aftercare', [\App\Http\Controllers\Aesthetic\AestheticAftercareIssueController::class, 'store'])->name('aftercare.store');
+        Route::post('/{aestheticSession}/aftercare/{aestheticAftercareIssue}/send-whatsapp', [\App\Http\Controllers\Aesthetic\AestheticAftercareIssueController::class, 'sendViaWhatsApp'])->name('aftercare.send-whatsapp');
         Route::post('/{aestheticSession}/images', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'uploadImages'])->name('images.store');
         Route::delete('/{aestheticSession}/images/{sessionImage}', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'deleteImage'])->name('images.destroy');
+    });
+
+    // Aesthetic Aftercare Template Routes
+    Route::prefix('aesthetic/settings/aftercare-templates')->name('aesthetic.aftercare-templates.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Aesthetic\AestheticAftercareTemplateController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Aesthetic\AestheticAftercareTemplateController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Aesthetic\AestheticAftercareTemplateController::class, 'store'])->name('store');
+        Route::get('/{aestheticAftercareTemplate}/edit', [\App\Http\Controllers\Aesthetic\AestheticAftercareTemplateController::class, 'edit'])->name('edit');
+        Route::put('/{aestheticAftercareTemplate}', [\App\Http\Controllers\Aesthetic\AestheticAftercareTemplateController::class, 'update'])->name('update');
+        Route::delete('/{aestheticAftercareTemplate}', [\App\Http\Controllers\Aesthetic\AestheticAftercareTemplateController::class, 'destroy'])->name('destroy');
     });
 
     // Aesthetic Inventory Routes
@@ -1098,6 +1112,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/reports', [FinanceController::class, 'reports'])->name('reports')->middleware('can:finance-reports');
         Route::get('/reports/cash-flow', [FinanceController::class, 'cashFlowReport'])->name('reports.cash-flow')->middleware('can:finance-reports');
         Route::get('/reports/profit-loss', [FinanceController::class, 'profitLossReport'])->name('reports.profit-loss')->middleware('can:finance-reports');
+        Route::get('/reports/user-performance', [FinanceController::class, 'userPerformanceReport'])->name('reports.user-performance')->middleware('can:finance-reports');
     });
 
     // Advertisements

@@ -293,6 +293,123 @@
                     @endif
                 </div>
             </div>
+
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">
+                            <i class="fas fa-spa text-primary me-2"></i>{{ __('Aesthetic Department Invoices') }}
+                        </h5>
+                        <small class="text-muted">{{ __('Aesthetic invoices are now visible here for finance follow-up and payment review.') }}</small>
+                    </div>
+                    <a href="{{ route('aesthetic.invoices.index') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-external-link-alt me-1"></i>{{ __('Open Aesthetic Invoices') }}
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if(isset($aestheticInvoices) && $aestheticInvoices->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('Invoice #') }}</th>
+                                        <th>{{ __('Patient') }}</th>
+                                        <th>{{ __('Session') }}</th>
+                                        <th>{{ __('Date') }}</th>
+                                        <th>{{ __('Due Date') }}</th>
+                                        <th>{{ __('Amount') }}</th>
+                                        <th>{{ __('Status') }}</th>
+                                        <th>{{ __('Remaining') }}</th>
+                                        <th>{{ __('Actions') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($aestheticInvoices as $invoice)
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $invoice->invoice_number }}</strong>
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2">{{ __('Aesthetic') }}</span>
+                                            </td>
+                                            <td>
+                                                @if($invoice->patient)
+                                                    {{ $invoice->patient->first_name }} {{ $invoice->patient->last_name }}
+                                                @else
+                                                    <span class="text-muted">{{ __('No Patient') }}</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($invoice->session)
+                                                    <div class="fw-semibold">{{ $invoice->session->session_context }}</div>
+                                                    <small class="text-muted">{{ __('Session #:number', ['number' => $invoice->session->session_number]) }}</small>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
+                                            <td>{{ $invoice->invoice_date ? $invoice->invoice_date->format('M d, Y') : '-' }}</td>
+                                            <td>{{ $invoice->due_date ? $invoice->due_date->format('M d, Y') : '-' }}</td>
+                                            <td>
+                                                <strong>{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->total_amount ?? 0, 2), '0'), '.') }}</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ $invoice->status_color }}">
+                                                    {{ $invoice->status_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if(($invoice->balance ?? 0) > 0)
+                                                    <span class="text-danger fw-bold">
+                                                        {{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->balance ?? 0, 2), '0'), '.') }}
+                                                    </span>
+                                                    @if(($invoice->paid_amount ?? 0) > 0)
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            {{ __('Paid: :amount', ['amount' => ($currencySymbol ?? '$') . rtrim(rtrim(number_format($invoice->paid_amount ?? 0, 2), '0'), '.')]) }}
+                                                        </small>
+                                                    @endif
+                                                @else
+                                                    <span class="text-success">
+                                                        <i class="fas fa-check-circle"></i> {{ __('Fully Paid') }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <div class="d-inline-flex gap-2 flex-wrap">
+                                                    <a href="{{ route('aesthetic.invoices.show', $invoice) }}" class="btn btn-sm btn-outline-primary" title="{{ __('View Invoice') }}">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ route('aesthetic.invoices.receipt', $invoice) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="{{ __('Print Receipt') }}">
+                                                        <i class="fas fa-print"></i>
+                                                    </a>
+                                                    @if(!in_array($invoice->status, ['paid', 'cancelled']))
+                                                        <a href="{{ route('aesthetic.invoices.edit', $invoice) }}" class="btn btn-sm btn-outline-info" title="{{ __('Edit Invoice') }}">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        @if(method_exists($aestheticInvoices, 'links'))
+                            <div class="d-flex justify-content-center mt-4">
+                                {{ $aestheticInvoices->appends(request()->except('aesthetic_page'))->links() }}
+                            </div>
+                        @endif
+                    @else
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-invoice-dollar fa-2x text-muted mb-3"></i>
+                            <h6 class="text-muted">{{ __('No aesthetic invoices found') }}</h6>
+                            <p class="text-muted mb-3">{{ __('Aesthetic invoices will appear here so finance staff can review them without leaving the finance page.') }}</p>
+                            <a href="{{ route('aesthetic.invoices.create') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-plus me-1"></i>{{ __('Create Aesthetic Invoice') }}
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 </div>

@@ -20,7 +20,14 @@ class AestheticInvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        $query = AestheticInvoice::with(['patient', 'session', 'items']);
+        $query = AestheticInvoice::with([
+            'patient',
+            'session.patientPackage.package',
+            'session.patientPackage.patient',
+            'session.patient',
+            'session.treatment',
+            'items',
+        ]);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -83,20 +90,17 @@ class AestheticInvoiceController extends Controller
         $lineItems = [];
 
         if ($request->filled('session_id')) {
-            $preselectedSession = AestheticSession::with(['patientPackage.patient', 'patientPackage.package.treatment'])->find($request->session_id);
-            if ($preselectedSession) {
-                $preselectedPatient = $preselectedSession->patientPackage->patient;
-                $preselectedPackage = $preselectedSession->patientPackage;
+            $preselectedSession = AestheticSession::with([
+                'patientPackage.patient',
+                'patientPackage.package.treatment',
+                'patient',
+                'treatment',
+            ])->find($request->session_id);
 
-                if ($preselectedSession->patientPackage->package) {
-                    $lineItems[] = [
-                        'description' => $preselectedSession->patientPackage->package->name . ' - Session #' . $preselectedSession->session_number,
-                        'treatment_id' => $preselectedSession->patientPackage->package->treatment_id,
-                        'quantity' => 1,
-                        'unit_price' => $preselectedSession->patientPackage->package->final_price,
-                        'discount' => 0,
-                    ];
-                }
+            if ($preselectedSession) {
+                $preselectedPatient = $preselectedSession->resolved_patient;
+                $preselectedPackage = $preselectedSession->patientPackage;
+                $lineItems = $this->buildLineItemsFromSession($preselectedSession);
             }
         }
 
@@ -445,9 +449,13 @@ class AestheticInvoiceController extends Controller
     private function getTenantSessions()
     {
         $clinicId = Auth::user()->clinic_id;
-        return AestheticSession::with(['patientPackage.patient', 'patientPackage.package'])
-            ->whereHas('patientPackage.patient', fn($q) => $q->when($clinicId, fn($sq) => $sq->where('clinic_id', $clinicId)))
-            ->where('status', 'completed')
+
+        return AestheticSession::with(['patientPackage.patient', 'patientPackage.package', 'patient', 'treatment'])
+            ->where(function ($query) use ($clinicId) {
+                $query->whereHas('patientPackage.patient', fn($q) => $q->when($clinicId, fn($sq) => $sq->where('clinic_id', $clinicId)))
+                    ->orWhereHas('patient', fn($q) => $q->when($clinicId, fn($sq) => $sq->where('clinic_id', $clinicId)));
+            })
+            ->whereNotIn('status', ['cancelled', 'no_show'])
             ->latest('session_date')
             ->get();
     }
@@ -464,11 +472,37 @@ class AestheticInvoiceController extends Controller
     private function validateSessionTenant(int $sessionId): void
     {
         $clinicId = Auth::user()->clinic_id;
+
         $exists = AestheticSession::where('id', $sessionId)
-            ->whereHas('patientPackage.patient', fn($q) => $q->when($clinicId, fn($sq) => $sq->where('clinic_id', $clinicId)))
+            ->where(function ($query) use ($clinicId) {
+                $query->whereHas('patientPackage.patient', fn($q) => $q->when($clinicId, fn($sq) => $sq->where('clinic_id', $clinicId)))
+                    ->orWhereHas('patient', fn($q) => $q->when($clinicId, fn($sq) => $sq->where('clinic_id', $clinicId)));
+            })
             ->exists();
+
         if (!$exists) {
             abort(403, __('The selected session is not available for your clinic.'));
         }
+    }
+
+    private function buildLineItemsFromSession(AestheticSession $session): array
+    {
+        if ($session->isPackageSession && $session->patientPackage?->package) {
+            return [[
+                'description' => $session->patientPackage->package->name . ' - Session #' . $session->session_number,
+                'treatment_id' => $session->patientPackage->package->treatment_id,
+                'quantity' => 1,
+                'unit_price' => $session->patientPackage->package->final_price,
+                'discount' => 0,
+            ]];
+        }
+
+        return [[
+            'description' => $session->session_context . ' - Session #' . $session->session_number,
+            'treatment_id' => $session->treatment_id,
+            'quantity' => 1,
+            'unit_price' => $session->treatment?->default_price ?? 0,
+            'discount' => 0,
+        ]];
     }
 }

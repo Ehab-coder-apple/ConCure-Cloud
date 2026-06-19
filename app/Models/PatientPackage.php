@@ -133,4 +133,20 @@ class PatientPackage extends Model
 
         return round(($this->sessions_used / $total) * 100, 1);
     }
+
+    /**
+     * Total sessions expected for this package assignment.
+     */
+    public function getTotalSessionsAttribute(): int
+    {
+        return (int) ($this->package?->total_sessions ?? ($this->sessions_used + $this->sessions_remaining));
+    }
+
+    /**
+     * Backward-compatible remaining sessions alias.
+     */
+    public function getRemainingSessionsAttribute(): int
+    {
+        return (int) $this->sessions_remaining;
+    }
 }

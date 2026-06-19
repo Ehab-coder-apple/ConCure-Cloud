@@ -3,17 +3,27 @@
 namespace App\Http\Controllers\Aesthetic;
 
 use App\Http\Controllers\Controller;
+use App\Models\AestheticAftercareIssue;
+use App\Models\AestheticAftercareTemplate;
 use App\Models\AestheticSession;
 use App\Models\AestheticInventory;
 use App\Models\AestheticTreatment;
+use App\Models\ConsentForm;
+use App\Models\NotificationLog;
+use App\Models\NotificationSetting;
 use App\Models\Patient;
 use App\Models\PatientPackage;
 use App\Models\SessionImage;
 use App\Models\SessionInventoryUsage;
+use App\Models\User;
 use App\Services\StorageQuotaService;
+use App\Services\WhatsAppService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 class AestheticSessionController extends Controller
 {
@@ -27,6 +37,7 @@ class AestheticSessionController extends Controller
             'patientPackage.package.treatments',
             'patient',
             'treatment',
+            'assignedUser',
             'images',
         ]);
 
@@ -65,14 +76,19 @@ class AestheticSessionController extends Controller
         $sessions = $query->latest('session_date')->paginate(15);
 
         $patientPackages = $this->getTenantPatientPackages();
+        $followUpReminders = $this->getOutstandingPackageReminderQuery()
+            ->latest('next_due_date')
+            ->take(6)
+            ->get();
 
         $stats = [
             'total' => AestheticSession::count(),
             'scheduled' => AestheticSession::where('status', 'scheduled')->count(),
             'completed' => AestheticSession::where('status', 'completed')->count(),
+            'follow_up_due' => $this->getOutstandingPackageReminderQuery()->count(),
         ];
 
-        return view('aesthetic.sessions.index', compact('sessions', 'patientPackages', 'stats'));
+        return view('aesthetic.sessions.index', compact('sessions', 'patientPackages', 'stats', 'followUpReminders'));
     }
 
     /**
@@ -84,14 +100,17 @@ class AestheticSessionController extends Controller
         $inventoryItems = $this->getTenantInventory();
         $patients = $this->getTenantPatients();
         $treatments = $this->getTenantTreatments();
+        $assignableUsers = $this->getAssignableUsers();
 
         $selectedPackageId = $request->get('patient_package_id');
+        $selectedPatientId = $request->get('patient_id');
+        $defaultSessionMode = $request->get('session_mode', 'package');
         $selectedPackage = $selectedPackageId ? PatientPackage::find($selectedPackageId) : null;
         $nextSessionNumber = $selectedPackage ? ($selectedPackage->sessions()->count() + 1) : 1;
 
         return view('aesthetic.sessions.create', compact(
-            'patientPackages', 'inventoryItems', 'patients', 'treatments',
-            'selectedPackageId', 'nextSessionNumber'
+            'patientPackages', 'inventoryItems', 'patients', 'treatments', 'assignableUsers',
+            'selectedPackageId', 'selectedPatientId', 'defaultSessionMode', 'nextSessionNumber'
         ));
     }
 
@@ -107,7 +126,8 @@ class AestheticSessionController extends Controller
                 'patient_package_id' => 'required|integer|exists:patient_packages,id',
                 'session_number' => 'required|integer|min:1',
                 'session_date' => 'required|date',
-                'status' => 'required|in:scheduled,completed,cancelled,no_show',
+                'assigned_user_id' => 'nullable|integer|exists:users,id',
+                'status' => 'required|in:scheduled,started,completed,cancelled,no_show',
                 'notes' => 'nullable|string|max:2000',
             ]);
             $this->validatePatientPackageTenant($validated['patient_package_id']);
@@ -117,13 +137,30 @@ class AestheticSessionController extends Controller
                 'treatment_id' => 'nullable|integer|exists:aesthetic_treatments,id',
                 'session_number' => 'required|integer|min:1',
                 'session_date' => 'required|date',
-                'status' => 'required|in:scheduled,completed,cancelled,no_show',
+                'assigned_user_id' => 'nullable|integer|exists:users,id',
+                'status' => 'required|in:scheduled,started,completed,cancelled,no_show',
                 'notes' => 'nullable|string|max:2000',
             ]);
             $this->validatePatientTenant($validated['patient_id']);
             if (!empty($validated['treatment_id'])) {
                 $this->validateTreatmentTenant($validated['treatment_id']);
             }
+
+            if ($request->input('next_action') === 'create_invoice' && empty($validated['treatment_id'])) {
+                return back()->withInput()->withErrors([
+                    'treatment_id' => __('Please select a treatment so the invoice item and price can be filled automatically.'),
+                ]);
+            }
+        }
+
+        if (!empty($validated['assigned_user_id'])) {
+            $this->validateAssignableUser($validated['assigned_user_id']);
+        }
+
+        if (in_array($validated['status'], ['started', 'completed'], true)) {
+            return back()->withInput()->withErrors([
+                'status' => __('Consent must be captured before a session can be marked as started or completed.'),
+            ]);
         }
 
         $validated['tenant_id'] = Auth::user()->clinic?->tenant_id;
@@ -138,6 +175,11 @@ class AestheticSessionController extends Controller
 
             return $session;
         });
+
+        if ($request->input('next_action') === 'create_invoice') {
+            return redirect()->route('aesthetic.invoices.create', ['session_id' => $session->id])
+                ->with('success', __('Session created successfully. Complete the invoice details below.'));
+        }
 
         return redirect()->route('aesthetic.sessions.show', $session)
             ->with('success', __('Session created successfully.'));
@@ -160,7 +202,7 @@ class AestheticSessionController extends Controller
                     $sq->where('patient_id', $patient->id);
                 })->orWhere('patient_id', $patient->id);
             })
-            ->with(['patientPackage.package.treatments', 'patient', 'treatment', 'images'])
+            ->with(['patientPackage.package.treatments', 'patient', 'treatment', 'images', 'consentForms', 'aftercareIssues'])
             ->orderByDesc('session_date')
             ->paginate(10);
 
@@ -168,6 +210,13 @@ class AestheticSessionController extends Controller
             ->with('package.treatments')
             ->latest()
             ->get();
+
+        $followUpReminders = $this->getOutstandingPackageReminderQuery()
+            ->whereHas('patientPackage', fn ($query) => $query->where('patient_id', $patient->id))
+            ->latest('next_due_date')
+            ->get();
+
+        $followUpReminderMap = $followUpReminders->keyBy('patient_package_id');
 
         $stats = [
             'total_sessions' => $sessions->total(),
@@ -182,9 +231,20 @@ class AestheticSessionController extends Controller
                     })->orWhere('patient_id', $patient->id);
                 })->where('status', 'scheduled')->count(),
             'packages' => $patientPackages->count(),
+            'follow_up_due' => $followUpReminders->count(),
         ];
 
-        return view('aesthetic.patients.show', compact('patient', 'sessions', 'patientPackages', 'stats'));
+        $consentForms = ConsentForm::with(['session', 'treatment', 'patientFile'])
+            ->where('patient_id', $patient->id)
+            ->latest('signed_at')
+            ->get();
+
+        $aftercareIssues = AestheticAftercareIssue::with(['session', 'template', 'patientFile'])
+            ->where('patient_id', $patient->id)
+            ->latest('issued_at')
+            ->get();
+
+        return view('aesthetic.patients.show', compact('patient', 'sessions', 'patientPackages', 'stats', 'consentForms', 'aftercareIssues', 'followUpReminders', 'followUpReminderMap'));
     }
 
     /**
@@ -197,13 +257,29 @@ class AestheticSessionController extends Controller
         $aestheticSession->load([
             'patientPackage.patient',
             'patientPackage.package.treatments',
+            'patientPackage.package.treatment',
             'patient',
             'treatment',
+            'assignedUser',
             'images',
             'inventoryUsages.product',
+            'consentForms.patientFile',
+            'consentForms.treatment',
+            'consentForms.creator',
+            'aftercareIssues.patientFile',
+            'aftercareIssues.template',
+            'aftercareIssues.issuer',
         ]);
 
-        return view('aesthetic.sessions.show', compact('aestheticSession'));
+        $aftercareTemplates = AestheticAftercareTemplate::active()
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get();
+
+        $sessionTreatments = $this->getSessionTreatments($aestheticSession);
+        $suggestedNextDueDate = $this->getSuggestedNextDueDate($aestheticSession);
+
+        return view('aesthetic.sessions.show', compact('aestheticSession', 'aftercareTemplates', 'sessionTreatments', 'suggestedNextDueDate'));
     }
 
     /**
@@ -217,8 +293,9 @@ class AestheticSessionController extends Controller
         $inventoryItems = $this->getTenantInventory();
         $patients = $this->getTenantPatients();
         $treatments = $this->getTenantTreatments();
+        $assignableUsers = $this->getAssignableUsers();
 
-        return view('aesthetic.sessions.edit', compact('aestheticSession', 'patientPackages', 'inventoryItems', 'patients', 'treatments'));
+        return view('aesthetic.sessions.edit', compact('aestheticSession', 'patientPackages', 'inventoryItems', 'patients', 'treatments', 'assignableUsers'));
     }
 
     /**
@@ -235,7 +312,9 @@ class AestheticSessionController extends Controller
                 'patient_package_id' => 'required|integer|exists:patient_packages,id',
                 'session_number' => 'required|integer|min:1',
                 'session_date' => 'required|date',
-                'status' => 'required|in:scheduled,completed,cancelled,no_show',
+                'assigned_user_id' => 'nullable|integer|exists:users,id',
+                'next_due_date' => 'nullable|date|after_or_equal:session_date',
+                'status' => 'required|in:scheduled,started,completed,cancelled,no_show',
                 'notes' => 'nullable|string|max:2000',
             ]);
             $this->validatePatientPackageTenant($validated['patient_package_id']);
@@ -247,7 +326,9 @@ class AestheticSessionController extends Controller
                 'treatment_id' => 'nullable|integer|exists:aesthetic_treatments,id',
                 'session_number' => 'required|integer|min:1',
                 'session_date' => 'required|date',
-                'status' => 'required|in:scheduled,completed,cancelled,no_show',
+                'assigned_user_id' => 'nullable|integer|exists:users,id',
+                'next_due_date' => 'nullable|date|after_or_equal:session_date',
+                'status' => 'required|in:scheduled,started,completed,cancelled,no_show',
                 'notes' => 'nullable|string|max:2000',
             ]);
             $this->validatePatientTenant($validated['patient_id']);
@@ -255,6 +336,16 @@ class AestheticSessionController extends Controller
                 $this->validateTreatmentTenant($validated['treatment_id']);
             }
             $validated['patient_package_id'] = null;
+        }
+
+        if (!empty($validated['assigned_user_id'])) {
+            $this->validateAssignableUser($validated['assigned_user_id']);
+        }
+
+        $validated['next_due_date'] = $this->resolveNextDueDate($request, $aestheticSession, $mode, $validated['status']);
+
+        if ($error = $this->statusConsentError($validated['status'], $aestheticSession)) {
+            return back()->withInput()->withErrors(['status' => $error]);
         }
 
         DB::transaction(function () use ($aestheticSession, $validated, $request) {
@@ -282,6 +373,71 @@ class AestheticSessionController extends Controller
 
         return redirect()->route('aesthetic.sessions.show', $aestheticSession)
             ->with('success', __('Session updated successfully.'));
+    }
+
+    /**
+     * Send a WhatsApp follow-up reminder for a package session.
+     */
+    public function sendWhatsAppReminder(AestheticSession $aestheticSession, WhatsAppService $whatsAppService): JsonResponse
+    {
+        $this->authorizeTenant($aestheticSession);
+
+        $aestheticSession->loadMissing([
+            'patientPackage.patient',
+            'patientPackage.package.treatments',
+            'patient',
+            'treatment',
+        ]);
+
+        if (!$aestheticSession->next_due_date) {
+            return response()->json([
+                'success' => false,
+                'message' => __('Add a next due date before sending a reminder.'),
+            ], 422);
+        }
+
+        $patient = $aestheticSession->resolvedPatient;
+        if (!$patient) {
+            return response()->json([
+                'success' => false,
+                'message' => __('This reminder is not linked to a patient.'),
+            ], 422);
+        }
+
+        $phoneNumber = $patient->whatsapp_phone ?: $patient->phone;
+        if (!$phoneNumber) {
+            return response()->json([
+                'success' => false,
+                'message' => __('The patient does not have a WhatsApp or phone number.'),
+            ], 422);
+        }
+
+        $message = $this->buildFollowUpReminderMessage($aestheticSession, $patient);
+
+        $whatsAppService->setClinicContext(Auth::user()->clinic_id);
+        $result = $whatsAppService->sendMessage($phoneNumber, $message);
+
+        $status = ($result['success'] ?? false)
+            ? NotificationLog::STATUS_SENT
+            : (isset($result['whatsapp_url']) ? NotificationLog::STATUS_PENDING : NotificationLog::STATUS_FAILED);
+
+        $this->logFollowUpReminderAttempt($aestheticSession, $patient, $phoneNumber, $message, $status, $result);
+
+        if (($result['success'] ?? false) || isset($result['whatsapp_url'])) {
+            return response()->json([
+                'success' => true,
+                'message' => ($result['success'] ?? false)
+                    ? __('Reminder sent successfully.')
+                    : __('Opening WhatsApp to finish sending the reminder.'),
+                'whatsapp_url' => $result['whatsapp_url'] ?? null,
+                'auto_open' => isset($result['whatsapp_url']),
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => $result['error'] ?? __('Failed to send reminder.'),
+        ], 422);
     }
 
     /**
@@ -511,6 +667,18 @@ class AestheticSessionController extends Controller
     }
 
     /**
+     * Get active clinic users who can be assigned to run sessions.
+     */
+    private function getAssignableUsers()
+    {
+        return User::where('clinic_id', Auth::user()->clinic_id)
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get();
+    }
+
+    /**
      * Validate that the patient belongs to the current clinic.
      */
     private function validatePatientTenant(int $patientId): void
@@ -540,5 +708,161 @@ class AestheticSessionController extends Controller
         if (!$exists) {
             abort(403, __('The selected treatment is not available for your clinic.'));
         }
+    }
+
+    /**
+     * Validate that the assigned user belongs to the current clinic.
+     */
+    private function validateAssignableUser(int $userId): void
+    {
+        $exists = User::where('id', $userId)
+            ->where('clinic_id', Auth::user()->clinic_id)
+            ->where('is_active', true)
+            ->exists();
+
+        if (!$exists) {
+            abort(403, __('The selected assigned person is not available for your clinic.'));
+        }
+    }
+
+    private function statusConsentError(string $status, ?AestheticSession $session = null): ?string
+    {
+        if (!in_array($status, ['started', 'completed'], true)) {
+            return null;
+        }
+
+        if (!$session || !$session->consentForms()->exists()) {
+            return __('Consent must be captured before a session can be marked as started or completed.');
+        }
+
+        return null;
+    }
+
+    private function getSessionTreatments(AestheticSession $session)
+    {
+        if ($session->isDirectSession && $session->treatment) {
+            return collect([$session->treatment]);
+        }
+
+        $package = $session->patientPackage?->package;
+        if (!$package) {
+            return collect();
+        }
+
+        $treatments = $package->treatments ?? collect();
+        if ($treatments->isNotEmpty()) {
+            return $treatments->values();
+        }
+
+        return $package->treatment ? collect([$package->treatment]) : collect();
+    }
+
+    private function getSuggestedNextDueDate(AestheticSession $session): ?Carbon
+    {
+        if (!$session->isPackageSession || !$session->has_pending_follow_up_slot) {
+            return null;
+        }
+
+        return $session->next_due_date ?: $session->suggested_next_due_date;
+    }
+
+    private function resolveNextDueDate(Request $request, AestheticSession $session, string $mode, string $status): ?string
+    {
+        if ($mode !== 'package' || $status !== 'completed') {
+            return null;
+        }
+
+        if (!$session->has_pending_follow_up_slot) {
+            return null;
+        }
+
+        if ($request->has('next_due_date')) {
+            return $request->input('next_due_date') ?: null;
+        }
+
+        return optional($session->next_due_date)->format('Y-m-d');
+    }
+
+    private function getOutstandingPackageReminderQuery()
+    {
+        return AestheticSession::with(['patientPackage.patient', 'patientPackage.package'])
+            ->whereNotNull('patient_package_id')
+            ->where('status', 'completed')
+            ->whereNotNull('next_due_date')
+            ->whereHas('patientPackage', fn ($query) => $query->where('sessions_remaining', '>', 0))
+            ->whereRaw('NOT EXISTS (
+                SELECT 1 FROM aesthetic_sessions future_sessions
+                WHERE future_sessions.patient_package_id = aesthetic_sessions.patient_package_id
+                  AND future_sessions.session_number > aesthetic_sessions.session_number
+                  AND future_sessions.deleted_at IS NULL
+            )');
+    }
+
+    private function buildFollowUpReminderMessage(AestheticSession $session, Patient $patient): string
+    {
+        $clinic = Auth::user()?->clinic;
+        $packageName = $session->patientPackage?->package?->name ?? __('Treatment Package');
+        $nextSessionNumber = $session->session_number + 1;
+        $dueDate = optional($session->next_due_date)->format('Y-m-d') ?? '';
+        $customTemplate = null;
+
+        if (Schema::hasTable('notification_settings') && Auth::user()?->clinic_id) {
+            $customTemplate = NotificationSetting::withoutGlobalScopes()
+                ->where('clinic_id', Auth::user()->clinic_id)
+                ->value('follow_up_reminder_template');
+        }
+
+        $template = $customTemplate ?: "Hello {patient_name},\nThis is a reminder that your next {package_name} session (Session {next_session_number}) is due on {due_date}.\nPlease contact {clinic_name} to confirm your visit.\n— {clinic_name}";
+
+        return strtr($template, [
+            '{patient_name}' => $patient->full_name ?? trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? '')),
+            '{patient_first_name}' => $patient->first_name ?? '',
+            '{patient_last_name}' => $patient->last_name ?? '',
+            '{patient_id}' => $patient->patient_id ?? '',
+            '{patient_phone}' => $patient->whatsapp_phone ?: ($patient->phone ?? ''),
+            '{clinic_name}' => $clinic?->name ?? config('app.name'),
+            '{clinic_phone}' => $clinic?->phone ?? '',
+            '{appointment_date}' => $dueDate,
+            '{appointment_time}' => '',
+            '{doctor_name}' => trim((Auth::user()?->first_name ?? '') . ' ' . (Auth::user()?->last_name ?? '')),
+            '{due_date}' => $dueDate,
+            '{package_name}' => $packageName,
+            '{session_number}' => (string) $session->session_number,
+            '{next_session_number}' => (string) $nextSessionNumber,
+            '{treatment_name}' => $session->treatment?->name ?? ($session->patientPackage?->package?->treatment?->name ?? __('Treatment Session')),
+        ]);
+    }
+
+    private function logFollowUpReminderAttempt(
+        AestheticSession $session,
+        Patient $patient,
+        string $phoneNumber,
+        string $message,
+        string $status,
+        array $result
+    ): void {
+        if (!Schema::hasTable('notification_logs')) {
+            return;
+        }
+
+        NotificationLog::withoutGlobalScopes()->create([
+            'clinic_id' => Auth::user()->clinic_id,
+            'patient_id' => $patient->id,
+            'type' => NotificationLog::TYPE_FOLLOW_UP,
+            'channel' => 'whatsapp',
+            'recipient' => $phoneNumber,
+            'message' => $message,
+            'status' => $status,
+            'error_message' => $result['error'] ?? null,
+            'external_id' => $result['message_id'] ?? $result['message_sid'] ?? null,
+            'notifiable_type' => AestheticSession::class,
+            'notifiable_id' => $session->id,
+            'metadata' => [
+                'next_due_date' => optional($session->next_due_date)->format('Y-m-d'),
+                'package_name' => $session->patientPackage?->package?->name,
+                'whatsapp_url' => $result['whatsapp_url'] ?? null,
+            ],
+            'sent_at' => $status === NotificationLog::STATUS_SENT ? now() : null,
+        ]);
     }
 }

@@ -112,7 +112,7 @@
 
             <!-- Report Types -->
             <div class="row">
-                <div class="col-lg-6 mb-4">
+                <div class="col-lg-4 mb-4">
                     <div class="card h-100">
                         <div class="card-header">
                             <h6 class="mb-0">
@@ -141,7 +141,7 @@
                     </div>
                 </div>
 
-                <div class="col-lg-6 mb-4">
+                <div class="col-lg-4 mb-4">
                     <div class="card h-100">
                         <div class="card-header">
                             <h6 class="mb-0">
@@ -165,6 +165,35 @@
                             <a href="{{ route('finance.reports.profit-loss') }}" class="btn btn-success">
                                 <i class="fas fa-chart-pie me-1"></i>
                                 {{ __('View P&L Report') }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-users text-info me-2"></i>
+                                {{ __('Per User Financial Report') }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">
+                                {{ __('See revenue, collections, receipts, and expenses attributed to each user or assigned provider across modules.') }}
+                            </p>
+                            <div class="mb-3">
+                                <h6 class="text-info">{{ __('Features:') }}</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Revenue totals by user / assigned person') }}</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Dental assigned-doctor attribution when available') }}</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Aesthetic and finance activity in one view') }}</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Date, module, and user filters') }}</li>
+                                </ul>
+                            </div>
+                            <a href="{{ route('finance.reports.user-performance') }}" class="btn btn-info text-white">
+                                <i class="fas fa-users me-1"></i>
+                                {{ __('View User Report') }}
                             </a>
                         </div>
                     </div>
@@ -209,6 +238,13 @@
                                        class="btn btn-outline-warning btn-lg w-100">
                                         <i class="fas fa-chart-bar d-block mb-1"></i>
                                         <small>{{ __('Year to Date P&L') }}</small>
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <a href="{{ route('finance.reports.user-performance', ['date_from' => now()->startOfMonth()->format('Y-m-d'), 'date_to' => now()->endOfMonth()->format('Y-m-d')]) }}" 
+                                       class="btn btn-outline-info btn-lg w-100">
+                                        <i class="fas fa-users d-block mb-1"></i>
+                                        <small>{{ __('This Month Per User') }}</small>
                                     </a>
                                 </div>
                             </div>

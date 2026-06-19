@@ -10,6 +10,8 @@
             filled(old('nutrition_height')) || filled(old('nutrition_weight')) ? 'nutrition' : null,
             filled(old('ent_notes')) ? 'ent' : null,
         ])->filter()->unique()->values();
+
+    $backUrl = old('return_to', $returnTo ?? route('patients.index'));
 @endphp
 
 @section('content')
@@ -19,7 +21,7 @@
             <h1 class="h3 mb-1"><i class="fas fa-user-plus text-primary me-2"></i>{{ __('Add New Patient') }}</h1>
             <p class="text-muted mb-0">{{ __('Create the shared patient profile first, then add only the optional specialty modules you need.') }}</p>
         </div>
-        <a href="{{ route('patients.index') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>{{ __('Back to Patients') }}</a>
+        <a href="{{ $backUrl }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>{{ $backUrl === route('patients.index') ? __('Back to Patients') : __('Back') }}</a>
     </div>
 
     <div class="row justify-content-center">
@@ -27,6 +29,7 @@
             <form action="{{ route('patients.store') }}" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate data-auto-voice-scope="patient-create-form">
                 @csrf
                 <input type="hidden" name="_supports_extended_medical_flags" value="1">
+                <input type="hidden" name="return_to" value="{{ old('return_to', $returnTo ?? '') }}">
 
                 <div class="card border-0 shadow-sm">
                     <div class="card-body p-3 p-lg-4">

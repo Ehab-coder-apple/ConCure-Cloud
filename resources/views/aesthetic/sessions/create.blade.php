@@ -38,6 +38,10 @@
                                     <a href="{{ route('aesthetic.sessions.index') }}" class="btn btn-outline-secondary">
                                         {{ __('Cancel') }}
                                     </a>
+                                    <button type="submit" name="next_action" value="create_invoice" class="btn btn-outline-success">
+                                        <i class="fas fa-file-invoice-dollar me-1"></i>
+                                        {{ __('Save Session & Create Invoice') }}
+                                    </button>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save me-1"></i>
                                         {{ __('Save Session') }}
