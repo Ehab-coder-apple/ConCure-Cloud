@@ -152,6 +152,20 @@
                             <td>{{ $stats['created_clinics'] }} clinic(s) · {{ $stats['remaining_creation_slots'] }} remaining</td>
                         </tr>
                         <tr>
+                            <td class="font-weight-bold">Managed User Capacity:</td>
+                            <td>{{ $stats['created_users'] }}/{{ $stats['managed_user_limit'] }} users · {{ $stats['remaining_user_slots'] }} remaining</td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-bold">Permitted Modules:</td>
+                            <td>
+                                @forelse($user->getPermittedModules() as $module)
+                                    <span class="badge bg-light text-dark me-1 mb-1">{{ \App\Models\Clinic::AVAILABLE_MODULES[$module] ?? ucfirst(str_replace('_', ' ', $module)) }}</span>
+                                @empty
+                                    <span class="text-muted">No clinic modules permitted</span>
+                                @endforelse
+                            </td>
+                        </tr>
+                        <tr>
                             <td class="font-weight-bold">Created:</td>
                             <td>{{ $user->created_at->format('M d, Y H:i') }}</td>
                         </tr>
@@ -243,6 +257,12 @@
                         </div>
                     </div>
                     <div class="row mt-2">
+                        <div class="col-md-6 mb-3">
+                            <div class="text-center">
+                                <div class="h4 mb-0 font-weight-bold text-primary">{{ $stats['created_users'] }}/{{ $stats['managed_user_limit'] }}</div>
+                                <div class="text-muted small">Managed User Quota</div>
+                            </div>
+                        </div>
                         <div class="col-md-6 mb-3">
                             <div class="text-center">
                                 <div class="h4 mb-0 font-weight-bold text-secondary">{{ $stats['clinic_patients'] }}</div>

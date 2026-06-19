@@ -22,15 +22,22 @@ class UserController extends Controller
     {
         $user = auth()->user();
 
-        // Only clinic admins or super admins can access the full Users management
-        if (!(method_exists($user, 'isClinicAdmin') && $user->isClinicAdmin()) && !(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
+        if (!$this->canManageClinicUsers($user)) {
             abort(403, 'Unauthorized: user management is restricted to admins.');
         }
 
         $query = User::with('clinic', 'creator', 'doctors');
 
-        // For tenant (non-super-admin) users: restrict to their clinic and hide super admins
-        if (!(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
+        if (method_exists($user, 'isMasterAdmin') && $user->isMasterAdmin()) {
+            $clinicIds = $user->accessibleClinicIds();
+
+            if ($clinicIds === []) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereIn('clinic_id', $clinicIds)
+                    ->whereNotIn('role', ['super_admin', 'master_admin']);
+            }
+        } elseif (!(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
             $query->where('clinic_id', $user->clinic_id)
                   ->where('role', '!=', 'super_admin');
         }
@@ -75,15 +82,26 @@ class UserController extends Controller
     {
         $user = auth()->user();
 
-        // Only clinic admins or super admins can create users
-        if (!(method_exists($user, 'isClinicAdmin') && $user->isClinicAdmin()) && !(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
+        if (!$this->canManageClinicUsers($user)) {
             abort(403, 'Unauthorized: creating users is restricted to admins.');
+        }
+
+        $clinics = $this->manageableClinics($user);
+        if ($clinics->isEmpty()) {
+            return redirect()->route('users.index')
+                ->with('error', 'No accessible clinics are available for user management.');
+        }
+
+        if (method_exists($user, 'isMasterAdmin') && $user->isMasterAdmin() && !$user->canCreateManagedUser()) {
+            return redirect()->route('users.index')
+                ->with('error', 'Cannot create new user. Your managed user creation limit has been reached.');
         }
 
         // Check user limit
         $userLimitInfo = null;
-        if ($user->clinic) {
-            $userLimitInfo = $user->clinic->getUserLimitInfo();
+        $selectedClinic = $this->selectedClinicForForm($user, $clinics, request()->input('clinic_id'));
+        if ($selectedClinic) {
+            $userLimitInfo = $selectedClinic->getUserLimitInfo();
             if ($userLimitInfo['has_reached_limit']) {
                 return redirect()->route('users.index')
                     ->with('error', 'Cannot create new user. Your clinic has reached its user limit. Please contact your administrator.');
@@ -103,9 +121,6 @@ class UserController extends Controller
             $availableRoles = array_values(array_intersect($availableRoles, $dbRoles));
         }
 
-        // Clinic users only see their own clinic
-        $clinics = collect([$user->clinic]);
-
         return view('users.create', compact('availableRoles', 'clinics', 'userLimitInfo'));
     }
 
@@ -116,8 +131,7 @@ class UserController extends Controller
     {
         $user = auth()->user();
 
-        // Only clinic admins or super admins can store users
-        if (!(method_exists($user, 'isClinicAdmin') && $user->isClinicAdmin()) && !(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())) {
+        if (!$this->canManageClinicUsers($user)) {
             abort(403, 'Unauthorized: creating users is restricted to admins.');
         }
 
@@ -144,7 +158,7 @@ class UserController extends Controller
             'scientific_degree' => 'nullable|string|max:100',
             'educational_institution' => 'nullable|string|max:255',
             'role' => ['required', Rule::in($availableRolesForRequest)],
-            'clinic_id' => 'nullable',
+            'clinic_id' => 'nullable|integer|exists:clinics,id',
             'password' => 'required|string|min:8|confirmed',
             'is_active' => 'boolean',
             'language' => 'required|in:en,ar,ku',
@@ -152,7 +166,26 @@ class UserController extends Controller
             'permissions.*' => 'string',
         ]);
 
-        $clinicId = $user->clinic_id;
+        $clinicId = $this->resolveManagedClinicId($user, $request->input('clinic_id'));
+        if (!$clinicId) {
+            return back()->withInput()->withErrors([
+                'clinic_id' => 'Please select a clinic for the new user.',
+            ]);
+        }
+
+        if (method_exists($user, 'isMasterAdmin') && $user->isMasterAdmin()) {
+            if (!$user->canAccessClinic($clinicId)) {
+                return back()->withInput()->withErrors([
+                    'clinic_id' => 'You are not allowed to create users for the selected clinic.',
+                ]);
+            }
+
+            if (!$user->canCreateManagedUser($clinicId)) {
+                return back()->withInput()->withErrors([
+                    'clinic_id' => 'You have reached your managed user creation limit for scoped clinics.',
+                ]);
+            }
+        }
 
         // Check clinic user limit
         if ($clinicId) {
@@ -187,12 +220,12 @@ class UserController extends Controller
         // If creating a subuser for a specific user (e.g., doctor), auto-assign as assistant
         if ($request->filled('assign_to_user_id')) {
             $assignTo = User::where('id', $request->integer('assign_to_user_id'))
-                ->where('clinic_id', $user->clinic_id)
+                ->where('clinic_id', $clinicId)
                 ->first();
 
             if ($assignTo && $newUser->role === 'assistant') {
                 $assignTo->assistants()->syncWithoutDetaching([$newUser->id]);
-                $assignTo->assistants()->updateExistingPivot($newUser->id, ['clinic_id' => $user->clinic_id]);
+                $assignTo->assistants()->updateExistingPivot($newUser->id, ['clinic_id' => $clinicId]);
             }
         }
 
@@ -226,7 +259,7 @@ class UserController extends Controller
         $this->authorizeUserAccess($user);
 
         $currentUser = auth()->user();
-        if (!(method_exists($currentUser, 'isClinicAdmin') && $currentUser->isClinicAdmin()) && !(method_exists($currentUser, 'isSuperAdmin') && $currentUser->isSuperAdmin())) {
+        if (!$this->canManageClinicUsers($currentUser)) {
             abort(403, 'Unauthorized: editing users is restricted to admins.');
         }
         $availableRoles = $this->getAvailableRoles($currentUser);
@@ -236,7 +269,7 @@ class UserController extends Controller
             $availableRoles = array_values(array_intersect($availableRoles, $dbRoles));
         }
 
-        $clinics = collect([$currentUser->clinic]);
+        $clinics = $this->manageableClinics($currentUser);
 
         // For doctor accounts, prepare assistants management data
         $assistants = collect();
@@ -244,7 +277,7 @@ class UserController extends Controller
         if ($user->role === 'doctor') {
             $user->loadMissing('assistants');
             $assistants = $user->assistants()->orderBy('first_name')->orderBy('last_name')->get();
-            $availableAssistants = User::byClinic($currentUser->clinic_id)
+            $availableAssistants = User::byClinic($user->clinic_id)
                 ->byRole('assistant')
                 ->whereNotIn('id', $assistants->pluck('id'))
                 ->orderBy('first_name')->orderBy('last_name')
@@ -262,7 +295,7 @@ class UserController extends Controller
         $this->authorizeUserAccess($user);
 
         $currentUser = auth()->user();
-        if (!(method_exists($currentUser, 'isClinicAdmin') && $currentUser->isClinicAdmin()) && !(method_exists($currentUser, 'isSuperAdmin') && $currentUser->isSuperAdmin())) {
+        if (!$this->canManageClinicUsers($currentUser)) {
             abort(403, 'Unauthorized: updating users is restricted to admins.');
         }
 
@@ -365,7 +398,7 @@ class UserController extends Controller
         $this->authorizeUserAccess($user);
 
         $currentUser = auth()->user();
-        if (!(method_exists($currentUser, 'isClinicAdmin') && $currentUser->isClinicAdmin()) && !(method_exists($currentUser, 'isSuperAdmin') && $currentUser->isSuperAdmin())) {
+        if (!$this->canManageClinicUsers($currentUser)) {
             abort(403, 'Unauthorized: deleting users is restricted to admins.');
         }
 
@@ -511,7 +544,7 @@ class UserController extends Controller
         // Base roles supported by the application
         $roles = ['admin', 'doctor', 'nutritionist', 'pharmacist', 'lab_dept', 'radiology_dept', 'dental_dept', 'dental_technician', 'cad_cam_designer', 'assistant', 'nurse', 'accountant', 'patient'];
 
-        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+        if ((method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) || (method_exists($user, 'isMasterAdmin') && $user->isMasterAdmin())) {
             return $roles;
         }
 
@@ -561,9 +594,23 @@ class UserController extends Controller
             abort(403, 'You do not have permission to access user management.');
         }
 
-        // Admins can access users across all clinics in their clinic
-        // Other users can only access users in their clinic
-        if ($user->clinic_id !== $currentUser->clinic_id) {
+        if ($user->isSuperAdmin() || $user->isMasterAdmin() || !$user->clinic_id) {
+            abort(403, 'Unauthorized access to administrative user account.');
+        }
+
+        if (method_exists($currentUser, 'isSuperAdmin') && $currentUser->isSuperAdmin()) {
+            return;
+        }
+
+        if (method_exists($currentUser, 'isMasterAdmin') && $currentUser->isMasterAdmin()) {
+            if (!$currentUser->canAccessClinic($user->clinic_id)) {
+                abort(403, 'Unauthorized access to user from a clinic outside your scope.');
+            }
+
+            return;
+        }
+
+        if ((int) $user->clinic_id !== (int) $currentUser->clinic_id) {
             abort(403, 'Unauthorized access to user from different clinic.');
         }
     }
@@ -668,7 +715,7 @@ class UserController extends Controller
         // Only admins or the doctor themselves can manage assignments
         $currentUser = auth()->user();
         $isSelfDoctor = $currentUser->id === $user->id && $currentUser->role === 'doctor';
-        if (!$currentUser->isClinicAdmin() && !$isSelfDoctor) {
+        if (!$currentUser->isClinicAdmin() && !(method_exists($currentUser, 'isMasterAdmin') && $currentUser->isMasterAdmin()) && !$isSelfDoctor) {
             abort(403, 'Only clinic admin or the doctor can manage assistants.');
         }
 
@@ -678,7 +725,7 @@ class UserController extends Controller
 
         // Validate assistant belongs to same clinic and has assistant role
         $assistant = User::where('id', $data['assistant_id'])
-            ->where('clinic_id', $currentUser->clinic_id)
+            ->where('clinic_id', $user->clinic_id)
             ->where('role', 'assistant')
             ->first();
 
@@ -690,7 +737,7 @@ class UserController extends Controller
         $user->assistants()->syncWithoutDetaching([$assistant->id]);
 
         // Optionally store clinic_id on pivot for auditing
-        $user->assistants()->updateExistingPivot($assistant->id, ['clinic_id' => $currentUser->clinic_id]);
+        $user->assistants()->updateExistingPivot($assistant->id, ['clinic_id' => $user->clinic_id]);
 
         return back()->with('success', __('Assistant assigned successfully.'));
     }
@@ -704,12 +751,12 @@ class UserController extends Controller
 
         $currentUser = auth()->user();
         $isSelfDoctor = $currentUser->id === $user->id && $currentUser->role === 'doctor';
-        if (!$currentUser->isClinicAdmin() && !$isSelfDoctor) {
+        if (!$currentUser->isClinicAdmin() && !(method_exists($currentUser, 'isMasterAdmin') && $currentUser->isMasterAdmin()) && !$isSelfDoctor) {
             abort(403, 'Only clinic admin or the doctor can manage assistants.');
         }
 
         $assistant = User::where('id', $assistantId)
-            ->where('clinic_id', $currentUser->clinic_id)
+            ->where('clinic_id', $user->clinic_id)
             ->where('role', 'assistant')
             ->first();
 
@@ -718,6 +765,64 @@ class UserController extends Controller
         }
 
         return back()->with('success', __('Assistant removed successfully.'));
+    }
+
+    private function canManageClinicUsers(?User $user): bool
+    {
+        return (bool) $user && (
+            (method_exists($user, 'isClinicAdmin') && $user->isClinicAdmin())
+            || (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
+            || (method_exists($user, 'isMasterAdmin') && $user->isMasterAdmin())
+        );
+    }
+
+    private function manageableClinics(User $user)
+    {
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            return Clinic::orderBy('name')->get();
+        }
+
+        if (method_exists($user, 'isMasterAdmin') && $user->isMasterAdmin()) {
+            $clinicIds = $user->accessibleClinicIds();
+
+            if ($clinicIds === []) {
+                return collect();
+            }
+
+            return Clinic::whereIn('id', $clinicIds)->orderBy('name')->get();
+        }
+
+        return collect([$user->clinic])->filter();
+    }
+
+    private function selectedClinicForForm(User $user, $clinics, $requestedClinicId): ?Clinic
+    {
+        $clinicId = $this->resolveManagedClinicId($user, $requestedClinicId);
+
+        if ($clinicId) {
+            return $clinics->firstWhere('id', (int) $clinicId);
+        }
+
+        return $clinics->count() === 1 ? $clinics->first() : null;
+    }
+
+    private function resolveManagedClinicId(User $user, $requestedClinicId): ?int
+    {
+        if (method_exists($user, 'isClinicAdmin') && $user->isClinicAdmin()) {
+            return $user->clinic_id ? (int) $user->clinic_id : null;
+        }
+
+        if ($requestedClinicId !== null && $requestedClinicId !== '') {
+            return (int) $requestedClinicId;
+        }
+
+        if ($user->clinic_id) {
+            return (int) $user->clinic_id;
+        }
+
+        $clinics = $this->manageableClinics($user);
+
+        return $clinics->count() === 1 ? (int) $clinics->first()->id : null;
     }
 }
 

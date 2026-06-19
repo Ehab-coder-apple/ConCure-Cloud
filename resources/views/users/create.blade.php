@@ -54,6 +54,18 @@
                                     </div>
                                 @endif
 
+                                @if(auth()->user()?->isMasterAdmin())
+                                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                                        <i class="fas fa-user-shield me-2"></i>
+                                        <div>
+                                            <strong>{{ __('Managed User Quota') }}:</strong>
+                                            {{ auth()->user()->createdManagedUsersCount() }}/{{ auth()->user()->getManagedUserCreationLimit() }}
+                                            {{ __('users created') }}
+                                            · {{ auth()->user()->remainingManagedUserCreationSlots() }} {{ __('slots remaining') }}
+                                        </div>
+                                    </div>
+                                @endif
+
                                 <div class="row g-3">
                                     <!-- Basic Information -->
                                     <div class="col-12">
@@ -170,6 +182,28 @@
                                             <i class="fas fa-user-shield me-2"></i>
                                             {{ __('Role and Permissions') }}
                                         </h6>
+                                    </div>
+
+                                    @php
+                                        $selectedClinicId = old('clinic_id', request('clinic_id', ($clinics->count() === 1 ? optional($clinics->first())->id : null)));
+                                    @endphp
+
+                                    <div class="col-md-6">
+                                        <label for="clinic_id" class="form-label">{{ __('Clinic') }} <span class="text-danger">*</span></label>
+                                        <select class="form-select @error('clinic_id') is-invalid @enderror" id="clinic_id" name="clinic_id" required>
+                                            <option value="">{{ __('Select Clinic') }}</option>
+                                            @foreach($clinics as $clinic)
+                                                <option value="{{ $clinic->id }}" {{ (string) $selectedClinicId === (string) $clinic->id ? 'selected' : '' }}>
+                                                    {{ $clinic->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <div class="form-text">
+                                            {{ auth()->user()?->isMasterAdmin() ? __('Choose one of your allocated clinics for this user.') : __('Users are created inside your clinic.') }}
+                                        </div>
+                                        @error('clinic_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
                                     </div>
 
                                     <div class="col-md-6">

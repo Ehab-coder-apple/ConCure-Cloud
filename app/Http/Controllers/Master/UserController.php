@@ -58,9 +58,11 @@ class UserController extends Controller
 
         $availableRoles = ['master_admin'];
         $masterPermissions = User::MASTER_PERMISSIONS;
+        $availableModules = Clinic::AVAILABLE_MODULES;
+        $moduleGroups = Clinic::MODULE_GROUPS;
         $clinics = Clinic::orderBy('name')->get(['id', 'name', 'city', 'is_active']);
 
-        return view('master.users.create', compact('availableRoles', 'masterPermissions', 'clinics'));
+        return view('master.users.create', compact('availableRoles', 'masterPermissions', 'availableModules', 'moduleGroups', 'clinics'));
     }
 
     /**
@@ -88,10 +90,15 @@ class UserController extends Controller
             'clinic_ids' => 'nullable|array',
             'clinic_ids.*' => 'integer|exists:clinics,id',
             'managed_clinic_limit' => 'nullable|integer|min:0|max:1000',
+            'managed_user_limit' => 'nullable|integer|min:0|max:1000',
+            'permitted_modules' => 'nullable|array',
+            'permitted_modules.*' => 'string|in:' . implode(',', array_keys(Clinic::AVAILABLE_MODULES)),
         ]);
 
         $clinicIds = $this->sanitizeClinicIds($request->input('clinic_ids', []));
         $managedClinicLimit = max(0, (int) $request->input('managed_clinic_limit', 0));
+        $managedUserLimit = max(0, (int) $request->input('managed_user_limit', 1));
+        $permittedModules = $this->sanitizeModules($request->input('permitted_modules', []));
 
         if ($clinicIds === [] && $managedClinicLimit === 0) {
             throw ValidationException::withMessages([
@@ -99,7 +106,7 @@ class UserController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($request, $clinicIds, $managedClinicLimit) {
+        DB::transaction(function () use ($request, $clinicIds, $managedClinicLimit, $managedUserLimit, $permittedModules) {
             $user = User::create([
                 'username' => $request->username,
                 'email' => $request->email,
@@ -115,7 +122,7 @@ class UserController extends Controller
                 'activated_at' => now(),
                 'language' => $request->language,
                 'permissions' => $request->input('permissions', []),
-                'metadata' => $this->buildManagedClinicMetadata([], $managedClinicLimit),
+                'metadata' => $this->buildManagedUserMetadata([], $managedClinicLimit, $managedUserLimit, $permittedModules),
                 'clinic_id' => null,
                 'created_by' => auth()->id(),
             ]);
@@ -146,6 +153,9 @@ class UserController extends Controller
             'created_clinics' => $user->createdManagedClinicsCount(),
             'managed_clinic_limit' => $user->getManagedClinicCreationLimit(),
             'remaining_creation_slots' => $user->remainingManagedClinicCreationSlots(),
+            'created_users' => $user->createdManagedUsersCount(),
+            'managed_user_limit' => $user->getManagedUserCreationLimit(),
+            'remaining_user_slots' => $user->remainingManagedUserCreationSlots(),
             'clinic_users' => $clinicIds === [] ? 0 : User::whereIn('clinic_id', $clinicIds)->count(),
             'active_clinic_users' => $clinicIds === [] ? 0 : User::whereIn('clinic_id', $clinicIds)->where('is_active', true)->count(),
             'clinic_patients' => $clinicIds === [] ? 0 : Patient::withoutGlobalScopes()->whereIn('clinic_id', $clinicIds)->count(),
@@ -166,10 +176,12 @@ class UserController extends Controller
 
         $availableRoles = ['master_admin'];
         $masterPermissions = User::MASTER_PERMISSIONS;
+        $availableModules = Clinic::AVAILABLE_MODULES;
+        $moduleGroups = Clinic::MODULE_GROUPS;
         $clinics = Clinic::orderBy('name')->get(['id', 'name', 'city', 'is_active']);
         $user->load('superAdminClinics:id,name');
 
-        return view('master.users.edit', compact('user', 'availableRoles', 'masterPermissions', 'clinics'));
+        return view('master.users.edit', compact('user', 'availableRoles', 'masterPermissions', 'availableModules', 'moduleGroups', 'clinics'));
     }
 
     /**
@@ -198,10 +210,15 @@ class UserController extends Controller
             'clinic_ids' => 'nullable|array',
             'clinic_ids.*' => 'integer|exists:clinics,id',
             'managed_clinic_limit' => 'nullable|integer|min:0|max:1000',
+            'managed_user_limit' => 'nullable|integer|min:0|max:1000',
+            'permitted_modules' => 'nullable|array',
+            'permitted_modules.*' => 'string|in:' . implode(',', array_keys(Clinic::AVAILABLE_MODULES)),
         ]);
 
         $clinicIds = $this->sanitizeClinicIds($request->input('clinic_ids', []));
         $managedClinicLimit = max(0, (int) $request->input('managed_clinic_limit', 0));
+        $managedUserLimit = max(0, (int) $request->input('managed_user_limit', 1));
+        $permittedModules = $this->sanitizeModules($request->input('permitted_modules', []));
 
         if ($clinicIds === [] && $managedClinicLimit === 0) {
             throw ValidationException::withMessages([
@@ -222,7 +239,7 @@ class UserController extends Controller
             'is_active' => $request->boolean('is_active', true),
             'language' => $request->language,
             'permissions' => $request->input('permissions', []),
-            'metadata' => $this->buildManagedClinicMetadata($user->metadata, $managedClinicLimit),
+            'metadata' => $this->buildManagedUserMetadata($user->metadata, $managedClinicLimit, $managedUserLimit, $permittedModules),
             'clinic_id' => null, // Master users don't belong to any clinic
         ];
 
@@ -391,10 +408,22 @@ class UserController extends Controller
             ->all();
     }
 
-    private function buildManagedClinicMetadata(?array $metadata, int $managedClinicLimit): array
+    private function sanitizeModules(array $modules): array
+    {
+        return collect($modules)
+            ->map(fn ($module) => (string) $module)
+            ->filter(fn ($module) => isset(Clinic::AVAILABLE_MODULES[$module]))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function buildManagedUserMetadata(?array $metadata, int $managedClinicLimit, int $managedUserLimit, array $permittedModules): array
     {
         $metadata = is_array($metadata) ? $metadata : [];
         $metadata[User::METADATA_MANAGED_CLINIC_LIMIT] = $managedClinicLimit;
+        $metadata[User::METADATA_MANAGED_USER_LIMIT] = $managedUserLimit;
+        $metadata[User::METADATA_PERMITTED_MODULES] = $permittedModules;
 
         return $metadata;
     }

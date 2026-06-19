@@ -258,6 +258,69 @@
                                     @enderror
                                 </div>
                             </div>
+
+                            <div class="col-md-4 mt-3">
+                                <div class="mb-3">
+                                    <label for="managed_user_limit" class="form-label">Managed Users They Can Create</label>
+                                    <input type="number"
+                                           min="0"
+                                           max="1000"
+                                           class="form-control @error('managed_user_limit') is-invalid @enderror"
+                                           id="managed_user_limit"
+                                           name="managed_user_limit"
+                                           value="{{ old('managed_user_limit', $user->getManagedUserCreationLimit()) }}">
+                                    <div class="form-text">Set the total number of clinic users this Super Admin can create across all allocated clinics.</div>
+                                    @error('managed_user_limit')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-puzzle-piece me-2"></i>
+                                    Permitted Clinic Modules
+                                </h6>
+                                <p class="text-muted small mb-3">Unchecked modules stay hidden and blocked for this scoped Super Admin even if assigned clinics have them enabled.</p>
+                                @php($selectedModules = old('permitted_modules', $user->getPermittedModules()))
+                            </div>
+
+                            @foreach($moduleGroups as $group)
+                                <div class="col-lg-6 mb-3">
+                                    <div class="card h-100 border-light shadow-sm">
+                                        <div class="card-header bg-light">
+                                            <strong><i class="{{ $group['icon'] }} me-2"></i>{{ $group['label'] }}</strong>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                @foreach($group['modules'] as $moduleKey => $moduleLabel)
+                                                    <div class="col-12 mb-2">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                   id="module_{{ $moduleKey }}"
+                                                                   name="permitted_modules[]"
+                                                                   value="{{ $moduleKey }}"
+                                                                   {{ in_array($moduleKey, $selectedModules, true) ? 'checked' : '' }}>
+                                                            <label class="form-check-label" for="module_{{ $moduleKey }}">
+                                                                {{ $moduleLabel }}
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+
+                            @error('permitted_modules')
+                                <div class="col-12"><div class="text-danger small">{{ $message }}</div></div>
+                            @enderror
+                            @error('permitted_modules.*')
+                                <div class="col-12"><div class="text-danger small">{{ $message }}</div></div>
+                            @enderror
                         </div>
 
                         <!-- Permissions -->

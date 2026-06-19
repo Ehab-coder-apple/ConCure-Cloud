@@ -15,6 +15,8 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     public const METADATA_MANAGED_CLINIC_LIMIT = 'managed_clinic_creation_limit';
+    public const METADATA_MANAGED_USER_LIMIT = 'managed_user_limit';
+    public const METADATA_PERMITTED_MODULES = 'permitted_modules';
     public const CLINIC_SETTINGS_SCOPED_OWNER_ID = 'scoped_super_admin_owner_id';
 
     /**
@@ -234,13 +236,17 @@ class User extends Authenticatable
 
     /**
      * Check if the user's clinic has a specific module enabled.
-     * Master-level users (super_admin, master_admin) always have access.
+     * Super admins bypass module checks; scoped Super Admins must be explicitly permitted.
      */
     public function canAccessModule(string $module): bool
     {
-        // Master-level users bypass module checks
-        if ($this->isSuperAdmin() || $this->isMasterAdmin()) {
+        if ($this->isSuperAdmin()) {
             return true;
+        }
+
+        if ($this->isMasterAdmin()) {
+            return isset(Clinic::AVAILABLE_MODULES[$module])
+                && in_array($module, $this->getPermittedModules(), true);
         }
 
         // If user has no clinic, deny (shouldn't happen normally)
@@ -310,6 +316,100 @@ class User extends Authenticatable
     public function getManagedClinicCreationLimit(): int
     {
         return max(0, (int) data_get($this->metadata ?? [], self::METADATA_MANAGED_CLINIC_LIMIT, 0));
+    }
+
+    /**
+     * Get the modules explicitly permitted for this scoped Super Admin.
+     * If the metadata key is absent, default to all available clinic modules for backward compatibility.
+     */
+    public function getPermittedModules(): array
+    {
+        $availableModules = array_keys(Clinic::AVAILABLE_MODULES);
+
+        if ($this->isSuperAdmin()) {
+            return $availableModules;
+        }
+
+        if (!$this->isMasterAdmin()) {
+            return [];
+        }
+
+        $metadata = is_array($this->metadata) ? $this->metadata : [];
+        if (!array_key_exists(self::METADATA_PERMITTED_MODULES, $metadata)) {
+            return $availableModules;
+        }
+
+        return collect(data_get($metadata, self::METADATA_PERMITTED_MODULES, []))
+            ->map(fn ($module) => (string) $module)
+            ->filter(fn ($module) => isset(Clinic::AVAILABLE_MODULES[$module]))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Get the number of users this scoped Super Admin may create across accessible clinics.
+     */
+    public function getManagedUserCreationLimit(): int
+    {
+        return max(0, (int) data_get($this->metadata ?? [], self::METADATA_MANAGED_USER_LIMIT, 1));
+    }
+
+    /**
+     * Get the count of currently existing clinic users created by this scoped Super Admin.
+     */
+    public function createdManagedUsersCount(): int
+    {
+        if (!$this->isMasterAdmin()) {
+            return 0;
+        }
+
+        $clinicIds = $this->accessibleClinicIds();
+        if ($clinicIds === []) {
+            return 0;
+        }
+
+        return static::query()
+            ->where('created_by', $this->id)
+            ->whereIn('clinic_id', $clinicIds)
+            ->whereNotIn('role', ['super_admin', 'master_admin'])
+            ->count();
+    }
+
+    /**
+     * Get the remaining number of users this scoped Super Admin can create.
+     */
+    public function remainingManagedUserCreationSlots(): ?int
+    {
+        if ($this->isSuperAdmin()) {
+            return null;
+        }
+
+        if (!$this->isMasterAdmin()) {
+            return 0;
+        }
+
+        return max(0, $this->getManagedUserCreationLimit() - $this->createdManagedUsersCount());
+    }
+
+    /**
+     * Check if the user can create another managed clinic user in the given clinic scope.
+     */
+    public function canCreateManagedUser(?int $clinicId = null): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if (!$this->isMasterAdmin()) {
+            return false;
+        }
+
+        if ($clinicId !== null && !$this->canAccessClinic($clinicId)) {
+            return false;
+        }
+
+        return $this->remainingManagedUserCreationSlots() > 0;
     }
 
     /**
@@ -923,9 +1023,12 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permission): bool
     {
-        // Master-layer admins have full access within their scope
-        if ($this->isSuperAdmin() || $this->isMasterAdmin()) {
+        if ($this->isSuperAdmin()) {
             return true;
+        }
+
+        if ($this->isMasterAdmin()) {
+            return $this->masterAdminCanUsePermission($permission);
         }
 
         // Clinic Admins have full access within their clinic scope
@@ -948,9 +1051,18 @@ class User extends Authenticatable
      */
     public function hasAnyPermission(array $permissions): bool
     {
-        // Admins and Super Admins have full access within their scope
-        if ($this->isSuperAdmin() || $this->isMasterAdmin() || $this->isClinicAdmin()) {
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
             return true;
+        }
+
+        if ($this->isMasterAdmin()) {
+            foreach ($permissions as $permission) {
+                if ($this->masterAdminCanUsePermission($permission)) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // Local dev bypass (explicit only)
@@ -967,8 +1079,17 @@ class User extends Authenticatable
      */
     public function hasAllPermissions(array $permissions): bool
     {
-        // Admins and Super Admins have full access within their scope
-        if ($this->isSuperAdmin() || $this->isMasterAdmin() || $this->isClinicAdmin()) {
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+            return true;
+        }
+
+        if ($this->isMasterAdmin()) {
+            foreach ($permissions as $permission) {
+                if (!$this->masterAdminCanUsePermission($permission)) {
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -1030,12 +1151,15 @@ class User extends Authenticatable
     {
         // Only Clinic Admins and Super Admins can access Settings regardless of permissions
         if ($section === 'settings') {
-            return $this->hasAdministrativeClinicAccess();
+            return $this->isSuperAdmin() || $this->isClinicAdmin();
         }
 
-        // Admins and Super Admins have full access within their scope
-        if ($this->hasAdministrativeClinicAccess()) {
+        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
             return true;
+        }
+
+        if ($this->isMasterAdmin()) {
+            return $this->masterAdminCanAccessSection($section);
         }
 
         // Local dev bypass (explicit only)
@@ -1047,6 +1171,80 @@ class User extends Authenticatable
         $sectionPermissions = array_keys($allPermissions[$section] ?? []);
 
         return $this->hasAnyPermission($sectionPermissions);
+    }
+
+    /**
+     * Check whether a scoped Super Admin may use a permission based on their permitted modules.
+     */
+    protected function masterAdminCanUsePermission(string $permission): bool
+    {
+        $section = $this->resolvePermissionSection($permission);
+
+        if ($section === null) {
+            return true;
+        }
+
+        return $this->masterAdminCanAccessSection($section);
+    }
+
+    /**
+     * Check whether a scoped Super Admin may access the given section.
+     */
+    protected function masterAdminCanAccessSection(string $section): bool
+    {
+        $modules = $this->moduleKeysForSection($section);
+
+        if ($modules === []) {
+            return true;
+        }
+
+        foreach ($modules as $module) {
+            if ($this->canAccessModule($module)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Map a permission name to its section key.
+     */
+    protected function resolvePermissionSection(string $permission): ?string
+    {
+        static $permissionSectionMap;
+
+        if ($permissionSectionMap === null) {
+            $permissionSectionMap = [];
+
+            foreach (self::getAllPermissions() as $section => $permissions) {
+                foreach (array_keys($permissions) as $sectionPermission) {
+                    $permissionSectionMap[$sectionPermission] = $section;
+                }
+            }
+
+            $permissionSectionMap['manage-food-composition'] = 'food_database';
+        }
+
+        return $permissionSectionMap[$permission] ?? null;
+    }
+
+    /**
+     * Map a permission section to the clinic module keys that unlock it.
+     */
+    protected function moduleKeysForSection(string $section): array
+    {
+        $sectionModuleAliases = [
+            'nutrition' => ['nutrition', 'food_database'],
+            'pediatric' => ['pediatric', 'vaccination'],
+            'progress_dashboard' => ['dashboard'],
+        ];
+
+        if (isset($sectionModuleAliases[$section])) {
+            return $sectionModuleAliases[$section];
+        }
+
+        return isset(Clinic::AVAILABLE_MODULES[$section]) ? [$section] : [];
     }
 
     /**

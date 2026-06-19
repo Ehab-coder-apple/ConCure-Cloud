@@ -131,6 +131,20 @@
                                                 · {{ $user->remainingManagedClinicCreationSlots() }} remaining
                                             @endif
                                         </div>
+                                        <div class="text-muted small mt-1">
+                                            Users created: {{ $user->createdManagedUsersCount() }}/{{ $user->getManagedUserCreationLimit() }}
+                                            @if($user->getManagedUserCreationLimit() > 0)
+                                                · {{ $user->remainingManagedUserCreationSlots() }} remaining
+                                            @endif
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-1 mt-2">
+                                            @foreach(array_slice($user->getPermittedModules(), 0, 4) as $module)
+                                                <span class="badge bg-light text-dark small">{{ \App\Models\Clinic::AVAILABLE_MODULES[$module] ?? ucfirst(str_replace('_', ' ', $module)) }}</span>
+                                            @endforeach
+                                            @if(count($user->getPermittedModules()) > 4)
+                                                <span class="badge bg-light text-dark small">+{{ count($user->getPermittedModules()) - 4 }} more</span>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td>
                                         @if($user->is_active)

@@ -1178,7 +1178,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
     });
 
 	    // Internal Messaging & Transfers
-	    Route::prefix('messages')->name('messages.')->group(function () {
+	    Route::prefix('messages')->name('messages.')->middleware('module:messages')->group(function () {
 	        // UI Page
 	        Route::get('/', [\App\Http\Controllers\MessagesPageController::class, 'index'])->name('index');
 
