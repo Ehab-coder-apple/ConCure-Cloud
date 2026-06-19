@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\AppliesAccessibleClinicScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MasterInvoice extends Model
 {
-    use HasFactory;
+    use HasFactory, AppliesAccessibleClinicScope;
 
     protected $fillable = [
         'invoice_number',

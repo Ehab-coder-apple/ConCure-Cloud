@@ -52,8 +52,8 @@ class FinanceController extends Controller
         $currencySymbol = $this->getCurrencySymbol($mostUsedCurrency);
 
         // Built-in + custom expense categories for the Record Expense modal.
-        $expenseCategories = MasterExpense::categoriesAll();
-        $expensePaymentMethods = MasterExpense::PAYMENT_METHODS;
+        $expenseCategories = $this->canViewPlatformExpenses() ? MasterExpense::categoriesAll() : [];
+        $expensePaymentMethods = $this->canViewPlatformExpenses() ? MasterExpense::PAYMENT_METHODS : [];
 
         // City suggestions + clinic->city map (drives the datalists on both
         // expense and payment modals; clinic map auto-fills payment city).
@@ -85,11 +85,14 @@ class FinanceController extends Controller
      */
     private function getClinicCityMap(): array
     {
-        return Clinic::where('is_demo', false)
+        $query = Clinic::where('is_demo', false)
             ->whereNotNull('city')
             ->where('city', '!=', '')
-            ->pluck('city', 'id')
-            ->all();
+            ->orderBy('name');
+
+        $this->applyAccessibleClinicScope($query, 'id');
+
+        return $query->pluck('city', 'id')->all();
     }
 
     /**
@@ -99,12 +102,17 @@ class FinanceController extends Controller
      */
     private function getCityOptions(): array
     {
-        $clinicCities = Clinic::where('is_demo', false)
+        $clinicCitiesQuery = Clinic::where('is_demo', false)
             ->whereNotNull('city')->where('city', '!=', '')
-            ->distinct()->pluck('city');
+            ->distinct();
 
-        $expenseCities = MasterExpense::whereNotNull('city')->where('city', '!=', '')
-            ->distinct()->pluck('city');
+        $this->applyAccessibleClinicScope($clinicCitiesQuery, 'id');
+
+        $clinicCities = $clinicCitiesQuery->pluck('city');
+
+        $expenseCities = $this->canViewPlatformExpenses()
+            ? MasterExpense::whereNotNull('city')->where('city', '!=', '')->distinct()->pluck('city')
+            : collect();
 
         $paymentCities = SubscriptionPayment::whereNotNull('city')->where('city', '!=', '')
             ->distinct()->pluck('city');
@@ -179,32 +187,37 @@ class FinanceController extends Controller
      */
     private function getFinancialStats(Carbon $from, Carbon $to): array
     {
-        // Get clinic payments (subscription payments) - Exclude demo clinics
-        $totalRevenue = DB::table('subscription_payments')
+        $paymentsQuery = DB::table('subscription_payments')
             ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
             ->where('clinics.is_demo', false)
-            ->whereBetween('subscription_payments.paid_at', [$from, $to])
-            ->sum('subscription_payments.amount');
+            ->whereBetween('subscription_payments.paid_at', [$from, $to]);
 
-        $paymentCount = DB::table('subscription_payments')
-            ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
-            ->where('clinics.is_demo', false)
-            ->whereBetween('subscription_payments.paid_at', [$from, $to])
-            ->count();
+        $this->applyAccessibleClinicScope($paymentsQuery, 'clinics.id');
+
+        // Get clinic payments (subscription payments) - Exclude demo clinics
+        $totalRevenue = (clone $paymentsQuery)->sum('subscription_payments.amount');
+        $paymentCount = (clone $paymentsQuery)->count();
 
         // Calculate expected revenue from active subscriptions (excluding demo)
         $expectedRevenue = $this->calculateExpectedRevenue($from, $to);
 
         // Get service charges (excluding demo clinics)
-        $serviceCharges = Clinic::where('is_demo', false)
-            ->whereBetween('service_charge_date', [$from, $to])
-            ->sum('service_charge_amount');
+        $serviceChargesQuery = Clinic::where('is_demo', false)
+            ->whereBetween('service_charge_date', [$from, $to]);
+
+        $this->applyAccessibleClinicScope($serviceChargesQuery, 'id');
+
+        $serviceCharges = $serviceChargesQuery->sum('service_charge_amount');
 
         // Operational SaaS expenses recorded by super-admin (IQD only).
-        $expensesQuery = MasterExpense::query()
-            ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()]);
-        $totalExpenses = (float) (clone $expensesQuery)->sum('amount');
-        $expenseCount = (int) (clone $expensesQuery)->count();
+        $totalExpenses = 0.0;
+        $expenseCount = 0;
+        if ($this->canViewPlatformExpenses()) {
+            $expensesQuery = MasterExpense::query()
+                ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()]);
+            $totalExpenses = (float) (clone $expensesQuery)->sum('amount');
+            $expenseCount = (int) (clone $expensesQuery)->count();
+        }
 
         // Net profit. Note: revenue can be multi-currency while expenses are
         // IQD-only by design -- the master finance dashboard already mixes
@@ -231,8 +244,11 @@ class FinanceController extends Controller
     {
         $activeClinics = Clinic::where('is_active', true)
             ->where('is_demo', false) // Exclude demo clinics
-            ->whereNotNull('plan_id')
-            ->get();
+            ->whereNotNull('plan_id');
+
+        $this->applyAccessibleClinicScope($activeClinics, 'id');
+
+        $activeClinics = $activeClinics->get();
 
         $totalExpected = 0;
         $monthsInPeriod = $from->diffInMonths($to) + 1;
@@ -251,44 +267,47 @@ class FinanceController extends Controller
      */
     private function getTenantStats(Carbon $from, Carbon $to): array
     {
+        $payingTenantsQuery = Clinic::where('is_demo', false);
+        $demoTenantsQuery = Clinic::where('is_demo', true);
+
+        $this->applyAccessibleClinicScope($payingTenantsQuery, 'id');
+        $this->applyAccessibleClinicScope($demoTenantsQuery, 'id');
+
         // Paying tenants (excluding demos)
-        $totalTenants = Clinic::where('is_demo', false)->count();
-        $activeTenants = Clinic::where('is_active', true)->where('is_demo', false)->count();
-        $inactiveTenants = Clinic::where('is_active', false)->where('is_demo', false)->count();
+        $totalTenants = (clone $payingTenantsQuery)->count();
+        $activeTenants = (clone $payingTenantsQuery)->where('is_active', true)->count();
+        $inactiveTenants = (clone $payingTenantsQuery)->where('is_active', false)->count();
 
         // Demo clinics (separate count)
-        $demoTenants = Clinic::where('is_demo', true)->count();
-        $activeDemos = Clinic::where('is_demo', true)->where('is_active', true)->count();
+        $demoTenants = (clone $demoTenantsQuery)->count();
+        $activeDemos = (clone $demoTenantsQuery)->where('is_active', true)->count();
 
         // New paying tenants in period (excluding demos)
-        $newTenants = Clinic::where('is_demo', false)
+        $newTenants = (clone $payingTenantsQuery)
             ->whereBetween('created_at', [$from, $to])
             ->count();
 
         // New demo clinics in period
-        $newDemos = Clinic::where('is_demo', true)
+        $newDemos = (clone $demoTenantsQuery)
             ->whereBetween('created_at', [$from, $to])
             ->count();
 
         // Total users across all clinics (excluding demo clinic users)
-        $totalUsers = User::whereNotNull('clinic_id')
+        $userBaseQuery = User::whereNotNull('clinic_id')
             ->whereHas('clinic', function($query) {
                 $query->where('is_demo', false);
-            })
-            ->count();
+            });
 
-        $activeUsers = User::whereNotNull('clinic_id')
-            ->where('is_active', true)
-            ->whereHas('clinic', function($query) {
-                $query->where('is_demo', false);
-            })
-            ->count();
+        if (!$this->hasGlobalClinicAccess()) {
+            $userBaseQuery->whereIn('clinic_id', $this->accessibleClinicIds());
+        }
+
+        $totalUsers = (clone $userBaseQuery)->count();
+
+        $activeUsers = (clone $userBaseQuery)->where('is_active', true)->count();
 
         // Users by role distribution (paying tenants only)
-        $usersByRole = User::whereNotNull('clinic_id')
-            ->whereHas('clinic', function($query) {
-                $query->where('is_demo', false);
-            })
+        $usersByRole = (clone $userBaseQuery)
             ->select('role', DB::raw('count(*) as count'))
             ->groupBy('role')
             ->pluck('count', 'role')
@@ -322,14 +341,17 @@ class FinanceController extends Controller
      */
     private function getRecentReceipts()
     {
-        return DB::table('subscription_payments')
+        $query = DB::table('subscription_payments')
             ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
             ->where('clinics.is_demo', false) // Exclude demo clinics
             ->select(
                 'subscription_payments.*',
                 'clinics.name as clinic_name'
-            )
-            ->orderBy('subscription_payments.paid_at', 'desc')
+            );
+
+        $this->applyAccessibleClinicScope($query, 'clinics.id');
+
+        return $query->orderBy('subscription_payments.paid_at', 'desc')
             ->limit(10)
             ->get();
     }
@@ -346,6 +368,10 @@ class FinanceController extends Controller
         $expenseData = [];
 
         $sumExpenses = function ($start, $end) {
+            if (!$this->canViewPlatformExpenses()) {
+                return 0.0;
+            }
+
             return (float) DB::table('master_expenses')
                 ->whereBetween('expense_date', [
                     $start instanceof Carbon ? $start->toDateString() : $start,
@@ -360,11 +386,12 @@ class FinanceController extends Controller
                 // Daily breakdown
                 for ($date = $from->copy(); $date->lte($to); $date->addDay()) {
                     $labels[] = $date->format('M d');
-                    $revenueData[] = DB::table('subscription_payments')
+                    $revenueQuery = DB::table('subscription_payments')
                         ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
                         ->where('clinics.is_demo', false)
-                        ->whereDate('subscription_payments.paid_at', $date->toDateString())
-                        ->sum('subscription_payments.amount');
+                        ->whereDate('subscription_payments.paid_at', $date->toDateString());
+                    $this->applyAccessibleClinicScope($revenueQuery, 'clinics.id');
+                    $revenueData[] = $revenueQuery->sum('subscription_payments.amount');
                     $expenseData[] = $sumExpenses($date, $date);
                 }
                 break;
@@ -386,11 +413,12 @@ class FinanceController extends Controller
                     }
 
                     $labels[] = 'Week ' . $weekStart->weekOfYear;
-                    $revenueData[] = DB::table('subscription_payments')
+                    $revenueQuery = DB::table('subscription_payments')
                         ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
                         ->where('clinics.is_demo', false)
-                        ->whereBetween('subscription_payments.paid_at', [$weekStart->toDateString(), $weekEnd->toDateString()])
-                        ->sum('subscription_payments.amount');
+                        ->whereBetween('subscription_payments.paid_at', [$weekStart->toDateString(), $weekEnd->toDateString()]);
+                    $this->applyAccessibleClinicScope($revenueQuery, 'clinics.id');
+                    $revenueData[] = $revenueQuery->sum('subscription_payments.amount');
                     $expenseData[] = $sumExpenses($weekStart, $weekEnd);
 
                     $currentDate->addWeek();
@@ -403,11 +431,12 @@ class FinanceController extends Controller
                 for ($date = $from->copy(); $date->lte($to); $date->addMonth()) {
                     $monthEnd = $date->copy()->endOfMonth()->min($to);
                     $labels[] = $date->format('M Y');
-                    $revenueData[] = DB::table('subscription_payments')
+                    $revenueQuery = DB::table('subscription_payments')
                         ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
                         ->where('clinics.is_demo', false)
-                        ->whereBetween('subscription_payments.paid_at', [$date->toDateString(), $monthEnd->toDateString()])
-                        ->sum('subscription_payments.amount');
+                        ->whereBetween('subscription_payments.paid_at', [$date->toDateString(), $monthEnd->toDateString()]);
+                    $this->applyAccessibleClinicScope($revenueQuery, 'clinics.id');
+                    $revenueData[] = $revenueQuery->sum('subscription_payments.amount');
                     $expenseData[] = $sumExpenses($date, $monthEnd);
                 }
                 break;
@@ -415,11 +444,12 @@ class FinanceController extends Controller
             default:
                 // Monthly breakdown for custom period
                 $labels = ['Period Total'];
-                $revenueData = [DB::table('subscription_payments')
+                $revenueQuery = DB::table('subscription_payments')
                     ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
                     ->where('clinics.is_demo', false)
-                    ->whereBetween('subscription_payments.paid_at', [$from->toDateString(), $to->toDateString()])
-                    ->sum('subscription_payments.amount')];
+                    ->whereBetween('subscription_payments.paid_at', [$from->toDateString(), $to->toDateString()]);
+                $this->applyAccessibleClinicScope($revenueQuery, 'clinics.id');
+                $revenueData = [$revenueQuery->sum('subscription_payments.amount')];
                 $expenseData = [$sumExpenses($from, $to)];
         }
 
@@ -435,6 +465,10 @@ class FinanceController extends Controller
      */
     private function getRecentExpenses()
     {
+        if (!$this->canViewPlatformExpenses()) {
+            return collect();
+        }
+
         return MasterExpense::with('creator:id,first_name,last_name')
             ->orderBy('expense_date', 'desc')
             ->orderBy('id', 'desc')
@@ -459,6 +493,8 @@ class FinanceController extends Controller
             'discount_amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
         ]);
+
+        $this->authorizeAccessibleClinicId((int) $request->clinic_id);
 
         DB::beginTransaction();
         try {
@@ -519,6 +555,8 @@ class FinanceController extends Controller
             'note' => 'nullable|string',
         ]);
 
+        $this->authorizeAccessibleClinicId((int) $request->clinic_id);
+
         DB::beginTransaction();
         try {
             $payment = SubscriptionPayment::create([
@@ -561,6 +599,7 @@ class FinanceController extends Controller
             }
 
             if ($request->has('clinic_id') && $request->clinic_id) {
+                $this->authorizeAccessibleClinicId((int) $request->clinic_id);
                 $query->where('clinic_id', $request->clinic_id);
             }
 
@@ -569,6 +608,7 @@ class FinanceController extends Controller
             // Get all clinics for filter
             $clinics = \App\Models\Clinic::where('is_active', true)
                 ->orderBy('name')
+                ->when(!$this->hasGlobalClinicAccess(), fn ($clinicQuery) => $clinicQuery->whereIn('id', $this->accessibleClinicIds()))
                 ->get();
 
             return view('master.finance.invoices', compact('invoices', 'clinics'));
@@ -587,6 +627,8 @@ class FinanceController extends Controller
      */
     public function showInvoice(MasterInvoice $invoice)
     {
+        $this->authorizeAccessibleClinicId((int) $invoice->clinic_id);
+
         $invoice->load('clinic', 'items', 'creator');
         return view('master.finance.invoice-show', compact('invoice'));
     }
@@ -596,6 +638,8 @@ class FinanceController extends Controller
      */
     public function printInvoice(MasterInvoice $invoice)
     {
+        $this->authorizeAccessibleClinicId((int) $invoice->clinic_id);
+
         $invoice->load('clinic', 'items');
 
         $brandingLogoUrl = $this->resolveBrandingLogoUrl();
@@ -608,6 +652,8 @@ class FinanceController extends Controller
      */
     public function downloadInvoicePDF(MasterInvoice $invoice)
     {
+        $this->authorizeAccessibleClinicId((int) $invoice->clinic_id);
+
         $invoice->load('clinic', 'items');
 
         $brandingLogoSrc = $this->resolveBrandingLogoDataUri();
@@ -659,6 +705,8 @@ class FinanceController extends Controller
      */
     public function updateInvoice(Request $request, MasterInvoice $invoice)
     {
+        $this->authorizeAccessibleClinicId((int) $invoice->clinic_id);
+
         $request->validate([
             'clinic_id' => 'required|exists:clinics,id',
             'currency' => 'required|in:USD,IQD,JOD,EGP',
@@ -671,6 +719,8 @@ class FinanceController extends Controller
             'discount_amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
         ]);
+
+        $this->authorizeAccessibleClinicId((int) $request->clinic_id);
 
         DB::beginTransaction();
         try {
@@ -721,6 +771,8 @@ class FinanceController extends Controller
      */
     public function deleteInvoice(MasterInvoice $invoice)
     {
+        $this->authorizeAccessibleClinicId((int) $invoice->clinic_id);
+
         DB::beginTransaction();
         try {
             $invoiceNumber = $invoice->invoice_number;
@@ -746,6 +798,8 @@ class FinanceController extends Controller
      */
     public function recordInvoicePayment(Request $request, MasterInvoice $invoice)
     {
+        $this->authorizeAccessibleClinicId((int) $invoice->clinic_id);
+
         $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|string',
@@ -795,6 +849,8 @@ class FinanceController extends Controller
      */
     public function updatePayment(Request $request, SubscriptionPayment $payment)
     {
+        $this->authorizeAccessibleClinicId((int) $payment->clinic_id);
+
         $request->validate([
             'clinic_id' => 'required|exists:clinics,id',
             'currency' => 'required|in:USD,IQD,JOD,EGP',
@@ -804,6 +860,8 @@ class FinanceController extends Controller
             'city' => 'nullable|string|max:80',
             'note' => 'nullable|string',
         ]);
+
+        $this->authorizeAccessibleClinicId((int) $request->clinic_id);
 
         DB::beginTransaction();
         try {
@@ -838,6 +896,8 @@ class FinanceController extends Controller
      */
     public function deletePayment(SubscriptionPayment $payment)
     {
+        $this->authorizeAccessibleClinicId((int) $payment->clinic_id);
+
         DB::beginTransaction();
         try {
             $amount = $payment->amount;
@@ -863,6 +923,8 @@ class FinanceController extends Controller
      */
     public function storeExpense(Request $request)
     {
+        $this->authorizeGlobalRoot();
+
         $data = $request->validate([
             'category' => ['required', 'string', Rule::in(array_keys(MasterExpense::categoriesAll()))],
             'new_category_label' => 'nullable|string|max:60',
@@ -904,6 +966,8 @@ class FinanceController extends Controller
      */
     public function updateExpense(Request $request, MasterExpense $expense)
     {
+        $this->authorizeGlobalRoot();
+
         $data = $request->validate([
             'category' => ['required', 'string', Rule::in(array_keys(MasterExpense::categoriesAll()))],
             'new_category_label' => 'nullable|string|max:60',
@@ -982,6 +1046,8 @@ class FinanceController extends Controller
      */
     public function deleteExpense(MasterExpense $expense)
     {
+        $this->authorizeGlobalRoot();
+
         try {
             $expense->delete();
 
@@ -1002,6 +1068,8 @@ class FinanceController extends Controller
      */
     public function expenses(Request $request)
     {
+        $this->authorizeGlobalRoot();
+
         $query = MasterExpense::with('creator:id,first_name,last_name')
             ->orderBy('expense_date', 'desc')
             ->orderBy('id', 'desc');
@@ -1054,6 +1122,7 @@ class FinanceController extends Controller
             ->orderBy('id', 'desc');
 
         if ($request->filled('clinic_id')) {
+            $this->authorizeAccessibleClinicId((int) $request->clinic_id);
             $query->where('clinic_id', $request->clinic_id);
         }
 
@@ -1089,6 +1158,7 @@ class FinanceController extends Controller
 
         $clinics = Clinic::where('is_demo', false)
             ->orderBy('name')
+            ->when(!$this->hasGlobalClinicAccess(), fn ($clinicQuery) => $clinicQuery->whereIn('id', $this->accessibleClinicIds()))
             ->get(['id', 'name', 'city']);
 
         return view('master.finance.payments', [
@@ -1132,13 +1202,16 @@ class FinanceController extends Controller
      */
     private function getMostUsedCurrency(): string
     {
-        $currency = DB::table('subscription_payments')
+        $query = DB::table('subscription_payments')
             ->join('clinics', 'subscription_payments.clinic_id', '=', 'clinics.id')
             ->where('clinics.is_demo', false)
             ->select('subscription_payments.currency', DB::raw('COUNT(*) as count'))
             ->groupBy('subscription_payments.currency')
-            ->orderBy('count', 'desc')
-            ->value('currency');
+            ->orderBy('count', 'desc');
+
+        $this->applyAccessibleClinicScope($query, 'clinics.id');
+
+        $currency = $query->value('currency');
 
         return $currency ?? 'USD';
     }
@@ -1158,6 +1231,48 @@ class FinanceController extends Controller
         ];
 
         return $symbols[$currency] ?? $currency;
+    }
+
+    private function accessibleClinicIds(): array
+    {
+        return Auth::user()?->accessibleClinicIds() ?? [];
+    }
+
+    private function hasGlobalClinicAccess(): bool
+    {
+        return Auth::user()?->hasGlobalClinicAccess() ?? false;
+    }
+
+    private function canViewPlatformExpenses(): bool
+    {
+        return Auth::user()?->isSuperAdmin() ?? false;
+    }
+
+    private function authorizeGlobalRoot(): void
+    {
+        if (!$this->canViewPlatformExpenses()) {
+            abort(403, 'Only the Master Admin can perform this action.');
+        }
+    }
+
+    private function authorizeAccessibleClinicId(int $clinicId): void
+    {
+        if (!Auth::user()?->canAccessClinic($clinicId)) {
+            abort(403, 'You do not have access to this clinic.');
+        }
+    }
+
+    private function applyAccessibleClinicScope($query, string $column = 'clinic_id')
+    {
+        if ($this->hasGlobalClinicAccess()) {
+            return $query;
+        }
+
+        $clinicIds = $this->accessibleClinicIds();
+
+        return $clinicIds === []
+            ? $query->whereRaw('1 = 0')
+            : $query->whereIn($column, $clinicIds);
     }
 }
 

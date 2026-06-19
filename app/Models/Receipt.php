@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\AppliesAccessibleClinicScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use App\Services\StorageQuotaService;
 
 class Receipt extends Model
 {
-    use HasFactory;
+    use HasFactory, AppliesAccessibleClinicScope;
 
     protected $fillable = [
         'receipt_number',

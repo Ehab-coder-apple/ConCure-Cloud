@@ -46,16 +46,30 @@ class AestheticTreatment extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('tenant', function (Builder $query) {
-            $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
-            if ($tenantId) {
-                $query->where('tenant_id', $tenantId);
+            $user = auth()->user();
+            $tenantIds = auth()->check() ? $user?->accessibleTenantIds() : [];
+
+            if ($user?->hasGlobalClinicAccess()) {
+                return;
+            }
+
+            if ($tenantIds !== []) {
+                $query->whereIn('tenant_id', $tenantIds);
             } else {
                 $query->whereRaw('1 = 0'); // No tenant context = no data
             }
         });
 
         static::creating(function ($treatment) {
-            $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
+            $tenantId = $treatment->tenant_id;
+
+            if (!$tenantId && auth()->check()) {
+                $tenantIds = auth()->user()->accessibleTenantIds();
+                if (count($tenantIds) === 1) {
+                    $tenantId = $tenantIds[0];
+                }
+            }
+
             if ($tenantId && empty($treatment->tenant_id)) {
                 $treatment->tenant_id = $tenantId;
             }

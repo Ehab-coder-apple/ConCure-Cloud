@@ -1,6 +1,6 @@
 @extends('master.layouts.app')
 
-@section('title', 'User Details - ' . $user->full_name)
+@section('title', 'Super Admin Details - ' . $user->full_name)
 
 @section('content')
 <div class="container-fluid">
@@ -16,6 +16,10 @@
                     <p class="text-muted mb-0">User ID: {{ $user->id }} | @{{ $user->username }}</p>
                 </div>
                 <div>
+                    <a href="{{ route('master.users.edit', $user) }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit
+                    </a>
                     <a href="{{ route('master.users.index') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-2"></i>
                         Back to Users
@@ -47,7 +51,7 @@
                             </div>
                             <div class="me-4">
                                 <span class="badge bg-{{ $user->role === 'admin' ? 'primary' : ($user->role === 'doctor' ? 'success' : 'secondary') }} fs-6">
-                                    {{ ucfirst($user->role) }}
+                                    {{ \App\Models\User::ROLES[$user->role] ?? ucfirst($user->role) }}
                                 </span>
                             </div>
                             <div>
@@ -107,7 +111,7 @@
                             <td class="font-weight-bold">Role:</td>
                             <td>
                                 <span class="badge bg-{{ $user->role === 'admin' ? 'primary' : ($user->role === 'doctor' ? 'success' : 'secondary') }}">
-                                    {{ ucfirst($user->role) }}
+                                    {{ \App\Models\User::ROLES[$user->role] ?? ucfirst($user->role) }}
                                 </span>
                             </td>
                         </tr>
@@ -163,54 +167,31 @@
         <div class="col-lg-6 mb-4">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Clinic Information</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Allocated Clinics</h6>
                 </div>
                 <div class="card-body">
-                    @if($user->clinic)
-                        <table class="table table-borderless">
-                            <tr>
-                                <td class="font-weight-bold">Clinic Name:</td>
-                                <td>{{ $user->clinic->name }}</td>
-                            </tr>
-                            <tr>
-                                <td class="font-weight-bold">Clinic ID:</td>
-                                <td>{{ $user->clinic->id }}</td>
-                            </tr>
-                            <tr>
-                                <td class="font-weight-bold">Clinic Email:</td>
-                                <td>{{ $user->clinic->email ?? 'Not provided' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="font-weight-bold">Clinic Phone:</td>
-                                <td>{{ $user->clinic->phone ?? 'Not provided' }}</td>
-                            </tr>
-                            <tr>
-                                <td class="font-weight-bold">Clinic Status:</td>
-                                <td>
-                                    @if($user->clinic->is_active)
-                                        <span class="badge bg-success">Active</span>
-                                    @else
-                                        <span class="badge bg-warning">Inactive</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="font-weight-bold">Max Users:</td>
-                                <td>{{ $user->clinic->max_users }}</td>
-                            </tr>
-                        </table>
-                        
-                        <div class="mt-3">
-                            <a href="{{ route('master.clinics.show', $user->clinic) }}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-hospital me-1"></i>
-                                View Clinic Details
-                            </a>
+                    @if($user->superAdminClinics->count() > 0)
+                        <div class="list-group list-group-flush">
+                            @foreach($user->superAdminClinics as $clinic)
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">{{ $clinic->name }}</div>
+                                            <div class="small text-muted">Clinic ID: {{ $clinic->id }}@if($clinic->city) · {{ $clinic->city }}@endif</div>
+                                        </div>
+                                        <a href="{{ route('master.clinics.show', $clinic) }}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-hospital me-1"></i>
+                                            View
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     @else
                         <div class="text-center py-4">
                             <i class="fas fa-hospital fa-3x text-muted mb-3"></i>
-                            <h6 class="text-muted">No Clinic Assigned</h6>
-                            <p class="text-muted small">This user is not associated with any clinic.</p>
+                            <h6 class="text-muted">No Clinics Assigned</h6>
+                            <p class="text-muted small">This Super Admin does not currently have any clinic allocations.</p>
                         </div>
                     @endif
                 </div>
@@ -219,7 +200,7 @@
     </div>
 
     <!-- Activity Statistics -->
-    @if($user->clinic)
+    @if($user->superAdminClinics->count() > 0)
     <div class="row">
         <div class="col-12">
             <div class="card shadow mb-4">
@@ -230,20 +211,20 @@
                     <div class="row">
                         <div class="col-md-3 mb-3">
                             <div class="text-center">
-                                <div class="h4 mb-0 font-weight-bold text-primary">{{ $stats['patients_created'] }}</div>
-                                <div class="text-muted small">Patients in Clinic</div>
+                                <div class="h4 mb-0 font-weight-bold text-primary">{{ $stats['allocated_clinics'] }}</div>
+                                <div class="text-muted small">Allocated Clinics</div>
                             </div>
                         </div>
                         <div class="col-md-3 mb-3">
                             <div class="text-center">
-                                <div class="h4 mb-0 font-weight-bold text-success">{{ $stats['prescriptions_created'] }}</div>
-                                <div class="text-muted small">Prescriptions in Clinic</div>
+                                <div class="h4 mb-0 font-weight-bold text-success">{{ $stats['clinic_users'] }}</div>
+                                <div class="text-muted small">Users in Scope</div>
                             </div>
                         </div>
                         <div class="col-md-3 mb-3">
                             <div class="text-center">
-                                <div class="h4 mb-0 font-weight-bold text-info">{{ $stats['appointments_created'] }}</div>
-                                <div class="text-muted small">Appointments in Clinic</div>
+                                <div class="h4 mb-0 font-weight-bold text-info">{{ $stats['clinic_patients'] }}</div>
+                                <div class="text-muted small">Patients in Scope</div>
                             </div>
                         </div>
                         <div class="col-md-3 mb-3">

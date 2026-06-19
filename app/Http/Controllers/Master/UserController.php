@@ -7,6 +7,8 @@ use App\Http\Traits\SmartSearch;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Clinic;
+use App\Models\Patient;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -16,7 +18,10 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::where('role', 'master_admin');
+        $this->authorizeGlobalRoot();
+
+        $query = User::where('role', 'master_admin')
+            ->with(['superAdminClinics:id,name,city', 'createdBy:id,first_name,last_name']);
 
         // Apply smart search filter
         $searchTerm = $this->getValidatedSearchTerm($request);
@@ -48,10 +53,13 @@ class UserController extends Controller
      */
     public function create()
     {
+        $this->authorizeGlobalRoot();
+
         $availableRoles = ['master_admin'];
         $masterPermissions = User::MASTER_PERMISSIONS;
+        $clinics = Clinic::orderBy('name')->get(['id', 'name', 'city', 'is_active']);
 
-        return view('master.users.create', compact('availableRoles', 'masterPermissions'));
+        return view('master.users.create', compact('availableRoles', 'masterPermissions', 'clinics'));
     }
 
     /**
@@ -59,6 +67,8 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorizeGlobalRoot();
+
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -74,29 +84,35 @@ class UserController extends Controller
             'language' => 'required|in:en,ar,ku',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|in:' . implode(',', array_keys(User::MASTER_PERMISSIONS)),
+            'clinic_ids' => 'required|array|min:1',
+            'clinic_ids.*' => 'integer|exists:clinics,id',
         ]);
 
-        $user = User::create([
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'phone' => $request->phone,
-            'title_prefix' => $request->title_prefix,
-            'scientific_degree' => $request->scientific_degree,
-            'educational_institution' => $request->educational_institution,
-            'role' => $request->role,
-            'is_active' => $request->boolean('is_active', true),
-            'activated_at' => now(),
-            'language' => $request->language,
-            'permissions' => $request->input('permissions', []),
-            'clinic_id' => null, // Master users don't belong to any clinic
-            'created_by' => auth()->id(),
-        ]);
+        DB::transaction(function () use ($request) {
+            $user = User::create([
+                'username' => $request->username,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'phone' => $request->phone,
+                'title_prefix' => $request->title_prefix,
+                'scientific_degree' => $request->scientific_degree,
+                'educational_institution' => $request->educational_institution,
+                'role' => $request->role,
+                'is_active' => $request->boolean('is_active', true),
+                'activated_at' => now(),
+                'language' => $request->language,
+                'permissions' => $request->input('permissions', []),
+                'clinic_id' => null,
+                'created_by' => auth()->id(),
+            ]);
+
+            $user->superAdminClinics()->sync($this->sanitizeClinicIds($request->input('clinic_ids', [])));
+        });
 
         return redirect()->route('master.users.index')
-            ->with('success', 'Master user created successfully.');
+            ->with('success', 'Super Admin created successfully.');
     }
 
     /**
@@ -104,18 +120,20 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        // Prevent viewing super admin users
-        if ($user->isSuperAdmin()) {
-            abort(403, 'Access denied.');
-        }
+        $this->authorizeGlobalRoot();
+        $this->authorizeManagedUser($user);
 
-        $user->load(['clinic', 'createdBy']);
+        $user->load(['clinic', 'createdBy', 'superAdminClinics' => function ($query) {
+            $query->orderBy('name');
+        }]);
+
+        $clinicIds = $user->superAdminClinics->pluck('id')->all();
         
-        // Get user activity stats
         $stats = [
-            'patients_created' => $user->clinic ? $user->clinic->patients()->count() : 0,
-            'prescriptions_created' => $user->clinic ? $user->clinic->prescriptions()->count() : 0,
-            'appointments_created' => $user->clinic ? $user->clinic->appointments()->count() : 0,
+            'allocated_clinics' => count($clinicIds),
+            'clinic_users' => $clinicIds === [] ? 0 : User::whereIn('clinic_id', $clinicIds)->count(),
+            'active_clinic_users' => $clinicIds === [] ? 0 : User::whereIn('clinic_id', $clinicIds)->where('is_active', true)->count(),
+            'clinic_patients' => $clinicIds === [] ? 0 : Patient::withoutGlobalScopes()->whereIn('clinic_id', $clinicIds)->count(),
             'last_login' => $user->last_login_at,
             'account_age' => $user->created_at->diffForHumans(),
         ];
@@ -128,20 +146,15 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        // Prevent editing super admin users
-        if ($user->isSuperAdmin()) {
-            abort(403, 'Access denied.');
-        }
-
-        // Only allow editing master users
-        if (!$user->isMasterAdmin()) {
-            abort(403, 'Access denied. Only master users can be edited here.');
-        }
+        $this->authorizeGlobalRoot();
+        $this->authorizeManagedUser($user);
 
         $availableRoles = ['master_admin'];
         $masterPermissions = User::MASTER_PERMISSIONS;
+        $clinics = Clinic::orderBy('name')->get(['id', 'name', 'city', 'is_active']);
+        $user->load('superAdminClinics:id,name');
 
-        return view('master.users.edit', compact('user', 'availableRoles', 'masterPermissions'));
+        return view('master.users.edit', compact('user', 'availableRoles', 'masterPermissions', 'clinics'));
     }
 
     /**
@@ -149,15 +162,8 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        // Prevent updating super admin users
-        if ($user->isSuperAdmin()) {
-            abort(403, 'Access denied.');
-        }
-
-        // Only allow updating master users
-        if (!$user->isMasterAdmin()) {
-            abort(403, 'Access denied. Only master users can be updated here.');
-        }
+        $this->authorizeGlobalRoot();
+        $this->authorizeManagedUser($user);
 
         $request->validate([
             'first_name' => 'required|string|max:255',
@@ -174,6 +180,8 @@ class UserController extends Controller
             'language' => 'required|in:en,ar,ku',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|in:' . implode(',', array_keys(User::MASTER_PERMISSIONS)),
+            'clinic_ids' => 'required|array|min:1',
+            'clinic_ids.*' => 'integer|exists:clinics,id',
         ]);
 
         $updateData = [
@@ -196,10 +204,13 @@ class UserController extends Controller
             $updateData['password'] = bcrypt($request->password);
         }
 
-        $user->update($updateData);
+        DB::transaction(function () use ($user, $updateData, $request) {
+            $user->update($updateData);
+            $user->superAdminClinics()->sync($this->sanitizeClinicIds($request->input('clinic_ids', [])));
+        });
 
         return redirect()->route('master.users.show', $user)
-            ->with('success', 'Master user updated successfully.');
+            ->with('success', 'Super Admin updated successfully.');
     }
 
     /**
@@ -207,10 +218,8 @@ class UserController extends Controller
      */
     public function activate(User $user)
     {
-        // Prevent modifying super admin users
-        if ($user->isSuperAdmin()) {
-            abort(403, 'Access denied.');
-        }
+        $this->authorizeGlobalRoot();
+        $this->authorizeManagedUser($user);
 
         $user->update([
             'is_active' => true,
@@ -225,10 +234,8 @@ class UserController extends Controller
      */
     public function deactivate(User $user)
     {
-        // Prevent modifying super admin users
-        if ($user->isSuperAdmin()) {
-            abort(403, 'Access denied.');
-        }
+        $this->authorizeGlobalRoot();
+        $this->authorizeManagedUser($user);
 
         // Prevent deactivating the last admin of a clinic
         if ($user->role === 'admin') {
@@ -255,10 +262,8 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        // Prevent deleting super admin users
-        if ($user->isSuperAdmin()) {
-            abort(403, 'Access denied.');
-        }
+        $this->authorizeGlobalRoot();
+        $this->authorizeManagedUser($user);
 
         // Prevent deleting the last admin of a clinic
         if ($user->role === 'admin') {
@@ -284,7 +289,10 @@ class UserController extends Controller
             return back()->withErrors(['error' => 'Cannot delete user with existing data. Deactivate instead.']);
         }
 
-        $user->delete();
+        DB::transaction(function () use ($user) {
+            $user->superAdminClinics()->detach();
+            $user->delete();
+        });
 
         return redirect()->route('master.users.index')
             ->with('success', 'User deleted successfully.');
@@ -295,6 +303,8 @@ class UserController extends Controller
      */
     public function getUserStats()
     {
+        $this->authorizeGlobalRoot();
+
         $roleStats = User::where('role', '!=', 'super_admin')
             ->selectRaw('role, count(*) as count')
             ->groupBy('role')
@@ -317,6 +327,8 @@ class UserController extends Controller
      */
     public function getUsersByClinic()
     {
+        $this->authorizeGlobalRoot();
+
         $clinicStats = User::where('role', '!=', 'super_admin')
             ->join('clinics', 'users.clinic_id', '=', 'clinics.id')
             ->selectRaw('clinics.name, count(*) as count')
@@ -327,5 +339,29 @@ class UserController extends Controller
             ->toArray();
 
         return response()->json($clinicStats);
+    }
+
+    private function authorizeGlobalRoot(): void
+    {
+        if (!auth()->user()?->isSuperAdmin()) {
+            abort(403, 'Only the Master Admin can manage Super Admin accounts.');
+        }
+    }
+
+    private function authorizeManagedUser(User $user): void
+    {
+        if ($user->isSuperAdmin() || !$user->isMasterAdmin()) {
+            abort(403, 'Access denied. Only scoped Super Admin accounts can be managed here.');
+        }
+    }
+
+    private function sanitizeClinicIds(array $clinicIds): array
+    {
+        return collect($clinicIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
     }
 }

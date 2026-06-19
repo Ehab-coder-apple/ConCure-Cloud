@@ -15,12 +15,14 @@
                     </h1>
                     <p class="text-muted mb-0">Manage all registered clinics</p>
                 </div>
-                <div>
-                    <a href="{{ route('master.clinics.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>
-                        Add New Clinic
-                    </a>
-                </div>
+                @if(auth()->user()?->isSuperAdmin())
+                    <div>
+                        <a href="{{ route('master.clinics.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Add New Clinic
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -269,12 +271,12 @@
                             No clinics have been registered yet.
                         @endif
                     </p>
-	                    @if(!request()->hasAny(['search', 'status', 'clinic_type', 'speciality', 'city', 'area', 'street']))
-                        <a href="{{ route('master.clinics.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>
-                            Add First Clinic
-                        </a>
-                    @endif
+	                    @if(auth()->user()?->isSuperAdmin() && !request()->hasAny(['search', 'status', 'clinic_type', 'speciality', 'city', 'area', 'street']))
+	                        <a href="{{ route('master.clinics.create') }}" class="btn btn-primary">
+	                            <i class="fas fa-plus me-2"></i>
+	                            Add First Clinic
+	                        </a>
+	                    @endif
                 </div>
             @endif
         </div>

@@ -54,6 +54,8 @@ class ClinicController extends Controller
                 $q->where('role', 'admin');
             }]);
 
+        $this->applyAccessibleClinicScope($query);
+
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
@@ -138,6 +140,8 @@ class ClinicController extends Controller
      */
     public function create()
     {
+        $this->authorizeGlobalRoot();
+
         $specialities = $this->specialityOptions();
         $availableModules = \App\Models\Clinic::AVAILABLE_MODULES;
         $moduleGroups = \App\Models\Clinic::MODULE_GROUPS;
@@ -151,6 +155,8 @@ class ClinicController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorizeGlobalRoot();
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:clinics,email',
@@ -320,6 +326,8 @@ class ClinicController extends Controller
      */
     public function show(Clinic $clinic)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         $clinic->load(['users', 'patients', 'prescriptions', 'appointments']);
         
         $stats = [
@@ -339,6 +347,8 @@ class ClinicController extends Controller
      */
     public function edit(Clinic $clinic)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         // Get the clinic admin user
         $adminUser = $clinic->users()->where('role', 'admin')->first();
 
@@ -355,6 +365,8 @@ class ClinicController extends Controller
      */
     public function update(Request $request, Clinic $clinic)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         // Get the admin user for validation
         $adminUser = $clinic->users()->where('role', 'admin')->first();
 
@@ -501,6 +513,8 @@ class ClinicController extends Controller
      */
     public function activate(Clinic $clinic)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         $clinic->update([
             'is_active' => true,
             'activated_at' => now(),
@@ -514,6 +528,8 @@ class ClinicController extends Controller
      */
     public function deactivate(Clinic $clinic)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         $clinic->update([
             'is_active' => false,
         ]);
@@ -526,6 +542,8 @@ class ClinicController extends Controller
      */
     public function resetAdminPassword(Request $request, Clinic $clinic)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         $request->validate([
             'new_password' => 'required|string|min:8|confirmed',
         ]);
@@ -548,6 +566,8 @@ class ClinicController extends Controller
      */
     public function destroy(Clinic $clinic)
     {
+        $this->authorizeGlobalRoot();
+
         $clinicId = $clinic->id;
         $clinicName = $clinic->name;
 
@@ -649,6 +669,8 @@ class ClinicController extends Controller
      */
     public function configureWhatsApp(Request $request, Clinic $clinic)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         $request->validate([
             'meta_phone_number_id' => 'required|string',
             'meta_access_token' => 'nullable|string',
@@ -723,6 +745,8 @@ class ClinicController extends Controller
      */
     public function manageContract(Clinic $clinic)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         $contracts = $clinic->contracts()->latest()->get();
         $defaultContractTemplate = \App\Http\Controllers\Master\SettingsController::getDefaultContractTemplate();
 
@@ -734,6 +758,8 @@ class ClinicController extends Controller
      */
     public function storeContract(Request $request, Clinic $clinic)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         $request->validate([
             'contract_title' => 'nullable|string|max:255',
             'contract_content' => 'required|string|min:100',
@@ -779,6 +805,8 @@ class ClinicController extends Controller
      */
     public function renewContract(Request $request, Clinic $clinic, \App\Models\ClinicContract $contract)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         $request->validate([
             'annual_fee' => 'nullable|numeric|min:0|max:10000000',
             'contract_duration_months' => 'nullable|integer|min:1|max:120',
@@ -824,6 +852,8 @@ class ClinicController extends Controller
      */
     public function sendContract(Clinic $clinic, \App\Models\ClinicContract $contract)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         // Verify contract belongs to this clinic
         if ($contract->clinic_id !== $clinic->id) {
             abort(403, 'Contract does not belong to this clinic.');
@@ -855,6 +885,8 @@ class ClinicController extends Controller
      */
     public function deleteContract(Clinic $clinic, \App\Models\ClinicContract $contract)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         // Verify contract belongs to this clinic
         if ($contract->clinic_id !== $clinic->id) {
             abort(403, 'Contract does not belong to this clinic.');
@@ -881,6 +913,8 @@ class ClinicController extends Controller
      */
     public function resetDemoClinic(Clinic $clinic)
     {
+        $this->authorizeAccessibleClinic($clinic);
+
         // Only allow resetting demo clinics
         if (!$clinic->is_demo) {
             return back()->withErrors(['error' => 'Only demo clinics can be reset.']);
@@ -1005,6 +1039,37 @@ class ClinicController extends Controller
             ]);
 
             return back()->withErrors(['error' => 'Failed to reset demo clinic: ' . $e->getMessage()]);
+        }
+    }
+
+    private function applyAccessibleClinicScope($query)
+    {
+        $user = auth()->user();
+
+        if (!$user || $user->hasGlobalClinicAccess()) {
+            return $query;
+        }
+
+        $clinicIds = $user->accessibleClinicIds();
+
+        return $clinicIds === []
+            ? $query->whereRaw('1 = 0')
+            : $query->whereIn('clinics.id', $clinicIds);
+    }
+
+    private function authorizeAccessibleClinic(Clinic $clinic): void
+    {
+        $user = auth()->user();
+
+        if (!$user || !$user->canAccessClinic($clinic->id)) {
+            abort(403, 'You do not have access to this clinic.');
+        }
+    }
+
+    private function authorizeGlobalRoot(): void
+    {
+        if (!auth()->user()?->isSuperAdmin()) {
+            abort(403, 'Only the Master Admin can perform this action.');
         }
     }
 }

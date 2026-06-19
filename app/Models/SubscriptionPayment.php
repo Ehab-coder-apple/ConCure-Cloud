@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\AppliesAccessibleClinicScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SubscriptionPayment extends Model
 {
-    use HasFactory;
+    use HasFactory, AppliesAccessibleClinicScope;
 
     protected $fillable = [
         'clinic_id',

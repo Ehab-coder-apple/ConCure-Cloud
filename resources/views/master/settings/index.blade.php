@@ -20,6 +20,7 @@
 
   <div class="row">
     <div class="col-lg-8">
+      @if(auth()->user()?->isSuperAdmin())
       <div class="card shadow-sm mb-4">
         <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">General</h6></div>
         <div class="card-body">
@@ -65,6 +66,7 @@
           </ul>
         </div>
       </div>
+      @endif
 
       <div class="card shadow-sm mb-4">
         <div class="card-header py-3">
@@ -196,17 +198,17 @@
           </h6>
         </div>
         <div class="card-body">
-          <p class="text-muted mb-3">Create and manage master-level users with custom permissions for system administration.</p>
+          <p class="text-muted mb-3">Create and manage scoped Super Admin accounts with clinic allocations.</p>
 
           <div class="row">
             <div class="col-md-6 mb-3">
               <div class="card border-primary">
                 <div class="card-body text-center">
                   <i class="fas fa-user-plus fa-2x text-primary mb-2"></i>
-                  <h6 class="card-title">Create Master User</h6>
-                  <p class="card-text text-muted small">Add new master-level users with system permissions</p>
+                  <h6 class="card-title">Create Super Admin</h6>
+                  <p class="card-text text-muted small">Add a scoped Super Admin and assign the clinics they can manage</p>
                   <a href="{{ route('master.users.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus me-1"></i>Create Master User
+                    <i class="fas fa-plus me-1"></i>Create Super Admin
                   </a>
                 </div>
               </div>
@@ -215,10 +217,10 @@
               <div class="card border-success">
                 <div class="card-body text-center">
                   <i class="fas fa-users-cog fa-2x text-success mb-2"></i>
-                  <h6 class="card-title">Manage Master Users</h6>
-                  <p class="card-text text-muted small">View, edit, and manage master-level users</p>
+                  <h6 class="card-title">Manage Super Admins</h6>
+                  <p class="card-text text-muted small">View, edit, and manage scoped Super Admin accounts</p>
                   <a href="{{ route('master.users.index') }}" class="btn btn-success btn-sm">
-                    <i class="fas fa-users me-1"></i>Manage Master Users
+                    <i class="fas fa-users me-1"></i>Manage Super Admins
                   </a>
                 </div>
               </div>
@@ -238,7 +240,7 @@
             <div class="col-md-3">
               <div class="text-center p-2 bg-light rounded">
                 <h5 class="text-primary mb-1">{{ $userStats['total'] }}</h5>
-                <small class="text-muted">Master Users</small>
+                <small class="text-muted">Super Admins</small>
               </div>
             </div>
             <div class="col-md-3">

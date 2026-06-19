@@ -85,8 +85,8 @@ class User extends Authenticatable
      * User roles
      */
     const ROLES = [
-        'super_admin' => 'Super Admin',
-        'master_admin' => 'Master Admin',
+        'super_admin' => 'Master Admin',
+        'master_admin' => 'Super Admin',
         'admin' => 'Admin',
         'doctor' => 'Doctor',
         'nutritionist' => 'Nutritionist',
@@ -124,6 +124,15 @@ class User extends Authenticatable
     public function clinic(): BelongsTo
     {
         return $this->belongsTo(Clinic::class);
+    }
+
+    /**
+     * Clinics assigned to a scoped Super Admin.
+     */
+    public function superAdminClinics(): BelongsToMany
+    {
+        return $this->belongsToMany(Clinic::class, 'clinic_super_admin')
+            ->withTimestamps();
     }
 
     /**
@@ -261,11 +270,107 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is the scoped Super Admin layer.
+     */
+    public function isScopedSuperAdmin(): bool
+    {
+        return $this->isMasterAdmin();
+    }
+
+    /**
      * Check if user is a clinic admin.
      */
     public function isClinicAdmin(): bool
     {
         return $this->role === 'admin' && $this->clinic_id !== null;
+    }
+
+    /**
+     * Check if user has global clinic visibility.
+     */
+    public function hasGlobalClinicAccess(): bool
+    {
+        return $this->isSuperAdmin();
+    }
+
+    /**
+     * Check if user has administrative clinic access within an assigned scope.
+     */
+    public function hasAdministrativeClinicAccess(): bool
+    {
+        return $this->isSuperAdmin() || $this->isMasterAdmin() || $this->isClinicAdmin();
+    }
+
+    /**
+     * Get clinic IDs visible to this user.
+     */
+    public function accessibleClinicIds(): array
+    {
+        if ($this->hasGlobalClinicAccess()) {
+            return Clinic::query()->pluck('id')->all();
+        }
+
+        if ($this->isMasterAdmin()) {
+            return $this->superAdminClinics()->pluck('clinics.id')->map(fn ($id) => (int) $id)->all();
+        }
+
+        if ($this->clinic_id !== null) {
+            return [(int) $this->clinic_id];
+        }
+
+        return [];
+    }
+
+    /**
+     * Get tenant IDs visible to this user via their accessible clinics.
+     */
+    public function accessibleTenantIds(): array
+    {
+        $query = Clinic::query()->whereNotNull('tenant_id');
+
+        if (!$this->hasGlobalClinicAccess()) {
+            $clinicIds = $this->accessibleClinicIds();
+            if ($clinicIds === []) {
+                return [];
+            }
+
+            $query->whereIn('id', $clinicIds);
+        }
+
+        return $query->distinct()->pluck('tenant_id')->filter()->values()->all();
+    }
+
+    /**
+     * Check if this user can access a given clinic.
+     */
+    public function canAccessClinic(?int $clinicId): bool
+    {
+        if (!$clinicId) {
+            return false;
+        }
+
+        if ($this->hasGlobalClinicAccess()) {
+            return true;
+        }
+
+        return in_array((int) $clinicId, $this->accessibleClinicIds(), true);
+    }
+
+    /**
+     * Apply this user's clinic visibility to a query.
+     */
+    public function scopeToAccessibleClinics($query, string $column = 'clinic_id')
+    {
+        if ($this->hasGlobalClinicAccess()) {
+            return $query;
+        }
+
+        $clinicIds = $this->accessibleClinicIds();
+        if ($clinicIds === []) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereIn($column, $clinicIds);
     }
 
     /**
@@ -289,7 +394,7 @@ class User extends Authenticatable
      */
     public function canManageAllClinics(): bool
     {
-        return $this->isSuperAdmin() || ($this->isMasterAdmin() && $this->hasPermission('manage_clinics'));
+        return $this->isSuperAdmin();
     }
 
     /**
@@ -731,8 +836,8 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permission): bool
     {
-        // Super Admins have full access to everything
-        if ($this->isSuperAdmin()) {
+        // Master-layer admins have full access within their scope
+        if ($this->isSuperAdmin() || $this->isMasterAdmin()) {
             return true;
         }
 
@@ -746,7 +851,7 @@ class User extends Authenticatable
             return true;
         }
 
-        // Master Admins and other users check their specific permissions
+        // Other users check their specific permissions
         $permissions = $this->permissions ?? [];
         return in_array($permission, $permissions);
     }
@@ -757,7 +862,7 @@ class User extends Authenticatable
     public function hasAnyPermission(array $permissions): bool
     {
         // Admins and Super Admins have full access within their scope
-        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+        if ($this->isSuperAdmin() || $this->isMasterAdmin() || $this->isClinicAdmin()) {
             return true;
         }
 
@@ -776,7 +881,7 @@ class User extends Authenticatable
     public function hasAllPermissions(array $permissions): bool
     {
         // Admins and Super Admins have full access within their scope
-        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+        if ($this->isSuperAdmin() || $this->isMasterAdmin() || $this->isClinicAdmin()) {
             return true;
         }
 
@@ -838,11 +943,11 @@ class User extends Authenticatable
     {
         // Only Clinic Admins and Super Admins can access Settings regardless of permissions
         if ($section === 'settings') {
-            return $this->isSuperAdmin() || $this->isClinicAdmin();
+            return $this->hasAdministrativeClinicAccess();
         }
 
         // Admins and Super Admins have full access within their scope
-        if ($this->isSuperAdmin() || $this->isClinicAdmin()) {
+        if ($this->hasAdministrativeClinicAccess()) {
             return true;
         }
 
@@ -1327,6 +1432,14 @@ class User extends Authenticatable
             return User::byRole('doctor')->pluck('id')->all();
         }
 
+        if ($this->isMasterAdmin()) {
+            $clinicIds = $this->accessibleClinicIds();
+
+            return $clinicIds === []
+                ? []
+                : User::whereIn('clinic_id', $clinicIds)->byRole('doctor')->pluck('id')->all();
+        }
+
         // Admin: all doctors in their clinic
         if ($this->isClinicAdmin()) {
             return User::byClinic($this->clinic_id)->byRole('doctor')->pluck('id')->all();
@@ -1351,25 +1464,30 @@ class User extends Authenticatable
      */
     public function canAccessDoctor(int $doctorId): bool
     {
-        // Cross-clinic access not allowed for clinic users
-        if (!$this->isSuperAdmin()) {
-            $target = User::find($doctorId);
-            if (!$target || $target->clinic_id !== $this->clinic_id) {
-                return false;
-            }
+        if ($this->isSuperAdmin()) {
+            return in_array($doctorId, $this->allowedDoctorIds(), true);
         }
 
-        return in_array($doctorId, $this->allowedDoctorIds());
+        $target = User::find($doctorId);
+        if (!$target || !$this->canAccessClinic($target->clinic_id)) {
+            return false;
+        }
+
+        return in_array($doctorId, $this->allowedDoctorIds(), true);
     }
 
     /**
      * Scope to filter by clinic.
      */
-    public function scopeByClinic($query, ?int $clinicId)
+    public function scopeByClinic($query, $clinicId)
     {
-        if ($clinicId === null) {
+        if ($clinicId === null || $clinicId === []) {
             // If no clinic ID provided, return empty result set for security
             return $query->whereRaw('1 = 0');
+        }
+
+        if (is_array($clinicId)) {
+            return $query->whereIn('clinic_id', $clinicId);
         }
 
         return $query->where('clinic_id', $clinicId);

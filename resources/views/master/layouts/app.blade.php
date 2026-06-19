@@ -155,13 +155,15 @@
                 </a>
             </div>
 
-            <div class="nav-item">
-                <a class="nav-link {{ request()->routeIs('master.users.*') ? 'active' : '' }}"
-                   href="{{ route('master.users.index') }}">
-                    <i class="fas fa-users me-2"></i>
-                    Users
-                </a>
-            </div>
+            @if(auth()->user()?->isSuperAdmin())
+                <div class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('master.users.*') ? 'active' : '' }}"
+                       href="{{ route('master.users.index') }}">
+                        <i class="fas fa-users me-2"></i>
+                        Super Admins
+                    </a>
+                </div>
+            @endif
 
             <div class="nav-item">
                 <a class="nav-link {{ request()->routeIs('master.subscriptions.*') ? 'active' : '' }}"

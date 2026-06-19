@@ -57,16 +57,68 @@ class AestheticSession extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('tenant', function (Builder $query) {
-            $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
-            if ($tenantId) {
-                $query->where('tenant_id', $tenantId);
+            $user = auth()->user();
+            $tenantIds = auth()->check() ? $user?->accessibleTenantIds() : [];
+
+            if ($user?->hasGlobalClinicAccess()) {
+                return;
+            }
+
+            if ($tenantIds !== []) {
+                $query->whereIn('tenant_id', $tenantIds);
             } else {
                 $query->whereRaw('1 = 0'); // No tenant context = no data
             }
         });
 
+        static::addGlobalScope('accessible_clinics', function (Builder $query) {
+            if (!auth()->check()) {
+                $query->whereRaw('1 = 0');
+                return;
+            }
+
+            $user = auth()->user();
+            if ($user?->hasGlobalClinicAccess()) {
+                return;
+            }
+
+            $clinicIds = $user?->accessibleClinicIds() ?? [];
+            if ($clinicIds === []) {
+                $query->whereRaw('1 = 0');
+                return;
+            }
+
+            $query->where(function (Builder $scope) use ($clinicIds) {
+                $scope->whereHas('patient', fn (Builder $patientQuery) => $patientQuery->whereIn('clinic_id', $clinicIds))
+                    ->orWhereHas('patientPackage.patient', fn (Builder $patientQuery) => $patientQuery->whereIn('clinic_id', $clinicIds));
+            });
+        });
+
         static::creating(function ($session) {
-            $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
+            $tenantId = $session->tenant_id;
+
+            if (!$tenantId && $session->patient_id) {
+                $tenantId = Patient::withoutGlobalScopes()
+                    ->whereKey($session->patient_id)
+                    ->join('clinics', 'patients.clinic_id', '=', 'clinics.id')
+                    ->value('clinics.tenant_id');
+            }
+
+            if (!$tenantId && $session->patient_package_id) {
+                $tenantId = PatientPackage::withoutGlobalScopes()
+                    ->whereKey($session->patient_package_id)
+                    ->join('patients', 'patient_packages.patient_id', '=', 'patients.id')
+                    ->join('clinics', 'patients.clinic_id', '=', 'clinics.id')
+                    ->value('clinics.tenant_id');
+            }
+
+            if (!$tenantId && auth()->check()) {
+                $tenantIds = auth()->user()->accessibleTenantIds();
+                if (count($tenantIds) === 1) {
+                    $tenantId = $tenantIds[0];
+                }
+            }
+
             if ($tenantId) {
                 $session->tenant_id = $tenantId;
             }

@@ -1,13 +1,13 @@
 @extends('master.layouts.app')
 
-@section('title', 'Edit Master User')
+@section('title', 'Edit Super Admin')
 
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">
             <i class="fas fa-user-edit text-primary me-2"></i>
-            Edit Master User: {{ $user->first_name }} {{ $user->last_name }}
+            Edit Super Admin: {{ $user->first_name }} {{ $user->last_name }}
         </h1>
         <div class="d-flex gap-2">
             <a href="{{ route('master.users.show', $user) }}" class="btn btn-outline-info">
@@ -37,7 +37,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-user-circle me-2"></i>
-                        Master User Information
+                        Super Admin Information
                     </h6>
                 </div>
                 <div class="card-body">
@@ -197,7 +197,7 @@
                                         <option value="">Select Role</option>
                                         @foreach($availableRoles as $role)
                                             <option value="{{ $role }}" {{ old('role', $user->role) == $role ? 'selected' : '' }}>
-                                                {{ __(ucfirst(str_replace('_', ' ', $role))) }}
+                                                {{ \App\Models\User::ROLES[$role] ?? __(ucfirst(str_replace('_', ' ', $role))) }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -216,16 +216,42 @@
                                     </label>
                                 </div>
                             </div>
+
+                            <div class="col-12 mt-3">
+                                <div class="mb-3">
+                                    <label for="clinic_ids" class="form-label">Allocated Clinics <span class="text-danger">*</span></label>
+                                    @php($selectedClinicIds = old('clinic_ids', $user->superAdminClinics->pluck('id')->all()))
+                                    <select class="form-select @error('clinic_ids') is-invalid @enderror @error('clinic_ids.*') is-invalid @enderror"
+                                            id="clinic_ids"
+                                            name="clinic_ids[]"
+                                            multiple
+                                            size="8"
+                                            required>
+                                        @foreach($clinics as $clinic)
+                                            <option value="{{ $clinic->id }}" {{ in_array($clinic->id, $selectedClinicIds) ? 'selected' : '' }}>
+                                                {{ $clinic->name }}@if($clinic->city) — {{ $clinic->city }}@endif{{ !$clinic->is_active ? ' (Inactive)' : '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="form-text">Hold Ctrl/Cmd to select multiple clinics assigned to this Super Admin.</div>
+                                    @error('clinic_ids')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                    @error('clinic_ids.*')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Master Permissions -->
+                        <!-- Permissions -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <h6 class="text-primary border-bottom pb-2 mb-3">
                                     <i class="fas fa-shield-alt me-2"></i>
-                                    Master Permissions
+                                    Reference Permissions
                                 </h6>
-                                <p class="text-muted small mb-3">Select the permissions this master user should have. Super admins have all permissions by default.</p>
+                                <p class="text-muted small mb-3">Scoped Super Admins use master-layer authority, but their data visibility is limited to the clinics selected above.</p>
                             </div>
 
                             <div class="col-12">
@@ -257,7 +283,7 @@
                                     </a>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save me-1"></i>
-                                        Update Master User
+                                        Update Super Admin
                                     </button>
                                 </div>
                             </div>

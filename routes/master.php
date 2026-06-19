@@ -144,7 +144,7 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
 
 // Redirect /master to dashboard if authenticated, login if not
 Route::get('/master', function () {
-    if (auth()->check() && auth()->user()->isSuperAdmin()) {
+    if (auth()->check() && auth()->user()->canAccessMasterDashboard()) {
         return redirect()->route('master.dashboard');
     }
     return redirect()->route('master.login');

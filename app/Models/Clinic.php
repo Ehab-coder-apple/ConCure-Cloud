@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Clinic extends Model
 {
@@ -112,6 +113,15 @@ class Clinic extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Scoped Super Admins assigned to this clinic.
+     */
+    public function superAdmins(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'clinic_super_admin')
+            ->withTimestamps();
     }
 
     /**

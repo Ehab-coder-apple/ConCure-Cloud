@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\AppliesAccessibleClinicScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use App\Services\PatientProfileModuleRegistry;
 
 class Patient extends Model
 {
-    use HasFactory;
+    use HasFactory, AppliesAccessibleClinicScope;
 
     protected $fillable = [
         'patient_id',

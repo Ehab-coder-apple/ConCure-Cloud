@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\AppliesAccessibleClinicScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AestheticInvoice extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, AppliesAccessibleClinicScope;
 
     protected $fillable = [
         'tenant_id',
@@ -73,17 +74,43 @@ class AestheticInvoice extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('tenant', function (Builder $query) {
-            $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
-            if ($tenantId) {
-                $query->where('tenant_id', $tenantId);
+            $user = auth()->user();
+            $tenantIds = auth()->check() ? $user?->accessibleTenantIds() : [];
+
+            if ($user?->hasGlobalClinicAccess()) {
+                return;
+            }
+
+            if ($tenantIds !== []) {
+                $query->whereIn('tenant_id', $tenantIds);
             } else {
                 $query->whereRaw('1 = 0'); // No tenant context = no data
             }
         });
 
         static::creating(function ($invoice) {
-            $tenantId = auth()->check() ? auth()->user()->clinic?->tenant_id : null;
-            $clinicId = auth()->check() ? auth()->user()->clinic_id : null;
+            $user = auth()->user();
+            $clinicId = $invoice->clinic_id ?: ($user?->clinic_id);
+
+            if (!$clinicId && $user) {
+                $accessibleClinicIds = $user->accessibleClinicIds();
+                if (count($accessibleClinicIds) === 1) {
+                    $clinicId = $accessibleClinicIds[0];
+                }
+            }
+
+            $tenantId = $invoice->tenant_id;
+            if (!$tenantId && $clinicId) {
+                $tenantId = Clinic::whereKey($clinicId)->value('tenant_id');
+            }
+
+            if (!$tenantId && $user) {
+                $tenantIds = $user->accessibleTenantIds();
+                if (count($tenantIds) === 1) {
+                    $tenantId = $tenantIds[0];
+                }
+            }
+
             if ($tenantId) {
                 $invoice->tenant_id = $tenantId;
             }
@@ -114,7 +141,7 @@ class AestheticInvoice extends Model
         $prefix = 'AEST-';
         $date = now()->format('Ymd');
 
-        $lastInvoice = self::withoutGlobalScope('tenant')
+        $lastInvoice = self::withoutGlobalScopes()
             ->withTrashed()
             ->where('invoice_number', 'like', "{$prefix}{$date}%")
             ->lockForUpdate()

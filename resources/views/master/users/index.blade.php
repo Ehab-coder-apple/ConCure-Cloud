@@ -1,6 +1,6 @@
 @extends('master.layouts.app')
 
-@section('title', 'Master User Management')
+@section('title', 'Super Admin Management')
 
 @section('content')
 <div class="container-fluid">
@@ -11,13 +11,13 @@
                 <div>
                     <h1 class="h3 mb-0">
                         <i class="fas fa-users me-2"></i>
-                        Master User Management
+                        Super Admin Management
                     </h1>
-                    <p class="text-muted mb-0">Manage master-level users with system administration permissions</p>
+                    <p class="text-muted mb-0">Manage scoped Super Admin accounts and their allocated clinics</p>
                 </div>
                 <a href="{{ route('master.users.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-1"></i>
-                    Create Master User
+                    Create Super Admin
                 </a>
             </div>
         </div>
@@ -67,7 +67,7 @@
     <div class="card">
         <div class="card-header">
             <h6 class="m-0 font-weight-bold text-primary">
-                Master Users ({{ $users->total() }})
+                Super Admins ({{ $users->total() }})
             </h6>
         </div>
         <div class="card-body">
@@ -78,7 +78,7 @@
                             <tr>
                                 <th>User</th>
                                 <th>Role</th>
-                                <th>Permissions</th>
+                                <th>Allocated Clinics</th>
                                 <th>Status</th>
                                 <th>Created</th>
                                 <th>Actions</th>
@@ -96,30 +96,34 @@
                                                 <div class="font-weight-bold">{{ $user->full_name }}</div>
                                                 <div class="text-muted small">{{ $user->email }}</div>
                                                 <div class="text-muted small">@{{ $user->username }}</div>
+                                                @if($user->createdBy)
+                                                    <div class="text-muted small">Created by {{ $user->createdBy->full_name }}</div>
+                                                @endif
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <span class="badge bg-primary">
-                                            {{ ucfirst(str_replace('_', ' ', $user->role)) }}
+                                            {{ \App\Models\User::ROLES[$user->role] ?? ucfirst(str_replace('_', ' ', $user->role)) }}
                                         </span>
                                     </td>
                                     <td>
-                                        @if($user->permissions && count($user->permissions) > 0)
+                                        @if($user->superAdminClinics->count() > 0)
                                             <div class="d-flex flex-wrap gap-1">
-                                                @foreach(array_slice($user->permissions, 0, 3) as $permission)
+                                                @foreach($user->superAdminClinics->take(3) as $clinic)
                                                     <span class="badge bg-secondary small">
-                                                        {{ ucfirst(str_replace('_', ' ', $permission)) }}
+                                                        {{ $clinic->name }}
                                                     </span>
                                                 @endforeach
-                                                @if(count($user->permissions) > 3)
+                                                @if($user->superAdminClinics->count() > 3)
                                                     <span class="badge bg-light text-dark small">
-                                                        +{{ count($user->permissions) - 3 }} more
+                                                        +{{ $user->superAdminClinics->count() - 3 }} more
                                                     </span>
                                                 @endif
                                             </div>
+                                            <div class="text-muted small mt-1">{{ $user->superAdminClinics->count() }} clinics assigned</div>
                                         @else
-                                            <span class="text-muted small">No permissions</span>
+                                            <span class="text-muted small">No clinics assigned</span>
                                         @endif
                                     </td>
                                     <td>
@@ -143,6 +147,10 @@
                                         <div class="d-flex flex-wrap gap-2">
                                             <a href="{{ route('master.users.show', $user) }}" class="btn btn-sm btn-outline-secondary">
                                                 <i class="fas fa-eye me-1"></i> View
+                                            </a>
+
+                                            <a href="{{ route('master.users.edit', $user) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit me-1"></i> Edit
                                             </a>
 
                                             @if($user->is_active)
@@ -188,18 +196,18 @@
             @else
                 <div class="text-center py-5">
                     <i class="fas fa-user-shield fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">No master users found</h5>
+                    <h5 class="text-muted">No Super Admins found</h5>
                     <p class="text-muted">
                         @if(request()->hasAny(['search', 'status']))
-                            No master users match your current filters.
+                            No Super Admins match your current filters.
                         @else
-                            No master users have been created yet. Create your first master user to get started.
+                            No Super Admins have been created yet. Create your first scoped Super Admin to get started.
                         @endif
                     </p>
                     @if(!request()->hasAny(['search', 'status']))
                         <a href="{{ route('master.users.create') }}" class="btn btn-primary">
                             <i class="fas fa-plus me-1"></i>
-                            Create First Master User
+                            Create First Super Admin
                         </a>
                     @endif
                 </div>

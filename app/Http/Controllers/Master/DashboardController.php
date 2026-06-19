@@ -292,6 +292,8 @@ class DashboardController extends Controller
      */
     public function getPendingRegistrations()
     {
+        $this->authorizeGlobalRoot();
+
         $pendingClinics = Clinic::where('is_active', false)
             ->with(['users' => function($q) {
                 $q->where('role', 'admin');
@@ -307,6 +309,8 @@ class DashboardController extends Controller
      */
     public function approveClinic(Clinic $clinic)
     {
+        $this->authorizeGlobalRoot();
+
         if ($clinic->is_active) {
             return response()->json(['error' => 'Clinic is already active'], 400);
         }
@@ -351,6 +355,8 @@ class DashboardController extends Controller
      */
     public function rejectClinic(Request $request, Clinic $clinic)
     {
+        $this->authorizeGlobalRoot();
+
         $request->validate([
             'reason' => 'required|string|max:500',
         ]);
@@ -398,17 +404,33 @@ class DashboardController extends Controller
      */
     private function getSystemStats()
     {
+        $clinicQuery = $this->accessibleClinicsQuery();
+        $clinicIds = $this->accessibleClinicIds();
+
+        $userQuery = User::where('role', '!=', 'super_admin');
+        if (!$this->hasGlobalClinicAccess()) {
+            $userQuery->whereIn('clinic_id', $clinicIds);
+        }
+
+        $prescriptionQuery = Prescription::query();
+        $appointmentQuery = Appointment::query();
+
+        if (!$this->hasGlobalClinicAccess()) {
+            $prescriptionQuery->whereIn('clinic_id', $clinicIds);
+            $appointmentQuery->whereIn('clinic_id', $clinicIds);
+        }
+
         return [
-            'total_clinics' => Clinic::count(),
-            'active_clinics' => Clinic::where('is_active', true)->count(),
-            'pending_clinics' => Clinic::where('is_active', false)->count(),
-            'total_users' => User::where('role', '!=', 'super_admin')->count(),
-            'active_users' => User::where('role', '!=', 'super_admin')->where('is_active', true)->count(),
+            'total_clinics' => (clone $clinicQuery)->count(),
+            'active_clinics' => (clone $clinicQuery)->where('is_active', true)->count(),
+            'pending_clinics' => (clone $clinicQuery)->where('is_active', false)->count(),
+            'total_users' => (clone $userQuery)->count(),
+            'active_users' => (clone $userQuery)->where('is_active', true)->count(),
             'total_patients' => Patient::count(),
-            'total_prescriptions' => Prescription::count(),
-            'total_appointments' => Appointment::count(),
-            'monthly_new_clinics' => Clinic::whereMonth('created_at', now()->month)->count(),
-            'monthly_new_users' => User::where('role', '!=', 'super_admin')->whereMonth('created_at', now()->month)->count(),
+            'total_prescriptions' => $prescriptionQuery->count(),
+            'total_appointments' => $appointmentQuery->count(),
+            'monthly_new_clinics' => (clone $clinicQuery)->whereMonth('created_at', now()->month)->count(),
+            'monthly_new_users' => (clone $userQuery)->whereMonth('created_at', now()->month)->count(),
         ];
     }
 
@@ -417,12 +439,15 @@ class DashboardController extends Controller
      */
     private function getRecentClinics()
     {
-        return Clinic::with(['users' => function($query) {
+        $query = Clinic::with(['users' => function($query) {
             $query->where('role', 'admin')->first();
-        }])
-        ->latest()
-        ->limit(10)
-        ->get();
+        }]);
+
+        $this->applyAccessibleClinicScope($query);
+
+        return $query->latest()
+            ->limit(10)
+            ->get();
     }
 
     /**
@@ -430,8 +455,14 @@ class DashboardController extends Controller
      */
     private function getRecentUsers()
     {
-        return User::with('clinic')
-            ->where('role', '!=', 'super_admin')
+        $query = User::with('clinic')
+            ->where('role', '!=', 'super_admin');
+
+        if (!$this->hasGlobalClinicAccess()) {
+            $query->whereIn('clinic_id', $this->accessibleClinicIds());
+        }
+
+        return $query
             ->latest()
             ->limit(10)
             ->get();
@@ -446,24 +477,31 @@ class DashboardController extends Controller
         $clinicData = [];
         $userData = [];
         $patientData = [];
+        $clinicIds = $this->accessibleClinicIds();
 
         // Get data for last 12 months
         for ($i = 11; $i >= 0; $i--) {
             $date = now()->subMonths($i);
             $months[] = $date->format('M Y');
 
-            $clinicData[] = Clinic::whereYear('created_at', $date->year)
-                ->whereMonth('created_at', $date->month)
-                ->count();
+            $clinicMonthQuery = Clinic::whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month);
 
-            $userData[] = User::where('role', '!=', 'super_admin')
+            $userMonthQuery = User::where('role', '!=', 'super_admin')
                 ->whereYear('created_at', $date->year)
-                ->whereMonth('created_at', $date->month)
-                ->count();
+                ->whereMonth('created_at', $date->month);
 
-            $patientData[] = Patient::whereYear('created_at', $date->year)
-                ->whereMonth('created_at', $date->month)
-                ->count();
+            $patientMonthQuery = Patient::whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month);
+
+            if (!$this->hasGlobalClinicAccess()) {
+                $clinicMonthQuery->whereIn('id', $clinicIds);
+                $userMonthQuery->whereIn('clinic_id', $clinicIds);
+            }
+
+            $clinicData[] = $clinicMonthQuery->count();
+            $userData[] = $userMonthQuery->count();
+            $patientData[] = $patientMonthQuery->count();
         }
 
         return [
@@ -479,9 +517,12 @@ class DashboardController extends Controller
      */
     public function getClinicStatusData()
     {
+        $query = Clinic::query();
+        $this->applyAccessibleClinicScope($query);
+
         $data = [
-            'active' => Clinic::where('is_active', true)->count(),
-            'inactive' => Clinic::where('is_active', false)->count(),
+            'active' => (clone $query)->where('is_active', true)->count(),
+            'inactive' => (clone $query)->where('is_active', false)->count(),
         ];
 
         return response()->json($data);
@@ -492,7 +533,13 @@ class DashboardController extends Controller
      */
     public function getUserRoleData()
     {
-        $data = User::where('role', '!=', 'super_admin')
+        $query = User::where('role', '!=', 'super_admin');
+
+        if (!$this->hasGlobalClinicAccess()) {
+            $query->whereIn('clinic_id', $this->accessibleClinicIds());
+        }
+
+        $data = $query
             ->select('role', DB::raw('count(*) as count'))
             ->groupBy('role')
             ->pluck('count', 'role')
@@ -506,6 +553,8 @@ class DashboardController extends Controller
      */
     public function getSystemHealth()
     {
+        $this->authorizeGlobalRoot();
+
         $health = [
             'database' => $this->checkDatabaseHealth(),
             'storage' => $this->checkStorageHealth(),
@@ -564,6 +613,44 @@ class DashboardController extends Controller
             return ['status' => 'warning', 'message' => 'Cache test failed'];
         } catch (\Exception $e) {
             return ['status' => 'error', 'message' => 'Cache connection failed'];
+        }
+    }
+
+    private function accessibleClinicIds(): array
+    {
+        return auth()->user()?->accessibleClinicIds() ?? [];
+    }
+
+    private function hasGlobalClinicAccess(): bool
+    {
+        return auth()->user()?->hasGlobalClinicAccess() ?? false;
+    }
+
+    private function accessibleClinicsQuery()
+    {
+        $query = Clinic::query();
+        $this->applyAccessibleClinicScope($query);
+
+        return $query;
+    }
+
+    private function applyAccessibleClinicScope($query)
+    {
+        if ($this->hasGlobalClinicAccess()) {
+            return $query;
+        }
+
+        $clinicIds = $this->accessibleClinicIds();
+
+        return $clinicIds === []
+            ? $query->whereRaw('1 = 0')
+            : $query->whereIn('id', $clinicIds);
+    }
+
+    private function authorizeGlobalRoot(): void
+    {
+        if (!auth()->user()?->isSuperAdmin()) {
+            abort(403, 'Only the Master Admin can perform this action.');
         }
     }
 }

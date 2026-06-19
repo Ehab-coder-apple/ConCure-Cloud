@@ -22,10 +22,12 @@
                 <i class="fas fa-receipt me-1"></i>
                 Manage Payments
             </a>
-            <a href="{{ route('master.finance.expenses') }}" class="btn btn-outline-danger ms-2">
-                <i class="fas fa-money-bill-wave me-1"></i>
-                Manage Expenses
-            </a>
+            @if(auth()->user()?->isSuperAdmin())
+                <a href="{{ route('master.finance.expenses') }}" class="btn btn-outline-danger ms-2">
+                    <i class="fas fa-money-bill-wave me-1"></i>
+                    Manage Expenses
+                </a>
+            @endif
             <button type="button" class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#createInvoiceModal">
                 <i class="fas fa-file-invoice me-1"></i>
                 Create Invoice
@@ -34,10 +36,12 @@
                 <i class="fas fa-receipt me-1"></i>
                 Record Payment
             </button>
-            <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#createExpenseModal">
-                <i class="fas fa-money-bill-wave me-1"></i>
-                Record Expense
-            </button>
+            @if(auth()->user()?->isSuperAdmin())
+                <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#createExpenseModal">
+                    <i class="fas fa-money-bill-wave me-1"></i>
+                    Record Expense
+                </button>
+            @endif
         </div>
     </div>
 
@@ -148,28 +152,30 @@
             </div>
         </div>
 
-        <!-- Total Expenses -->
-        <div class="col-xl col-lg-4 col-md-6 mb-3">
-            <div class="card border-left-danger h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Expenses</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                IQD{{ number_format($stats['total_expenses'], 2) }}
+        @if(auth()->user()?->isSuperAdmin())
+            <!-- Total Expenses -->
+            <div class="col-xl col-lg-4 col-md-6 mb-3">
+                <div class="card border-left-danger h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Expenses</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    IQD{{ number_format($stats['total_expenses'], 2) }}
+                                </div>
+                                <small class="text-muted">
+                                    {{ $stats['expense_count'] ?? 0 }} {{ ($stats['expense_count'] ?? 0) === 1 ? 'entry' : 'entries' }}
+                                    <a href="{{ route('master.finance.expenses') }}" class="ms-1">View</a>
+                                </small>
                             </div>
-                            <small class="text-muted">
-                                {{ $stats['expense_count'] ?? 0 }} {{ ($stats['expense_count'] ?? 0) === 1 ? 'entry' : 'entries' }}
-                                <a href="{{ route('master.finance.expenses') }}" class="ms-1">View</a>
-                            </small>
-                        </div>
-                        <div class="icon-circle bg-danger text-white">
-                            <i class="fas fa-money-bill-wave"></i>
+                            <div class="icon-circle bg-danger text-white">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        @endif
 
         <!-- Net Profit -->
         <div class="col-xl col-lg-4 col-md-6 mb-3">
@@ -360,79 +366,81 @@
         </div>
     </div>
 
-    <!-- Recent Expenses -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 text-danger">
-                        <i class="fas fa-money-bill-wave me-2"></i>
-                        Recent Expenses
-                        <span class="badge bg-secondary ms-2">IQD</span>
-                    </h6>
-                    <a href="{{ route('master.finance.expenses') }}" class="btn btn-sm btn-outline-secondary">
-                        View all
-                    </a>
-                </div>
-                <div class="card-body p-0">
-                    @if($recentExpenses->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-sm mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Category</th>
-                                        <th>Description</th>
-                                        <th>Recorded By</th>
-                                        <th class="text-end">Amount (IQD)</th>
-                                        <th class="text-end">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($recentExpenses as $expense)
+    @if(auth()->user()?->isSuperAdmin())
+        <!-- Recent Expenses -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 text-danger">
+                            <i class="fas fa-money-bill-wave me-2"></i>
+                            Recent Expenses
+                            <span class="badge bg-secondary ms-2">IQD</span>
+                        </h6>
+                        <a href="{{ route('master.finance.expenses') }}" class="btn btn-sm btn-outline-secondary">
+                            View all
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        @if($recentExpenses->count() > 0)
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="table-light">
                                         <tr>
-                                            <td>{{ optional($expense->expense_date)->format('M d, Y') }}</td>
-                                            <td>
-                                                <span class="badge bg-light text-dark">
-                                                    {{ $expenseCategories[$expense->category] ?? ucfirst($expense->category) }}
-                                                </span>
-                                            </td>
-                                            <td>{{ $expense->description }}</td>
-                                            <td>
-                                                @if($expense->creator)
-                                                    {{ trim($expense->creator->first_name . ' ' . $expense->creator->last_name) ?: '-' }}
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
-                                            <td class="text-end fw-semibold text-danger">
-                                                {{ number_format($expense->amount, 2) }}
-                                            </td>
-                                            <td class="text-end">
-                                                <button type="button" class="btn btn-sm btn-outline-primary"
-                                                        onclick='editExpense(@json($expense))' title="Edit">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                        onclick="deleteExpense({{ $expense->id }})" title="Delete">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </td>
+                                            <th>Date</th>
+                                            <th>Category</th>
+                                            <th>Description</th>
+                                            <th>Recorded By</th>
+                                            <th class="text-end">Amount (IQD)</th>
+                                            <th class="text-end">Actions</th>
                                         </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-inbox fa-3x mb-3"></i>
-                            <p>No expenses recorded yet. Click <strong>Record Expense</strong> above to add one.</p>
-                        </div>
-                    @endif
+                                    </thead>
+                                    <tbody>
+                                        @foreach($recentExpenses as $expense)
+                                            <tr>
+                                                <td>{{ optional($expense->expense_date)->format('M d, Y') }}</td>
+                                                <td>
+                                                    <span class="badge bg-light text-dark">
+                                                        {{ $expenseCategories[$expense->category] ?? ucfirst($expense->category) }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ $expense->description }}</td>
+                                                <td>
+                                                    @if($expense->creator)
+                                                        {{ trim($expense->creator->first_name . ' ' . $expense->creator->last_name) ?: '-' }}
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                                <td class="text-end fw-semibold text-danger">
+                                                    {{ number_format($expense->amount, 2) }}
+                                                </td>
+                                                <td class="text-end">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                            onclick='editExpense(@json($expense))' title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                                            onclick="deleteExpense({{ $expense->id }})" title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <div class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>No expenses recorded yet. Click <strong>Record Expense</strong> above to add one.</p>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    @endif
 </div>
 
 <!-- Create Invoice Modal -->
@@ -702,6 +710,7 @@
     </div>
 </div>
 
+@if(auth()->user()?->isSuperAdmin())
 <!-- Record Expense Modal (IQD only, super-admin only) -->
 <div class="modal fade" id="createExpenseModal" tabindex="-1">
     <div class="modal-dialog">
@@ -856,6 +865,7 @@
         </div>
     </div>
 </div>
+@endif
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
@@ -1233,6 +1243,7 @@ function deletePayment(paymentId) {
     });
 }
 
+@if(auth()->user()?->isSuperAdmin())
 // ===== Master Expenses =====
 
 // Reveal the "New category name" input only when "Other" is selected.
@@ -1373,6 +1384,7 @@ function deleteExpense(id) {
         console.error(error);
     });
 }
+@endif
 </script>
 
 <style>
