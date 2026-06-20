@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Medicine;
+use App\Models\MedicineSaleInvoice;
 use App\Imports\MedicinesImport;
 use App\Exports\MedicinesTemplateExport;
 use App\Exports\MedicinesExport;
@@ -665,6 +666,21 @@ class MedicineController extends Controller
             $unitPrice = $request->unit_price;
             $totalAmount = $quantity * $unitPrice;
 
+            $invoice = MedicineSaleInvoice::create([
+                'clinic_id' => $user->clinic_id,
+                'user_id' => $user->id,
+                'patient_id' => $request->patient_id,
+                'invoice_number' => MedicineSaleInvoice::generateInvoiceNumber($user->clinic_id),
+                'payment_method' => $request->payment_method,
+                'subtotal' => $totalAmount,
+                'discount' => 0,
+                'tax' => 0,
+                'total' => $totalAmount,
+                'paid_amount' => $totalAmount,
+                'notes' => $request->notes ?: 'Single-item sale for medicine: ' . $medicine->name,
+                'sold_at' => now(),
+            ]);
+
             // Record stock before transaction
             $stockBefore = $medicine->stock_quantity;
 
@@ -673,11 +689,12 @@ class MedicineController extends Controller
                 'medicine_id' => $medicine->id,
                 'clinic_id' => $user->clinic_id,
                 'user_id' => $user->id,
+                'medicine_sale_invoice_id' => $invoice->id,
                 'type' => 'sale',
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'total_amount' => $totalAmount,
-                'reference_number' => 'SALE-' . date('Ymd') . '-' . str_pad($medicine->id, 5, '0', STR_PAD_LEFT) . '-' . time(),
+                'reference_number' => $invoice->invoice_number,
                 'patient_id' => $request->patient_id,
                 'payment_method' => $request->payment_method,
                 'stock_before' => $stockBefore,
@@ -691,8 +708,8 @@ class MedicineController extends Controller
 
             DB::commit();
 
-            return redirect()->route('medicines.index')
-                ->with('success', 'Medicine sold successfully. Receipt: ' . $transaction->reference_number);
+            return redirect()->route('medicines.sales.show', $invoice)
+                ->with('success', 'Medicine sold successfully. Invoice: ' . $transaction->reference_number);
 
         } catch (\Exception $e) {
             DB::rollBack();

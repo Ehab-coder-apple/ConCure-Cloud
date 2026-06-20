@@ -37,7 +37,7 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
         View::share('primaryColor', null);
         View::share('companyName', 'Test Clinic');
 
-        foreach (['settings', 'dental_treatments', 'medicine_sale_invoices', 'aesthetic_invoices', 'invoices', 'expenses', 'receipts', 'patients', 'users', 'clinics'] as $table) {
+        foreach (['settings', 'medicine_transactions', 'medicines', 'dental_treatments', 'medicine_sale_invoices', 'aesthetic_invoices', 'invoices', 'expenses', 'receipts', 'patients', 'users', 'clinics'] as $table) {
             Schema::dropIfExists($table);
         }
 
@@ -134,6 +134,49 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('medicines', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('generic_name')->nullable();
+            $table->string('brand_name')->nullable();
+            $table->string('dosage')->nullable();
+            $table->string('form')->nullable();
+            $table->text('description')->nullable();
+            $table->text('side_effects')->nullable();
+            $table->text('contraindications')->nullable();
+            $table->boolean('is_frequent')->default(false);
+            $table->decimal('stock_quantity', 12, 2)->default(0);
+            $table->decimal('purchase_price', 12, 2)->default(0);
+            $table->decimal('selling_price', 12, 2)->default(0);
+            $table->date('expiry_date')->nullable();
+            $table->string('batch_number')->nullable();
+            $table->foreignId('clinic_id')->nullable();
+            $table->foreignId('created_by')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+
+        Schema::create('medicine_transactions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('medicine_id')->nullable();
+            $table->foreignId('clinic_id')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->foreignId('medicine_sale_invoice_id')->nullable();
+            $table->string('type')->nullable();
+            $table->decimal('quantity', 12, 2)->default(0);
+            $table->decimal('unit_price', 12, 2)->default(0);
+            $table->decimal('total_amount', 12, 2)->default(0);
+            $table->string('reference_number')->nullable();
+            $table->foreignId('patient_id')->nullable();
+            $table->string('supplier_name')->nullable();
+            $table->string('payment_method')->nullable();
+            $table->decimal('stock_before', 12, 2)->default(0);
+            $table->decimal('stock_after', 12, 2)->default(0);
+            $table->text('notes')->nullable();
+            $table->date('transaction_date')->nullable();
+            $table->timestamps();
+        });
+
         Schema::create('dental_treatments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('invoice_id')->nullable();
@@ -221,6 +264,42 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
             ->assertOk()
             ->assertSee('Recent Medicine Sales')
             ->assertSee($sale->invoice_number);
+    }
+
+    public function test_legacy_single_item_sell_flow_creates_finance_visible_invoice(): void
+    {
+        [$user, $patient] = $this->makeFinanceUserAndPatient();
+
+        $medicine = \App\Models\Medicine::create([
+            'name' => 'Test Antibiotic',
+            'form' => 'tablet',
+            'stock_quantity' => 10,
+            'purchase_price' => 5,
+            'selling_price' => 12,
+            'clinic_id' => $user->clinic_id,
+            'created_by' => $user->id,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->post(route('medicines.sell.process', $medicine), [
+                'patient_id' => $patient->id,
+                'quantity' => 2,
+                'unit_price' => 12,
+                'payment_method' => 'cash',
+                'notes' => 'Legacy sell flow',
+            ]);
+
+        $invoice = MedicineSaleInvoice::query()->latest('id')->first();
+
+        $this->assertNotNull($invoice);
+        $response->assertRedirect(route('medicines.sales.show', $invoice));
+        $this->assertSame('24.00', number_format((float) $invoice->total, 2, '.', ''));
+
+        $this->actingAs($user)
+            ->get(route('finance.invoices'))
+            ->assertOk()
+            ->assertSee($invoice->invoice_number);
     }
 
     private function makeFinanceUserAndPatient(): array
