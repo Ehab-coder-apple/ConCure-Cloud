@@ -1366,12 +1366,20 @@ class FinanceController extends Controller
             ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
             ->sum('total_amount');
 
+        $monthlyMedicineRevenue = $medicineSaleInvoicesQuery->clone()
+            ->whereBetween('sold_at', [$currentMonth, $currentMonthEnd])
+            ->sum('total');
+
         $monthlyInvoicePayments = $invoicesQuery->clone()
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('paid_amount');
 
         $monthlyAestheticPayments = $aestheticInvoicesQuery->clone()
             ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
+            ->sum('paid_amount');
+
+        $monthlyMedicinePayments = $medicineSaleInvoicesQuery->clone()
+            ->whereBetween('sold_at', [$currentMonth, $currentMonthEnd])
             ->sum('paid_amount');
 
         $monthlyRevenueSummary = $this->buildClinicRevenueSummary(
@@ -1383,9 +1391,11 @@ class FinanceController extends Controller
         );
 
         // Total clinic revenue includes invoice totals, aesthetic invoice totals, receipts, and tracked paid amounts.
-        $stats['monthlyRevenue'] = $monthlyRevenueSummary['total'];
+        $stats['monthlyRevenue'] = $monthlyRevenueSummary['total'] + $monthlyMedicineRevenue;
         $stats['monthlyReceipts'] = $monthlyReceiptRevenue;
-        $stats['monthlyCollectedPayments'] = $monthlyRevenueSummary['invoice_payments'] + $monthlyRevenueSummary['aesthetic_payments'];
+        $stats['monthlyCollectedPayments'] = $monthlyRevenueSummary['invoice_payments']
+            + $monthlyRevenueSummary['aesthetic_payments']
+            + $monthlyMedicinePayments;
 
         $stats['monthlyExpenses'] = $expensesQuery->clone()
             ->approved()
@@ -1404,6 +1414,11 @@ class FinanceController extends Controller
             ->whereIn('status', ['sent', 'overdue', 'partial'])
             ->sum('balance');
 
+        $stats['outstandingInvoices'] += $medicineSaleInvoicesQuery->clone()
+            ->whereColumn('paid_amount', '<', 'total')
+            ->get(['total', 'paid_amount'])
+            ->sum(fn ($invoice) => max(0, (float) $invoice->total - (float) $invoice->paid_amount));
+
         // Partial payments balance (subset of outstanding)
         $stats['partialPaymentsBalance'] = $invoicesQuery->clone()
             ->where('status', 'partial_paid')
@@ -1413,12 +1428,23 @@ class FinanceController extends Controller
             ->where('status', 'partial')
             ->sum('balance');
 
+        $stats['partialPaymentsBalance'] += $medicineSaleInvoicesQuery->clone()
+            ->where('paid_amount', '>', 0)
+            ->whereColumn('paid_amount', '<', 'total')
+            ->get(['total', 'paid_amount'])
+            ->sum(fn ($invoice) => max(0, (float) $invoice->total - (float) $invoice->paid_amount));
+
         $stats['partialPaymentsCount'] = $invoicesQuery->clone()
             ->where('status', 'partial_paid')
             ->count();
 
         $stats['partialPaymentsCount'] += $aestheticInvoicesQuery->clone()
             ->where('status', 'partial')
+            ->count();
+
+        $stats['partialPaymentsCount'] += $medicineSaleInvoicesQuery->clone()
+            ->where('paid_amount', '>', 0)
+            ->whereColumn('paid_amount', '<', 'total')
             ->count();
 
         $stats['pendingReceipts'] = $receiptsQuery->clone()
@@ -1447,7 +1473,7 @@ class FinanceController extends Controller
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('amount');
 
-        $monthlyCashIn = $monthlyInvoicePayments + $monthlyAestheticPayments + $monthlyOtherReceipts;
+        $monthlyCashIn = $monthlyInvoicePayments + $monthlyAestheticPayments + $monthlyMedicinePayments + $monthlyOtherReceipts;
 
         // Total cash out = Expenses (current month)
         $monthlyCashOut = $expensesQuery->clone()
@@ -1616,6 +1642,9 @@ class FinanceController extends Controller
         $currentMonthAestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
             ->sum('total_amount');
+        $currentMonthMedicineRevenue = MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
+            ->whereBetween('sold_at', [$currentMonth, $currentMonthEnd])
+            ->sum('total');
         $currentMonthInvoicePayments = $invoicesQuery->clone()->byDateRange($currentMonth, $currentMonthEnd)->sum('paid_amount');
         $currentMonthAestheticPayments = AestheticInvoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($currentMonth->toDateString(), $currentMonthEnd->toDateString())
@@ -1631,7 +1660,7 @@ class FinanceController extends Controller
         );
 
         $data['currentMonth'] = [
-            'revenue' => $currentMonthRevenueSummary['total'],
+            'revenue' => $currentMonthRevenueSummary['total'] + $currentMonthMedicineRevenue,
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($currentMonth, $currentMonthEnd)->sum('amount'),
         ];
         $data['currentMonth']['profit'] = $data['currentMonth']['revenue'] - $data['currentMonth']['expenses'];
@@ -1644,6 +1673,9 @@ class FinanceController extends Controller
         $previousMonthAestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($previousMonth->toDateString(), $previousMonthEnd->toDateString())
             ->sum('total_amount');
+        $previousMonthMedicineRevenue = MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
+            ->whereBetween('sold_at', [$previousMonth, $previousMonthEnd])
+            ->sum('total');
         $previousMonthInvoicePayments = $invoicesQuery->clone()->byDateRange($previousMonth, $previousMonthEnd)->sum('paid_amount');
         $previousMonthAestheticPayments = AestheticInvoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($previousMonth->toDateString(), $previousMonthEnd->toDateString())
@@ -1659,7 +1691,7 @@ class FinanceController extends Controller
         );
 
         $data['previousMonth'] = [
-            'revenue' => $previousMonthRevenueSummary['total'],
+            'revenue' => $previousMonthRevenueSummary['total'] + $previousMonthMedicineRevenue,
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($previousMonth, $previousMonthEnd)->sum('amount'),
         ];
         $data['previousMonth']['profit'] = $data['previousMonth']['revenue'] - $data['previousMonth']['expenses'];
@@ -1670,6 +1702,9 @@ class FinanceController extends Controller
         $yearToDateAestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($yearStart->toDateString(), now()->toDateString())
             ->sum('total_amount');
+        $yearToDateMedicineRevenue = MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
+            ->whereBetween('sold_at', [$yearStart, now()])
+            ->sum('total');
         $yearToDateInvoicePayments = $invoicesQuery->clone()->byDateRange($yearStart, now())->sum('paid_amount');
         $yearToDateAestheticPayments = AestheticInvoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($yearStart->toDateString(), now()->toDateString())
@@ -1685,7 +1720,7 @@ class FinanceController extends Controller
         );
 
         $data['yearToDate'] = [
-            'revenue' => $yearToDateRevenueSummary['total'],
+            'revenue' => $yearToDateRevenueSummary['total'] + $yearToDateMedicineRevenue,
             'expenses' => $expensesQuery->clone()->approved()->byDateRange($yearStart, now())->sum('amount'),
         ];
         $data['yearToDate']['profit'] = $data['yearToDate']['revenue'] - $data['yearToDate']['expenses'];
@@ -1716,6 +1751,13 @@ class FinanceController extends Controller
             ->orderBy('date')
             ->get();
 
+        $medicineSaleInflows = MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
+            ->whereBetween('sold_at', [$dateFrom, $dateTo])
+            ->selectRaw('DATE(sold_at) as date, SUM(total) as amount')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
         // Cash inflows from receipts (approved only)
         $receiptInflows = Receipt::where('clinic_id', $user->clinic_id)
             ->approved()
@@ -1726,7 +1768,7 @@ class FinanceController extends Controller
             ->get();
 
         // Merge inflows from invoices, receipts, and aesthetic invoices
-        $inflows = $this->mergeInflowsByDate($invoiceInflows, $receiptInflows, $aestheticInflows);
+        $inflows = $this->mergeInflowsByDate($invoiceInflows, $receiptInflows, $aestheticInflows, $medicineSaleInflows);
 
         // Cash outflows (expenses)
         $outflows = Expense::where('clinic_id', $user->clinic_id)
@@ -1800,9 +1842,13 @@ class FinanceController extends Controller
         $aestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
             ->byDateRange($dateFrom->toDateString(), $dateTo->toDateString())
             ->get();
+        $medicineRevenue = MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
+            ->whereBetween('sold_at', [$dateFrom, $dateTo])
+            ->get();
 
         $invoiceTotal = $revenue->sum('total_amount');
         $aestheticTotal = $aestheticRevenue->sum('total_amount');
+        $medicineTotal = $medicineRevenue->sum('total');
         $invoicePaymentsTotal = $revenue->sum('paid_amount');
         $aestheticPaymentsTotal = $aestheticRevenue->sum('paid_amount');
         $receiptTotal = $receipts->sum('amount');
@@ -1819,6 +1865,10 @@ class FinanceController extends Controller
             $revenueByType['aesthetic_payments'] = ($revenueByType['aesthetic_payments'] ?? 0) + $aestheticPaymentsTotal;
         }
 
+        if ($medicineTotal > 0) {
+            $revenueByType['medicine_sales'] = ($revenueByType['medicine_sales'] ?? 0) + $medicineTotal;
+        }
+
         $revenueSummary = $this->buildClinicRevenueSummary(
             $invoiceTotal,
             $aestheticTotal,
@@ -1828,7 +1878,7 @@ class FinanceController extends Controller
         );
 
         $data['revenue'] = [
-            'total' => $revenueSummary['total'],
+            'total' => $revenueSummary['total'] + $medicineTotal,
             'byType' => $revenueByType,
         ];
 
@@ -2060,7 +2110,7 @@ class FinanceController extends Controller
     /**
      * Merge inflows from invoices and receipts by date.
      */
-    private function mergeInflowsByDate($invoiceInflows, $receiptInflows, $aestheticInflows = null)
+    private function mergeInflowsByDate($invoiceInflows, $receiptInflows, $aestheticInflows = null, $medicineSaleInflows = null)
     {
         $merged = [];
 
@@ -2085,6 +2135,16 @@ class FinanceController extends Controller
         // Add aesthetic invoice inflows
         if ($aestheticInflows) {
             foreach ($aestheticInflows as $inflow) {
+                $date = $inflow->date;
+                if (!isset($merged[$date])) {
+                    $merged[$date] = 0;
+                }
+                $merged[$date] += $inflow->amount;
+            }
+        }
+
+        if ($medicineSaleInflows) {
+            foreach ($medicineSaleInflows as $inflow) {
                 $date = $inflow->date;
                 if (!isset($merged[$date])) {
                     $merged[$date] = 0;

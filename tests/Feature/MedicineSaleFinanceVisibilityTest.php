@@ -37,7 +37,7 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
         View::share('primaryColor', null);
         View::share('companyName', 'Test Clinic');
 
-        foreach (['settings', 'medicine_transactions', 'medicines', 'dental_treatments', 'medicine_sale_invoices', 'aesthetic_invoices', 'invoices', 'expenses', 'receipts', 'patients', 'users', 'clinics'] as $table) {
+        foreach (['settings', 'audit_logs', 'patient_files', 'medicine_transactions', 'medicines', 'dental_treatments', 'medicine_sale_invoices', 'aesthetic_invoices', 'invoices', 'expenses', 'receipts', 'patients', 'users', 'clinics'] as $table) {
             Schema::dropIfExists($table);
         }
 
@@ -46,6 +46,7 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
             $table->string('name');
             $table->string('email')->nullable();
             $table->unsignedBigInteger('tenant_id')->nullable();
+            $table->json('enabled_modules')->nullable();
             $table->timestamps();
         });
 
@@ -213,6 +214,31 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
             $table->text('value')->nullable();
             $table->timestamps();
         });
+
+        Schema::create('audit_logs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->nullable();
+            $table->string('user_name')->nullable();
+            $table->string('user_role')->nullable();
+            $table->foreignId('clinic_id')->nullable();
+            $table->string('action')->nullable();
+            $table->string('model_type')->nullable();
+            $table->unsignedBigInteger('model_id')->nullable();
+            $table->text('description')->nullable();
+            $table->json('old_values')->nullable();
+            $table->json('new_values')->nullable();
+            $table->string('ip_address')->nullable();
+            $table->text('user_agent')->nullable();
+            $table->timestamp('performed_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('patient_files', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('patient_id')->nullable();
+            $table->unsignedBigInteger('file_size')->default(0);
+            $table->timestamps();
+        });
     }
 
     public function test_finance_invoices_page_lists_medicine_sale_invoices(): void
@@ -266,6 +292,59 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
             ->assertSee($sale->invoice_number);
     }
 
+    public function test_finance_dashboard_summary_cards_include_medicine_sales(): void
+    {
+        [$user, $patient] = $this->makeFinanceUserAndPatient();
+
+        MedicineSaleInvoice::create([
+            'clinic_id' => $user->clinic_id,
+            'user_id' => $user->id,
+            'patient_id' => $patient->id,
+            'invoice_number' => 'MS-TEST-3003',
+            'payment_method' => 'cash',
+            'subtotal' => 4000,
+            'discount' => 0,
+            'tax' => 0,
+            'total' => 4000,
+            'paid_amount' => 4000,
+            'sold_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('finance.index'))
+            ->assertOk()
+            ->assertViewHas('monthlyRevenue', fn ($value) => (float) $value === 4000.0)
+            ->assertViewHas('monthlyProfit', fn ($value) => (float) $value === 4000.0)
+            ->assertViewHas('cashFlow', fn ($value) => (float) $value === 4000.0);
+    }
+
+    public function test_main_dashboard_total_revenue_includes_medicine_sales(): void
+    {
+        [$user, $patient] = $this->makeFinanceUserAndPatient('accountant', ['finance_view'], ['dashboard', 'finance']);
+
+        MedicineSaleInvoice::create([
+            'clinic_id' => $user->clinic_id,
+            'user_id' => $user->id,
+            'patient_id' => $patient->id,
+            'invoice_number' => 'MS-TEST-4004',
+            'payment_method' => 'cash',
+            'subtotal' => 4000,
+            'discount' => 0,
+            'tax' => 0,
+            'total' => 4000,
+            'paid_amount' => 4000,
+            'sold_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertViewHas('totalRevenue', fn ($value) => (float) $value === 4000.0)
+            ->assertViewHas('monthlyStats', function ($stats) {
+                return collect($stats)->contains(fn ($row) => (float) ($row['revenue'] ?? 0) === 4000.0);
+            });
+    }
+
     public function test_legacy_single_item_sell_flow_creates_finance_visible_invoice(): void
     {
         [$user, $patient] = $this->makeFinanceUserAndPatient();
@@ -302,26 +381,27 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
             ->assertSee($invoice->invoice_number);
     }
 
-    private function makeFinanceUserAndPatient(): array
+    private function makeFinanceUserAndPatient(string $role = 'admin', array $permissions = [], ?array $enabledModules = null): array
     {
         $clinic = Clinic::create([
             'name' => 'Finance Clinic',
             'email' => 'finance@example.test',
             'tenant_id' => 1,
+            'enabled_modules' => $enabledModules,
         ]);
 
         $user = User::create([
-            'username' => 'finance_admin',
-            'email' => 'finance_admin@example.test',
+            'username' => 'finance_' . $role . '_' . uniqid(),
+            'email' => 'finance_' . $role . '_' . uniqid() . '@example.test',
             'password' => 'secret',
             'first_name' => 'Finance',
             'last_name' => 'Admin',
-            'role' => 'admin',
+            'role' => $role,
             'clinic_id' => $clinic->id,
             'is_active' => true,
             'activated_at' => now(),
             'language' => 'en',
-            'permissions' => [],
+            'permissions' => $permissions,
         ]);
 
         $patient = Patient::create([
