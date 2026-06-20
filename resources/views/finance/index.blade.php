@@ -247,7 +247,7 @@
     <!-- Recent Activity -->
     <div class="row">
         <!-- Recent Invoices -->
-        <div class="col-lg-6 mb-4">
+        <div class="col-lg-4 mb-4">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
@@ -289,8 +289,51 @@
             </div>
         </div>
 
+        <!-- Recent Medicine Sales -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-pills text-success"></i>
+                        Recent Medicine Sales
+                    </h6>
+                    <a href="{{ route('finance.invoices') }}#medicine-sales-section" class="btn btn-sm btn-outline-success">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    @forelse($recentMedicineSales ?? collect() as $sale)
+                    <div class="border-bottom p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ $sale->invoice_number }}</h6>
+                                <p class="mb-1 text-muted small">
+                                    {{ $sale->patient?->full_name ?? __('Walk-in') }}
+                                </p>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    {{ __('Medicine Sale') }}
+                                </span>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($sale->total, 2), '0'), '.') }}</div>
+                                <small class="text-muted">
+                                    {{ $sale->sold_at?->format('M d') ?? '—' }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="p-3 text-center text-muted">
+                        <i class="fas fa-pills fa-2x mb-2"></i>
+                        <p class="mb-0">No recent medicine sales</p>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
         <!-- Recent Expenses -->
-        <div class="col-lg-6 mb-4">
+        <div class="col-lg-4 mb-4">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">

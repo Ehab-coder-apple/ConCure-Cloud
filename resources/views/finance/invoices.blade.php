@@ -410,6 +410,115 @@
                     @endif
                 </div>
             </div>
+
+            <div class="card mt-4" id="medicine-sales-section">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">
+                            <i class="fas fa-pills text-success me-2"></i>{{ __('Medicine Sales') }}
+                        </h5>
+                        <small class="text-muted">{{ __('Completed medicine sale invoices are listed here for finance review.') }}</small>
+                    </div>
+                    <a href="{{ route('medicines.sales.create') }}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-plus me-1"></i>{{ __('New Medicine Sale') }}
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if(isset($medicineSaleInvoices) && $medicineSaleInvoices->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('Invoice #') }}</th>
+                                        <th>{{ __('Patient') }}</th>
+                                        <th>{{ __('Cashier') }}</th>
+                                        <th>{{ __('Date') }}</th>
+                                        <th>{{ __('Amount') }}</th>
+                                        <th>{{ __('Status') }}</th>
+                                        <th>{{ __('Remaining') }}</th>
+                                        <th>{{ __('Actions') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($medicineSaleInvoices as $invoice)
+                                        @php
+                                            $remaining = max(0, (float) $invoice->total - (float) $invoice->paid_amount);
+                                            $isPaid = $remaining <= 0.009;
+                                            $isPartial = !$isPaid && (float) $invoice->paid_amount > 0;
+                                        @endphp
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $invoice->invoice_number }}</strong>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle ms-2">{{ __('Medicine') }}</span>
+                                            </td>
+                                            <td>
+                                                @if($invoice->patient)
+                                                    {{ $invoice->patient->first_name }} {{ $invoice->patient->last_name }}
+                                                @else
+                                                    <span class="text-muted">{{ __('Walk-in') }}</span>
+                                                @endif
+                                            </td>
+                                            <td>{{ $invoice->user->full_name ?? $invoice->user->username ?? '—' }}</td>
+                                            <td>{{ $invoice->sold_at ? $invoice->sold_at->format('M d, Y H:i') : '-' }}</td>
+                                            <td>
+                                                <strong>{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->total ?? 0, 2), '0'), '.') }}</strong>
+                                                @if(($invoice->paid_amount ?? 0) > 0)
+                                                    <br>
+                                                    <small class="text-muted">{{ __('Paid: :amount', ['amount' => ($currencySymbol ?? '$') . rtrim(rtrim(number_format($invoice->paid_amount ?? 0, 2), '0'), '.')]) }}</small>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($isPaid)
+                                                    <span class="badge bg-success">{{ __('Paid') }}</span>
+                                                @elseif($isPartial)
+                                                    <span class="badge bg-warning text-dark">{{ __('Partial Paid') }}</span>
+                                                @else
+                                                    <span class="badge bg-secondary">{{ __('Unpaid') }}</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($remaining > 0)
+                                                    <span class="text-danger fw-semibold">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($remaining, 2), '0'), '.') }}</span>
+                                                @else
+                                                    <span class="text-success"><i class="fas fa-check-circle"></i> {{ __('Fully Paid') }}</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <div class="d-inline-flex gap-2 flex-wrap">
+                                                    <a href="{{ route('medicines.sales.show', $invoice) }}" class="btn btn-sm btn-outline-primary" title="{{ __('View Sale') }}">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ route('medicines.sales.pdf', $invoice) }}" class="btn btn-sm btn-outline-secondary" title="{{ __('Download PDF') }}">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                    </a>
+                                                    <a href="{{ route('medicines.sales.thermal', ['invoice' => $invoice, 'width' => 80]) }}" target="_blank" class="btn btn-sm btn-outline-success" title="{{ __('Print Receipt') }}">
+                                                        <i class="fas fa-print"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        @if(method_exists($medicineSaleInvoices, 'links'))
+                            <div class="d-flex justify-content-center mt-4">
+                                {{ $medicineSaleInvoices->appends(request()->except('medicine_page'))->links() }}
+                            </div>
+                        @endif
+                    @else
+                        <div class="text-center py-4">
+                            <i class="fas fa-pills fa-2x text-muted mb-3"></i>
+                            <h6 class="text-muted">{{ __('No medicine sales found') }}</h6>
+                            <p class="text-muted mb-3">{{ __('Completed medicine sale invoices will appear here for finance tracking.') }}</p>
+                            <a href="{{ route('medicines.sales.create') }}" class="btn btn-outline-success">
+                                <i class="fas fa-plus me-1"></i>{{ __('Create Medicine Sale') }}
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 </div>

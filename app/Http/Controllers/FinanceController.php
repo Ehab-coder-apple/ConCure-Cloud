@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\AestheticInvoice;
+use App\Models\MedicineSaleInvoice;
 use App\Models\InvoiceItem;
 use App\Models\Expense;
 use App\Models\Receipt;
@@ -218,6 +219,36 @@ class FinanceController extends Controller
 
         $aestheticInvoices = $aestheticInvoicesQuery->latest()->paginate(10, ['*'], 'aesthetic_page');
 
+        $medicineSaleInvoicesQuery = MedicineSaleInvoice::with(['patient', 'user'])
+            ->where('clinic_id', $user->clinic_id);
+
+        if ($request->filled('status')) {
+            $this->applyMedicineSaleStatusFilter($medicineSaleInvoicesQuery, $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $medicineSaleInvoicesQuery->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhereHas('patient', function ($pq) use ($search) {
+                        $pq->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere('patient_id', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $medicineSaleInvoicesQuery->whereBetween('sold_at', [
+                $request->date_from . ' 00:00:00',
+                $request->date_to . ' 23:59:59',
+            ]);
+        }
+
+        $medicineSaleInvoices = $medicineSaleInvoicesQuery
+            ->latest('sold_at')
+            ->paginate(10, ['*'], 'medicine_page');
+
         // Get patients for the create invoice form
         $patients = Patient::where('clinic_id', $user->clinic_id)
                           ->where('is_active', true)
@@ -233,7 +264,7 @@ class FinanceController extends Controller
 
         $currencySymbol = $this->getCurrencySymbol($currency);
 
-        return view('finance.invoices', compact('invoices', 'aestheticInvoices', 'patients', 'currency', 'currencySymbol'));
+        return view('finance.invoices', compact('invoices', 'aestheticInvoices', 'medicineSaleInvoices', 'patients', 'currency', 'currencySymbol'));
     }
 
     /**
@@ -1311,6 +1342,7 @@ class FinanceController extends Controller
         // Base queries - FILTER BY CLINIC
         $invoicesQuery = Invoice::where('clinic_id', $user->clinic_id);
         $aestheticInvoicesQuery = AestheticInvoice::where('clinic_id', $user->clinic_id);
+        $medicineSaleInvoicesQuery = MedicineSaleInvoice::where('clinic_id', $user->clinic_id);
         $expensesQuery = Expense::where('clinic_id', $user->clinic_id);
         $receiptsQuery = Receipt::where('clinic_id', $user->clinic_id);
 
@@ -1400,6 +1432,7 @@ class FinanceController extends Controller
         // Counts
         $stats['totalInvoices'] = $invoicesQuery->clone()->count();
         $stats['totalInvoices'] += $aestheticInvoicesQuery->clone()->count();
+        $stats['totalInvoices'] += $medicineSaleInvoicesQuery->clone()->count();
 
         $stats['overdueInvoices'] = $invoicesQuery->clone()->overdue()->count();
         $stats['overdueInvoices'] += $aestheticInvoicesQuery->clone()->overdue()->count();
@@ -1505,6 +1538,12 @@ class FinanceController extends Controller
             ->limit(5)
             ->get();
 
+        $stats['recentMedicineSales'] = $medicineSaleInvoicesQuery->clone()
+            ->with(['patient', 'user'])
+            ->latest('sold_at')
+            ->limit(5)
+            ->get();
+
         $stats['recentReceipts'] = $receiptsQuery->clone()
             ->with(['creator'])
             ->latest()
@@ -1518,6 +1557,26 @@ class FinanceController extends Controller
             ->get();
 
         return $stats;
+    }
+
+    /**
+     * Apply the finance status filter semantics to medicine sales.
+     */
+    private function applyMedicineSaleStatusFilter($query, string $status): void
+    {
+        if ($status === 'paid') {
+            $query->whereColumn('paid_amount', '>=', 'total');
+            return;
+        }
+
+        if ($status === 'partial_paid') {
+            $query->where('paid_amount', '>', 0)
+                ->whereColumn('paid_amount', '<', 'total');
+            return;
+        }
+
+        // Medicine sales do not have draft/sent/overdue/cancelled states.
+        $query->whereRaw('1 = 0');
     }
 
     /**
