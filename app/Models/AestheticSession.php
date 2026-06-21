@@ -20,6 +20,7 @@ class AestheticSession extends Model
         'patient_id',
         'treatment_id',
         'assigned_user_id',
+        'external_practitioner_name',
         'session_number',
         'session_date',
         'next_due_date',
@@ -221,7 +222,15 @@ class AestheticSession extends Model
      */
     public function getAssignedPersonDisplayAttribute(): string
     {
-        return $this->assignedUser?->full_name ?? __('Unassigned');
+        if ($this->assignedUser) {
+            return $this->assignedUser->full_name;
+        }
+
+        if (!empty($this->external_practitioner_name)) {
+            return $this->external_practitioner_name;
+        }
+
+        return __('Unassigned');
     }
 
     /**

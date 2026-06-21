@@ -34,7 +34,7 @@
                             @if($aestheticSession->treatment)- {{ $aestheticSession->treatment->name }}@endif
                         @endif
                     </p>
-                    @if($aestheticSession->assigned_user_id)
+                    @if($aestheticSession->assigned_user_id || $aestheticSession->external_practitioner_name)
                         <p class="text-muted mb-0 small">
                             <i class="fas fa-user-md me-1"></i>{{ __('Assigned Person: :name', ['name' => $aestheticSession->assigned_person_display]) }}
                         </p>
@@ -150,7 +150,7 @@
                 </div>
             </div>
 
-            @if($aestheticSession->assigned_user_id)
+                @if($aestheticSession->assigned_user_id || $aestheticSession->external_practitioner_name)
                 <div class="alert alert-light border d-flex align-items-center gap-2 mb-4">
                     <i class="fas fa-user-md text-info"></i>
                     <span><strong>{{ __('Assigned Person:') }}</strong> {{ $aestheticSession->assigned_person_display }}</span>

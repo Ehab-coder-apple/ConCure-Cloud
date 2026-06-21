@@ -156,7 +156,22 @@
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
         <small class="form-text text-muted">
-            {{ __('Choose the person responsible for running this session.') }}
+            {{ __('Choose the person responsible for running this session. If you select someone here, any external practitioner name will be cleared.') }}
+        </small>
+    </div>
+
+    <!-- External Practitioner Name -->
+    <div class="col-md-3">
+        <label for="external_practitioner_name" class="form-label">{{ __('External Practitioner Name') }}</label>
+        <input type="text"
+               class="form-control @error('external_practitioner_name') is-invalid @enderror"
+               id="external_practitioner_name" name="external_practitioner_name"
+               value="{{ old('external_practitioner_name', $aestheticSession->external_practitioner_name ?? '') }}">
+        @error('external_practitioner_name')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <small class="form-text text-muted">
+            {{ __('Use this when the practitioner is external and not listed in the Assigned Person dropdown. Typing a name here will clear any selected Assigned Person.') }}
         </small>
     </div>
 
@@ -328,5 +343,36 @@
     if (modeDirect) modeDirect.addEventListener('change', toggleMode);
     toggleMode();
 })();
+
+	// Keep internal Assigned Person and External Practitioner mutually exclusive
+	(function () {
+	    const assignedSelect = document.getElementById('assigned_user_id');
+	    const externalInput = document.getElementById('external_practitioner_name');
+
+	    if (!assignedSelect || !externalInput) return;
+
+	    function handleExternalChange() {
+	        if (externalInput.value.trim() !== '') {
+	            if (assignedSelect.value !== '') {
+	                assignedSelect.value = '';
+	            }
+	        }
+	    }
+
+	    function handleAssignedChange() {
+	        if (assignedSelect.value !== '') {
+	            if (externalInput.value.trim() !== '') {
+	                externalInput.value = '';
+	            }
+	        }
+	    }
+
+	    externalInput.addEventListener('input', handleExternalChange);
+	    assignedSelect.addEventListener('change', handleAssignedChange);
+
+	    // Normalize state on load if both somehow have values (e.g. after back/forward navigation)
+	    handleExternalChange();
+	    handleAssignedChange();
+	})();
 </script>
 @endif

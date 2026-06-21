@@ -127,6 +127,7 @@ class AestheticSessionController extends Controller
                 'session_number' => 'required|integer|min:1',
                 'session_date' => 'required|date',
                 'assigned_user_id' => 'nullable|integer|exists:users,id',
+                'external_practitioner_name' => 'nullable|string|max:255',
                 'status' => 'required|in:scheduled,started,completed,cancelled,no_show',
                 'notes' => 'nullable|string|max:2000',
             ]);
@@ -138,6 +139,7 @@ class AestheticSessionController extends Controller
                 'session_number' => 'required|integer|min:1',
                 'session_date' => 'required|date',
                 'assigned_user_id' => 'nullable|integer|exists:users,id',
+                'external_practitioner_name' => 'nullable|string|max:255',
                 'status' => 'required|in:scheduled,started,completed,cancelled,no_show',
                 'notes' => 'nullable|string|max:2000',
             ]);
@@ -314,6 +316,7 @@ class AestheticSessionController extends Controller
                 'session_date' => 'required|date',
                 'assigned_user_id' => 'nullable|integer|exists:users,id',
                 'next_due_date' => 'nullable|date|after_or_equal:session_date',
+                'external_practitioner_name' => 'nullable|string|max:255',
                 'status' => 'required|in:scheduled,started,completed,cancelled,no_show',
                 'notes' => 'nullable|string|max:2000',
             ]);
@@ -328,6 +331,7 @@ class AestheticSessionController extends Controller
                 'session_date' => 'required|date',
                 'assigned_user_id' => 'nullable|integer|exists:users,id',
                 'next_due_date' => 'nullable|date|after_or_equal:session_date',
+                'external_practitioner_name' => 'nullable|string|max:255',
                 'status' => 'required|in:scheduled,started,completed,cancelled,no_show',
                 'notes' => 'nullable|string|max:2000',
             ]);
