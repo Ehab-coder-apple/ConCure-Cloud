@@ -11,6 +11,7 @@ use App\Models\Appointment;
 use App\Models\Invoice;
 use App\Models\AestheticInvoice;
 use App\Models\MedicineSaleInvoice;
+use App\Models\OrthodonticPayment;
 use App\Models\Receipt;
 use App\Models\User;
 use App\Models\AuditLog;
@@ -410,8 +411,9 @@ class DashboardController extends Controller
             $invoiceRevenue = $applyPeriod((clone $invoicesQuery), 'invoice_date')->sum('total_amount');
             $aestheticRevenue = $applyPeriod(AestheticInvoice::where('clinic_id', $user->clinic_id), 'invoice_date')->sum('total_amount');
             $medicineRevenue = $applyPeriod(MedicineSaleInvoice::where('clinic_id', $user->clinic_id), 'sold_at')->sum('total');
+            $orthodonticRevenue = $applyPeriod(OrthodonticPayment::where('clinic_id', $user->clinic_id), 'payment_date')->sum('amount');
             $receiptRevenue = $applyPeriod((clone $receiptsQuery)->where('status', 'approved'), 'receipt_date')->sum('amount');
-            $data['totalRevenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $receiptRevenue;
+            $data['totalRevenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $orthodonticRevenue + $receiptRevenue;
 
             $data['pendingInvoices'] = (clone $invoicesQuery)
                 ->whereIn('status', ['draft', 'sent'])
@@ -906,11 +908,14 @@ class DashboardController extends Controller
                     $medicineRevenue = MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
                         ->whereDate('sold_at', $day->toDateString())
                         ->sum('total');
+                    $orthodonticRevenue = OrthodonticPayment::where('clinic_id', $user->clinic_id)
+                        ->whereDate('payment_date', $day->toDateString())
+                        ->sum('amount');
                     $receiptRevenue = Receipt::where('clinic_id', $user->clinic_id)
                         ->where('status', 'approved')
                         ->whereDate('receipt_date', $day->toDateString())
                         ->sum('amount');
-                    $stats[$key]['revenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $receiptRevenue;
+                    $stats[$key]['revenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $orthodonticRevenue + $receiptRevenue;
                 }
             }
         } elseif ($period === 'year') {
@@ -972,11 +977,14 @@ class DashboardController extends Controller
                     $medicineRevenue = MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
                         ->whereYear('sold_at', $year)
                         ->sum('total');
+                    $orthodonticRevenue = OrthodonticPayment::where('clinic_id', $user->clinic_id)
+                        ->whereYear('payment_date', $year)
+                        ->sum('amount');
                     $receiptRevenue = Receipt::where('clinic_id', $user->clinic_id)
                         ->where('status', 'approved')
                         ->whereYear('receipt_date', $year)
                         ->sum('amount');
-                    $stats[$key]['revenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $receiptRevenue;
+                    $stats[$key]['revenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $orthodonticRevenue + $receiptRevenue;
                 }
             }
         } else {
@@ -1044,12 +1052,16 @@ class DashboardController extends Controller
                         ->whereMonth('sold_at', $month->month)
                         ->whereYear('sold_at', $month->year)
                         ->sum('total');
+                    $orthodonticRevenue = OrthodonticPayment::where('clinic_id', $user->clinic_id)
+                        ->whereMonth('payment_date', $month->month)
+                        ->whereYear('payment_date', $month->year)
+                        ->sum('amount');
                     $receiptRevenue = Receipt::where('clinic_id', $user->clinic_id)
                         ->where('status', 'approved')
                         ->whereMonth('receipt_date', $month->month)
                         ->whereYear('receipt_date', $month->year)
                         ->sum('amount');
-                    $stats[$key]['revenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $receiptRevenue;
+                    $stats[$key]['revenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $orthodonticRevenue + $receiptRevenue;
                 }
             }
         }

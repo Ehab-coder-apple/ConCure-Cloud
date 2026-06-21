@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\AestheticInvoice;
 use App\Models\MedicineSaleInvoice;
+use App\Models\OrthodonticPayment;
 use App\Models\InvoiceItem;
 use App\Models\Expense;
 use App\Models\Receipt;
@@ -1370,6 +1371,10 @@ class FinanceController extends Controller
             ->whereBetween('sold_at', [$currentMonth, $currentMonthEnd])
             ->sum('total');
 
+        $monthlyOrthodonticRevenue = OrthodonticPayment::where('clinic_id', $user->clinic_id)
+            ->whereBetween('payment_date', [$currentMonth->toDateString(), $currentMonthEnd->toDateString()])
+            ->sum('amount');
+
         $monthlyInvoicePayments = $invoicesQuery->clone()
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('paid_amount');
@@ -1382,6 +1387,10 @@ class FinanceController extends Controller
             ->whereBetween('sold_at', [$currentMonth, $currentMonthEnd])
             ->sum('paid_amount');
 
+        $monthlyOrthodonticPayments = OrthodonticPayment::where('clinic_id', $user->clinic_id)
+            ->whereBetween('payment_date', [$currentMonth->toDateString(), $currentMonthEnd->toDateString()])
+            ->sum('amount');
+
         $monthlyRevenueSummary = $this->buildClinicRevenueSummary(
             $monthlyInvoiceRevenue,
             $monthlyAestheticRevenue,
@@ -1391,11 +1400,12 @@ class FinanceController extends Controller
         );
 
         // Total clinic revenue includes invoice totals, aesthetic invoice totals, receipts, and tracked paid amounts.
-        $stats['monthlyRevenue'] = $monthlyRevenueSummary['total'] + $monthlyMedicineRevenue;
+        $stats['monthlyRevenue'] = $monthlyRevenueSummary['total'] + $monthlyMedicineRevenue + $monthlyOrthodonticRevenue;
         $stats['monthlyReceipts'] = $monthlyReceiptRevenue;
         $stats['monthlyCollectedPayments'] = $monthlyRevenueSummary['invoice_payments']
             + $monthlyRevenueSummary['aesthetic_payments']
-            + $monthlyMedicinePayments;
+            + $monthlyMedicinePayments
+            + $monthlyOrthodonticPayments;
 
         $stats['monthlyExpenses'] = $expensesQuery->clone()
             ->approved()
@@ -1473,7 +1483,7 @@ class FinanceController extends Controller
             ->byDateRange($currentMonth, $currentMonthEnd)
             ->sum('amount');
 
-        $monthlyCashIn = $monthlyInvoicePayments + $monthlyAestheticPayments + $monthlyMedicinePayments + $monthlyOtherReceipts;
+        $monthlyCashIn = $monthlyInvoicePayments + $monthlyAestheticPayments + $monthlyMedicinePayments + $monthlyOrthodonticPayments + $monthlyOtherReceipts;
 
         // Total cash out = Expenses (current month)
         $monthlyCashOut = $expensesQuery->clone()
@@ -1526,6 +1536,17 @@ class FinanceController extends Controller
                 'paid' => \App\Models\MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
                     ->whereBetween('sold_at', [$currentMonth, $currentMonthEnd])
                     ->sum('paid_amount'),
+            ],
+            'orthodontics' => [
+                'label' => 'Orthodontics',
+                'icon' => 'fa-teeth-open',
+                'color' => 'secondary',
+                'revenue' => OrthodonticPayment::where('clinic_id', $user->clinic_id)
+                    ->whereBetween('payment_date', [$currentMonth->toDateString(), $currentMonthEnd->toDateString()])
+                    ->sum('amount'),
+                'paid' => OrthodonticPayment::where('clinic_id', $user->clinic_id)
+                    ->whereBetween('payment_date', [$currentMonth->toDateString(), $currentMonthEnd->toDateString()])
+                    ->sum('amount'),
             ],
             'general' => [
                 'label' => 'General Clinic',

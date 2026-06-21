@@ -10,6 +10,7 @@ use App\Http\Middleware\SetClinicTimezone;
 use App\Http\Middleware\SetLocale;
 use App\Models\Clinic;
 use App\Models\MedicineSaleInvoice;
+use App\Models\OrthodonticPayment;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
@@ -37,7 +38,7 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
         View::share('primaryColor', null);
         View::share('companyName', 'Test Clinic');
 
-        foreach (['settings', 'audit_logs', 'patient_files', 'medicine_transactions', 'medicines', 'dental_treatments', 'medicine_sale_invoices', 'aesthetic_invoices', 'invoices', 'expenses', 'receipts', 'patients', 'users', 'clinics'] as $table) {
+        foreach (['settings', 'audit_logs', 'patient_files', 'orthodontic_payments', 'orthodontic_cases', 'medicine_transactions', 'medicines', 'dental_treatments', 'medicine_sale_invoices', 'aesthetic_invoices', 'invoices', 'expenses', 'receipts', 'patients', 'users', 'clinics'] as $table) {
             Schema::dropIfExists($table);
         }
 
@@ -176,6 +177,49 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
             $table->text('notes')->nullable();
             $table->date('transaction_date')->nullable();
             $table->timestamps();
+        });
+
+        Schema::create('orthodontic_cases', function (Blueprint $table) {
+            $table->id();
+            $table->string('case_number')->nullable();
+            $table->foreignId('patient_id')->nullable();
+            $table->foreignId('clinic_id')->nullable();
+            $table->foreignId('doctor_id')->nullable();
+            $table->string('treatment_type')->nullable();
+            $table->date('start_date')->nullable();
+            $table->integer('estimated_duration_months')->nullable();
+            $table->date('estimated_completion_date')->nullable();
+            $table->date('actual_completion_date')->nullable();
+            $table->string('current_phase')->nullable();
+            $table->string('status')->nullable();
+            $table->decimal('total_cost', 12, 2)->default(0);
+            $table->string('currency')->nullable();
+            $table->decimal('paid_amount', 12, 2)->default(0);
+            $table->decimal('balance', 12, 2)->default(0);
+            $table->string('payment_plan')->nullable();
+            $table->text('notes')->nullable();
+            $table->foreignId('created_by')->nullable();
+            $table->foreignId('updated_by')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('orthodontic_payments', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('orthodontic_case_id')->nullable();
+            $table->foreignId('patient_id')->nullable();
+            $table->foreignId('clinic_id')->nullable();
+            $table->date('payment_date')->nullable();
+            $table->decimal('amount', 12, 2)->default(0);
+            $table->string('currency')->nullable();
+            $table->string('payment_method')->nullable();
+            $table->string('payment_type')->nullable();
+            $table->integer('installment_number')->nullable();
+            $table->string('receipt_number')->nullable();
+            $table->text('notes')->nullable();
+            $table->foreignId('received_by')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('dental_treatments', function (Blueprint $table) {
@@ -318,6 +362,24 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
             ->assertViewHas('cashFlow', fn ($value) => (float) $value === 4000.0);
     }
 
+    public function test_finance_department_revenue_includes_orthodontic_payments(): void
+    {
+        [$user, $patient] = $this->makeFinanceUserAndPatient();
+
+        $this->createOrthodonticPayment($user, $patient, 2500);
+
+        $this->actingAs($user)
+            ->get(route('finance.index'))
+            ->assertOk()
+            ->assertViewHas('deptRevenue', function ($deptRevenue) {
+                return isset($deptRevenue['orthodontics'])
+                    && (float) $deptRevenue['orthodontics']['revenue'] === 2500.0
+                    && (float) $deptRevenue['orthodontics']['paid'] === 2500.0;
+            })
+            ->assertViewHas('monthlyRevenue', fn ($value) => (float) $value === 2500.0)
+            ->assertViewHas('cashFlow', fn ($value) => (float) $value === 2500.0);
+    }
+
     public function test_main_dashboard_total_revenue_includes_medicine_sales(): void
     {
         [$user, $patient] = $this->makeFinanceUserAndPatient('accountant', ['finance_view'], ['dashboard', 'finance']);
@@ -342,6 +404,21 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
             ->assertViewHas('totalRevenue', fn ($value) => (float) $value === 4000.0)
             ->assertViewHas('monthlyStats', function ($stats) {
                 return collect($stats)->contains(fn ($row) => (float) ($row['revenue'] ?? 0) === 4000.0);
+            });
+    }
+
+    public function test_main_dashboard_total_revenue_includes_orthodontic_payments(): void
+    {
+        [$user, $patient] = $this->makeFinanceUserAndPatient('accountant', ['finance_view'], ['dashboard', 'finance']);
+
+        $this->createOrthodonticPayment($user, $patient, 2500);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertViewHas('totalRevenue', fn ($value) => (float) $value === 2500.0)
+            ->assertViewHas('monthlyStats', function ($stats) {
+                return collect($stats)->contains(fn ($row) => (float) ($row['revenue'] ?? 0) === 2500.0);
             });
     }
 
@@ -413,5 +490,42 @@ class MedicineSaleFinanceVisibilityTest extends TestCase
         ]);
 
         return [$user, $patient];
+    }
+
+    private function createOrthodonticPayment(User $user, Patient $patient, float $amount): OrthodonticPayment
+    {
+        $caseId = \Illuminate\Support\Facades\DB::table('orthodontic_cases')->insertGetId([
+            'case_number' => 'ORT-TEST-' . uniqid(),
+            'patient_id' => $patient->id,
+            'clinic_id' => $user->clinic_id,
+            'doctor_id' => $user->id,
+            'treatment_type' => 'metal_braces',
+            'start_date' => now()->toDateString(),
+            'estimated_duration_months' => 12,
+            'estimated_completion_date' => now()->addYear()->toDateString(),
+            'current_phase' => 'initial',
+            'status' => 'active',
+            'total_cost' => $amount,
+            'currency' => 'USD',
+            'paid_amount' => 0,
+            'balance' => $amount,
+            'payment_plan' => 'monthly',
+            'created_by' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return OrthodonticPayment::create([
+            'orthodontic_case_id' => $caseId,
+            'patient_id' => $patient->id,
+            'clinic_id' => $user->clinic_id,
+            'payment_date' => now()->toDateString(),
+            'amount' => $amount,
+            'currency' => 'USD',
+            'payment_method' => 'cash',
+            'payment_type' => 'installment',
+            'receipt_number' => 'ORT-RCPT-' . uniqid(),
+            'received_by' => $user->id,
+        ]);
     }
 }
