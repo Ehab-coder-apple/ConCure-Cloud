@@ -29,12 +29,27 @@ class ClinicReportController extends Controller
                     ->whereColumn('patients.clinic_id', 'clinics.id')
                     ->selectRaw('COUNT(*)');
             }, 'total_patients')
-            // Total prescriptions per clinic
-            ->selectSub(function ($sub) {
-                $sub->from('prescriptions')
-                    ->whereColumn('prescriptions.clinic_id', 'clinics.id')
-                    ->selectRaw('COUNT(*)');
-            }, 'total_prescriptions')
+            // Total prescriptions per clinic (all prescription engines):
+            // - Standard prescriptions
+            // - Simple prescriptions
+            // - Pediatric prescriptions
+            ->selectRaw("(
+                    COALESCE((
+                        SELECT COUNT(*)
+                        FROM prescriptions
+                        WHERE prescriptions.clinic_id = clinics.id
+                    ), 0) +
+                    COALESCE((
+                        SELECT COUNT(*)
+                        FROM simple_prescriptions
+                        WHERE simple_prescriptions.clinic_id = clinics.id
+                    ), 0) +
+                    COALESCE((
+                        SELECT COUNT(*)
+                        FROM pediatric_prescriptions
+                        WHERE pediatric_prescriptions.clinic_id = clinics.id
+                    ), 0)
+                ) AS total_prescriptions")
             // Total revenue per clinic across all clinical modules:
             // - Standard invoices (pediatric, ENT, dental, etc.)
             // - Aesthetic invoices
