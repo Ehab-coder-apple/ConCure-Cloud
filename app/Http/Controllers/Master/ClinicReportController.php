@@ -18,38 +18,44 @@ class ClinicReportController extends Controller
         $sort = $request->query('sort', 'name');
         $direction = strtolower($request->query('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
 
+        // Use raw subqueries against the underlying tables so the report always
+        // reflects the true system-wide data, completely independent of any
+        // model-level global scopes or auth context.
         $query = Clinic::query()
-            // Use withoutGlobalScopes() so master reports always see full system data,
-            // regardless of the logged-in user's clinic visibility.
-            ->withCount([
-                'patients as total_patients' => function ($q) {
-                    $q->withoutGlobalScopes();
-                },
-                'prescriptions as total_prescriptions' => function ($q) {
-                    $q->withoutGlobalScopes();
-                },
-            ])
-            ->withSum([
-                'aestheticInvoices as total_revenue' => function ($q) {
-                    $q->withoutGlobalScopes()
-                        ->whereIn('status', ['paid', 'partial']);
-                },
-            ], 'total_amount')
-            ->withMax([
-                'users as last_login_at' => function ($q) {
-                    $q->withoutGlobalScopes()->whereNotNull('last_login_at');
-                },
-            ], 'last_login_at')
-            ->select('clinics.*');
-
-        // Total images via subquery to avoid global scopes on SessionImage / AestheticSession
-        $query->selectSub(function ($sub) {
-            $sub->from('session_images')
-                ->join('aesthetic_sessions', 'session_images.session_id', '=', 'aesthetic_sessions.id')
-                ->whereNull('aesthetic_sessions.deleted_at')
-                ->whereColumn('aesthetic_sessions.tenant_id', 'clinics.tenant_id')
-                ->selectRaw('COUNT(*)');
-        }, 'total_images');
+            ->select('clinics.*')
+            // Total patients per clinic
+            ->selectSub(function ($sub) {
+                $sub->from('patients')
+                    ->whereColumn('patients.clinic_id', 'clinics.id')
+                    ->selectRaw('COUNT(*)');
+            }, 'total_patients')
+            // Total prescriptions per clinic
+            ->selectSub(function ($sub) {
+                $sub->from('prescriptions')
+                    ->whereColumn('prescriptions.clinic_id', 'clinics.id')
+                    ->selectRaw('COUNT(*)');
+            }, 'total_prescriptions')
+            // Total aesthetic revenue per clinic (paid or partial invoices)
+            ->selectSub(function ($sub) {
+                $sub->from('aesthetic_invoices')
+                    ->whereIn('status', ['paid', 'partial'])
+                    ->whereColumn('aesthetic_invoices.clinic_id', 'clinics.id')
+                    ->selectRaw('COALESCE(SUM(total_amount), 0)');
+            }, 'total_revenue')
+            // Last login timestamp among clinic users
+            ->selectSub(function ($sub) {
+                $sub->from('users')
+                    ->whereColumn('users.clinic_id', 'clinics.id')
+                    ->selectRaw('MAX(last_login_at)');
+            }, 'last_login_at')
+            // Total images from aesthetic sessions mapped by tenant ID
+            ->selectSub(function ($sub) {
+                $sub->from('session_images')
+                    ->join('aesthetic_sessions', 'session_images.session_id', '=', 'aesthetic_sessions.id')
+                    ->whereNull('aesthetic_sessions.deleted_at')
+                    ->whereColumn('aesthetic_sessions.tenant_id', 'clinics.tenant_id')
+                    ->selectRaw('COUNT(*)');
+            }, 'total_images');
 
         if ($search !== '') {
             $query->where('clinics.name', 'like', '%' . $search . '%');
