@@ -23,19 +23,40 @@
 
 <div class="card mb-3">
     <form method="GET" class="card-body row g-2 align-items-end">
-        <div class="col-md-4 col-lg-3">
+        <div class="col-md-3 col-lg-3">
             <label class="form-label">Search by Clinic Name</label>
             <input type="text" name="search" value="{{ $search }}" class="form-control" placeholder="Enter clinic name...">
         </div>
+        <div class="col-md-3 col-lg-3">
+            <label class="form-label">City</label>
+            <input type="text" name="city" value="{{ request('city') }}" class="form-control" placeholder="All cities">
+        </div>
+        <div class="col-md-2 col-lg-2">
+            <label class="form-label">Clinic Type</label>
+            <select name="clinic_type" class="form-select">
+                <option value="">All Clinics</option>
+                <option value="tenant" {{ request('clinic_type') === 'tenant' ? 'selected' : '' }}>Tenant Clinics Only</option>
+                <option value="demo" {{ request('clinic_type') === 'demo' ? 'selected' : '' }}>Demo Clinics Only</option>
+            </select>
+        </div>
+        <div class="col-md-2 col-lg-2">
+            <label class="form-label">Speciality</label>
+            <input type="text" list="speciality-list" name="speciality" value="{{ request('speciality') }}" class="form-control" placeholder="All Specialities">
+            <datalist id="speciality-list">
+                @foreach(($specialities ?? []) as $sp)
+                    <option value="{{ $sp }}">{{ $sp }}</option>
+                @endforeach
+            </datalist>
+        </div>
         <input type="hidden" name="sort" value="{{ $sort }}">
         <input type="hidden" name="direction" value="{{ $direction }}">
-        <div class="col-md-3 col-lg-2">
+        <div class="col-md-2 col-lg-2">
             <button type="submit" class="btn btn-primary w-100 mt-3 mt-md-0">
                 <i class="fas fa-search me-1"></i> Apply
             </button>
         </div>
-        @if($search)
-            <div class="col-md-2 col-lg-2">
+        @if($search || request('city') || request('clinic_type') || request('speciality'))
+            <div class="col-md-2 col-lg-2 mt-2 mt-md-0">
                 <a href="{{ route('master.reports.clinics') }}" class="btn btn-outline-secondary w-100 mt-3 mt-md-0">Reset</a>
             </div>
         @endif
@@ -57,14 +78,21 @@
                             'last_login' => 'Last Login',
                         ];
                     @endphp
-                    @foreach($cols as $key => $label)
+                        @foreach($cols as $key => $label)
                         @php
                             $isActive = $sort === $key;
                             $nextDir = $isActive && $direction === 'asc' ? 'desc' : 'asc';
                             $icon = $isActive ? ($direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort';
                         @endphp
                         <th scope="col">
-                            <a href="{{ route('master.reports.clinics', array_filter(['search' => $search, 'sort' => $key, 'direction' => $nextDir])) }}"
+                            <a href="{{ route('master.reports.clinics', array_filter([
+                                'search' => $search,
+                                'city' => request('city'),
+                                'clinic_type' => request('clinic_type'),
+                                'speciality' => request('speciality'),
+                                'sort' => $key,
+                                'direction' => $nextDir,
+                            ])) }}"
                                class="text-decoration-none text-nowrap">
                                 <span>{{ $label }}</span>
                                 <i class="fas {{ $icon }} ms-1 small {{ $isActive ? '' : 'text-muted' }}"></i>

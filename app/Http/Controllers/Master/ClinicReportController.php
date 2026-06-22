@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Clinic;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ClinicReportController extends Controller
 {
@@ -17,6 +18,11 @@ class ClinicReportController extends Controller
         $search = trim((string) $request->query('search', ''));
         $sort = $request->query('sort', 'name');
         $direction = strtolower($request->query('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+        // Additional filters
+        $city = trim((string) $request->query('city', ''));
+        $clinicType = $request->query('clinic_type'); // tenant | demo | null
+        $speciality = trim((string) $request->query('speciality', ''));
 
         // Use raw subqueries against the underlying tables so the report always
         // reflects the true system-wide data, completely independent of any
@@ -104,8 +110,38 @@ class ClinicReportController extends Controller
                     ), 0)
                 ) AS total_images");
 
+        // Name search
         if ($search !== '') {
             $query->where('clinics.name', 'like', '%' . $search . '%');
+        }
+
+        // Clinic type filter (Tenant vs Demo)
+        if ($clinicType !== null && $clinicType !== '' && Schema::hasColumn('clinics', 'is_demo')) {
+            if ($clinicType === 'tenant') {
+                $query->where('clinics.is_demo', false);
+            } elseif ($clinicType === 'demo') {
+                $query->where('clinics.is_demo', true);
+            }
+        }
+
+        // Speciality filter
+        if ($speciality !== '' && Schema::hasColumn('clinics', 'speciality')) {
+            $query->where('clinics.speciality', $speciality);
+        }
+
+        // City filter (with fallback to legacy address column)
+        if ($city !== '') {
+            $hasCity = Schema::hasColumn('clinics', 'city');
+
+            $query->where(function ($q) use ($city, $hasCity) {
+                if ($hasCity) {
+                    $q->where('clinics.city', 'like', "%{$city}%")
+                      ->orWhere('clinics.address', 'like', "%{$city}%");
+                    return;
+                }
+
+                $q->where('clinics.address', 'like', "%{$city}%");
+            });
         }
 
         $sortable = [
@@ -131,6 +167,34 @@ class ClinicReportController extends Controller
             'search' => $search,
             'sort' => $sort,
             'direction' => $direction,
+            'city' => $city,
+            'clinicType' => $clinicType,
+            'specialityFilter' => $speciality,
+            'specialities' => $this->specialityOptions(),
         ]);
+    }
+
+    /**
+     * Common clinic specialties for Master forms/filters.
+     * Duplicated from Master\\ClinicController to keep filters consistent.
+     */
+    protected function specialityOptions(): array
+    {
+        return [
+            'General Medicine',
+            'Dental',
+            'Pediatrics',
+            'Dermatology',
+            'Cardiology',
+            'Orthopedics',
+            'ENT',
+            'Ophthalmology',
+            'Gynecology',
+            'Psychiatry',
+            'Radiology',
+            'Laboratory',
+            'Pharmacy',
+            'Other',
+        ];
     }
 }
