@@ -35,27 +35,59 @@ class ClinicReportController extends Controller
                     ->whereColumn('prescriptions.clinic_id', 'clinics.id')
                     ->selectRaw('COUNT(*)');
             }, 'total_prescriptions')
-            // Total aesthetic revenue per clinic (paid or partial invoices)
-            ->selectSub(function ($sub) {
-                $sub->from('aesthetic_invoices')
-                    ->whereIn('status', ['paid', 'partial'])
-                    ->whereColumn('aesthetic_invoices.clinic_id', 'clinics.id')
-                    ->selectRaw('COALESCE(SUM(total_amount), 0)');
-            }, 'total_revenue')
+            // Total revenue per clinic across all clinical modules:
+            // - Standard invoices (pediatric, ENT, dental, etc.)
+            // - Aesthetic invoices
+            ->selectRaw("(
+                    COALESCE((
+                        SELECT SUM(total_amount)
+                        FROM invoices
+                        WHERE invoices.clinic_id = clinics.id
+                          AND invoices.status IN ('paid', 'partial_paid')
+                    ), 0) +
+                    COALESCE((
+                        SELECT SUM(total_amount)
+                        FROM aesthetic_invoices
+                        WHERE aesthetic_invoices.clinic_id = clinics.id
+                          AND aesthetic_invoices.status IN ('paid', 'partial')
+                    ), 0)
+                ) AS total_revenue")
             // Last login timestamp among clinic users
             ->selectSub(function ($sub) {
                 $sub->from('users')
                     ->whereColumn('users.clinic_id', 'clinics.id')
                     ->selectRaw('MAX(last_login_at)');
             }, 'last_login_at')
-            // Total images from aesthetic sessions mapped by tenant ID
-            ->selectSub(function ($sub) {
-                $sub->from('session_images')
-                    ->join('aesthetic_sessions', 'session_images.session_id', '=', 'aesthetic_sessions.id')
-                    ->whereNull('aesthetic_sessions.deleted_at')
-                    ->whereColumn('aesthetic_sessions.tenant_id', 'clinics.tenant_id')
-                    ->selectRaw('COUNT(*)');
-            }, 'total_images');
+            // Total images per clinic across all imaging sources:
+            // - Aesthetic session images (by tenant_id)
+            // - Medical Image Bank (patient_images)
+            // - Dental images
+            // - Orthodontic photos
+            ->selectRaw("(
+                    COALESCE((
+                        SELECT COUNT(*)
+                        FROM session_images
+                        JOIN aesthetic_sessions ON session_images.session_id = aesthetic_sessions.id
+                        WHERE aesthetic_sessions.deleted_at IS NULL
+                          AND aesthetic_sessions.tenant_id = clinics.tenant_id
+                    ), 0) +
+                    COALESCE((
+                        SELECT COUNT(*)
+                        FROM patient_images
+                        WHERE patient_images.clinic_id = clinics.id
+                          AND (patient_images.mime IS NULL OR patient_images.mime LIKE 'image/%')
+                    ), 0) +
+                    COALESCE((
+                        SELECT COUNT(*)
+                        FROM dental_images
+                        WHERE dental_images.clinic_id = clinics.id
+                    ), 0) +
+                    COALESCE((
+                        SELECT COUNT(*)
+                        FROM orthodontic_photos
+                        WHERE orthodontic_photos.clinic_id = clinics.id
+                    ), 0)
+                ) AS total_images");
 
         if ($search !== '') {
             $query->where('clinics.name', 'like', '%' . $search . '%');
