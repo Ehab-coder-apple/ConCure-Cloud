@@ -7,6 +7,7 @@ use App\Http\Controllers\Master\ClinicController;
 use App\Http\Controllers\Master\UserController;
 use App\Http\Controllers\Master\SubscriptionController;
 use App\Http\Controllers\Master\ReportController;
+use App\Http\Controllers\Master\ClinicReportController;
 use App\Http\Controllers\Master\PaymentsController;
 use App\Http\Controllers\Master\PlanController;
 use App\Http\Controllers\Master\MaintenanceController;
@@ -132,6 +133,7 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+    Route::get('/reports/clinics', [ClinicReportController::class, 'index'])->name('reports.clinics');
     Route::post('/reports/payments', [PaymentsController::class, 'store'])->name('reports.payments.store');
     Route::post('/reports/payments/import', [PaymentsController::class, 'import'])->name('reports.payments.import');
     Route::get('/reports/service-charges/export', [ReportController::class, 'exportServiceCharges'])->name('reports.service-charges.export');

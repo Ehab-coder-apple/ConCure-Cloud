@@ -182,7 +182,7 @@
             </div>
 
             <div class="nav-item">
-                <a class="nav-link {{ request()->routeIs('master.reports') ? 'active' : '' }}"
+                <a class="nav-link {{ request()->routeIs('master.reports*') ? 'active' : '' }}"
                    href="{{ route('master.reports') }}">
                     <i class="fas fa-chart-bar me-2"></i>
                     Reports

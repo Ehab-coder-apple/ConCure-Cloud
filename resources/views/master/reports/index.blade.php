@@ -11,7 +11,10 @@
             <small class="text-muted">High-level analytics across all clinics</small>
         </div>
     </div>
-    <div>
+    <div class="d-flex gap-2">
+        <a href="{{ route('master.reports.clinics') }}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-hospital me-1"></i> Clinics Report
+        </a>
         <a href="{{ route('master.reports.login-activity') }}" class="btn btn-primary btn-sm">
             <i class="fas fa-sign-in-alt me-1"></i> Login Activity Report
         </a>

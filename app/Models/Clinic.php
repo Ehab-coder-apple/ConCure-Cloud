@@ -191,6 +191,14 @@ class Clinic extends Model
     }
 
     /**
+     * Get the aesthetic invoices for the clinic.
+     */
+    public function aestheticInvoices(): HasMany
+    {
+        return $this->hasMany(AestheticInvoice::class, 'clinic_id');
+    }
+
+    /**
      * Get the expenses for the clinic.
      */
     public function expenses(): HasMany
