@@ -19,18 +19,25 @@ class ClinicReportController extends Controller
         $direction = strtolower($request->query('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
 
         $query = Clinic::query()
+            // Use withoutGlobalScopes() so master reports always see full system data,
+            // regardless of the logged-in user's clinic visibility.
             ->withCount([
-                'patients as total_patients',
-                'prescriptions as total_prescriptions',
+                'patients as total_patients' => function ($q) {
+                    $q->withoutGlobalScopes();
+                },
+                'prescriptions as total_prescriptions' => function ($q) {
+                    $q->withoutGlobalScopes();
+                },
             ])
             ->withSum([
                 'aestheticInvoices as total_revenue' => function ($q) {
-                    $q->whereIn('status', ['paid', 'partial']);
+                    $q->withoutGlobalScopes()
+                        ->whereIn('status', ['paid', 'partial']);
                 },
             ], 'total_amount')
             ->withMax([
                 'users as last_login_at' => function ($q) {
-                    $q->whereNotNull('last_login_at');
+                    $q->withoutGlobalScopes()->whereNotNull('last_login_at');
                 },
             ], 'last_login_at')
             ->select('clinics.*');
