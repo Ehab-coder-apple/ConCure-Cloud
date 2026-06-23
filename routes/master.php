@@ -65,6 +65,7 @@ Route::middleware(['super.admin'])->prefix('master')->name('master.')->group(fun
     Route::post('/clinics/{clinic}/contracts/{contract}/renew', [ClinicController::class, 'renewContract'])->name('clinics.renew-contract');
     Route::post('/clinics/{clinic}/contracts/{contract}/send', [ClinicController::class, 'sendContract'])->name('clinics.send-contract');
     Route::delete('/clinics/{clinic}/contracts/{contract}', [ClinicController::class, 'deleteContract'])->name('clinics.delete-contract');
+    Route::get('/clinics/{clinic}/contracts/{contract}/pdf', [ClinicController::class, 'downloadContractPdf'])->name('clinics.contract-pdf');
 
     // Storage Quota Management
     Route::post('/clinics/{clinic}/update-storage-limit', [StorageQuotaController::class, 'updateStorageLimit'])->name('clinics.update-storage-limit');

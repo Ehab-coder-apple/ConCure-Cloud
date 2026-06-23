@@ -12,6 +12,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ClinicController extends Controller
 {
@@ -919,6 +920,68 @@ class ClinicController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Failed to delete contract: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Download a clinic contract as PDF (Master view).
+     */
+    public function downloadContractPdf(Clinic $clinic, \App\Models\ClinicContract $contract)
+    {
+        $this->authorizeAccessibleClinic($clinic);
+
+        // Verify contract belongs to this clinic
+        if ($contract->clinic_id !== $clinic->id) {
+            abort(403, 'Contract does not belong to this clinic.');
+        }
+
+        // Replace placeholders so the PDF matches what clinic admins see.
+        $contractContent = $this->replaceContractPlaceholders(
+            (string) $contract->contract_content,
+            $clinic
+        );
+
+        // Load related data used in the PDF (if available)
+        if (method_exists($contract, 'acceptedBy')) {
+            $contract->loadMissing('acceptedBy');
+        }
+
+        $pdf = Pdf::loadView('master.clinics.contract-pdf', [
+                'clinic'          => $clinic,
+                'contract'        => $contract,
+                'contractContent' => $contractContent,
+                'generatedAt'     => now(),
+            ])
+            ->setPaper('a4', 'portrait');
+
+        $filename = 'contract-' . $clinic->id . '-' . $contract->id . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Replace placeholders in contract content with actual clinic data.
+     *
+     * Mirrors App\Http\Controllers\ContractController::replacePlaceholders()
+     * so PDF content matches the web contract views.
+     */
+    protected function replaceContractPlaceholders(string $content, Clinic $clinic): string
+    {
+        $replacements = [
+            '[Clinic Name]'    => $clinic->name,
+            '[CLINIC_NAME]'    => $clinic->name,
+            '[Clinic Email]'   => $clinic->email ?? 'N/A',
+            '[CLINIC_EMAIL]'   => $clinic->email ?? 'N/A',
+            '[Clinic Phone]'   => $clinic->phone ?? 'N/A',
+            '[CLINIC_PHONE]'   => $clinic->phone ?? 'N/A',
+            '[Clinic Address]' => $clinic->address ?? 'N/A',
+            '[CLINIC_ADDRESS]' => $clinic->address ?? 'N/A',
+            '[Date]'           => now()->format('Y-m-d'),
+            '[DATE]'           => now()->format('Y-m-d'),
+            '[Year]'           => now()->format('Y'),
+            '[YEAR]'           => now()->format('Y'),
+        ];
+
+        return str_replace(array_keys($replacements), array_values($replacements), $content);
     }
 
     /**

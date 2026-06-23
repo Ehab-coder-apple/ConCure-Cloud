@@ -78,6 +78,11 @@
 
                                 <!-- Action Buttons Based on Status -->
                                 <div class="mt-2">
+                                    <!-- Print / Download as PDF -->
+                                    <a href="{{ route('master.clinics.contract-pdf', [$clinic, $contract]) }}"
+                                       class="btn btn-sm btn-outline-secondary me-2">
+                                        <i class="fas fa-file-pdf me-1"></i>Print PDF
+                                    </a>
                                     @if($contract->status === 'draft')
                                     <!-- Send Contract Button -->
                                     <form action="{{ route('master.clinics.send-contract', [$clinic, $contract]) }}" method="POST" class="d-inline"
