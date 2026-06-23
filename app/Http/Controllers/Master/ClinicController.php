@@ -1056,6 +1056,11 @@ class ClinicController extends Controller
                 DB::table('dental_treatments')->where('clinic_id', $clinic->id)->delete();
             }
 
+	        	    // Delete dental lab requests (depend on clinic users via doctor_id)
+	        	    if (Schema::hasTable('dental_lab_requests') && Schema::hasColumn('dental_lab_requests', 'clinic_id')) {
+	        	        DB::table('dental_lab_requests')->where('clinic_id', $clinic->id)->delete();
+	        	    }
+
             // Delete aesthetic sessions
             if (Schema::hasTable('aesthetic_sessions') && Schema::hasColumn('aesthetic_sessions', 'clinic_id')) {
                 DB::table('aesthetic_sessions')->where('clinic_id', $clinic->id)->delete();
