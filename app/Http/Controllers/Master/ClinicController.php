@@ -624,14 +624,26 @@ class ClinicController extends Controller
                         ->delete();
                 }
 
-	                // Dental lab requests reference doctors via doctor_id with
-	                // ON DELETE RESTRICT, so we must clear them before deleting
-	                // clinic users to avoid foreign key violations when a clinic
-	                // that only has lab requests (and no patients/invoices/etc.)
-	                // is removed.
-	                if (Schema::hasTable('dental_lab_requests') && Schema::hasColumn('dental_lab_requests', 'clinic_id')) {
-	                    DB::table('dental_lab_requests')->where('clinic_id', $clinic->id)->delete();
-	                }
+                // Dental lab requests reference doctors via doctor_id with
+                // ON DELETE RESTRICT, so we must clear them before deleting
+                // clinic users to avoid foreign key violations when a clinic
+                // that only has lab requests (and no patients/invoices/etc.)
+                // is removed.
+                if (Schema::hasTable('dental_lab_requests') && Schema::hasColumn('dental_lab_requests', 'clinic_id')) {
+                    DB::table('dental_lab_requests')->where('clinic_id', $clinic->id)->delete();
+                }
+
+                // Forms module: patient_forms and form_templates reference clinic users
+                // via RESTRICT foreign keys (assigned_by_user_id, created_by). Clear
+                // clinic-scoped forms before deleting users to avoid FK violations
+                // like form_templates_created_by_foreign.
+                if (Schema::hasTable('patient_forms') && Schema::hasColumn('patient_forms', 'clinic_id')) {
+                    DB::table('patient_forms')->where('clinic_id', $clinic->id)->delete();
+                }
+
+                if (Schema::hasTable('form_templates') && Schema::hasColumn('form_templates', 'clinic_id')) {
+                    DB::table('form_templates')->where('clinic_id', $clinic->id)->delete();
+                }
 
                 // Best-effort manual cleanup for tables that may not have ON DELETE CASCADE.
                 $clinic->auditLogs()->delete();
@@ -1040,6 +1052,15 @@ class ClinicController extends Controller
                 $clinic->invoices()->delete();
             }
 
+	            // Delete clinic-scoped forms (patient_forms and form_templates)
+	            if (Schema::hasTable('patient_forms') && Schema::hasColumn('patient_forms', 'clinic_id')) {
+	                DB::table('patient_forms')->where('clinic_id', $clinic->id)->delete();
+	            }
+
+	            if (Schema::hasTable('form_templates') && Schema::hasColumn('form_templates', 'clinic_id')) {
+	                DB::table('form_templates')->where('clinic_id', $clinic->id)->delete();
+	            }
+
             // Delete receipts
             if (Schema::hasTable('receipts') && Schema::hasColumn('receipts', 'clinic_id')) {
                 DB::table('receipts')->where('clinic_id', $clinic->id)->delete();
@@ -1065,10 +1086,10 @@ class ClinicController extends Controller
                 DB::table('dental_treatments')->where('clinic_id', $clinic->id)->delete();
             }
 
-	        	    // Delete dental lab requests (depend on clinic users via doctor_id)
-	        	    if (Schema::hasTable('dental_lab_requests') && Schema::hasColumn('dental_lab_requests', 'clinic_id')) {
-	        	        DB::table('dental_lab_requests')->where('clinic_id', $clinic->id)->delete();
-	        	    }
+            // Delete dental lab requests (depend on clinic users via doctor_id)
+            if (Schema::hasTable('dental_lab_requests') && Schema::hasColumn('dental_lab_requests', 'clinic_id')) {
+                DB::table('dental_lab_requests')->where('clinic_id', $clinic->id)->delete();
+            }
 
             // Delete aesthetic sessions
             if (Schema::hasTable('aesthetic_sessions') && Schema::hasColumn('aesthetic_sessions', 'clinic_id')) {
