@@ -402,7 +402,6 @@ class Clinic extends Model
                 'radiology'     => 'Radiology',
                 'image_bank'    => 'Medical Image Bank',
                 'forms'         => 'Forms',
-                'surgery'       => 'Surgical Module',
             ],
         ],
         'modules' => [
@@ -412,6 +411,7 @@ class Clinic extends Model
                 'dental'        => 'Dental Module',
                 'orthodontics'  => 'Orthodontic Module',
                 'ent'           => 'ENT Module',
+                'surgery'       => 'Surgical Module',
                 'aesthetic'     => 'Aesthetic Module',
                 'nutrition'     => 'Nutrition & Diet Planning',
                 'food_database' => 'Food Database',
