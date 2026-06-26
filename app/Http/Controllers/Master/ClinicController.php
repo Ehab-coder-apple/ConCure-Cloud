@@ -645,6 +645,27 @@ class ClinicController extends Controller
                     DB::table('form_templates')->where('clinic_id', $clinic->id)->delete();
                 }
 
+	                // Nutrition module: food_groups are clinic-scoped and referenced by
+	                // foods via foods_food_group_id_foreign (ON DELETE RESTRICT). When a
+	                // clinic is deleted, MySQL cascades to food_groups via clinic_id, but
+	                // that cascade can fail if any foods still point at those groups.
+	                // To avoid this, detach foods from clinic-owned groups first.
+	                if (
+	                    Schema::hasTable('food_groups') && Schema::hasColumn('food_groups', 'clinic_id') &&
+	                    Schema::hasTable('foods') && Schema::hasColumn('foods', 'food_group_id')
+	                ) {
+	                    $groupIds = DB::table('food_groups')
+	                        ->where('clinic_id', $clinic->id)
+	                        ->pluck('id')
+	                        ->all();
+
+	                    if (!empty($groupIds)) {
+	                        DB::table('foods')
+	                            ->whereIn('food_group_id', $groupIds)
+	                            ->update(['food_group_id' => null]);
+	                    }
+	                }
+
                 // Best-effort manual cleanup for tables that may not have ON DELETE CASCADE.
                 $clinic->auditLogs()->delete();
                 $clinic->activationCodes()->delete();
