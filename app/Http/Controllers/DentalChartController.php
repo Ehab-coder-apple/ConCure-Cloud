@@ -462,7 +462,12 @@ class DentalChartController extends Controller
             }
 
             // Only create treatment plans for conditions that need treatment
+            // Skip completed treatments (filling, crown, root_canal, implant, bridge) unless they're diagnostic
             $treatableConditions = ['caries', 'fracture', 'periodontal'];
+
+            // Note: We don't auto-create treatments for already completed conditions like:
+            // 'filling', 'crown', 'root_canal', 'implant', 'bridge'
+            // These are usually added to the chart AFTER treatment is done
 
             foreach ($addedConditions as $condition) {
                 if (!in_array($condition, $treatableConditions)) {
