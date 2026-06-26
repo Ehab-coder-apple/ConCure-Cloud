@@ -402,6 +402,7 @@ class Clinic extends Model
                 'radiology'     => 'Radiology',
                 'image_bank'    => 'Medical Image Bank',
                 'forms'         => 'Forms',
+                'surgery'       => 'Surgical Module',
             ],
         ],
         'modules' => [
@@ -450,6 +451,7 @@ class Clinic extends Model
         'radiology'     => 'Radiology',
         'image_bank'    => 'Medical Image Bank',
         'forms'         => 'Forms',
+        'surgery'       => 'Surgical Module',
         'dental'        => 'Dental Module',
         'orthodontics'  => 'Orthodontics Module',
         'ent'           => 'ENT Module',

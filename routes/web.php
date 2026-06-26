@@ -820,6 +820,20 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/{orthodonticCase}/phase', [App\Http\Controllers\OrthodonticCaseController::class, 'updatePhase'])->name('phase.update');
     });
 
+    // Surgical Module Routes
+    Route::prefix('surgery')->name('surgery.')->middleware(['module:surgery', 'section:surgery'])->group(function () {
+        Route::get('/', [App\Http\Controllers\SurgicalCaseController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\SurgicalCaseController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\SurgicalCaseController::class, 'store'])->name('store');
+        Route::get('/{surgicalCase}', [App\Http\Controllers\SurgicalCaseController::class, 'show'])->name('show');
+
+        // Operations: pre-op, operative note, post-op
+        Route::get('/{surgicalCase}/operations/create', [App\Http\Controllers\SurgicalCaseController::class, 'createOperation'])
+            ->name('operations.create');
+        Route::post('/{surgicalCase}/operations', [App\Http\Controllers\SurgicalCaseController::class, 'storeOperation'])
+            ->name('operations.store');
+    });
+
     // Aesthetic Treatments Routes
     Route::prefix('aesthetic/treatments')->name('aesthetic.treatments.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'index'])->name('index');

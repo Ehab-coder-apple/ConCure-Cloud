@@ -1855,6 +1855,16 @@
                         </li>
                         @endif
 
+	                        <!-- Surgery Module -->
+	                        @if(Auth::user()->canAccessSection('surgery') && Auth::user()->canAccessModule('surgery'))
+	                        <li class="nav-item {{ request()->routeIs('surgery.*') ? 'active' : '' }}">
+	                            <a href="{{ route('surgery.index') }}" class="nav-link {{ request()->routeIs('surgery.*') ? 'active' : '' }}">
+	                                <i class="nav-icon fas fa-user-md"></i>
+	                                <span class="nav-text">{{ __('Surgery') }}</span>
+	                            </a>
+	                        </li>
+	                        @endif
+
                         <!-- Pediatric Module -->
                         {{-- Parent gate: user must have pediatric section permission AND at least one child module enabled --}}
                         @if(Auth::user()->canAccessSection('pediatric') && (Auth::user()->canAccessModule('pediatric') || Auth::user()->canAccessModule('vaccination')))
