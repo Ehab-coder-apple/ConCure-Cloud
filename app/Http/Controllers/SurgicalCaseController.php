@@ -19,10 +19,14 @@ class SurgicalCaseController extends Controller
     {
         $user = Auth::user();
 
-        $cases = SurgicalCase::query()
-            ->with(['patient', 'primarySurgeon'])
-            ->where('clinic_id', $user->clinic_id)
-            ->latest('scheduled_at')
+        $query = SurgicalCase::query()
+            ->with(['patient', 'primarySurgeon']);
+
+        if ($user->clinic_id) {
+            $query->where('clinic_id', $user->clinic_id);
+        }
+
+        $cases = $query->latest('scheduled_at')
             ->latest('created_at')
             ->paginate(20);
 
@@ -36,16 +40,28 @@ class SurgicalCaseController extends Controller
     {
         $user = Auth::user();
 
-        $patients = Patient::where('clinic_id', $user->clinic_id)
-            ->where('is_active', true)
+        $query = Patient::query();
+
+        if ($user->clinic_id) {
+            $query->where('clinic_id', $user->clinic_id);
+        }
+
+        $patients = $query->where(function($q) {
+                $q->where('is_active', true)->orWhereNull('is_active');
+            })
             ->orderBy('first_name')
             ->get();
 
-        $doctors = User::where('clinic_id', $user->clinic_id)
-            ->whereIn('role', ['doctor', 'admin'])
-            ->where('is_active', true)
-            ->orderBy('first_name')
-            ->get();
+        $doctorQuery = User::whereIn('role', ['doctor', 'admin'])
+            ->where(function($q) {
+                $q->where('is_active', true)->orWhereNull('is_active');
+            });
+
+        if ($user->clinic_id) {
+            $doctorQuery->where('clinic_id', $user->clinic_id);
+        }
+
+        $doctors = $doctorQuery->orderBy('first_name')->get();
 
         $preselectedPatientId = $request->get('patient_id');
 
@@ -69,8 +85,10 @@ class SurgicalCaseController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $user) {
+            $patient = Patient::find($validated['patient_id']);
+
             SurgicalCase::create([
-                'clinic_id' => $user->clinic_id,
+                'clinic_id' => $user->clinic_id ?? $patient->clinic_id,
                 'patient_id' => $validated['patient_id'],
                 'primary_surgeon_id' => $validated['primary_surgeon_id'],
                 'diagnosis' => $validated['diagnosis'] ?? null,
@@ -92,7 +110,7 @@ class SurgicalCaseController extends Controller
     {
         $user = Auth::user();
 
-        if ($surgicalCase->clinic_id !== $user->clinic_id) {
+        if ($user->clinic_id && $surgicalCase->clinic_id !== $user->clinic_id) {
             abort(403);
         }
 
@@ -116,7 +134,7 @@ class SurgicalCaseController extends Controller
     {
         $user = Auth::user();
 
-        if ($surgicalCase->clinic_id !== $user->clinic_id) {
+        if ($user->clinic_id && $surgicalCase->clinic_id !== $user->clinic_id) {
             abort(403);
         }
 
@@ -132,7 +150,7 @@ class SurgicalCaseController extends Controller
     {
         $user = Auth::user();
 
-        if ($surgicalCase->clinic_id !== $user->clinic_id) {
+        if ($user->clinic_id && $surgicalCase->clinic_id !== $user->clinic_id) {
             abort(403);
         }
 
