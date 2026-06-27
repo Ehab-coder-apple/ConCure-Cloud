@@ -405,30 +405,30 @@
 	                        <label class="form-label small text-muted">Wound (0-3)</label>
 	                        <select name="wound_assessment[classification][wifi][wound]" class="form-select form-select-sm">
 	                            <option value="">Select...</option>
-	                            <option value="0" {{ old('wound_assessment.classification.wifi.wound') === '0' ? 'selected' : '' }}>0 - No ulcer</option>
-	                            <option value="1" {{ old('wound_assessment.classification.wifi.wound') === '1' ? 'selected' : '' }}>1 - Small, shallow</option>
-	                            <option value="2" {{ old('wound_assessment.classification.wifi.wound') === '2' ? 'selected' : '' }}>2 - Deep, to tendon/joint</option>
-	                            <option value="3" {{ old('wound_assessment.classification.wifi.wound') === '3' ? 'selected' : '' }}>3 - Extensive, to bone</option>
+	                            <option value="0" {{ old('wound_assessment.classification.wifi.wound') === '0' ? 'selected' : '' }} title="No ulcer, no gangrene (ischemic rest pain)">0 - No ulcer, no gangrene</option>
+	                            <option value="1" {{ old('wound_assessment.classification.wifi.wound') === '1' ? 'selected' : '' }} title="Small, shallow ulcer(s); no exposed bone / Gangrene limited to distal phalanx">1 - Small, shallow ulcer / minor gangrene</option>
+	                            <option value="2" {{ old('wound_assessment.classification.wifi.wound') === '2' ? 'selected' : '' }} title="Deeper ulcer with exposed bone, joint or tendon / Gangrenous changes limited to digits">2 - Deep ulcer / gangrene of digits</option>
+	                            <option value="3" {{ old('wound_assessment.classification.wifi.wound') === '3' ? 'selected' : '' }} title="Extensive, deep ulcer involving forefoot/midfoot/heel / Extensive gangrene">3 - Extensive ulcer / extensive gangrene</option>
 	                        </select>
 	                    </div>
 	                    <div class="col-md-3 mb-2">
 	                        <label class="form-label small text-muted">Ischemia (0-3)</label>
 	                        <select name="wound_assessment[classification][wifi][ischemia]" class="form-select form-select-sm">
 	                            <option value="">Select...</option>
-	                            <option value="0" {{ old('wound_assessment.classification.wifi.ischemia') === '0' ? 'selected' : '' }}>0 - ABI >= 0.80</option>
-	                            <option value="1" {{ old('wound_assessment.classification.wifi.ischemia') === '1' ? 'selected' : '' }}>1 - ABI 0.60-0.79</option>
-	                            <option value="2" {{ old('wound_assessment.classification.wifi.ischemia') === '2' ? 'selected' : '' }}>2 - ABI 0.40-0.59</option>
-	                            <option value="3" {{ old('wound_assessment.classification.wifi.ischemia') === '3' ? 'selected' : '' }}>3 - ABI <= 0.39</option>
+	                            <option value="0" {{ old('wound_assessment.classification.wifi.ischemia') === '0' ? 'selected' : '' }} title="ABI ≥0.80 / Ankle >100 mmHg / TP ≥60 mmHg">0 - ABI ≥0.80 / TP ≥60</option>
+	                            <option value="1" {{ old('wound_assessment.classification.wifi.ischemia') === '1' ? 'selected' : '' }} title="ABI 0.6-0.79 / Ankle 70-100 mmHg / TP 40-59 mmHg">1 - ABI 0.6-0.79 / TP 40-59</option>
+	                            <option value="2" {{ old('wound_assessment.classification.wifi.ischemia') === '2' ? 'selected' : '' }} title="ABI 0.4-0.59 / Ankle 50-70 mmHg / TP 30-39 mmHg">2 - ABI 0.4-0.59 / TP 30-39</option>
+	                            <option value="3" {{ old('wound_assessment.classification.wifi.ischemia') === '3' ? 'selected' : '' }} title="ABI ≤0.39 / Ankle <50 mmHg / TP <30 mmHg">3 - ABI ≤0.39 / TP <30</option>
 	                        </select>
 	                    </div>
 	                    <div class="col-md-3 mb-2">
 	                        <label class="form-label small text-muted">foot Infection (0-3)</label>
 	                        <select name="wound_assessment[classification][wifi][infection]" class="form-select form-select-sm">
 	                            <option value="">Select...</option>
-	                            <option value="0" {{ old('wound_assessment.classification.wifi.infection') === '0' ? 'selected' : '' }}>0 - Uninfected</option>
-	                            <option value="1" {{ old('wound_assessment.classification.wifi.infection') === '1' ? 'selected' : '' }}>1 - Mild (< 2cm erythema)</option>
-	                            <option value="2" {{ old('wound_assessment.classification.wifi.infection') === '2' ? 'selected' : '' }}>2 - Moderate (> 2cm erythema)</option>
-	                            <option value="3" {{ old('wound_assessment.classification.wifi.infection') === '3' ? 'selected' : '' }}>3 - Severe (systemic SIRS)</option>
+	                            <option value="0" {{ old('wound_assessment.classification.wifi.infection') === '0' ? 'selected' : '' }} title="Uninfected; no symptoms or signs of infection">0 - Uninfected</option>
+	                            <option value="1" {{ old('wound_assessment.classification.wifi.infection') === '1' ? 'selected' : '' }} title="Mild: Local infection involving only skin/subcutaneous tissue (erythema ≤2 cm)">1 - Mild (skin/subcut. only)</option>
+	                            <option value="2" {{ old('wound_assessment.classification.wifi.infection') === '2' ? 'selected' : '' }} title="Moderate: Local infection with erythema >2 cm, or deeper structures (abscess, osteomyelitis)">2 - Moderate (erythema >2cm/deeper)</option>
+	                            <option value="3" {{ old('wound_assessment.classification.wifi.infection') === '3' ? 'selected' : '' }} title="Severe: Local infection with signs of SIRS (Temp >38 or <36, HR >90, RR >20, WBC >12k or <4k)">3 - Severe (with SIRS)</option>
 	                        </select>
 	                    </div>
 	                    <div class="col-md-3 mb-2">
