@@ -395,18 +395,65 @@
 	        </div>
 
 	        {{-- 11. Classification --}}
-	        <h6 class="mt-3">Classification</h6>
-	        <div class="row">
-	            <div class="col-md-3 mb-2">
-	                <input type="text" name="wound_assessment[classification][wifi_stage]" class="form-control" placeholder="WIfI stage" value="{{ old('wound_assessment.classification.wifi_stage') }}">
+	        <h6 class="mt-3">Classification & WIfI Scale</h6>
+
+	        <div class="card mb-3 border-secondary">
+	            <div class="card-header bg-light"><strong>WIfI Scale (Wound, Ischemia, foot Infection)</strong></div>
+	            <div class="card-body pb-1">
+	                <div class="row">
+	                    <div class="col-md-3 mb-2">
+	                        <label class="form-label small text-muted">Wound (0-3)</label>
+	                        <select name="wound_assessment[classification][wifi][wound]" class="form-select form-select-sm">
+	                            <option value="">Select...</option>
+	                            <option value="0" {{ old('wound_assessment.classification.wifi.wound') === '0' ? 'selected' : '' }}>0 - No ulcer</option>
+	                            <option value="1" {{ old('wound_assessment.classification.wifi.wound') === '1' ? 'selected' : '' }}>1 - Small, shallow</option>
+	                            <option value="2" {{ old('wound_assessment.classification.wifi.wound') === '2' ? 'selected' : '' }}>2 - Deep, to tendon/joint</option>
+	                            <option value="3" {{ old('wound_assessment.classification.wifi.wound') === '3' ? 'selected' : '' }}>3 - Extensive, to bone</option>
+	                        </select>
+	                    </div>
+	                    <div class="col-md-3 mb-2">
+	                        <label class="form-label small text-muted">Ischemia (0-3)</label>
+	                        <select name="wound_assessment[classification][wifi][ischemia]" class="form-select form-select-sm">
+	                            <option value="">Select...</option>
+	                            <option value="0" {{ old('wound_assessment.classification.wifi.ischemia') === '0' ? 'selected' : '' }}>0 - ABI >= 0.80</option>
+	                            <option value="1" {{ old('wound_assessment.classification.wifi.ischemia') === '1' ? 'selected' : '' }}>1 - ABI 0.60-0.79</option>
+	                            <option value="2" {{ old('wound_assessment.classification.wifi.ischemia') === '2' ? 'selected' : '' }}>2 - ABI 0.40-0.59</option>
+	                            <option value="3" {{ old('wound_assessment.classification.wifi.ischemia') === '3' ? 'selected' : '' }}>3 - ABI <= 0.39</option>
+	                        </select>
+	                    </div>
+	                    <div class="col-md-3 mb-2">
+	                        <label class="form-label small text-muted">foot Infection (0-3)</label>
+	                        <select name="wound_assessment[classification][wifi][infection]" class="form-select form-select-sm">
+	                            <option value="">Select...</option>
+	                            <option value="0" {{ old('wound_assessment.classification.wifi.infection') === '0' ? 'selected' : '' }}>0 - Uninfected</option>
+	                            <option value="1" {{ old('wound_assessment.classification.wifi.infection') === '1' ? 'selected' : '' }}>1 - Mild (< 2cm erythema)</option>
+	                            <option value="2" {{ old('wound_assessment.classification.wifi.infection') === '2' ? 'selected' : '' }}>2 - Moderate (> 2cm erythema)</option>
+	                            <option value="3" {{ old('wound_assessment.classification.wifi.infection') === '3' ? 'selected' : '' }}>3 - Severe (systemic SIRS)</option>
+	                        </select>
+	                    </div>
+	                    <div class="col-md-3 mb-2">
+	                        <label class="form-label small text-muted fw-bold">Clinical Stage</label>
+	                        <select name="wound_assessment[classification][wifi_stage]" class="form-select form-select-sm border-primary">
+	                            <option value="">Select Stage...</option>
+	                            <option value="1" {{ old('wound_assessment.classification.wifi_stage') === '1' ? 'selected' : '' }}>Stage 1 (Very Low Risk)</option>
+	                            <option value="2" {{ old('wound_assessment.classification.wifi_stage') === '2' ? 'selected' : '' }}>Stage 2 (Low Risk)</option>
+	                            <option value="3" {{ old('wound_assessment.classification.wifi_stage') === '3' ? 'selected' : '' }}>Stage 3 (Moderate Risk)</option>
+	                            <option value="4" {{ old('wound_assessment.classification.wifi_stage') === '4' ? 'selected' : '' }}>Stage 4 (High Risk)</option>
+	                        </select>
+	                    </div>
+	                </div>
 	            </div>
-	            <div class="col-md-3 mb-2">
+	        </div>
+
+	        <h6 class="mt-3">Other Classifications</h6>
+	        <div class="row">
+	            <div class="col-md-4 mb-2">
 	                <input type="text" name="wound_assessment[classification][wagner_grade]" class="form-control" placeholder="Wagner grade" value="{{ old('wound_assessment.classification.wagner_grade') }}">
 	            </div>
-	            <div class="col-md-3 mb-2">
+	            <div class="col-md-4 mb-2">
 	                <input type="text" name="wound_assessment[classification][pedis]" class="form-control" placeholder="PEDIS classification" value="{{ old('wound_assessment.classification.pedis') }}">
 	            </div>
-	            <div class="col-md-3 mb-2">
+	            <div class="col-md-4 mb-2">
 	                <input type="text" name="wound_assessment[classification][pressure_injury_stage]" class="form-control" placeholder="Pressure injury stage" value="{{ old('wound_assessment.classification.pressure_injury_stage') }}">
 	            </div>
 	        </div>

@@ -222,7 +222,21 @@
 
 	                    @if($class = data_get($wound, 'classification'))
 	                        <h6 class="mt-2">Classification</h6>
-	                        <p><strong>WIfI stage:</strong> {{ data_get($class, 'wifi_stage') }}</p>
+
+	                        @if(data_get($class, 'wifi_stage') || data_get($class, 'wifi.wound') !== null)
+	                            <div class="mb-2">
+	                                <strong>WIfI Scale:</strong>
+	                                @if(data_get($class, 'wifi_stage')) Stage {{ data_get($class, 'wifi_stage') }} @endif
+	                                @if(data_get($class, 'wifi.wound') !== null || data_get($class, 'wifi.ischemia') !== null || data_get($class, 'wifi.infection') !== null)
+	                                    <span class="text-muted">
+	                                        (Wound: {{ data_get($class, 'wifi.wound', '-') }},
+	                                         Ischemia: {{ data_get($class, 'wifi.ischemia', '-') }},
+	                                         Infection: {{ data_get($class, 'wifi.infection', '-') }})
+	                                    </span>
+	                                @endif
+	                            </div>
+	                        @endif
+
 	                        <p><strong>Wagner grade:</strong> {{ data_get($class, 'wagner_grade') }}</p>
 	                        <p><strong>PEDIS:</strong> {{ data_get($class, 'pedis') }}</p>
 	                        <p><strong>Pressure injury stage:</strong> {{ data_get($class, 'pressure_injury_stage') }}</p>
