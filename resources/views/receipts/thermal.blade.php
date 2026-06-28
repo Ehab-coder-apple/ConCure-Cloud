@@ -184,7 +184,15 @@
                 <div class="fin-row"><span>{{ __('Payment Plan') }}</span><span>{{ $financials['payment_plan'] }}</span></div>
             @endif
             @if(!empty($financials['last_payment_date']))
-                <div class="fin-row"><span>{{ __('Last Payment') }}</span><span>{{ $financials['last_payment_date'] }}</span></div>
+                <div class="fin-row">
+                    <span>{{ __('Last Payment') }}</span>
+                    <span>
+                        {{ $financials['last_payment_date'] }}
+                        @if(isset($financials['last_payment_amount']) && $financials['last_payment_amount'] > 0)
+                            ({{ $financials['currency_symbol'] }} {{ number_format($financials['last_payment_amount'], 2) }})
+                        @endif
+                    </span>
+                </div>
             @endif
             @if(!empty($financials['receipt_number']))
                 <div class="fin-row"><span>{{ __('Receipt #') }}</span><span>{{ $financials['receipt_number'] }}</span></div>

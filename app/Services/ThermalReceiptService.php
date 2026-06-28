@@ -269,6 +269,7 @@ class ThermalReceiptService
             'receipt_number' => $latestPayment?->receipt_number,
             'payment_plan' => OrthodonticCase::PAYMENT_PLANS[$case->payment_plan] ?? $this->humanize($case->payment_plan),
             'last_payment_date' => optional($latestPayment?->payment_date)->format('Y-m-d'),
+            'last_payment_amount' => $latestPayment ? (float) $latestPayment->amount : 0.0,
             'notes' => $latestPayment?->notes,
         ];
 
