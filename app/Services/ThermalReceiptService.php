@@ -259,6 +259,13 @@ class ThermalReceiptService
             ->where('key', 'currency')
             ->value('value') ?? 'USD');
 
+        $paymentHistory = $case->payments->sortBy('payment_date')->map(function ($payment) {
+            return [
+                'date' => optional($payment->payment_date)->format('Y-m-d'),
+                'amount' => (float) $payment->amount,
+            ];
+        })->values()->all();
+
         $financials = [
             'currency' => $currency,
             'currency_symbol' => $this->currencySymbol($currency),
@@ -268,8 +275,7 @@ class ThermalReceiptService
             'method' => $latestPayment ? $this->humanize($latestPayment->payment_method) : '-',
             'receipt_number' => $latestPayment?->receipt_number,
             'payment_plan' => OrthodonticCase::PAYMENT_PLANS[$case->payment_plan] ?? $this->humanize($case->payment_plan),
-            'last_payment_date' => optional($latestPayment?->payment_date)->format('Y-m-d'),
-            'last_payment_amount' => $latestPayment ? (float) $latestPayment->amount : 0.0,
+            'payment_history' => $paymentHistory,
             'notes' => $latestPayment?->notes,
         ];
 

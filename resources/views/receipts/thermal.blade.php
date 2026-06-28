@@ -183,7 +183,21 @@
             @if(!empty($financials['payment_plan']))
                 <div class="fin-row"><span>{{ __('Payment Plan') }}</span><span>{{ $financials['payment_plan'] }}</span></div>
             @endif
-            @if(!empty($financials['last_payment_date']))
+            @if(!empty($financials['payment_history']))
+                <hr class="divider">
+                <div class="block-title" style="margin-bottom: 4px;">{{ __('Payment History') }}</div>
+                <div style="display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px dashed var(--text-color); padding-bottom: 2px; margin-bottom: 4px; font-size: 0.9em;">
+                    <span>{{ __('Date') }}</span>
+                    <span>{{ __('Amount') }}</span>
+                </div>
+                @foreach($financials['payment_history'] as $payment)
+                    <div class="fin-row" style="font-size: 0.9em;">
+                        <span>{{ $payment['date'] }}</span>
+                        <span>{{ $financials['currency_symbol'] }} {{ number_format($payment['amount'], 2) }}</span>
+                    </div>
+                @endforeach
+                <hr class="divider">
+            @elseif(!empty($financials['last_payment_date']))
                 <div class="fin-row">
                     <span>{{ __('Last Payment') }}</span>
                     <span>
