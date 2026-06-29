@@ -135,9 +135,45 @@ try {
     echo "❌ FAILED: " . $e->getMessage() . "\n";
     echo "   This means the migration didn't run!\n";
 }
+// TEST 5: Creating TWO patients in a row (simulating real-world scenario)
+echo "\nTEST 5: Creating TWO patients in a row (like the user reported)...\n";
+try {
+    DB::beginTransaction();
+
+    // First patient
+    $patient1 = Patient::create([
+        'first_name' => 'First',
+        'last_name' => 'Patient_' . time(),
+        'phone' => '07701111111',
+        'clinic_id' => $clinic->id,
+        'created_by' => $user->id,
+        'is_active' => true,
+    ]);
+    echo "✅ First patient created: {$patient1->patient_id}\n";
+
+    // Second patient immediately after (this is where the error happens)
+    $patient2 = Patient::create([
+        'first_name' => 'Second',
+        'last_name' => 'Patient_' . (time() + 1),
+        'phone' => '07702222222',
+        'clinic_id' => $clinic->id,
+        'created_by' => $user->id,
+        'is_active' => true,
+    ]);
+    echo "✅ Second patient created: {$patient2->patient_id}\n";
+
+    DB::rollBack();
+    echo "✅ Both patients created successfully! (rolled back)\n";
+} catch (\Exception $e) {
+    DB::rollBack();
+    echo "❌ FAILED on second patient!\n";
+    echo "   Error: " . $e->getMessage() . "\n";
+    echo "   File: " . $e->getFile() . ":" . $e->getLine() . "\n";
+}
+
 echo "\n";
 
 echo "=== Test Complete ===\n";
 echo "\nNext steps:\n";
-echo "1. If TEST 4 failed, run: php artisan migrate\n";
+echo "1. If TEST 5 failed, check the error message above\n";
 echo "2. Check Laravel logs: tail -50 storage/logs/laravel.log\n";
