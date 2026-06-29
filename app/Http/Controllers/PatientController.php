@@ -303,6 +303,18 @@ class PatientController extends Controller
             'emergency_contact_name' => 'nullable|string|max:255',
             'emergency_contact_phone' => 'nullable|string|max:20',
             'medical_files.*' => 'nullable|file|max:10240|mimes:pdf,jpg,jpeg,png,doc,docx',
+            'aesthetic_skin_type' => 'nullable|string|in:normal,oily,dry,combination,sensitive',
+            'aesthetic_skin_concerns' => 'nullable|array',
+            'aesthetic_skin_concerns.*' => 'string|in:acne,aging,wrinkles,pigmentation,scars,redness,dullness,pores,dryness,sagging',
+            'aesthetic_allergies' => 'nullable|string',
+            'aesthetic_previous_treatments' => 'nullable|string',
+            'aesthetic_current_skincare_routine' => 'nullable|string',
+            'aesthetic_desired_outcomes' => 'nullable|string',
+            'aesthetic_sun_exposure' => 'nullable|string|in:low,moderate,high',
+            'aesthetic_is_pregnant_or_breastfeeding' => 'boolean',
+            'aesthetic_photosensitivity' => 'boolean',
+            'aesthetic_medical_conditions' => 'nullable|string',
+            'aesthetic_notes' => 'nullable|string',
         ];
 
         try {
@@ -417,9 +429,13 @@ class PatientController extends Controller
                     ]);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Log the exception for debugging
-            \Log::error('Error saving patient modules/overview', ['error' => $e->getMessage()]);
+            \Log::error('Error saving patient modules/overview', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e; // Rethrow to ensure it results in a 500 error instead of failing silently and returning 200
         }
 
         // Handle medical history file uploads
@@ -910,6 +926,18 @@ class PatientController extends Controller
             'emergency_contact_phone' => 'nullable|string|max:20',
             'is_active' => 'boolean',
             'medical_files.*' => 'nullable|file|max:10240|mimes:pdf,jpg,jpeg,png,doc,docx',
+            'aesthetic_skin_type' => 'nullable|string|in:normal,oily,dry,combination,sensitive',
+            'aesthetic_skin_concerns' => 'nullable|array',
+            'aesthetic_skin_concerns.*' => 'string|in:acne,aging,wrinkles,pigmentation,scars,redness,dullness,pores,dryness,sagging',
+            'aesthetic_allergies' => 'nullable|string',
+            'aesthetic_previous_treatments' => 'nullable|string',
+            'aesthetic_current_skincare_routine' => 'nullable|string',
+            'aesthetic_desired_outcomes' => 'nullable|string',
+            'aesthetic_sun_exposure' => 'nullable|string|in:low,moderate,high',
+            'aesthetic_is_pregnant_or_breastfeeding' => 'boolean',
+            'aesthetic_photosensitivity' => 'boolean',
+            'aesthetic_medical_conditions' => 'nullable|string',
+            'aesthetic_notes' => 'nullable|string',
         ]);
 
         $patient->update([
