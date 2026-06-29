@@ -15,16 +15,24 @@ use App\Models\Patient;
 
 echo "=== Patient Creation Diagnostic Tool ===\n\n";
 
-// Find Dr. AbdulRahman's clinic
-$clinic = Clinic::where('name', 'LIKE', '%عبدالرحمن%')->orWhere('name', 'LIKE', '%abdulrahman%')->first();
+// Find Dr. AbdulRahman's clinic (ID 45)
+$clinic = Clinic::find(45);
 
 if (!$clinic) {
-    echo "❌ Could not find Dr. AbdulRahman's clinic\n";
-    echo "Available clinics:\n";
-    foreach (Clinic::all() as $c) {
-        echo "  - ID: {$c->id}, Name: {$c->name}\n";
+    echo "❌ Could not find clinic with ID 45\n";
+    echo "Searching by name...\n";
+    $clinic = Clinic::where('name', 'LIKE', '%Abdul Rahman%')
+        ->orWhere('name', 'LIKE', '%عبدالرحمن%')
+        ->first();
+
+    if (!$clinic) {
+        echo "❌ Could not find Dr. AbdulRahman's clinic\n";
+        echo "Available clinics:\n";
+        foreach (Clinic::all() as $c) {
+            echo "  - ID: {$c->id}, Name: {$c->name}\n";
+        }
+        exit(1);
     }
-    exit(1);
 }
 
 echo "✅ Found clinic: {$clinic->name} (ID: {$clinic->id})\n\n";

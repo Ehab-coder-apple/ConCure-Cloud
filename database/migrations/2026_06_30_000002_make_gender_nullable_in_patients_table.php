@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -11,9 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('patients', function (Blueprint $table) {
-            $table->enum('gender', ['male', 'female', 'other'])->nullable()->change();
-        });
+        // Use raw SQL to modify enum column to be nullable
+        // This avoids Doctrine enum type issues
+        DB::statement('ALTER TABLE `patients` MODIFY COLUMN `gender` ENUM("male", "female", "other") NULL');
     }
 
     /**
@@ -21,8 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('patients', function (Blueprint $table) {
-            $table->enum('gender', ['male', 'female', 'other'])->nullable(false)->change();
-        });
+        // Revert to NOT NULL
+        DB::statement('ALTER TABLE `patients` MODIFY COLUMN `gender` ENUM("male", "female", "other") NOT NULL');
     }
 };
