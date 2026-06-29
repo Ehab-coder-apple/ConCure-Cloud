@@ -1386,6 +1386,13 @@ class User extends Authenticatable
                 'ent_audiometry' => 'Access Audiometry',
                 'ent_manage' => 'Full ENT Management',
             ],
+            'surgery' => [
+                'surgery_view' => 'View Surgical Records',
+                'surgery_create' => 'Create Surgical Records',
+                'surgery_edit' => 'Edit Surgical Records',
+                'surgery_delete' => 'Delete Surgical Records',
+                'surgery_manage' => 'Full Surgical Management',
+            ],
             'pediatric' => [
                 'pediatric_view' => 'View Pediatric Growth Charts',
                 'pediatric_create' => 'Record Growth Measurements',
@@ -1523,6 +1530,11 @@ class User extends Authenticatable
                 'icon' => 'fas fa-ear-listen',
                 'color' => 'info',
             ],
+            'surgery' => [
+                'name' => 'Surgical Module',
+                'icon' => 'fas fa-procedures',
+                'color' => 'primary',
+            ],
             'progress_dashboard' => [
                 'name' => 'Progress Dashboard',
                 'icon' => 'fas fa-chart-line',
@@ -1586,6 +1598,7 @@ class User extends Authenticatable
                 'medicines_view', 'medicines_create', 'medicines_edit', 'medicines_delete', 'medicines_inventory',
                 'nutrition_view', 'nutrition_create', 'nutrition_edit', 'nutrition_delete', 'nutrition_manage',
                 'ent_view', 'ent_create', 'ent_edit', 'ent_delete', 'ent_audiometry', 'ent_manage',
+                'surgery_view', 'surgery_create', 'surgery_edit', 'surgery_delete', 'surgery_manage',
                 'aesthetic_view', 'aesthetic_create', 'aesthetic_edit', 'aesthetic_delete', 'aesthetic_treatments', 'aesthetic_packages', 'aesthetic_inventory', 'aesthetic_invoices', 'aesthetic_manage',
                 'radiology_view', 'radiology_create', 'radiology_edit', 'radiology_delete', 'radiology_manage',
                 'food_database_view', 'food_database_create', 'food_database_edit', 'food_database_delete', 'food_database_import', 'food_database_export', 'food_database_groups', 'food_database_clear', 'food_database_manage',
@@ -1603,6 +1616,7 @@ class User extends Authenticatable
                 'medicines_view', 'medicines_create',
                 'nutrition_view', 'nutrition_create', 'nutrition_edit', 'nutrition_manage',
                 'ent_view', 'ent_create', 'ent_edit', 'ent_audiometry',
+                'surgery_view', 'surgery_create', 'surgery_edit', 'surgery_manage',
                 'aesthetic_view', 'aesthetic_create', 'aesthetic_edit', 'aesthetic_treatments', 'aesthetic_packages',
                 'radiology_view', 'radiology_create', 'radiology_edit', 'radiology_manage',
                 'food_database_view', 'food_database_create', 'food_database_edit', 'food_database_import', 'food_database_groups',
