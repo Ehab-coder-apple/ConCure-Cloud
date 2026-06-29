@@ -480,62 +480,67 @@ class Patient extends Model
             $prefix = $clinic ? ('CL' . $clinic->id) : 'PAT';
         }
 
-        // Get the highest existing number for this prefix to avoid duplicates
-        $lastPatient = self::where('patient_id', 'LIKE', $prefix . '-%')
-            ->orderByRaw('CAST(SUBSTRING_INDEX(patient_id, "-", -1) AS UNSIGNED) DESC')
-            ->first();
+        // Use a database transaction to ensure atomicity
+        return \DB::transaction(function () use ($prefix, $clinicId) {
+            // Get the highest existing number for this prefix to avoid duplicates
+            // Use sharedLock to allow reads but prevent concurrent writes during this transaction
+            $lastPatient = self::where('patient_id', 'LIKE', $prefix . '-%')
+                ->orderByRaw('CAST(SUBSTRING_INDEX(patient_id, "-", -1) AS UNSIGNED) DESC')
+                ->sharedLock()
+                ->first();
 
-        $lastNumber = 0;
-        if ($lastPatient && $lastPatient->patient_id) {
-            // Extract the number after the last dash
-            $parts = explode('-', $lastPatient->patient_id);
-            $lastPart = end($parts);
-            // Remove any non-numeric characters
-            $lastNumber = (int) preg_replace('/[^0-9]/', '', $lastPart);
-        }
-
-        // Start from the next number after the last one
-        $startNumber = max(1, $lastNumber + 1);
-
-        $maxAttempts = 100;
-        $attempt = 0;
-
-        do {
-            $attempt++;
-
-            // Generate sequential numbers starting from last + 1
-            $number = str_pad((string) ($startNumber + $attempt - 1), 4, '0', STR_PAD_LEFT);
-            $patientId = $prefix . '-' . $number;
-
-            // Double-check uniqueness
-            $exists = self::where('patient_id', $patientId)->exists();
-
-            if (!$exists) {
-                return $patientId;
+            $lastNumber = 0;
+            if ($lastPatient && $lastPatient->patient_id) {
+                // Extract the number after the last dash
+                $parts = explode('-', $lastPatient->patient_id);
+                $lastPart = end($parts);
+                // Remove any non-numeric characters
+                $lastNumber = (int) preg_replace('/[^0-9]/', '', $lastPart);
             }
 
-            if ($attempt >= $maxAttempts) {
-                // Emergency fallback: use microtime for guaranteed uniqueness
-                $uniqueSuffix = str_pad((string) (int) (microtime(true) * 10000) % 100000, 5, '0', STR_PAD_LEFT);
-                $patientId = $prefix . '-' . $uniqueSuffix;
+            // Start from the next number after the last one
+            $startNumber = max(10000, $lastNumber + 1);
 
-                \Log::warning('Patient ID generation reached max attempts', [
-                    'clinic_id' => $clinicId,
-                    'prefix' => $prefix,
-                    'final_id' => $patientId,
-                    'attempts' => $attempt,
-                    'last_number' => $lastNumber,
-                ]);
+            $maxAttempts = 100;
+            $attempt = 0;
 
-                // Final safety check
-                if (self::where('patient_id', $patientId)->exists()) {
-                    // Use a completely unique ID with timestamp
-                    $patientId = $prefix . '-' . time() . '-' . mt_rand(100, 999);
+            do {
+                $attempt++;
+
+                // Generate sequential numbers starting from last + 1
+                $number = str_pad((string) ($startNumber + $attempt - 1), 5, '0', STR_PAD_LEFT);
+                $patientId = $prefix . '-' . $number;
+
+                // Double-check uniqueness within this transaction
+                $exists = self::where('patient_id', $patientId)->exists();
+
+                if (!$exists) {
+                    return $patientId;
                 }
 
-                return $patientId;
-            }
-        } while (true);
+                if ($attempt >= $maxAttempts) {
+                    // Emergency fallback: use microtime for guaranteed uniqueness
+                    $uniqueSuffix = str_pad((string) (int) (microtime(true) * 10000) % 100000, 5, '0', STR_PAD_LEFT);
+                    $patientId = $prefix . '-' . $uniqueSuffix;
+
+                    \Log::warning('Patient ID generation reached max attempts', [
+                        'clinic_id' => $clinicId,
+                        'prefix' => $prefix,
+                        'final_id' => $patientId,
+                        'attempts' => $attempt,
+                        'last_number' => $lastNumber,
+                    ]);
+
+                    // Final safety check
+                    if (self::where('patient_id', $patientId)->exists()) {
+                        // Use a completely unique ID with timestamp
+                        $patientId = $prefix . '-' . time() . '-' . mt_rand(100, 999);
+                    }
+
+                    return $patientId;
+                }
+            } while (true);
+        });
     }
 
     /**
