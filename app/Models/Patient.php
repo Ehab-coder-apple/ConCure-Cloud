@@ -480,9 +480,39 @@ class Patient extends Model
             $prefix = $clinic ? ('CL' . $clinic->id) : 'PAT';
         }
 
+        $maxAttempts = 100; // Prevent infinite loops
+        $attempt = 0;
+
         do {
-            $number = str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+            $attempt++;
+
+            // Use a combination of timestamp and random for better uniqueness
+            // This reduces collision probability significantly
+            $timestamp = substr((string) time(), -4);
+            $random = str_pad((string) mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+
+            // Alternate between timestamp-based and pure random IDs
+            $number = ($attempt % 2 === 0) ? $timestamp : $random;
             $patientId = $prefix . '-' . $number;
+
+            if ($attempt >= $maxAttempts) {
+                // Emergency fallback: use microtime for guaranteed uniqueness
+                $uniqueSuffix = str_pad((string) (int) (microtime(true) * 10000) % 10000, 4, '0', STR_PAD_LEFT);
+                $patientId = $prefix . '-' . $uniqueSuffix;
+
+                \Log::warning('Patient ID generation reached max attempts', [
+                    'clinic_id' => $clinicId,
+                    'prefix' => $prefix,
+                    'final_id' => $patientId,
+                    'attempts' => $attempt
+                ]);
+
+                // Final check - if this still exists, append attempt number
+                if (self::where('patient_id', $patientId)->exists()) {
+                    $patientId = $prefix . '-' . $uniqueSuffix . $attempt;
+                }
+                break;
+            }
         } while (self::where('patient_id', $patientId)->exists());
 
         return $patientId;

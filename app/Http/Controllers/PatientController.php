@@ -330,30 +330,49 @@ class PatientController extends Controller
             throw $e;
         }
 
-        $patient = Patient::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'date_of_birth' => $request->date_of_birth,
-            'gender' => $request->gender,
-            'phone' => $request->phone,
-            'whatsapp_phone' => $request->whatsapp_phone,
-            'email' => $request->email,
-            'address' => $request->address,
-            'job' => $request->job,
-            'education' => $request->education,
-            'height' => $request->height,
-            'weight' => $request->weight,
-            'is_pregnant' => $request->boolean('is_pregnant'),
-            'blood_type' => $request->blood_type,
-            'birth_weight' => $request->birth_weight,
-            'gestational_age_weeks' => $request->gestational_age_weeks,
-            'notes' => $request->notes,
-            'emergency_contact_name' => $request->emergency_contact_name,
-            'emergency_contact_phone' => $request->emergency_contact_phone,
-            'clinic_id' => $clinicId,
-            'created_by' => $user->id,
-            'is_active' => true,
-        ]);
+        // Create patient with comprehensive error logging
+        try {
+            $patient = Patient::create([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'date_of_birth' => $request->date_of_birth,
+                'gender' => $request->gender,
+                'phone' => $request->phone,
+                'whatsapp_phone' => $request->whatsapp_phone,
+                'email' => $request->email,
+                'address' => $request->address,
+                'job' => $request->job,
+                'education' => $request->education,
+                'height' => $request->height,
+                'weight' => $request->weight,
+                'is_pregnant' => $request->boolean('is_pregnant'),
+                'blood_type' => $request->blood_type,
+                'birth_weight' => $request->birth_weight,
+                'gestational_age_weeks' => $request->gestational_age_weeks,
+                'notes' => $request->notes,
+                'emergency_contact_name' => $request->emergency_contact_name,
+                'emergency_contact_phone' => $request->emergency_contact_phone,
+                'clinic_id' => $clinicId,
+                'created_by' => $user->id,
+                'is_active' => true,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to create patient record', [
+                'clinic_id' => $clinicId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            if ($isQuickAdd) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create patient: ' . $e->getMessage()
+                ], 500);
+            }
+
+            throw $e;
+        }
 
         // Save medical overview and flags
         try {
