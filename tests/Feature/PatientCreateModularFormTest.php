@@ -326,6 +326,30 @@ class PatientCreateModularFormTest extends TestCase
         $this->assertNull(PatientEnt::query()->where('patient_id', $patient->id)->first());
     }
 
+    public function test_store_can_create_an_eleventh_patient_for_the_same_clinic(): void
+    {
+        $user = $this->createActivatedAdmin();
+
+        for ($i = 1; $i <= 11; $i++) {
+            $response = $this->actingAs($user)->post(route('patients.store'), [
+                'first_name' => 'Patient',
+                'last_name' => 'Number ' . $i,
+                'date_of_birth' => Carbon::now()->subYears(20)->toDateString(),
+                'gender' => 'female',
+                'phone' => '555-' . str_pad((string) $i, 4, '0', STR_PAD_LEFT),
+                'email' => 'patient' . $i . '@example.test',
+            ]);
+
+            $patient = Patient::query()->where('email', 'patient' . $i . '@example.test')->first();
+
+            $this->assertNotNull($patient, 'Patient ' . $i . ' should be created successfully.');
+            $response->assertRedirect(route('patients.show', $patient));
+        }
+
+        $this->assertSame(11, Patient::query()->count());
+        $this->assertSame('TES-10010', Patient::query()->latest('id')->value('patient_id'));
+    }
+
     public function test_edit_view_preloads_selected_module_keys_for_existing_patient(): void
     {
         $user = $this->createActivatedAdmin();

@@ -69,7 +69,23 @@ class Patient extends Model
 
         static::creating(function ($patient) {
             if (!$patient->patient_id) {
-                $patient->patient_id = self::generatePatientId($patient->clinic_id);
+                // Retry up to 5 times if we get a duplicate patient ID
+                $maxRetries = 5;
+                $attempt = 0;
+
+                while ($attempt < $maxRetries) {
+                    try {
+                        $patient->patient_id = self::generatePatientId($patient->clinic_id);
+                        break; // Success, exit loop
+                    } catch (\Exception $e) {
+                        $attempt++;
+                        if ($attempt >= $maxRetries) {
+                            throw $e; // Re-throw if all retries failed
+                        }
+                        // Wait a tiny bit before retry to reduce collision chance
+                        usleep(10000); // 10ms
+                    }
+                }
             }
 
             // Calculate BMI if height and weight are provided
@@ -486,76 +502,77 @@ class Patient extends Model
             $rawPrefix = $prefix;
         }
 
-        // Use a database transaction to ensure atomicity
-        return \DB::transaction(function () use ($prefix, $rawPrefix, $clinicId) {
-            // Get the highest existing number for this prefix to avoid duplicates
-            // Check BOTH old format (with special chars) and new format (clean)
-            // Use lockForUpdate to prevent any concurrent reads/writes during this transaction
-            $lastPatient = self::where(function ($query) use ($prefix, $rawPrefix) {
-                    // Search for new format (clean prefix)
+        return self::withPatientIdLock('patient-id-prefix:' . $prefix, function () use ($prefix, $rawPrefix, $clinicId) {
+            $lastNumber = self::query()
+                ->where(function ($query) use ($prefix, $rawPrefix) {
                     $query->where('patient_id', 'LIKE', $prefix . '-%');
 
-                    // Also search for old format if it's different (had special characters)
                     if ($rawPrefix !== $prefix) {
                         $query->orWhere('patient_id', 'LIKE', $rawPrefix . '-%');
                     }
                 })
-                ->orderByRaw('CAST(SUBSTRING_INDEX(patient_id, "-", -1) AS UNSIGNED) DESC')
-                ->lockForUpdate()
-                ->first();
+                ->pluck('patient_id')
+                ->map(fn ($patientId) => self::extractPatientSequence((string) $patientId))
+                ->filter(fn ($sequence) => $sequence !== null)
+                ->max() ?? 9999;
 
-            $lastNumber = 0;
-            if ($lastPatient && $lastPatient->patient_id) {
-                // Extract the number after the last dash
-                $parts = explode('-', $lastPatient->patient_id);
-                $lastPart = end($parts);
-                // Remove any non-numeric characters
-                $lastNumber = (int) preg_replace('/[^0-9]/', '', $lastPart);
-            }
-
-            // Start from the next number after the last one
-            $startNumber = max(10000, $lastNumber + 1);
-
-            $maxAttempts = 100;
+            $nextNumber = max(10000, $lastNumber + 1);
             $attempt = 0;
+            $maxAttempts = 100;
 
             do {
                 $attempt++;
 
-                // Generate sequential numbers starting from last + 1
-                $number = str_pad((string) ($startNumber + $attempt - 1), 5, '0', STR_PAD_LEFT);
-                $patientId = $prefix . '-' . $number;
+                $patientId = sprintf('%s-%05d', $prefix, $nextNumber);
 
-                // Double-check uniqueness within this transaction
-                $exists = self::where('patient_id', $patientId)->exists();
-
-                if (!$exists) {
+                if (!self::where('patient_id', $patientId)->exists()) {
                     return $patientId;
                 }
 
-                if ($attempt >= $maxAttempts) {
-                    // Emergency fallback: use microtime for guaranteed uniqueness
-                    $uniqueSuffix = str_pad((string) (int) (microtime(true) * 10000) % 100000, 5, '0', STR_PAD_LEFT);
-                    $patientId = $prefix . '-' . $uniqueSuffix;
+                $nextNumber++;
+            } while ($attempt < $maxAttempts);
 
-                    \Log::warning('Patient ID generation reached max attempts', [
-                        'clinic_id' => $clinicId,
-                        'prefix' => $prefix,
-                        'final_id' => $patientId,
-                        'attempts' => $attempt,
-                        'last_number' => $lastNumber,
-                    ]);
+            $fallbackId = $prefix . '-' . now()->format('His') . mt_rand(100, 999);
 
-                    // Final safety check
-                    if (self::where('patient_id', $patientId)->exists()) {
-                        // Use a completely unique ID with timestamp
-                        $patientId = $prefix . '-' . time() . '-' . mt_rand(100, 999);
-                    }
+            \Log::warning('Patient ID generation reached max attempts', [
+                'clinic_id' => $clinicId,
+                'prefix' => $prefix,
+                'attempts' => $attempt,
+                'last_number' => $lastNumber,
+                'fallback_id' => $fallbackId,
+            ]);
 
-                    return $patientId;
-                }
-            } while (true);
+            return $fallbackId;
         });
+    }
+
+    private static function extractPatientSequence(string $patientId): ?int
+    {
+        $parts = explode('-', $patientId);
+        $lastPart = end($parts);
+        $digits = preg_replace('/[^0-9]/', '', (string) $lastPart);
+
+        return $digits === '' ? null : (int) $digits;
+    }
+
+    private static function withPatientIdLock(string $lockName, callable $callback): string
+    {
+        if (\DB::getDriverName() !== 'mysql') {
+            return $callback();
+        }
+
+        $lock = \DB::selectOne('SELECT GET_LOCK(?, 10) AS acquired', [$lockName]);
+        $acquired = (int) (($lock->acquired ?? 0));
+
+        if ($acquired !== 1) {
+            throw new \RuntimeException('Unable to acquire patient ID generation lock.');
+        }
+
+        try {
+            return $callback();
+        } finally {
+            \DB::select('SELECT RELEASE_LOCK(?)', [$lockName]);
+        }
     }
 
     /**
