@@ -470,25 +470,36 @@ class Patient extends Model
         $clinic = $clinicId ? Clinic::find($clinicId) : null;
         // Use multibyte-safe substring to avoid producing invalid UTF-8 prefixes
         // (e.g., clinics with Arabic names). Invalid UTF-8 here can crash inserts/logging.
-        $prefix = $clinic && $clinic->name
+        $rawPrefix = $clinic && $clinic->name
             ? Str::upper(Str::substr((string) $clinic->name, 0, 3))
             : 'PAT';
 
-        // Remove special characters (colons, dots, dashes, etc) from prefix
-        // Keep only letters and numbers
-        $prefix = preg_replace('/[^A-Z0-9]/u', '', $prefix);
+        // Keep the raw prefix for searching old records (may contain special chars)
+        $rawPrefix = trim((string) $rawPrefix);
+
+        // Create clean prefix for new patient IDs (remove special characters)
+        $prefix = preg_replace('/[^A-Z0-9]/u', '', $rawPrefix);
 
         // If the name starts with whitespace/symbols and yields an empty prefix, fall back.
-        $prefix = trim((string) $prefix);
         if ($prefix === '') {
             $prefix = $clinic ? ('CL' . $clinic->id) : 'PAT';
+            $rawPrefix = $prefix;
         }
 
         // Use a database transaction to ensure atomicity
-        return \DB::transaction(function () use ($prefix, $clinicId) {
+        return \DB::transaction(function () use ($prefix, $rawPrefix, $clinicId) {
             // Get the highest existing number for this prefix to avoid duplicates
+            // Check BOTH old format (with special chars) and new format (clean)
             // Use sharedLock to allow reads but prevent concurrent writes during this transaction
-            $lastPatient = self::where('patient_id', 'LIKE', $prefix . '-%')
+            $lastPatient = self::where(function ($query) use ($prefix, $rawPrefix) {
+                    // Search for new format (clean prefix)
+                    $query->where('patient_id', 'LIKE', $prefix . '-%');
+
+                    // Also search for old format if it's different (had special characters)
+                    if ($rawPrefix !== $prefix) {
+                        $query->orWhere('patient_id', 'LIKE', $rawPrefix . '-%');
+                    }
+                })
                 ->orderByRaw('CAST(SUBSTRING_INDEX(patient_id, "-", -1) AS UNSIGNED) DESC')
                 ->sharedLock()
                 ->first();
