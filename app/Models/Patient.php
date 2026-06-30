@@ -561,17 +561,40 @@ class Patient extends Model
             return $callback();
         }
 
-        $lock = \DB::selectOne('SELECT GET_LOCK(?, 10) AS acquired', [$lockName]);
-        $acquired = (int) (($lock->acquired ?? 0));
+        try {
+            $lock = \DB::selectOne('SELECT GET_LOCK(?, 10) AS acquired', [$lockName]);
+            $acquired = (int) (($lock->acquired ?? 0));
+        } catch (\Throwable $e) {
+            \Log::warning('Patient ID generation lock unavailable; falling back without DB lock', [
+                'lock_name' => $lockName,
+                'driver' => \DB::getDriverName(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return $callback();
+        }
 
         if ($acquired !== 1) {
-            throw new \RuntimeException('Unable to acquire patient ID generation lock.');
+            \Log::warning('Unable to acquire patient ID generation lock; falling back without DB lock', [
+                'lock_name' => $lockName,
+                'driver' => \DB::getDriverName(),
+            ]);
+
+            return $callback();
         }
 
         try {
             return $callback();
         } finally {
-            \DB::select('SELECT RELEASE_LOCK(?)', [$lockName]);
+            try {
+                \DB::select('SELECT RELEASE_LOCK(?)', [$lockName]);
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to release patient ID generation lock', [
+                    'lock_name' => $lockName,
+                    'driver' => \DB::getDriverName(),
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 
