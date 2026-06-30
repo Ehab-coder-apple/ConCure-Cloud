@@ -47,22 +47,32 @@ echo "✅ User: {$user->first_name} {$user->last_name} ({$user->role})\n\n";
 
 // TEST 1: Check existing patients with this clinic's prefix
 echo "TEST 1: Checking existing patient IDs...\n";
-$prefix = strtoupper(substr($clinic->name, 0, 3));
-$prefix = trim($prefix);
+$rawPrefix = strtoupper(substr($clinic->name, 0, 3));
+$rawPrefix = trim($rawPrefix);
+$prefix = preg_replace('/[^A-Z0-9]/', '', $rawPrefix);
 if ($prefix === '') {
     $prefix = 'CL' . $clinicId;
+    $rawPrefix = $prefix;
 }
-echo "   Clinic prefix: {$prefix}\n";
+echo "   Old prefix (with special chars): {$rawPrefix}\n";
+echo "   New prefix (clean): {$prefix}\n";
 
 $lastPatient = Patient::where('clinic_id', $clinicId)
-    ->where('patient_id', 'LIKE', $prefix . '-%')
+    ->where(function ($query) use ($prefix, $rawPrefix) {
+        $query->where('patient_id', 'LIKE', $prefix . '-%');
+        if ($rawPrefix !== $prefix) {
+            $query->orWhere('patient_id', 'LIKE', $rawPrefix . '-%');
+        }
+    })
     ->orderByRaw('CAST(SUBSTRING_INDEX(patient_id, "-", -1) AS UNSIGNED) DESC')
     ->first();
 
 if ($lastPatient) {
     echo "   Last patient ID: {$lastPatient->patient_id}\n";
+    echo "   Next ID will be: {$prefix}-" . str_pad((string)((int)preg_replace('/[^0-9]/', '', explode('-', $lastPatient->patient_id)[1] ?? '0') + 1), 5, '0', STR_PAD_LEFT) . "\n";
 } else {
     echo "   No existing patients with this prefix\n";
+    echo "   First ID will be: {$prefix}-10000\n";
 }
 echo "\n";
 
