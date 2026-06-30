@@ -474,6 +474,10 @@ class Patient extends Model
             ? Str::upper(Str::substr((string) $clinic->name, 0, 3))
             : 'PAT';
 
+        // Remove special characters (colons, dots, dashes, etc) from prefix
+        // Keep only letters and numbers
+        $prefix = preg_replace('/[^A-Z0-9]/u', '', $prefix);
+
         // If the name starts with whitespace/symbols and yields an empty prefix, fall back.
         $prefix = trim((string) $prefix);
         if ($prefix === '') {
