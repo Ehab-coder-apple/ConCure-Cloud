@@ -159,11 +159,8 @@ class AestheticSessionController extends Controller
             $this->validateAssignableUser($validated['assigned_user_id']);
         }
 
-        if (in_array($validated['status'], ['started', 'completed'], true)) {
-            return back()->withInput()->withErrors([
-                'status' => __('Consent must be captured before a session can be marked as started or completed.'),
-            ]);
-        }
+        // Consent is now optional - removed validation requirement
+        // Users can start/complete sessions without mandatory consent forms
 
         $validated['tenant_id'] = Auth::user()->clinic?->tenant_id;
 
@@ -731,14 +728,8 @@ class AestheticSessionController extends Controller
 
     private function statusConsentError(string $status, ?AestheticSession $session = null): ?string
     {
-        if (!in_array($status, ['started', 'completed'], true)) {
-            return null;
-        }
-
-        if (!$session || !$session->consentForms()->exists()) {
-            return __('Consent must be captured before a session can be marked as started or completed.');
-        }
-
+        // Consent is now optional - no validation error
+        // Sessions can be started or completed without requiring consent forms
         return null;
     }
 

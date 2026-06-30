@@ -266,8 +266,8 @@
                                     </div>
                                 </div>
                             @else
-                                <div class="alert alert-warning border-warning">
-                                    <i class="fas fa-circle-info me-2"></i>{{ __('A consent form must be signed before this session can move to Started or Completed status.') }}
+                                <div class="alert alert-info border-info">
+                                    <i class="fas fa-circle-info me-2"></i>{{ __('Consent forms are optional. You can start/complete the session with or without capturing consent.') }}
                                 </div>
                             @endif
 
