@@ -350,6 +350,49 @@ class PatientCreateModularFormTest extends TestCase
         $this->assertSame('TES-10010', Patient::query()->latest('id')->value('patient_id'));
     }
 
+    public function test_store_retries_when_patient_id_insert_collides(): void
+    {
+        $user = $this->createActivatedAdmin();
+        $originalDispatcher = Patient::getEventDispatcher();
+
+        $this->createPatientFor($user, [
+            'patient_id' => 'TES-10000',
+            'email' => 'existing@example.test',
+        ]);
+
+        $creatingAttempts = 0;
+
+        Patient::creating(function (Patient $patient) use (&$creatingAttempts) {
+            if ($creatingAttempts === 0) {
+                $patient->patient_id = 'TES-10000';
+            }
+
+            $creatingAttempts++;
+        });
+
+        try {
+            $response = $this->actingAs($user)->post(route('patients.store'), [
+                'first_name' => 'Retry',
+                'last_name' => 'Collision',
+                'date_of_birth' => Carbon::now()->subYears(20)->toDateString(),
+                'gender' => 'female',
+                'phone' => '555-2222',
+                'email' => 'retry@example.test',
+            ]);
+
+            $patient = Patient::query()->where('email', 'retry@example.test')->first();
+
+            $this->assertNotNull($patient);
+            $this->assertNotSame('TES-10000', $patient->patient_id);
+            $this->assertGreaterThanOrEqual(2, $creatingAttempts);
+            $response->assertRedirect(route('patients.show', $patient));
+        } finally {
+            Patient::flushEventListeners();
+            Patient::clearBootedModels();
+            Patient::setEventDispatcher($originalDispatcher);
+        }
+    }
+
     public function test_edit_view_preloads_selected_module_keys_for_existing_patient(): void
     {
         $user = $this->createActivatedAdmin();

@@ -25,6 +25,7 @@ use App\Http\Traits\SmartSearch;
 use App\Services\PatientProfileModuleRegistry;
 use App\Services\StorageQuotaService;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -332,7 +333,7 @@ class PatientController extends Controller
 
         // Create patient with comprehensive error logging
         try {
-            $patient = Patient::create([
+            $patient = $this->createPatientWithRetry([
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'date_of_birth' => $request->date_of_birth,
@@ -355,7 +356,7 @@ class PatientController extends Controller
                 'clinic_id' => $clinicId,
                 'created_by' => $user->id,
                 'is_active' => true,
-            ]);
+            ], $clinicId, $user->id);
         } catch (\Exception $e) {
             \Log::error('Failed to create patient record', [
                 'clinic_id' => $clinicId,
@@ -505,6 +506,51 @@ class PatientController extends Controller
 
         return redirect()->route('patients.show', $patient)
                         ->with('success', 'Patient created successfully.');
+    }
+
+    private function createPatientWithRetry(array $attributes, int $clinicId, int $userId): Patient
+    {
+        $maxAttempts = 5;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                return Patient::create($attributes);
+            } catch (QueryException $e) {
+                if (!$this->isDuplicatePatientIdException($e) || $attempt >= $maxAttempts) {
+                    throw $e;
+                }
+
+                \Log::warning('Duplicate patient_id detected during patient insert; retrying create', [
+                    'clinic_id' => $clinicId,
+                    'user_id' => $userId,
+                    'attempt' => $attempt,
+                    'max_attempts' => $maxAttempts,
+                    'error' => $e->getMessage(),
+                ]);
+
+                usleep(10000);
+            }
+        }
+
+        throw new \RuntimeException('Failed to create patient after retrying duplicate patient IDs.');
+    }
+
+    private function isDuplicatePatientIdException(QueryException $e): bool
+    {
+        $message = $e->getMessage();
+        $driverCode = (int) ($e->errorInfo[1] ?? 0);
+
+        if ($driverCode === 1062 && str_contains($message, 'patients_patient_id_unique')) {
+            return true;
+        }
+
+        if (in_array($driverCode, [19, 2067], true) && str_contains($message, 'patients.patient_id')) {
+            return true;
+        }
+
+        return str_contains($message, 'Duplicate entry')
+                && str_contains($message, 'patient_id')
+            || str_contains($message, 'UNIQUE constraint failed: patients.patient_id');
     }
 
     private function resolveSafeReturnTo(?string $returnTo, ?Patient $patient = null): ?string
