@@ -490,7 +490,7 @@ class Patient extends Model
         return \DB::transaction(function () use ($prefix, $rawPrefix, $clinicId) {
             // Get the highest existing number for this prefix to avoid duplicates
             // Check BOTH old format (with special chars) and new format (clean)
-            // Use sharedLock to allow reads but prevent concurrent writes during this transaction
+            // Use lockForUpdate to prevent any concurrent reads/writes during this transaction
             $lastPatient = self::where(function ($query) use ($prefix, $rawPrefix) {
                     // Search for new format (clean prefix)
                     $query->where('patient_id', 'LIKE', $prefix . '-%');
@@ -501,7 +501,7 @@ class Patient extends Model
                     }
                 })
                 ->orderByRaw('CAST(SUBSTRING_INDEX(patient_id, "-", -1) AS UNSIGNED) DESC')
-                ->sharedLock()
+                ->lockForUpdate()
                 ->first();
 
             $lastNumber = 0;
