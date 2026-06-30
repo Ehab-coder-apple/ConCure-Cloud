@@ -393,6 +393,32 @@ class PatientCreateModularFormTest extends TestCase
         }
     }
 
+    public function test_store_generates_unique_patient_id_across_clinics_with_same_prefix(): void
+    {
+        $firstUser = $this->createActivatedAdminForClinicName('Dr Alpha Clinic');
+        $secondUser = $this->createActivatedAdminForClinicName('Dr Beta Clinic');
+
+        $this->createPatientFor($firstUser, [
+            'patient_id' => 'DR-10000',
+            'email' => 'dr-alpha@example.test',
+        ]);
+
+        $response = $this->actingAs($secondUser)->post(route('patients.store'), [
+            'first_name' => 'Second',
+            'last_name' => 'Clinic',
+            'date_of_birth' => Carbon::now()->subYears(20)->toDateString(),
+            'gender' => 'female',
+            'phone' => '555-3333',
+            'email' => 'dr-beta@example.test',
+        ]);
+
+        $patient = Patient::query()->where('email', 'dr-beta@example.test')->first();
+
+        $this->assertNotNull($patient);
+        $this->assertSame('DR-10001', $patient->patient_id);
+        $response->assertRedirect(route('patients.show', $patient));
+    }
+
     public function test_edit_view_preloads_selected_module_keys_for_existing_patient(): void
     {
         $user = $this->createActivatedAdmin();
@@ -552,8 +578,13 @@ class PatientCreateModularFormTest extends TestCase
 
     private function createActivatedAdmin(?array $enabledModules = null): User
     {
+        return $this->createActivatedAdminForClinicName('Test Clinic', $enabledModules);
+    }
+
+    private function createActivatedAdminForClinicName(string $clinicName, ?array $enabledModules = null): User
+    {
         $clinic = Clinic::create([
-            'name' => 'Test Clinic',
+            'name' => $clinicName,
             'is_active' => true,
             'activated_at' => now(),
             'enabled_modules' => $enabledModules,

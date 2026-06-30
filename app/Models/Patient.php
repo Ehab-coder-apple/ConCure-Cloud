@@ -503,7 +503,7 @@ class Patient extends Model
         }
 
         return self::withPatientIdLock('patient-id-prefix:' . $prefix, function () use ($prefix, $rawPrefix, $clinicId) {
-            $lastNumber = self::query()
+            $lastNumber = self::withoutGlobalScopes()
                 ->where(function ($query) use ($prefix, $rawPrefix) {
                     $query->where('patient_id', 'LIKE', $prefix . '-%');
 
@@ -525,7 +525,7 @@ class Patient extends Model
 
                 $patientId = sprintf('%s-%05d', $prefix, $nextNumber);
 
-                if (!self::where('patient_id', $patientId)->exists()) {
+                if (!self::withoutGlobalScopes()->where('patient_id', $patientId)->exists()) {
                     return $patientId;
                 }
 
