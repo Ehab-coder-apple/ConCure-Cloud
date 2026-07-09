@@ -14,7 +14,7 @@
         <input type="text" name="wound_assessment[information][duration]" class="form-control" value="{{ old('wound_assessment.information.duration') }}" placeholder="e.g. 3 weeks">
     </div>
     <div class="col-md-4 mb-3">
-        <label class="form-label">Cause</label>
+        <label class="form-label">Etiology (Cause)</label>
         <input type="text" name="wound_assessment[information][cause]" class="form-control" value="{{ old('wound_assessment.information.cause') }}">
     </div>
 </div>
@@ -46,6 +46,7 @@
             <input class="form-check-input" type="checkbox" name="wound_assessment[information][burn]" value="1" {{ old('wound_assessment.information.burn') ? 'checked' : '' }}>
             <label class="form-check-label">Burn</label>
         </div>
+        <input type="text" name="wound_assessment[information][burn_detail]" class="form-control form-control-sm d-inline-block mt-1" style="width: 220px;" placeholder="Burn detail" value="{{ old('wound_assessment.information.burn_detail') }}">
     </div>
     <div class="col-md-6 mb-3">
         <label class="form-label">Pressure injury (stage)</label>
@@ -133,7 +134,7 @@
         </div>
         <div class="form-check">
             <input class="form-check-input" type="checkbox" name="wound_assessment[time_framework][signs][purulent_discharge]" value="1" {{ data_get($signsOld, 'purulent_discharge') ? 'checked' : '' }}>
-            <label class="form-check-label">Purulent discharge</label>
+            <label class="form-check-label">Discharge</label>
         </div>
     </div>
     <div class="col-md-3 mb-3">
@@ -200,20 +201,12 @@
         </div>
         <div class="row">
             <div class="col-md-4 mb-2">
-                <input type="number" step="0.1" min="0" name="wound_assessment[measurements][area_cm2]" class="form-control" placeholder="Area (cm²)" value="{{ old('wound_assessment.measurements.area_cm2') }}">
-            </div>
-            <div class="col-md-4 mb-2">
-                <input type="number" step="0.1" min="0" name="wound_assessment[measurements][volume_cm3]" class="form-control" placeholder="Volume (cm³)" value="{{ old('wound_assessment.measurements.volume_cm3') }}">
-            </div>
-            <div class="col-md-4 mb-2">
                 <input type="text" name="wound_assessment[measurements][undermining_clock_position]" class="form-control" placeholder="Undermining (clock)" value="{{ old('wound_assessment.measurements.undermining_clock_position') }}">
             </div>
-        </div>
-        <div class="row mt-1">
-            <div class="col-md-6 mb-2">
+            <div class="col-md-4 mb-2">
                 <input type="text" name="wound_assessment[measurements][tunneling]" class="form-control" placeholder="Tunneling" value="{{ old('wound_assessment.measurements.tunneling') }}">
             </div>
-            <div class="col-md-6 mb-2">
+            <div class="col-md-4 mb-2">
                 <input type="text" name="wound_assessment[measurements][probe_to_bone_test]" class="form-control" placeholder="Probe-to-bone test" value="{{ old('wound_assessment.measurements.probe_to_bone_test') }}">
             </div>
         </div>

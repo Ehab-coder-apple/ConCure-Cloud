@@ -49,8 +49,6 @@
 	                                    <h6 class="mt-2">Wound Measurements</h6>
 	                                    <p>
 	                                        <strong>Size:</strong> {{ data_get($measure, 'length_cm') }} x {{ data_get($measure, 'width_cm') }} x {{ data_get($measure, 'depth_cm') }} cm
-	                                        &nbsp;|&nbsp; <strong>Area:</strong> {{ data_get($measure, 'area_cm2') }} cm²
-	                                        &nbsp;|&nbsp; <strong>Volume:</strong> {{ data_get($measure, 'volume_cm3') }} cm³
 	                                    </p>
 	                                @endif
 
@@ -166,7 +164,7 @@
 	                        <h6>Wound Information</h6>
 	                        <p><strong>Date developed:</strong> {{ data_get($info, 'date_developed') }}</p>
 	                        <p><strong>Duration:</strong> {{ data_get($info, 'duration') }}</p>
-	                        <p><strong>Cause:</strong> {{ data_get($info, 'cause') }}</p>
+	                        <p><strong>Etiology (Cause):</strong> {{ data_get($info, 'cause') }}</p>
 	                        <p><strong>Pressure injury stage:</strong> {{ data_get($info, 'pressure_injury_stage') }}</p>
 	                        <p><strong>Anatomical location:</strong> {{ data_get($info, 'anatomical_location') }}</p>
 	                        <p><strong>Number of wounds:</strong> {{ data_get($info, 'number_of_wounds') }}</p>
@@ -178,7 +176,7 @@
 	                                if(data_get($info, 'arterial_ulcer')) $types[] = 'Arterial ulcer';
 	                                if(data_get($info, 'surgical_wound')) $types[] = 'Surgical wound';
 	                                if(data_get($info, 'traumatic_wound')) $types[] = 'Traumatic wound';
-	                                if(data_get($info, 'burn')) $types[] = 'Burn';
+	                                if(data_get($info, 'burn')) $types[] = 'Burn' . (data_get($info, 'burn_detail') ? ' (' . data_get($info, 'burn_detail') . ')' : '');
 	                            @endphp
 	                            {{ $types ? implode(', ', $types) : '-' }}
 	                        </p>
@@ -221,7 +219,7 @@
 	                                    'swelling' => 'Swelling',
 	                                    'pain' => 'Pain',
 	                                    'odor' => 'Odor',
-	                                    'purulent_discharge' => 'Purulent discharge',
+	                                    'purulent_discharge' => 'Discharge',
 	                                ];
 	                                foreach ($signMap as $key => $label) {
 	                                    if(data_get($time, 'signs.' . $key)) $signs[] = $label;
@@ -256,9 +254,6 @@
 	                            {{ data_get($measure, 'length_cm') }} x
 	                            {{ data_get($measure, 'width_cm') }} x
 	                            {{ data_get($measure, 'depth_cm') }} cm
-	                        </p>
-	                        <p><strong>Area:</strong> {{ data_get($measure, 'area_cm2') }} cm²,
-	                            <strong>Volume:</strong> {{ data_get($measure, 'volume_cm3') }} cm³
 	                        </p>
 	                        <p><strong>Undermining (clock):</strong> {{ data_get($measure, 'undermining_clock_position') }}</p>
 	                        <p><strong>Tunneling:</strong> {{ data_get($measure, 'tunneling') }}</p>
