@@ -49,8 +49,17 @@
         <input type="text" name="wound_assessment[information][burn_detail]" class="form-control form-control-sm d-inline-block mt-1" style="width: 220px;" placeholder="Burn detail" value="{{ old('wound_assessment.information.burn_detail') }}">
     </div>
     <div class="col-md-6 mb-3">
-        <label class="form-label">Pressure injury (stage)</label>
-        <input type="text" name="wound_assessment[information][pressure_injury_stage]" class="form-control" value="{{ old('wound_assessment.information.pressure_injury_stage') }}" placeholder="e.g. Stage II">
+        <label class="form-label">Pressure injury stage (if applicable)</label>
+        @php $pressureStageOld = old('wound_assessment.information.pressure_injury_stage'); @endphp
+        <select name="wound_assessment[information][pressure_injury_stage]" class="form-select">
+            <option value="">-- Select --</option>
+            <option value="1" {{ $pressureStageOld === '1' ? 'selected' : '' }}>Stage 1 - Non-blanchable redness, skin intact</option>
+            <option value="2" {{ $pressureStageOld === '2' ? 'selected' : '' }}>Stage 2 - Partial-thickness skin loss or blister</option>
+            <option value="3" {{ $pressureStageOld === '3' ? 'selected' : '' }}>Stage 3 - Full-thickness skin loss, fat visible</option>
+            <option value="4" {{ $pressureStageOld === '4' ? 'selected' : '' }}>Stage 4 - Full-thickness tissue loss, muscle/tendon/bone exposed</option>
+            <option value="unstageable" {{ $pressureStageOld === 'unstageable' ? 'selected' : '' }}>Unstageable - Base covered by slough/eschar</option>
+            <option value="dtpi" {{ $pressureStageOld === 'dtpi' ? 'selected' : '' }}>DTPI - Deep tissue damage with purple/maroon discoloration</option>
+        </select>
         <div class="mt-2">
             <label class="form-label">Anatomical location</label>
             <input type="text" name="wound_assessment[information][anatomical_location]" class="form-control" value="{{ old('wound_assessment.information.anatomical_location') }}">

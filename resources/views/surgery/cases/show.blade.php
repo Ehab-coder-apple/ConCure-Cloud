@@ -165,7 +165,18 @@
 	                        <p><strong>Date developed:</strong> {{ data_get($info, 'date_developed') }}</p>
 	                        <p><strong>Duration:</strong> {{ data_get($info, 'duration') }}</p>
 	                        <p><strong>Etiology (Cause):</strong> {{ data_get($info, 'cause') }}</p>
-	                        <p><strong>Pressure injury stage:</strong> {{ data_get($info, 'pressure_injury_stage') }}</p>
+	                        @php
+	                            $pressureStageLabels = [
+	                                '1' => 'Stage 1 - Non-blanchable redness, skin intact',
+	                                '2' => 'Stage 2 - Partial-thickness skin loss or blister',
+	                                '3' => 'Stage 3 - Full-thickness skin loss, fat visible',
+	                                '4' => 'Stage 4 - Full-thickness tissue loss, muscle/tendon/bone exposed',
+	                                'unstageable' => 'Unstageable - Base covered by slough/eschar',
+	                                'dtpi' => 'DTPI - Deep tissue damage with purple/maroon discoloration',
+	                            ];
+	                            $pressureStageValue = data_get($info, 'pressure_injury_stage');
+	                        @endphp
+	                        <p><strong>Pressure injury stage:</strong> {{ $pressureStageValue ? ($pressureStageLabels[$pressureStageValue] ?? $pressureStageValue) : '-' }}</p>
 	                        <p><strong>Anatomical location:</strong> {{ data_get($info, 'anatomical_location') }}</p>
 	                        <p><strong>Number of wounds:</strong> {{ data_get($info, 'number_of_wounds') }}</p>
 	                        <p><strong>Wound types:</strong>
