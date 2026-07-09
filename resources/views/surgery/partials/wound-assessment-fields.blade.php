@@ -450,6 +450,7 @@
         <div class="form-check"><input class="form-check-input" type="checkbox" name="wound_assessment[treatment][dressing][iodine]" value="1" {{ data_get($dressOld, 'iodine') ? 'checked' : '' }}><label class="form-check-label">Iodine dressing</label></div>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="wound_assessment[treatment][dressing][silicone]" value="1" {{ data_get($dressOld, 'silicone') ? 'checked' : '' }}><label class="form-check-label">Silicone dressing</label></div>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="wound_assessment[treatment][dressing][contact_layer]" value="1" {{ data_get($dressOld, 'contact_layer') ? 'checked' : '' }}><label class="form-check-label">Contact layer</label></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="wound_assessment[treatment][dressing][ecm]" value="1" {{ data_get($dressOld, 'ecm') ? 'checked' : '' }}><label class="form-check-label">ECM</label></div>
     </div>
     <div class="col-md-3 mb-2">
         <strong>Advanced Therapy & Offloading</strong>

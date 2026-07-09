@@ -419,6 +419,7 @@
 	                                        'iodine' => 'Iodine',
 	                                        'silicone' => 'Silicone',
 	                                        'contact_layer' => 'Contact layer',
+	                                        'ecm' => 'ECM',
 	                                    ];
 	                                    $dressOut = [];
 	                                    foreach ($dressLabels as $key => $label) {
