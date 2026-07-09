@@ -120,9 +120,15 @@ class SurgicalCaseController extends Controller
             'operations' => function ($q) {
                 $q->latest('operation_date');
             },
+            'visits' => function ($q) {
+                $q->latest('visit_date');
+            },
         ]);
 
         $latestOperation = $surgicalCase->operations->first();
+
+        // Debug: Log that we're returning the correct view
+        \Log::info('Rendering surgery.cases.show for case #' . $surgicalCase->id);
 
         return view('surgery.cases.show', compact('surgicalCase', 'latestOperation'));
     }

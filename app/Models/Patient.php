@@ -247,6 +247,14 @@ class Patient extends Model
         return $this->hasMany(\App\Models\OrthodonticCase::class);
     }
 
+    /**
+     * Get the surgical cases for the patient.
+     */
+    public function surgicalCases(): HasMany
+    {
+        return $this->hasMany(SurgicalCase::class);
+    }
+
     public function dentalProfile(): HasOne
     {
         return $this->hasOne(PatientDental::class);

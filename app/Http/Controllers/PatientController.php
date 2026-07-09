@@ -1198,6 +1198,11 @@ class PatientController extends Controller
             },
             'appointments' => function ($q) {
                 $q->with('doctor')->latest('appointment_datetime');
+            },
+            'surgicalCases' => function ($q) {
+                $q->with(['primarySurgeon', 'visits' => function ($visitsQuery) {
+                    $visitsQuery->with('creator')->latest('visit_date');
+                }])->latest('scheduled_at');
             }
         ]);
 

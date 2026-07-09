@@ -832,6 +832,12 @@ Route::middleware(['auth', 'activation'])->group(function () {
             ->name('operations.create');
         Route::post('/{surgicalCase}/operations', [App\Http\Controllers\SurgicalCaseController::class, 'storeOperation'])
             ->name('operations.store');
+
+        // Surgical Visits: post-operative follow-ups
+        Route::get('/{surgicalCase}/visits/create', [App\Http\Controllers\SurgicalVisitController::class, 'create'])
+            ->name('visit.create');
+        Route::post('/{surgicalCase}/visits', [App\Http\Controllers\SurgicalVisitController::class, 'store'])
+            ->name('visit.store');
     });
 
     // Aesthetic Treatments Routes

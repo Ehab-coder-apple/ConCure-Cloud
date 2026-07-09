@@ -12,8 +12,109 @@
 
     <div class="mb-3">
         <a href="{{ route('surgery.operations.create', $surgicalCase) }}" class="btn btn-primary">Record Operation</a>
+        <a href="{{ route('surgery.visit.create', $surgicalCase) }}" class="btn btn-success">Add Follow-up Visit</a>
         <a href="{{ route('surgery.index') }}" class="btn btn-link">Back to list</a>
     </div>
+
+	    {{-- Follow-up Visits: healing progress over time --}}
+	    @if($surgicalCase->visits->count() > 0)
+	        <hr>
+	        <h3 class="mb-3">Follow-up Visits <span class="badge bg-secondary">{{ $surgicalCase->visits->count() }}</span></h3>
+	        <div class="accordion mb-4" id="visitsAccordion">
+	            @foreach($surgicalCase->visits->sortByDesc('visit_date') as $visit)
+	                @php $vWound = $visit->wound_assessment; @endphp
+	                <div class="accordion-item">
+	                    <h2 class="accordion-header">
+	                        <button class="accordion-button {{ $loop->first ? '' : 'collapsed' }}" type="button" data-bs-toggle="collapse" data-bs-target="#visit-{{ $visit->id }}">
+	                            Visit #{{ $visit->visit_number }} — {{ optional($visit->visit_date)->format('M d, Y') }}
+	                            @if($visit->wound_status)
+	                                <span class="badge ms-2 bg-{{ $visit->wound_status === 'healing_well' ? 'success' : ($visit->wound_status === 'infected' ? 'danger' : 'warning') }}">
+	                                    {{ ucfirst(str_replace('_', ' ', $visit->wound_status)) }}
+	                                </span>
+	                            @endif
+	                        </button>
+	                    </h2>
+	                    <div id="visit-{{ $visit->id }}" class="accordion-collapse collapse {{ $loop->first ? 'show' : '' }}" data-bs-parent="#visitsAccordion">
+	                        <div class="accordion-body">
+	                            @if($visit->clinical_observations)
+	                                <p><strong>Clinical Observations:</strong> {{ $visit->clinical_observations }}</p>
+	                            @endif
+	                            @if($visit->medications_prescribed)
+	                                <p><strong>Medications Prescribed:</strong> {{ $visit->medications_prescribed }}</p>
+	                            @endif
+
+	                            @if($vWound)
+	                                {{-- Key healing-progress indicators for comparison across visits --}}
+	                                @if($measure = data_get($vWound, 'measurements'))
+	                                    <h6 class="mt-2">Wound Measurements</h6>
+	                                    <p>
+	                                        <strong>Size:</strong> {{ data_get($measure, 'length_cm') }} x {{ data_get($measure, 'width_cm') }} x {{ data_get($measure, 'depth_cm') }} cm
+	                                        &nbsp;|&nbsp; <strong>Area:</strong> {{ data_get($measure, 'area_cm2') }} cm²
+	                                        &nbsp;|&nbsp; <strong>Volume:</strong> {{ data_get($measure, 'volume_cm3') }} cm³
+	                                    </p>
+	                                @endif
+
+	                                @if($bed = data_get($vWound, 'bed_composition'))
+	                                    <p><strong>Wound Bed:</strong>
+	                                        Granulation {{ data_get($bed, 'granulation_pct') }}%,
+	                                        Slough {{ data_get($bed, 'slough_pct') }}%,
+	                                        Necrosis {{ data_get($bed, 'necrosis_pct') }}%,
+	                                        Epithelial {{ data_get($bed, 'epithelial_pct') }}%
+	                                    </p>
+	                                @endif
+
+	                                @if($time = data_get($vWound, 'time_framework'))
+	                                    @php
+	                                        $tissue = [];
+	                                        foreach (['granulation' => 'Granulation', 'slough' => 'Slough', 'necrotic' => 'Necrotic', 'epithelial' => 'Epithelial'] as $key => $label) {
+	                                            if (data_get($time, 'tissue.' . $key)) $tissue[] = $label;
+	                                        }
+	                                        $infection = [];
+	                                        $infMap = ['none' => 'None', 'local' => 'Local infection', 'spreading' => 'Spreading infection', 'osteomyelitis' => 'Osteomyelitis', 'biofilm_suspected' => 'Biofilm suspected'];
+	                                        foreach ($infMap as $key => $label) {
+	                                            if (data_get($time, 'infection.' . $key)) $infection[] = $label;
+	                                        }
+	                                    @endphp
+	                                    <p><strong>Tissue:</strong> {{ $tissue ? implode(', ', $tissue) : '-' }}
+	                                        &nbsp;|&nbsp; <strong>Infection/Inflammation:</strong> {{ $infection ? implode(', ', $infection) : '-' }}
+	                                    </p>
+	                                @endif
+
+	                                @if($class = data_get($vWound, 'classification'))
+	                                    @if(data_get($class, 'wifi_stage'))
+	                                        <p><strong>WIfI Clinical Stage:</strong> {{ data_get($class, 'wifi_stage') }}</p>
+	                                    @endif
+	                                @endif
+
+	                                @if($outcome = data_get($vWound, 'outcome'))
+	                                    @php
+	                                        $outLabels = [
+	                                            'completely_healed' => 'Completely healed',
+	                                            'improved' => 'Improved',
+	                                            'no_change' => 'No change',
+	                                            'deteriorated' => 'Deteriorated',
+	                                            'infection_resolved' => 'Infection resolved',
+	                                        ];
+	                                        $outOut = [];
+	                                        foreach ($outLabels as $key => $label) {
+	                                            if (data_get($outcome, $key)) $outOut[] = $label;
+	                                        }
+	                                    @endphp
+	                                    @if($outOut || data_get($outcome, 'summary'))
+	                                        <p><strong>Outcome:</strong> {{ data_get($outcome, 'summary') }} {{ $outOut ? '(' . implode(', ', $outOut) . ')' : '' }}</p>
+	                                    @endif
+	                                @endif
+	                            @endif
+
+	                            @if($visit->notes)
+	                                <p class="mb-0"><strong>Notes:</strong> {{ $visit->notes }}</p>
+	                            @endif
+	                        </div>
+	                    </div>
+	                </div>
+	            @endforeach
+	        </div>
+	    @endif
 
 	    @if($latestOperation)
 	        @php

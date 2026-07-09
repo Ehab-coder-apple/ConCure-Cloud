@@ -55,4 +55,9 @@ class SurgicalCase extends Model
     {
         return $this->hasMany(SurgicalOperation::class, 'surgical_case_id');
     }
+
+    public function visits(): HasMany
+    {
+        return $this->hasMany(SurgicalVisit::class, 'surgical_case_id');
+    }
 }
