@@ -826,6 +826,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/create', [App\Http\Controllers\SurgicalCaseController::class, 'create'])->name('create');
         Route::post('/', [App\Http\Controllers\SurgicalCaseController::class, 'store'])->name('store');
         Route::get('/{surgicalCase}', [App\Http\Controllers\SurgicalCaseController::class, 'show'])->name('show');
+        Route::delete('/{surgicalCase}', [App\Http\Controllers\SurgicalCaseController::class, 'destroy'])->name('destroy');
 
         // Operations: pre-op, operative note, post-op
         Route::get('/{surgicalCase}/operations/create', [App\Http\Controllers\SurgicalCaseController::class, 'createOperation'])

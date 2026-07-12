@@ -134,6 +134,23 @@ class SurgicalCaseController extends Controller
     }
 
     /**
+     * Delete a surgical case (and its related operations/visits via cascade).
+     */
+    public function destroy(SurgicalCase $surgicalCase)
+    {
+        $user = Auth::user();
+
+        if ($user->clinic_id && $surgicalCase->clinic_id !== $user->clinic_id) {
+            abort(403);
+        }
+
+        $surgicalCase->delete();
+
+        return redirect()->route('surgery.index')
+            ->with('success', 'Surgical case deleted successfully.');
+    }
+
+    /**
      * Show form to record a surgical operation for a case.
      */
     public function createOperation(SurgicalCase $surgicalCase)

@@ -34,6 +34,11 @@
                         <td>{{ optional($case->scheduled_at)->format('Y-m-d H:i') }}</td>
                         <td class="text-end">
                             <a href="{{ route('surgery.show', $case) }}" class="btn btn-sm btn-outline-primary">View</a>
+                            <form action="{{ route('surgery.destroy', $case) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this surgical case? This will also delete all related operations and visits. This action cannot be undone.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
                         </td>
                     </tr>
                 @endforeach
