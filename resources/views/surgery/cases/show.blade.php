@@ -17,9 +17,63 @@
         <a href="{{ route('surgery.index') }}" class="btn btn-link">Back to list</a>
     </div>
 
-	    {{-- Follow-up Visits: healing progress over time --}}
+	    {{-- Healing Progress Monitor: chronological comparison across all visits --}}
 	    @if($surgicalCase->visits->count() > 0)
 	        <hr>
+	        <h3 class="mb-3">Healing Progress Monitor</h3>
+	        <div class="table-responsive mb-4">
+	            <table class="table table-sm table-bordered align-middle text-center">
+	                <thead class="table-light">
+	                    <tr>
+	                        <th rowspan="2" class="align-middle">Visit</th>
+	                        <th rowspan="2" class="align-middle">Wound Status</th>
+	                        <th colspan="3">Dimensions (cm)</th>
+	                        <th colspan="4">Wound Bed Composition (%)</th>
+	                    </tr>
+	                    <tr>
+	                        <th>Length</th>
+	                        <th>Width</th>
+	                        <th>Depth</th>
+	                        <th>Granulation</th>
+	                        <th>Slough</th>
+	                        <th>Necrosis</th>
+	                        <th>Epithelial</th>
+	                    </tr>
+	                </thead>
+	                <tbody>
+	                    @foreach($surgicalCase->visits->sortBy('visit_date') as $progressVisit)
+	                        @php
+	                            $pWound = $progressVisit->wound_assessment;
+	                            $pMeasure = data_get($pWound, 'measurements');
+	                            $pBed = data_get($pWound, 'bed_composition');
+	                        @endphp
+	                        <tr>
+	                            <td class="text-start">
+	                                <strong>Visit #{{ $progressVisit->visit_number }}</strong><br>
+	                                <span class="text-muted">{{ optional($progressVisit->visit_date)->format('M d, Y') }}</span>
+	                            </td>
+	                            <td>
+	                                @if($progressVisit->wound_status)
+	                                    <span class="badge bg-{{ $progressVisit->wound_status === 'healing_well' ? 'success' : ($progressVisit->wound_status === 'infected' ? 'danger' : 'warning') }}">
+	                                        {{ ucfirst(str_replace('_', ' ', $progressVisit->wound_status)) }}
+	                                    </span>
+	                                @else
+	                                    -
+	                                @endif
+	                            </td>
+	                            <td>{{ data_get($pMeasure, 'length_cm') ?? '-' }}</td>
+	                            <td>{{ data_get($pMeasure, 'width_cm') ?? '-' }}</td>
+	                            <td>{{ data_get($pMeasure, 'depth_cm') ?? '-' }}</td>
+	                            <td>{{ data_get($pBed, 'granulation_pct') !== null ? data_get($pBed, 'granulation_pct') . '%' : '-' }}</td>
+	                            <td>{{ data_get($pBed, 'slough_pct') !== null ? data_get($pBed, 'slough_pct') . '%' : '-' }}</td>
+	                            <td>{{ data_get($pBed, 'necrosis_pct') !== null ? data_get($pBed, 'necrosis_pct') . '%' : '-' }}</td>
+	                            <td>{{ data_get($pBed, 'epithelial_pct') !== null ? data_get($pBed, 'epithelial_pct') . '%' : '-' }}</td>
+	                        </tr>
+	                    @endforeach
+	                </tbody>
+	            </table>
+	        </div>
+
 	        <h3 class="mb-3">Follow-up Visits <span class="badge bg-secondary">{{ $surgicalCase->visits->count() }}</span></h3>
 	        <div class="accordion mb-4" id="visitsAccordion">
 	            @foreach($surgicalCase->visits->sortByDesc('visit_date') as $visit)

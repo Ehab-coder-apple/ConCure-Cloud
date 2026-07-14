@@ -122,7 +122,9 @@ class SurgicalCaseController extends Controller
                 $q->latest('operation_date');
             },
             'visits' => function ($q) {
-                $q->latest('visit_date');
+                // Chronological (oldest first) so the Healing Progress Monitor
+                // table reads left-to-right / top-to-bottom as a timeline.
+                $q->oldest('visit_date');
             },
         ]);
 
