@@ -11,6 +11,7 @@
     <p><strong>Status:</strong> <span class="badge bg-secondary text-uppercase">{{ $surgicalCase->status }}</span></p>
 
     <div class="mb-3">
+        <a href="{{ route('surgery.edit', $surgicalCase) }}" class="btn btn-outline-secondary">Edit Case</a>
         <a href="{{ route('surgery.operations.create', $surgicalCase) }}" class="btn btn-primary">Record Operation</a>
         <a href="{{ route('surgery.visit.create', $surgicalCase) }}" class="btn btn-success">Add Follow-up Visit</a>
         <a href="{{ route('surgery.index') }}" class="btn btn-link">Back to list</a>
@@ -36,6 +37,9 @@
 	                    </h2>
 	                    <div id="visit-{{ $visit->id }}" class="accordion-collapse collapse {{ $loop->first ? 'show' : '' }}" data-bs-parent="#visitsAccordion">
 	                        <div class="accordion-body">
+	                            <div class="mb-2 text-end">
+	                                <a href="{{ route('surgery.visit.edit', [$surgicalCase, $visit]) }}" class="btn btn-sm btn-outline-primary">Edit Visit</a>
+	                            </div>
 	                            @if($visit->clinical_observations)
 	                                <p><strong>Clinical Observations:</strong> {{ $visit->clinical_observations }}</p>
 	                            @endif
@@ -134,7 +138,10 @@
 
 	        <div class="tab-content pt-3">
 	            <div class="tab-pane fade show active" id="op-pane" role="tabpanel" aria-labelledby="op-tab">
-	                <h3>Latest Operation</h3>
+	                <div class="d-flex justify-content-between align-items-center">
+	                    <h3>Latest Operation</h3>
+	                    <a href="{{ route('surgery.operations.edit', [$surgicalCase, $latestOperation]) }}" class="btn btn-sm btn-outline-primary">Edit Operation</a>
+	                </div>
 	                <p><strong>Date:</strong> {{ optional($latestOperation->operation_date)->format('Y-m-d H:i') }}</p>
 	                <p><strong>Theatre:</strong> {{ $latestOperation->theatre }}</p>
 	                <p><strong>ASA Class:</strong> {{ $latestOperation->asa_class }}</p>

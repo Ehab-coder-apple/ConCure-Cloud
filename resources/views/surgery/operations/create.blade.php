@@ -1,14 +1,21 @@
 @extends('layouts.app')
 
+@php
+    $isEdit = isset($operation);
+@endphp
+
 @section('content')
 <div class="container">
-    <h1 class="mb-3">Record Operation for Case #{{ $surgicalCase->id }}</h1>
+    <h1 class="mb-3">{{ $isEdit ? 'Edit Operation' : 'Record Operation' }} for Case #{{ $surgicalCase->id }}</h1>
 
     <p><strong>Patient:</strong> {{ $surgicalCase->patient->first_name }} {{ $surgicalCase->patient->last_name }}</p>
     <p><strong>Planned Procedure:</strong> {{ $surgicalCase->planned_procedure }}</p>
 
-    <form method="POST" action="{{ route('surgery.operations.store', $surgicalCase) }}">
+    <form method="POST" action="{{ $isEdit ? route('surgery.operations.update', [$surgicalCase, $operation]) : route('surgery.operations.store', $surgicalCase) }}">
         @csrf
+        @if($isEdit)
+            @method('PUT')
+        @endif
 
         <div class="row">
             <div class="col-md-4 mb-3">
@@ -71,7 +78,7 @@
 	            </div>
 	        </div>
 
-        <button type="submit" class="btn btn-primary">Save Operation</button>
+        <button type="submit" class="btn btn-primary">{{ $isEdit ? 'Update Operation' : 'Save Operation' }}</button>
         <a href="{{ route('surgery.show', $surgicalCase) }}" class="btn btn-link">Cancel</a>
     </form>
 </div>

@@ -826,6 +826,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/create', [App\Http\Controllers\SurgicalCaseController::class, 'create'])->name('create');
         Route::post('/', [App\Http\Controllers\SurgicalCaseController::class, 'store'])->name('store');
         Route::get('/{surgicalCase}', [App\Http\Controllers\SurgicalCaseController::class, 'show'])->name('show');
+        Route::get('/{surgicalCase}/edit', [App\Http\Controllers\SurgicalCaseController::class, 'edit'])->name('edit');
+        Route::put('/{surgicalCase}', [App\Http\Controllers\SurgicalCaseController::class, 'update'])->name('update');
         Route::delete('/{surgicalCase}', [App\Http\Controllers\SurgicalCaseController::class, 'destroy'])->name('destroy');
 
         // Operations: pre-op, operative note, post-op
@@ -833,12 +835,20 @@ Route::middleware(['auth', 'activation'])->group(function () {
             ->name('operations.create');
         Route::post('/{surgicalCase}/operations', [App\Http\Controllers\SurgicalCaseController::class, 'storeOperation'])
             ->name('operations.store');
+        Route::get('/{surgicalCase}/operations/{operation}/edit', [App\Http\Controllers\SurgicalCaseController::class, 'editOperation'])
+            ->name('operations.edit');
+        Route::put('/{surgicalCase}/operations/{operation}', [App\Http\Controllers\SurgicalCaseController::class, 'updateOperation'])
+            ->name('operations.update');
 
         // Surgical Visits: post-operative follow-ups
         Route::get('/{surgicalCase}/visits/create', [App\Http\Controllers\SurgicalVisitController::class, 'create'])
             ->name('visit.create');
         Route::post('/{surgicalCase}/visits', [App\Http\Controllers\SurgicalVisitController::class, 'store'])
             ->name('visit.store');
+        Route::get('/{surgicalCase}/visits/{visit}/edit', [App\Http\Controllers\SurgicalVisitController::class, 'edit'])
+            ->name('visit.edit');
+        Route::put('/{surgicalCase}/visits/{visit}', [App\Http\Controllers\SurgicalVisitController::class, 'update'])
+            ->name('visit.update');
     });
 
     // Aesthetic Treatments Routes

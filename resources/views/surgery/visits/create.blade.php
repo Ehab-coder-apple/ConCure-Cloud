@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@php
+    $isEdit = isset($visit);
+@endphp
+
 @section('content')
 <div class="container">
     <div class="row mb-4">
@@ -7,7 +11,7 @@
             <div>
                 <h1 class="h3 mb-0">
                     <i class="fas fa-stethoscope text-primary me-2"></i>
-                    Add Follow-up Visit #{{ $visitNumber }} for {{ $surgicalCase->patient->first_name }} {{ $surgicalCase->patient->last_name }}
+                    {{ $isEdit ? 'Edit Follow-up Visit #' . $visitNumber : 'Add Follow-up Visit #' . $visitNumber }} for {{ $surgicalCase->patient->first_name }} {{ $surgicalCase->patient->last_name }}
                 </h1>
                 <p class="text-muted mb-0">
                     <strong>Case ID:</strong> {{ $surgicalCase->id }} |
@@ -33,8 +37,11 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('surgery.visit.store', $surgicalCase->id) }}" class="needs-validation">
+                    <form method="POST" action="{{ $isEdit ? route('surgery.visit.update', [$surgicalCase->id, $visit->id]) : route('surgery.visit.store', $surgicalCase->id) }}" class="needs-validation">
                         @csrf
+                        @if($isEdit)
+                            @method('PUT')
+                        @endif
 
                         <!-- Visit Date -->
                         <div class="mb-3">
@@ -130,7 +137,7 @@
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-1"></i>
-                                {{ __('Record Visit') }}
+                                {{ $isEdit ? __('Update Visit') : __('Record Visit') }}
                             </button>
                             <a href="{{ route('surgery.show', $surgicalCase) }}" class="btn btn-secondary">
                                 {{ __('Cancel') }}
