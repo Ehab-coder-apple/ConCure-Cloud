@@ -119,7 +119,12 @@ class SurgicalCaseController extends Controller
             'patient',
             'primarySurgeon',
             'operations' => function ($q) {
-                $q->latest('operation_date');
+                // Order by operation_date when present, but fall back to newest
+                // created (id desc) so a record with a null operation_date does
+                // not incorrectly win the "latest" position and hide newer data.
+                $q->orderByRaw('operation_date IS NULL')
+                    ->latest('operation_date')
+                    ->latest('id');
             },
             'visits' => function ($q) {
                 // Chronological (oldest first) so the Healing Progress Monitor
@@ -129,9 +134,6 @@ class SurgicalCaseController extends Controller
         ]);
 
         $latestOperation = $surgicalCase->operations->first();
-
-        // Debug: Log that we're returning the correct view
-        \Log::info('Rendering surgery.cases.show for case #' . $surgicalCase->id);
 
         return view('surgery.cases.show', compact('surgicalCase', 'latestOperation'));
     }
