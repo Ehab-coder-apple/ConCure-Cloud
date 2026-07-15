@@ -116,21 +116,6 @@
                             @enderror
                         </div>
 
-                        <!-- Additional Notes -->
-                        <div class="mb-3">
-                            <label for="notes" class="form-label">
-                                {{ __('Additional Notes') }}
-                            </label>
-                            <textarea id="notes"
-                                      name="notes"
-                                      rows="3"
-                                      class="form-control @error('notes') is-invalid @enderror"
-                                      placeholder="Any additional notes or follow-up instructions...">{{ old('notes') }}</textarea>
-                            @error('notes')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-
                         @include('surgery.partials.wound-assessment-fields')
 
                         <!-- Form Actions -->

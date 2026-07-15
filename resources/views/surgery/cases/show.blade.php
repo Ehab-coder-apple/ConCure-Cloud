@@ -405,9 +405,6 @@
 	                            </div>
 	                        @endif
 
-	                        <p><strong>Wagner grade:</strong> {{ data_get($class, 'wagner_grade') }}</p>
-	                        <p><strong>PEDIS:</strong> {{ data_get($class, 'pedis') }}</p>
-	                        <p><strong>Pressure injury stage:</strong> {{ data_get($class, 'pressure_injury_stage') }}</p>
 	                    @endif
 
 	                    @if($lab = data_get($wound, 'laboratory'))

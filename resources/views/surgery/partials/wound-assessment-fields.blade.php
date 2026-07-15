@@ -382,19 +382,6 @@
     </div>
 </div>
 
-<h6 class="mt-3">Other Classifications</h6>
-<div class="row">
-    <div class="col-md-4 mb-2">
-        <input type="text" name="wound_assessment[classification][wagner_grade]" class="form-control" placeholder="Wagner grade" value="{{ old('wound_assessment.classification.wagner_grade') }}">
-    </div>
-    <div class="col-md-4 mb-2">
-        <input type="text" name="wound_assessment[classification][pedis]" class="form-control" placeholder="PEDIS classification" value="{{ old('wound_assessment.classification.pedis') }}">
-    </div>
-    <div class="col-md-4 mb-2">
-        <input type="text" name="wound_assessment[classification][pressure_injury_stage]" class="form-control" placeholder="Pressure injury stage" value="{{ old('wound_assessment.classification.pressure_injury_stage') }}">
-    </div>
-</div>
-
 <h6 class="mt-3">Laboratory Results</h6>
 <div class="row">
     <div class="col-md-3 mb-2"><input type="text" name="wound_assessment[laboratory][hba1c]" class="form-control" placeholder="HbA1c" value="{{ old('wound_assessment.laboratory.hba1c') }}"></div>
