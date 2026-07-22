@@ -23,7 +23,13 @@ class AestheticTreatmentController extends Controller
 
         if ($tenantId) {
             try {
-                $treatmentCount = AestheticTreatment::where('tenant_id', $tenantId)->count();
+                // Include soft-deleted rows in this check. Otherwise, once a
+                // tenant intentionally deletes (soft-deletes) every one of
+                // their treatments, the active count drops to 0 and the
+                // built-ins get auto-cloned right back on the next page
+                // load. We only want to auto-seed genuinely new tenants that
+                // have never had any treatment row at all.
+                $treatmentCount = AestheticTreatment::withTrashed()->where('tenant_id', $tenantId)->count();
                 if ($treatmentCount === 0) {
                     $cloned = AestheticTreatment::cloneBuiltInForTenant($tenantId);
                     if ($cloned > 0) {
@@ -176,6 +182,28 @@ class AestheticTreatmentController extends Controller
 
         return redirect()->route('aesthetic.treatments.index')
             ->with('success', __('Aesthetic treatment deleted successfully.'));
+    }
+
+    /**
+     * Remove ALL treatments (including built-in ones) for the current tenant
+     * in a single action. Lets a tenant fully clear their catalog instead of
+     * deleting 30+ built-in treatments one by one.
+     */
+    public function destroyAll(Request $request)
+    {
+        $user = Auth::user();
+        $tenantId = $user->clinic?->tenant_id;
+
+        if (!$tenantId) {
+            return redirect()->route('aesthetic.treatments.index')
+                ->withErrors(['error' => __('Unable to delete treatments. Tenant not found.')]);
+        }
+
+        $count = AestheticTreatment::where('tenant_id', $tenantId)->count();
+        AestheticTreatment::where('tenant_id', $tenantId)->delete();
+
+        return redirect()->route('aesthetic.treatments.index')
+            ->with('success', __(':count treatment(s) deleted successfully.', ['count' => $count]));
     }
 
     /**

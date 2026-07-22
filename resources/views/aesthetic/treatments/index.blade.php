@@ -14,10 +14,18 @@
                     </h1>
                     <p class="text-muted mb-0">{{ __('Manage your clinic\'s aesthetic treatment catalog') }}</p>
                 </div>
-                <a href="{{ route('aesthetic.treatments.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i>
-                    {{ __('Add Treatment') }}
-                </a>
+                <div class="d-flex gap-2">
+                    @if($stats['total'] > 0)
+                        <button type="button" class="btn btn-outline-danger" onclick="confirmDeleteAllTreatments();">
+                            <i class="fas fa-trash-alt me-1"></i>
+                            {{ __('Delete All') }}
+                        </button>
+                    @endif
+                    <a href="{{ route('aesthetic.treatments.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        {{ __('Add Treatment') }}
+                    </a>
+                </div>
             </div>
 
             <!-- Statistics Cards -->
@@ -184,4 +192,63 @@
         </div>
     </div>
 </div>
+
+<!-- Delete All Treatments Confirmation Modal -->
+<div class="modal fade" id="deleteAllTreatmentsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> {{ __('Delete All Treatments') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-warning"></i>
+                    <strong>{{ __('Warning:') }}</strong> {{ __('This will permanently delete ALL treatments (including built-in ones) from your clinic\'s catalog.') }}
+                </div>
+                <p><strong>{{ __('Are you sure you want to delete all :count treatment(s)?', ['count' => $stats['total']]) }}</strong></p>
+                <p class="text-muted">{{ __('Deleted built-in treatments will not be re-added automatically. You can always add new treatments manually afterwards.') }}</p>
+                <p class="text-danger"><strong>{{ __('This action cannot be undone!') }}</strong></p>
+
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="confirmDeleteAllTreatments">
+                    <label class="form-check-label" for="confirmDeleteAllTreatments">
+                        {{ __('I understand this will permanently delete all treatments') }}
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                <form action="{{ route('aesthetic.treatments.destroyAll') }}" method="POST" style="display: inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger" id="deleteAllTreatmentsButton" disabled>
+                        <i class="fas fa-trash-alt"></i> {{ __('Delete All') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function confirmDeleteAllTreatments() {
+    new bootstrap.Modal(document.getElementById('deleteAllTreatmentsModal')).show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('confirmDeleteAllTreatments');
+    const button = document.getElementById('deleteAllTreatmentsButton');
+
+    if (checkbox && button) {
+        checkbox.addEventListener('change', function() {
+            button.disabled = !this.checked;
+        });
+    }
+});
+</script>
+@endpush
 @endsection

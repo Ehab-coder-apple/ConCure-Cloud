@@ -858,6 +858,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'store'])->name('store');
         Route::get('/{aestheticTreatment}/edit', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'edit'])->name('edit');
         Route::put('/{aestheticTreatment}', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'update'])->name('update');
+        Route::delete('/destroy-all', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'destroyAll'])->name('destroyAll');
         Route::delete('/{aestheticTreatment}', [\App\Http\Controllers\Aesthetic\AestheticTreatmentController::class, 'destroy'])->name('destroy');
     });
 
