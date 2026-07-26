@@ -2,6 +2,14 @@
 <hr>
 <h5>Wound Assessment</h5>
 
+{{--
+    The Etiology (Cause) field is only relevant when a wound is first being
+    characterized (Surgical Case operation form). It's redundant on every
+    Follow-up Visit, so callers can suppress it by passing hideEtiology=true
+    when including this partial (see surgery.visits.create).
+--}}
+@php $hideEtiology = $hideEtiology ?? false; @endphp
+
 {{-- Wound Information --}}
 <h6 class="mt-3">Wound Information</h6>
 <div class="row">
@@ -13,10 +21,12 @@
         <label class="form-label">Duration of wound</label>
         <input type="text" name="wound_assessment[information][duration]" class="form-control" value="{{ old('wound_assessment.information.duration') }}" placeholder="e.g. 3 weeks">
     </div>
-    <div class="col-md-4 mb-3">
-        <label class="form-label">Etiology (Cause)</label>
-        <input type="text" name="wound_assessment[information][cause]" class="form-control" value="{{ old('wound_assessment.information.cause') }}">
-    </div>
+    @unless($hideEtiology)
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Etiology (Cause)</label>
+            <input type="text" name="wound_assessment[information][cause]" class="form-control" value="{{ old('wound_assessment.information.cause') }}">
+        </div>
+    @endunless
 </div>
 
 <div class="row">

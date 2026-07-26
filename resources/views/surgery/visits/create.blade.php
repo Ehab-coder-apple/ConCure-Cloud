@@ -116,7 +116,7 @@
                             @enderror
                         </div>
 
-                        @include('surgery.partials.wound-assessment-fields')
+                        @include('surgery.partials.wound-assessment-fields', ['hideEtiology' => true])
 
                         <!-- Form Actions -->
                         <div class="d-flex gap-2">
