@@ -166,10 +166,16 @@
 	                                        foreach ($edgeMap as $key => $label) {
 	                                            if (data_get($time, 'edge.' . $key)) $edges[] = $label;
 	                                        }
+	                                        $signs = [];
+	                                        $signMap = ['redness' => 'Redness', 'warmth' => 'Warmth', 'swelling' => 'Swelling', 'pain' => 'Pain', 'odor' => 'Odor', 'purulent_discharge' => 'Discharge'];
+	                                        foreach ($signMap as $key => $label) {
+	                                            if (data_get($time, 'signs.' . $key)) $signs[] = $label;
+	                                        }
 	                                    @endphp
 	                                    <p><strong>Tissue:</strong> {{ $tissue ? implode(', ', $tissue) : '-' }}
 	                                        &nbsp;|&nbsp; <strong>Infection/Inflammation:</strong> {{ $infection ? implode(', ', $infection) : '-' }}
 	                                    </p>
+	                                    <p><strong>Infection signs:</strong> {{ $signs ? implode(', ', $signs) : '-' }}</p>
 	                                    <p><strong>Moisture:</strong> {{ data_get($time, 'moisture.level') ?: '-' }}
 	                                        &nbsp;|&nbsp; <strong>Exudate type:</strong> {{ data_get($time, 'exudate.type') ?: '-' }}
 	                                    </p>
@@ -287,7 +293,10 @@
 
 	                                @if($follow = data_get($vWound, 'followup'))
 	                                    <h6 class="mt-2">Follow-up</h6>
-	                                    <p><strong>Dressing change frequency:</strong> {{ data_get($follow, 'dressing_change_frequency') ?: '-' }}</p>
+	                                    <p><strong>Dressing change frequency:</strong> {{ data_get($follow, 'dressing_change_frequency') ?: '-' }}
+	                                        &nbsp;|&nbsp; <strong>Weekly measurements:</strong> {{ data_get($follow, 'weekly_measurements') ?: '-' }}
+	                                        &nbsp;|&nbsp; <strong>Photographs:</strong> {{ data_get($follow, 'photographs') ?: '-' }}
+	                                    </p>
 	                                    <p><strong>Healing progress:</strong> {{ data_get($follow, 'healing_progress') ?: '-' }}
 	                                        &nbsp;|&nbsp; <strong>Complications:</strong> {{ data_get($follow, 'complications') ?: '-' }}
 	                                    </p>
