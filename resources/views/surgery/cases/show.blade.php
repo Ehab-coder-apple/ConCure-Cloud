@@ -125,7 +125,6 @@
 	                                    <h6 class="mt-2">Wound Information</h6>
 	                                    <p><strong>Date developed:</strong> {{ data_get($vInfo, 'date_developed') ?: '-' }}
 	                                        &nbsp;|&nbsp; <strong>Duration:</strong> {{ data_get($vInfo, 'duration') ?: '-' }}
-	                                        &nbsp;|&nbsp; <strong>Etiology (Cause):</strong> {{ data_get($vInfo, 'cause') ?: '-' }}
 	                                    </p>
 	                                    <p><strong>Wound types:</strong> {{ $vTypes ? implode(', ', $vTypes) : '-' }}</p>
 	                                    <p><strong>Pressure injury stage:</strong> {{ $vPressureStageValue ? ($vPressureStageLabels[$vPressureStageValue] ?? $vPressureStageValue) : '-' }}</p>
