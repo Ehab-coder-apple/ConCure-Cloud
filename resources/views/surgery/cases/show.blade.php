@@ -102,7 +102,34 @@
 	                            @endif
 
 	                            @if($vWound)
-	                                {{-- Key healing-progress indicators for comparison across visits --}}
+	                                {{-- Wound Information --}}
+	                                @if($vInfo = data_get($vWound, 'information'))
+	                                    @php
+	                                        $vTypes = [];
+	                                        if(data_get($vInfo, 'diabetic_foot_ulcer')) $vTypes[] = 'Diabetic foot ulcer';
+	                                        if(data_get($vInfo, 'venous_leg_ulcer')) $vTypes[] = 'Venous leg ulcer';
+	                                        if(data_get($vInfo, 'arterial_ulcer')) $vTypes[] = 'Arterial ulcer';
+	                                        if(data_get($vInfo, 'surgical_wound')) $vTypes[] = 'Surgical wound';
+	                                        if(data_get($vInfo, 'traumatic_wound')) $vTypes[] = 'Traumatic wound';
+	                                        if(data_get($vInfo, 'burn')) $vTypes[] = 'Burn' . (data_get($vInfo, 'burn_detail') ? ' (' . data_get($vInfo, 'burn_detail') . ')' : '');
+	                                        $vPressureStageLabels = [
+	                                            '1' => 'Stage 1 - Non-blanchable redness, skin intact',
+	                                            '2' => 'Stage 2 - Partial-thickness skin loss or blister',
+	                                            '3' => 'Stage 3 - Full-thickness skin loss, fat visible',
+	                                            '4' => 'Stage 4 - Full-thickness tissue loss, muscle/tendon/bone exposed',
+	                                            'unstageable' => 'Unstageable - Base covered by slough/eschar',
+	                                            'dtpi' => 'DTPI - Deep tissue damage with purple/maroon discoloration',
+	                                        ];
+	                                        $vPressureStageValue = data_get($vInfo, 'pressure_injury_stage');
+	                                    @endphp
+	                                    <h6 class="mt-2">Wound Information</h6>
+	                                    <p><strong>Wound types:</strong> {{ $vTypes ? implode(', ', $vTypes) : '-' }}</p>
+	                                    <p><strong>Pressure injury stage:</strong> {{ $vPressureStageValue ? ($vPressureStageLabels[$vPressureStageValue] ?? $vPressureStageValue) : '-' }}</p>
+	                                    <p><strong>Anatomical location:</strong> {{ data_get($vInfo, 'anatomical_location') ?: '-' }}
+	                                        &nbsp;|&nbsp; <strong>Number of wounds:</strong> {{ data_get($vInfo, 'number_of_wounds') ?? '-' }}
+	                                    </p>
+	                                @endif
+
 	                                @if($measure = data_get($vWound, 'measurements'))
 	                                    <h6 class="mt-2">Wound Measurements</h6>
 	                                    <p>
@@ -130,9 +157,45 @@
 	                                        foreach ($infMap as $key => $label) {
 	                                            if (data_get($time, 'infection.' . $key)) $infection[] = $label;
 	                                        }
+	                                        $edges = [];
+	                                        $edgeMap = ['attached' => 'Attached', 'undermining' => 'Undermining', 'rolled_edge' => 'Rolled edge (Epibole)', 'macerated' => 'Macerated', 'hyperkeratosis' => 'Hyperkeratosis'];
+	                                        foreach ($edgeMap as $key => $label) {
+	                                            if (data_get($time, 'edge.' . $key)) $edges[] = $label;
+	                                        }
 	                                    @endphp
 	                                    <p><strong>Tissue:</strong> {{ $tissue ? implode(', ', $tissue) : '-' }}
 	                                        &nbsp;|&nbsp; <strong>Infection/Inflammation:</strong> {{ $infection ? implode(', ', $infection) : '-' }}
+	                                    </p>
+	                                    <p><strong>Moisture:</strong> {{ data_get($time, 'moisture.level') ?: '-' }}
+	                                        &nbsp;|&nbsp; <strong>Exudate type:</strong> {{ data_get($time, 'exudate.type') ?: '-' }}
+	                                    </p>
+	                                    <p><strong>Edge:</strong> {{ $edges ? implode(', ', $edges) : '-' }}</p>
+	                                @endif
+
+	                                @if($skin = data_get($vWound, 'surrounding_skin'))
+	                                    @php
+	                                        $skinLabels = ['normal' => 'Normal', 'maceration' => 'Maceration', 'erythema' => 'Erythema', 'callus' => 'Callus', 'edema' => 'Edema', 'induration' => 'Induration', 'dry_skin' => 'Dry skin'];
+	                                        $skinOut = [];
+	                                        foreach ($skinLabels as $key => $label) {
+	                                            if (data_get($skin, $key)) $skinOut[] = $label;
+	                                        }
+	                                    @endphp
+	                                    <p><strong>Surrounding Skin:</strong> {{ $skinOut ? implode(', ', $skinOut) : '-' }}</p>
+	                                @endif
+
+	                                @if($pain = data_get($vWound, 'pain'))
+	                                    <p><strong>Pain:</strong> Score {{ data_get($pain, 'score') ?? '-' }},
+	                                        At rest: {{ data_get($pain, 'at_rest') ?: '-' }},
+	                                        During dressing change: {{ data_get($pain, 'during_dressing_change') ?: '-' }}
+	                                    </p>
+	                                @endif
+
+	                                @if($neuro = data_get($vWound, 'neurological'))
+	                                    <p><strong>Neurological:</strong>
+	                                        Monofilament: {{ data_get($neuro, 'monofilament_test') ?: '-' }},
+	                                        Vibration: {{ data_get($neuro, 'vibration_sensation') ?: '-' }},
+	                                        Protective sensation: {{ data_get($neuro, 'protective_sensation') ?: '-' }},
+	                                        Neuropathy: {{ data_get($neuro, 'neuropathy_present') ?: '-' }}
 	                                    </p>
 	                                @endif
 
@@ -156,6 +219,63 @@
 	                                        Hb {{ data_get($lab, 'hemoglobin') }},
 	                                        Creatinine {{ data_get($lab, 'creatinine') }},
 	                                        GFR {{ data_get($lab, 'gfr') }}
+	                                    </p>
+	                                @endif
+
+	                                @if($micro = data_get($vWound, 'microbiology'))
+	                                    <h6 class="mt-2">Microbiology</h6>
+	                                    <p><strong>Swab collected:</strong> {{ data_get($micro, 'swab_collected') ?: '-' }}
+	                                        &nbsp;|&nbsp; <strong>Tissue culture:</strong> {{ data_get($micro, 'tissue_culture') ?: '-' }}
+	                                    </p>
+	                                    <p><strong>Organism isolated:</strong> {{ data_get($micro, 'organism_isolated') ?: '-' }}
+	                                        &nbsp;|&nbsp; <strong>Antibiotic sensitivity:</strong> {{ data_get($micro, 'antibiotic_sensitivity') ?: '-' }}
+	                                    </p>
+	                                @endif
+
+	                                @if($treat = data_get($vWound, 'treatment'))
+	                                    @php
+	                                        $debMap = ['sharp' => 'Sharp', 'surgical' => 'Surgical', 'autolytic' => 'Autolytic', 'mechanical' => 'Mechanical', 'enzymatic' => 'Enzymatic'];
+	                                        $deb = [];
+	                                        foreach ($debMap as $key => $label) {
+	                                            if (data_get($treat, 'debridement.' . $key)) $deb[] = $label;
+	                                        }
+	                                        $cleanMap = ['normal_saline' => 'Normal saline', 'hocl' => 'HOCl', 'phmb' => 'PHMB'];
+	                                        $clean = [];
+	                                        foreach ($cleanMap as $key => $label) {
+	                                            if (data_get($treat, 'cleansing.' . $key)) $clean[] = $label;
+	                                        }
+	                                        if ($other = data_get($treat, 'cleansing.other')) $clean[] = $other;
+	                                        $dressLabels = ['foam' => 'Foam', 'alginate' => 'Alginate', 'hydrofiber' => 'Hydrofiber', 'hydrocolloid' => 'Hydrocolloid', 'silver' => 'Silver', 'iodine' => 'Iodine', 'silicone' => 'Silicone', 'contact_layer' => 'Contact layer', 'ecm' => 'ECM', 'hydrogel' => 'Hydrogel'];
+	                                        $dressOut = [];
+	                                        foreach ($dressLabels as $key => $label) {
+	                                            if (data_get($treat, 'dressing.' . $key)) $dressOut[] = $label;
+	                                        }
+	                                        $advLabels = ['npwt' => 'NPWT', 'skin_graft' => 'Skin graft', 'flap_surgery' => 'Flap surgery', 'hbot' => 'Hyperbaric oxygen therapy'];
+	                                        $advOut = [];
+	                                        foreach ($advLabels as $key => $label) {
+	                                            if (data_get($treat, 'advanced.' . $key)) $advOut[] = $label;
+	                                        }
+	                                        $offLabels = ['tcc' => 'Total Contact Cast', 'removable_walker' => 'Removable walker', 'therapeutic_shoes' => 'Therapeutic shoes', 'wheelchair' => 'Wheelchair', 'crutches' => 'Crutches'];
+	                                        $offOut = [];
+	                                        foreach ($offLabels as $key => $label) {
+	                                            if (data_get($treat, 'offloading.' . $key)) $offOut[] = $label;
+	                                        }
+	                                    @endphp
+	                                    <h6 class="mt-2">Treatment</h6>
+	                                    <p><strong>Debridement:</strong> {{ $deb ? implode(', ', $deb) : '-' }}
+	                                        &nbsp;|&nbsp; <strong>Cleansing:</strong> {{ $clean ? implode(', ', $clean) : '-' }}
+	                                    </p>
+	                                    <p><strong>Dressing:</strong> {{ $dressOut ? implode(', ', $dressOut) : '-' }}</p>
+	                                    <p><strong>Advanced therapy:</strong> {{ $advOut ? implode(', ', $advOut) : '-' }}
+	                                        &nbsp;|&nbsp; <strong>Offloading:</strong> {{ $offOut ? implode(', ', $offOut) : '-' }}
+	                                    </p>
+	                                @endif
+
+	                                @if($follow = data_get($vWound, 'followup'))
+	                                    <h6 class="mt-2">Follow-up</h6>
+	                                    <p><strong>Dressing change frequency:</strong> {{ data_get($follow, 'dressing_change_frequency') ?: '-' }}</p>
+	                                    <p><strong>Healing progress:</strong> {{ data_get($follow, 'healing_progress') ?: '-' }}
+	                                        &nbsp;|&nbsp; <strong>Complications:</strong> {{ data_get($follow, 'complications') ?: '-' }}
 	                                    </p>
 	                                @endif
 
