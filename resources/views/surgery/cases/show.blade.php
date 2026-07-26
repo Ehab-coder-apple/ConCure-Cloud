@@ -123,6 +123,10 @@
 	                                        $vPressureStageValue = data_get($vInfo, 'pressure_injury_stage');
 	                                    @endphp
 	                                    <h6 class="mt-2">Wound Information</h6>
+	                                    <p><strong>Date developed:</strong> {{ data_get($vInfo, 'date_developed') ?: '-' }}
+	                                        &nbsp;|&nbsp; <strong>Duration:</strong> {{ data_get($vInfo, 'duration') ?: '-' }}
+	                                        &nbsp;|&nbsp; <strong>Etiology (Cause):</strong> {{ data_get($vInfo, 'cause') ?: '-' }}
+	                                    </p>
 	                                    <p><strong>Wound types:</strong> {{ $vTypes ? implode(', ', $vTypes) : '-' }}</p>
 	                                    <p><strong>Pressure injury stage:</strong> {{ $vPressureStageValue ? ($vPressureStageLabels[$vPressureStageValue] ?? $vPressureStageValue) : '-' }}</p>
 	                                    <p><strong>Anatomical location:</strong> {{ data_get($vInfo, 'anatomical_location') ?: '-' }}
@@ -187,6 +191,16 @@
 	                                    <p><strong>Pain:</strong> Score {{ data_get($pain, 'score') ?? '-' }},
 	                                        At rest: {{ data_get($pain, 'at_rest') ?: '-' }},
 	                                        During dressing change: {{ data_get($pain, 'during_dressing_change') ?: '-' }}
+	                                    </p>
+	                                @endif
+
+	                                @if($vascular = data_get($vWound, 'vascular'))
+	                                    <p><strong>Vascular:</strong>
+	                                        Pedal pulses: {{ data_get($vascular, 'pedal_pulses') ?: '-' }},
+	                                        Capillary refill: {{ data_get($vascular, 'capillary_refill') ?: '-' }},
+	                                        ABI/TBI: {{ data_get($vascular, 'abi') ?: '-' }}/{{ data_get($vascular, 'tbi') ?: '-' }},
+	                                        Doppler: {{ data_get($vascular, 'doppler_findings') ?: '-' }},
+	                                        Skin temp: {{ data_get($vascular, 'skin_temperature') ?: '-' }}
 	                                    </p>
 	                                @endif
 
@@ -296,6 +310,13 @@
 	                                    @if($outOut || data_get($outcome, 'summary'))
 	                                        <p><strong>Outcome:</strong> {{ data_get($outcome, 'summary') }} {{ $outOut ? '(' . implode(', ', $outOut) . ')' : '' }}</p>
 	                                    @endif
+	                                @endif
+
+	                                @if($heal = data_get($vWound, 'healing_time'))
+	                                    <p><strong>Healing Time:</strong>
+	                                        Date healed: {{ data_get($heal, 'date_healed') ?: '-' }},
+	                                        Total healing days: {{ data_get($heal, 'total_healing_days') ?? '-' }}
+	                                    </p>
 	                                @endif
 	                            @endif
 
