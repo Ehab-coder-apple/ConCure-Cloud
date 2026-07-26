@@ -90,8 +90,9 @@
             <table class="table table-sm table-bordered" id="items_table">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 35%">{{ __('Description') }}</th>
-                        <th style="width: 20%">{{ __('Treatment') }}</th>
+                        <th style="width: 25%">{{ __('Description') }}</th>
+                        <th style="width: 15%">{{ __('Treatment') }}</th>
+                        <th style="width: 15%">{{ __('Product (Inventory)') }}</th>
                         <th style="width: 10%">{{ __('Qty') }}</th>
                         <th style="width: 15%">{{ __('Unit Price') }}</th>
                         <th style="width: 10%">{{ __('Discount') }}</th>
@@ -130,12 +131,22 @@
                             <input type="text" class="form-control form-control-sm" name="items[{{ $i }}][description]" value="{{ $item['description'] ?? '' }}" placeholder="{{ __('Description') }}" required>
                         </td>
                         <td>
-                            <select class="form-select form-select-sm" name="items[{{ $i }}][treatment_id]">
+                            <select class="form-select form-select-sm treatment-select" name="items[{{ $i }}][treatment_id]">
                                 <option value="">{{ __('None') }}</option>
                                 @foreach($treatments as $treatment)
                                     <option value="{{ $treatment->id }}" data-price="{{ $treatment->default_price }}"
                                         {{ ($item['treatment_id'] ?? '') == $treatment->id ? 'selected' : '' }}>
                                         {{ $treatment->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm product-select">
+                                <option value="">{{ __('None') }}</option>
+                                @foreach($inventoryItems ?? [] as $product)
+                                    <option value="{{ $product->id }}" data-price="{{ $product->selling_price }}" data-name="{{ $product->product_name }}">
+                                        {{ $product->product_name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -216,6 +227,12 @@
         'price' => (float) $treatment->default_price,
     ])->values();
 
+    $productMeta = ($inventoryItems ?? collect())->map(fn($p) => [
+        'id' => $p->id,
+        'name' => $p->product_name,
+        'price' => (float) $p->selling_price,
+    ])->values();
+
     $sessionMeta = $sessions->map(function ($session) {
         $sessionTreatments = $session->isPackageSession ? collect() : $session->effective_treatments;
 
@@ -230,6 +247,18 @@
                 'treatment_id' => $session->isPackageSession ? $session->patientPackage?->package?->treatment_id : $session->treatment_id,
                 'unit_price' => (float) ($session->isPackageSession ? ($session->patientPackage?->package?->final_price ?? 0) : ($session->treatment?->default_price ?? 0)),
             ]]);
+
+        $inventoryItems = $session->inventoryUsages
+            ->filter(fn($usage) => $usage->product !== null)
+            ->map(fn($usage) => [
+                'description' => $usage->product->product_name . ' (x' . $usage->quantity_used . ')',
+                'treatment_id' => null,
+                'product_id' => $usage->product->id,
+                'quantity' => $usage->quantity_used,
+                'unit_price' => (float) ($usage->product->selling_price ?? 0),
+            ])->values();
+
+        $items = $items->concat($inventoryItems);
 
         return [
             'id' => $session->id,
@@ -251,9 +280,14 @@
 
     const treatments = @json($treatmentMeta);
     const sessions = @json($sessionMeta);
+    const products = @json($productMeta);
 
     function buildOptions() {
         return treatments.map(t => `<option value="${t.id}" data-price="${t.price}">${t.name}</option>`).join('');
+    }
+
+    function buildProductOptions() {
+        return products.map(p => `<option value="${p.id}" data-price="${p.price}" data-name="${p.name}">${p.name}</option>`).join('');
     }
 
     function getSessionMeta(sessionId) {
@@ -347,6 +381,12 @@
                 </select>
             </td>
             <td>
+                <select class="form-select form-select-sm product-select">
+                    <option value="">{{ __('None') }}</option>
+                    ${buildProductOptions()}
+                </select>
+            </td>
+            <td>
                 <input type="number" min="1" class="form-control form-control-sm qty" name="items[${idx}][quantity]" value="1" required>
             </td>
             <td>
@@ -392,6 +432,24 @@
                 const price = parseFloat(opt.dataset.price || 0);
                 if (price > 0) {
                     row.querySelector('.price').value = price.toFixed(2);
+                }
+                recalc();
+            });
+        }
+
+        const productSelect = row.querySelector('.product-select');
+        if (productSelect) {
+            productSelect.addEventListener('change', function () {
+                const opt = this.options[this.selectedIndex];
+                const price = parseFloat(opt.dataset.price || 0);
+                const name = opt.dataset.name || '';
+                const priceInput = row.querySelector('.price');
+                if (priceInput) {
+                    priceInput.value = price.toFixed(2);
+                }
+                const descriptionInput = row.querySelector('input[name*="[description]"]');
+                if (descriptionInput && !descriptionInput.value.trim() && name) {
+                    descriptionInput.value = name;
                 }
                 recalc();
             });

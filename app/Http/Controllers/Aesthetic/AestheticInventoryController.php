@@ -74,6 +74,8 @@ class AestheticInventoryController extends Controller
             'quantity' => 'required|integer|min:0',
             'low_stock_threshold' => 'required|integer|min:1',
             'expiry_date' => 'nullable|date|after_or_equal:today',
+            'purchase_price' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
         ]);
 
         $validated['tenant_id'] = Auth::user()->clinic?->tenant_id;
@@ -108,6 +110,8 @@ class AestheticInventoryController extends Controller
             'quantity' => 'required|integer|min:0',
             'low_stock_threshold' => 'required|integer|min:1',
             'expiry_date' => 'nullable|date',
+            'purchase_price' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
         ]);
 
         $aestheticInventory->update($validated);

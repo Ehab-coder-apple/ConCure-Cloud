@@ -21,12 +21,16 @@ class AestheticInventory extends Model
         'quantity',
         'low_stock_threshold',
         'expiry_date',
+        'purchase_price',
+        'selling_price',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
         'low_stock_threshold' => 'integer',
         'expiry_date' => 'date',
+        'purchase_price' => 'decimal:2',
+        'selling_price' => 'decimal:2',
     ];
 
     const TYPES = [

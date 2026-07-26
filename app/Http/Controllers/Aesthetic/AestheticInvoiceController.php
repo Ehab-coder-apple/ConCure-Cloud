@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Aesthetic;
 
 use App\Http\Controllers\Controller;
+use App\Models\AestheticInventory;
 use App\Models\AestheticInvoice;
 use App\Models\AestheticInvoiceItem;
 use App\Models\AestheticSession;
@@ -82,6 +83,7 @@ class AestheticInvoiceController extends Controller
         $patients = $this->getTenantPatients();
         $treatments = $this->getTenantTreatments();
         $sessions = $this->getTenantSessions();
+        $inventoryItems = $this->getTenantInventory();
         $clinicCurrency = $this->resolveCurrency();
 
         $preselectedPatient = null;
@@ -96,6 +98,7 @@ class AestheticInvoiceController extends Controller
                 'patient',
                 'treatment',
                 'treatments',
+                'inventoryUsages.product',
             ])->find($request->session_id);
 
             if ($preselectedSession) {
@@ -106,7 +109,7 @@ class AestheticInvoiceController extends Controller
         }
 
         return view('aesthetic.invoices.create', compact(
-            'patients', 'treatments', 'sessions',
+            'patients', 'treatments', 'sessions', 'inventoryItems',
             'preselectedPatient', 'preselectedSession', 'preselectedPackage', 'lineItems', 'clinicCurrency'
         ));
     }
@@ -206,11 +209,12 @@ class AestheticInvoiceController extends Controller
         $patients = $this->getTenantPatients();
         $treatments = $this->getTenantTreatments();
         $sessions = $this->getTenantSessions();
+        $inventoryItems = $this->getTenantInventory();
 
         $aestheticInvoice->load('items');
         $clinicCurrency = $this->resolveCurrency();
 
-        return view('aesthetic.invoices.edit', compact('aestheticInvoice', 'patients', 'treatments', 'sessions', 'clinicCurrency'));
+        return view('aesthetic.invoices.edit', compact('aestheticInvoice', 'patients', 'treatments', 'sessions', 'inventoryItems', 'clinicCurrency'));
     }
 
     /**
@@ -451,13 +455,25 @@ class AestheticInvoiceController extends Controller
     {
         $clinicId = Auth::user()->clinic_id;
 
-        return AestheticSession::with(['patientPackage.patient', 'patientPackage.package', 'patient', 'treatment', 'treatments'])
+        return AestheticSession::with(['patientPackage.patient', 'patientPackage.package', 'patient', 'treatment', 'treatments', 'inventoryUsages.product'])
             ->where(function ($query) use ($clinicId) {
                 $query->whereHas('patientPackage.patient', fn($q) => $q->when($clinicId, fn($sq) => $sq->where('clinic_id', $clinicId)))
                     ->orWhereHas('patient', fn($q) => $q->when($clinicId, fn($sq) => $sq->where('clinic_id', $clinicId)));
             })
             ->whereNotIn('status', ['cancelled', 'no_show'])
             ->latest('session_date')
+            ->get();
+    }
+
+    /**
+     * Get inventory items for the current tenant (for line item pricing).
+     */
+    private function getTenantInventory()
+    {
+        $tenantId = Auth::user()->clinic?->tenant_id;
+
+        return AestheticInventory::byTenant($tenantId)
+            ->orderBy('product_name')
             ->get();
     }
 
@@ -489,19 +505,21 @@ class AestheticInvoiceController extends Controller
     private function buildLineItemsFromSession(AestheticSession $session): array
     {
         if ($session->isPackageSession && $session->patientPackage?->package) {
-            return [[
+            $items = [[
                 'description' => $session->patientPackage->package->name . ' - Session #' . $session->session_number,
                 'treatment_id' => $session->patientPackage->package->treatment_id,
                 'quantity' => 1,
                 'unit_price' => $session->patientPackage->package->final_price,
                 'discount' => 0,
             ]];
+
+            return array_merge($items, $this->buildLineItemsFromInventoryUsage($session));
         }
 
         $treatments = $session->effective_treatments;
 
         if ($treatments->isNotEmpty()) {
-            return $treatments->map(function ($treatment) use ($session) {
+            $items = $treatments->map(function ($treatment) use ($session) {
                 return [
                     'description' => $treatment->name . ' - Session #' . $session->session_number,
                     'treatment_id' => $treatment->id,
@@ -510,14 +528,41 @@ class AestheticInvoiceController extends Controller
                     'discount' => 0,
                 ];
             })->all();
+
+            return array_merge($items, $this->buildLineItemsFromInventoryUsage($session));
         }
 
-        return [[
+        $items = [[
             'description' => $session->session_context . ' - Session #' . $session->session_number,
             'treatment_id' => $session->treatment_id,
             'quantity' => 1,
             'unit_price' => $session->treatment?->default_price ?? 0,
             'discount' => 0,
         ]];
+
+        return array_merge($items, $this->buildLineItemsFromInventoryUsage($session));
+    }
+
+    /**
+     * Build additional line items from a session's recorded inventory usage,
+     * pricing each item using the product's selling_price.
+     */
+    private function buildLineItemsFromInventoryUsage(AestheticSession $session): array
+    {
+        $usages = $session->relationLoaded('inventoryUsages') ? $session->inventoryUsages : $session->inventoryUsages()->with('product')->get();
+
+        if ($usages->isEmpty()) {
+            return [];
+        }
+
+        return $usages->filter(fn($usage) => $usage->product !== null)->map(function ($usage) {
+            return [
+                'description' => $usage->product->product_name . ' (x' . $usage->quantity_used . ')',
+                'treatment_id' => null,
+                'quantity' => $usage->quantity_used,
+                'unit_price' => $usage->product->selling_price ?? 0,
+                'discount' => 0,
+            ];
+        })->values()->all();
     }
 }

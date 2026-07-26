@@ -69,6 +69,34 @@
         @enderror
         <small class="form-text text-muted">{{ __('Optional. Leave blank for items with no expiry.') }}</small>
     </div>
+
+    <!-- Purchase Price -->
+    <div class="col-md-6">
+        <label for="purchase_price" class="form-label">{{ __('Purchase Price') }} <span class="text-danger">*</span></label>
+        <input type="number" min="0" step="0.01"
+               class="form-control @error('purchase_price') is-invalid @enderror"
+               id="purchase_price" name="purchase_price"
+               value="{{ old('purchase_price', $aestheticInventory->purchase_price ?? 0) }}"
+               required>
+        @error('purchase_price')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <small class="form-text text-muted">{{ __('Cost price paid to acquire this item.') }}</small>
+    </div>
+
+    <!-- Selling Price -->
+    <div class="col-md-6">
+        <label for="selling_price" class="form-label">{{ __('Selling Price') }} <span class="text-danger">*</span></label>
+        <input type="number" min="0" step="0.01"
+               class="form-control @error('selling_price') is-invalid @enderror"
+               id="selling_price" name="selling_price"
+               value="{{ old('selling_price', $aestheticInventory->selling_price ?? 0) }}"
+               required>
+        @error('selling_price')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <small class="form-text text-muted">{{ __('Price charged to patients when this item is used/sold.') }}</small>
+    </div>
 </div>
 
 @push('scripts')

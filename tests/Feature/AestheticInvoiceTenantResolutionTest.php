@@ -53,6 +53,8 @@ class AestheticInvoiceTenantResolutionTest extends TestCase
         Schema::dropIfExists('dental_treatments');
         Schema::dropIfExists('receipts');
         Schema::dropIfExists('expenses');
+        Schema::dropIfExists('session_inventory_usage');
+        Schema::dropIfExists('aesthetic_inventory');
         Schema::dropIfExists('aesthetic_session_treatment');
         Schema::dropIfExists('aesthetic_sessions');
         Schema::dropIfExists('patient_packages');
@@ -240,6 +242,29 @@ class AestheticInvoiceTenantResolutionTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('session_id');
             $table->unsignedBigInteger('treatment_id');
+            $table->timestamps();
+        });
+
+        Schema::create('aesthetic_inventory', function (Blueprint $table) {
+            $table->id();
+            $table->string('tenant_id')->nullable();
+            $table->string('product_name');
+            $table->string('type')->nullable();
+            $table->integer('quantity')->default(0);
+            $table->integer('low_stock_threshold')->default(0);
+            $table->date('expiry_date')->nullable();
+            $table->decimal('purchase_price', 12, 2)->default(0);
+            $table->decimal('selling_price', 12, 2)->default(0);
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('session_inventory_usage', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('session_id');
+            $table->string('tenant_id')->nullable();
+            $table->unsignedBigInteger('product_id');
+            $table->integer('quantity_used')->default(1);
             $table->timestamps();
         });
 
