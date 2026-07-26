@@ -216,13 +216,27 @@
         'price' => (float) $treatment->default_price,
     ])->values();
 
-    $sessionMeta = $sessions->map(fn($session) => [
-        'id' => $session->id,
-        'patient_id' => $session->resolved_patient?->id,
-        'description' => $session->session_context . ' - Session #' . $session->session_number,
-        'treatment_id' => $session->isPackageSession ? $session->patientPackage?->package?->treatment_id : $session->treatment_id,
-        'unit_price' => (float) ($session->isPackageSession ? ($session->patientPackage?->package?->final_price ?? 0) : ($session->treatment?->default_price ?? 0)),
-    ])->values();
+    $sessionMeta = $sessions->map(function ($session) {
+        $sessionTreatments = $session->isPackageSession ? collect() : $session->effective_treatments;
+
+        $items = $sessionTreatments->isNotEmpty()
+            ? $sessionTreatments->map(fn($treatment) => [
+                'description' => $treatment->name . ' - Session #' . $session->session_number,
+                'treatment_id' => $treatment->id,
+                'unit_price' => (float) ($treatment->default_price ?? 0),
+            ])->values()
+            : collect([[
+                'description' => $session->session_context . ' - Session #' . $session->session_number,
+                'treatment_id' => $session->isPackageSession ? $session->patientPackage?->package?->treatment_id : $session->treatment_id,
+                'unit_price' => (float) ($session->isPackageSession ? ($session->patientPackage?->package?->final_price ?? 0) : ($session->treatment?->default_price ?? 0)),
+            ]]);
+
+        return [
+            'id' => $session->id,
+            'patient_id' => $session->resolved_patient?->id,
+            'items' => $items,
+        ];
+    })->values();
 @endphp
 
 <script>
@@ -256,8 +270,8 @@
         return description === '' && treatmentId === '' && price === 0 && discount === 0 && (qty === 0 || qty === 1);
     }
 
-    function populateRowFromSession(row, sessionMeta, force = false) {
-        if (!row || !sessionMeta) {
+    function populateRowFromItem(row, item, force = false) {
+        if (!row || !item) {
             return;
         }
 
@@ -272,15 +286,15 @@
         const discountInput = row.querySelector('.discount');
 
         if (descriptionInput) {
-            descriptionInput.value = sessionMeta.description || descriptionInput.value;
+            descriptionInput.value = item.description || descriptionInput.value;
         }
 
-        if (treatmentSelect && sessionMeta.treatment_id) {
-            treatmentSelect.value = String(sessionMeta.treatment_id);
+        if (treatmentSelect && item.treatment_id) {
+            treatmentSelect.value = String(item.treatment_id);
         }
 
-        if (priceInput && Number(sessionMeta.unit_price) > 0) {
-            priceInput.value = Number(sessionMeta.unit_price).toFixed(2);
+        if (priceInput && Number(item.unit_price) > 0) {
+            priceInput.value = Number(item.unit_price).toFixed(2);
         }
 
         if (qtyInput && (!qtyInput.value || Number(qtyInput.value) <= 0)) {
@@ -291,9 +305,27 @@
             discountInput.value = 0;
         }
 
+        recalc();
+    }
+
+    function populateRowsFromSession(sessionMeta, force = false) {
+        if (!sessionMeta || !sessionMeta.items || sessionMeta.items.length === 0) {
+            return;
+        }
+
         if (patientSelect && sessionMeta.patient_id) {
             patientSelect.value = String(sessionMeta.patient_id);
         }
+
+        const existingRows = Array.from(tbody.querySelectorAll('.item-row'));
+        sessionMeta.items.forEach((item, idx) => {
+            let row = existingRows[idx];
+            if (!row) {
+                addRow();
+                row = tbody.querySelector('.item-row:last-child');
+            }
+            populateRowFromItem(row, item, force);
+        });
 
         recalc();
     }
@@ -400,12 +432,11 @@
 
     sessionSelect?.addEventListener('change', function () {
         const meta = getSessionMeta(this.value);
-        const firstRow = tbody.querySelector('.item-row');
-        populateRowFromSession(firstRow, meta, true);
+        populateRowsFromSession(meta, true);
     });
 
     tbody.querySelectorAll('.item-row').forEach(bindRow);
-    populateRowFromSession(tbody.querySelector('.item-row'), getSessionMeta(sessionSelect?.value), false);
+    populateRowsFromSession(getSessionMeta(sessionSelect?.value), false);
     recalc();
 })();
 </script>

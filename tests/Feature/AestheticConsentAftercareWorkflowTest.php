@@ -67,6 +67,7 @@ class AestheticConsentAftercareWorkflowTest extends TestCase
             'session_inventory_usage',
             'session_images',
             'aesthetic_package_treatment',
+            'aesthetic_session_treatment',
             'aesthetic_sessions',
             'aesthetic_inventory',
             'aesthetic_packages',
@@ -239,6 +240,13 @@ class AestheticConsentAftercareWorkflowTest extends TestCase
             $table->text('notes')->nullable();
             $table->timestamps();
             $table->softDeletes();
+        });
+
+        Schema::create('aesthetic_session_treatment', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('session_id');
+            $table->unsignedBigInteger('treatment_id');
+            $table->timestamps();
         });
 
         Schema::create('session_images', function (Blueprint $table) {
@@ -835,7 +843,7 @@ class AestheticConsentAftercareWorkflowTest extends TestCase
         ]);
 
         $response->assertRedirect(route('aesthetic.sessions.create'));
-        $response->assertSessionHasErrors('treatment_id');
+        $response->assertSessionHasErrors('treatment_ids');
     }
 
     public function test_full_local_flow_shows_consent_and_aftercare_documents_on_patient_page(): void

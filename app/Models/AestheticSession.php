@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use App\Models\User;
 
 class AestheticSession extends Model
@@ -156,11 +158,36 @@ class AestheticSession extends Model
     }
 
     /**
-     * Get the treatment (for direct treatment sessions).
+     * Get the primary treatment (for direct treatment sessions, backward compat).
      */
     public function treatment(): BelongsTo
     {
         return $this->belongsTo(AestheticTreatment::class);
+    }
+
+    /**
+     * Get all treatments selected for this session (multi-treatment support
+     * for direct treatment sessions). Mirrors AestheticPackage::treatments().
+     */
+    public function treatments(): BelongsToMany
+    {
+        return $this->belongsToMany(AestheticTreatment::class, 'aesthetic_session_treatment', 'session_id', 'treatment_id');
+    }
+
+    /**
+     * All treatments for this session, preferring the multi-select
+     * `treatments` pivot and falling back to the legacy single `treatment`
+     * relation for sessions created before multi-treatment support existed.
+     */
+    public function getEffectiveTreatmentsAttribute(): Collection
+    {
+        $pivotTreatments = $this->relationLoaded('treatments') ? $this->treatments : $this->treatments()->get();
+
+        if ($pivotTreatments->isNotEmpty()) {
+            return $pivotTreatments;
+        }
+
+        return $this->treatment ? collect([$this->treatment]) : collect();
     }
 
     /**
@@ -195,8 +222,8 @@ class AestheticSession extends Model
         if ($this->isPackageSession) {
             return $this->patientPackage?->package?->name ?? __('Package');
         }
-        if ($this->treatment) {
-            return $this->treatment->name;
+        if ($this->effective_treatments->isNotEmpty()) {
+            return $this->effective_treatments->pluck('name')->implode(', ');
         }
         return __('Direct Treatment');
     }

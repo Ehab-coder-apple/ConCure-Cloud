@@ -95,6 +95,7 @@ class AestheticInvoiceController extends Controller
                 'patientPackage.package.treatment',
                 'patient',
                 'treatment',
+                'treatments',
             ])->find($request->session_id);
 
             if ($preselectedSession) {
@@ -450,7 +451,7 @@ class AestheticInvoiceController extends Controller
     {
         $clinicId = Auth::user()->clinic_id;
 
-        return AestheticSession::with(['patientPackage.patient', 'patientPackage.package', 'patient', 'treatment'])
+        return AestheticSession::with(['patientPackage.patient', 'patientPackage.package', 'patient', 'treatment', 'treatments'])
             ->where(function ($query) use ($clinicId) {
                 $query->whereHas('patientPackage.patient', fn($q) => $q->when($clinicId, fn($sq) => $sq->where('clinic_id', $clinicId)))
                     ->orWhereHas('patient', fn($q) => $q->when($clinicId, fn($sq) => $sq->where('clinic_id', $clinicId)));
@@ -495,6 +496,20 @@ class AestheticInvoiceController extends Controller
                 'unit_price' => $session->patientPackage->package->final_price,
                 'discount' => 0,
             ]];
+        }
+
+        $treatments = $session->effective_treatments;
+
+        if ($treatments->isNotEmpty()) {
+            return $treatments->map(function ($treatment) use ($session) {
+                return [
+                    'description' => $treatment->name . ' - Session #' . $session->session_number,
+                    'treatment_id' => $treatment->id,
+                    'quantity' => 1,
+                    'unit_price' => $treatment->default_price ?? 0,
+                    'discount' => 0,
+                ];
+            })->all();
         }
 
         return [[

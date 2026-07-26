@@ -197,7 +197,13 @@
                                             @if($session->isPackageSession)
                                                 <span class="badge bg-info">{{ $session->patientPackage?->package?->name ?? __('Package') }}</span>
                                             @else
-                                                <span class="badge bg-warning">{{ $session->treatment?->name ?? __('Direct Treatment') }}</span>
+                                                @if($session->effective_treatments->isNotEmpty())
+                                                    @foreach($session->effective_treatments as $et)
+                                                        <span class="badge bg-warning">{{ $et->name }}</span>
+                                                    @endforeach
+                                                @else
+                                                    <span class="badge bg-warning">{{ __('Direct Treatment') }}</span>
+                                                @endif
                                             @endif
                                         </td>
                                         <td>

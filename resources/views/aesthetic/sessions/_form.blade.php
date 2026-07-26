@@ -74,24 +74,63 @@
         @enderror
     </div>
 
-    <!-- Treatment (Direct) -->
+    <!-- Treatments (Direct) -->
     <div class="col-md-6">
-        <label for="treatment_id" class="form-label">{{ __('Treatment') }}</label>
-        <select class="form-select @error('treatment_id') is-invalid @enderror" id="treatment_id" name="treatment_id">
-            <option value="">{{ __('Select Treatment (Optional)') }}</option>
+        <label class="form-label">{{ __('Treatments') }}</label>
+        @php
+            $selectedTreatmentIds = old('treatment_ids', isset($aestheticSession) ? $aestheticSession->effective_treatments->pluck('id')->all() : []);
+            if (!is_array($selectedTreatmentIds)) { $selectedTreatmentIds = [$selectedTreatmentIds]; }
+            $selectedTreatmentIds = array_filter($selectedTreatmentIds);
+        @endphp
+
+        <div class="dropdown w-100" id="sessionTreatmentDropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button"
+                    data-bs-toggle="dropdown" aria-expanded="false" id="sessionTreatmentDropdownBtn">
+                <span id="sessionTreatmentCount">{{ count($selectedTreatmentIds) }}</span> {{ __('treatment(s) selected') }}
+            </button>
+            <div class="dropdown-menu w-100 p-2" style="max-height: 320px; overflow-y: auto;">
+                <input type="text" class="form-control form-control-sm mb-2" id="sessionTreatmentSearch"
+                       placeholder="{{ __('Search treatments...') }}" autocomplete="off">
+                <div id="sessionTreatmentList">
+                    @foreach($treatments as $treatment)
+                        <div class="form-check session-treatment-item" data-name="{{ strtolower($treatment->name) }} {{ strtolower($treatment->category_display) }}">
+                            <input class="form-check-input session-treatment-checkbox" type="checkbox"
+                                   name="treatment_ids[]"
+                                   id="session_treatment_{{ $treatment->id }}"
+                                   value="{{ $treatment->id }}"
+                                   {{ in_array($treatment->id, $selectedTreatmentIds) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="session_treatment_{{ $treatment->id }}">
+                                {{ $treatment->name }}
+                                <small class="text-muted">({{ $treatment->category_display }})</small>
+                            </label>
+                        </div>
+                    @endforeach
+                </div>
+                @if($treatments->count() === 0)
+                    <div class="text-muted small text-center py-2">{{ __('No treatments available') }}</div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Selected badges (live preview) -->
+        <div id="sessionSelectedTreatmentsPreview" class="mt-2 d-flex flex-wrap gap-1">
             @foreach($treatments as $treatment)
-                <option value="{{ $treatment->id }}"
-                    {{ old('treatment_id', $aestheticSession->treatment_id ?? '') == $treatment->id ? 'selected' : '' }}>
-                    {{ $treatment->name }}
-                    <small class="text-muted">({{ $treatment->category_display }})</small>
-                </option>
+                @if(in_array($treatment->id, $selectedTreatmentIds))
+                    <span class="badge bg-primary session-treatment-badge-{{ $treatment->id }}">
+                        {{ $treatment->name }}
+                    </span>
+                @endif
             @endforeach
-        </select>
-        @error('treatment_id')
-            <div class="invalid-feedback">{{ $message }}</div>
+        </div>
+
+        @error('treatment_ids')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
+        @error('treatment_ids.*')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
         @enderror
         <small class="form-text text-muted">
-            {{ __('Choose a treatment if you want the Create Invoice shortcut to auto-fill the invoice item and price.') }}
+            {{ __('Select one or more treatments performed in this session. Each selected treatment becomes a separate line item when using the Create Invoice shortcut.') }}
         </small>
     </div>
 </div>
@@ -376,3 +415,57 @@
 	})();
 </script>
 @endif
+
+<script>
+// Multi-select treatment dropdown for Direct Treatment sessions
+(function () {
+    const search = document.getElementById('sessionTreatmentSearch');
+    const list = document.getElementById('sessionTreatmentList');
+    const countEl = document.getElementById('sessionTreatmentCount');
+    const preview = document.getElementById('sessionSelectedTreatmentsPreview');
+    const dropdownMenu = document.querySelector('#sessionTreatmentDropdown .dropdown-menu');
+
+    if (!list || !countEl || !preview) return;
+
+    function updateCountAndPreview() {
+        const checkboxes = list.querySelectorAll('.session-treatment-checkbox');
+        const checked = Array.from(checkboxes).filter(cb => cb.checked);
+        countEl.textContent = checked.length;
+
+        preview.innerHTML = '';
+        checked.forEach(cb => {
+            const label = cb.closest('.session-treatment-item').querySelector('label');
+            const name = label ? label.childNodes[0].textContent.trim() : cb.value;
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-primary session-treatment-badge-' + cb.value;
+            badge.textContent = name;
+            preview.appendChild(badge);
+        });
+    }
+
+    if (search) {
+        search.addEventListener('input', function () {
+            const term = search.value.trim().toLowerCase();
+            list.querySelectorAll('.session-treatment-item').forEach(function (item) {
+                const haystack = item.getAttribute('data-name') || '';
+                item.style.display = haystack.indexOf(term) !== -1 ? '' : 'none';
+            });
+        });
+
+        // Prevent the dropdown from closing when interacting with the search box
+        search.addEventListener('click', function (e) { e.stopPropagation(); });
+    }
+
+    if (dropdownMenu) {
+        dropdownMenu.addEventListener('click', function (e) { e.stopPropagation(); });
+    }
+
+    list.addEventListener('change', function (e) {
+        if (e.target.classList.contains('session-treatment-checkbox')) {
+            updateCountAndPreview();
+        }
+    });
+
+    updateCountAndPreview();
+})();
+</script>

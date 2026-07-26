@@ -37,6 +37,7 @@ class AestheticSessionController extends Controller
             'patientPackage.package.treatments',
             'patient',
             'treatment',
+            'treatments',
             'assignedUser',
             'images',
         ]);
@@ -68,6 +69,8 @@ class AestheticSessionController extends Controller
                     $sq->where('first_name', 'like', "%{$search}%")
                       ->orWhere('last_name', 'like', "%{$search}%");
                 })->orWhereHas('treatment', function ($sq) use ($search) {
+                    $sq->where('name', 'like', "%{$search}%");
+                })->orWhereHas('treatments', function ($sq) use ($search) {
                     $sq->where('name', 'like', "%{$search}%");
                 });
             });
@@ -120,6 +123,7 @@ class AestheticSessionController extends Controller
     public function store(Request $request)
     {
         $mode = $request->input('session_mode', 'package');
+        $treatmentIds = [];
 
         if ($mode === 'package') {
             $validated = $request->validate([
@@ -136,6 +140,8 @@ class AestheticSessionController extends Controller
             $validated = $request->validate([
                 'patient_id' => 'required|integer|exists:patients,id',
                 'treatment_id' => 'nullable|integer|exists:aesthetic_treatments,id',
+                'treatment_ids' => 'nullable|array',
+                'treatment_ids.*' => 'integer|exists:aesthetic_treatments,id',
                 'session_number' => 'required|integer|min:1',
                 'session_date' => 'required|date',
                 'assigned_user_id' => 'nullable|integer|exists:users,id',
@@ -144,13 +150,23 @@ class AestheticSessionController extends Controller
                 'notes' => 'nullable|string|max:2000',
             ]);
             $this->validatePatientTenant($validated['patient_id']);
-            if (!empty($validated['treatment_id'])) {
-                $this->validateTreatmentTenant($validated['treatment_id']);
+
+            // Accept the new multi-select `treatment_ids[]` field, falling back
+            // to the legacy singular `treatment_id` (used by quick-action forms).
+            $treatmentIds = array_values(array_unique(array_filter(
+                $validated['treatment_ids'] ?? (isset($validated['treatment_id']) ? [$validated['treatment_id']] : [])
+            )));
+
+            foreach ($treatmentIds as $treatmentId) {
+                $this->validateTreatmentTenant($treatmentId);
             }
 
-            if ($request->input('next_action') === 'create_invoice' && empty($validated['treatment_id'])) {
+            $validated['treatment_id'] = $treatmentIds[0] ?? null;
+            unset($validated['treatment_ids']);
+
+            if ($request->input('next_action') === 'create_invoice' && empty($treatmentIds)) {
                 return back()->withInput()->withErrors([
-                    'treatment_id' => __('Please select a treatment so the invoice item and price can be filled automatically.'),
+                    'treatment_ids' => __('Please select at least one treatment so the invoice items and prices can be filled automatically.'),
                 ]);
             }
         }
@@ -164,8 +180,12 @@ class AestheticSessionController extends Controller
 
         $validated['tenant_id'] = Auth::user()->clinic?->tenant_id;
 
-        $session = DB::transaction(function () use ($validated, $request) {
+        $session = DB::transaction(function () use ($validated, $request, $treatmentIds) {
             $session = AestheticSession::create($validated);
+
+            if (!empty($treatmentIds)) {
+                $session->treatments()->sync($treatmentIds);
+            }
 
             // Always record inventory items from the form (stock deducted immediately)
             if ($validated['status'] !== 'cancelled') {
@@ -201,7 +221,7 @@ class AestheticSessionController extends Controller
                     $sq->where('patient_id', $patient->id);
                 })->orWhere('patient_id', $patient->id);
             })
-            ->with(['patientPackage.package.treatments', 'patient', 'treatment', 'images', 'consentForms', 'aftercareIssues'])
+            ->with(['patientPackage.package.treatments', 'patient', 'treatment', 'treatments', 'images', 'consentForms', 'aftercareIssues'])
             ->orderByDesc('session_date')
             ->paginate(10);
 
@@ -259,6 +279,7 @@ class AestheticSessionController extends Controller
             'patientPackage.package.treatment',
             'patient',
             'treatment',
+            'treatments',
             'assignedUser',
             'images',
             'inventoryUsages.product',
@@ -305,6 +326,7 @@ class AestheticSessionController extends Controller
         $this->authorizeTenant($aestheticSession);
 
         $mode = $request->input('session_mode', $aestheticSession->isPackageSession ? 'package' : 'direct');
+        $treatmentIds = [];
 
         if ($mode === 'package') {
             $validated = $request->validate([
@@ -324,6 +346,8 @@ class AestheticSessionController extends Controller
             $validated = $request->validate([
                 'patient_id' => 'required|integer|exists:patients,id',
                 'treatment_id' => 'nullable|integer|exists:aesthetic_treatments,id',
+                'treatment_ids' => 'nullable|array',
+                'treatment_ids.*' => 'integer|exists:aesthetic_treatments,id',
                 'session_number' => 'required|integer|min:1',
                 'session_date' => 'required|date',
                 'assigned_user_id' => 'nullable|integer|exists:users,id',
@@ -333,9 +357,19 @@ class AestheticSessionController extends Controller
                 'notes' => 'nullable|string|max:2000',
             ]);
             $this->validatePatientTenant($validated['patient_id']);
-            if (!empty($validated['treatment_id'])) {
-                $this->validateTreatmentTenant($validated['treatment_id']);
+
+            // Accept the new multi-select `treatment_ids[]` field, falling back
+            // to the legacy singular `treatment_id` (used by quick-action forms).
+            $treatmentIds = array_values(array_unique(array_filter(
+                $validated['treatment_ids'] ?? (isset($validated['treatment_id']) ? [$validated['treatment_id']] : [])
+            )));
+
+            foreach ($treatmentIds as $treatmentId) {
+                $this->validateTreatmentTenant($treatmentId);
             }
+
+            $validated['treatment_id'] = $treatmentIds[0] ?? null;
+            unset($validated['treatment_ids']);
             $validated['patient_package_id'] = null;
         }
 
@@ -349,7 +383,7 @@ class AestheticSessionController extends Controller
             return back()->withInput()->withErrors(['status' => $error]);
         }
 
-        DB::transaction(function () use ($aestheticSession, $validated, $request) {
+        DB::transaction(function () use ($aestheticSession, $validated, $request, $mode, $treatmentIds) {
             // If inventory_items are submitted (full edit form), restore old stock,
             // delete old usages, and re-record from the form.
             if ($request->has('inventory_items')) {
@@ -370,6 +404,9 @@ class AestheticSessionController extends Controller
             }
 
             $aestheticSession->update($validated);
+
+            // Keep the multi-treatment pivot in sync with the (possibly changed) mode.
+            $aestheticSession->treatments()->sync($mode === 'direct' ? $treatmentIds : []);
         });
 
         return redirect()->route('aesthetic.sessions.show', $aestheticSession)
@@ -388,6 +425,7 @@ class AestheticSessionController extends Controller
             'patientPackage.package.treatments',
             'patient',
             'treatment',
+            'treatments',
         ]);
 
         if (!$aestheticSession->next_due_date) {
@@ -735,8 +773,8 @@ class AestheticSessionController extends Controller
 
     private function getSessionTreatments(AestheticSession $session)
     {
-        if ($session->isDirectSession && $session->treatment) {
-            return collect([$session->treatment]);
+        if ($session->isDirectSession) {
+            return $session->effective_treatments;
         }
 
         $package = $session->patientPackage?->package;

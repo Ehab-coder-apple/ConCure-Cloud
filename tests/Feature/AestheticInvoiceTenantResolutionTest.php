@@ -53,6 +53,7 @@ class AestheticInvoiceTenantResolutionTest extends TestCase
         Schema::dropIfExists('dental_treatments');
         Schema::dropIfExists('receipts');
         Schema::dropIfExists('expenses');
+        Schema::dropIfExists('aesthetic_session_treatment');
         Schema::dropIfExists('aesthetic_sessions');
         Schema::dropIfExists('patient_packages');
         Schema::dropIfExists('aesthetic_treatments');
@@ -233,6 +234,13 @@ class AestheticInvoiceTenantResolutionTest extends TestCase
             $table->string('status')->default('completed');
             $table->timestamps();
             $table->softDeletes();
+        });
+
+        Schema::create('aesthetic_session_treatment', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('session_id');
+            $table->unsignedBigInteger('treatment_id');
+            $table->timestamps();
         });
 
         Schema::create('aesthetic_invoices', function (Blueprint $table) {

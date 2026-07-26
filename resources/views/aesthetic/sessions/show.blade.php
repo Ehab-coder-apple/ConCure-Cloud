@@ -31,7 +31,7 @@
                             - {{ $aestheticSession->patientPackage?->package?->name ?? __('Package') }}
                         @else
                             {{ $aestheticSession->patient?->first_name }} {{ $aestheticSession->patient?->last_name }}
-                            @if($aestheticSession->treatment)- {{ $aestheticSession->treatment->name }}@endif
+                            @if($aestheticSession->effective_treatments->isNotEmpty())- {{ $aestheticSession->effective_treatments->pluck('name')->implode(', ') }}@endif
                         @endif
                     </p>
                     @if($aestheticSession->assigned_user_id || $aestheticSession->external_practitioner_name)
@@ -142,7 +142,15 @@
                                 @endif
                                 <small class="text-muted">{{ __('Package Treatments') }}</small>
                             @else
-                                <h5 class="mb-1">{{ $aestheticSession->treatment?->name ?? '-' }}</h5>
+                                @if($aestheticSession->effective_treatments->isNotEmpty())
+                                    <h5 class="mb-1">
+                                        @foreach($aestheticSession->effective_treatments as $et)
+                                            {{ $et->name }}{{ !$loop->last ? ', ' : '' }}
+                                        @endforeach
+                                    </h5>
+                                @else
+                                    <h5 class="mb-1">-</h5>
+                                @endif
                                 <small class="text-muted">{{ __('Direct Treatment') }}</small>
                             @endif
                         </div>
