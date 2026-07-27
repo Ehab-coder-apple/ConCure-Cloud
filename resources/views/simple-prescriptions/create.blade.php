@@ -310,6 +310,29 @@ function initMedicineSelect2(selectEl) {
         allowClear: true,
         width: '100%',
         minimumInputLength: 1,
+        tags: true,
+        // If the typed search term has no match in the medicine database,
+        // let the user create it inline as a custom/manual medicine entry
+        // without leaving the prescription page.
+        createTag: function (params) {
+            const term = $.trim(params.term);
+            if (term === '') {
+                return undefined;
+            }
+
+            const alreadyExists = Array.from(selectEl.options).some(function (opt) {
+                return opt.value && opt.value !== 'custom' && opt.value.toLowerCase() === term.toLowerCase();
+            });
+            if (alreadyExists) {
+                return undefined;
+            }
+
+            return {
+                id: 'new:' + term,
+                text: term + ' ({{ __('Add as new medicine') }})',
+                newTag: true
+            };
+        },
         language: {
             noResults: function() {
                 return '{{ __("No medicines found") }}';
