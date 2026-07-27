@@ -356,7 +356,10 @@
         }
     });
 })();
+</script>
+@endif
 
+<script>
 // Toggle between package and direct treatment modes
 (function () {
     const modePackage = document.getElementById('mode_package');
@@ -414,7 +417,6 @@
 	    handleAssignedChange();
 	})();
 </script>
-@endif
 
 <script>
 // Multi-select treatment dropdown for Direct Treatment sessions
