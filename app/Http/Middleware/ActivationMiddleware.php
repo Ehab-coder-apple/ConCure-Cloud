@@ -47,6 +47,15 @@ class ActivationMiddleware
                                ->with('error', 'Your clinic requires activation. Please contact support.');
             }
 
+            // Ensure the clinic has a tenant_id backfilled as early as possible.
+            // Several modules (e.g. Aesthetic) scope their data by tenant_id via
+            // Auth::user()->accessibleTenantIds(), which resolves to an empty
+            // set (hiding all data, including dropdown options) when the
+            // clinic's tenant_id column has never been generated.
+            if (empty($user->clinic->tenant_id)) {
+                $user->clinic->ensureTenantId();
+            }
+
             // Subscription checks removed - no longer needed
 
             // Trial system removed - no longer needed
