@@ -1,0 +1,333 @@
+/**
+ * Custom Medicine Feature - CSS Styles
+ * For projects not using Tailwind CSS
+ * Include this stylesheet in your project
+ */
+
+/* Medicine Input Container */
+.medicine-input-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background-color: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Medicine Input Header */
+.medicine-input-container h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #1f2937;
+}
+
+/* Remove Button */
+.medicine-remove-btn {
+  color: #ef4444;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s ease-in-out;
+}
+
+.medicine-remove-btn:hover {
+  color: #dc2626;
+}
+
+/* Label Styles */
+.medicine-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #374151;
+}
+
+/* Custom Entry Badge */
+.custom-entry-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #dbeafe;
+  color: #1e40af;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Input Fields */
+.medicine-input,
+.medicine-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.15s ease-in-out;
+}
+
+.medicine-input:focus,
+.medicine-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.medicine-input::placeholder,
+.medicine-textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Search Input Container */
+.medicine-search-container {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+/* Clear Button (X) */
+.medicine-clear-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s ease-in-out;
+}
+
+.medicine-clear-btn:hover {
+  color: #6b7280;
+}
+
+/* Dropdown Container */
+.medicine-dropdown {
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 
+              0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  max-height: 256px;
+  overflow-y: auto;
+}
+
+/* Dropdown Item */
+.medicine-dropdown-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.medicine-dropdown-item:hover {
+  background-color: #f3f4f6;
+}
+
+.medicine-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+/* Medicine Name in Dropdown */
+.medicine-dropdown-name {
+  font-weight: 500;
+  font-size: 14px;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+/* Medicine Details in Dropdown */
+.medicine-dropdown-details {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Add Custom Medicine Button in Dropdown */
+.add-custom-dropdown-btn {
+  padding: 12px 16px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  color: #2563eb;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.add-custom-dropdown-btn:hover {
+  background-color: #eff6ff;
+}
+
+/* No Results Container */
+.medicine-no-results {
+  padding: 16px;
+  text-align: center;
+}
+
+.medicine-no-results-text {
+  color: #6b7280;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+/* Add Custom Medicine Button (Primary) */
+.add-custom-primary-btn {
+  width: 100%;
+  padding: 12px 24px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.add-custom-primary-btn:hover {
+  background-color: #2563eb;
+  transform: scale(1.02);
+}
+
+/* Grid Layout for Dosage/Frequency/Duration */
+.medicine-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Add Medicine Button */
+.add-medicine-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.add-medicine-btn:hover {
+  background-color: #2563eb;
+}
+
+/* Form Actions */
+.prescription-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+/* Cancel Button */
+.cancel-btn {
+  padding: 12px 24px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.cancel-btn:hover {
+  background-color: #f9fafb;
+}
+
+/* Save/Submit Button */
+.submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.submit-btn:hover {
+  background-color: #2563eb;
+}
+
+.submit-btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .medicine-fields-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .medicine-input-container {
+    padding: 12px;
+  }
+  
+  .prescription-form-actions {
+    flex-direction: column;
+  }
+  
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
+  }
+}
+
+/* Loading State */
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spinner 0.6s linear infinite;
+}
+
+@keyframes spinner {
+  to { transform: rotate(360deg); }
+}
+
+/* Accessibility */
+.medicine-input:focus-visible,
+.medicine-textarea:focus-visible,
+.add-custom-primary-btn:focus-visible,
+.submit-btn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+  .medicine-remove-btn,
+  .add-medicine-btn,
+  .prescription-form-actions {
+    display: none;
+  }
+  
+  .medicine-dropdown {
+    display: none !important;
+  }
+  
+  .custom-entry-badge {
+    border: 1px solid #1e40af;
+  }
+}
