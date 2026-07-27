@@ -1,0 +1,669 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\WhatsAppService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use App\Models\Patient;
+
+class WhatsAppController extends Controller
+{
+    protected $whatsappService;
+
+    public function __construct(WhatsAppService $whatsappService)
+    {
+        $this->whatsappService = $whatsappService;
+    }
+
+    /**
+     * Show WhatsApp configuration and status
+     */
+    public function index()
+    {
+        $user = auth()->user();
+
+        $status = $this->whatsappService->getProviderStatus();
+
+        // Try to get server status if web provider is configured
+        $serverStatus = null;
+        if (($status['provider'] ?? null) === 'web' && ($status['configured'] ?? false)) {
+            $apiUrl = env('WHATSAPP_API_URL');
+            if (!empty($apiUrl)) {
+                try {
+                    $response = Http::timeout(5)->get(rtrim($apiUrl, '/') . '/status');
+                    if ($response->successful()) {
+                        $serverStatus = $response->json();
+                    }
+                } catch (\Exception $e) {
+                    $serverStatus = ['error' => $e->getMessage()];
+                }
+            }
+        }
+
+        // Get clinic's WhatsApp number for pre-filling test form
+        $clinicWhatsApp = $this->whatsappService->getClinicWhatsAppNumber();
+
+        // Get clinic's Meta WhatsApp configuration for the view
+        $metaConfig = [];
+        if ($user->clinic && isset($user->clinic->settings['whatsapp'])) {
+            $wa = $user->clinic->settings['whatsapp'];
+            if (($wa['provider'] ?? '') === 'meta') {
+                $metaConfig = [
+                    'configured' => true,
+                    'phone_number_id' => $wa['meta_phone_number_id'] ?? '',
+                    'phone_display' => $wa['meta_phone_display'] ?? null,
+                    'verified_name' => $wa['meta_verified_name'] ?? null,
+                    'configured_at' => $wa['configured_at'] ?? null,
+                ];
+            }
+        }
+
+        return view('whatsapp.index', compact('status', 'serverStatus', 'clinicWhatsApp', 'metaConfig'));
+    }
+
+    /**
+     * Test WhatsApp message sending
+     */
+    public function test(Request $request)
+    {
+        $user = auth()->user();
+
+
+        $request->validate([
+            'phone' => 'required|string',
+            'message' => 'required|string|max:1000',
+        ]);
+
+        $result = $this->whatsappService->sendMessage(
+            $request->phone,
+            $request->message
+        );
+
+        if ($result['success']) {
+            if (isset($result['whatsapp_url'])) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Opening WhatsApp Web to send message...',
+                    'whatsapp_url' => $result['whatsapp_url'],
+                    'auto_open' => true,
+                ]);
+            } else if (isset($result['demo_mode']) && $result['demo_mode']) {
+                // In demo mode, also provide WhatsApp Web URL for actual sending
+                $whatsappUrl = $this->whatsappService->generateWhatsAppWebUrl(
+                    $request->phone,
+                    $request->message
+                );
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Demo mode: Opening WhatsApp Web to send real message...',
+                    'whatsapp_url' => $whatsappUrl,
+                    'auto_open' => true,
+                    'demo_mode' => true,
+                ]);
+            } else {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Test message sent successfully!',
+                ]);
+            }
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => $result['error'] ?? 'Failed to send test message',
+            ], 400);
+        }
+    }
+
+    /**
+     * Setup WhatsApp Web connection automatically
+     */
+    public function setupWhatsAppWeb(Request $request)
+    {
+        $user = auth()->user();
+
+
+        try {
+            // Generate WhatsApp Web URL for automatic setup
+            $phoneNumber = $request->input('phone_number', '');
+            $message = $request->input('message', 'Setting up WhatsApp for ' . ($user->clinic->name ?? 'clinic'));
+
+            // Create WhatsApp Web URL
+            $whatsappUrl = $this->whatsappService->generateWhatsAppWebUrl($phoneNumber, $message);
+
+            // Store setup status in session
+            session(['whatsapp_setup_initiated' => true]);
+            session(['whatsapp_setup_time' => now()]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'WhatsApp URL generated. Opening WhatsApp Web...',
+                'whatsapp_url' => $whatsappUrl,
+                'auto_open' => true
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to setup WhatsApp: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Configure Twilio WhatsApp settings
+     */
+    public function configureTwilio(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'twilio_sid' => 'required|string',
+            'twilio_token' => 'required|string',
+            'twilio_from' => 'required|string',
+        ]);
+
+        try {
+            $clinic = $user->clinic;
+            if (!$clinic) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Clinic not found'
+                ], 404);
+            }
+
+            // Store Twilio configuration in clinic settings
+            $settings = $clinic->settings ?? [];
+            $settings['whatsapp'] = [
+                'provider' => 'twilio',
+                'twilio_sid' => $request->twilio_sid,
+                'twilio_token' => $request->twilio_token,
+                'twilio_from' => $request->twilio_from,
+                'configured_at' => now()->toDateTimeString(),
+                'configured_by' => $user->id,
+            ];
+
+            $clinic->settings = $settings;
+            $clinic->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Twilio configuration saved successfully! You can now send WhatsApp messages.'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to save Twilio configuration', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save configuration: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Configure Meta WhatsApp Cloud API settings
+     */
+    public function configureMeta(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'meta_phone_number_id' => 'required|string',
+            'meta_access_token' => 'required|string',
+        ]);
+
+        try {
+            $clinic = $user->clinic;
+            if (!$clinic) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Clinic not found'
+                ], 404);
+            }
+
+            // Verify the credentials by calling Meta API
+            $verifyResponse = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $request->meta_access_token,
+            ])->get("https://graph.facebook.com/v21.0/{$request->meta_phone_number_id}");
+
+            if (!$verifyResponse->successful()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid credentials. Please check your Phone Number ID and Access Token. Meta API returned: ' . $verifyResponse->body(),
+                ], 400);
+            }
+
+            $phoneInfo = $verifyResponse->json();
+
+            // Store Meta configuration in clinic settings
+            $settings = $clinic->settings ?? [];
+            $settings['whatsapp'] = [
+                'provider' => 'meta',
+                'meta_phone_number_id' => $request->meta_phone_number_id,
+                'meta_access_token' => $request->meta_access_token,
+                'meta_phone_display' => $phoneInfo['display_phone_number'] ?? null,
+                'meta_verified_name' => $phoneInfo['verified_name'] ?? null,
+                'configured_at' => now()->toDateTimeString(),
+                'configured_by' => $user->id,
+            ];
+
+            $clinic->settings = $settings;
+            $clinic->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Meta WhatsApp Cloud API configured successfully! Your clinic can now send WhatsApp messages.',
+                'phone_display' => $phoneInfo['display_phone_number'] ?? null,
+                'verified_name' => $phoneInfo['verified_name'] ?? null,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to save Meta WhatsApp configuration', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save configuration: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Check WhatsApp setup status
+     */
+    public function checkSetupStatus()
+    {
+        $user = auth()->user();
+
+
+        $setupInitiated = session('whatsapp_setup_initiated', false);
+        $setupTime = session('whatsapp_setup_time');
+
+        // Consider setup complete if initiated more than 30 seconds ago
+        $setupComplete = $setupInitiated && $setupTime && now()->diffInSeconds($setupTime) > 30;
+
+        if ($setupComplete) {
+            // Mark WhatsApp as configured
+            session(['whatsapp_configured' => true]);
+        }
+
+        return response()->json([
+            'setup_initiated' => $setupInitiated,
+            'setup_complete' => $setupComplete,
+            'configured' => session('whatsapp_configured', false),
+            'time_elapsed' => $setupTime ? now()->diffInSeconds($setupTime) : 0
+        ]);
+    }
+
+    /**
+     * Get WhatsApp server QR code (for web provider)
+     */
+    public function qrCode()
+    {
+        $user = auth()->user();
+
+
+        $apiUrl = env('WHATSAPP_API_URL');
+        if (!$apiUrl) {
+            return response()->json([
+                'success' => false,
+                'message' => 'WhatsApp API URL not configured',
+            ], 400);
+        }
+
+        try {
+            $response = Http::timeout(10)->get($apiUrl . '/qr');
+
+            if ($response->successful()) {
+                return response($response->body())
+                    ->header('Content-Type', 'text/html');
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to get QR code from server',
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'WhatsApp server is not running: ' . $e->getMessage(),
+            ], 500);
+        }
+
+    }
+
+    /**
+     * Return patients (JSON) filtered by WhatsApp availability and status
+     */
+    public function patientsList(Request $request)
+    {
+        $user = auth()->user();
+        $status = $request->input('status', 'active'); // active|inactive|all
+        $type = $request->input('type', 'both'); // new|updated|both
+        $since = $request->input('since');
+        try {
+            $sinceDate = $since ? \Carbon\Carbon::parse($since)->startOfDay() : now()->subDays(30)->startOfDay();
+        } catch (\Throwable $e) {
+            $sinceDate = now()->subDays(30)->startOfDay();
+        }
+
+        // Build base query: clinic scope (if any) + has WhatsApp
+        $base = Patient::query();
+        if (!empty($user->clinic_id)) {
+            $base->where('clinic_id', $user->clinic_id);
+        }
+        $base->whereNotNull('whatsapp_phone')->where('whatsapp_phone', '!=', '');
+
+        // Count with WhatsApp only (no status/date filters)
+        $countWhatsApp = (clone $base)->count();
+
+        // Apply status filter
+        $statusQuery = clone $base;
+        if ($status === 'active') {
+            $statusQuery->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $statusQuery->where('is_active', false);
+        }
+        $countAfterStatus = (clone $statusQuery)->count();
+
+        // Apply date filters (registration/updates)
+        $finalQuery = clone $statusQuery;
+        if ($type === 'new') {
+            $finalQuery->where('created_at', '>=', $sinceDate);
+        } elseif ($type === 'updated') {
+            $finalQuery->where('updated_at', '>=', $sinceDate);
+        } else { // both
+            $finalQuery->where(function($q) use ($sinceDate){
+                $q->where('created_at', '>=', $sinceDate)
+                  ->orWhere('updated_at', '>=', $sinceDate);
+            });
+        }
+
+        $patients = $finalQuery->orderBy('first_name')
+            ->orderBy('last_name')
+            ->limit(1000)
+            ->get(['id','first_name','last_name','whatsapp_phone','is_active']);
+
+        $out = $patients->map(function($p){
+            $display = preg_replace('/\s+/', ' ', trim((string)$p->whatsapp_phone));
+            return [
+                'id' => $p->id,
+                'name' => trim(($p->first_name.' '.$p->last_name)) ?: ('#'.$p->id),
+                'phone' => $display,
+                'is_active' => (bool)$p->is_active,
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'patients' => $out,
+            'meta' => [
+                'counts' => [
+                    'with_whatsapp' => $countWhatsApp,
+                    'after_status' => $countAfterStatus,
+                    'final' => $out->count(),
+                ],
+                'filters' => [
+                    'status' => $status,
+                    'type' => $type,
+                    'since' => $sinceDate->toDateString(),
+                    'clinic_id' => $user->clinic_id,
+                ],
+            ],
+        ]);
+    }
+
+    // ──────────────────────────────────────────────────────
+    // WPPConnect — self-hosted free WhatsApp integration
+    // ──────────────────────────────────────────────────────
+
+    /**
+     * Save WPPConnect configuration for the current clinic.
+     */
+    public function configureWppconnect(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'wppconnect_url' => 'required|url',
+            'wppconnect_session' => 'nullable|string|max:100',
+        ]);
+
+        try {
+            $clinic = $user->clinic;
+            if (!$clinic) {
+                return response()->json(['success' => false, 'message' => 'Clinic not found'], 404);
+            }
+
+            $sessionName = $request->wppconnect_session ?: 'clinic_' . $clinic->id;
+
+            // Start (or retrieve) a session on the WPPConnect server and get the API key
+            $apiUrl = rtrim($request->wppconnect_url, '/');
+            $secretKey = config('whatsapp.providers.wppconnect.api_key')
+                         ?: env('WPPCONNECT_SECRET_KEY', 'THISISMYSECURETOKEN');
+
+            $startResponse = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->post("{$apiUrl}/api/{$sessionName}/{$secretKey}/generate-token");
+
+            if (!$startResponse->successful()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Could not connect to WPPConnect server: ' . $startResponse->body(),
+                ], 400);
+            }
+
+            $tokenData = $startResponse->json();
+            $apiKey = $tokenData['token'] ?? null;
+
+            // Save to clinic settings
+            $settings = $clinic->settings ?? [];
+            $settings['whatsapp'] = [
+                'provider' => 'wppconnect',
+                'wppconnect_url' => $apiUrl,
+                'wppconnect_session' => $sessionName,
+                'wppconnect_api_key' => $apiKey,
+                'configured_at' => now()->toDateTimeString(),
+                'configured_by' => $user->id,
+            ];
+            $clinic->settings = $settings;
+            $clinic->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'WPPConnect configuration saved! Now scan the QR code to connect your WhatsApp.',
+                'session' => $sessionName,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to save WPPConnect configuration', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save configuration: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Start a WPPConnect session and return the QR code for scanning.
+     */
+    public function wppconnectQr()
+    {
+        $user = auth()->user();
+        $clinic = $user->clinic;
+
+        if (!$clinic) {
+            return response()->json(['success' => false, 'message' => 'Clinic not found'], 404);
+        }
+
+        $wa = $clinic->settings['whatsapp'] ?? [];
+        $apiUrl = $wa['wppconnect_url'] ?? null;
+        $session = $wa['wppconnect_session'] ?? null;
+        $apiKey = $wa['wppconnect_api_key'] ?? null;
+
+        if (!$apiUrl || !$session) {
+            return response()->json([
+                'success' => false,
+                'message' => 'WPPConnect is not configured for this clinic. Please save the settings first.',
+            ], 400);
+        }
+
+        try {
+            $headers = ['Accept' => 'application/json'];
+            if ($apiKey) {
+                $headers['Authorization'] = 'Bearer ' . $apiKey;
+            }
+
+            // Start session (this makes WPPConnect generate a QR code)
+            $startRes = Http::withHeaders($headers)
+                ->timeout(15)
+                ->post("{$apiUrl}/api/{$session}/start-session");
+
+            $body = $startRes->json();
+            $qrCode = $body['qrcode'] ?? $body['urlcode'] ?? null;
+            $status = $body['status'] ?? 'unknown';
+
+            // If already connected
+            if (in_array($status, ['CONNECTED', 'isLogged'])) {
+                return response()->json([
+                    'success' => true,
+                    'connected' => true,
+                    'message' => 'WhatsApp is already connected!',
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'connected' => false,
+                'qrcode' => $qrCode,
+                'status' => $status,
+                'message' => 'Scan the QR code with your WhatsApp app.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('WPPConnect QR code fetch failed', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not reach WPPConnect server: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Check the current connection status of the clinic's WPPConnect session.
+     */
+    public function wppconnectStatus()
+    {
+        $user = auth()->user();
+        $clinic = $user->clinic;
+
+        if (!$clinic) {
+            return response()->json(['success' => false, 'message' => 'Clinic not found'], 404);
+        }
+
+        $wa = $clinic->settings['whatsapp'] ?? [];
+        $apiUrl = $wa['wppconnect_url'] ?? null;
+        $session = $wa['wppconnect_session'] ?? null;
+        $apiKey = $wa['wppconnect_api_key'] ?? null;
+
+        if (!$apiUrl || !$session) {
+            return response()->json(['success' => false, 'connected' => false, 'message' => 'Not configured']);
+        }
+
+        try {
+            $headers = ['Accept' => 'application/json'];
+            if ($apiKey) {
+                $headers['Authorization'] = 'Bearer ' . $apiKey;
+            }
+
+            $res = Http::withHeaders($headers)->timeout(10)->get("{$apiUrl}/api/{$session}/check-connection-session");
+            $data = $res->json();
+            $connected = ($data['status'] ?? false) === true || ($data['message'] ?? '') === 'Connected';
+
+            return response()->json([
+                'success' => true,
+                'connected' => $connected,
+                'status' => $data['status'] ?? 'unknown',
+                'message' => $connected ? 'WhatsApp is connected and ready to send messages.' : 'WhatsApp is not connected. Please scan the QR code.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'connected' => false,
+                'message' => 'Cannot reach WPPConnect server: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Broadcast a WhatsApp message to selected patients
+     */
+    public function broadcast(Request $request)
+    {
+        $user = auth()->user();
+
+        $data = $request->validate([
+            'patient_ids' => 'required|array|min:1',
+            'patient_ids.*' => 'integer',
+            'message' => 'required|string|max:2000',
+        ]);
+
+        $patientsQuery = Patient::query();
+        if (!empty($user->clinic_id)) {
+            $patientsQuery->where('clinic_id', $user->clinic_id);
+        }
+        $patients = $patientsQuery
+            ->whereIn('id', $data['patient_ids'])
+            ->whereNotNull('whatsapp_phone')
+            ->where('whatsapp_phone','!=','')
+            ->get();
+
+        $results = [ 'sent' => [], 'pending' => [], 'failed' => [] ];
+
+        foreach ($patients as $p) {
+            $res = $this->whatsappService->sendMessage($p->whatsapp_phone, $data['message']);
+
+            // Log each attempt
+            try {
+                $status = $res['success'] ? ($res['status'] ?? 'sent') : 'failed';
+                $this->whatsappService->logCommunication(
+                    $p->id,
+                    $user->clinic_id,
+                    $p->whatsapp_phone,
+                    $data['message'],
+                    null,
+                    null,
+                    $status,
+                    $res['error'] ?? null,
+                    $res['message_id'] ?? null,
+                    $res,
+                    $user->id
+                );
+            } catch (\Throwable $e) { /* ignore logging errors */ }
+
+            if (!empty($res['success'])) {
+                if (!empty($res['whatsapp_url'])) {
+                    $results['pending'][] = [
+                        'patient_id' => $p->id,
+                        'name' => trim(($p->first_name.' '.$p->last_name)),
+                        'phone' => $p->whatsapp_phone,
+                        'url' => $res['whatsapp_url'],
+                    ];
+                } else {
+                    $results['sent'][] = [ 'patient_id' => $p->id, 'name' => trim(($p->first_name.' '.$p->last_name)), 'phone' => $p->whatsapp_phone ];
+                }
+            } else {
+                $results['failed'][] = [ 'patient_id' => $p->id, 'name' => trim(($p->first_name.' '.$p->last_name)), 'phone' => $p->whatsapp_phone, 'error' => $res['error'] ?? 'unknown' ];
+            }
+        }
+
+        return response()->json(['success' => true] + $results);
+    }
+
+}

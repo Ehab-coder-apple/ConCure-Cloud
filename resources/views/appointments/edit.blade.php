@@ -1,0 +1,323 @@
+@extends('layouts.app')
+
+@section('title', __('Edit Appointment'))
+
+@section('content')
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-calendar-edit text-primary me-2"></i>
+                        {{ __('Edit Appointment') }}
+                    </h1>
+                    <p class="text-muted mb-0">{{ __('Update appointment details') }} - {{ $appointment->appointment_number }}</p>
+                </div>
+                <div>
+                    <a href="{{ route('appointments.show', $appointment->id) }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-eye me-1"></i>
+                        {{ __('View Appointment') }}
+                    </a>
+                    <a href="{{ route('appointments.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        {{ __('Back to Appointments') }}
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="fas fa-calendar-check me-2"></i>
+                                {{ __('Appointment Details') }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form action="{{ route('appointments.update', $appointment->id) }}" method="POST">
+                                @csrf
+                                @method('PUT')
+
+                                <div class="row">
+                                    <!-- Patient Selection -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
+                                        <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id" required>
+                                            <option value="">{{ __('Select patient...') }}</option>
+                                            @foreach($patients as $patient)
+                                                <option value="{{ $patient->id }}" {{ old('patient_id', $appointment->patient_id) == $patient->id ? 'selected' : '' }}>
+                                                    {{ $patient->first_name }} {{ $patient->last_name }} ({{ $patient->patient_id }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('patient_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Doctor Selection -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="doctor_id" class="form-label">{{ __('Doctor') }} <span class="text-danger">*</span></label>
+                                        <select class="form-select @error('doctor_id') is-invalid @enderror" id="doctor_id" name="doctor_id" required>
+                                            <option value="">{{ __('Select doctor...') }}</option>
+                                            @foreach($doctors as $doctor)
+                                                <option value="{{ $doctor->id }}" {{ old('doctor_id', $appointment->doctor_id) == $doctor->id ? 'selected' : '' }}>
+                                                    Dr. {{ $doctor->first_name }} {{ $doctor->last_name }}{{ ($doctor->role ?? null) === 'admin' ? ' (Admin)' : '' }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('doctor_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Appointment Date -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="appointment_date" class="form-label">{{ __('Appointment Date') }} <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control @error('appointment_date') is-invalid @enderror" 
+                                               id="appointment_date" name="appointment_date" 
+                                               value="{{ old('appointment_date', \Carbon\Carbon::parse($appointment->appointment_datetime)->format('Y-m-d')) }}" 
+                                               required>
+                                        @error('appointment_date')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Appointment Time (optional; midnight = walk-in, render as empty) -->
+                                    @php
+                                        $apptTime = \Carbon\Carbon::parse($appointment->appointment_datetime);
+                                        $apptTimeValue = $apptTime->format('H:i:s') === '00:00:00' ? '' : $apptTime->format('H:i');
+                                    @endphp
+                                    <div class="col-md-6 mb-3">
+                                        <label for="appointment_time" class="form-label">{{ __('Appointment Time') }}</label>
+                                        <input type="time" class="form-control @error('appointment_time') is-invalid @enderror"
+                                               id="appointment_time" name="appointment_time"
+                                               value="{{ old('appointment_time', $apptTimeValue) }}">
+                                        <small class="form-text text-muted">{{ __('Leave empty for walk-in / first-come basis.') }}</small>
+                                        @error('appointment_time')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Appointment Type -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="appointment_type" class="form-label">{{ __('Appointment Type') }}</label>
+                                        <select class="form-select @error('appointment_type') is-invalid @enderror" id="appointment_type" name="appointment_type">
+                                            <option value="">{{ __('Select type...') }}</option>
+                                            <option value="consultation" {{ old('appointment_type', $appointment->type) == 'consultation' ? 'selected' : '' }}>{{ __('Consultation') }}</option>
+                                            <option value="follow_up" {{ old('appointment_type', $appointment->type) == 'follow_up' ? 'selected' : '' }}>{{ __('Follow Up') }}</option>
+                                            <option value="checkup" {{ old('appointment_type', $appointment->type) == 'checkup' ? 'selected' : '' }}>{{ __('Checkup') }}</option>
+                                            <option value="procedure" {{ old('appointment_type', $appointment->type) == 'procedure' ? 'selected' : '' }}>{{ __('Procedure') }}</option>
+                                            <option value="emergency" {{ old('appointment_type', $appointment->type) == 'emergency' ? 'selected' : '' }}>{{ __('Emergency') }}</option>
+                                            <option value="routine_checkup" {{ old('appointment_type', $appointment->type) == 'routine_checkup' ? 'selected' : '' }}>{{ __('Routine Checkup') }}</option>
+                                            <option value="other" {{ old('appointment_type', $appointment->type) == 'other' ? 'selected' : '' }}>{{ __('Other') }}</option>
+                                        </select>
+                                        @error('appointment_type')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Duration -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="duration" class="form-label">{{ __('Duration (minutes)') }}</label>
+                                        <select class="form-select @error('duration') is-invalid @enderror" id="duration" name="duration">
+                                            <option value="15" {{ old('duration', $appointment->duration_minutes) == '15' ? 'selected' : '' }}>15 {{ __('minutes') }}</option>
+                                            <option value="30" {{ old('duration', $appointment->duration_minutes) == '30' ? 'selected' : '' }}>30 {{ __('minutes') }}</option>
+                                            <option value="45" {{ old('duration', $appointment->duration_minutes) == '45' ? 'selected' : '' }}>45 {{ __('minutes') }}</option>
+                                            <option value="60" {{ old('duration', $appointment->duration_minutes) == '60' ? 'selected' : '' }}>1 {{ __('hour') }}</option>
+                                            <option value="90" {{ old('duration', $appointment->duration_minutes) == '90' ? 'selected' : '' }}>1.5 {{ __('hours') }}</option>
+                                            <option value="120" {{ old('duration', $appointment->duration_minutes) == '120' ? 'selected' : '' }}>2 {{ __('hours') }}</option>
+                                        </select>
+                                        @error('duration')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Status -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="status" class="form-label">{{ __('Status') }} <span class="text-danger">*</span></label>
+                                        <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" required>
+                                            <option value="scheduled" {{ old('status', $appointment->status) == 'scheduled' ? 'selected' : '' }}>{{ __('Scheduled') }}</option>
+                                            <option value="confirmed" {{ old('status', $appointment->status) == 'confirmed' ? 'selected' : '' }}>{{ __('Confirmed') }}</option>
+                                            <option value="completed" {{ old('status', $appointment->status) == 'completed' ? 'selected' : '' }}>{{ __('Completed') }}</option>
+                                            <option value="cancelled" {{ old('status', $appointment->status) == 'cancelled' ? 'selected' : '' }}>{{ __('Cancelled') }}</option>
+                                        </select>
+                                        @error('status')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Notes -->
+                                    <div class="col-12 mb-3">
+                                        <label for="notes" class="form-label">{{ __('Notes') }}</label>
+                                        <textarea class="form-control @error('notes') is-invalid @enderror"
+                                                  id="notes" name="notes" rows="3"
+                                                  placeholder="{{ __('Additional notes or reason for appointment...') }}">{{ old('notes', $appointment->notes) }}</textarea>
+                                        @error('notes')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Payment Collection (Optional) -->
+                                    <div class="col-12">
+                                        <hr class="my-4">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-receipt me-2"></i>
+                                            {{ __('Payment Collection') }} <span class="text-muted">({{ __('Optional') }})</span>
+                                        </h6>
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label for="fees_collected" class="form-label">{{ __('Fees Collected') }}</label>
+                                        <input type="number"
+                                               step="0.01"
+                                               min="0"
+                                               class="form-control @error('fees_collected') is-invalid @enderror"
+                                               id="fees_collected"
+                                               name="fees_collected"
+                                               value="{{ old('fees_collected', $receipt ? $receipt->amount : '0.00') }}"
+                                               placeholder="0.00">
+                                        @error('fees_collected')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-4 mb-3" id="payment_method_wrapper">
+                                        <label for="payment_method" class="form-label">{{ __('Payment Method') }}</label>
+                                        @php $apptPm = old('payment_method', $receipt ? $receipt->payment_method : 'cash'); @endphp
+                                        <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method">
+                                            <option value="cash" {{ $apptPm === 'cash' ? 'selected' : '' }}>{{ __('Cash') }}</option>
+                                            <option value="card" {{ $apptPm === 'card' ? 'selected' : '' }}>{{ __('Card') }}</option>
+                                            <option value="bank_transfer" {{ $apptPm === 'bank_transfer' ? 'selected' : '' }}>{{ __('Bank Transfer') }}</option>
+                                            <option value="check" {{ $apptPm === 'check' ? 'selected' : '' }}>{{ __('Check') }}</option>
+                                            <option value="other" {{ $apptPm === 'other' ? 'selected' : '' }}>{{ __('Other') }}</option>
+                                        </select>
+                                        @error('payment_method')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-12 mb-3" id="payment_notes_wrapper">
+                                        <label for="payment_notes" class="form-label">{{ __('Payment Notes') }}</label>
+                                        <textarea class="form-control @error('payment_notes') is-invalid @enderror"
+                                                  id="payment_notes"
+                                                  name="payment_notes"
+                                                  rows="2"
+                                                  placeholder="{{ __('Additional payment details (optional)...') }}">{{ old('payment_notes', $receipt ? $receipt->notes : '') }}</textarea>
+                                        @error('payment_notes')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <a href="{{ route('appointments.show', $appointment->id) }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times me-1"></i>
+                                            {{ __('Cancel') }}
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>
+                                            {{ __('Update Appointment') }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Appointment Info Sidebar -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                {{ __('Current Appointment Info') }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <small class="text-muted">{{ __('Appointment Number') }}</small>
+                                <div class="fw-bold">{{ $appointment->appointment_number }}</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <small class="text-muted">{{ __('Current Status') }}</small>
+                                <div>
+                                    <span class="badge bg-{{ 
+                                        $appointment->status == 'completed' ? 'success' : 
+                                        ($appointment->status == 'cancelled' ? 'danger' : 
+                                        ($appointment->status == 'confirmed' ? 'primary' : 'secondary')) 
+                                    }}">
+                                        {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <small class="text-muted">{{ __('Current Date & Time') }}</small>
+                                <div>{{ \Carbon\Carbon::parse($appointment->appointment_datetime)->format('M d, Y g:i A') }}</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <small class="text-muted">{{ __('Current Duration') }}</small>
+                                <div>{{ $appointment->duration_minutes }} {{ __('minutes') }}</div>
+                            </div>
+
+                            <div class="mb-0">
+                                <small class="text-muted">{{ __('Last Updated') }}</small>
+                                <div>{{ \Carbon\Carbon::parse($appointment->updated_at)->format('M d, Y g:i A') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Select2 for patient and doctor dropdowns
+$(document).ready(function() {
+    // Initialize Select2 for patient dropdown with search
+    $('#patient_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select patient...") }}',
+        allowClear: true,
+        width: '100%',
+        minimumResultsForSearch: Infinity,
+        language: {
+            noResults: function() {
+                return '{{ __("No patients found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
+
+    // Initialize Select2 for doctor dropdown with search
+    $('#doctor_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select doctor...") }}',
+        allowClear: true,
+        width: '100%',
+        minimumResultsForSearch: Infinity,
+        language: {
+            noResults: function() {
+                return '{{ __("No doctors found") }}';
+            },
+            searching: function() {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
+});
+</script>
+@endsection

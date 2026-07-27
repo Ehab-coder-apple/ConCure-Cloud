@@ -1,0 +1,292 @@
+@extends('master.layouts.app')
+
+@section('title', 'Clinic Management')
+
+@section('content')
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-hospital me-2"></i>
+                        Clinic Management
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Manage all registered clinics
+                        @if(auth()->user()?->isMasterAdmin())
+                            · You can create {{ auth()->user()->remainingManagedClinicCreationSlots() }} more clinic(s) under your assigned quota
+                        @endif
+                    </p>
+                </div>
+                @if(auth()->user()?->canCreateManagedClinic())
+                    <div>
+                        <a href="{{ route('master.clinics.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Add New Clinic
+                        </a>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+	            <form method="GET" action="{{ route('master.clinics.index') }}">
+	                <div class="row g-3">
+	                    <div class="col-md-4">
+	                        <label for="search" class="form-label">Search</label>
+	                        <input type="text" 
+	                               class="form-control" 
+	                               id="search" 
+	                               name="search" 
+	                               value="{{ request('search') }}" 
+	                               placeholder="Search by name, email, or phone">
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="status" class="form-label">Status</label>
+	                        <select class="form-select" id="status" name="status">
+	                            <option value="">All Statuses</option>
+	                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+	                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+	                        </select>
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="clinic_type" class="form-label">Clinic Type</label>
+	                        <select class="form-select" id="clinic_type" name="clinic_type">
+	                            <option value="">All Clinics</option>
+	                            <option value="tenant" {{ request('clinic_type') === 'tenant' ? 'selected' : '' }}>Tenant Clinics Only</option>
+	                            <option value="demo" {{ request('clinic_type') === 'demo' ? 'selected' : '' }}>Demo Clinics Only</option>
+	                        </select>
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="speciality" class="form-label">Speciality</label>
+	                        <input type="text" list="speciality-list" class="form-control" id="speciality" name="speciality" value="{{ request('speciality') }}" placeholder="All Specialities">
+	                        <datalist id="speciality-list">
+	                            @foreach(($specialities ?? []) as $sp)
+	                                <option value="{{ $sp }}">
+	                            @endforeach
+	                        </datalist>
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="city" class="form-label">City</label>
+	                        <input type="text" class="form-control" id="city" name="city" value="{{ request('city') }}" placeholder="City">
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="area" class="form-label">Area</label>
+	                        <input type="text" class="form-control" id="area" name="area" value="{{ request('area') }}" placeholder="Area">
+	                    </div>
+	                    <div class="col-md-2">
+	                        <label for="street" class="form-label">Street</label>
+	                        <input type="text" class="form-control" id="street" name="street" value="{{ request('street') }}" placeholder="Street">
+	                    </div>
+	                    <div class="col-md-4">
+	                        <label class="form-label">&nbsp;</label>
+	                        <div class="d-flex gap-2">
+	                            <button type="submit" class="btn btn-outline-primary">
+	                                <i class="fas fa-search me-1"></i>
+	                                Filter
+	                            </button>
+	                            <a href="{{ route('master.clinics.index') }}" class="btn btn-outline-secondary">
+	                                <i class="fas fa-times me-1"></i>
+	                                Clear
+	                            </a>
+	                        </div>
+	                    </div>
+	                </div>
+	            </form>
+        </div>
+    </div>
+
+    <!-- Clinics Table -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">
+                Registered Clinics ({{ $clinics->total() }})
+            </h6>
+        </div>
+        <div class="card-body">
+            @if($clinics->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+	                            <tr>
+	                                <th>Clinic</th>
+	                                <th>Speciality</th>
+	                                <th>Contact</th>
+	                                <th>Address</th>
+	                                <th>Users</th>
+	                                <th>Status</th>
+	                                <th>Renewal</th>
+	                                <th>Created</th>
+	                                <th>Actions</th>
+	                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($clinics as $clinic)
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-primary me-3">
+                                                <i class="fas fa-hospital text-white"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-weight-bold">
+                                                    {{ $clinic->name }}
+                                                    @if($clinic->is_demo)
+                                                        <span class="badge bg-secondary ms-2" title="Demo clinic">Demo</span>
+                                                    @endif
+                                                </div>
+                                                <div class="text-muted small">ID: {{ $clinic->id }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+	                                    <td>
+	                                        {{ $clinic->speciality ?? '-' }}
+	                                    </td>
+                                    <td>
+                                        <div>
+                                            @if($clinic->email)
+                                                <div><i class="fas fa-envelope me-1"></i>{{ $clinic->email }}</div>
+                                            @endif
+                                            @if($clinic->phone)
+                                                <div><i class="fas fa-phone me-1"></i>{{ $clinic->phone }}</div>
+                                            @endif
+                                        </div>
+                                    </td>
+	                                    <td>
+	                                        <div class="text-muted small">
+	                                            {{ $clinic->formatted_address ?? 'Not provided' }}
+	                                        </div>
+	                                    </td>
+                                    <td>
+                                        <div class="text-center">
+                                            <div class="font-weight-bold">{{ $clinic->users_count ?? $clinic->users->count() }}</div>
+                                            <div class="text-muted small">/ {{ $clinic->max_users }} max</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if($clinic->is_active)
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                Active
+                                            </span>
+                                        @else
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-pause-circle me-1"></i>
+                                                Inactive
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($clinic->contract_renewal_at)
+                                            @php
+                                                $renewal = $clinic->contract_renewal_at;
+                                                $today = \Carbon\Carbon::today();
+                                                $daysToRenewal = $today->diffInDays($renewal, false);
+                                                if ($daysToRenewal < 0) { $renewalClass = 'text-danger fw-bold'; $renewalLabel = 'Overdue'; }
+                                                elseif ($daysToRenewal <= 30) { $renewalClass = 'text-warning fw-bold'; $renewalLabel = 'Due soon'; }
+                                                else { $renewalClass = 'text-muted'; $renewalLabel = $renewal->diffForHumans(); }
+                                            @endphp
+                                            <div class="{{ $renewalClass }}">{{ $renewal->format('M d, Y') }}</div>
+                                            <div class="text-muted small">{{ $renewalLabel }}</div>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div>{{ $clinic->created_at->format('M d, Y') }}</div>
+                                        <div class="text-muted small">{{ $clinic->created_at->diffForHumans() }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <a href="{{ route('master.clinics.show', $clinic) }}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-eye me-1"></i> View
+                                            </a>
+                                            <a href="{{ route('master.clinics.edit', $clinic) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit me-1"></i> Edit
+                                            </a>
+                                            <a href="{{ route('master.clinics.manage-contract', $clinic) }}" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-file-contract me-1"></i> Contract
+                                            </a>
+
+                                            @if($clinic->is_active)
+                                                <form method="POST" action="{{ route('master.clinics.deactivate', $clinic) }}" class="d-inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning"
+                                                            onclick="return confirm('Are you sure you want to deactivate this clinic?')">
+                                                        <i class="fas fa-pause me-1"></i> Deactivate
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <form method="POST" action="{{ route('master.clinics.activate', $clinic) }}" class="d-inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                                        <i class="fas fa-play me-1"></i> Activate
+                                                    </button>
+                                                </form>
+                                            @endif
+
+                                            @if($clinic->is_demo)
+                                                <form method="POST" action="{{ route('master.clinics.reset-demo', $clinic) }}" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                            onclick="return confirm('Are you sure you want to reset this demo clinic? All user-generated data will be permanently deleted. This action cannot be undone.')">
+                                                        <i class="fas fa-redo me-1"></i> Reset Demo
+                                                    </button>
+                                                </form>
+                                            @endif
+
+                                            @if(auth()->user()?->ownsManagedClinic($clinic))
+                                                <form method="POST" action="{{ route('master.clinics.destroy', $clinic) }}" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                            onclick="return confirm('Are you sure you want to delete this clinic? This action cannot be undone.')">
+                                                        <i class="fas fa-trash me-1"></i> Delete
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="text-muted">
+                        Showing {{ $clinics->firstItem() }} to {{ $clinics->lastItem() }} of {{ $clinics->total() }} results
+                    </div>
+                    {{ $clinics->links() }}
+                </div>
+            @else
+                <div class="text-center py-5">
+                    <i class="fas fa-hospital fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No clinics found</h5>
+	                    <p class="text-muted">
+	                        @if(request()->hasAny(['search', 'status', 'clinic_type', 'speciality', 'city', 'area', 'street']))
+                            No clinics match your current filters.
+                        @else
+                            No clinics have been registered yet.
+                        @endif
+                    </p>
+	                    @if(auth()->user()?->canCreateManagedClinic() && !request()->hasAny(['search', 'status', 'clinic_type', 'speciality', 'city', 'area', 'street']))
+	                        <a href="{{ route('master.clinics.create') }}" class="btn btn-primary">
+	                            <i class="fas fa-plus me-2"></i>
+	                            Add First Clinic
+	                        </a>
+	                    @endif
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+@endsection

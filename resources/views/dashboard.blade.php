@@ -1,0 +1,748 @@
+@extends('layouts.app')
+
+@section('page-title', __('Dashboard'))
+
+@section('content')
+<div class="container">
+    {{-- Trial notification removed - subscription system no longer needed --}}
+
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center">
+                    @php
+                        $clinicLogo = \App\Http\Controllers\SettingsController::getClinicLogo(auth()->user()->clinic_id);
+                    @endphp
+                    @if($clinicLogo)
+                        <img src="{{ $clinicLogo }}" alt="Clinic Logo" class="clinic-logo me-3" style="max-height: 80px; max-width: 80px; object-fit: cover;">
+                    @endif
+                    <div>
+                        <h1 class="h3 mb-0">
+                            <i class="fas fa-tachometer-alt text-primary"></i>
+                            Dashboard
+                        </h1>
+                        <p class="text-muted mb-0">Welcome back, {{ auth()->user()->full_name }}!</p>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">{{ now()->format('l, F j, Y') }}</small>
+                    @if(auth()->user() && method_exists(auth()->user(), 'canManageUsers') && auth()->user()->canManageUsers())
+                    <div class="mt-2">
+                        <form method="GET" action="{{ route('dashboard') }}" class="d-inline-flex align-items-center gap-2">
+                            <label for="period" class="small text-muted mb-0">Stats period:</label>
+                            <select id="period" name="period" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                <option value="day" {{ ($selectedPeriod ?? 'month') === 'day' ? 'selected' : '' }}>Day</option>
+                                <option value="month" {{ ($selectedPeriod ?? 'month') === 'month' ? 'selected' : '' }}>Month</option>
+                                <option value="year" {{ ($selectedPeriod ?? 'month') === 'year' ? 'selected' : '' }}>Year</option>
+                            </select>
+                        </form>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4 stat-cards g-1">
+        @if(isset($totalPatients))
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between no-divider">
+                        <div>
+                            <h6 class="card-title">{{ __('Total Patients') }}</h6>
+                            <h2 class="mb-0">{{ number_format($totalPatients) }}</h2>
+                            @if(isset($newPatientsThisMonth) && $newPatientsThisMonth > 0)
+                            <small>+{{ $newPatientsThisMonth }} {{ $periodPhrase ?? __('this month') }}</small>
+                            @endif
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if(isset($newPatientsToday))
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between no-divider">
+                        <div>
+                            <h6 class="card-title">{{ __('New Patients Today') }}</h6>
+                            <h2 class="mb-0">{{ number_format($newPatientsToday) }}</h2>
+                            <small>
+                                <i class="fas fa-calendar-day me-1"></i>
+                                {{ now()->format('M d, Y') }}
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user-plus fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if(isset($activePrescriptions) && Auth::user()->canAccessModule('prescriptions'))
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between no-divider">
+                        <div>
+                            <h6 class="card-title">{{ __('Active Prescriptions') }}</h6>
+                            <h2 class="mb-0">{{ number_format($activePrescriptions) }}</h2>
+                            @if(isset($prescriptionsThisMonth) && $prescriptionsThisMonth > 0)
+                            <small>{{ $prescriptionsThisMonth }} {{ $periodPhrase ?? __('this month') }}</small>
+                            @endif
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-prescription-bottle-alt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if(isset($completedDentalLabRequests) && Auth::user()->canAccessModule('dental'))
+        <div class="col-lg-3 col-md-6 mb-3">
+	            <div class="card bg-success text-white h-100" style="background-color: #27ae60 !important;">
+	                <div class="card-body">
+	                    <div class="d-flex justify-content-between no-divider">
+	                        <div>
+	                            <h6 class="card-title">{{ __('Completed Dental Lab Requests') }}</h6>
+	                            <h2 class="mb-0">{{ number_format($completedDentalLabRequests) }}</h2>
+	                            <small>{{ number_format($pendingDentalLabRequests ?? 0) }} {{ __('pending requests') }}</small>
+	                        </div>
+	                        <div class="align-self-center">
+	                            <i class="fas fa-tooth fa-2x opacity-75"></i>
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
+        </div>
+        @endif
+
+        @if(isset($completedLabRequests) && Auth::user()->canAccessModule('lab'))
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-white h-100" style="background-color: #1e3a5f;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between no-divider">
+                        <div>
+                            <h6 class="card-title">{{ __('Completed Lab Results') }}</h6>
+                            <h2 class="mb-0">{{ number_format($completedLabRequests) }}</h2>
+	                            <small>
+	                                @if(($pendingLabRequests ?? 0) > 0)
+	                                    {{ number_format($pendingLabRequests) }} {{ __('pending requests') }}
+	                                @else
+	                                    {{ $completedLabRequests > 0 ? __('Ready for review') : __('No results ready') }}
+	                                @endif
+	                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-flask fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if(isset($totalAppointments) && Auth::user()->canAccessModule('appointments'))
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between no-divider">
+                        <div>
+                            <h6 class="card-title">{{ __("Today's Appointments") }}</h6>
+                            <h2 class="mb-0">{{ number_format($todayAppointments ?? 0) }}</h2>
+                            @if(isset($upcomingAppointments) && $upcomingAppointments > 0)
+                            <small>{{ $upcomingAppointments }} {{ __('upcoming') }}</small>
+                            @endif
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar-check fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if(isset($totalNutritionPlans) && Auth::user()->canAccessModule('nutrition'))
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between no-divider">
+                        <div>
+                            <h6 class="card-title">{{ __('Nutrition Plans') }}</h6>
+                            <h2 class="mb-0">{{ number_format($activeNutritionPlans ?? 0) }}</h2>
+                            @if(isset($thisMonthNutritionPlans) && $thisMonthNutritionPlans > 0)
+                            <small>{{ $thisMonthNutritionPlans }} {{ $periodPhrase ?? __('this month') }}</small>
+                            @endif
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-apple-alt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if(isset($totalRevenue) && Auth::user()->canAccessModule('finance'))
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between no-divider">
+                        <div>
+                            <h6 class="card-title">{{ __('Revenue') }} ({{ ucfirst(__($selectedPeriod ?? 'month')) }})</h6>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($totalRevenue, 2), '0'), '.') }}</h2>
+                            @if(isset($pendingInvoices) && $pendingInvoices > 0)
+                            <small>{{ $pendingInvoices }} {{ __('pending invoices') }}</small>
+                            @endif
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+    </div>
+
+    {{-- Vaccination Delayed / Missed Summary --}}
+    @if(auth()->user()->canAccessSection('pediatric') && auth()->user()->canAccessModule('pediatric') && isset($vaccinationStats))
+    <div class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#fef3c7;">
+                        <i class="fas fa-clock text-warning fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold lh-1 text-warning">{{ $vaccinationStats['delayed'] }}</div>
+                        <small class="text-muted">{{ __('Delayed Vaccinations') }}</small>
+                        <div class="text-muted" style="font-size:.7rem;">{{ __('Overdue ≤ 30 days') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#fee2e2;">
+                        <i class="fas fa-exclamation-triangle text-danger fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold lh-1 text-danger">{{ $vaccinationStats['missed'] }}</div>
+                        <small class="text-muted">{{ __('Missed Vaccinations') }}</small>
+                        <div class="text-muted" style="font-size:.7rem;">{{ __('Overdue > 30 days') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;background:#dbeafe;">
+                        <i class="fas fa-syringe text-primary fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold lh-1 text-primary">{{ $vaccinationStats['total_overdue'] }}</div>
+                        <small class="text-muted">{{ __('Total Overdue') }}</small>
+                        <div class="text-muted" style="font-size:.7rem;">{{ __('Delayed + Missed') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Vaccination Alerts Widget --}}
+    @if(auth()->user()->canAccessSection('pediatric') && auth()->user()->canAccessModule('vaccination') && isset($vaccinationAlerts))
+    <div class="row mb-4">
+        <div class="col-12">
+            @if(count($vaccinationAlerts) > 0)
+            <div class="card border-warning shadow-sm">
+                <div class="card-header bg-warning bg-opacity-10 border-warning d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-warning">
+                        <i class="fas fa-syringe me-2"></i>
+                        {{ __('Vaccination Alerts') }}
+                        <span class="badge bg-warning text-dark ms-2">{{ count($vaccinationAlerts) }}</span>
+                    </h5>
+                    <a href="{{ route('vaccination.index') }}" class="btn btn-sm btn-outline-warning">
+                        {{ __('View All') }} <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ __('Patient') }}</th>
+                                    <th>{{ __('Vaccine') }}</th>
+                                    <th>{{ __('Dose') }}</th>
+                                    <th>{{ __('Scheduled Date') }}</th>
+                                    <th>{{ __('Due') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($vaccinationAlerts as $alert)
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('vaccination.show', $alert['patient_id']) }}" class="text-decoration-none fw-semibold">
+                                            {{ $alert['patient_name'] }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">{{ $alert['vaccine_code'] }}</span>
+                                        {{ $alert['vaccine_name'] }}
+                                    </td>
+                                    <td><span class="badge bg-secondary">{{ __('Dose') }} {{ $alert['dose_number'] }}</span></td>
+                                    <td>{{ $alert['scheduled_date'] }}</td>
+                                    <td>
+                                        @if($alert['days_remaining'] === 0)
+                                            <span class="badge bg-danger">{{ $alert['days_label'] }}</span>
+                                        @elseif($alert['days_remaining'] === 1)
+                                            <span class="badge bg-warning text-dark">{{ $alert['days_label'] }}</span>
+                                        @else
+                                            <span class="badge bg-info text-dark">{{ $alert['days_label'] }}</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @else
+            <div class="card border-success shadow-sm">
+                <div class="card-body text-center py-3">
+                    <i class="fas fa-check-circle text-success fa-lg me-2"></i>
+                    <span class="text-success fw-semibold">{{ __('All vaccinations up to date — no doses due in the next 3 days.') }}</span>
+                </div>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row quick-actions">
+                        @if(Auth::user()->hasPermission('patients_create'))
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
+                            <a href="{{ route('patients.create') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-user-plus d-block mb-1"></i>
+                                <small>Add Patient</small>
+                            </a>
+                        </div>
+                        @endif
+
+                        @if(Auth::user()->hasPermission('prescriptions_create') && Auth::user()->canAccessModule('prescriptions'))
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
+                            <a href="{{ route('simple-prescriptions.create') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-prescription d-block mb-1"></i>
+                                <small>New Prescription</small>
+                            </a>
+                        </div>
+                        @endif
+
+                        @if(Auth::user()->hasPermission('appointments_create') && Auth::user()->canAccessModule('appointments'))
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
+                            <a href="{{ route('appointments.create') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-calendar-plus d-block mb-1"></i>
+                                <small>New Appointment</small>
+                            </a>
+                        </div>
+                        @endif
+
+                        @if(Auth::user()->hasPermission('nutrition_create') && Auth::user()->canAccessModule('nutrition'))
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
+                            <a href="{{ route('nutrition.create') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-apple-alt d-block mb-1"></i>
+                                <small>Nutrition Plan</small>
+                            </a>
+                        </div>
+                        @endif
+
+                        @if(Auth::user()->hasPermission('medicines_create') && Auth::user()->canAccessModule('medicines'))
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
+                            <a href="{{ route('medicines.create') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-pills d-block mb-1"></i>
+                                <small>New Medicine</small>
+                            </a>
+                        </div>
+                        @endif
+
+                        @if(Auth::user()->hasPermission('users_create'))
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
+                            <a href="{{ route('users.create') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-user-plus d-block mb-1"></i>
+                                <small>New User</small>
+                            </a>
+                        </div>
+                        @endif
+
+                        @if(Auth::user()->canAccessModule('lab'))
+                        @can('create-lab-requests')
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
+                            <a href="{{ route('recommendations.lab-requests') }}" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-vial d-block mb-1"></i>
+                                <small>Lab Request</small>
+                            </a>
+                        </div>
+                        @endcan
+                        @endif
+
+                        @if(Auth::user()->canAccessModule('radiology'))
+                        @can('create-radiology-requests')
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
+                            <a href="{{ route('recommendations.radiology.index') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-x-ray d-block mb-1"></i>
+                                <small>Radiology Request</small>
+                            </a>
+                        </div>
+                        @endcan
+                        @endif
+
+                        @if(Auth::user()->canAccessModule('finance'))
+                        @can('manage-finance')
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
+                            <a href="{{ route('finance.invoices') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-file-invoice d-block mb-1"></i>
+                                <small>New Invoice</small>
+                            </a>
+                        </div>
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
+                            <a href="{{ route('finance.expenses', ['new' => 1]) }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-receipt d-block mb-1"></i>
+                                <small>Add Expense</small>
+                            </a>
+                        </div>
+                        @endcan
+                        @endif
+
+
+                        @can('access-section', 'settings')
+                        <div class="col-xl-3 col-lg-3 col-md-4 col-6 mb-3">
+                            <a href="{{ route('settings.index') }}" class="btn btn-outline-dark w-100">
+                                <i class="fas fa-cog d-block mb-1"></i>
+                                <small>Settings</small>
+                            </a>
+                        </div>
+                        @endcan
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="row">
+        <!-- Recent Activity -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history"></i>
+                        Recent Activity
+                    </h6>
+                    @can('view-audit-logs')
+                    <a href="{{ route('settings.audit-logs') }}" class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                    @endcan
+                </div>
+                <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+                    @if(isset($recentActivity) && count($recentActivity) > 0)
+                        @foreach($recentActivity as $activity)
+                        <div class="border-bottom p-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3">
+                                    <div class="bg-light rounded-circle p-2" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user text-muted"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ $activity['description'] }}</h6>
+                                    <p class="mb-1 text-muted small">
+                                        by {{ $activity['user_name'] ?? 'System' }}
+                                    </p>
+                                    <small class="text-muted">
+                                        {{ \Carbon\Carbon::parse($activity['performed_at'])->diffForHumans() }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    @else
+                    <div class="p-4 text-center text-muted">
+                        <i class="fas fa-history fa-2x mb-2"></i>
+                        <p class="mb-0">No recent activity</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments Overview -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-calendar-week text-primary"></i>
+                        Appointments Overview
+                    </h6>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{{ route('appointments.create') }}" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i>
+                            New
+                        </a>
+                        <a href="{{ route('appointments.index') }}" class="btn btn-primary">
+                            <i class="fas fa-list me-1"></i>
+                            All
+                        </a>
+                        <a href="{{ route('appointments.index') }}?view=calendar" class="btn btn-info">
+                            <i class="fas fa-calendar me-1"></i>
+                            Calendar
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if(isset($appointmentsByDate) && count($appointmentsByDate) > 0)
+                        <div class="row g-0">
+                            @foreach($appointmentsByDate as $dateGroup)
+                            <div class="col-12 border-bottom">
+                                <div class="p-3">
+                                    <!-- Date Header -->
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0 {{ $dateGroup['is_today'] ? 'text-primary fw-bold' : 'text-dark' }}">
+                                            @if($dateGroup['is_today'])
+                                                <i class="fas fa-calendar-day me-1 text-primary"></i>
+                                                {{ __('Today') }} - {{ $dateGroup['date_label'] }}
+                                            @else
+                                                <i class="fas fa-calendar me-1 text-muted"></i>
+                                                {{ $dateGroup['date_label'] }}
+                                            @endif
+                                        </h6>
+                                        <span class="badge {{ $dateGroup['count'] > 0 ? 'bg-primary' : 'bg-secondary' }}">
+                                            {{ $dateGroup['count'] }} {{ $dateGroup['count'] == 1 ? __('appointment') : __('appointments') }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Appointments List -->
+                                    @if(count($dateGroup['appointments']) > 0)
+                                        <div class="row">
+                                            @foreach($dateGroup['appointments'] as $appointment)
+                                            <div class="col-md-6 mb-2">
+                                                <div class="d-flex align-items-center p-2 bg-light rounded">
+                                                    <div class="flex-shrink-0 me-2">
+                                                        <div class="text-center">
+                                                            <div class="fw-bold text-primary" style="font-size: 0.8rem;">
+                                                                {{ \Carbon\Carbon::parse($appointment['appointment_datetime'])->format('g:i A') }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1 min-w-0">
+                                                        <div class="fw-bold text-truncate" style="font-size: 0.85rem;">
+                                                            {{ $appointment['patient']['first_name'] ?? '' }} {{ $appointment['patient']['last_name'] ?? '' }}
+                                                        </div>
+                                                        <div class="text-muted text-truncate" style="font-size: 0.75rem;">
+                                                            Dr. {{ $appointment['doctor']['first_name'] ?? '' }} {{ $appointment['doctor']['last_name'] ?? '' }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-shrink-0">
+                                                        <span class="badge bg-{{ $appointment['status'] === 'scheduled' ? 'success' : ($appointment['status'] === 'completed' ? 'primary' : 'warning') }}" style="font-size: 0.65rem;">
+                                                            {{ ucfirst($appointment['status']) }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <div class="text-center text-muted py-2">
+                                            <small>No appointments scheduled</small>
+                                            @if($dateGroup['is_today'])
+                                            <div class="mt-1">
+                                                <a href="{{ route('appointments.create') }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-plus me-1"></i>
+                                                    Schedule
+                                                </a>
+                                            </div>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    @else
+                    <div class="p-4 text-center text-muted">
+                        <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                        <p class="mb-2">No appointments scheduled</p>
+                        <a href="{{ route('appointments.create') }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            Schedule First Appointment
+                        </a>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage Widget -->
+    <div class="row mb-4">
+        <div class="col-lg-6 col-md-8">
+            @include('components.storage-widget')
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    @if(isset($monthlyStats) && count($monthlyStats) > 0)
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-line"></i>
+                        {{ ucfirst(__($selectedPeriod ?? 'month')) }} {{ __('Trends') }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+</div>
+
+@push('scripts')
+@if(isset($monthlyStats) && count($monthlyStats) > 0)
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    const monthlyStats = @json($monthlyStats);
+
+    const labels = Object.keys(monthlyStats);
+    const patientsData = Object.values(monthlyStats).map(stat => stat.patients);
+    const prescriptionsData = Object.values(monthlyStats).map(stat => stat.prescriptions);
+    const revenueData = Object.values(monthlyStats).map(stat => stat.revenue);
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: '{{ __("New Patients") }}',
+                    data: patientsData,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.1
+                },
+                {
+                    label: '{{ __("Prescriptions") }}',
+                    data: prescriptionsData,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.1
+                },
+                {
+                    label: '{{ __("Revenue") }} ({{ $currencySymbol ?? "$" }})',
+                    data: revenueData,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.1,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+});
+</script>
+@endif
+@endpush
+@endsection
+
+@push('styles')
+<style>
+.clinic-logo {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: white;
+    padding: 2px;
+    object-fit: cover;
+    object-position: center;
+}
+
+.clinic-logo:hover {
+    border-color: #007bff;
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+}
+
+@media print {
+    .clinic-logo {
+        border: 1px solid #ddd !important;
+        padding: 1px !important;
+        max-height: 70px !important;
+        max-width: 70px !important;
+        object-fit: cover !important;
+    }
+}
+</style>
+
+<style>
+/* Wider, balanced quick actions */
+.quick-actions .btn{padding:12px 10px; border-radius:10px;}
+.quick-actions i{font-size:1.1rem;}
+.quick-actions small{font-size:0.9rem;}
+</style>
+
+
+@endpush

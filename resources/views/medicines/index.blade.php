@@ -1,0 +1,329 @@
+@extends('layouts.app')
+
+@section('title', __('Medicine Inventory'))
+
+@section('content')
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-pills text-primary me-2"></i>
+                        {{ __('Medicine Inventory') }}
+                    </h1>
+                    <p class="text-muted mb-0">{{ __('Manage your clinic\'s medicine inventory') }}</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-1"></i>
+                            {{ __('Actions') }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('medicines.export') }}">
+                                    <i class="fas fa-file-excel text-success me-2"></i>
+                                    {{ __('Export to Excel') }}
+                                </a>
+                            </li>
+                            @if(in_array(auth()->user()->role, ['super_admin', 'admin', 'pharmacist'], true))
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('medicines.forms.index') }}">
+                                        <i class="fas fa-layer-group text-info me-2"></i>
+                                        {{ __('Manage Forms') }}
+                                    </a>
+                                </li>
+                            @endif
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); confirmClearAllMedicines();">
+                                    <i class="fas fa-trash-alt me-2"></i>
+                                    {{ __('Clear All Medicines') }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @can('create', App\Models\Medicine::class)
+                    <a href="{{ route('medicines.sales.create') }}" class="btn btn-danger">
+                        <i class="fas fa-cash-register me-1"></i>
+                        {{ __('Create Sell') }}
+                    </a>
+                    @endcan
+                    <a href="{{ route('medicines.import') }}" class="btn btn-success">
+                        <i class="fas fa-file-import me-1"></i>
+                        {{ __('Import') }}
+                    </a>
+                    <a href="{{ route('medicines.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        {{ __('Add Medicine') }}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <i class="fas fa-pills fa-2x text-primary mb-2"></i>
+                            <h4 class="mb-1">{{ $stats['total'] }}</h4>
+                            <small class="text-muted">{{ __('Total Medicines') }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                            <h4 class="mb-1">{{ $stats['active'] }}</h4>
+                            <small class="text-muted">{{ __('Active Medicines') }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-warning">
+                        <div class="card-body text-center">
+                            <i class="fas fa-star fa-2x text-warning mb-2"></i>
+                            <h4 class="mb-1">{{ $stats['frequent'] }}</h4>
+                            <small class="text-muted">{{ __('Frequent Medicines') }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-info">
+                        <div class="card-body text-center">
+                            <i class="fas fa-layer-group fa-2x text-info mb-2"></i>
+                            <h4 class="mb-1">{{ $stats['forms'] }}</h4>
+                            <small class="text-muted">{{ __('Medicine Forms') }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" action="{{ route('medicines.index') }}">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">{{ __('Search') }}</label>
+                                <input type="text" class="form-control" name="search" value="{{ request('search') }}"
+                                       placeholder="{{ __('Search by name, generic, brand (min 1 character)...') }}"
+                                       minlength="1">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">{{ __('Form') }}</label>
+                                <select class="form-select" name="form">
+                                    <option value="">{{ __('All Forms') }}</option>
+                                    @foreach(\App\Models\Medicine::formsForClinic(auth()->user()->clinic_id) as $key => $label)
+                                        <option value="{{ $key }}" {{ request('form') == $key ? 'selected' : '' }}>
+                                            {{ __($label) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">{{ __('Status') }}</label>
+                                <select class="form-select" name="status">
+                                    <option value="">{{ __('All Status') }}</option>
+                                    <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>{{ __('Active') }}</option>
+                                    <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>{{ __('Inactive') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">{{ __('Frequent') }}</label>
+                                <select class="form-select" name="frequent">
+                                    <option value="">{{ __('All') }}</option>
+                                    <option value="1" {{ request('frequent') == '1' ? 'selected' : '' }}>{{ __('Frequent Only') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search me-1"></i>
+                                        {{ __('Filter') }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Medicines Table -->
+            <div class="card">
+                <div class="card-body">
+                    @if($medicines->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('Medicine') }}</th>
+                                        <th>{{ __('Form') }}</th>
+                                        <th>{{ __('Dosage') }}</th>
+                                        <th>{{ __('Stock') }}</th>
+                                        <th>{{ __('Selling Price') }}</th>
+                                        <th>{{ __('Expiry') }}</th>
+                                        <th>{{ __('Status') }}</th>
+                                        <th>{{ __('Frequent') }}</th>
+                                        <th>{{ __('Actions') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($medicines as $medicine)
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ $medicine->name }}</strong>
+                                                @if($medicine->brand_name)
+                                                    <small class="text-muted d-block">{{ __('Brand') }}: {{ $medicine->brand_name }}</small>
+                                                @endif
+                                                @if($medicine->generic_name)
+                                                    <small class="text-muted d-block">{{ __('Generic') }}: {{ $medicine->generic_name }}</small>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ $medicine->form_display }}</span>
+                                        </td>
+                                        <td>{{ $medicine->dosage ?? '-' }}</td>
+                                        <td>
+                                            @if($medicine->stock_quantity <= 0)
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                                    {{ __('Out of Stock') }}
+                                                </span>
+                                            @elseif($medicine->stock_quantity <= 10)
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                                    {{ $medicine->stock_quantity }} {{ __('units') }}
+                                                </span>
+                                            @else
+                                                <span class="badge bg-success">
+                                                    {{ $medicine->stock_quantity }} {{ __('units') }}
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($medicine->selling_price)
+                                                <strong>{{ number_format($medicine->selling_price, 2) }}</strong>
+                                                @if($medicine->purchase_price)
+                                                    <br><small class="text-muted">{{ __('Cost') }}: {{ number_format($medicine->purchase_price, 2) }}</small>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($medicine->expiry_date)
+                                                @if($medicine->isExpired())
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-times-circle me-1"></i>
+                                                        {{ $medicine->expiry_date->format('M d, Y') }}
+                                                    </span>
+                                                @elseif($medicine->isExpiringSoon())
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        {{ $medicine->expiry_date->format('M d, Y') }}
+                                                    </span>
+                                                @else
+                                                    <small class="text-muted">{{ $medicine->expiry_date->format('M d, Y') }}</small>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($medicine->is_active)
+                                                <span class="badge bg-success">{{ __('Active') }}</span>
+                                            @else
+                                                <span class="badge bg-danger">{{ __('Inactive') }}</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($medicine->is_frequent)
+                                                <i class="fas fa-star text-warning" title="{{ __('Frequent Medicine') }}"></i>
+                                            @else
+                                                <i class="far fa-star text-muted" title="{{ __('Regular Medicine') }}"></i>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ route('medicines.show', $medicine) }}" class="btn btn-sm btn-outline-primary" title="{{ __('View') }}">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                @can('update', $medicine)
+                                                <a href="{{ route('medicines.edit', $medicine) }}" class="btn btn-sm btn-outline-secondary" title="{{ __('Edit') }}">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                @endcan
+                                            </div>
+
+                                            @can('update', $medicine)
+                                            <div class="btn-group mt-1" role="group">
+                                                <a href="{{ route('medicines.sell', $medicine) }}" class="btn btn-sm btn-danger" title="{{ __('Sell') }}">
+                                                    <i class="fas fa-shopping-cart me-1"></i>{{ __('Sell') }}
+                                                </a>
+                                                <a href="{{ route('medicines.purchase', $medicine) }}" class="btn btn-sm btn-success" title="{{ __('Purchase') }}">
+                                                    <i class="fas fa-cart-plus me-1"></i>{{ __('Purchase') }}
+                                                </a>
+                                            </div>
+                                            @endcan
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="d-flex justify-content-center mt-4">
+                            {{ $medicines->appends(request()->query())->links() }}
+                        </div>
+                    @else
+                        <div class="text-center py-5">
+                            <i class="fas fa-pills fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">{{ __('No medicines found') }}</h5>
+                            <p class="text-muted">{{ __('Start building your medicine inventory by adding medicines.') }}</p>
+                            <a href="{{ route('medicines.create') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>
+                                {{ __('Add First Medicine') }}
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmClearAllMedicines() {
+    if (confirm('{{ __("Are you sure you want to delete ALL medicines? This action cannot be undone!") }}')) {
+        if (confirm('{{ __("This will permanently delete all medicine records. Are you absolutely sure?") }}')) {
+            fetch('{{ route("medicines.clear-all") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        }
+    }
+}
+</script>
+@endsection

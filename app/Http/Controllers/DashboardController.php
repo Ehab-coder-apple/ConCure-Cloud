@@ -1,0 +1,1088 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Patient;
+use App\Models\Prescription;
+use App\Models\LabRequest;
+use App\Models\DentalLabRequest;
+use App\Models\DietPlan;
+use App\Models\Appointment;
+use App\Models\Invoice;
+use App\Models\AestheticInvoice;
+use App\Models\MedicineSaleInvoice;
+use App\Models\OrthodonticPayment;
+use App\Models\Receipt;
+use App\Models\User;
+use App\Models\AuditLog;
+use App\Models\Clinic;
+use App\Models\PatientVaccination;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
+
+class DashboardController extends Controller
+{
+    /**
+     * Display the dashboard.
+     */
+    public function index(Request $request)
+    {
+        $user = auth()->user();
+
+        // Redirect lab technicians to their dedicated dashboard
+        if ($user->role === 'lab_dept') {
+            return redirect()->route('recommendations.lab-technician.dashboard');
+        }
+
+        // Redirect radiology technicians to their dedicated dashboard
+        if ($user->role === 'radiology_dept') {
+            return redirect()->route('recommendations.radiology-technician.dashboard');
+        }
+
+        // Redirect dental designers (CAD/CAM) and dental technicians directly to dental lab
+        if (in_array($user->role, ['cad_cam_designer', 'dental_technician'])) {
+            return redirect()->route('dental.lab-requests.index');
+        }
+
+        // DEBUG: Log assistant doctor assignments
+        if ($user->role === 'assistant') {
+            \Log::info('Assistant Dashboard Debug', [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'doctors_count' => $user->doctors()->count(),
+                'doctor_ids' => $user->doctors()->pluck('users.id')->toArray(),
+                'allowed_doctor_ids' => $user->allowedDoctorIds(),
+            ]);
+        }
+
+        // Determine selected period: precedence = explicit param (admin saves) -> clinic default -> 'month'
+        $requested = $request->get('period');
+        $isValid = in_array($requested, ['day','month','year'], true);
+
+        $clinicDefault = null;
+        $clinic = null;
+        if ($user && $user->clinic_id) {
+            $clinic = Clinic::find($user->clinic_id);
+            // Prefer settings table value if present
+            $clinicDefault = DB::table('settings')
+                ->where('clinic_id', $user->clinic_id)
+                ->where('key', 'dashboard_default_period')
+                ->value('value');
+            // Fallback to Clinic JSON settings column
+            if (!$clinicDefault && $clinic) {
+                $clinicDefault = $clinic->getSetting('dashboard_default_period', null);
+            }
+        }
+
+        $period = $isValid ? $requested : ($clinicDefault ?? 'month');
+
+        // If an admin explicitly chooses a period, persist it as the clinic default for everyone
+        if ($isValid && $clinic && method_exists($user, 'canManageUsers') && $user->canManageUsers()) {
+            // Save in the settings table (authoritative)
+            DB::table('settings')->updateOrInsert(
+                ['clinic_id' => $user->clinic_id, 'key' => 'dashboard_default_period'],
+                ['value' => $period, 'type' => 'string', 'updated_at' => now()]
+            );
+            // Keep Clinic JSON settings in sync as a fallback
+            $clinic->setSetting('dashboard_default_period', $period);
+        }
+
+        // Get dashboard data based on user role and selected period
+        $dashboardData = $this->getDashboardData($user, $period);
+        $dashboardData['selectedPeriod'] = $period;
+        $dashboardData['periodPhrase'] = $period === 'day' ? 'today' : ($period === 'year' ? 'this year' : 'this month');
+
+        // Get clinic currency setting
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $dashboardData['currencySymbol'] = $this->getCurrencySymbol($currency);
+        $dashboardData['currency'] = $currency;
+
+        return view('dashboard', $dashboardData);
+    }
+
+    /**
+     * Get dashboard data based on user role.
+     */
+    private function getDashboardData($user, string $period = 'month'): array
+    {
+        $data = [];
+
+        // Helper to apply selected period to a given date column
+        $applyPeriod = function ($query, string $column) use ($period) {
+            if ($period === 'day') {
+                return $query->whereDate($column, now()->toDateString());
+            } elseif ($period === 'year') {
+                return $query->whereYear($column, now()->year);
+            }
+            // default month
+            return $query->whereMonth($column, now()->month)
+                         ->whereYear($column, now()->year);
+        };
+
+        // Common filters for clinic-based data
+        $clinicFilter = function ($query) use ($user) {
+            if ($user->role === 'patient') {
+                // Patients see only their own data
+                $query->where('patient_id', $user->patient_id ?? 0);
+            } else {
+                // Other roles see clinic data
+                $query->whereHas('patient', function ($q) use ($user) {
+                    $q->where('clinic_id', $user->clinic_id);
+                });
+            }
+        };
+
+        // Patient statistics
+        if ($user->canManagePatients() ) {
+            $patientsQuery = Patient::query();
+            $patientsQuery->where('clinic_id', $user->clinic_id);
+
+            // Filter for doctors: show only their own patients
+            if ($user->role === 'doctor') {
+                $patientsQuery->where(function($q) use ($user) {
+                    $q->where('created_by', $user->id)
+                    ->orWhereHas('appointments', function($subQ) use ($user) {
+                        $subQ->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('prescriptions', function($subQ) use ($user) {
+                        $subQ->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('labRequests', function($subQ) use ($user) {
+                        $subQ->where('doctor_id', $user->id);
+                    })
+                    ->orWhereHas('dietPlans', function($subQ) use ($user) {
+                        $subQ->where('doctor_id', $user->id);
+                    });
+                });
+            }
+            // Filter for dentists: show patients they created or have dental records for
+            elseif ($user->role === 'dental_dept') {
+                $patientsQuery->where(function($q) use ($user) {
+                    $q->where('created_by', $user->id)
+                    ->orWhereHas('dentalCharts', function($subQ) use ($user) {
+                        $subQ->where('created_by', $user->id);
+                    })
+                    ->orWhereHas('dentalTreatments', function($subQ) use ($user) {
+                        $subQ->where('created_by', $user->id);
+                    });
+                });
+            }
+            // Filter for assistants: show patients who have any interaction with their assigned doctors
+            // (appointments, prescriptions, lab requests, or diet plans)
+            elseif ($user->role === 'assistant') {
+	                // Assistants that can access Patient Management should see clinic patient stats.
+	                // (Avoid zeroing out the query when no doctors are assigned.)
+	                // No additional filtering needed here.
+            }
+
+            $data['totalPatients'] = (clone $patientsQuery)->active()->count();
+            $data['newPatientsThisMonth'] = (clone $patientsQuery)->active();
+            $data['newPatientsThisMonth'] = $applyPeriod($data['newPatientsThisMonth'], 'created_at')->count();
+
+            // New patients added today
+            $data['newPatientsToday'] = (clone $patientsQuery)
+                ->active()
+                ->whereDate('created_at', now()->toDateString())
+                ->count();
+        }
+
+        // Prescription statistics (include Simple Prescriptions if available)
+        if (($user->canPrescribe() || $user->canManagePatients()) && $user->canAccessModule('prescriptions')) {
+            $prescriptionsQuery = Prescription::query();
+            $prescriptionsQuery->whereHas('patient', function ($q) use ($user) {
+                $q->where('clinic_id', $user->clinic_id);
+            });
+
+            // Filter for doctors: only show their own prescriptions
+            if ($user->role === 'doctor') {
+                $prescriptionsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for dentists: only show their own prescriptions
+            elseif ($user->role === 'dental_dept') {
+                $prescriptionsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for assistants: only show prescriptions from their assigned doctors
+            elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $prescriptionsQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $prescriptionsQuery->whereRaw('1 = 0');
+                }
+            }
+
+            $activeCount = (clone $prescriptionsQuery)->active()->count();
+            $thisPeriodCount = $applyPeriod((clone $prescriptionsQuery), 'prescribed_date')->count();
+
+            // Also count simple_prescriptions for this clinic if the model/table exists
+            if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
+                $spBase = \App\Models\SimplePrescription::query()->where('clinic_id', $user->clinic_id);
+
+                // Filter for doctors
+                if ($user->role === 'doctor') {
+                    $spBase->where('doctor_id', $user->id);
+                }
+                // Filter for dentists
+                elseif ($user->role === 'dental_dept') {
+                    $spBase->where('doctor_id', $user->id);
+                }
+                // Filter for assistants
+                elseif ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+                    if (!empty($doctorIds)) {
+                        $spBase->whereIn('doctor_id', $doctorIds);
+                    } else {
+                        $spBase->whereRaw('1 = 0');
+                    }
+                }
+
+                $activeCount += (clone $spBase)->where('status', 'active')->count();
+                $thisPeriodCount += $applyPeriod((clone $spBase), 'prescribed_date')->count();
+            }
+
+            $data['activePrescriptions'] = $activeCount;
+            $data['prescriptionsThisMonth'] = $thisPeriodCount;
+        }
+
+        // Lab request statistics
+        if (($user->canPrescribe() || $user->canManagePatients()) && $user->canAccessModule('lab')) {
+            $labRequestsQuery = LabRequest::query();
+            $labRequestsQuery->whereHas('patient', function ($q) use ($user) {
+                $q->where('clinic_id', $user->clinic_id);
+            });
+
+            // Filter for doctors: only show their own lab requests
+            if ($user->role === 'doctor') {
+                $labRequestsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for assistants: only show lab requests from their assigned doctors
+            elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $labRequestsQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $labRequestsQuery->whereRaw('1 = 0');
+                }
+            }
+
+            $data['pendingLabRequests'] = (clone $labRequestsQuery)->pending()->count();
+            $data['urgentLabRequests'] = (clone $labRequestsQuery)->pending()
+                ->where('priority', 'urgent')
+                ->count();
+        }
+
+        // Dental lab request statistics (completed and pending)
+        if (($user->canPrescribe() || $user->canManagePatients()) && $user->canAccessModule('dental')) {
+            $dentalLabRequestsQuery = DentalLabRequest::query();
+            $dentalLabRequestsQuery->where('clinic_id', $user->clinic_id);
+
+            // Filter for doctors: only show their own dental lab requests
+            if ($user->role === 'doctor') {
+                $dentalLabRequestsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for dentists: only show their own dental lab requests
+            elseif ($user->role === 'dental_dept') {
+                $dentalLabRequestsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for assistants: only show dental lab requests from their assigned doctors
+            elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $dentalLabRequestsQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $dentalLabRequestsQuery->whereRaw('1 = 0');
+                }
+            }
+
+	            // Apply assignment visibility rules (assigned requests only visible to assigned technician + admins)
+	            $dentalLabRequestsQuery->visibleTo($user);
+
+            $data['completedDentalLabRequests'] = (clone $dentalLabRequestsQuery)
+                ->where('status', 'completed')
+                ->count();
+            $data['pendingDentalLabRequests'] = (clone $dentalLabRequestsQuery)
+	                ->whereIn('status', ['pending', 'in_progress'])
+                ->count();
+        }
+
+        // Lab request statistics (completed with results uploaded) - includes both dental and regular lab requests
+        if (($user->canPrescribe() || $user->canManagePatients()) && ($user->canAccessModule('lab') || $user->canAccessModule('dental'))) {
+            $completedLabCount = 0;
+
+            // Count completed dental lab requests with results uploaded
+            $dentalLabRequestsQuery = DentalLabRequest::query();
+            $dentalLabRequestsQuery->where('clinic_id', $user->clinic_id);
+
+            // Filter for doctors: only show their own dental lab requests
+            if ($user->role === 'doctor') {
+                $dentalLabRequestsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for dentists: only show their own dental lab requests
+            elseif ($user->role === 'dental_dept') {
+                $dentalLabRequestsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for assistants: only show dental lab requests from their assigned doctors
+            elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $dentalLabRequestsQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $dentalLabRequestsQuery->whereRaw('1 = 0');
+                }
+            }
+
+	            // Apply assignment visibility rules
+	            $dentalLabRequestsQuery->visibleTo($user);
+
+            $completedDentalLab = (clone $dentalLabRequestsQuery)
+                ->where('status', 'completed')
+                ->whereNotNull('result_file_path')
+                ->count();
+
+            // Count completed regular lab requests with results uploaded
+            $labRequestsQuery = LabRequest::query();
+            $labRequestsQuery->whereHas('patient', function ($q) use ($user) {
+                $q->where('clinic_id', $user->clinic_id);
+            });
+
+            // Filter for doctors: only show their own lab requests
+            if ($user->role === 'doctor') {
+                $labRequestsQuery->where('doctor_id', $user->id);
+            }
+            // Filter for assistants: only show lab requests from their assigned doctors
+            elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $labRequestsQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $labRequestsQuery->whereRaw('1 = 0');
+                }
+            }
+
+            $completedRegularLab = (clone $labRequestsQuery)
+                ->where('status', 'completed')
+                ->whereNotNull('result_file_path')
+                ->count();
+
+            // Total completed lab requests (both dental and regular)
+            $data['completedLabRequests'] = $completedDentalLab + $completedRegularLab;
+        }
+
+        // Diet plan statistics
+        if (($user->canPrescribe() || $user->canManagePatients()) && $user->canAccessModule('nutrition')) {
+            $dietPlansQuery = DietPlan::query();
+            $dietPlansQuery->whereHas('patient', function ($q) use ($user) {
+                $q->where('clinic_id', $user->clinic_id);
+            });
+
+            // Filter for doctors: only show their own diet plans
+            if ($user->role === 'doctor') {
+                $dietPlansQuery->where('doctor_id', $user->id);
+            }
+            // Filter for assistants: only show diet plans from their assigned doctors
+            elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $dietPlansQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $dietPlansQuery->whereRaw('1 = 0');
+                }
+            }
+
+            $data['activeDietPlans'] = (clone $dietPlansQuery)->active()->count();
+            $data['expiredDietPlans'] = (clone $dietPlansQuery)->expired()->count();
+        }
+
+        // Financial statistics
+        if ($user->canAccessFinance() && $user->canAccessModule('finance')) {
+            $invoicesQuery = Invoice::query();
+            $invoicesQuery->where('clinic_id', $user->clinic_id);
+
+            $receiptsQuery = Receipt::query();
+            $receiptsQuery->where('clinic_id', $user->clinic_id);
+
+            // Total revenue includes invoices, aesthetic invoices, and approved receipts
+            $invoiceRevenue = $applyPeriod((clone $invoicesQuery), 'invoice_date')->sum('total_amount');
+            $aestheticRevenue = $applyPeriod(AestheticInvoice::where('clinic_id', $user->clinic_id), 'invoice_date')->sum('total_amount');
+            $medicineRevenue = $applyPeriod(MedicineSaleInvoice::where('clinic_id', $user->clinic_id), 'sold_at')->sum('total');
+            $orthodonticRevenue = $applyPeriod(OrthodonticPayment::where('clinic_id', $user->clinic_id), 'payment_date')->sum('amount');
+            $receiptRevenue = $applyPeriod((clone $receiptsQuery)->where('status', 'approved'), 'receipt_date')->sum('amount');
+            $data['totalRevenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $orthodonticRevenue + $receiptRevenue;
+
+            $data['pendingInvoices'] = (clone $invoicesQuery)
+                ->whereIn('status', ['draft', 'sent'])
+                ->count();
+            $data['pendingInvoices'] += AestheticInvoice::where('clinic_id', $user->clinic_id)
+                ->whereIn('status', ['draft', 'sent'])
+                ->count();
+
+            $data['overdueInvoices'] = (clone $invoicesQuery)
+                ->where('status', 'sent')
+                ->where('due_date', '<', now())
+                ->count();
+            $data['overdueInvoices'] += AestheticInvoice::where('clinic_id', $user->clinic_id)
+                ->where('status', 'sent')
+                ->where('due_date', '<', now())
+                ->count();
+        }
+
+        // User statistics (for admins and program owners)
+        if ($user->canManageUsers()) {
+            $usersQuery = User::query();
+            $usersQuery->where('clinic_id', $user->clinic_id);
+
+            $data['totalUsers'] = (clone $usersQuery)->active()->count();
+            $data['newUsersThisMonth'] = $applyPeriod((clone $usersQuery)->active(), 'created_at')->count();
+        }
+
+        // Recent activity (exclude dental lab roles)
+        if (!in_array($user->role, ['cad_cam_designer', 'dental_technician'])) {
+            $data['recentActivity'] = $this->getRecentActivity($user);
+        }
+
+        // Appointment statistics (schema-aware) - exclude dental lab roles
+        if (class_exists('App\\Models\\Appointment') &&
+            !in_array($user->role, ['cad_cam_designer', 'dental_technician']) &&
+            $user->canAccessModule('appointments')) {
+            $legacy = $this->isLegacyAppointments();
+            if ($legacy) {
+                $base = DB::table('appointments')->where('clinic_id', $user->clinic_id);
+                if ($user->role === 'doctor') {
+                    $base->where('doctor_id', $user->id);
+                } elseif ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+	                    if (!empty($doctorIds)) {
+	                        // Assistants can see appointments for assigned doctors OR ones they created
+	                        $base->where(function ($q) use ($doctorIds, $user) {
+	                            $q->whereIn('doctor_id', $doctorIds)
+	                              ->orWhere('created_by', $user->id);
+	                        });
+	                    } else {
+	                        // No assigned doctors yet; still allow showing appointments the assistant created
+	                        $base->where('created_by', $user->id);
+	                    }
+                }
+                $now = Carbon::now();
+                $data['totalAppointments'] = (clone $base)->count();
+                $data['todayAppointments'] = (clone $base)
+                    ->whereDate('appointment_date', now()->toDateString())
+                    ->count();
+                $data['upcomingAppointments'] = (clone $base)
+                    ->whereIn('status', ['scheduled'])
+                    ->whereRaw("STR_TO_DATE(CONCAT(appointment_date,' ', appointment_time), '%Y-%m-%d %H:%i:%s') > ?", [$now->format('Y-m-d H:i:s')])
+                    ->count();
+            } else {
+                $appointmentsQuery = Appointment::query();
+                $appointmentsQuery->where('clinic_id', $user->clinic_id);
+                if ($user->role === 'doctor') {
+                    $appointmentsQuery->where('doctor_id', $user->id);
+                } elseif ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+	                    if (!empty($doctorIds)) {
+	                        // Assistants can see appointments for assigned doctors OR ones they created
+	                        $appointmentsQuery->where(function ($q) use ($doctorIds, $user) {
+	                            $q->whereIn('doctor_id', $doctorIds)
+	                              ->orWhere('created_by', $user->id);
+	                        });
+	                    } else {
+	                        // No assigned doctors yet; still allow showing appointments the assistant created
+	                        $appointmentsQuery->where('created_by', $user->id);
+	                    }
+                }
+                $data['totalAppointments'] = (clone $appointmentsQuery)->count();
+                $data['todayAppointments'] = (clone $appointmentsQuery)
+                    ->whereDate('appointment_datetime', now()->toDateString())
+                    ->count();
+                $data['upcomingAppointments'] = (clone $appointmentsQuery)
+                    ->where('appointment_datetime', '>', now())
+                    ->where('status', 'scheduled')
+                    ->count();
+            }
+        }
+
+        // Nutrition plan statistics (exclude dental roles)
+        if (class_exists('App\Models\DietPlan') &&
+            !in_array($user->role, ['dental_dept', 'cad_cam_designer', 'dental_technician']) &&
+            $user->canAccessModule('nutrition')) {
+            $nutritionQuery = \App\Models\DietPlan::query();
+            $nutritionQuery->whereHas('patient', function ($q) use ($user) {
+                $q->where('clinic_id', $user->clinic_id);
+
+                // Filter for assistants: only show patients of their assigned doctors
+                if ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+                    if (!empty($doctorIds)) {
+                        $q->whereIn('doctor_id', $doctorIds);
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
+                }
+            });
+            if ($user->role === 'doctor') {
+                $nutritionQuery->where('doctor_id', $user->id);
+            } elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+                if (!empty($doctorIds)) {
+                    $nutritionQuery->whereIn('doctor_id', $doctorIds);
+                } else {
+                    $nutritionQuery->whereRaw('1 = 0');
+                }
+            }
+
+            $data['totalNutritionPlans'] = (clone $nutritionQuery)->count();
+            $data['activeNutritionPlans'] = (clone $nutritionQuery)->where('status', 'active')->count();
+            $data['thisMonthNutritionPlans'] = $applyPeriod((clone $nutritionQuery), 'created_at')->count();
+        }
+
+        // Upcoming appointments (detailed)
+        if ($user->canAccessModule('appointments')) {
+            $data['upcomingAppointmentsList'] = $this->getUpcomingAppointments($user);
+
+            // Appointments by date (for the next 7 days)
+            $data['appointmentsByDate'] = $this->getAppointmentsByDate($user);
+        }
+
+        // Quick stats for charts (period-aware)
+        $data['monthlyStats'] = $this->getMonthlyStats($user, $period);
+
+        // Vaccination alerts (next 3 days) + delayed/missed stats — only if pediatric module is enabled
+        if ($user->canAccessModule('pediatric') && Schema::hasTable('patient_vaccinations')) {
+            $data['vaccinationAlerts'] = $this->getVaccinationAlerts($user);
+            $data['vaccinationStats'] = $this->getVaccinationStats($user);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Get vaccination alerts — upcoming vaccinations due within the next 3 days.
+     */
+    private function getVaccinationAlerts($user): array
+    {
+        $today = Carbon::today();
+        $threeDaysLater = Carbon::today()->addDays(3);
+
+        // Age cutoff: patients must be under 20 years old
+        $ageCutoff = Carbon::now()->subYears(20);
+
+        $alerts = PatientVaccination::with(['patient', 'vaccine.translations'])
+            ->where('status', 'upcoming')
+            ->whereBetween('scheduled_date', [$today, $threeDaysLater])
+            ->whereHas('patient', function ($q) use ($user, $ageCutoff) {
+                $q->where('clinic_id', $user->clinic_id)
+                  ->where('date_of_birth', '>', $ageCutoff);
+            })
+            ->orderBy('scheduled_date', 'asc')
+            ->limit(10)
+            ->get()
+            ->map(function ($v) {
+                $daysRemaining = Carbon::today()->diffInDays(Carbon::parse($v->scheduled_date), false);
+                return [
+                    'id' => $v->id,
+                    'patient_name' => $v->patient->full_name ?? ($v->patient->first_name . ' ' . $v->patient->last_name),
+                    'patient_id' => $v->patient->id,
+                    'vaccine_name' => $v->vaccine->getLocalizedName(app()->getLocale()),
+                    'vaccine_code' => $v->vaccine->code,
+                    'dose_number' => $v->dose_number,
+                    'scheduled_date' => $v->scheduled_date->format('Y-m-d'),
+                    'days_remaining' => $daysRemaining,
+                    'days_label' => match (true) {
+                        $daysRemaining === 0 => __('Today'),
+                        $daysRemaining === 1 => __('Tomorrow'),
+                        default => __('In :days days', ['days' => $daysRemaining]),
+                    },
+                ];
+            })
+            ->toArray();
+
+        return $alerts;
+    }
+
+    /**
+     * Get delayed and missed vaccination statistics for the clinic.
+     *
+     * Delayed: scheduled_date is past but within the last 30 days, status is not 'on_time' or 'skipped'.
+     * Missed:  scheduled_date is more than 30 days overdue, status is not 'on_time' or 'skipped'.
+     */
+    private function getVaccinationStats($user): array
+    {
+        $clinicId = $user->clinic_id;
+        $today = Carbon::today();
+        $thirtyDaysAgo = Carbon::today()->subDays(30);
+
+        $excludedStatuses = [
+            PatientVaccination::STATUS_ON_TIME,
+            PatientVaccination::STATUS_SKIPPED,
+        ];
+
+        $baseQuery = PatientVaccination::whereHas('patient', function ($q) use ($clinicId) {
+            $q->where('clinic_id', $clinicId);
+        })->whereNotIn('status', $excludedStatuses);
+
+        // Delayed: scheduled_date is past (≤ today) but within the last 30 days
+        $delayed = (clone $baseQuery)
+            ->where('scheduled_date', '<', $today)
+            ->where('scheduled_date', '>=', $thirtyDaysAgo)
+            ->count();
+
+        // Missed: scheduled_date is more than 30 days overdue
+        $missed = (clone $baseQuery)
+            ->where('scheduled_date', '<', $thirtyDaysAgo)
+            ->count();
+
+        return [
+            'delayed' => $delayed,
+            'missed' => $missed,
+            'total_overdue' => $delayed + $missed,
+        ];
+    }
+
+    /**
+     * Get recent activity for the user.
+     */
+    private function getRecentActivity($user): array
+    {
+        $query = AuditLog::with('user');
+        $query->where('clinic_id', $user->clinic_id);
+
+        return $query->latest('performed_at')
+                    ->limit(10)
+                    ->get()
+                    ->toArray();
+    }
+    /**
+     * Detect legacy appointment schema (separate date/time columns) vs unified datetime.
+     */
+    private function isLegacyAppointments(): bool
+    {
+        // Legacy if no appointment_datetime or if appointment_date/time exist
+        $hasDatetime = Schema::hasColumn('appointments', 'appointment_datetime');
+        $hasDate = Schema::hasColumn('appointments', 'appointment_date');
+        $hasTime = Schema::hasColumn('appointments', 'appointment_time');
+        return !$hasDatetime && ($hasDate || $hasTime);
+    }
+
+
+
+    /**
+     * Get upcoming appointments.
+     */
+    private function getUpcomingAppointments($user): array
+    {
+        if (!class_exists('App\Models\Appointment')) {
+            return [];
+        }
+
+        $legacy = $this->isLegacyAppointments();
+        if ($legacy) {
+            $now = Carbon::now();
+            $q = DB::table('appointments')
+                ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
+                ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
+                ->where('appointments.clinic_id', $user->clinic_id)
+                ->where('appointments.status', 'scheduled');
+            if ($user->role === 'patient') {
+                $q->where('appointments.patient_id', $user->patient_id ?? 0);
+            } elseif ($user->role === 'doctor') {
+                $q->where('appointments.doctor_id', $user->id);
+            } elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+	                if (!empty($doctorIds)) {
+	                    $q->where(function ($sub) use ($doctorIds, $user) {
+	                        $sub->whereIn('appointments.doctor_id', $doctorIds)
+	                            ->orWhere('appointments.created_by', $user->id);
+	                    });
+	                } else {
+	                    $q->where('appointments.created_by', $user->id);
+	                }
+            }
+            $rows = $q->whereRaw("STR_TO_DATE(CONCAT(appointment_date,' ', appointment_time), '%Y-%m-%d %H:%i:%s') >= ?", [$now->format('Y-m-d H:i:s')])
+                ->orderBy('appointment_date')->orderBy('appointment_time')
+                ->limit(5)
+                ->get([
+                    'appointments.id','appointments.status','appointments.appointment_date','appointments.appointment_time',
+                    'patients.first_name as patient_first_name','patients.last_name as patient_last_name',
+                    'doctors.first_name as doctor_first_name','doctors.last_name as doctor_last_name'
+                ]);
+            return $rows->map(function($r){
+                return [
+                    'id' => $r->id,
+                    'status' => $r->status,
+                    'appointment_datetime' => trim(($r->appointment_date ?? '').' '.($r->appointment_time ?? '')),
+                    'patient' => ['first_name' => $r->patient_first_name, 'last_name' => $r->patient_last_name],
+                    'doctor' => ['first_name' => $r->doctor_first_name, 'last_name' => $r->doctor_last_name],
+                ];
+            })->toArray();
+        }
+
+        $query = Appointment::with(['patient', 'doctor']);
+        if ($user->role === 'patient') {
+            $query->where('patient_id', $user->patient_id ?? 0);
+        } else {
+            $query->where('clinic_id', $user->clinic_id);
+            if ($user->role === 'doctor') {
+                $query->where('doctor_id', $user->id);
+            } elseif ($user->role === 'assistant') {
+                $doctorIds = $user->allowedDoctorIds();
+	                if (!empty($doctorIds)) {
+	                    $query->where(function ($sub) use ($doctorIds, $user) {
+	                        $sub->whereIn('doctor_id', $doctorIds)
+	                            ->orWhere('created_by', $user->id);
+	                    });
+	                } else {
+	                    $query->where('created_by', $user->id);
+	                }
+            }
+        }
+        return $query->where('appointment_datetime', '>=', now())
+                    ->where('status', 'scheduled')
+                    ->orderBy('appointment_datetime')
+                    ->limit(5)
+                    ->get()
+                    ->toArray();
+    }
+
+    /**
+     * Get appointments organized by date for the next 7 days.
+     */
+    private function getAppointmentsByDate($user): array
+    {
+        if (!class_exists('App\Models\Appointment')) {
+            return [];
+        }
+
+        $appointments = [];
+        $legacy = $this->isLegacyAppointments();
+
+        // Get appointments for the next 7 days
+        for ($i = 0; $i < 7; $i++) {
+            $date = now()->addDays($i);
+            $dateKey = $date->toDateString();
+            $dateLabel = $date->format('l, M j');
+
+            if ($legacy) {
+                $q = DB::table('appointments')
+                    ->leftJoin('patients', 'appointments.patient_id', '=', 'patients.id')
+                    ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
+                    ->where('appointments.clinic_id', $user->clinic_id)
+                    ->whereDate('appointments.appointment_date', $dateKey);
+                if ($user->role === 'patient') {
+                    $q->where('appointments.patient_id', $user->patient_id ?? 0);
+                } elseif ($user->role === 'doctor') {
+                    $q->where('appointments.doctor_id', $user->id);
+                } elseif ($user->role === 'assistant') {
+                    $doctorIds = $user->allowedDoctorIds();
+	                    if (!empty($doctorIds)) {
+	                        $q->where(function ($sub) use ($doctorIds, $user) {
+	                            $sub->whereIn('appointments.doctor_id', $doctorIds)
+	                                ->orWhere('appointments.created_by', $user->id);
+	                        });
+	                    } else {
+	                        $q->where('appointments.created_by', $user->id);
+	                    }
+                }
+                $rows = $q->orderBy('appointments.appointment_time')
+                    ->get([
+                        'appointments.id','appointments.status','appointments.appointment_date','appointments.appointment_time',
+                        'patients.first_name as patient_first_name','patients.last_name as patient_last_name',
+                        'doctors.first_name as doctor_first_name','doctors.last_name as doctor_last_name'
+                    ]);
+                $dayAppointments = $rows->map(function($r){
+                    return [
+                        'id' => $r->id,
+                        'status' => $r->status,
+                        'appointment_datetime' => trim(($r->appointment_date ?? '').' '.($r->appointment_time ?? '')),
+                        'patient' => ['first_name' => $r->patient_first_name, 'last_name' => $r->patient_last_name],
+                        'doctor' => ['first_name' => $r->doctor_first_name, 'last_name' => $r->doctor_last_name],
+                    ];
+                })->toArray();
+            } else {
+                $query = Appointment::with(['patient', 'doctor']);
+                if ($user->role === 'patient') {
+                    $query->where('patient_id', $user->patient_id ?? 0);
+                } else {
+                    $query->where('clinic_id', $user->clinic_id);
+                    if ($user->role === 'doctor') {
+                        $query->where('doctor_id', $user->id);
+                    } elseif ($user->role === 'assistant') {
+                        $doctorIds = $user->allowedDoctorIds();
+	                        if (!empty($doctorIds)) {
+	                            $query->where(function ($sub) use ($doctorIds, $user) {
+	                                $sub->whereIn('doctor_id', $doctorIds)
+	                                    ->orWhere('created_by', $user->id);
+	                            });
+	                        } else {
+	                            $query->where('created_by', $user->id);
+	                        }
+                    }
+                }
+                $dayAppointments = $query->whereDate('appointment_datetime', $dateKey)
+                                       ->orderBy('appointment_datetime')
+                                       ->get()
+                                       ->toArray();
+            }
+
+            if (!empty($dayAppointments) || $i === 0) {
+                $appointments[] = [
+                    'date' => $dateKey,
+                    'date_label' => $dateLabel,
+                    'is_today' => $i === 0,
+                    'appointments' => $dayAppointments,
+                    'count' => count($dayAppointments)
+                ];
+            }
+        }
+
+        return $appointments;
+    }
+
+    /**
+     * Get period-aware statistics for charts.
+     */
+    private function getMonthlyStats($user, string $period = 'month'): array
+    {
+        $stats = [];
+
+        if ($period === 'day') {
+            // Last 7 days including today
+            for ($i = 6; $i >= 0; $i--) {
+                $day = now()->subDays($i);
+                $key = $day->format('M j');
+                $stats[$key] = ['patients' => 0, 'prescriptions' => 0, 'revenue' => 0];
+
+                if ($user->canManagePatients()) {
+                    $patientsQuery = Patient::where('clinic_id', $user->clinic_id)
+                        ->whereDate('created_at', $day->toDateString());
+
+                    // Filter for assistants
+
+                    $stats[$key]['patients'] = $patientsQuery->count();
+                }
+                if ($user->canPrescribe() || $user->canManagePatients()) {
+                    $rxCount = Prescription::whereHas('patient', function ($q) use ($user) {
+                            $q->where('clinic_id', $user->clinic_id);
+
+                            // Filter for assistants
+                            if ($user->role === 'assistant') {
+                                $doctorIds = $user->allowedDoctorIds();
+                                if (!empty($doctorIds)) {
+                                    $q->whereIn('doctor_id', $doctorIds);
+                                } else {
+                                    $q->whereRaw('1 = 0');
+                                }
+                            }
+                        })
+                        ->whereDate('prescribed_date', $day->toDateString())
+                        ->count();
+                    if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
+                        $spQuery = \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
+                            ->whereDate('prescribed_date', $day->toDateString());
+
+                        // Filter for assistants
+                        if ($user->role === 'assistant') {
+                            $doctorIds = $user->allowedDoctorIds();
+                            if (!empty($doctorIds)) {
+                                $spQuery->whereIn('doctor_id', $doctorIds);
+                            } else {
+                                $spQuery->whereRaw('1 = 0');
+                            }
+                        }
+
+                        $rxCount += $spQuery->count();
+                    }
+                    $stats[$key]['prescriptions'] = $rxCount;
+                }
+                if ($user->canAccessFinance()) {
+                    $invoiceRevenue = Invoice::where('clinic_id', $user->clinic_id)
+                        ->whereDate('invoice_date', $day->toDateString())
+                        ->sum('total_amount');
+                    $aestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
+                        ->whereDate('invoice_date', $day->toDateString())
+                        ->sum('total_amount');
+                    $medicineRevenue = MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
+                        ->whereDate('sold_at', $day->toDateString())
+                        ->sum('total');
+                    $orthodonticRevenue = OrthodonticPayment::where('clinic_id', $user->clinic_id)
+                        ->whereDate('payment_date', $day->toDateString())
+                        ->sum('amount');
+                    $receiptRevenue = Receipt::where('clinic_id', $user->clinic_id)
+                        ->where('status', 'approved')
+                        ->whereDate('receipt_date', $day->toDateString())
+                        ->sum('amount');
+                    $stats[$key]['revenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $orthodonticRevenue + $receiptRevenue;
+                }
+            }
+        } elseif ($period === 'year') {
+            // Last 5 years including current year
+            for ($i = 4; $i >= 0; $i--) {
+                $year = now()->subYears($i)->year;
+                $key = (string) $year;
+                $stats[$key] = ['patients' => 0, 'prescriptions' => 0, 'revenue' => 0];
+
+                if ($user->canManagePatients()) {
+                    $patientsQuery = Patient::where('clinic_id', $user->clinic_id)
+                        ->whereYear('created_at', $year);
+
+                    // Filter for assistants
+
+                    $stats[$key]['patients'] = $patientsQuery->count();
+                }
+                if ($user->canPrescribe() || $user->canManagePatients()) {
+                    $rxCount = Prescription::whereHas('patient', function ($q) use ($user) {
+                            $q->where('clinic_id', $user->clinic_id);
+
+                            // Filter for assistants
+                            if ($user->role === 'assistant') {
+                                $doctorIds = $user->allowedDoctorIds();
+                                if (!empty($doctorIds)) {
+                                    $q->whereIn('doctor_id', $doctorIds);
+                                } else {
+                                    $q->whereRaw('1 = 0');
+                                }
+                            }
+                        })
+                        ->whereYear('prescribed_date', $year)
+                        ->count();
+                    if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
+                        $spQuery = \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
+                            ->whereYear('prescribed_date', $year);
+
+                        // Filter for assistants
+                        if ($user->role === 'assistant') {
+                            $doctorIds = $user->allowedDoctorIds();
+                            if (!empty($doctorIds)) {
+                                $spQuery->whereIn('doctor_id', $doctorIds);
+                            } else {
+                                $spQuery->whereRaw('1 = 0');
+                            }
+                        }
+
+                        $rxCount += $spQuery->count();
+                    }
+                    $stats[$key]['prescriptions'] = $rxCount;
+                }
+                if ($user->canAccessFinance()) {
+                    $invoiceRevenue = Invoice::where('clinic_id', $user->clinic_id)
+                        ->whereYear('invoice_date', $year)
+                        ->sum('total_amount');
+                    $aestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
+                        ->whereYear('invoice_date', $year)
+                        ->sum('total_amount');
+                    $medicineRevenue = MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
+                        ->whereYear('sold_at', $year)
+                        ->sum('total');
+                    $orthodonticRevenue = OrthodonticPayment::where('clinic_id', $user->clinic_id)
+                        ->whereYear('payment_date', $year)
+                        ->sum('amount');
+                    $receiptRevenue = Receipt::where('clinic_id', $user->clinic_id)
+                        ->where('status', 'approved')
+                        ->whereYear('receipt_date', $year)
+                        ->sum('amount');
+                    $stats[$key]['revenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $orthodonticRevenue + $receiptRevenue;
+                }
+            }
+        } else {
+            // Default: last 6 months
+            for ($i = 5; $i >= 0; $i--) {
+                $month = now()->subMonths($i);
+                $key = $month->format('M Y');
+                $stats[$key] = ['patients' => 0, 'prescriptions' => 0, 'revenue' => 0];
+
+                if ($user->canManagePatients()) {
+                    $patientsQuery = Patient::where('clinic_id', $user->clinic_id)
+                        ->whereMonth('created_at', $month->month)
+                        ->whereYear('created_at', $month->year);
+
+                    // Filter for assistants
+
+                    $stats[$key]['patients'] = $patientsQuery->count();
+                }
+                if ($user->canPrescribe() || $user->canManagePatients()) {
+                    $rxCount = Prescription::whereHas('patient', function ($q) use ($user) {
+                            $q->where('clinic_id', $user->clinic_id);
+
+                            // Filter for assistants
+                            if ($user->role === 'assistant') {
+                                $doctorIds = $user->allowedDoctorIds();
+                                if (!empty($doctorIds)) {
+                                    $q->whereIn('doctor_id', $doctorIds);
+                                } else {
+                                    $q->whereRaw('1 = 0');
+                                }
+                            }
+                        })
+                        ->whereMonth('prescribed_date', $month->month)
+                        ->whereYear('prescribed_date', $month->year)
+                        ->count();
+                    if (class_exists(\App\Models\SimplePrescription::class) && \Illuminate\Support\Facades\Schema::hasTable('simple_prescriptions')) {
+                        $spQuery = \App\Models\SimplePrescription::where('clinic_id', $user->clinic_id)
+                            ->whereMonth('prescribed_date', $month->month)
+                            ->whereYear('prescribed_date', $month->year);
+
+                        // Filter for assistants
+                        if ($user->role === 'assistant') {
+                            $doctorIds = $user->allowedDoctorIds();
+                            if (!empty($doctorIds)) {
+                                $spQuery->whereIn('doctor_id', $doctorIds);
+                            } else {
+                                $spQuery->whereRaw('1 = 0');
+                            }
+                        }
+
+                        $rxCount += $spQuery->count();
+                    }
+                    $stats[$key]['prescriptions'] = $rxCount;
+                }
+                if ($user->canAccessFinance()) {
+                    $invoiceRevenue = Invoice::where('clinic_id', $user->clinic_id)
+                        ->whereMonth('invoice_date', $month->month)
+                        ->whereYear('invoice_date', $month->year)
+                        ->sum('total_amount');
+                    $aestheticRevenue = AestheticInvoice::where('clinic_id', $user->clinic_id)
+                        ->whereMonth('invoice_date', $month->month)
+                        ->whereYear('invoice_date', $month->year)
+                        ->sum('total_amount');
+                    $medicineRevenue = MedicineSaleInvoice::where('clinic_id', $user->clinic_id)
+                        ->whereMonth('sold_at', $month->month)
+                        ->whereYear('sold_at', $month->year)
+                        ->sum('total');
+                    $orthodonticRevenue = OrthodonticPayment::where('clinic_id', $user->clinic_id)
+                        ->whereMonth('payment_date', $month->month)
+                        ->whereYear('payment_date', $month->year)
+                        ->sum('amount');
+                    $receiptRevenue = Receipt::where('clinic_id', $user->clinic_id)
+                        ->where('status', 'approved')
+                        ->whereMonth('receipt_date', $month->month)
+                        ->whereYear('receipt_date', $month->year)
+                        ->sum('amount');
+                    $stats[$key]['revenue'] = $invoiceRevenue + $aestheticRevenue + $medicineRevenue + $orthodonticRevenue + $receiptRevenue;
+                }
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Get currency symbol for a given currency code
+     */
+    private function getCurrencySymbol($currencyCode): string
+    {
+        $symbols = [
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            'IQD' => 'د.ع',
+            'JOD' => 'د.أ',
+            'EGP' => 'ج.م',
+        ];
+
+        return $symbols[$currencyCode] ?? '$';
+    }
+}

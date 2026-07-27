@@ -1,0 +1,623 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-dollar-sign text-primary"></i>
+                    Finance Dashboard
+                </h1>
+                <div>
+                    <a href="{{ route('finance.invoices') }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-file-invoice"></i> Invoices
+                    </a>
+                    <a href="{{ route('finance.receipts') }}" class="btn btn-outline-success me-2">
+                        <i class="fas fa-receipt"></i> Receipts
+                    </a>
+                    <a href="{{ route('finance.expenses') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-money-bill"></i> Expenses
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Monthly Revenue</h6>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($monthlyRevenue, 2), '0'), '.') }}</h2>
+                            <small>{{ now()->format('F Y') }}</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Monthly Receipts</h6>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($monthlyReceipts, 2), '0'), '.') }}</h2>
+                            <small>{{ now()->format('F Y') }}</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-receipt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Monthly Expenses</h6>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($monthlyExpenses, 2), '0'), '.') }}</h2>
+                            <small>{{ now()->format('F Y') }}</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-pie fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-{{ $monthlyProfit >= 0 ? 'primary' : 'warning' }} text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Monthly Profit</h6>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($monthlyProfit, 2), '0'), '.') }}</h2>
+                            <small>Revenue - Expenses</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-{{ $monthlyProfit >= 0 ? 'arrow-up' : 'arrow-down' }} fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Outstanding</h6>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($outstandingInvoices, 2), '0'), '.') }}</h2>
+                            <small>Unpaid invoices</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Partial Payments</h6>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($partialPaymentsBalance ?? 0, 2), '0'), '.') }}</h2>
+                            <small>{{ $partialPaymentsCount ?? 0 }} {{ ($partialPaymentsCount ?? 0) === 1 ? 'invoice' : 'invoices' }}</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-coins fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-{{ $cashFlow >= 0 ? 'success' : 'danger' }} text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Cash Flow</h6>
+                            <h2 class="mb-0">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($cashFlow ?? 0, 2), '0'), '.') }}</h2>
+                            <small>{{ now()->format('F Y') }}</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-wallet fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Invoices</h5>
+                    <h2 class="text-primary">{{ number_format($totalInvoices) }}</h2>
+                    @if($overdueInvoices > 0)
+                    <p class="text-danger mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        {{ $overdueInvoices }} overdue
+                    </p>
+                    @endif
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Pending Expenses</h5>
+                    <h2 class="text-warning">{{ number_format($pendingExpenseCount) }}</h2>
+                    <p class="text-muted mb-0">
+                        {{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($pendingExpenses, 2), '0'), '.') }} total
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Profit Margin</h5>
+                    @php
+                        $profitMargin = $monthlyRevenue > 0 ? ($monthlyProfit / $monthlyRevenue) * 100 : 0;
+                    @endphp
+                    <h2 class="text-{{ $profitMargin >= 0 ? 'success' : 'danger' }}">
+                        {{ number_format($profitMargin, 1) }}%
+                    </h2>
+                    <p class="text-muted mb-0">This month</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue by Department / Module -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie text-info me-2"></i>
+                        {{ __('Revenue by Department') }}
+                        <small class="text-muted ms-2">{{ __('This Month') }}</small>
+                    </h5>
+                    <span class="badge bg-info">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($deptTotalRevenue, 2), '0'), '.') }} {{ __('Total') }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        @foreach($deptRevenue as $key => $dept)
+                        @php
+                            $pct = $deptTotalRevenue > 0 ? ($dept['revenue'] / $deptTotalRevenue) * 100 : 0;
+                            $barColor = match($dept['color']) {
+                                'primary' => 'bg-primary',
+                                'success' => 'bg-success',
+                                'info' => 'bg-info',
+                                'warning' => 'bg-warning',
+                                'danger' => 'bg-danger',
+                                default => 'bg-secondary',
+                            };
+                        @endphp
+                        <div class="col-md col-sm-6" style="min-width: 200px;">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted small">
+                                        <i class="fas {{ $dept['icon'] }} text-{{ $dept['color'] }}"></i>
+                                        {{ __($dept['label']) }}
+                                    </span>
+                                    <span class="badge {{ $barColor }}">{{ number_format($pct, 1) }}%</span>
+                                </div>
+                                <h5 class="mb-1">
+                                    {{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($dept['revenue'], 2), '0'), '.') }}
+                                </h5>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar {{ $barColor }}" role="progressbar" style="width: {{ $pct }}%" aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <small class="text-muted mt-1 d-block">
+                                    {{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($dept['paid'], 2), '0'), '.') }} {{ __('collected') }}
+                                </small>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <!-- Recent Invoices -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-file-invoice text-primary"></i>
+                        Recent Invoices
+                    </h6>
+                    <a href="{{ route('finance.invoices') }}" class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    @forelse($recentInvoices as $invoice)
+                    <div class="border-bottom p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ $invoice->invoice_number }}</h6>
+                                <p class="mb-1 text-muted small">
+                                    {{ $invoice->patient->full_name }}
+                                </p>
+                                <span class="{{ $invoice->status_badge_class }}">
+                                    {{ $invoice->status_display }}
+                                </span>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->total_amount, 2), '0'), '.') }}</div>
+                                <small class="text-muted">
+                                    {{ $invoice->invoice_date->format('M d') }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="p-3 text-center text-muted">
+                        <i class="fas fa-file-invoice fa-2x mb-2"></i>
+                        <p class="mb-0">No recent invoices</p>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Medicine Sales -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-pills text-success"></i>
+                        Recent Medicine Sales
+                    </h6>
+                    <a href="{{ route('finance.invoices') }}#medicine-sales-section" class="btn btn-sm btn-outline-success">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    @forelse($recentMedicineSales ?? collect() as $sale)
+                    <div class="border-bottom p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ $sale->invoice_number }}</h6>
+                                <p class="mb-1 text-muted small">
+                                    {{ $sale->patient?->full_name ?? __('Walk-in') }}
+                                </p>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    {{ __('Medicine Sale') }}
+                                </span>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($sale->total, 2), '0'), '.') }}</div>
+                                <small class="text-muted">
+                                    {{ $sale->sold_at?->format('M d') ?? '—' }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="p-3 text-center text-muted">
+                        <i class="fas fa-pills fa-2x mb-2"></i>
+                        <p class="mb-0">No recent medicine sales</p>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Expenses -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-receipt text-danger"></i>
+                        Recent Expenses
+                    </h6>
+                    <a href="{{ route('finance.expenses') }}" class="btn btn-sm btn-outline-secondary">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    @forelse($recentExpenses as $expense)
+                    <div class="border-bottom p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ $expense->description }}</h6>
+                                <p class="mb-1 text-muted small">
+                                    {{ $expense->category_display }}
+                                    @if($expense->vendor_name)
+                                        • {{ $expense->vendor_name }}
+                                    @endif
+                                </p>
+                                <span class="{{ $expense->status_badge_class }}">
+                                    {{ $expense->status_display }}
+                                </span>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-danger">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($expense->amount, 2), '0'), '.') }}</div>
+                                <small class="text-muted">
+                                    {{ $expense->expense_date->format('M d') }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="p-3 text-center text-muted">
+                        <i class="fas fa-receipt fa-2x mb-2"></i>
+                        <p class="mb-0">No recent expenses</p>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-plus-circle"></i>
+                        Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button type="button" class="btn btn-primary btn-lg w-100" data-bs-toggle="modal" data-bs-target="#createInvoiceModal">
+                                <i class="fas fa-file-invoice-dollar d-block mb-1"></i>
+                                <small>Create Invoice</small>
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ route('finance.receipts') }}" class="btn btn-success btn-lg w-100">
+                                <i class="fas fa-receipt d-block mb-1"></i>
+                                <small>Add Receipt</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ route('finance.expenses', ['new' => 1]) }}" class="btn btn-danger btn-lg w-100">
+                                <i class="fas fa-money-bill d-block mb-1"></i>
+                                <small>Add Expense</small>
+                            </a>
+                        </div>
+                        @can('finance-reports')
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ route('finance.reports') }}" class="btn btn-info btn-lg w-100">
+                                <i class="fas fa-chart-bar d-block mb-1"></i>
+                                <small>View Reports</small>
+                            </a>
+                        </div>
+                        @endcan
+                        @can('access-section', 'settings')
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ route('settings.index', ['tab' => 'general']) }}" class="btn btn-secondary btn-lg w-100">
+                                <i class="fas fa-cog d-block mb-1"></i>
+                                <small>Settings</small>
+                            </a>
+                        </div>
+                        @endcan
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Invoice Modal -->
+<div class="modal fade" id="createInvoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Invoice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ route('finance.invoices.store') }}">
+                @csrf
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="patient_id" class="form-label">Patient *</label>
+                            <select class="form-select" id="patient_id" name="patient_id" required>
+                                <option value="">Select Patient</option>
+                                @if(isset($patients) && $patients->count() > 0)
+                                    @foreach($patients as $patient)
+                                        <option value="{{ $patient->id }}"
+                                                data-tokens="{{ $patient->first_name }} {{ $patient->last_name }} {{ $patient->patient_id }} {{ $patient->phone }}">
+                                            {{ $patient->first_name }} {{ $patient->last_name }}
+                                            @if($patient->patient_id)
+                                                (ID: {{ $patient->patient_id }})
+                                            @endif
+                                            @if($patient->phone)
+                                                - {{ $patient->phone }}
+                                            @endif
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="due_date" class="form-label">Due Date</label>
+                            <input type="date" class="form-control" id="due_date" name="due_date" 
+                                   value="{{ now()->addDays(30)->format('Y-m-d') }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="tax_rate" class="form-label">Tax Rate (%)</label>
+                            <input type="number" class="form-control" id="tax_rate" name="tax_rate" 
+                                   min="0" max="100" step="0.01" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="discount_rate" class="form-label">Discount Rate (%)</label>
+                            <input type="number" class="form-control" id="discount_rate" name="discount_rate" 
+                                   min="0" max="100" step="0.01" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="discount_amount" class="form-label">Discount Amount ({{ $currencySymbol ?? '$' }})</label>
+                            <input type="number" class="form-control" id="discount_amount" name="discount_amount" 
+                                   min="0" step="0.01" value="0">
+                        </div>
+                    </div>
+
+                    <!-- Invoice Items -->
+                    <div class="mb-3">
+                        <label class="form-label">Invoice Items *</label>
+                        <div id="invoiceItems">
+                            <div class="row invoice-item mb-2">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control" name="items[0][description]" 
+                                           placeholder="Description" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" class="form-control" name="items[0][quantity]" 
+                                           placeholder="Qty" min="1" value="1" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" class="form-control" name="items[0][unit_price]" 
+                                           placeholder="Price" min="0" step="0.01" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="items[0][item_type]" required>
+                                        <option value="consultation">Consultation</option>
+                                        <option value="procedure">Procedure</option>
+                                        <option value="medication">Medication</option>
+                                        <option value="lab_test">Lab Test</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-item">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="addItem">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="payment_amount" class="form-label">Payment Amount ({{ $currencySymbol ?? '$' }})</label>
+                            <input type="number" class="form-control" id="payment_amount" name="payment_amount"
+                                   step="0.01" min="0" value="0" placeholder="Amount paid now">
+                            <div class="form-text text-muted">Leave 0 if no payment at creation</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="payment_method" class="form-label">Payment Method</label>
+                            <select class="form-select" id="payment_method" name="payment_method">
+                                <option value="cash" selected>Cash</option>
+                                <option value="card">Credit/Debit Card</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="check">Check</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="terms" class="form-label">Terms</label>
+                            <textarea class="form-control" id="terms" name="terms" rows="2"
+                                      placeholder="Payment terms and conditions..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Invoice</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+// Initialize Select2 for patient dropdown with smart search
+$(document).ready(function() {
+    $('#patient_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Select Patient',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#createInvoiceModal'),
+        language: {
+            noResults: function() {
+                return 'No patients found';
+            },
+            searching: function() {
+                return 'Searching...';
+            }
+        }
+    });
+
+    // Reset Select2 when modal is closed
+    $('#createInvoiceModal').on('hidden.bs.modal', function () {
+        $('#patient_id').val(null).trigger('change');
+    });
+});
+
+// Add/Remove invoice items
+let itemIndex = 1;
+
+document.getElementById('addItem').addEventListener('click', function() {
+    const container = document.getElementById('invoiceItems');
+    const newItem = document.querySelector('.invoice-item').cloneNode(true);
+
+    // Update input names
+    newItem.querySelectorAll('input, select').forEach(input => {
+        const name = input.name.replace(/\[\d+\]/, `[${itemIndex}]`);
+        input.name = name;
+        input.value = input.type === 'number' && input.placeholder === 'Qty' ? '1' : '';
+    });
+
+    container.appendChild(newItem);
+    itemIndex++;
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-item')) {
+        const items = document.querySelectorAll('.invoice-item');
+        if (items.length > 1) {
+            e.target.closest('.invoice-item').remove();
+        }
+    }
+});
+</script>
+@endpush
+@endsection
