@@ -51,15 +51,23 @@ DEALLOCATE PREPARE stmt;
 
 -- Step 4: Make medicine_id nullable
 ALTER TABLE prescription_medicines
-MODIFY COLUMN medicine_id INT NULL
+MODIFY COLUMN medicine_id INT UNSIGNED NULL
 COMMENT 'Reference to medicines table (NULL for custom medicines)';
 
--- Step 5: Re-create the foreign key constraint (now allowing NULL)
-ALTER TABLE prescription_medicines
-ADD CONSTRAINT prescription_medicines_medicine_id_foreign
-FOREIGN KEY (medicine_id)
-REFERENCES medicines(id)
-ON DELETE CASCADE;
+-- Step 5: Re-create the foreign key constraint (now allowing NULL) - only if not exists
+SET @fk_exists = (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'prescription_medicines'
+    AND CONSTRAINT_NAME = 'prescription_medicines_medicine_id_foreign'
+    AND CONSTRAINT_TYPE = 'FOREIGN KEY');
+
+SET @add_fk = IF(@fk_exists = 0,
+    'ALTER TABLE prescription_medicines ADD CONSTRAINT prescription_medicines_medicine_id_foreign FOREIGN KEY (medicine_id) REFERENCES medicines(id) ON DELETE CASCADE',
+    'SELECT "Foreign key already exists, skipping..."');
+
+PREPARE stmt FROM @add_fk;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Step 6: Add index if it doesn't exist
 SET @index_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS
