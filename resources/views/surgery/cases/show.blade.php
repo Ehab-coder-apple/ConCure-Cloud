@@ -269,6 +269,7 @@
 	                                        foreach ($dressLabels as $key => $label) {
 	                                            if (data_get($treat, 'dressing.' . $key)) $dressOut[] = $label;
 	                                        }
+	                                        if ($dressOther = data_get($treat, 'dressing.other')) $dressOut[] = $dressOther;
 	                                        $advLabels = ['npwt' => 'NPWT', 'skin_graft' => 'Skin graft', 'flap_surgery' => 'Flap surgery', 'hbot' => 'Hyperbaric oxygen therapy'];
 	                                        $advOut = [];
 	                                        foreach ($advLabels as $key => $label) {
@@ -293,10 +294,6 @@
 	                                @if($follow = data_get($vWound, 'followup'))
 	                                    <h6 class="mt-2">Follow-up</h6>
 	                                    <p><strong>Dressing change frequency:</strong> {{ data_get($follow, 'dressing_change_frequency') ?: '-' }}
-	                                        &nbsp;|&nbsp; <strong>Weekly measurements:</strong> {{ data_get($follow, 'weekly_measurements') ?: '-' }}
-	                                        &nbsp;|&nbsp; <strong>Photographs:</strong> {{ data_get($follow, 'photographs') ?: '-' }}
-	                                    </p>
-	                                    <p><strong>Healing progress:</strong> {{ data_get($follow, 'healing_progress') ?: '-' }}
 	                                        &nbsp;|&nbsp; <strong>Complications:</strong> {{ data_get($follow, 'complications') ?: '-' }}
 	                                    </p>
 	                                @endif
@@ -650,6 +647,7 @@
 	                                    foreach ($dressLabels as $key => $label) {
 	                                        if(data_get($dress, $key)) $dressOut[] = $label;
 	                                    }
+	                                    if($dressOther = data_get($dress, 'other')) $dressOut[] = $dressOther;
 	                                @endphp
 	                                {{ $dressOut ? implode(', ', $dressOut) : '-' }}
 	                            </p>
@@ -694,10 +692,7 @@
 	                    @if($follow = data_get($wound, 'followup'))
 	                        <h6 class="mt-2">Follow-up</h6>
 	                        <p><strong>Dressing change frequency:</strong> {{ data_get($follow, 'dressing_change_frequency') }}</p>
-	                        <p><strong>Weekly measurements:</strong> {{ data_get($follow, 'weekly_measurements') }}</p>
-	                        <p><strong>Photographs:</strong> {{ data_get($follow, 'photographs') }}</p>
 	                        <p><strong>Complications:</strong> {{ data_get($follow, 'complications') }}</p>
-	                        <p><strong>Healing progress:</strong> {{ data_get($follow, 'healing_progress') }}</p>
 	                    @endif
 
 	                    @if($outcome = data_get($wound, 'outcome'))

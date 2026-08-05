@@ -449,6 +449,7 @@
         <div class="form-check"><input class="form-check-input" type="checkbox" name="wound_assessment[treatment][dressing][contact_layer]" value="1" {{ data_get($dressOld, 'contact_layer') ? 'checked' : '' }}><label class="form-check-label">Contact layer</label></div>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="wound_assessment[treatment][dressing][ecm]" value="1" {{ data_get($dressOld, 'ecm') ? 'checked' : '' }}><label class="form-check-label">ECM</label></div>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="wound_assessment[treatment][dressing][hydrogel]" value="1" {{ data_get($dressOld, 'hydrogel') ? 'checked' : '' }}><label class="form-check-label">Hydrogel</label></div>
+        <input type="text" name="wound_assessment[treatment][dressing][other]" class="form-control mt-1" placeholder="Other dressing" value="{{ data_get($dressOld, 'other') }}">
     </div>
     <div class="col-md-3 mb-2">
         <strong>Advanced Therapy & Offloading</strong>
@@ -469,12 +470,9 @@
 <h6 class="mt-3">Follow-up</h6>
 <div class="row">
     <div class="col-md-4 mb-2"><input type="text" name="wound_assessment[followup][dressing_change_frequency]" class="form-control" placeholder="Dressing change frequency" value="{{ old('wound_assessment.followup.dressing_change_frequency') }}"></div>
-    <div class="col-md-4 mb-2"><input type="text" name="wound_assessment[followup][weekly_measurements]" class="form-control" placeholder="Weekly wound measurements" value="{{ old('wound_assessment.followup.weekly_measurements') }}"></div>
-    <div class="col-md-4 mb-2"><input type="text" name="wound_assessment[followup][photographs]" class="form-control" placeholder="Photographs" value="{{ old('wound_assessment.followup.photographs') }}"></div>
 </div>
 <div class="row mt-1">
     <div class="col-md-6 mb-2"><input type="text" name="wound_assessment[followup][complications]" class="form-control" placeholder="Complications" value="{{ old('wound_assessment.followup.complications') }}"></div>
-    <div class="col-md-6 mb-2"><input type="text" name="wound_assessment[followup][healing_progress]" class="form-control" placeholder="Healing progress" value="{{ old('wound_assessment.followup.healing_progress') }}"></div>
 </div>
 
 <h6 class="mt-3">Outcome</h6>
