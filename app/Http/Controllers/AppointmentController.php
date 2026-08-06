@@ -25,7 +25,10 @@ class AppointmentController extends Controller
      * - Super/Clinic admins: no restriction
      * - Doctor: only own appointments
      * - Assistant: appointments for assigned doctors; also include appointments they created
-     * - Others: default to old behavior (doctor_id = user id)
+     * - Patient: no access via the staff-facing appointment views (they use the patient dashboard)
+     * - All other clinic staff (pharmacist, nurse, accountant, lab_dept, radiology_dept,
+     *   dental_dept, dental_technician, cad_cam_designer, nutritionist, ...): full clinic
+     *   visibility, consistent with the calendar view's visibility rules.
      */
     private function applyAppointmentVisibilityFilter($query, $user, string $doctorColumn, string $createdByColumn): void
     {
@@ -54,8 +57,15 @@ class AppointmentController extends Controller
             return;
         }
 
-        // Fallback to previous behavior for any other non-admin roles.
-        $query->where($doctorColumn, $user->id);
+        if ($user->role === 'patient') {
+            // Patients use their own dashboard to view appointments, not this staff view.
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        // All other clinic staff roles see the full clinic schedule (still scoped to
+        // their clinic via the clinic_id filter applied by the caller), matching the
+        // calendar view's behavior.
     }
 
     /**
