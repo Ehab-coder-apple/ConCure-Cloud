@@ -31,17 +31,31 @@
         @enderror
     </div>
 
-    <!-- Quantity -->
+    <!-- Purchased Quantity -->
     <div class="col-md-4">
-        <label for="quantity" class="form-label">{{ __('Current Stock') }} <span class="text-danger">*</span></label>
+        <label for="purchased_quantity" class="form-label">{{ __('Initial Purchased Stock') }} <span class="text-danger">*</span></label>
         <input type="number" min="0" step="1"
-               class="form-control @error('quantity') is-invalid @enderror"
-               id="quantity" name="quantity"
-               value="{{ old('quantity', $aestheticInventory->quantity ?? 0) }}"
+               class="form-control @error('purchased_quantity') is-invalid @enderror"
+               id="purchased_quantity" name="purchased_quantity"
+               value="{{ old('purchased_quantity', $aestheticInventory->purchased_quantity ?? 0) }}"
                required>
-        @error('quantity')
+        @error('purchased_quantity')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
+    </div>
+
+    <!-- Bonus Quantity -->
+    <div class="col-md-4">
+        <label for="bonus_quantity" class="form-label">{{ __('Initial Bonus Stock') }} <span class="text-danger">*</span></label>
+        <input type="number" min="0" step="1"
+               class="form-control @error('bonus_quantity') is-invalid @enderror"
+               id="bonus_quantity" name="bonus_quantity"
+               value="{{ old('bonus_quantity', $aestheticInventory->bonus_quantity ?? 0) }}"
+               required>
+        @error('bonus_quantity')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <small class="form-text text-muted">{{ __('Free/bonus goods from supplier, tracked separately from purchased stock.') }}</small>
     </div>
 
     <!-- Low Stock Threshold -->

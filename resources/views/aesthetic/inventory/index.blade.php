@@ -121,6 +121,8 @@
                                         <td>
                                             <strong>{{ $item->quantity }}</strong>
                                             <small class="text-muted">{{ __('(alert at :threshold)', ['threshold' => $item->low_stock_threshold]) }}</small>
+                                            <br>
+                                            <small class="text-muted">{{ __('(P: :purchased | B: :bonus)', ['purchased' => $item->purchased_quantity, 'bonus' => $item->bonus_quantity]) }}</small>
                                         </td>
                                         <td>
                                             @if($item->quantity === 0)
@@ -172,7 +174,22 @@
                                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                             </div>
                                                             <div class="modal-body">
-                                                                <p>{{ __('Current stock: :quantity', ['quantity' => $item->quantity]) }}</p>
+                                                                <p>
+                                                                    {{ __('Current stock: :quantity', ['quantity' => $item->quantity]) }}
+                                                                    <br>
+                                                                    <small class="text-muted">{{ __('(P: :purchased | B: :bonus)', ['purchased' => $item->purchased_quantity, 'bonus' => $item->bonus_quantity]) }}</small>
+                                                                </p>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label d-block">{{ __('Stock Type') }}</label>
+                                                                    <div class="form-check form-check-inline">
+                                                                        <input class="form-check-input" type="radio" name="stock_type" id="stockTypePurchased{{ $item->id }}" value="purchased" checked>
+                                                                        <label class="form-check-label" for="stockTypePurchased{{ $item->id }}">{{ __('Purchased Item') }}</label>
+                                                                    </div>
+                                                                    <div class="form-check form-check-inline">
+                                                                        <input class="form-check-input" type="radio" name="stock_type" id="stockTypeBonus{{ $item->id }}" value="bonus">
+                                                                        <label class="form-check-label" for="stockTypeBonus{{ $item->id }}">{{ __('Bonus / Free Goods') }}</label>
+                                                                    </div>
+                                                                </div>
                                                                 <div class="mb-3">
                                                                     <label class="form-label">{{ __('Adjustment (+ add / - deduct)') }}</label>
                                                                     <input type="number" class="form-control" name="adjustment" required>

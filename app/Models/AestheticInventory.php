@@ -19,6 +19,8 @@ class AestheticInventory extends Model
         'product_name',
         'type',
         'quantity',
+        'purchased_quantity',
+        'bonus_quantity',
         'low_stock_threshold',
         'expiry_date',
         'purchase_price',
@@ -27,6 +29,8 @@ class AestheticInventory extends Model
 
     protected $casts = [
         'quantity' => 'integer',
+        'purchased_quantity' => 'integer',
+        'bonus_quantity' => 'integer',
         'low_stock_threshold' => 'integer',
         'expiry_date' => 'date',
         'purchase_price' => 'decimal:2',
@@ -139,6 +143,10 @@ class AestheticInventory extends Model
 
     /**
      * Deduct quantity from stock.
+     *
+     * Deducts from purchased stock first, then falls back to bonus stock
+     * once purchased stock is exhausted, while keeping the aggregate
+     * `quantity` column in sync.
      */
     public function deductStock(int $amount): bool
     {
@@ -146,15 +154,33 @@ class AestheticInventory extends Model
             return false;
         }
 
+        $fromPurchased = min($this->purchased_quantity, $amount);
+        $fromBonus = $amount - $fromPurchased;
+
+        if ($fromPurchased > 0) {
+            $this->decrement('purchased_quantity', $fromPurchased);
+        }
+        if ($fromBonus > 0) {
+            $this->decrement('bonus_quantity', $fromBonus);
+        }
         $this->decrement('quantity', $amount);
+
         return true;
     }
 
     /**
      * Add quantity to stock.
+     *
+     * By default the added quantity is treated as "purchased" stock unless
+     * a different stock type is specified.
      */
-    public function addStock(int $amount): void
+    public function addStock(int $amount, string $stockType = 'purchased'): void
     {
+        if ($stockType === 'bonus') {
+            $this->increment('bonus_quantity', $amount);
+        } else {
+            $this->increment('purchased_quantity', $amount);
+        }
         $this->increment('quantity', $amount);
     }
 }

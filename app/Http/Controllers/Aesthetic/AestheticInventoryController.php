@@ -71,13 +71,15 @@ class AestheticInventoryController extends Controller
         $validated = $request->validate([
             'product_name' => 'required|string|max:255',
             'type' => 'required|string|max:100',
-            'quantity' => 'required|integer|min:0',
+            'purchased_quantity' => 'required|integer|min:0',
+            'bonus_quantity' => 'required|integer|min:0',
             'low_stock_threshold' => 'required|integer|min:1',
             'expiry_date' => 'nullable|date|after_or_equal:today',
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
         ]);
 
+        $validated['quantity'] = $validated['purchased_quantity'] + $validated['bonus_quantity'];
         $validated['tenant_id'] = Auth::user()->clinic?->tenant_id;
 
         AestheticInventory::create($validated);
@@ -107,12 +109,15 @@ class AestheticInventoryController extends Controller
         $validated = $request->validate([
             'product_name' => 'required|string|max:255',
             'type' => 'required|string|max:100',
-            'quantity' => 'required|integer|min:0',
+            'purchased_quantity' => 'required|integer|min:0',
+            'bonus_quantity' => 'required|integer|min:0',
             'low_stock_threshold' => 'required|integer|min:1',
             'expiry_date' => 'nullable|date',
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
         ]);
+
+        $validated['quantity'] = $validated['purchased_quantity'] + $validated['bonus_quantity'];
 
         $aestheticInventory->update($validated);
 
@@ -142,14 +147,24 @@ class AestheticInventoryController extends Controller
 
         $validated = $request->validate([
             'adjustment' => 'required|integer',
+            'stock_type' => 'required|in:purchased,bonus',
             'reason' => 'nullable|string|max:255',
         ]);
 
-        $newQuantity = max(0, $aestheticInventory->quantity + $validated['adjustment']);
-        $aestheticInventory->update(['quantity' => $newQuantity]);
+        $column = $validated['stock_type'] === 'bonus' ? 'bonus_quantity' : 'purchased_quantity';
+        $newColumnQuantity = max(0, $aestheticInventory->{$column} + $validated['adjustment']);
+
+        // Clamp the adjustment so the total quantity never goes negative.
+        $appliedAdjustment = $newColumnQuantity - $aestheticInventory->{$column};
+        $newTotalQuantity = $aestheticInventory->quantity + $appliedAdjustment;
+
+        $aestheticInventory->update([
+            $column => $newColumnQuantity,
+            'quantity' => $newTotalQuantity,
+        ]);
 
         return redirect()->route('aesthetic.inventory.index')
-            ->with('success', __('Stock adjusted. New quantity: :quantity', ['quantity' => $newQuantity]));
+            ->with('success', __('Stock adjusted. New quantity: :quantity', ['quantity' => $newTotalQuantity]));
     }
 
     /**
