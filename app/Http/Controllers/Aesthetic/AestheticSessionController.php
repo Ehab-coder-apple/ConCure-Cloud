@@ -79,7 +79,7 @@ class AestheticSessionController extends Controller
         $sessions = $query->latest('session_date')->paginate(15);
 
         $patientPackages = $this->getTenantPatientPackages();
-        $followUpReminders = $this->getOutstandingPackageReminderQuery()
+        $followUpReminders = $this->getOutstandingFollowUpRemindersQuery()
             ->latest('next_due_date')
             ->take(6)
             ->get();
@@ -88,7 +88,7 @@ class AestheticSessionController extends Controller
             'total' => AestheticSession::count(),
             'scheduled' => AestheticSession::where('status', 'scheduled')->count(),
             'completed' => AestheticSession::where('status', 'completed')->count(),
-            'follow_up_due' => $this->getOutstandingPackageReminderQuery()->count(),
+            'follow_up_due' => $this->getOutstandingFollowUpRemindersQuery()->count(),
         ];
 
         return view('aesthetic.sessions.index', compact('sessions', 'patientPackages', 'stats', 'followUpReminders'));
@@ -230,12 +230,15 @@ class AestheticSessionController extends Controller
             ->latest()
             ->get();
 
-        $followUpReminders = $this->getOutstandingPackageReminderQuery()
-            ->whereHas('patientPackage', fn ($query) => $query->where('patient_id', $patient->id))
+        $followUpReminders = $this->getOutstandingFollowUpRemindersQuery()
+            ->where(function ($query) use ($patient) {
+                $query->whereHas('patientPackage', fn ($sq) => $sq->where('patient_id', $patient->id))
+                    ->orWhere('patient_id', $patient->id);
+            })
             ->latest('next_due_date')
             ->get();
 
-        $followUpReminderMap = $followUpReminders->keyBy('patient_package_id');
+        $followUpReminderMap = $followUpReminders->whereNotNull('patient_package_id')->keyBy('patient_package_id');
 
         $stats = [
             'total_sessions' => $sessions->total(),
@@ -414,7 +417,8 @@ class AestheticSessionController extends Controller
     }
 
     /**
-     * Send a WhatsApp follow-up reminder for a package session.
+     * Send a WhatsApp follow-up reminder for a package session or a direct
+     * treatment session.
      */
     public function sendWhatsAppReminder(AestheticSession $aestheticSession, WhatsAppService $whatsAppService): JsonResponse
     {
@@ -792,7 +796,7 @@ class AestheticSessionController extends Controller
 
     private function getSuggestedNextDueDate(AestheticSession $session): ?Carbon
     {
-        if (!$session->isPackageSession || !$session->has_pending_follow_up_slot) {
+        if ((!$session->isPackageSession && !$session->isDirectSession) || !$session->has_pending_follow_up_slot) {
             return null;
         }
 
@@ -801,7 +805,7 @@ class AestheticSessionController extends Controller
 
     private function resolveNextDueDate(Request $request, AestheticSession $session, string $mode, string $status): ?string
     {
-        if ($mode !== 'package' || $status !== 'completed') {
+        if (!in_array($mode, ['package', 'direct'], true) || $status !== 'completed') {
             return null;
         }
 
@@ -816,25 +820,39 @@ class AestheticSessionController extends Controller
         return optional($session->next_due_date)->format('Y-m-d');
     }
 
-    private function getOutstandingPackageReminderQuery()
+    /**
+     * Outstanding follow-up reminders for both package sessions and direct
+     * treatment sessions: completed sessions with a next_due_date set that
+     * still represent an open reminder (see AestheticSession::has_open_reminder).
+     */
+    private function getOutstandingFollowUpRemindersQuery()
     {
-        return AestheticSession::with(['patientPackage.patient', 'patientPackage.package'])
-            ->whereNotNull('patient_package_id')
+        return AestheticSession::with(['patientPackage.patient', 'patientPackage.package', 'patient', 'treatment', 'treatments'])
             ->where('status', 'completed')
             ->whereNotNull('next_due_date')
-            ->whereHas('patientPackage', fn ($query) => $query->where('sessions_remaining', '>', 0))
-            ->whereRaw('NOT EXISTS (
-                SELECT 1 FROM aesthetic_sessions future_sessions
-                WHERE future_sessions.patient_package_id = aesthetic_sessions.patient_package_id
-                  AND future_sessions.session_number > aesthetic_sessions.session_number
-                  AND future_sessions.deleted_at IS NULL
-            )');
+            ->where(function ($query) {
+                $query->whereNull('patient_package_id')
+                    ->orWhere(function ($packageQuery) {
+                        $packageQuery->whereNotNull('patient_package_id')
+                            ->whereHas('patientPackage', fn ($q) => $q->where('sessions_remaining', '>', 0))
+                            ->whereRaw('NOT EXISTS (
+                                SELECT 1 FROM aesthetic_sessions future_sessions
+                                WHERE future_sessions.patient_package_id = aesthetic_sessions.patient_package_id
+                                  AND future_sessions.session_number > aesthetic_sessions.session_number
+                                  AND future_sessions.deleted_at IS NULL
+                            )');
+                    });
+            });
     }
 
     private function buildFollowUpReminderMessage(AestheticSession $session, Patient $patient): string
     {
         $clinic = Auth::user()?->clinic;
-        $packageName = $session->patientPackage?->package?->name ?? __('Treatment Package');
+        $treatmentName = $session->effective_treatments->pluck('name')->implode(', ')
+            ?: ($session->patientPackage?->package?->treatment?->name ?? __('Treatment Session'));
+        $packageName = $session->isPackageSession
+            ? ($session->patientPackage?->package?->name ?? __('Treatment Package'))
+            : $treatmentName;
         $nextSessionNumber = $session->session_number + 1;
         $dueDate = optional($session->next_due_date)->format('Y-m-d') ?? '';
         $customTemplate = null;
@@ -862,7 +880,7 @@ class AestheticSessionController extends Controller
             '{package_name}' => $packageName,
             '{session_number}' => (string) $session->session_number,
             '{next_session_number}' => (string) $nextSessionNumber,
-            '{treatment_name}' => $session->treatment?->name ?? ($session->patientPackage?->package?->treatment?->name ?? __('Treatment Session')),
+            '{treatment_name}' => $treatmentName,
         ]);
     }
 

@@ -172,52 +172,57 @@
             </div>
             @endif
 
-            @if($aestheticSession->isPackageSession)
-                <div class="card mb-4 border-{{ $aestheticSession->has_open_reminder ? 'warning' : 'light' }}">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">
-                            <i class="fas fa-bell me-2 text-warning"></i>{{ __('Next Due Reminder') }}
-                        </h6>
-                        @if($aestheticSession->next_due_date)
-                            <span class="badge bg-warning text-dark">{{ $aestheticSession->next_due_date->format('M d, Y') }}</span>
-                        @elseif($aestheticSession->has_pending_follow_up_slot)
-                            <span class="badge bg-light text-dark border">{{ __('Suggested') }} {{ optional($suggestedNextDueDate)->format('M d, Y') }}</span>
-                        @endif
-                    </div>
-                    <div class="card-body">
-                        @if(!$aestheticSession->has_pending_follow_up_slot)
-                            <div class="alert alert-success mb-0">
-                                <i class="fas fa-circle-check me-2"></i>{{ __('This package has no remaining sessions to schedule after this appointment.') }}
+            <div class="card mb-4 border-{{ $aestheticSession->has_open_reminder ? 'warning' : 'light' }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-bell me-2 text-warning"></i>{{ __('Next Due Reminder') }}
+                    </h6>
+                    @if($aestheticSession->next_due_date)
+                        <span class="badge bg-warning text-dark">{{ $aestheticSession->next_due_date->format('M d, Y') }}</span>
+                    @elseif($aestheticSession->has_pending_follow_up_slot)
+                        <span class="badge bg-light text-dark border">{{ __('Suggested') }} {{ optional($suggestedNextDueDate)->format('M d, Y') }}</span>
+                    @endif
+                </div>
+                <div class="card-body">
+                    @if(!$aestheticSession->has_pending_follow_up_slot)
+                        <div class="alert alert-success mb-0">
+                            <i class="fas fa-circle-check me-2"></i>{{ __('This package has no remaining sessions to schedule after this appointment.') }}
+                        </div>
+                    @else
+                        <div class="row g-3 align-items-end">
+                            <div class="col-lg-8">
+                                <form method="POST" action="{{ route('aesthetic.sessions.update', $aestheticSession) }}" class="row g-3">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="session_mode" value="{{ $aestheticSession->isPackageSession ? 'package' : 'direct' }}">
+                                    <input type="hidden" name="patient_package_id" value="{{ $aestheticSession->patient_package_id ?? '' }}">
+                                    <input type="hidden" name="patient_id" value="{{ $aestheticSession->patient_id ?? '' }}">
+                                    <input type="hidden" name="treatment_id" value="{{ $aestheticSession->treatment_id ?? '' }}">
+                                    @foreach($aestheticSession->effective_treatments as $et)
+                                        <input type="hidden" name="treatment_ids[]" value="{{ $et->id }}">
+                                    @endforeach
+                                    <input type="hidden" name="session_number" value="{{ $aestheticSession->session_number }}">
+                                    <input type="hidden" name="session_date" value="{{ $aestheticSession->session_date->format('Y-m-d') }}">
+                                    <input type="hidden" name="status" value="completed">
+                                    <input type="hidden" name="notes" value="{{ $aestheticSession->notes ?? '' }}">
+                                    <div class="col-md-7">
+                                        <label class="form-label">{{ __('Next Due Date (Optional)') }}</label>
+                                        <input type="date" name="next_due_date" class="form-control @error('next_due_date') is-invalid @enderror" value="{{ $nextDueDateValue }}" min="{{ $aestheticSession->session_date->format('Y-m-d') }}">
+                                        @error('next_due_date')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <small class="text-muted">{{ __('Suggested interval: :weeks weeks after this session.', ['weeks' => 4]) }}</small>
+                                    </div>
+                                    <div class="col-md-5 d-flex gap-2 align-items-end">
+                                        <button type="submit" class="btn btn-warning w-100">
+                                            <i class="fas fa-calendar-plus me-1"></i>
+                                            {{ $aestheticSession->status === 'completed' ? __('Save Reminder') : __('Mark Completed & Save Reminder') }}
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
-                        @else
-                            <div class="row g-3 align-items-end">
-                                <div class="col-lg-8">
-                                    <form method="POST" action="{{ route('aesthetic.sessions.update', $aestheticSession) }}" class="row g-3">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="session_mode" value="package">
-                                        <input type="hidden" name="patient_package_id" value="{{ $aestheticSession->patient_package_id }}">
-                                        <input type="hidden" name="session_number" value="{{ $aestheticSession->session_number }}">
-                                        <input type="hidden" name="session_date" value="{{ $aestheticSession->session_date->format('Y-m-d') }}">
-                                        <input type="hidden" name="status" value="completed">
-                                        <input type="hidden" name="notes" value="{{ $aestheticSession->notes ?? '' }}">
-                                        <div class="col-md-7">
-                                            <label class="form-label">{{ __('Next Due Date (Optional)') }}</label>
-                                            <input type="date" name="next_due_date" class="form-control @error('next_due_date') is-invalid @enderror" value="{{ $nextDueDateValue }}" min="{{ $aestheticSession->session_date->format('Y-m-d') }}">
-                                            @error('next_due_date')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                            <small class="text-muted">{{ __('Suggested interval: :weeks weeks after this session.', ['weeks' => 4]) }}</small>
-                                        </div>
-                                        <div class="col-md-5 d-flex gap-2 align-items-end">
-                                            <button type="submit" class="btn btn-warning w-100">
-                                                <i class="fas fa-calendar-plus me-1"></i>
-                                                {{ $aestheticSession->status === 'completed' ? __('Save Reminder') : __('Mark Completed & Save Reminder') }}
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                                <div class="col-lg-4">
+                            <div class="col-lg-4">
+                                @if($aestheticSession->isPackageSession)
                                     @if($aestheticSession->has_subsequent_package_session)
                                         <div class="alert alert-info mb-0">
                                             <i class="fas fa-calendar-check me-2"></i>{{ __('A later package session already exists, so this reminder is informational only.') }}
@@ -227,12 +232,16 @@
                                             {{ __('Use this reminder to know when the next package session should be booked after completion.') }}
                                         </div>
                                     @endif
-                                </div>
+                                @else
+                                    <div class="small text-muted">
+                                        {{ __('Use this reminder to know when this patient should return for their next treatment.') }}
+                                    </div>
+                                @endif
                             </div>
-                        @endif
-                    </div>
+                        </div>
+                    @endif
                 </div>
-            @endif
+            </div>
 
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">

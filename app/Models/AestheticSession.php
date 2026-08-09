@@ -261,20 +261,30 @@ class AestheticSession extends Model
     }
 
     /**
-     * Suggested next due date for package follow-up.
+     * Suggested next due date for follow-up (package or direct treatment).
      */
     public function getSuggestedNextDueDateAttribute()
     {
-        return $this->isPackageSession && $this->session_date
-            ? $this->session_date->copy()->addDays(self::DEFAULT_PACKAGE_FOLLOW_UP_INTERVAL_DAYS)
-            : null;
+        if (!$this->session_date || (!$this->isPackageSession && !$this->isDirectSession)) {
+            return null;
+        }
+
+        return $this->session_date->copy()->addDays(self::DEFAULT_PACKAGE_FOLLOW_UP_INTERVAL_DAYS);
     }
 
     /**
-     * Whether this package session still has a future slot to follow up on.
+     * Whether this session still has a future slot to follow up on.
+     *
+     * Package sessions: true while the package has remaining/uncreated sessions.
+     * Direct treatment sessions: always true, since there is no fixed session
+     * quota — a follow-up can always be scheduled for a direct treatment.
      */
     public function getHasPendingFollowUpSlotAttribute(): bool
     {
+        if ($this->isDirectSession) {
+            return true;
+        }
+
         if (!$this->isPackageSession || !$this->patientPackage) {
             return false;
         }
@@ -303,12 +313,23 @@ class AestheticSession extends Model
 
     /**
      * Whether this session currently represents an open follow-up reminder.
+     *
+     * Direct treatment sessions: open whenever the session is completed and a
+     * next due date has been set (no package session quota to check).
+     * Package sessions: also requires a remaining/uncreated slot in the
+     * package and that no later package session has already been booked.
      */
     public function getHasOpenReminderAttribute(): bool
     {
-        return $this->status === 'completed'
-            && $this->isPackageSession
-            && !is_null($this->next_due_date)
+        if ($this->status !== 'completed' || is_null($this->next_due_date)) {
+            return false;
+        }
+
+        if ($this->isDirectSession) {
+            return true;
+        }
+
+        return $this->isPackageSession
             && $this->has_pending_follow_up_slot
             && !$this->has_subsequent_package_session;
     }

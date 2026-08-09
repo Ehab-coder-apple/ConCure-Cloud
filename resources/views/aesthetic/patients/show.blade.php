@@ -243,7 +243,13 @@
                             <div class="d-flex justify-content-between align-items-start gap-2 mb-2 pb-2 border-bottom">
                                 <div>
                                     <div class="fw-semibold">{{ __('Session :number', ['number' => $reminder->session_number]) }}</div>
-                                    <small class="text-muted">{{ $reminder->patientPackage?->package?->name ?? __('Package') }}</small>
+                                    <small class="text-muted">
+                                        @if($reminder->isPackageSession)
+                                            {{ $reminder->patientPackage?->package?->name ?? __('Package') }}
+                                        @else
+                                            {{ $reminder->effective_treatments->pluck('name')->implode(', ') ?: __('Direct Treatment') }}
+                                        @endif
+                                    </small>
                                 </div>
                                 <div class="text-end">
                                     <div class="fw-semibold text-warning">{{ $reminder->next_due_date?->format('M d, Y') }}</div>

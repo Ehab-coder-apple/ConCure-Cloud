@@ -62,19 +62,19 @@
 
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="fas fa-bell me-2 text-warning"></i>{{ __('Package Follow-up Reminders') }}</h6>
+                    <h6 class="mb-0"><i class="fas fa-bell me-2 text-warning"></i>{{ __('Follow-up Reminders') }}</h6>
                     <span class="badge bg-warning text-dark">{{ $followUpReminders->count() }}</span>
                 </div>
                 <div class="card-body">
                     @if($followUpReminders->isEmpty())
-                        <p class="text-muted mb-0">{{ __('No open package follow-up reminders yet.') }}</p>
+                        <p class="text-muted mb-0">{{ __('No open follow-up reminders yet.') }}</p>
                     @else
                         <div class="table-responsive">
                             <table class="table table-sm align-middle mb-0">
                                 <thead>
                                     <tr>
                                         <th>{{ __('Patient') }}</th>
-                                        <th>{{ __('Package') }}</th>
+                                        <th>{{ __('Package / Treatment') }}</th>
                                         <th>{{ __('Last Completed Session') }}</th>
                                         <th>{{ __('Next Due') }}</th>
                                         <th class="text-end">{{ __('Action') }}</th>
@@ -85,7 +85,13 @@
                                         @php($reminderPhone = $reminder->resolvedPatient?->whatsapp_phone ?: $reminder->resolvedPatient?->phone)
                                         <tr>
                                             <td>{{ $reminder->patient_display }}</td>
-                                            <td>{{ $reminder->patientPackage?->package?->name ?? __('Package') }}</td>
+                                            <td>
+                                                @if($reminder->isPackageSession)
+                                                    <span class="badge bg-info">{{ $reminder->patientPackage?->package?->name ?? __('Package') }}</span>
+                                                @else
+                                                    <span class="badge bg-warning">{{ $reminder->effective_treatments->pluck('name')->implode(', ') ?: __('Direct Treatment') }}</span>
+                                                @endif
+                                            </td>
                                             <td>{{ __('Session :number', ['number' => $reminder->session_number]) }}</td>
                                             <td>
                                                 <span class="fw-semibold">{{ $reminder->next_due_date?->format('M d, Y') }}</span>
