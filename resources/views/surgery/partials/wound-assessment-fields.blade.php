@@ -395,12 +395,12 @@
 <h6 class="mt-3">Laboratory Results</h6>
 <div class="row">
     <div class="col-md-3 mb-2"><input type="text" name="wound_assessment[laboratory][hba1c]" class="form-control" placeholder="HbA1c" value="{{ old('wound_assessment.laboratory.hba1c') }}"></div>
-    <div class="col-md-3 mb-2"><input type="text" name="wound_assessment[laboratory][fasting_blood_glucose]" class="form-control" placeholder="Fasting blood glucose" value="{{ old('wound_assessment.laboratory.fasting_blood_glucose') }}"></div>
+    <div class="col-md-3 mb-2"><input type="text" name="wound_assessment[laboratory][fasting_blood_glucose]" class="form-control" placeholder="RBC" value="{{ old('wound_assessment.laboratory.fasting_blood_glucose') }}"></div>
     <div class="col-md-3 mb-2"><input type="text" name="wound_assessment[laboratory][wbc]" class="form-control" placeholder="WBC" value="{{ old('wound_assessment.laboratory.wbc') }}"></div>
     <div class="col-md-3 mb-2"><input type="text" name="wound_assessment[laboratory][crp]" class="form-control" placeholder="CRP" value="{{ old('wound_assessment.laboratory.crp') }}"></div>
 </div>
 <div class="row mt-1">
-    <div class="col-md-3 mb-2"><input type="text" name="wound_assessment[laboratory][esr]" class="form-control" placeholder="ESR" value="{{ old('wound_assessment.laboratory.esr') }}"></div>
+    <div class="col-md-3 mb-2"><input type="text" name="wound_assessment[laboratory][esr]" class="form-control" placeholder="Urea" value="{{ old('wound_assessment.laboratory.esr') }}"></div>
     <div class="col-md-3 mb-2"><input type="text" name="wound_assessment[laboratory][albumin]" class="form-control" placeholder="Albumin" value="{{ old('wound_assessment.laboratory.albumin') }}"></div>
     <div class="col-md-3 mb-2"><input type="text" name="wound_assessment[laboratory][hemoglobin]" class="form-control" placeholder="Hemoglobin" value="{{ old('wound_assessment.laboratory.hemoglobin') }}"></div>
     <div class="col-md-3 mb-2"><input type="text" name="wound_assessment[laboratory][creatinine]" class="form-control" placeholder="Creatinine" value="{{ old('wound_assessment.laboratory.creatinine') }}"></div>

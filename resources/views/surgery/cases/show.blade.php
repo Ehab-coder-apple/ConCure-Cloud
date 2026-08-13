@@ -228,10 +228,10 @@
 	                                    <h6 class="mt-2">Laboratory Results</h6>
 	                                    <p>
 	                                        HbA1c {{ data_get($lab, 'hba1c') }},
-	                                        FBG {{ data_get($lab, 'fasting_blood_glucose') }},
+	                                        RBC {{ data_get($lab, 'fasting_blood_glucose') }},
 	                                        WBC {{ data_get($lab, 'wbc') }},
 	                                        CRP {{ data_get($lab, 'crp') }},
-	                                        ESR {{ data_get($lab, 'esr') }}
+	                                        Urea {{ data_get($lab, 'esr') }}
 	                                    </p>
 	                                    <p>
 	                                        Albumin {{ data_get($lab, 'albumin') }},
@@ -574,10 +574,10 @@
 	                        <h6 class="mt-2">Laboratory Results</h6>
 	                        <p>
 	                            HbA1c {{ data_get($lab, 'hba1c') }},
-	                            FBG {{ data_get($lab, 'fasting_blood_glucose') }},
+	                            RBC {{ data_get($lab, 'fasting_blood_glucose') }},
 	                            WBC {{ data_get($lab, 'wbc') }},
 	                            CRP {{ data_get($lab, 'crp') }},
-	                            ESR {{ data_get($lab, 'esr') }}
+	                            Urea {{ data_get($lab, 'esr') }}
 	                        </p>
 	                        <p>
 	                            Albumin {{ data_get($lab, 'albumin') }},
