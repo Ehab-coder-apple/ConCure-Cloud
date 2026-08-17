@@ -541,6 +541,76 @@ class AestheticInvoiceTenantResolutionTest extends TestCase
         $response->assertSee(route('aesthetic.invoices.edit', $invoice), false);
     }
 
+    public function test_regular_invoice_and_thermal_receipt_print_views_render(): void
+    {
+        $clinic = Clinic::create([
+            'name' => 'Printable Invoice Clinic',
+            'tenant_id' => 'TEN-600',
+            'enabled_modules' => ['aesthetic'],
+        ]);
+
+        $user = User::create([
+            'username' => 'print_invoice_admin',
+            'email' => 'print-invoice-admin@example.test',
+            'password' => 'secret',
+            'first_name' => 'Print',
+            'last_name' => 'Admin',
+            'role' => 'admin',
+            'clinic_id' => $clinic->id,
+            'is_active' => true,
+            'activated_at' => now(),
+        ]);
+
+        $patient = Patient::create([
+            'clinic_id' => $clinic->id,
+            'patient_id' => 'P-9002',
+            'first_name' => 'Yasmin',
+            'last_name' => 'Print',
+            'is_active' => true,
+        ]);
+
+        $invoice = AestheticInvoice::create([
+            'tenant_id' => $clinic->tenant_id,
+            'clinic_id' => $clinic->id,
+            'invoice_number' => 'AEST-PRINT-0001',
+            'patient_id' => $patient->id,
+            'invoice_date' => now()->toDateString(),
+            'subtotal' => 100,
+            'tax_rate' => 0,
+            'discount_amount' => 0,
+            'total_amount' => 100,
+            'paid_amount' => 0,
+            'balance' => 100,
+            'status' => 'draft',
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        $invoice->addItem([
+            'description' => 'Laser Hair - Session #1',
+            'quantity' => 1,
+            'unit_price' => 100,
+            'discount' => 0,
+        ]);
+
+        $regular = $this->get(route('aesthetic.invoices.invoice', $invoice));
+        $regular->assertOk();
+        $regular->assertSee('Aesthetic Invoice');
+        $regular->assertSee('AEST-PRINT-0001');
+        $regular->assertSee(e(route('aesthetic.invoices.thermal-receipt', [$invoice, 'width' => 80, 'auto' => 0])), false);
+        $regular->assertSee(e(route('aesthetic.invoices.thermal-receipt', [$invoice, 'width' => 58, 'auto' => 0])), false);
+
+        $thermal80 = $this->get(route('aesthetic.invoices.thermal-receipt', [$invoice, 'width' => 80]));
+        $thermal80->assertOk();
+        $thermal80->assertSee('Aesthetic Treatment Receipt');
+        $thermal80->assertSee('AEST-PRINT-0001');
+        $thermal80->assertSee('Laser Hair - Session #1');
+
+        $thermal58 = $this->get(route('aesthetic.invoices.thermal-receipt', [$invoice, 'width' => 58]));
+        $thermal58->assertOk();
+    }
+
     public function test_finance_revenue_report_includes_aesthetic_invoices_and_paid_amounts(): void
     {
         $clinic = Clinic::create([

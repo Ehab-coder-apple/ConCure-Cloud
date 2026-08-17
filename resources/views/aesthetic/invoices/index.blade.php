@@ -164,10 +164,17 @@
                                                    class="btn btn-sm btn-outline-primary" title="{{ __('View') }}">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="{{ route('aesthetic.invoices.receipt', $invoice) }}" target="_blank"
-                                                   class="btn btn-sm btn-outline-secondary" title="{{ __('Receipt') }}">
-                                                    <i class="fas fa-print"></i>
-                                                </a>
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="{{ __('Print') }}">
+                                                        <i class="fas fa-print"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end">
+                                                        <li><a class="dropdown-item" href="{{ route('aesthetic.invoices.invoice', [$invoice, 'auto' => 1]) }}" target="_blank">{{ __('Regular Invoice') }}</a></li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li><a class="dropdown-item" href="{{ route('aesthetic.invoices.thermal-receipt', [$invoice, 'width' => 80]) }}" target="_blank">{{ __('Thermal Receipt 80mm') }}</a></li>
+                                                        <li><a class="dropdown-item" href="{{ route('aesthetic.invoices.thermal-receipt', [$invoice, 'width' => 58]) }}" target="_blank">{{ __('Thermal Receipt 58mm') }}</a></li>
+                                                    </ul>
+                                                </div>
                                                 @if(!in_array($invoice->status, ['paid', 'cancelled']))
                                                     <a href="{{ route('aesthetic.invoices.edit', $invoice) }}"
                                                        class="btn btn-sm btn-outline-info" title="{{ __('Edit') }}">

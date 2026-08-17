@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesPatientAccess;
+use App\Models\AestheticInvoice;
 use App\Models\Appointment;
 use App\Models\DentalTreatment;
 use App\Models\OrthodonticCase;
@@ -91,6 +92,25 @@ class ReceiptController extends Controller
         }
 
         $payload = $this->service->buildForOrthodonticCase($orthodonticCase, $this->resolveWidth($request));
+        $payload['auto_print'] = $request->boolean('auto', true);
+
+        return view('receipts.thermal', $payload);
+    }
+
+    /**
+     * Print a thermal receipt for an aesthetic treatment invoice.
+     */
+    public function printAestheticInvoice(Request $request, AestheticInvoice $aestheticInvoice)
+    {
+        $user = Auth::user();
+
+        if (!$user->isSuperAdmin()) {
+            if ($user->clinic_id && $aestheticInvoice->clinic_id !== $user->clinic_id) {
+                abort(403, 'Unauthorized access to this invoice.');
+            }
+        }
+
+        $payload = $this->service->buildForAestheticInvoice($aestheticInvoice, $this->resolveWidth($request));
         $payload['auto_print'] = $request->boolean('auto', true);
 
         return view('receipts.thermal', $payload);

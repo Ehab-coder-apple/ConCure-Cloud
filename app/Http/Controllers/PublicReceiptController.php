@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AestheticInvoice;
 use App\Models\Appointment;
 use App\Models\DentalTreatment;
 use App\Models\MedicineSaleInvoice;
@@ -60,6 +61,20 @@ class PublicReceiptController extends Controller
     {
         $this->applyLocale($request);
         $payload = $this->service->buildForMedicineSale($invoice);
+        return view('receipts.public', $this->finalize($payload));
+    }
+
+    public function showAestheticInvoice(Request $request, int $aestheticInvoice)
+    {
+        $this->applyLocale($request);
+        // AestheticInvoice carries a tenant-scoped global scope keyed off the
+        // authenticated user, which has no meaning on this signed, guest-accessible
+        // route -- bypass it and load the specific invoice directly.
+        $invoice = AestheticInvoice::withoutGlobalScopes()->findOrFail($aestheticInvoice);
+        // AestheticInvoiceItem also carries its own tenant scope that returns
+        // no rows when unauthenticated -- bypass it here too.
+        $invoice->setRelation('items', $invoice->items()->withoutGlobalScopes()->with('treatment')->get());
+        $payload = $this->service->buildForAestheticInvoice($invoice);
         return view('receipts.public', $this->finalize($payload));
     }
 

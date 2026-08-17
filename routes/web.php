@@ -133,6 +133,7 @@ Route::middleware('signed')->prefix('r')->name('public.receipt.')->group(functio
     Route::get('/orthodontic-case/{orthodonticCase}', [App\Http\Controllers\PublicReceiptController::class, 'showOrthodonticCase'])->name('orthodontic-case');
     Route::get('/medicine-sale/{invoice}', [App\Http\Controllers\PublicReceiptController::class, 'showMedicineSale'])->name('medicine-sale');
     Route::get('/prescription/{prescription}', [App\Http\Controllers\PublicReceiptController::class, 'showPrescription'])->name('prescription');
+    Route::get('/aesthetic-invoice/{aestheticInvoice}', [App\Http\Controllers\PublicReceiptController::class, 'showAestheticInvoice'])->name('aesthetic-invoice');
 });
 
 // Diagnostic route for production debugging
@@ -931,6 +932,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::put('/{aestheticInvoice}', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'update'])->name('update');
         Route::delete('/{aestheticInvoice}', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'destroy'])->name('destroy');
         Route::get('/{aestheticInvoice}/receipt', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'receipt'])->name('receipt');
+        Route::get('/{aestheticInvoice}/invoice', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'invoice'])->name('invoice');
+        Route::get('/{aestheticInvoice}/thermal-receipt', [App\Http\Controllers\ReceiptController::class, 'printAestheticInvoice'])->name('thermal-receipt');
         Route::post('/{aestheticInvoice}/mark-paid', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'markAsPaid'])->name('mark-paid');
         Route::post('/{aestheticInvoice}/send', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'send'])->name('send');
         Route::post('/{aestheticInvoice}/cancel', [\App\Http\Controllers\Aesthetic\AestheticInvoiceController::class, 'cancel'])->name('cancel');

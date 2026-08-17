@@ -153,6 +153,14 @@ class AestheticInvoice extends Model
     }
 
     /**
+     * Get the clinic that owns the invoice.
+     */
+    public function clinic(): BelongsTo
+    {
+        return $this->belongsTo(Clinic::class);
+    }
+
+    /**
      * Get the patient that owns the invoice.
      */
     public function patient(): BelongsTo

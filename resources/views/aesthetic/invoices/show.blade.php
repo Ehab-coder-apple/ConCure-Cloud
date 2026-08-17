@@ -15,9 +15,29 @@
                     <p class="text-muted mb-0">{{ $aestheticInvoice->invoice_date->format('M d, Y') }}</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('aesthetic.invoices.receipt', $aestheticInvoice) }}" target="_blank" class="btn btn-outline-secondary">
-                        <i class="fas fa-print me-1"></i>{{ __('Print') }}
-                    </a>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-print me-1"></i>{{ __('Print') }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('aesthetic.invoices.invoice', [$aestheticInvoice, 'auto' => 1]) }}" target="_blank">
+                                    <i class="fas fa-file-invoice me-2"></i>{{ __('Regular Invoice') }}
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('aesthetic.invoices.thermal-receipt', [$aestheticInvoice, 'width' => 80]) }}" target="_blank">
+                                    <i class="fas fa-receipt me-2"></i>{{ __('Thermal Receipt 80mm') }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('aesthetic.invoices.thermal-receipt', [$aestheticInvoice, 'width' => 58]) }}" target="_blank">
+                                    <i class="fas fa-receipt me-2"></i>{{ __('Thermal Receipt 58mm') }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <a href="{{ route('aesthetic.invoices.index') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i>{{ __('Back') }}
                     </a>

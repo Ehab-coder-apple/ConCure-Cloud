@@ -378,7 +378,7 @@ class AestheticInvoiceController extends Controller
     }
 
     /**
-     * Print receipt view.
+     * Print receipt view (compact 80mm-style receipt).
      */
     public function receipt(AestheticInvoice $aestheticInvoice)
     {
@@ -387,6 +387,21 @@ class AestheticInvoiceController extends Controller
         $aestheticInvoice->load(['patient', 'items.treatment', 'creator']);
 
         return view('aesthetic.invoices.receipt', compact('aestheticInvoice'));
+    }
+
+    /**
+     * Print regular (full A4) invoice view.
+     */
+    public function invoice(Request $request, AestheticInvoice $aestheticInvoice)
+    {
+        $this->authorizeTenant($aestheticInvoice);
+
+        $aestheticInvoice->load(['patient', 'items.treatment', 'creator', 'clinic']);
+
+        return view('aesthetic.invoices.invoice', [
+            'aestheticInvoice' => $aestheticInvoice,
+            'autoPrint' => $request->boolean('auto', false),
+        ]);
     }
 
     // ─── Helpers ────────────────────────────────────────────────

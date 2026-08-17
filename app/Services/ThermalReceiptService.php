@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AestheticInvoice;
 use App\Models\Appointment;
 use App\Models\Clinic;
 use App\Models\DentalTreatment;
@@ -299,6 +300,65 @@ class ThermalReceiptService
             'financials' => $financials,
             'qr_payload' => $this->signedPublicUrl('public.receipt.orthodontic-case', ['orthodonticCase' => $case->id], $case->case_number, $this->effectiveLocale($clinic)),
             'width_mm' => $this->normalizeWidth($widthMm, $clinic),
+        ], $clinic);
+    }
+
+    /**
+     * Build payload for an aesthetic treatment invoice/receipt.
+     */
+    public function buildForAestheticInvoice(AestheticInvoice $invoice, ?int $widthMm = null): array
+    {
+        $invoice->loadMissing(['patient', 'items.treatment', 'creator', 'clinic']);
+        $clinic = $invoice->clinic ?: Clinic::find($invoice->clinic_id);
+        $this->applyLocale($clinic);
+
+        $currency = DB::table('settings')
+            ->where('clinic_id', $invoice->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $items = $invoice->items->map(function ($item) {
+            return [
+                'name'       => $item->description,
+                'qty'        => (float) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'total'      => (float) $item->total_price,
+            ];
+        })->all();
+
+        $financials = [
+            'currency'        => $currency,
+            'currency_symbol' => $this->currencySymbol($currency),
+            'subtotal'        => (float) $invoice->subtotal,
+            'discount'        => (float) $invoice->discount_amount,
+            'tax'             => (float) $invoice->tax_amount,
+            'total'           => (float) $invoice->total_amount,
+            'paid'            => (float) $invoice->paid_amount,
+            'balance'         => max(0.0, (float) $invoice->balance),
+            'method'          => $this->humanize((string) $invoice->payment_method) ?: '-',
+            'receipt_number'  => $invoice->invoice_number,
+            'notes'           => $invoice->notes,
+        ];
+
+        return $this->finalize([
+            'title'        => __('Aesthetic Treatment Receipt'),
+            'reference'    => $invoice->invoice_number,
+            'clinic'       => $clinic,
+            'patient'      => $invoice->patient,
+            'doctor_label' => __('Issued By'),
+            'doctor_name'  => optional($invoice->creator)->full_name_with_title
+                ?: optional($invoice->creator)->full_name,
+            'meta'         => [
+                ['label' => __('Invoice'), 'value' => $invoice->invoice_number],
+                ['label' => __('Date'), 'value' => optional($invoice->invoice_date)->format('Y-m-d') ?: '-'],
+                ['label' => __('Status'), 'value' => $invoice->status_display ?: '-'],
+            ],
+            'services'     => [],
+            'items'        => $items,
+            'items_title'  => __('Items'),
+            'financials'   => $financials,
+            'qr_payload'   => $this->signedPublicUrl('public.receipt.aesthetic-invoice', ['aestheticInvoice' => $invoice->id], $invoice->invoice_number, $this->effectiveLocale($clinic)),
+            'width_mm'     => $this->normalizeWidth($widthMm, $clinic),
         ], $clinic);
     }
 
