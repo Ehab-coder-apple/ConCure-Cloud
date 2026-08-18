@@ -88,15 +88,16 @@ class DietPlanMeal extends Model
     }
 
     /**
-     * Whether at least one food in this meal is linked to the Food database
-     * (i.e. has nutrition data available). Custom/free-text foods have no
-     * food_id and therefore contribute 0 to all macro totals, which would
-     * otherwise misleadingly display as "0" instead of "no data".
+     * Whether at least one food in this meal has resolvable nutrition data
+     * (either linked via food_id, or matched by exact name against the Food
+     * database as a fallback for entries saved without a food_id). Only
+     * fully custom foods with no matching Food record contribute 0, which
+     * would otherwise misleadingly display as "0" instead of "no data".
      */
     public function getHasNutritionDataAttribute(): bool
     {
         return $this->foods->contains(function ($food) {
-            return !is_null($food->food_id);
+            return !is_null($food->resolved_food);
         });
     }
 

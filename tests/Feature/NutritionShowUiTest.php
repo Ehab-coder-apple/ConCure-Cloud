@@ -8,12 +8,46 @@ use App\Models\DietPlanMealFood;
 use App\Models\Food;
 use App\Models\Patient;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 class NutritionShowUiTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        DB::beginTransaction();
+        // The view resolves nutrition data for meal foods without a linked
+        // food_id by looking them up by name in the `foods` table, so it
+        // must exist even though the diet plan/meal/patient models here are
+        // otherwise plain in-memory (non-persisted) instances.
+        if (!Schema::hasTable('foods')) {
+            Schema::create('foods', function ($table) {
+                $table->id();
+                $table->string('name');
+                $table->decimal('calories', 8, 2)->default(0);
+                $table->decimal('protein', 8, 2)->default(0);
+                $table->decimal('carbohydrates', 8, 2)->default(0);
+                $table->decimal('fat', 8, 2)->default(0);
+                $table->decimal('serving_weight', 8, 2)->nullable();
+                $table->decimal('grams_per_piece', 8, 2)->nullable();
+                $table->boolean('is_custom')->default(false);
+                $table->unsignedBigInteger('clinic_id')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+            });
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        DB::rollBack();
+        parent::tearDown();
+    }
+
     private function renderShow(DietPlan $dietPlan, bool $isFlexiblePlan): string
     {
         View::share('primaryColor', '#008080');
@@ -66,6 +100,11 @@ class NutritionShowUiTest extends TestCase
         $cheeseFood->exists = true;
         $breakfastOption1->setRelation('foods', new EloquentCollection([$eggFood, $cheeseFood]));
 
+        // Meal food saved WITHOUT a food_id (as with auto-suggested/typed entries), but a
+        // matching Food record ('Chicken kibbeh') exists in the database by name — the
+        // fallback lookup should resolve it and calculate real macros, not zeros.
+        Food::create(['name' => 'Chicken kibbeh', 'calories' => 313, 'protein' => 20, 'carbohydrates' => 10, 'fat' => 15, 'is_custom' => false, 'is_active' => true]);
+
         $lunchOption1 = new DietPlanMeal([
             'meal_type' => 'lunch',
             'option_number' => 1,
@@ -79,7 +118,22 @@ class NutritionShowUiTest extends TestCase
         $chickenFood->exists = true;
         $lunchOption1->setRelation('foods', new EloquentCollection([$chickenFood]));
 
-        $dietPlan->setRelation('meals', new EloquentCollection([$breakfastOption1, $lunchOption1]));
+        // A genuinely custom entry with no matching Food record anywhere
+        // must still hide the macro row (no data to show).
+        $dinnerOption1 = new DietPlanMeal([
+            'meal_type' => 'dinner',
+            'option_number' => 1,
+            'is_option_based' => true,
+            'option_description' => 'Mystery Dish',
+        ]);
+        $dinnerOption1->id = 4;
+        $dinnerOption1->exists = true;
+        $mysteryFood = new DietPlanMealFood(['food_name' => 'Totally Unknown Dish', 'quantity' => 100, 'unit' => 'g']);
+        $mysteryFood->id = 41;
+        $mysteryFood->exists = true;
+        $dinnerOption1->setRelation('foods', new EloquentCollection([$mysteryFood]));
+
+        $dietPlan->setRelation('meals', new EloquentCollection([$breakfastOption1, $lunchOption1, $dinnerOption1]));
 
         $html = $this->renderShow($dietPlan, true);
 
@@ -101,16 +155,26 @@ class NutritionShowUiTest extends TestCase
         $this->assertStringContainsString('Egg', $html);
         $this->assertStringContainsString('Chicken kibbeh', $html);
 
-        // Macro summary chips appear for meals with at least one food linked to the Food database
+        // Macro summary chips appear for meals with at least one food resolvable to the Food database
         $this->assertStringContainsString('meal-option-macros', $html);
 
-        // Custom/free-text-only foods (no food_id, e.g. "Chicken kibbeh") have no nutrition
-        // data, so their macro row must NOT render misleading "0" totals.
+        // "Chicken kibbeh" has no food_id but IS matched by name in the Food database,
+        // so its macros must be calculated and shown (not hidden as "no data").
         $lunchCardStart = strpos($html, 'Chicken Kibbeh');
         $this->assertNotFalse($lunchCardStart);
         $lunchCardEnd = strpos($html, 'meal-option-card', $lunchCardStart) ?: strlen($html);
         $lunchCardHtml = substr($html, $lunchCardStart, $lunchCardEnd - $lunchCardStart);
-        $this->assertStringNotContainsString('meal-option-macros', $lunchCardHtml);
+        $this->assertStringContainsString('meal-option-macros', $lunchCardHtml);
+        // 104g @ 313 cal/100g = 325.52 => rounds to 326
+        $this->assertStringContainsString('326', $lunchCardHtml);
+
+        // A food name matching nothing in the database has no nutrition data,
+        // so its macro row must NOT render misleading "0" totals.
+        $dinnerCardStart = strpos($html, 'Mystery Dish');
+        $this->assertNotFalse($dinnerCardStart);
+        $dinnerCardEnd = strpos($html, 'meal-option-card', $dinnerCardStart) ?: strlen($html);
+        $dinnerCardHtml = substr($html, $dinnerCardStart, $dinnerCardEnd - $dinnerCardStart);
+        $this->assertStringNotContainsString('meal-option-macros', $dinnerCardHtml);
 
         // Sidebar: duplicated top-bar actions removed
         $this->assertStringNotContainsString('onclick="shareOnWhatsApp()"', $html);

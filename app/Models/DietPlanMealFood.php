@@ -58,6 +58,44 @@ class DietPlanMealFood extends Model
     }
 
     /**
+     * Resolve the Food record for nutrition calculations, even when this entry
+     * was saved without a food_id (e.g. typed/auto-suggested by name). Falls
+     * back to an exact, case-insensitive name match against the Food database
+     * (scoped to standard foods or the owning clinic's custom foods) so
+     * calories/macros can still be calculated for these entries.
+     */
+    public function getResolvedFoodAttribute(): ?Food
+    {
+        if ($this->food) {
+            return $this->food;
+        }
+        if ($this->food_id) {
+            // food_id set but relation resolved to null (e.g. dangling reference)
+            return null;
+        }
+
+        $name = trim((string) $this->food_name);
+        if ($name === '') {
+            return null;
+        }
+
+        $clinicId = $this->dietPlanMeal?->dietPlan?->patient?->clinic_id;
+
+        $query = Food::where('is_active', true)
+            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)]);
+
+        if ($clinicId) {
+            $query->where(function ($q) use ($clinicId) {
+                $q->where('is_custom', false)->orWhere('clinic_id', $clinicId);
+            });
+        } else {
+            $query->where('is_custom', false);
+        }
+
+        return $query->first();
+    }
+
+    /**
      * Get the food name (from database or custom).
      */
     public function getFoodNameDisplayAttribute(): string
@@ -86,10 +124,11 @@ class DietPlanMealFood extends Model
      */
     public function getCaloriesAttribute(): float
     {
-        if ($this->food && $this->quantity) {
+        $food = $this->resolved_food;
+        if ($food && $this->quantity) {
             $grams = $this->calcGramsForCurrent();
             if ($grams === null) { return 0; }
-            return ($this->food->calories * $grams) / 100.0;
+            return ($food->calories * $grams) / 100.0;
         }
         return 0.0;
     }
@@ -99,10 +138,11 @@ class DietPlanMealFood extends Model
      */
     public function getProteinAttribute(): float
     {
-        if ($this->food && $this->quantity) {
+        $food = $this->resolved_food;
+        if ($food && $this->quantity) {
             $grams = $this->calcGramsForCurrent();
             if ($grams === null) { return 0.0; }
-            return ($this->food->protein * $grams) / 100.0;
+            return ($food->protein * $grams) / 100.0;
         }
         return 0.0;
     }
@@ -112,10 +152,11 @@ class DietPlanMealFood extends Model
      */
     public function getCarbsAttribute(): float
     {
-        if ($this->food && $this->quantity) {
+        $food = $this->resolved_food;
+        if ($food && $this->quantity) {
             $grams = $this->calcGramsForCurrent();
             if ($grams === null) { return 0.0; }
-            return ($this->food->carbohydrates * $grams) / 100.0;
+            return ($food->carbohydrates * $grams) / 100.0;
         }
         return 0.0;
     }
@@ -125,10 +166,11 @@ class DietPlanMealFood extends Model
      */
     public function getFatAttribute(): float
     {
-        if ($this->food && $this->quantity) {
+        $food = $this->resolved_food;
+        if ($food && $this->quantity) {
             $grams = $this->calcGramsForCurrent();
             if ($grams === null) { return 0.0; }
-            return ($this->food->fat * $grams) / 100.0;
+            return ($food->fat * $grams) / 100.0;
         }
         return 0.0;
     }
@@ -185,7 +227,7 @@ class DietPlanMealFood extends Model
     {
         $qty = (float) ($this->quantity ?? 0);
         if ($qty <= 0) { return null; }
-        $food = $this->food;
+        $food = $this->resolved_food;
         if (!$food) { return null; }
         $unit = strtolower(trim((string) ($this->unit ?? 'g')));
         try {

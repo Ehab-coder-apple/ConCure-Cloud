@@ -2197,7 +2197,7 @@ class NutritionController extends Controller
 
         foreach ($nutrition->meals as $meal) {
             foreach ($meal->foods as $mealFood) {
-                $food = $mealFood->food;
+                $food = $mealFood->resolved_food;
                 $quantity = $mealFood->quantity;
 
                 // Skip if food record doesn't exist (might have been deleted)
