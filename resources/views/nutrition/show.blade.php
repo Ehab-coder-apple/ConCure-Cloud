@@ -36,6 +36,139 @@ body.fix-nutrition-offset #nutrition-show.container {
 @media (max-width: 991.98px) {
   body.fix-nutrition-offset #nutrition-show.container { margin-left: 0 !important; width: 100% !important; }
 }
+
+/* ---- Meal plan: tabbed, compact card grid ---- */
+#nutrition-show .meal-type-tabs .nav-link {
+  color: #495057;
+  border: 1px solid transparent;
+}
+#nutrition-show .meal-type-tabs .nav-link.active {
+  border-color: #E5E7EB #E5E7EB #fff;
+  font-weight: 600;
+}
+#nutrition-show .meal-type-tabs .badge {
+  font-size: 0.7rem;
+}
+
+#nutrition-show .meal-options-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  #nutrition-show .meal-options-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1200px) {
+  #nutrition-show .meal-options-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+#nutrition-show .meal-option-card {
+  border: 1px solid #E5E7EB;
+  border-radius: 0.5rem;
+  padding: 0.9rem 1rem;
+  background: #fff;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+#nutrition-show .meal-option-card .meal-option-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #E5E7EB;
+}
+#nutrition-show .meal-option-card .meal-option-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  min-width: 0;
+}
+#nutrition-show .meal-option-card .meal-option-title .meal-icon {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #F3F4F6;
+  color: #6B7280;
+  font-size: 0.8rem;
+}
+#nutrition-show .meal-option-card .meal-option-title span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#nutrition-show .food-line-list {
+  columns: 1;
+  column-gap: 1.25rem;
+  flex: 1;
+}
+@media (min-width: 480px) {
+  #nutrition-show .food-line-list { columns: 2; }
+}
+#nutrition-show .food-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #F3F4F6;
+  break-inside: avoid;
+}
+#nutrition-show .food-line:last-child { border-bottom: none; }
+#nutrition-show .food-line .food-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #212529;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#nutrition-show .food-line .food-qty {
+  font-size: 0.78rem;
+  color: #6B7280;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#nutrition-show .meal-option-macros {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #E5E7EB;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  color: #6B7280;
+}
+#nutrition-show .meal-option-macros span strong { color: #374151; }
+
+/* ---- Sidebar: compact, low-profile actions ---- */
+#nutrition-show .actions-card .btn {
+  width: auto;
+  min-width: 180px;
+}
+#nutrition-show .actions-card .d-grid {
+  justify-items: center;
+}
+#nutrition-show .actions-card .delete-plan-link {
+  color: #dc3545;
+  font-size: 0.85rem;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+}
+#nutrition-show .actions-card .delete-plan-link:hover {
+  text-decoration: underline;
+}
 </style>
 @endpush
 
@@ -413,109 +546,123 @@ body.fix-nutrition-offset #nutrition-show.container {
                         }
                     @endphp
 
+                    @php
+                        $mealTypeIcon = fn($t) => $t === 'breakfast' ? 'coffee' : ($t === 'lunch' ? 'sun' : ($t === 'dinner' ? 'moon' : 'cookie-bite'));
+                        $mealTypeBadge = fn($t) => $t === 'breakfast' ? 'warning' : ($t === 'lunch' ? 'success' : ($t === 'dinner' ? 'primary' : 'info'));
+                        $mealTypeLabel = fn($t) => ucfirst($t === 'snack_1' ? 'snacks' : $t);
+                    @endphp
+
                     @if($isFlexiblePlan)
-                        {{-- Flexible meal plan display --}}
-                        @foreach($mealsByType as $mealType => $meals)
-                        <div class="mb-4">
-                            <h6 class="text-primary mb-3">
-                                <i class="fas fa-{{ $mealType === 'breakfast' ? 'coffee' : ($mealType === 'lunch' ? 'sun' : ($mealType === 'dinner' ? 'moon' : 'cookie-bite')) }} me-2"></i>
-                                {{ ucfirst($mealType === 'snack_1' ? 'snacks' : $mealType) }} Options
-                            </h6>
+                        {{-- Flexible meal plan: tabbed by meal type --}}
+                        <ul class="nav nav-tabs meal-type-tabs mb-3" role="tablist">
+                            @foreach($mealsByType as $mealType => $meals)
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link {{ $loop->first ? 'active' : '' }}" id="mt-{{ $mealType }}-tab"
+                                        data-bs-toggle="tab" data-bs-target="#mt-{{ $mealType }}-pane" type="button" role="tab">
+                                    <i class="fas fa-{{ $mealTypeIcon($mealType) }} me-1"></i>
+                                    {{ $mealTypeLabel($mealType) }}
+                                    <span class="badge bg-secondary ms-1">{{ $meals->count() }}</span>
+                                </button>
+                            </li>
+                            @endforeach
+                        </ul>
 
-                            @foreach($meals->sortBy('option_number') as $meal)
-                            <div class="meal-item mb-3 p-3 border rounded">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div>
-                                        <h6 class="mb-1">
-                                            <i class="fas fa-list-ol me-1 text-muted"></i>
-                                            {{ $meal->option_description ?: 'Option ' . $meal->option_number }}
-                                        </h6>
+                        <div class="tab-content">
+                            @foreach($mealsByType as $mealType => $meals)
+                            <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="mt-{{ $mealType }}-pane" role="tabpanel">
+                                <div class="meal-options-grid">
+                                    @foreach($meals->sortBy('option_number') as $meal)
+                                    <div class="meal-option-card">
+                                        <div class="meal-option-header">
+                                            <h6 class="meal-option-title">
+                                                <span class="meal-icon"><i class="fas fa-list-ol"></i></span>
+                                                <span>{{ $meal->option_description ?: 'Option ' . $meal->option_number }}</span>
+                                            </h6>
+                                            <span class="badge bg-{{ $mealTypeBadge($meal->meal_type) }}">
+                                                {{ $mealTypeLabel($meal->meal_type) }}
+                                            </span>
+                                        </div>
                                         @if($meal->instructions)
                                         <p class="text-muted small mb-2">{{ $meal->instructions }}</p>
                                         @endif
-                                    </div>
-                                    <span class="badge bg-{{ $meal->meal_type === 'breakfast' ? 'warning' : ($meal->meal_type === 'lunch' ? 'success' : ($meal->meal_type === 'dinner' ? 'primary' : 'info')) }}">
-                                        {{ ucfirst($meal->meal_type === 'snack_1' ? 'snacks' : $meal->meal_type) }}
-                                    </span>
-                                </div>
 
-                                @if($meal->foods->count() > 0)
-                                <div class="foods-list">
-                                    <div class="row">
-                                        @foreach($meal->foods as $food)
-                                        <div class="col-md-6 mb-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <strong>{{ $food->food_name }}</strong>
-                                                    @if($food->preparation_notes)
-                                                    <br><small class="text-muted">{{ $food->preparation_notes }}</small>
-                                                    @endif
-                                                </div>
-                                                <span class="badge bg-light text-dark">
-                                                    {{ $food->quantity_with_equivalent }}
-                                                </span>
+                                        @if($meal->foods->count() > 0)
+                                        <div class="food-line-list">
+                                            @foreach($meal->foods as $food)
+                                            <div class="food-line">
+                                                <span class="food-name" title="{{ $food->food_name }}{{ $food->preparation_notes ? ' - '.$food->preparation_notes : '' }}">{{ $food->food_name }}</span>
+                                                <span class="food-qty">{{ $food->quantity_with_equivalent }}</span>
                                             </div>
+                                            @endforeach
                                         </div>
-                                        @endforeach
+                                        <div class="meal-option-macros">
+                                            <span>{{ __('Cal') }}: <strong>{{ number_format($meal->total_calories) }}</strong></span>
+                                            <span>{{ __('P') }}: <strong>{{ number_format($meal->total_protein) }}g</strong></span>
+                                            <span>{{ __('C') }}: <strong>{{ number_format($meal->total_carbs) }}g</strong></span>
+                                            <span>{{ __('F') }}: <strong>{{ number_format($meal->total_fat) }}g</strong></span>
+                                        </div>
+                                        @endif
                                     </div>
+                                    @endforeach
                                 </div>
-                                @endif
                             </div>
                             @endforeach
                         </div>
-                        @endforeach
                     @else
-                        {{-- Traditional daily meal plan display --}}
-                        @foreach($mealsByDay as $dayNumber => $dayMeals)
-                        <div class="mb-4">
-                            <h6 class="text-primary mb-3">
-                                <i class="fas fa-calendar-day me-2"></i>
-                                {{ __('Day') }} {{ $dayNumber }}
-                            </h6>
+                        {{-- Traditional daily meal plan: tabbed by day --}}
+                        <ul class="nav nav-tabs meal-type-tabs mb-3" role="tablist">
+                            @foreach($mealsByDay as $dayNumber => $dayMeals)
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link {{ $loop->first ? 'active' : '' }}" id="day-{{ $dayNumber }}-tab"
+                                        data-bs-toggle="tab" data-bs-target="#day-{{ $dayNumber }}-pane" type="button" role="tab">
+                                    <i class="fas fa-calendar-day me-1"></i>
+                                    {{ __('Day') }} {{ $dayNumber }}
+                                </button>
+                            </li>
+                            @endforeach
+                        </ul>
 
-                            @foreach($dayMeals->sortBy('suggested_time') as $meal)
-                            <div class="meal-item mb-3 p-3 border rounded">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div>
-                                        <h6 class="mb-1">
-                                            <i class="fas fa-clock me-1 text-muted"></i>
-                                            {{ $meal->suggested_time ? \Carbon\Carbon::parse($meal->suggested_time)->format('g:i A') : '' }}
-                                            - {{ $meal->meal_name ?: ucfirst($meal->meal_type) }}
-                                        </h6>
+                        <div class="tab-content">
+                            @foreach($mealsByDay as $dayNumber => $dayMeals)
+                            <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="day-{{ $dayNumber }}-pane" role="tabpanel">
+                                <div class="meal-options-grid">
+                                    @foreach($dayMeals->sortBy('suggested_time') as $meal)
+                                    <div class="meal-option-card">
+                                        <div class="meal-option-header">
+                                            <h6 class="meal-option-title">
+                                                <span class="meal-icon"><i class="fas fa-{{ $mealTypeIcon($meal->meal_type) }}"></i></span>
+                                                <span>{{ $meal->suggested_time ? \Carbon\Carbon::parse($meal->suggested_time)->format('g:i A') : '' }} {{ $meal->meal_name ?: ucfirst($meal->meal_type) }}</span>
+                                            </h6>
+                                            <span class="badge bg-{{ $mealTypeBadge($meal->meal_type) }}">
+                                                {{ ucfirst($meal->meal_type) }}
+                                            </span>
+                                        </div>
                                         @if($meal->instructions)
                                         <p class="text-muted small mb-2">{{ $meal->instructions }}</p>
                                         @endif
-                                    </div>
-                                    <span class="badge bg-{{ $meal->meal_type === 'breakfast' ? 'warning' : ($meal->meal_type === 'lunch' ? 'success' : ($meal->meal_type === 'dinner' ? 'primary' : 'info')) }}">
-                                        {{ ucfirst($meal->meal_type) }}
-                                    </span>
-                                </div>
 
-                                @if($meal->foods->count() > 0)
-                                <div class="foods-list">
-                                    <div class="row">
-                                        @foreach($meal->foods as $food)
-                                        <div class="col-md-6 mb-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <strong>{{ $food->food_name }}</strong>
-                                                    @if($food->preparation_notes)
-                                                    <br><small class="text-muted">{{ $food->preparation_notes }}</small>
-                                                    @endif
-                                                </div>
-                                                <span class="badge bg-light text-dark">
-                                                    {{ $food->quantity_with_equivalent }}
-                                                </span>
+                                        @if($meal->foods->count() > 0)
+                                        <div class="food-line-list">
+                                            @foreach($meal->foods as $food)
+                                            <div class="food-line">
+                                                <span class="food-name" title="{{ $food->food_name }}{{ $food->preparation_notes ? ' - '.$food->preparation_notes : '' }}">{{ $food->food_name }}</span>
+                                                <span class="food-qty">{{ $food->quantity_with_equivalent }}</span>
                                             </div>
+                                            @endforeach
                                         </div>
-                                        @endforeach
+                                        <div class="meal-option-macros">
+                                            <span>{{ __('Cal') }}: <strong>{{ number_format($meal->total_calories) }}</strong></span>
+                                            <span>{{ __('P') }}: <strong>{{ number_format($meal->total_protein) }}g</strong></span>
+                                            <span>{{ __('C') }}: <strong>{{ number_format($meal->total_carbs) }}g</strong></span>
+                                            <span>{{ __('F') }}: <strong>{{ number_format($meal->total_fat) }}g</strong></span>
+                                        </div>
+                                        @endif
                                     </div>
+                                    @endforeach
                                 </div>
-                                @endif
                             </div>
                             @endforeach
                         </div>
-                        @endforeach
                     @endif
                 </div>
             </div>
@@ -619,51 +766,33 @@ body.fix-nutrition-offset #nutrition-show.container {
             </div>
 
             <!-- Actions -->
-            <div class="card">
+            <div class="card actions-card">
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-cogs"></i>
                         {{ __('Actions') }}
                     </h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body text-center">
                     <div class="d-grid gap-2">
-                        @if($dietPlan->canBeModified())
-                        <a href="{{ route('nutrition.edit', $dietPlan) }}" class="btn btn-warning">
-                            <i class="fas fa-edit me-1"></i>
-                            {{ __('Edit Plan') }}
-                        </a>
-
-                        <a href="{{ route('nutrition.create.enhanced') }}?edit={{ $dietPlan->id }}" class="btn btn-success">
-                            <i class="fas fa-utensils me-1"></i>
-                            {{ __('Manage Meals') }}
-                        </a>
-                        @endif
-
-                        <button type="button" class="btn btn-success w-100 mb-2" onclick="shareOnWhatsApp()">
-                            <i class="fab fa-whatsapp me-1"></i>
-                            {{ __('Send via WhatsApp') }}
-                        </button>
-
                         <a href="{{ route('nutrition.create') }}?patient_id={{ $dietPlan->patient_id }}" class="btn btn-success">
                             <i class="fas fa-plus me-1"></i>
                             {{ __('New Plan for Name') }}
                         </a>
-
-                        <hr>
-
-                        @if($dietPlan->canBeModified())
-                        <form action="{{ route('nutrition.destroy', $dietPlan) }}" method="POST"
-                              onsubmit="return confirm('{{ __('Are you sure you want to delete this nutrition plan?') }}')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-outline-danger w-100">
-                                <i class="fas fa-trash me-1"></i>
-                                {{ __('Delete Plan') }}
-                            </button>
-                        </form>
-                        @endif
                     </div>
+
+                    @if($dietPlan->canBeModified())
+                    <hr>
+                    <form action="{{ route('nutrition.destroy', $dietPlan) }}" method="POST"
+                          onsubmit="return confirm('{{ __('Are you sure you want to delete this nutrition plan?') }}')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="delete-plan-link">
+                            <i class="fas fa-trash me-1"></i>
+                            {{ __('Delete Plan') }}
+                        </button>
+                    </form>
+                    @endif
                 </div>
             </div>
         </div>
