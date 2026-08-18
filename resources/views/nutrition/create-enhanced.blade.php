@@ -773,6 +773,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeMealPlanning();
     // Only calculate when patient data is available
     updateNutritionTargets();
+    initializeEndDateAutoCalculation();
     const pidEl = document.getElementById('patient_id');
     if (pidEl && pidEl.value) {
         updateCalorieCalculation();
@@ -824,6 +825,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Auto-calculate End Date = Start Date + Duration (days)
+function calculateEndDateFromDuration() {
+    const startEl = document.getElementById('start_date');
+    const durationEl = document.getElementById('duration_days');
+    const endEl = document.getElementById('end_date');
+    if (!startEl || !durationEl || !endEl) return;
+
+    const startVal = startEl.value;
+    const duration = parseInt(durationEl.value, 10);
+    if (!startVal || !duration || duration <= 0) return;
+
+    const startDate = new Date(startVal + 'T00:00:00');
+    if (isNaN(startDate.getTime())) return;
+
+    startDate.setDate(startDate.getDate() + duration);
+
+    const yyyy = startDate.getFullYear();
+    const mm = String(startDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(startDate.getDate()).padStart(2, '0');
+    endEl.value = `${yyyy}-${mm}-${dd}`;
+    endEl.classList.remove('is-invalid');
+}
+
+function initializeEndDateAutoCalculation() {
+    const startEl = document.getElementById('start_date');
+    const durationEl = document.getElementById('duration_days');
+    if (!startEl || !durationEl) return;
+
+    startEl.addEventListener('change', calculateEndDateFromDuration);
+    durationEl.addEventListener('change', calculateEndDateFromDuration);
+    durationEl.addEventListener('input', calculateEndDateFromDuration);
+
+    // Compute immediately so an already-filled Start Date + Duration (e.g.
+    // the pre-populated defaults, or a stale/incorrect saved End Date) is
+    // reflected as soon as the page loads.
+    calculateEndDateFromDuration();
+}
 
 // Debounce function to prevent too many API calls
 function debounce(func, wait) {
