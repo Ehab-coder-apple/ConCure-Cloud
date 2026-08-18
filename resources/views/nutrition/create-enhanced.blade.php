@@ -3,7 +3,7 @@
 @section('page-title', isset($dietPlan) ? __('Edit Detailed Nutrition Plan') : __('Create Detailed Nutrition Plan'))
 
 @section('content')
-<div class="container">
+<div id="nutrition-create-enhanced" class="container">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -407,7 +407,7 @@
                                             {{ __('Add Breakfast Option') }}
                                         </button>
                                     </div>
-                                    <div class="options-container" id="breakfast-options">
+                                    <div class="options-container meal-options-grid" id="breakfast-options">
                                         <div class="text-center text-muted py-4">
                                             <i class="fas fa-coffee fa-2x mb-2"></i>
                                             <p>{{ __('No breakfast options added yet. Click "Add Breakfast Option" to start.') }}</p>
@@ -426,7 +426,7 @@
                                             {{ __('Add Lunch Option') }}
                                         </button>
                                     </div>
-                                    <div class="options-container" id="lunch-options">
+                                    <div class="options-container meal-options-grid" id="lunch-options">
                                         <div class="text-center text-muted py-4">
                                             <i class="fas fa-sun fa-2x mb-2"></i>
                                             <p>{{ __('No lunch options added yet. Click "Add Lunch Option" to start.') }}</p>
@@ -445,7 +445,7 @@
                                             {{ __('Add Dinner Option') }}
                                         </button>
                                     </div>
-                                    <div class="options-container" id="dinner-options">
+                                    <div class="options-container meal-options-grid" id="dinner-options">
                                         <div class="text-center text-muted py-4">
                                             <i class="fas fa-moon fa-2x mb-2"></i>
                                             <p>{{ __('No dinner options added yet. Click "Add Dinner Option" to start.') }}</p>
@@ -464,7 +464,7 @@
                                             {{ __('Add Snack Option') }}
                                         </button>
                                     </div>
-                                    <div class="options-container" id="snacks-options">
+                                    <div class="options-container meal-options-grid" id="snacks-options">
                                         <div class="text-center text-muted py-4">
                                             <i class="fas fa-cookie-bite fa-2x mb-2"></i>
                                             <p>{{ __('No snack options added yet. Click "Add Snack Option" to start.') }}</p>
@@ -1053,6 +1053,9 @@ function loadExistingMealData() {
                 // Process all meals for this option (should typically be just one)
                 meals.forEach(meal => {
                     meal.foods.forEach(mealFood => {
+                        // The server resolves a `food` match by name for entries saved
+                        // without a food_id (e.g. auto-suggested/typed foods), so this
+                        // is populated whenever nutrition data is available at all.
                         const food = mealFood.food;
                         if (food) {
                             // Unit-aware reconstruction of existing meal foods
@@ -1316,40 +1319,36 @@ function renderMealOption(mealType, option, optionIndex) {
     const container = document.getElementById(`${mealType}-options`);
 
     const optionCard = document.createElement('div');
-    optionCard.className = 'card mb-3 option-card';
+    optionCard.className = 'meal-option-card option-card';
     optionCard.dataset.mealType = mealType;
     optionCard.dataset.optionIndex = optionIndex;
 
     optionCard.innerHTML = `
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="mb-0">${option.option_description}</h6>
-                    <small class="text-muted">${getMealTypeDisplayName(mealType)}</small>
-                </div>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary add-food-to-option-btn"
-                            data-meal-type="${mealType}" data-option-index="${optionIndex}">
-                        <i class="fas fa-plus me-1"></i>
-                        Add Food
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger remove-option-btn"
-                            data-meal-type="${mealType}" data-option-index="${optionIndex}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+        <div class="meal-option-header">
+            <h6 class="meal-option-title">
+                <span class="meal-icon"><i class="fas fa-list-ol"></i></span>
+                <span title="${option.option_description}">${option.option_description}</span>
+            </h6>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-primary add-food-to-option-btn"
+                        data-meal-type="${mealType}" data-option-index="${optionIndex}">
+                    <i class="fas fa-plus me-1"></i>
+                    Add Food
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-option-btn"
+                        data-meal-type="${mealType}" data-option-index="${optionIndex}">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
         </div>
-        <div class="card-body">
-            <div class="foods-list" id="${mealType}-option-${optionIndex}-foods">
-                <div class="text-center text-muted py-3">
-                    <i class="fas fa-utensils"></i>
-                    <p class="mb-0">No foods added yet. Click "Add Food" to start building this option.</p>
-                </div>
+        <div class="foods-list" id="${mealType}-option-${optionIndex}-foods">
+            <div class="text-center text-muted py-3">
+                <i class="fas fa-utensils"></i>
+                <p class="mb-0">No foods added yet. Click "Add Food" to start building this option.</p>
             </div>
-            <div class="option-summary mt-3 p-2 bg-light rounded" id="${mealType}-option-${optionIndex}-summary">
-                <strong>Total: 0 calories | 0g protein | 0g carbs | 0g fat</strong>
-            </div>
+        </div>
+        <div class="option-summary mt-2" id="${mealType}-option-${optionIndex}-summary">
+            <strong>Total: 0 calories | 0g protein | 0g carbs | 0g fat</strong>
         </div>
     `;
 
@@ -1908,7 +1907,7 @@ function updateOptionDisplay(mealType, optionIndex) {
             </div>
         `;
     } else {
-        let html = '';
+        let html = '<div class="food-line-list">';
         let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
 
         option.foods.forEach((food, foodIndex) => {
@@ -1936,21 +1935,23 @@ function updateOptionDisplay(mealType, optionIndex) {
                 quantityDisplay = `${food.quantity} ${food.unit}`;
             }
 
+            const titleText = food.preparation_notes ? `${food.displayName} - ${food.preparation_notes}` : food.displayName;
+
             html += `
-                <div class="food-item d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                    <div>
-                        <strong>${food.displayName}</strong>
-                        <div class="text-muted small">${quantityDisplay} | ${food.calories} cal</div>
-                        ${food.preparation_notes ? `<div class="text-info small">${food.preparation_notes}</div>` : ''}
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger"
-                            onclick="removeFoodFromOption('${mealType}', ${optionIndex}, ${foodIndex})">
-                        <i class="fas fa-times"></i>
-                    </button>
+                <div class="food-line">
+                    <span class="food-name" title="${titleText}">${food.displayName}</span>
+                    <span class="food-qty">
+                        ${quantityDisplay} | ${food.calories} cal
+                        <button type="button" class="btn-remove-food" title="Remove"
+                                onclick="removeFoodFromOption('${mealType}', ${optionIndex}, ${foodIndex})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </span>
                 </div>
             `;
         });
 
+        html += '</div>';
         foodsContainer.innerHTML = html;
 
         // Update option totals
@@ -1959,9 +1960,13 @@ function updateOptionDisplay(mealType, optionIndex) {
         option.total_carbs = totalCarbs;
         option.total_fat = totalFat;
 
-        // Update summary
+        // Update summary (styled to match the meal-option-macros row used on the plan dashboard)
+        summaryContainer.classList.add('meal-option-macros');
         summaryContainer.innerHTML = `
-            <strong>Total: ${Math.round(totalCalories)} calories | ${totalProtein.toFixed(1)}g protein | ${totalCarbs.toFixed(1)}g carbs | ${totalFat.toFixed(1)}g fat</strong>
+            <span>Cal: <strong>${Math.round(totalCalories)}</strong></span>
+            <span>P: <strong>${totalProtein.toFixed(1)}g</strong></span>
+            <span>C: <strong>${totalCarbs.toFixed(1)}g</strong></span>
+            <span>F: <strong>${totalFat.toFixed(1)}g</strong></span>
         `;
     }
 }
@@ -2881,35 +2886,131 @@ function applyGeneratedMealOptions(generated) {
 
 @push('styles')
 <style>
-.option-card {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    transition: all 0.3s ease;
+/* ---- Compact meal option grid (mirrors nutrition/show.blade.php) ---- */
+#nutrition-create-enhanced .meal-options-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+    min-height: 0;
+}
+@media (min-width: 768px) {
+    #nutrition-create-enhanced .meal-options-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1200px) {
+    #nutrition-create-enhanced .meal-options-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-.option-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+#nutrition-create-enhanced .meal-option-card {
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+    padding: 0.9rem 1rem;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+#nutrition-create-enhanced .meal-option-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-color: #20B2AA;
 }
-
-.food-item {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 6px;
-    transition: all 0.2s ease;
+#nutrition-create-enhanced .meal-option-card .meal-option-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #E5E7EB;
+    flex-wrap: wrap;
 }
-
-.food-item:hover {
-    background: #e9ecef;
+#nutrition-create-enhanced .meal-option-card .meal-option-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0;
+    min-width: 0;
 }
-
-.option-summary {
-    background: linear-gradient(135deg, #20B2AA 0%, #17a2b8 100%);
-    color: white;
-    border-radius: 6px;
+#nutrition-create-enhanced .meal-option-card .meal-option-title .meal-icon {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #F3F4F6;
+    color: #6B7280;
+    font-size: 0.8rem;
 }
+#nutrition-create-enhanced .meal-option-card .meal-option-title span:not(.meal-icon) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 160px;
+}
+#nutrition-create-enhanced .food-line-list {
+    columns: 1;
+    column-gap: 1.25rem;
+    flex: 1;
+}
+@media (min-width: 480px) {
+    #nutrition-create-enhanced .food-line-list { columns: 2; }
+}
+#nutrition-create-enhanced .food-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #F3F4F6;
+    break-inside: avoid;
+}
+#nutrition-create-enhanced .food-line:last-child { border-bottom: none; }
+#nutrition-create-enhanced .food-line .food-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #212529;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#nutrition-create-enhanced .food-line .food-qty {
+    font-size: 0.78rem;
+    color: #6B7280;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+#nutrition-create-enhanced .btn-remove-food {
+    border: none;
+    background: transparent;
+    color: #DC3545;
+    font-size: 0.72rem;
+    line-height: 1;
+    padding: 0.1rem 0.2rem;
+    cursor: pointer;
+}
+#nutrition-create-enhanced .btn-remove-food:hover { color: #a71d2a; }
 
-.options-container {
+#nutrition-create-enhanced .meal-option-macros,
+#nutrition-create-enhanced .option-summary {
+    margin-top: 0.6rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #E5E7EB;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    font-size: 0.78rem;
+    color: #6B7280;
+}
+#nutrition-create-enhanced .meal-option-macros span strong,
+#nutrition-create-enhanced .option-summary span strong { color: #374151; }
+
+#nutrition-create-enhanced .options-container {
     min-height: 200px;
 }
 </style>

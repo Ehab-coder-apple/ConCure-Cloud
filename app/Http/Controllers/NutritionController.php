@@ -169,6 +169,8 @@ class NutritionController extends Controller
             if (!$dietPlan) {
                 return redirect()->route('nutrition.index')->with('error', 'You do not have permission to edit this nutrition plan.');
             }
+
+            $this->backfillResolvedFoodRelations($dietPlan);
         }
 
         // Get patients for dropdown
@@ -623,11 +625,36 @@ class NutritionController extends Controller
 
         // Load the diet plan with all related data
         $dietPlan->load(['patient', 'meals.foods.food']);
+        $this->backfillResolvedFoodRelations($dietPlan);
 
         // Set selected patient for the form
         $selectedPatient = $dietPlan->patient;
 
         return view('nutrition.create-enhanced', compact('dietPlan', 'patients', 'foodGroups', 'selectedPatient'));
+    }
+
+    /**
+     * For meal foods saved without a food_id (e.g. auto-suggested/typed
+     * entries), set the `food` relation in memory to the name-matched
+     * resolved_food (DietPlanMealFood::resolved_food) when one exists, so
+     * the create/edit form's @json()-serialized meal data includes real
+     * nutrition info instead of showing "0 cal".
+     *
+     * Deliberately mutates the already-loaded `food` relation directly
+     * (rather than exposing resolved_food itself to serialization) to avoid
+     * caching the dietPlanMeal/dietPlan/patient relation chain as a
+     * side effect — that chain circles back to the same DietPlanMealFood
+     * (dietPlan->meals->foods) and is unsafe to serialize.
+     */
+    private function backfillResolvedFoodRelations(DietPlan $dietPlan): void
+    {
+        foreach ($dietPlan->meals as $meal) {
+            foreach ($meal->foods as $mealFood) {
+                if (!$mealFood->food_id) {
+                    $mealFood->setRelation('food', $mealFood->resolved_food);
+                }
+            }
+        }
     }
 
     /**

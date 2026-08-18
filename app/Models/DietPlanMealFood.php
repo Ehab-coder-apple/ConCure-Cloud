@@ -79,7 +79,7 @@ class DietPlanMealFood extends Model
             return null;
         }
 
-        $clinicId = $this->dietPlanMeal?->dietPlan?->patient?->clinic_id;
+        $clinicId = $this->resolveClinicIdWithoutCachingRelations();
 
         $query = Food::where('is_active', true)
             ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)]);
@@ -93,6 +93,43 @@ class DietPlanMealFood extends Model
         }
 
         return $query->first();
+    }
+
+    /**
+     * Look up the owning patient's clinic_id via fresh, uncached lookups
+     * that never mutate this model's own relation cache. resolved_food is
+     * routinely called while this model is nested inside an @json()/array
+     * serialization of its own ancestor chain (dietPlan->meals->foods->...),
+     * so caching dietPlanMeal/dietPlan/patient here (e.g. via ?-> access)
+     * would make later serialization of *this* record recurse back through
+     * those newly-cached relations and loop forever.
+     */
+    private function resolveClinicIdWithoutCachingRelations(): ?int
+    {
+        $dietPlanMeal = $this->relationLoaded('dietPlanMeal') ? $this->getRelation('dietPlanMeal') : null;
+        $dietPlanId = $dietPlanMeal?->diet_plan_id;
+
+        if (!$dietPlanId) {
+            if (!$this->diet_plan_meal_id) {
+                return null;
+            }
+            $dietPlanId = DietPlanMeal::where('id', $this->diet_plan_meal_id)->value('diet_plan_id');
+        }
+
+        if (!$dietPlanId) {
+            return null;
+        }
+
+        $dietPlan = $dietPlanMeal?->relationLoaded('dietPlan') ? $dietPlanMeal->getRelation('dietPlan') : null;
+        $patientId = $dietPlan?->patient_id ?? DietPlan::where('id', $dietPlanId)->value('patient_id');
+
+        if (!$patientId) {
+            return null;
+        }
+
+        $patient = $dietPlan?->relationLoaded('patient') ? $dietPlan->getRelation('patient') : null;
+
+        return $patient?->clinic_id ?? Patient::where('id', $patientId)->value('clinic_id');
     }
 
     /**
