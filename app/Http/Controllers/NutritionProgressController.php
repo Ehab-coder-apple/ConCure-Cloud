@@ -49,12 +49,14 @@ class NutritionProgressController extends Controller
             'measurement_date' => 'required|date',
             'weight_kg' => 'nullable|numeric|min:1|max:500',
             'height_cm' => 'nullable|numeric|min:30|max:300',
-            'fat_percentage' => 'nullable|numeric|min:1|max:80',
-            'muscle_percentage' => 'nullable|numeric|min:1|max:80',
+            'fat_kg' => 'nullable|numeric|min:0|max:300',
+            'muscle_kg' => 'nullable|numeric|min:0|max:300',
             'waist_cm' => 'nullable|numeric|min:30|max:250',
             'hip_cm' => 'nullable|numeric|min:30|max:250',
+            'whr_direct' => 'nullable|numeric|min:0.3|max:2',
             'visceral_fat' => 'nullable|numeric|min:1|max:60',
-            'body_water_percentage' => 'nullable|numeric|min:20|max:80',
+            'mineral_kg' => 'nullable|numeric|min:0|max:20',
+            'body_water_liters' => 'nullable|numeric|min:0|max:100',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -68,12 +70,14 @@ class NutritionProgressController extends Controller
             'measurement_date' => $request->measurement_date,
             'weight_kg' => $request->weight_kg,
             'height_cm' => $request->height_cm ?? $patient->height,
-            'fat_percentage' => $request->fat_percentage,
-            'muscle_percentage' => $request->muscle_percentage,
+            'fat_kg' => $request->fat_kg,
+            'muscle_kg' => $request->muscle_kg,
             'waist_cm' => $request->waist_cm,
             'hip_cm' => $request->hip_cm,
+            'whr_direct' => $request->whr_direct,
             'visceral_fat' => $request->visceral_fat,
-            'body_water_percentage' => $request->body_water_percentage,
+            'mineral_kg' => $request->mineral_kg,
+            'body_water_liters' => $request->body_water_liters,
             'notes' => $request->notes,
         ]);
 
@@ -104,13 +108,15 @@ class NutritionProgressController extends Controller
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'target_weight' => 'nullable|numeric|min:20|max:500',
-            'target_fat_percentage' => 'nullable|numeric|min:3|max:60',
-            'target_muscle_percentage' => 'nullable|numeric|min:10|max:70',
+            'target_fat_kg' => 'nullable|numeric|min:0|max:300',
+            'target_muscle_kg' => 'nullable|numeric|min:0|max:300',
             'target_bmi' => 'nullable|numeric|min:15|max:50',
             'target_waist_cm' => 'nullable|numeric|min:30|max:200',
             'target_hip_cm' => 'nullable|numeric|min:30|max:200',
+            'target_whr' => 'nullable|numeric|min:0.3|max:2',
             'target_visceral_fat' => 'nullable|numeric|min:1|max:30',
-            'target_body_water_percentage' => 'nullable|numeric|min:30|max:75',
+            'target_mineral_kg' => 'nullable|numeric|min:0|max:20',
+            'target_body_water_liters' => 'nullable|numeric|min:0|max:100',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -125,13 +131,15 @@ class NutritionProgressController extends Controller
             'clinic_id' => $user->clinic_id,
             'created_by' => $user->id,
             'target_weight' => $request->target_weight,
-            'target_fat_percentage' => $request->target_fat_percentage,
-            'target_muscle_percentage' => $request->target_muscle_percentage,
+            'target_fat_kg' => $request->target_fat_kg,
+            'target_muscle_kg' => $request->target_muscle_kg,
             'target_bmi' => $request->target_bmi,
             'target_waist_cm' => $request->target_waist_cm,
             'target_hip_cm' => $request->target_hip_cm,
+            'target_whr' => $request->target_whr,
             'target_visceral_fat' => $request->target_visceral_fat,
-            'target_body_water_percentage' => $request->target_body_water_percentage,
+            'target_mineral_kg' => $request->target_mineral_kg,
+            'target_body_water_liters' => $request->target_body_water_liters,
             'notes' => $request->notes,
             'is_active' => true,
         ]);
@@ -158,19 +166,21 @@ class NutritionProgressController extends Controller
             'datasets' => [
                 'weight' => $measurements->pluck('weight_kg')->toArray(),
                 'bmi' => $measurements->pluck('bmi')->toArray(),
-                'fat_percentage' => $measurements->pluck('fat_percentage')->toArray(),
-                'muscle_percentage' => $measurements->pluck('muscle_percentage')->toArray(),
+                'fat_kg' => $measurements->pluck('fat_kg')->toArray(),
+                'muscle_kg' => $measurements->pluck('muscle_kg')->toArray(),
                 'waist_to_hip_ratio' => $measurements->pluck('waist_to_hip_ratio')->toArray(),
                 'visceral_fat' => $measurements->pluck('visceral_fat')->toArray(),
-                'body_water_percentage' => $measurements->pluck('body_water_percentage')->toArray(),
+                'mineral_kg' => $measurements->pluck('mineral_kg')->toArray(),
+                'body_water_liters' => $measurements->pluck('body_water_liters')->toArray(),
             ],
             'goal' => $goal ? [
                 'weight' => $goal->target_weight,
-                'fat_percentage' => $goal->target_fat_percentage,
-                'muscle_percentage' => $goal->target_muscle_percentage,
+                'fat_kg' => $goal->target_fat_kg,
+                'muscle_kg' => $goal->target_muscle_kg,
                 'bmi' => $goal->target_bmi,
                 'visceral_fat' => $goal->target_visceral_fat,
-                'body_water_percentage' => $goal->target_body_water_percentage,
+                'mineral_kg' => $goal->target_mineral_kg,
+                'body_water_liters' => $goal->target_body_water_liters,
             ] : null,
             'reference_ranges' => $this->getReferenceRanges($patient),
         ];
@@ -216,19 +226,10 @@ class NutritionProgressController extends Controller
 
         return [
             'bmi' => ['min' => 18.5, 'max' => 24.9, 'label' => 'Normal BMI'],
-            'fat_percentage' => $gender === 'male'
-                ? ['min' => 10, 'max' => 20, 'label' => 'Healthy Fat % (Male)']
-                : ['min' => 18, 'max' => 28, 'label' => 'Healthy Fat % (Female)'],
-            'muscle_percentage' => $gender === 'male'
-                ? ['min' => 33, 'max' => 39, 'label' => 'Normal Muscle % (Male)']
-                : ['min' => 24, 'max' => 30, 'label' => 'Normal Muscle % (Female)'],
             'waist_to_hip_ratio' => $gender === 'male'
                 ? ['min' => 0.85, 'max' => 0.95, 'label' => 'Normal WHR (Male)']
                 : ['min' => 0.75, 'max' => 0.85, 'label' => 'Normal WHR (Female)'],
             'visceral_fat' => ['min' => 1, 'max' => 12, 'label' => 'Healthy Visceral Fat'],
-            'body_water_percentage' => $gender === 'male'
-                ? ['min' => 50, 'max' => 65, 'label' => 'Normal Body Water (Male)']
-                : ['min' => 45, 'max' => 60, 'label' => 'Normal Body Water (Female)'],
         ];
     }
 }

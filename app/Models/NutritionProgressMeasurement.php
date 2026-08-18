@@ -19,12 +19,17 @@ class NutritionProgressMeasurement extends Model
         'height_cm',
         'bmi',
         'fat_percentage',
+        'fat_kg',
         'muscle_percentage',
+        'muscle_kg',
         'waist_cm',
         'hip_cm',
         'waist_to_hip_ratio',
+        'whr_direct',
         'visceral_fat',
+        'mineral_kg',
         'body_water_percentage',
+        'body_water_liters',
         'notes',
     ];
 
@@ -34,12 +39,17 @@ class NutritionProgressMeasurement extends Model
         'height_cm' => 'decimal:2',
         'bmi' => 'decimal:2',
         'fat_percentage' => 'decimal:2',
+        'fat_kg' => 'decimal:2',
         'muscle_percentage' => 'decimal:2',
+        'muscle_kg' => 'decimal:2',
         'waist_cm' => 'decimal:2',
         'hip_cm' => 'decimal:2',
         'waist_to_hip_ratio' => 'decimal:3',
+        'whr_direct' => 'decimal:3',
         'visceral_fat' => 'decimal:2',
+        'mineral_kg' => 'decimal:2',
         'body_water_percentage' => 'decimal:2',
+        'body_water_liters' => 'decimal:2',
     ];
 
     protected static function boot()
@@ -52,10 +62,7 @@ class NutritionProgressMeasurement extends Model
                 $heightM = $m->height_cm / 100;
                 $m->bmi = round($m->weight_kg / ($heightM * $heightM), 2);
             }
-            // Auto-calculate waist-to-hip ratio
-            if ($m->waist_cm && $m->hip_cm && $m->hip_cm > 0) {
-                $m->waist_to_hip_ratio = round($m->waist_cm / $m->hip_cm, 3);
-            }
+            $m->applyEffectiveWhr();
         });
 
         static::updating(function ($m) {
@@ -65,12 +72,24 @@ class NutritionProgressMeasurement extends Model
                     $m->bmi = round($m->weight_kg / ($heightM * $heightM), 2);
                 }
             }
-            if ($m->isDirty(['waist_cm', 'hip_cm'])) {
-                if ($m->waist_cm && $m->hip_cm && $m->hip_cm > 0) {
-                    $m->waist_to_hip_ratio = round($m->waist_cm / $m->hip_cm, 3);
-                }
+            if ($m->isDirty(['waist_cm', 'hip_cm', 'whr_direct'])) {
+                $m->applyEffectiveWhr();
             }
         });
+    }
+
+    /**
+     * Populate waist_to_hip_ratio either from a directly-entered value
+     * (whr_direct, e.g. from a body composition analyzer) or, if not
+     * provided, calculated from waist/hip measurements.
+     */
+    public function applyEffectiveWhr(): void
+    {
+        if ($this->whr_direct) {
+            $this->waist_to_hip_ratio = $this->whr_direct;
+        } elseif ($this->waist_cm && $this->hip_cm && $this->hip_cm > 0) {
+            $this->waist_to_hip_ratio = round($this->waist_cm / $this->hip_cm, 3);
+        }
     }
 
     public function patient(): BelongsTo

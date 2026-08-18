@@ -76,12 +76,12 @@
                             @endif
                         </div>
                         <div class="col">
-                            <small class="opacity-75 d-block">{{ __('Fat %') }}</small>
-                            <strong>{{ $latest?->fat_percentage ?? '-' }}%</strong>
+                            <small class="opacity-75 d-block">{{ __('Fat') }}</small>
+                            <strong>{{ $latest?->fat_kg ?? '-' }}{{ $latest?->fat_kg ? ' kg' : '' }}</strong>
                         </div>
                         <div class="col">
-                            <small class="opacity-75 d-block">{{ __('Muscle %') }}</small>
-                            <strong>{{ $latest?->muscle_percentage ?? '-' }}%</strong>
+                            <small class="opacity-75 d-block">{{ __('Muscle') }}</small>
+                            <strong>{{ $latest?->muscle_kg ?? '-' }}{{ $latest?->muscle_kg ? ' kg' : '' }}</strong>
                         </div>
                         <div class="col">
                             <small class="opacity-75 d-block">{{ __('WHR') }}</small>
@@ -104,11 +104,12 @@
                 <small class="text-muted fw-semibold me-2">{{ __('Metrics:') }}</small>
                 <button class="btn btn-sm metric-toggle active" data-metric="weight" style="--c:#3b82f6"><i class="fas fa-weight me-1"></i>{{ __('Weight') }}</button>
                 <button class="btn btn-sm metric-toggle active" data-metric="bmi" style="--c:#8b5cf6"><i class="fas fa-calculator me-1"></i>{{ __('BMI') }}</button>
-                <button class="btn btn-sm metric-toggle" data-metric="fat_percentage" style="--c:#ef4444"><i class="fas fa-fire me-1"></i>{{ __('Fat %') }}</button>
-                <button class="btn btn-sm metric-toggle" data-metric="muscle_percentage" style="--c:#10b981"><i class="fas fa-dumbbell me-1"></i>{{ __('Muscle %') }}</button>
+                <button class="btn btn-sm metric-toggle" data-metric="fat_kg" style="--c:#ef4444"><i class="fas fa-fire me-1"></i>{{ __('Fat (kg)') }}</button>
+                <button class="btn btn-sm metric-toggle" data-metric="muscle_kg" style="--c:#10b981"><i class="fas fa-dumbbell me-1"></i>{{ __('Muscle (kg)') }}</button>
                 <button class="btn btn-sm metric-toggle" data-metric="waist_to_hip_ratio" style="--c:#f59e0b"><i class="fas fa-ruler me-1"></i>{{ __('WHR') }}</button>
                 <button class="btn btn-sm metric-toggle" data-metric="visceral_fat" style="--c:#ec4899"><i class="fas fa-heartbeat me-1"></i>{{ __('Visceral Fat') }}</button>
-                <button class="btn btn-sm metric-toggle" data-metric="body_water_percentage" style="--c:#06b6d4"><i class="fas fa-tint me-1"></i>{{ __('Body Water') }}</button>
+                <button class="btn btn-sm metric-toggle" data-metric="mineral_kg" style="--c:#a3a3a3"><i class="fas fa-cubes me-1"></i>{{ __('Mineral (kg)') }}</button>
+                <button class="btn btn-sm metric-toggle" data-metric="body_water_liters" style="--c:#06b6d4"><i class="fas fa-tint me-1"></i>{{ __('Body Water (L)') }}</button>
                 @if($goal && $goal->target_weight)
                 <button class="btn btn-sm metric-toggle" data-metric="weight_to_goal" style="--c:#a855f7"><i class="fas fa-bullseye me-1"></i>{{ __('Weight→Goal %') }}</button>
                 @endif
@@ -131,11 +132,13 @@
         @php
             $goalMetrics = [
                 ['label' => 'Weight', 'current' => $latest?->weight_kg, 'target' => $goal->target_weight, 'unit' => 'kg', 'icon' => 'fa-weight', 'color' => '#3b82f6'],
-                ['label' => 'Fat %', 'current' => $latest?->fat_percentage, 'target' => $goal->target_fat_percentage, 'unit' => '%', 'icon' => 'fa-fire', 'color' => '#ef4444'],
-                ['label' => 'Muscle %', 'current' => $latest?->muscle_percentage, 'target' => $goal->target_muscle_percentage, 'unit' => '%', 'icon' => 'fa-dumbbell', 'color' => '#10b981'],
+                ['label' => 'Fat', 'current' => $latest?->fat_kg, 'target' => $goal->target_fat_kg, 'unit' => 'kg', 'icon' => 'fa-fire', 'color' => '#ef4444'],
+                ['label' => 'Muscle', 'current' => $latest?->muscle_kg, 'target' => $goal->target_muscle_kg, 'unit' => 'kg', 'icon' => 'fa-dumbbell', 'color' => '#10b981'],
                 ['label' => 'BMI', 'current' => $latest?->bmi, 'target' => $goal->target_bmi, 'unit' => '', 'icon' => 'fa-calculator', 'color' => '#8b5cf6'],
                 ['label' => 'Visceral Fat', 'current' => $latest?->visceral_fat, 'target' => $goal->target_visceral_fat, 'unit' => '', 'icon' => 'fa-heartbeat', 'color' => '#ec4899'],
-                ['label' => 'Body Water', 'current' => $latest?->body_water_percentage, 'target' => $goal->target_body_water_percentage, 'unit' => '%', 'icon' => 'fa-tint', 'color' => '#06b6d4'],
+                ['label' => 'Mineral', 'current' => $latest?->mineral_kg, 'target' => $goal->target_mineral_kg, 'unit' => 'kg', 'icon' => 'fa-cubes', 'color' => '#a3a3a3'],
+                ['label' => 'Body Water', 'current' => $latest?->body_water_liters, 'target' => $goal->target_body_water_liters, 'unit' => 'L', 'icon' => 'fa-tint', 'color' => '#06b6d4'],
+                ['label' => 'WHR', 'current' => $latest?->waist_to_hip_ratio, 'target' => $goal->target_whr, 'unit' => '', 'icon' => 'fa-ruler', 'color' => '#f59e0b'],
             ];
         @endphp
         @foreach($goalMetrics as $gm)
@@ -176,13 +179,14 @@
                             <th>{{ __('Date') }}</th>
                             <th>{{ __('Weight') }}</th>
                             <th>{{ __('BMI') }}</th>
-                            <th>{{ __('Fat %') }}</th>
-                            <th>{{ __('Muscle %') }}</th>
+                            <th>{{ __('Fat (kg)') }}</th>
+                            <th>{{ __('Muscle (kg)') }}</th>
                             <th>{{ __('Waist') }}</th>
                             <th>{{ __('Hip') }}</th>
                             <th>{{ __('WHR') }}</th>
                             <th>{{ __('VF') }}</th>
-                            <th>{{ __('Water %') }}</th>
+                            <th>{{ __('Mineral (kg)') }}</th>
+                            <th>{{ __('Water (L)') }}</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -192,13 +196,14 @@
                             <td>{{ $m->measurement_date->format('d M Y') }}</td>
                             <td>{{ $m->weight_kg ?? '-' }}</td>
                             <td><span class="badge" style="background:{{ $m->bmi_color }}">{{ $m->bmi ?? '-' }}</span></td>
-                            <td>{{ $m->fat_percentage ?? '-' }}</td>
-                            <td>{{ $m->muscle_percentage ?? '-' }}</td>
+                            <td>{{ $m->fat_kg ?? '-' }}</td>
+                            <td>{{ $m->muscle_kg ?? '-' }}</td>
                             <td>{{ $m->waist_cm ?? '-' }}</td>
                             <td>{{ $m->hip_cm ?? '-' }}</td>
                             <td>{{ $m->waist_to_hip_ratio ?? '-' }}</td>
                             <td>{{ $m->visceral_fat ?? '-' }}</td>
-                            <td>{{ $m->body_water_percentage ?? '-' }}</td>
+                            <td>{{ $m->mineral_kg ?? '-' }}</td>
+                            <td>{{ $m->body_water_liters ?? '-' }}</td>
                             <td>
                                 <form method="POST" action="{{ route('nutrition.progress.measurement.destroy', $m) }}" class="d-inline" onsubmit="return confirm('Delete?')">
                                     @csrf @method('DELETE')
@@ -244,12 +249,16 @@
                             <input type="number" step="0.01" name="height_cm" class="form-control" value="{{ $selectedPatient->height }}" placeholder="e.g. 170">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">{{ __('Fat %') }}</label>
-                            <input type="number" step="0.1" name="fat_percentage" class="form-control" placeholder="e.g. 22.5">
+                            <label class="form-label">{{ __('Fat (kg)') }}</label>
+                            <input type="number" step="0.1" name="fat_kg" class="form-control" placeholder="e.g. 18.5">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">{{ __('Muscle %') }}</label>
-                            <input type="number" step="0.1" name="muscle_percentage" class="form-control" placeholder="e.g. 35.0">
+                            <label class="form-label">{{ __('Muscle (kg)') }}</label>
+                            <input type="number" step="0.1" name="muscle_kg" class="form-control" placeholder="e.g. 28.0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ __('Mineral (kg)') }}</label>
+                            <input type="number" step="0.1" name="mineral_kg" class="form-control" placeholder="e.g. 3.2">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">{{ __('Waist (cm)') }}</label>
@@ -260,12 +269,17 @@
                             <input type="number" step="0.1" name="hip_cm" class="form-control" placeholder="e.g. 95">
                         </div>
                         <div class="col-md-4">
+                            <label class="form-label">{{ __('WHR (if provided directly by device)') }}</label>
+                            <input type="number" step="0.001" name="whr_direct" class="form-control" placeholder="e.g. 0.90">
+                            <small class="text-muted">{{ __('Optional — leave blank to auto-calculate from Waist/Hip above.') }}</small>
+                        </div>
+                        <div class="col-md-4">
                             <label class="form-label">{{ __('Visceral Fat') }}</label>
                             <input type="number" step="0.1" name="visceral_fat" class="form-control" placeholder="e.g. 8">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">{{ __('Body Water %') }}</label>
-                            <input type="number" step="0.1" name="body_water_percentage" class="form-control" placeholder="e.g. 55">
+                            <label class="form-label">{{ __('Body Water (L)') }}</label>
+                            <input type="number" step="0.1" name="body_water_liters" class="form-control" placeholder="e.g. 38.5">
                         </div>
                         <div class="col-12">
                             <label class="form-label">{{ __('Notes') }}</label>
@@ -300,24 +314,32 @@
                             <input type="number" step="0.1" name="target_weight" class="form-control" value="{{ $goal?->target_weight }}">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">{{ __('Target Fat %') }}</label>
-                            <input type="number" step="0.1" name="target_fat_percentage" class="form-control" value="{{ $goal?->target_fat_percentage }}">
+                            <label class="form-label">{{ __('Target Fat (kg)') }}</label>
+                            <input type="number" step="0.1" name="target_fat_kg" class="form-control" value="{{ $goal?->target_fat_kg }}">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">{{ __('Target Muscle %') }}</label>
-                            <input type="number" step="0.1" name="target_muscle_percentage" class="form-control" value="{{ $goal?->target_muscle_percentage }}">
+                            <label class="form-label">{{ __('Target Muscle (kg)') }}</label>
+                            <input type="number" step="0.1" name="target_muscle_kg" class="form-control" value="{{ $goal?->target_muscle_kg }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ __('Target Mineral (kg)') }}</label>
+                            <input type="number" step="0.1" name="target_mineral_kg" class="form-control" value="{{ $goal?->target_mineral_kg }}">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">{{ __('Target BMI') }}</label>
                             <input type="number" step="0.1" name="target_bmi" class="form-control" value="{{ $goal?->target_bmi }}">
                         </div>
                         <div class="col-md-4">
+                            <label class="form-label">{{ __('Target WHR (direct)') }}</label>
+                            <input type="number" step="0.001" name="target_whr" class="form-control" value="{{ $goal?->target_whr }}">
+                        </div>
+                        <div class="col-md-4">
                             <label class="form-label">{{ __('Target Visceral Fat') }}</label>
                             <input type="number" step="0.1" name="target_visceral_fat" class="form-control" value="{{ $goal?->target_visceral_fat }}">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">{{ __('Target Body Water %') }}</label>
-                            <input type="number" step="0.1" name="target_body_water_percentage" class="form-control" value="{{ $goal?->target_body_water_percentage }}">
+                            <label class="form-label">{{ __('Target Body Water (L)') }}</label>
+                            <input type="number" step="0.1" name="target_body_water_liters" class="form-control" value="{{ $goal?->target_body_water_liters }}">
                         </div>
                         <div class="col-12">
                             <label class="form-label">{{ __('Notes') }}</label>
@@ -368,11 +390,12 @@
         'datasets' => [
             'weight' => $measurements->pluck('weight_kg')->values(),
             'bmi' => $measurements->pluck('bmi')->values(),
-            'fat_percentage' => $measurements->pluck('fat_percentage')->values(),
-            'muscle_percentage' => $measurements->pluck('muscle_percentage')->values(),
+            'fat_kg' => $measurements->pluck('fat_kg')->values(),
+            'muscle_kg' => $measurements->pluck('muscle_kg')->values(),
             'waist_to_hip_ratio' => $measurements->pluck('waist_to_hip_ratio')->values(),
             'visceral_fat' => $measurements->pluck('visceral_fat')->values(),
-            'body_water_percentage' => $measurements->pluck('body_water_percentage')->values(),
+            'mineral_kg' => $measurements->pluck('mineral_kg')->values(),
+            'body_water_liters' => $measurements->pluck('body_water_liters')->values(),
         ],
     ];
 @endphp
@@ -383,11 +406,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const metricConfig = {
         weight:              { label: '{{ __("Weight (kg)") }}',    color: '#3b82f6', yAxisID: 'y' },
         bmi:                 { label: '{{ __("BMI") }}',            color: '#8b5cf6', yAxisID: 'y1' },
-        fat_percentage:      { label: '{{ __("Fat %") }}',          color: '#ef4444', yAxisID: 'y1' },
-        muscle_percentage:   { label: '{{ __("Muscle %") }}',       color: '#10b981', yAxisID: 'y1' },
+        fat_kg:              { label: '{{ __("Fat (kg)") }}',       color: '#ef4444', yAxisID: 'y1' },
+        muscle_kg:           { label: '{{ __("Muscle (kg)") }}',    color: '#10b981', yAxisID: 'y1' },
         waist_to_hip_ratio:  { label: '{{ __("WHR") }}',            color: '#f59e0b', yAxisID: 'y2' },
         visceral_fat:        { label: '{{ __("Visceral Fat") }}',   color: '#ec4899', yAxisID: 'y1' },
-        body_water_percentage:{ label: '{{ __("Body Water %") }}',  color: '#06b6d4', yAxisID: 'y1' },
+        mineral_kg:          { label: '{{ __("Mineral (kg)") }}',   color: '#a3a3a3', yAxisID: 'y1' },
+        body_water_liters:   { label: '{{ __("Body Water (L)") }}', color: '#06b6d4', yAxisID: 'y1' },
     };
 
     const activeMetrics = new Set(['weight', 'bmi']);
