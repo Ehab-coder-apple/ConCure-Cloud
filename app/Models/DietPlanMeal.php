@@ -88,6 +88,19 @@ class DietPlanMeal extends Model
     }
 
     /**
+     * Whether at least one food in this meal is linked to the Food database
+     * (i.e. has nutrition data available). Custom/free-text foods have no
+     * food_id and therefore contribute 0 to all macro totals, which would
+     * otherwise misleadingly display as "0" instead of "no data".
+     */
+    public function getHasNutritionDataAttribute(): bool
+    {
+        return $this->foods->contains(function ($food) {
+            return !is_null($food->food_id);
+        });
+    }
+
+    /**
      * Calculate total calories for this meal (unit-aware via DietPlanMealFood accessors).
      */
     public function getTotalCaloriesAttribute(): float

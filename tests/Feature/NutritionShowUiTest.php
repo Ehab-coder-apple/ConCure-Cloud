@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\DietPlan;
 use App\Models\DietPlanMeal;
 use App\Models\DietPlanMealFood;
+use App\Models\Food;
 use App\Models\Patient;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\View;
@@ -53,9 +54,13 @@ class NutritionShowUiTest extends TestCase
         $breakfastOption1->id = 1;
         $breakfastOption1->exists = true;
 
-        $eggFood = new DietPlanMealFood(['food_name' => 'Egg', 'quantity' => 186, 'unit' => 'g']);
+        $eggFoodDb = new Food(['name' => 'Egg', 'calories' => 155, 'protein' => 13, 'carbohydrates' => 1.1, 'fat' => 11]);
+        $eggFoodDb->id = 101;
+        $eggFoodDb->exists = true;
+        $eggFood = new DietPlanMealFood(['food_id' => 101, 'food_name' => 'Egg', 'quantity' => 186, 'unit' => 'g']);
         $eggFood->id = 11;
         $eggFood->exists = true;
+        $eggFood->setRelation('food', $eggFoodDb);
         $cheeseFood = new DietPlanMealFood(['food_name' => 'Solid goat cheese', 'quantity' => 30, 'unit' => 'g']);
         $cheeseFood->id = 12;
         $cheeseFood->exists = true;
@@ -96,8 +101,16 @@ class NutritionShowUiTest extends TestCase
         $this->assertStringContainsString('Egg', $html);
         $this->assertStringContainsString('Chicken kibbeh', $html);
 
-        // Macro summary chips per option card
+        // Macro summary chips appear for meals with at least one food linked to the Food database
         $this->assertStringContainsString('meal-option-macros', $html);
+
+        // Custom/free-text-only foods (no food_id, e.g. "Chicken kibbeh") have no nutrition
+        // data, so their macro row must NOT render misleading "0" totals.
+        $lunchCardStart = strpos($html, 'Chicken Kibbeh');
+        $this->assertNotFalse($lunchCardStart);
+        $lunchCardEnd = strpos($html, 'meal-option-card', $lunchCardStart) ?: strlen($html);
+        $lunchCardHtml = substr($html, $lunchCardStart, $lunchCardEnd - $lunchCardStart);
+        $this->assertStringNotContainsString('meal-option-macros', $lunchCardHtml);
 
         // Sidebar: duplicated top-bar actions removed
         $this->assertStringNotContainsString('onclick="shareOnWhatsApp()"', $html);

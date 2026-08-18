@@ -595,12 +595,14 @@ body.fix-nutrition-offset #nutrition-show.container {
                                             </div>
                                             @endforeach
                                         </div>
+                                        @if($meal->has_nutrition_data)
                                         <div class="meal-option-macros">
                                             <span>{{ __('Cal') }}: <strong>{{ number_format($meal->total_calories) }}</strong></span>
                                             <span>{{ __('P') }}: <strong>{{ number_format($meal->total_protein) }}g</strong></span>
                                             <span>{{ __('C') }}: <strong>{{ number_format($meal->total_carbs) }}g</strong></span>
                                             <span>{{ __('F') }}: <strong>{{ number_format($meal->total_fat) }}g</strong></span>
                                         </div>
+                                        @endif
                                         @endif
                                     </div>
                                     @endforeach
@@ -650,12 +652,14 @@ body.fix-nutrition-offset #nutrition-show.container {
                                             </div>
                                             @endforeach
                                         </div>
+                                        @if($meal->has_nutrition_data)
                                         <div class="meal-option-macros">
                                             <span>{{ __('Cal') }}: <strong>{{ number_format($meal->total_calories) }}</strong></span>
                                             <span>{{ __('P') }}: <strong>{{ number_format($meal->total_protein) }}g</strong></span>
                                             <span>{{ __('C') }}: <strong>{{ number_format($meal->total_carbs) }}g</strong></span>
                                             <span>{{ __('F') }}: <strong>{{ number_format($meal->total_fat) }}g</strong></span>
                                         </div>
+                                        @endif
                                         @endif
                                     </div>
                                     @endforeach
