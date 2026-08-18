@@ -169,6 +169,50 @@ body.fix-nutrition-offset #nutrition-show.container {
 #nutrition-show .actions-card .delete-plan-link:hover {
   text-decoration: underline;
 }
+
+/* ---- Compact info cards: Plan Overview, Nutritional Targets, Weight
+   Management, Plan Timeline, Progress. Tighter padding/gaps without
+   removing any information; card height now driven purely by content. ---- */
+#nutrition-show .info-card .card-body {
+  padding: 0.9rem 1.1rem;
+}
+#nutrition-show .info-card.mb-4,
+#nutrition-show .card.mb-4 {
+  margin-bottom: 1rem !important;
+}
+#nutrition-show .info-card .row.g-compact {
+  --bs-gutter-y: 0.6rem;
+}
+#nutrition-show .info-card .field-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #6B7280;
+  margin-bottom: 0.15rem;
+  display: block;
+}
+#nutrition-show .info-card .field-value {
+  font-size: 0.95rem;
+}
+#nutrition-show .metric-box {
+  text-align: center;
+  padding: 0.6rem 0.5rem;
+  background: #F8F9FA;
+  border-radius: 0.5rem;
+  height: 100%;
+}
+#nutrition-show .metric-box h4,
+#nutrition-show .metric-box .metric-value {
+  margin-bottom: 0.15rem;
+  font-size: 1.25rem;
+}
+#nutrition-show .metric-box small {
+  font-size: 0.75rem;
+}
+#nutrition-show .timeline-list dt,
+#nutrition-show .timeline-list dd {
+  margin-bottom: 0;
+}
 </style>
 @endpush
 
@@ -263,7 +307,7 @@ body.fix-nutrition-offset #nutrition-show.container {
     <div class="row">
         <!-- Plan Overview -->
         <div class="col-lg-8">
-            <div class="card mb-4">
+            <div class="card info-card mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-info-circle"></i>
@@ -271,39 +315,36 @@ body.fix-nutrition-offset #nutrition-show.container {
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <strong>{{ __('Name:') }}</strong><br>
-                            <span class="text-primary">{{ $dietPlan->patient->first_name ?? '' }} {{ $dietPlan->patient->last_name ?? '' }}</span><br>
+                    <div class="row g-compact">
+                        <div class="col-md-6 col-lg-3">
+                            <span class="field-label">{{ __('Name:') }}</span>
+                            <span class="field-value text-primary">{{ $dietPlan->patient->first_name ?? '' }} {{ $dietPlan->patient->last_name ?? '' }}</span><br>
                             <small class="text-muted">{{ $dietPlan->patient->patient_id ?? '' }}</small>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>{{ __('Doctor:') }}</strong><br>
-                            <span class="text-primary">{{ $dietPlan->doctor ? ('Dr. ' . ($dietPlan->doctor->first_name ?? '') . ' ' . ($dietPlan->doctor->last_name ?? '')) : __('Doctor not assigned') }}</span>
+                        <div class="col-md-6 col-lg-3">
+                            <span class="field-label">{{ __('Doctor:') }}</span>
+                            <span class="field-value text-primary">{{ $dietPlan->doctor ? ('Dr. ' . ($dietPlan->doctor->first_name ?? '') . ' ' . ($dietPlan->doctor->last_name ?? '')) : __('Doctor not assigned') }}</span>
                         </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <strong>{{ __('Goal:') }}</strong><br>
+                        <div class="col-md-6 col-lg-3">
+                            <span class="field-label">{{ __('Goal:') }}</span>
                             <span class="badge bg-info">{{ $dietPlan->goal_display }}</span>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>{{ __('Status:') }}</strong><br>
+                        <div class="col-md-6 col-lg-3">
+                            <span class="field-label">{{ __('Status:') }}</span>
                             <span class="{{ $dietPlan->status_badge_class }}">{{ $dietPlan->status_display }}</span>
                         </div>
                     </div>
 
                     @if($dietPlan->description)
-                    <div class="mb-3">
-                        <strong>{{ __('Description:') }}</strong><br>
+                    <div class="mt-3">
+                        <span class="field-label">{{ __('Description:') }}</span>
                         <p class="mb-0">{{ $dietPlan->description }}</p>
                     </div>
                     @endif
 
                     @if($dietPlan->goal_description)
-                    <div class="mb-3">
-                        <strong>{{ __('Goal Description:') }}</strong><br>
+                    <div class="mt-3">
+                        <span class="field-label">{{ __('Goal Description:') }}</span>
                         <p class="mb-0">{{ $dietPlan->goal_description }}</p>
                     </div>
                     @endif
@@ -311,7 +352,7 @@ body.fix-nutrition-offset #nutrition-show.container {
             </div>
 
             <!-- Nutritional Targets -->
-            <div class="card mb-4">
+            <div class="card info-card mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-bullseye"></i>
@@ -319,38 +360,38 @@ body.fix-nutrition-offset #nutrition-show.container {
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row g-compact">
                         @if($dietPlan->target_calories)
-                        <div class="col-md-3 mb-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="text-primary mb-1">{{ number_format($dietPlan->target_calories) }}</h4>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <h4 class="text-primary">{{ number_format($dietPlan->target_calories) }}</h4>
                                 <small class="text-muted">{{ __('Calories/day') }}</small>
                             </div>
                         </div>
                         @endif
 
                         @if($dietPlan->target_protein)
-                        <div class="col-md-3 mb-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="text-success mb-1">{{ number_format($dietPlan->target_protein) }}g</h4>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <h4 class="text-success">{{ number_format($dietPlan->target_protein) }}g</h4>
                                 <small class="text-muted">{{ __('Protein') }}</small>
                             </div>
                         </div>
                         @endif
 
                         @if($dietPlan->target_carbs)
-                        <div class="col-md-3 mb-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="text-warning mb-1">{{ number_format($dietPlan->target_carbs) }}g</h4>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <h4 class="text-warning">{{ number_format($dietPlan->target_carbs) }}g</h4>
                                 <small class="text-muted">{{ __('Carbohydrates') }}</small>
                             </div>
                         </div>
                         @endif
 
                         @if($dietPlan->target_fat)
-                        <div class="col-md-3 mb-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="text-info mb-1">{{ number_format($dietPlan->target_fat) }}g</h4>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <h4 class="text-info">{{ number_format($dietPlan->target_fat) }}g</h4>
                                 <small class="text-muted">{{ __('Fat') }}</small>
                             </div>
                         </div>
@@ -361,7 +402,7 @@ body.fix-nutrition-offset #nutrition-show.container {
 
             <!-- Weight Tracking Progress -->
             @if($dietPlan->initial_weight || $dietPlan->current_weight || $dietPlan->target_weight)
-            <div class="card mb-4">
+            <div class="card info-card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
                         <i class="fas fa-weight text-primary"></i>
@@ -373,38 +414,38 @@ body.fix-nutrition-offset #nutrition-show.container {
                     </a>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row g-compact">
                         @if($dietPlan->initial_weight)
-                        <div class="col-md-3 mb-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="text-info mb-1">{{ number_format($dietPlan->initial_weight, 1) }}</h4>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <h4 class="text-info">{{ number_format($dietPlan->initial_weight, 1) }}</h4>
                                 <small class="text-muted">{{ __('Initial Weight (kg)') }}</small>
                             </div>
                         </div>
                         @endif
 
                         @if($dietPlan->current_weight)
-                        <div class="col-md-3 mb-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="text-success mb-1">{{ number_format($dietPlan->current_weight, 1) }}</h4>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <h4 class="text-success">{{ number_format($dietPlan->current_weight, 1) }}</h4>
                                 <small class="text-muted">{{ __('Current Weight (kg)') }}</small>
                             </div>
                         </div>
                         @endif
 
                         @if($dietPlan->target_weight)
-                        <div class="col-md-3 mb-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="text-warning mb-1">{{ number_format($dietPlan->target_weight, 1) }}</h4>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <h4 class="text-warning">{{ number_format($dietPlan->target_weight, 1) }}</h4>
                                 <small class="text-muted">{{ __('Target Weight (kg)') }}</small>
                             </div>
                         </div>
                         @endif
 
                         @if($dietPlan->total_weight_change)
-                        <div class="col-md-3 mb-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="{{ $dietPlan->total_weight_change > 0 ? 'text-primary' : 'text-danger' }} mb-1">
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <h4 class="{{ $dietPlan->total_weight_change > 0 ? 'text-primary' : 'text-danger' }}">
                                     {{ $dietPlan->total_weight_change > 0 ? '+' : '' }}{{ number_format($dietPlan->total_weight_change, 1) }}
                                 </h4>
                                 <small class="text-muted">{{ __('Weight Change (kg)') }}</small>
@@ -415,12 +456,12 @@ body.fix-nutrition-offset #nutrition-show.container {
 
                     <!-- BMI Information -->
                     @if($dietPlan->initial_bmi || $dietPlan->current_bmi)
-                    <div class="row mt-3">
+                    <div class="row g-compact mt-1 pt-2 border-top">
                         <div class="col-12">
-                            <h6 class="border-bottom pb-2">{{ __('BMI Progress') }}</h6>
+                            <span class="field-label mb-1">{{ __('BMI Progress') }}</span>
                         </div>
                         @if($dietPlan->initial_bmi)
-                        <div class="col-md-4 mb-2">
+                        <div class="col-md-4">
                             <strong>{{ __('Initial BMI') }}:</strong>
                             <span class="badge bg-secondary">{{ number_format($dietPlan->initial_bmi, 1) }}</span>
                             <small class="text-muted">
@@ -434,7 +475,7 @@ body.fix-nutrition-offset #nutrition-show.container {
                         @endif
 
                         @if($dietPlan->current_bmi)
-                        <div class="col-md-4 mb-2">
+                        <div class="col-md-4">
                             <strong>{{ __('Current BMI') }}:</strong>
                             <span class="badge bg-success">{{ number_format($dietPlan->current_bmi, 1) }}</span>
                             <small class="text-muted">
@@ -448,7 +489,7 @@ body.fix-nutrition-offset #nutrition-show.container {
                         @endif
 
                         @if($dietPlan->target_bmi)
-                        <div class="col-md-4 mb-2">
+                        <div class="col-md-4">
                             <strong>{{ __('Target BMI') }}:</strong>
                             <span class="badge bg-warning">{{ number_format($dietPlan->target_bmi, 1) }}</span>
                             <small class="text-muted">
@@ -465,24 +506,22 @@ body.fix-nutrition-offset #nutrition-show.container {
 
                     <!-- Progress Bar -->
                     @if($dietPlan->weight_progress_percentage)
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h6>{{ __('Progress to Goal') }}</h6>
-                            <div class="progress" style="height: 25px;">
-                                <div class="progress-bar bg-success" role="progressbar"
-                                     style="width: {{ min($dietPlan->weight_progress_percentage, 100) }}%">
-                                    {{ number_format($dietPlan->weight_progress_percentage, 1) }}%
-                                </div>
+                    <div class="mt-2 pt-2 border-top">
+                        <span class="field-label mb-1">{{ __('Progress to Goal') }}</span>
+                        <div class="progress" style="height: 22px;">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 style="width: {{ min($dietPlan->weight_progress_percentage, 100) }}%">
+                                {{ number_format($dietPlan->weight_progress_percentage, 1) }}%
                             </div>
-                            @if($dietPlan->isWeightGoalAchieved())
-                            <div class="text-center mt-2">
-                                <span class="badge bg-success fs-6">
-                                    <i class="fas fa-trophy me-1"></i>
-                                    {{ __('Goal Achieved!') }}
-                                </span>
-                            </div>
-                            @endif
                         </div>
+                        @if($dietPlan->isWeightGoalAchieved())
+                        <div class="text-center mt-2">
+                            <span class="badge bg-success fs-6">
+                                <i class="fas fa-trophy me-1"></i>
+                                {{ __('Goal Achieved!') }}
+                            </span>
+                        </div>
+                        @endif
                     </div>
                     @endif
                 </div>
@@ -675,7 +714,7 @@ body.fix-nutrition-offset #nutrition-show.container {
 
         <!-- Plan Details -->
         <div class="col-lg-4">
-            <div class="card mb-4">
+            <div class="card info-card mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-calendar-alt"></i>
@@ -683,45 +722,47 @@ body.fix-nutrition-offset #nutrition-show.container {
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <strong>{{ __('Start Date:') }}</strong><br>
-                        @if($dietPlan->start_date)
-                            <span class="text-primary">{{ ($dietPlan->start_date instanceof \Carbon\Carbon) ? $dietPlan->start_date->format('M d, Y') : \Carbon\Carbon::parse($dietPlan->start_date)->format('M d, Y') }}</span>
-                        @else
-                            <span class="text-muted">—</span>
+                    <div class="row g-compact">
+                        <div class="col-6">
+                            <span class="field-label">{{ __('Start Date:') }}</span>
+                            @if($dietPlan->start_date)
+                                <span class="field-value text-primary">{{ ($dietPlan->start_date instanceof \Carbon\Carbon) ? $dietPlan->start_date->format('M d, Y') : \Carbon\Carbon::parse($dietPlan->start_date)->format('M d, Y') }}</span>
+                            @else
+                                <span class="field-value text-muted">—</span>
+                            @endif
+                        </div>
+
+                        @if($dietPlan->end_date)
+                        <div class="col-6">
+                            <span class="field-label">{{ __('End Date:') }}</span>
+                            <span class="field-value text-primary">{{ ($dietPlan->end_date instanceof \Carbon\Carbon) ? $dietPlan->end_date->format('M d, Y') : \Carbon\Carbon::parse($dietPlan->end_date)->format('M d, Y') }}</span>
+                        </div>
+                        @endif
+
+                        @if($dietPlan->duration_days)
+                        <div class="col-6">
+                            <span class="field-label">{{ __('Duration:') }}</span>
+                            <span class="field-value text-primary">{{ $dietPlan->duration_days }} {{ __('days') }}</span>
+                        </div>
+                        @endif
+
+                        <div class="col-6">
+                            <span class="field-label">{{ __('Created:') }}</span>
+                            <span class="field-value text-muted">{{ $dietPlan->created_at->format('M d, Y g:i A') }}</span>
+                        </div>
+
+                        @if($dietPlan->updated_at != $dietPlan->created_at)
+                        <div class="col-6">
+                            <span class="field-label">{{ __('Last Updated:') }}</span>
+                            <span class="field-value text-muted">{{ $dietPlan->updated_at->format('M d, Y g:i A') }}</span>
+                        </div>
                         @endif
                     </div>
-
-                    @if($dietPlan->end_date)
-                    <div class="mb-3">
-                        <strong>{{ __('End Date:') }}</strong><br>
-                        <span class="text-primary">{{ ($dietPlan->end_date instanceof \Carbon\Carbon) ? $dietPlan->end_date->format('M d, Y') : \Carbon\Carbon::parse($dietPlan->end_date)->format('M d, Y') }}</span>
-                    </div>
-                    @endif
-
-                    @if($dietPlan->duration_days)
-                    <div class="mb-3">
-                        <strong>{{ __('Duration:') }}</strong><br>
-                        <span class="text-primary">{{ $dietPlan->duration_days }} {{ __('days') }}</span>
-                    </div>
-                    @endif
-
-                    <div class="mb-3">
-                        <strong>{{ __('Created:') }}</strong><br>
-                        <span class="text-muted">{{ $dietPlan->created_at->format('M d, Y g:i A') }}</span>
-                    </div>
-
-                    @if($dietPlan->updated_at != $dietPlan->created_at)
-                    <div class="mb-3">
-                        <strong>{{ __('Last Updated:') }}</strong><br>
-                        <span class="text-muted">{{ $dietPlan->updated_at->format('M d, Y g:i A') }}</span>
-                    </div>
-                    @endif
                 </div>
             </div>
 
             <!-- Progress -->
-            <div class="card mb-4">
+            <div class="card info-card mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-chart-line"></i>
@@ -739,7 +780,7 @@ body.fix-nutrition-offset #nutrition-show.container {
                             $progress = $totalDays > 0 ? min(100, max(0, ($daysPassed / $totalDays) * 100)) : 0;
                         @endphp
 
-                        <div class="mb-3">
+                        <div class="mb-2">
                             <div class="d-flex justify-content-between mb-1">
                                 <small>{{ __('Plan Progress') }}</small>
                                 <small>{{ number_format($progress, 1) }}%</small>
@@ -749,16 +790,16 @@ body.fix-nutrition-offset #nutrition-show.container {
                             </div>
                         </div>
 
-                        <div class="row text-center">
+                        <div class="row g-compact text-center">
                             <div class="col-6">
-                                <div class="bg-light p-2 rounded">
-                                    <div class="fw-bold text-primary">{{ max(0, $daysPassed) }}</div>
+                                <div class="metric-box">
+                                    <div class="fw-bold text-primary metric-value">{{ max(0, $daysPassed) }}</div>
                                     <small class="text-muted">{{ __('Days Passed') }}</small>
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="bg-light p-2 rounded">
-                                    <div class="fw-bold text-info">{{ max(0, $totalDays - $daysPassed) }}</div>
+                                <div class="metric-box">
+                                    <div class="fw-bold text-info metric-value">{{ max(0, $totalDays - $daysPassed) }}</div>
                                     <small class="text-muted">{{ __('Days Remaining') }}</small>
                                 </div>
                             </div>
