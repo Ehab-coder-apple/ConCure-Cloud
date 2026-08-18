@@ -56,10 +56,9 @@ body.fix-nutrition-offset #nutrition-show.container {
   gap: 1rem;
 }
 @media (min-width: 768px) {
+  /* 2 columns on medium screens and up (was 3 on xl), so long food names
+     have enough horizontal room and don't get truncated/cramped. */
   #nutrition-show .meal-options-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (min-width: 1200px) {
-  #nutrition-show .meal-options-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 #nutrition-show .meal-option-card {
