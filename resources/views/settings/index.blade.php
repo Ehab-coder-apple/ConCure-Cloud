@@ -1288,7 +1288,7 @@
                                                                        class="form-control"
                                                                        id="session_lifetime"
                                                                        name="session_lifetime"
-                                                                       value="{{ $globalSettings['session_lifetime'] ?? 480 }}"
+                                                                       value="{{ $globalSettings['session_lifetime'] ?? 20 }}"
                                                                        min="5"
                                                                        max="43200"
                                                                        required>
@@ -1300,8 +1300,8 @@
                                                                 <div class="text-muted small">
                                                                     <strong>{{ __('Current:') }}</strong>
                                                                     <span id="currentSessionDisplay">
-                                                                        {{ floor(($globalSettings['session_lifetime'] ?? 480) / 60) }} {{ __('hours') }}
-                                                                        {{ ($globalSettings['session_lifetime'] ?? 480) % 60 }} {{ __('minutes') }}
+                                                                        {{ floor(($globalSettings['session_lifetime'] ?? 20) / 60) }} {{ __('hours') }}
+                                                                        {{ ($globalSettings['session_lifetime'] ?? 20) % 60 }} {{ __('minutes') }}
                                                                     </span>
                                                                 </div>
                                                             </div>

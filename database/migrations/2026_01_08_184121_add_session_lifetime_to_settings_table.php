@@ -16,7 +16,7 @@ return new class extends Migration
         DB::table('settings')->insert([
             'clinic_id' => null, // Global setting
             'key' => 'session_lifetime',
-            'value' => '480', // Default 8 hours (in minutes)
+            'value' => '20', // Secure default: 20 minutes (admin can override in System Settings)
             'type' => 'integer',
             'description' => 'Session lifetime in minutes (how long users can stay logged in without activity)',
             'is_public' => false,

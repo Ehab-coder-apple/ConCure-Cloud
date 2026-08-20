@@ -124,7 +124,7 @@ class SettingsController extends Controller
                 ->where('key', 'session_lifetime')
                 ->value('value');
 
-            $globalSettings['session_lifetime'] = $sessionLifetime ?? 480; // Default 8 hours
+            $globalSettings['session_lifetime'] = $sessionLifetime ?? 20; // Secure default: 20 minutes
         }
 
         // Get patient inactivity period for clinic admins

@@ -31,7 +31,8 @@ return [
     |
     */
 
-    'lifetime' => env('SESSION_LIFETIME', 480), // 8 hours instead of 2
+    'lifetime' => env('SESSION_LIFETIME', 20), // Secure default: 20 minutes; overridden at runtime by
+    // the admin-configurable Session Lifetime System Setting (see SessionConfigServiceProvider).
 
     'expire_on_close' => false,
 
