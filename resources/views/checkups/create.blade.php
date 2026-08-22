@@ -42,7 +42,7 @@
                         'selectedTemplateId' => $selectedTemplateId,
                     ])
 
-                    <form action="{{ route('checkups.store', $patient) }}" method="POST">
+                    <form action="{{ route('checkups.store', $patient) }}" method="POST" data-auto-voice-scope="checkup-form">
                         @csrf
 
                         <!-- Checkup Date -->
@@ -383,4 +383,5 @@ document.addEventListener('DOMContentLoaded', function() {
     heightInput.addEventListener('input', calculateBMI);
 });
 </script>
+@include('partials.voice-input')
 @endsection

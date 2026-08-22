@@ -39,7 +39,7 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('checkups.update', [$patient, $checkup]) }}" method="POST">
+                    <form action="{{ route('checkups.update', [$patient, $checkup]) }}" method="POST" data-auto-voice-scope="checkup-form">
                         @csrf
                         @method('PUT')
 
@@ -381,4 +381,5 @@ document.addEventListener('DOMContentLoaded', function() {
     heightInput.addEventListener('input', calculateBMI);
 });
 </script>
+@include('partials.voice-input')
 @endsection
