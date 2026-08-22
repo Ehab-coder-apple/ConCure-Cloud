@@ -6,7 +6,12 @@
 .voice-input-wrapper input[type="tel"],
 .voice-input-wrapper input[type="email"],
 .voice-input-wrapper input[type="search"],
-.voice-input-wrapper input[type="url"] { padding-right: 44px; }
+.voice-input-wrapper input[type="url"],
+.voice-input-wrapper input[type="number"] { padding-right: 44px; }
+/* Hide native number spinner arrows so they don't collide with the mic button */
+.voice-input-wrapper input[type="number"] { -moz-appearance: textfield; }
+.voice-input-wrapper input[type="number"]::-webkit-outer-spin-button,
+.voice-input-wrapper input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .btn-voice {
     position: absolute;
     top: 8px;
@@ -58,7 +63,8 @@ html[dir="rtl"] .voice-input-wrapper input[type="text"],
 html[dir="rtl"] .voice-input-wrapper input[type="tel"],
 html[dir="rtl"] .voice-input-wrapper input[type="email"],
 html[dir="rtl"] .voice-input-wrapper input[type="search"],
-html[dir="rtl"] .voice-input-wrapper input[type="url"] { padding-right: 12px; padding-left: 44px; }
+html[dir="rtl"] .voice-input-wrapper input[type="url"],
+html[dir="rtl"] .voice-input-wrapper input[type="number"] { padding-right: 12px; padding-left: 44px; }
 html[dir="rtl"] .btn-voice { right: auto; left: 8px; }
 </style>
 
@@ -66,7 +72,7 @@ html[dir="rtl"] .btn-voice { right: auto; left: 8px; }
 const VoiceInput = {
     supported: !!( window.SpeechRecognition || window.webkitSpeechRecognition ),
     activeInstance: null,
-    autoEnhanceSelector: 'textarea, input[type="text"], input[type="tel"], input[type="email"], input[type="search"], input[type="url"]',
+    autoEnhanceSelector: 'textarea, input[type="text"], input[type="tel"], input[type="email"], input[type="search"], input[type="url"], input[type="number"]',
     observer: null,
     refreshTimer: null,
 
@@ -82,7 +88,7 @@ const VoiceInput = {
     },
 
     getField(btn) {
-        return btn.closest('.voice-input-wrapper')?.querySelector('.voice-input-target, textarea, input[type="text"], input[type="tel"], input[type="email"], input[type="search"], input[type="url"]');
+        return btn.closest('.voice-input-wrapper')?.querySelector('.voice-input-target, textarea, input[type="text"], input[type="tel"], input[type="email"], input[type="search"], input[type="url"], input[type="number"]');
     },
 
     isEligibleField(field) {
@@ -223,9 +229,20 @@ const VoiceInput = {
                 }
             }
             if (final) {
-                const separator = field.value.length > 0 && !field.value.endsWith(' ') ? ' ' : '';
-                field.value += separator + final.trim();
-                field.dispatchEvent(new Event('input', { bubbles: true }));
+                if (field.type === 'number') {
+                    // Numeric fields hold a single value: replace with the number
+                    // spoken instead of appending raw dictated text (which the
+                    // browser would silently reject as an invalid number).
+                    const numberMatch = final.replace(',', '.').match(/-?\d+(?:\.\d+)?/);
+                    if (numberMatch) {
+                        field.value = numberMatch[0];
+                        field.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                } else {
+                    const separator = field.value.length > 0 && !field.value.endsWith(' ') ? ' ' : '';
+                    field.value += separator + final.trim();
+                    field.dispatchEvent(new Event('input', { bubbles: true }));
+                }
             }
             if (statusEl && interim) {
                 statusEl.innerHTML = '<span class="text-muted"><i class="fas fa-ellipsis-h me-1"></i>' + interim + '</span>';

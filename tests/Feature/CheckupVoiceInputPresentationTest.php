@@ -77,6 +77,15 @@ class CheckupVoiceInputPresentationTest extends TestCase
         $this->assertStringContainsString('name="symptoms"', $html);
         $this->assertStringContainsString('name="notes"', $html);
         $this->assertStringContainsString('name="recommendations"', $html);
+
+        // Numeric vital-sign fields should also be voice-enabled.
+        $this->assertStringContainsString('input[type="number"]', $html);
+        $this->assertStringContainsString('name="weight"', $html);
+        $this->assertStringContainsString('name="height"', $html);
+        $this->assertStringContainsString('name="heart_rate"', $html);
+        $this->assertStringContainsString('name="temperature"', $html);
+        $this->assertStringContainsString('name="respiratory_rate"', $html);
+        $this->assertStringContainsString('name="blood_sugar"', $html);
     }
 
     public function test_edit_checkup_form_enables_auto_voice_typing_scope(): void
@@ -99,5 +108,28 @@ class CheckupVoiceInputPresentationTest extends TestCase
         $this->assertStringContainsString('name="chief_complaint"', $html);
         $this->assertStringContainsString('name="diagnosis"', $html);
         $this->assertStringContainsString('name="clinical_examination"', $html);
+
+        // Numeric vital-sign fields should also be voice-enabled.
+        $this->assertStringContainsString('input[type="number"]', $html);
+        $this->assertStringContainsString('name="weight"', $html);
+        $this->assertStringContainsString('name="height"', $html);
+        $this->assertStringContainsString('name="heart_rate"', $html);
+        $this->assertStringContainsString('name="temperature"', $html);
+        $this->assertStringContainsString('name="respiratory_rate"', $html);
+        $this->assertStringContainsString('name="blood_sugar"', $html);
+    }
+
+    public function test_shared_voice_input_component_replaces_number_field_value_from_speech(): void
+    {
+        $html = view('partials.voice-input')->render();
+
+        // Number inputs are auto-enhanced alongside text/textarea fields.
+        $this->assertStringContainsString('input[type="number"]', $html);
+
+        // For numeric fields, dictated speech replaces the value with the
+        // extracted number (browsers reject non-numeric strings), instead
+        // of appending raw text as done for free-text fields.
+        $this->assertStringContainsString("field.type === 'number'", $html);
+        $this->assertMatchesRegularExpression('/field\.value\s*=\s*numberMatch\[0\]/', $html);
     }
 }
