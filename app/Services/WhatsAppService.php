@@ -527,13 +527,12 @@ class WhatsAppService
     protected function sendViaWPPConnect(string $phoneNumber, string $message, ?string $attachmentPath = null): array
     {
         if (!$this->wppconnectUrl || !$this->wppconnectApiKey) {
-            Log::warning("WPPConnect not configured — cannot send to {$phoneNumber}");
-            return [
-                'success' => false,
-                'error' => 'WPPConnect is not configured. Please scan the QR code in WhatsApp settings.',
-                'status' => 'failed',
-                'configured' => false,
-            ];
+            Log::warning("WPPConnect not configured — falling back to web WhatsApp link for {$phoneNumber}");
+
+            $fallback = $this->sendViaWebWhatsApp($phoneNumber, $message, $attachmentPath);
+            $fallback['error'] = 'WPPConnect is not configured. Please scan the QR code in WhatsApp settings.';
+
+            return $fallback;
         }
 
         $session = $this->wppconnectSession ?: 'clinic_session';
@@ -582,27 +581,33 @@ class WhatsAppService
                 ];
             }
 
-            // Session may be disconnected
+            // Session may be disconnected — fall back to the web (wa.me) link so the
+            // reminder can still be sent manually instead of hard-failing the user.
             $body = $response->json();
             $errorMsg = $body['message'] ?? $body['error'] ?? $response->body();
 
-            return [
-                'success' => false,
-                'error' => "WPPConnect send failed: {$errorMsg}",
-                'status' => 'failed',
-                'setup_required' => str_contains(strtolower($errorMsg), 'not found') || str_contains(strtolower($errorMsg), 'not connected'),
-            ];
+            Log::warning('WPPConnect send failed — falling back to web WhatsApp link', [
+                'phone' => $phoneNumber,
+                'error' => $errorMsg,
+            ]);
+
+            $fallback = $this->sendViaWebWhatsApp($phoneNumber, $message, $attachmentPath);
+            $fallback['error'] = "WPPConnect send failed: {$errorMsg}";
+            $fallback['setup_required'] = str_contains(strtolower($errorMsg), 'not found') || str_contains(strtolower($errorMsg), 'not connected');
+
+            return $fallback;
         } catch (\Exception $e) {
-            Log::error('WPPConnect WhatsApp send failed', [
+            // WPPConnect server unreachable (e.g. not running / connection refused) —
+            // fall back to the web (wa.me) link rather than failing outright.
+            Log::error('WPPConnect WhatsApp send failed — falling back to web WhatsApp link', [
                 'phone' => $phoneNumber,
                 'error' => $e->getMessage(),
             ]);
 
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-                'status' => 'failed',
-            ];
+            $fallback = $this->sendViaWebWhatsApp($phoneNumber, $message, $attachmentPath);
+            $fallback['error'] = $e->getMessage();
+
+            return $fallback;
         }
     }
 
