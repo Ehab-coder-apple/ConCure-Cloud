@@ -147,7 +147,7 @@ class WhatsAppService
                 break;
 
             case 'wppconnect':
-                if (!empty($config['providers']['wppconnect']['api_url'])) {
+                if (!empty($this->wppconnectUrl) && !empty($this->wppconnectApiKey)) {
                     return 'wppconnect';
                 }
                 break;
@@ -166,7 +166,7 @@ class WhatsAppService
             return 'chatapi';
         }
 
-        if (!empty($config['providers']['wppconnect']['api_url'])) {
+        if (!empty($this->wppconnectUrl) && !empty($this->wppconnectApiKey)) {
             return 'wppconnect';
         }
 
