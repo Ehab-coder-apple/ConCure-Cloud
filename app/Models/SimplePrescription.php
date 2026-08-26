@@ -19,6 +19,7 @@ class SimplePrescription extends Model
         'clinic_id',
         'prescription_number',
         'diagnosis',
+        'visit_type',
         'notes',
         'prescribed_date',
         'status',
@@ -26,6 +27,17 @@ class SimplePrescription extends Model
         'dispensed_at',
         'dispensed_by',
         'dispense_reference',
+    ];
+
+    /**
+     * Visit type options for the Quick Visit one-page workflow.
+     */
+    const VISIT_TYPES = [
+        'new_visit' => 'New Visit',
+        'follow_up' => 'Follow-up',
+        'consultation' => 'Consultation',
+        'emergency' => 'Emergency',
+        'other' => 'Other',
     ];
 
     protected $casts = [

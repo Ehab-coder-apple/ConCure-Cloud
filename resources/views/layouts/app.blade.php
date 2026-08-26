@@ -1593,6 +1593,16 @@
                         </li>
                         @endif
 
+                        <!-- Quick Visit (opt-in per-clinic feature) -->
+                        @if(Route::has('simple-prescriptions.quick-visit') && Auth::user()->canAccessSection('prescriptions') && Auth::user()->canAccessModule('quick_visit'))
+                        <li class="nav-item">
+                            <a href="{{ route('simple-prescriptions.quick-visit') }}" class="nav-link {{ request()->routeIs('simple-prescriptions.quick-visit') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-bolt"></i>
+                                <span class="nav-text">{{ __('Quick Visit') }}</span>
+                            </a>
+                        </li>
+                        @endif
+
                         <!-- Messages -->
                         @if(Auth::user()->canAccessModule('messages'))
                         <li class="nav-item">

@@ -15,10 +15,16 @@ class SimplePrescriptionMedicine extends Model
     protected $fillable = [
         'prescription_id',
         'medicine_name',
+        'type',
         'dosage',
         'frequency',
         'duration',
+        'quantity',
         'instructions'
+    ];
+
+    protected $casts = [
+        'quantity' => 'integer',
     ];
 
     // Relationships

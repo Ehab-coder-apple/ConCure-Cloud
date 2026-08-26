@@ -125,6 +125,38 @@ class SimplePrescriptionController extends Controller
         return view('simple-prescriptions.create', compact('patients', 'medicines', 'selectedPatientId'));
     }
 
+    /**
+     * Show the compact "Quick Visit" one-page form: patient (or quick-add
+     * new patient), visit type, diagnosis/notes and medicines, all on a
+     * single page. Gated by the 'quick_visit' clinic module.
+     */
+    public function quickVisit(Request $request)
+    {
+        $clinicId = Auth::user()->clinic_id;
+
+        $patients = Patient::where('clinic_id', $clinicId)
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->get();
+
+        $medicines = Medicine::where('clinic_id', $clinicId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $medicineForms = Medicine::formsForClinic($clinicId);
+        $visitTypes = SimplePrescription::VISIT_TYPES;
+        $selectedPatientId = $request->get('patient_id');
+
+        return view('simple-prescriptions.quick-visit', compact(
+            'patients',
+            'medicines',
+            'medicineForms',
+            'visitTypes',
+            'selectedPatientId'
+        ));
+    }
+
     public function store(Request $request)
     {
         // Simple validation
@@ -132,13 +164,17 @@ class SimplePrescriptionController extends Controller
             'patient_id' => 'required|exists:patients,id',
             'prescribed_date' => 'required|date',
             'diagnosis' => 'nullable|string|max:1000',
+            'visit_type' => 'nullable|string|in:' . implode(',', array_keys(SimplePrescription::VISIT_TYPES)),
             'notes' => 'nullable|string|max:1000',
             'medicines' => 'nullable|array',
             'medicines.*.name' => 'nullable|string|max:255',
+            'medicines.*.type' => 'nullable|string|max:50',
             'medicines.*.dosage' => 'nullable|string|max:100',
             'medicines.*.frequency' => 'nullable|string|max:100',
             'medicines.*.duration' => 'nullable|string|max:100',
+            'medicines.*.quantity' => 'nullable|integer|min:0|max:9999',
             'medicines.*.instructions' => 'nullable|string|max:500',
+            'print_after' => 'nullable|boolean',
         ]);
 
         try {
@@ -151,6 +187,7 @@ class SimplePrescriptionController extends Controller
                 'clinic_id' => Auth::user()->clinic_id,
                 'prescription_number' => SimplePrescription::generatePrescriptionNumber(),
                 'diagnosis' => $request->diagnosis,
+                'visit_type' => $request->visit_type,
                 'notes' => $request->notes,
                 'prescribed_date' => $request->prescribed_date,
                 'status' => 'active'
@@ -181,9 +218,11 @@ class SimplePrescriptionController extends Controller
                         SimplePrescriptionMedicine::create([
                             'prescription_id' => $prescription->id,
                             'medicine_name' => $medicineName,
+                            'type' => $medicine['type'] ?? null,
                             'dosage' => $medicine['dosage'] ?? null,
                             'frequency' => $medicine['frequency'] ?? null,
                             'duration' => $medicine['duration'] ?? null,
+                            'quantity' => $medicine['quantity'] ?? null,
                             'instructions' => $medicine['instructions'] ?? null,
                         ]);
                     }
@@ -191,6 +230,11 @@ class SimplePrescriptionController extends Controller
             }
 
             DB::commit();
+
+            if ($request->boolean('print_after')) {
+                return redirect()->route('simple-prescriptions.print', $prescription->id)
+                    ->with('success', 'Prescription created successfully!');
+            }
 
             return redirect()->route('simple-prescriptions.show', $prescription->id)
                 ->with('success', 'Prescription created successfully!');

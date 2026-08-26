@@ -198,11 +198,14 @@
                     <!-- Diagnosis -->
                     @if($prescription->diagnosis)
                         <div class="card mb-4">
-                            <div class="card-header bg-light">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                 <h6 class="mb-0">
                                     <i class="fas fa-stethoscope text-primary me-2"></i>
                                     {{ __('Diagnosis') }}
                                 </h6>
+                                @if($prescription->visit_type)
+                                    <span class="badge bg-secondary">{{ \App\Models\SimplePrescription::VISIT_TYPES[$prescription->visit_type] ?? ucfirst($prescription->visit_type) }}</span>
+                                @endif
                             </div>
                             <div class="card-body">
                                 <p class="mb-0">{{ $prescription->diagnosis }}</p>
@@ -228,25 +231,41 @@
                                                 {{ $index + 1 }}. {{ $medicine->medicine_name }}
                                             </h6>
                                         </div>
-                                        <div class="row" style="display: flex; gap: 15px;">
-                                            <div class="col-md-4" style="flex: 1;">
+                                        <div class="row" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                            @if($medicine->type)
+                                                <div class="col-md-2" style="flex: 1;">
+                                                    <div class="medicine-detail">
+                                                        <small class="text-muted d-block">{{ __('Type') }}</small>
+                                                        <strong class="text-dark">{{ ucfirst($medicine->type) }}</strong>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            <div class="col-md-3" style="flex: 1;">
                                                 <div class="medicine-detail">
                                                     <small class="text-muted d-block">{{ __('Dosage') }}</small>
                                                     <strong class="text-dark">{{ $medicine->dosage ?? __('Not specified') }}</strong>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4" style="flex: 1;">
+                                            <div class="col-md-3" style="flex: 1;">
                                                 <div class="medicine-detail">
                                                     <small class="text-muted d-block">{{ __('Frequency') }}</small>
                                                     <strong class="text-dark">{{ $medicine->frequency ?? __('Not specified') }}</strong>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4" style="flex: 1;">
+                                            <div class="col-md-3" style="flex: 1;">
                                                 <div class="medicine-detail">
                                                     <small class="text-muted d-block">{{ __('Duration') }}</small>
                                                     <strong class="text-dark">{{ $medicine->duration ?? __('Not specified') }}</strong>
                                                 </div>
                                             </div>
+                                            @if($medicine->quantity)
+                                                <div class="col-md-2" style="flex: 1;">
+                                                    <div class="medicine-detail">
+                                                        <small class="text-muted d-block">{{ __('Quantity') }}</small>
+                                                        <strong class="text-dark">{{ $medicine->quantity }}</strong>
+                                                    </div>
+                                                </div>
+                                            @endif
                                         </div>
                                         @if($medicine->instructions)
                                             <div class="mt-3 pt-3 border-top">

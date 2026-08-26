@@ -89,6 +89,10 @@
             <strong>Height:</strong> {{ $prescription->patient->latest_height ?? $prescription->patient->height ?? 'N/A' }} cm
             &nbsp;&nbsp;|&nbsp;&nbsp;
             <strong>Date:</strong> {{ $prescription->prescribed_date->format('d/m/Y') }}
+            @if($prescription->visit_type)
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                <strong>Visit Type:</strong> {{ \App\Models\SimplePrescription::VISIT_TYPES[$prescription->visit_type] ?? ucfirst($prescription->visit_type) }}
+            @endif
         </div>
     </div>
 
@@ -108,9 +112,11 @@
                 @foreach($prescription->medicines as $index => $medicine)
                     <span style="font-weight: bold;">{{ $index + 1 }}. {{ $medicine->medicine_name }}</span><br>
                     <span style="padding-left: 15px; font-size: 9px;">
+                        @if($medicine->type)<strong>Type:</strong> {{ ucfirst($medicine->type) }} |@endif
                         @if($medicine->dosage)<strong>Dose:</strong> {{ $medicine->dosage }}@endif
                         @if($medicine->frequency) | <strong>Frequency:</strong> {{ $medicine->frequency }}@endif
                         @if($medicine->duration) | <strong>Duration:</strong> {{ $medicine->duration }}@endif
+                        @if($medicine->quantity) | <strong>Qty:</strong> {{ $medicine->quantity }}@endif
                     </span>
                     @if($medicine->instructions)
                         <br><span style="padding-left: 15px; font-size: 9px;"><strong>Instructions:</strong> {{ $medicine->instructions }}</span>

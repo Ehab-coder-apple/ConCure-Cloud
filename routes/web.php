@@ -447,6 +447,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
     Route::prefix('simple-prescriptions')->name('simple-prescriptions.')->group(function () {
         Route::get('/', [SimplePrescriptionController::class, 'index'])->name('index');
         Route::get('/create', [SimplePrescriptionController::class, 'create'])->name('create');
+        Route::get('/quick-visit', [SimplePrescriptionController::class, 'quickVisit'])->name('quick-visit')->middleware('module:quick_visit');
         Route::post('/', [SimplePrescriptionController::class, 'store'])->name('store');
         Route::get('/{prescription}', [SimplePrescriptionController::class, 'show'])->name('show');
         Route::get('/{prescription}/edit', [SimplePrescriptionController::class, 'edit'])->name('edit');
