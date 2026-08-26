@@ -207,6 +207,7 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
 let qvMedicineRowCount = 0;
 const medicineForms = @json($medicineForms);
@@ -432,4 +433,5 @@ $(document).ready(function () {
     });
 });
 </script>
+@endpush
 @endsection

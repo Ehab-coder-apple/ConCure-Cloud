@@ -189,6 +189,24 @@ class QuickVisitPrescriptionTest extends TestCase
         foreach (SimplePrescription::VISIT_TYPES as $label) {
             $response->assertSee($label, false);
         }
+
+        // Regression guard: the page's inline <script> (which calls jQuery's
+        // $(document).ready(...) and relies on window.bootstrap for the
+        // "Add New Patient" modal) must be emitted via @push('scripts') so it
+        // renders AFTER the jQuery/Bootstrap <script src> tags in the layout
+        // footer. If it ever moves back into the body of the page, jQuery/
+        // bootstrap won't be defined yet and the New Patient / Save & Print
+        // buttons silently stop working.
+        $html = $response->getContent();
+        $jqueryPos = strpos($html, 'jquery-3.7.1.min.js');
+        $bootstrapPos = strpos($html, 'bootstrap.bundle.min.js');
+        $inlineScriptPos = strpos($html, 'qvMedicineRowCount');
+
+        $this->assertNotFalse($jqueryPos, 'jQuery script tag not found in page.');
+        $this->assertNotFalse($bootstrapPos, 'Bootstrap bundle script tag not found in page.');
+        $this->assertNotFalse($inlineScriptPos, 'Quick Visit inline script not found in page.');
+        $this->assertGreaterThan($jqueryPos, $inlineScriptPos, 'Quick Visit script must render after jQuery.');
+        $this->assertGreaterThan($bootstrapPos, $inlineScriptPos, 'Quick Visit script must render after Bootstrap.');
     }
 
     public function test_quick_visit_page_is_blocked_when_module_disabled(): void
