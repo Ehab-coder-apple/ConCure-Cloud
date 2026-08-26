@@ -95,6 +95,21 @@ class AestheticSessionController extends Controller
     }
 
     /**
+     * Display the full, paginated list of outstanding follow-up reminders
+     * (sessions with a next_due_date set). This is the standalone
+     * counterpart to the 6-item widget shown on the sessions index page.
+     */
+    public function followUpReminders(Request $request)
+    {
+        $followUpReminders = $this->getOutstandingFollowUpRemindersQuery()
+            ->orderBy('next_due_date', 'asc')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('aesthetic.sessions.follow-up-reminders', compact('followUpReminders'));
+    }
+
+    /**
      * Show the form for creating a new session.
      */
     public function create(Request $request)

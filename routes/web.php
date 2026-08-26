@@ -889,6 +889,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'store'])->name('store');
+        Route::get('/follow-up-reminders', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'followUpReminders'])->name('follow-up-reminders');
         Route::get('/{aestheticSession}', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'show'])->name('show');
         Route::post('/{aestheticSession}/send-whatsapp-reminder', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'sendWhatsAppReminder'])->name('send-whatsapp-reminder');
         Route::get('/{aestheticSession}/edit', [\App\Http\Controllers\Aesthetic\AestheticSessionController::class, 'edit'])->name('edit');

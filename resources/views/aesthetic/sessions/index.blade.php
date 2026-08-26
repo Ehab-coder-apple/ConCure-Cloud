@@ -63,7 +63,12 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0"><i class="fas fa-bell me-2 text-warning"></i>{{ __('Follow-up Reminders') }}</h6>
-                    <span class="badge bg-warning text-dark">{{ $followUpReminders->count() }}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-warning text-dark">{{ $followUpReminders->count() }}</span>
+                        <a href="{{ route('aesthetic.sessions.follow-up-reminders') }}" class="btn btn-sm btn-outline-secondary">
+                            {{ __('View All') }}
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     @if($followUpReminders->isEmpty())
