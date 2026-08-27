@@ -93,7 +93,7 @@
                 </div>
 
                 <!-- Diagnosis + Notes -->
-                <div class="row g-3 mb-3">
+                <div class="row g-3 mb-3" data-auto-voice-scope="quick-visit-notes">
                     <div class="col-md-6">
                         <label for="diagnosis" class="form-label">{{ __('Diagnosis') }}</label>
                         <textarea class="form-control" id="diagnosis" name="diagnosis" rows="2"
@@ -434,4 +434,6 @@ $(document).ready(function () {
 });
 </script>
 @endpush
+
+@include('partials.voice-input')
 @endsection

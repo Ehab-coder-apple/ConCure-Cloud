@@ -209,6 +209,31 @@ class QuickVisitPrescriptionTest extends TestCase
         $this->assertGreaterThan($bootstrapPos, $inlineScriptPos, 'Quick Visit script must render after Bootstrap.');
     }
 
+    public function test_diagnosis_and_history_fields_have_voice_typing_enabled(): void
+    {
+        $response = $this->actingAs($this->doctor)
+            ->get(route('simple-prescriptions.quick-visit'));
+
+        $response->assertOk();
+        $html = $response->getContent();
+
+        // The Diagnosis/History textareas must sit inside a voice-enabled
+        // scope so HCPs can dictate instead of typing.
+        $this->assertStringContainsString('data-auto-voice-scope="quick-visit-notes"', $html);
+        $this->assertStringContainsString('id="diagnosis"', $html);
+        $this->assertStringContainsString('id="notes"', $html);
+
+        $notesScopeStart = strpos($html, 'data-auto-voice-scope="quick-visit-notes"');
+        $diagnosisFieldPos = strpos($html, 'id="diagnosis"');
+        $notesFieldPos = strpos($html, 'id="notes"');
+        $this->assertGreaterThan($notesScopeStart, $diagnosisFieldPos, 'Diagnosis field must be inside the voice-typing scope.');
+        $this->assertGreaterThan($notesScopeStart, $notesFieldPos, 'History/Notes field must be inside the voice-typing scope.');
+
+        // The voice-input JS engine that scans for data-auto-voice-scope must
+        // actually be loaded on this page.
+        $this->assertStringContainsString('const VoiceInput', $html);
+    }
+
     public function test_quick_visit_page_is_blocked_when_module_disabled(): void
     {
         $this->clinic->update(['enabled_modules' => ['prescriptions']]);
