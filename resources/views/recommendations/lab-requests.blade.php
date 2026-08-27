@@ -413,35 +413,33 @@
                             </button>
                         </div>
 
-                        <div class="row g-2" id="lr-tests-grid">
+                        <div class="row" id="lr-tests-grid">
                             @foreach($labTestCatalog ?? [] as $categoryKey => $group)
-                                <div class="col-md-4 lr-category-card" data-category-key="{{ $categoryKey }}">
-                                    <div class="border rounded p-2 h-100">
-                                        <strong class="text-primary text-uppercase small d-block mb-1">{{ $group['label'] }}</strong>
-                                        <div class="lr-tests-list">
-                                            @foreach($group['tests'] as $test)
-                                                <div class="form-check">
-                                                    <input class="form-check-input lr-test-checkbox" type="checkbox"
-                                                           id="lr_test_{{ $categoryKey }}_{{ $loop->index }}"
-                                                           data-test-name="{{ $test['name'] }}"
-                                                           data-lab-test-id="{{ $test['id'] }}">
-                                                    <label class="form-check-label small" for="lr_test_{{ $categoryKey }}_{{ $loop->index }}">
-                                                        {{ $test['name'] }}
-                                                    </label>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                        <button type="button" class="btn btn-link btn-sm p-0 mt-1 lr-add-test-btn"
-                                                data-category-key="{{ $categoryKey }}" data-category-label="{{ $group['label'] }}">
-                                            <i class="fas fa-plus me-1"></i>{{ __('Add test') }}
-                                        </button>
+                                <div class="col-md-4 lr-category-card mb-3" data-category-key="{{ $categoryKey }}">
+                                    <strong class="text-primary text-uppercase small d-block mb-2 pb-1 border-bottom border-primary">{{ $group['label'] }}</strong>
+                                    <div class="lr-tests-list">
+                                        @foreach($group['tests'] as $test)
+                                            <div class="form-check">
+                                                <input class="form-check-input lr-test-checkbox" type="checkbox"
+                                                       id="lr_test_{{ $categoryKey }}_{{ $loop->index }}"
+                                                       data-test-name="{{ $test['name'] }}"
+                                                       data-lab-test-id="{{ $test['id'] }}">
+                                                <label class="form-check-label small" for="lr_test_{{ $categoryKey }}_{{ $loop->index }}">
+                                                    {{ $test['name'] }}
+                                                </label>
+                                            </div>
+                                        @endforeach
                                     </div>
+                                    <button type="button" class="btn btn-link btn-sm p-0 mt-1 lr-add-test-btn"
+                                            data-category-key="{{ $categoryKey }}" data-category-label="{{ $group['label'] }}">
+                                        <i class="fas fa-plus me-1"></i>{{ __('Add test') }}
+                                    </button>
                                 </div>
                             @endforeach
                         </div>
 
                         <!-- Other / one-off tests not worth adding to the checklist -->
-                        <div class="mt-3">
+                        <div class="mt-1">
                             <label class="form-label small text-muted mb-1">{{ __('Other / Additional Tests (not listed above)') }}</label>
                             <div id="tests-container"></div>
                             <button type="button" class="btn btn-outline-secondary btn-sm" id="add-test">
@@ -453,7 +451,7 @@
 
                     <!-- Notes -->
                     <div class="mb-3">
-                        <label for="notes" class="form-label">{{ __('Additional Notes') }}</label>
+                        <label for="notes" class="form-label">{{ __('Clinical Indications / ICD-10 Codes / Notes') }}</label>
                         <textarea class="form-control" id="notes" name="notes" rows="2"
                                   placeholder="{{ __('Any additional notes...') }}"></textarea>
                     </div>
@@ -695,16 +693,14 @@ setInterval(removeHash, 100);
         if (card) return card;
 
         card = document.createElement('div');
-        card.className = 'col-md-4 lr-category-card';
+        card.className = 'col-md-4 lr-category-card mb-3';
         card.dataset.categoryKey = categoryKey;
         card.innerHTML =
-            '<div class="border rounded p-2 h-100">' +
-                '<strong class="text-primary text-uppercase small d-block mb-1"></strong>' +
-                '<div class="lr-tests-list"></div>' +
-                '<button type="button" class="btn btn-link btn-sm p-0 mt-1 lr-add-test-btn">' +
-                    '<i class="fas fa-plus me-1"></i>{{ __("Add test") }}' +
-                '</button>' +
-            '</div>';
+            '<strong class="text-primary text-uppercase small d-block mb-2 pb-1 border-bottom border-primary"></strong>' +
+            '<div class="lr-tests-list"></div>' +
+            '<button type="button" class="btn btn-link btn-sm p-0 mt-1 lr-add-test-btn">' +
+                '<i class="fas fa-plus me-1"></i>{{ __("Add test") }}' +
+            '</button>';
         card.querySelector('strong').textContent = categoryLabel;
         card.querySelector('.lr-add-test-btn').dataset.categoryKey = categoryKey;
         card.querySelector('.lr-add-test-btn').dataset.categoryLabel = categoryLabel;
