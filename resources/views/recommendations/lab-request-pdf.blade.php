@@ -535,141 +535,42 @@
     </div>
     @endif
 
-    <!-- Tests Required -->
-    <div style="margin-bottom: 15px; border: 2px solid #dee2e6; border-radius: 6px; padding: 15px; background: #f8f9fa;">
-        <h3 style="color: #2c5aa0; margin: 0 0 12px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #2c5aa0; padding-bottom: 5px;">
-            Tests Required
-            @if(isset($isMultiPage) && $isMultiPage && isset($pageNumber) && isset($totalPages))
-                <span style="float: right; font-size: 12px; color: #6c757d; font-weight: normal;">Page {{ $pageNumber }} of {{ $totalPages }}</span>
-            @endif
-        </h3>
+    <!-- Tests Required (compact single-page checklist, grouped by category) -->
+    <div style="margin-bottom: 15px; border: 2px solid #dee2e6; border-radius: 6px; padding: 12px; background: #f8f9fa;">
+        <h3 style="color: #2c5aa0; margin: 0 0 10px 0; font-size: 15px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #2c5aa0; padding-bottom: 4px;">Tests Required</h3>
 
-        @if(isset($testChunks) && $testChunks->count() > 0)
-            @foreach($testChunks as $pageIndex => $testsChunk)
-                @if($pageIndex > 0)
-                    <div style="page-break-before: always;"></div>
-
-                    <!-- Repeat header for new page -->
-                    <div style="border: 3px solid #2c5aa0; padding: 12px; margin-bottom: 15px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr>
-                                <!-- Left Section: Logo -->
-                                @if($clinicLogoPath)
-                                    <td style="width: 25%; vertical-align: middle; text-align: left; padding-right: 15px;">
-                                        <img src="{{ $clinicLogoPath }}"
-                                             alt="Clinic Logo"
-                                             style="max-height: 110px; max-width: 115px; object-fit: contain; border-radius: 6px; border: 1px solid #dee2e6; padding: 2px; background: white;">
-                                    </td>
-                                @else
-                                    <td style="width: 25%;"></td>
-                                @endif
-
-                                <!-- Middle Section: Clinic Name -->
-                                <td style="width: 50%; vertical-align: middle; text-align: center;">
-                                    <h1 style="color: #2c5aa0; margin: 0; font-size: 28px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', serif;">{{ $clinicInfo['name'] }}</h1>
-                                </td>
-
-                                <!-- Right Section: Request Number -->
-                                <td style="width: 25%; vertical-align: middle; text-align: right; padding-left: 15px;">
-                                    <div style="background: #2c5aa0; color: white; padding: 8px 16px; border-radius: 20px; font-size: 16px; font-weight: bold; display: inline-block; letter-spacing: 1px;">{{ $labRequest->request_number }} - Page {{ $pageIndex + 1 }}</div>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <!-- Repeat patient info for new page -->
-                    <div style="margin-bottom: 15px; display: table; width: 100%; border-collapse: separate; border-spacing: 10px 0;">
-                        <div style="display: table-cell; width: 50%; border: 2px solid #dee2e6; border-radius: 6px; padding: 12px; background: #f8f9fa; vertical-align: top;">
-                            <h3 style="color: #2c5aa0; margin: 0 0 8px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #2c5aa0; padding-bottom: 3px;">Patient Information</h3>
-                            <div style="margin-bottom: 4px;">
-                                <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Patient Name:</span>
-                                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->patient->full_name }}</span>
-                            </div>
-                            <div style="margin-bottom: 4px;">
-                                <span style="font-weight: bold; color: #495057; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Patient ID:</span>
-                                <span style="color: #000; font-size: 12px; font-weight: 500; margin-left: 8px;">{{ $labRequest->patient->patient_id }}</span>
-                            </div>
-                        </div>
-                        <div style="display: table-cell; width: 50%; border: 2px solid #dee2e6; border-radius: 6px; padding: 12px; background: #f8f9fa; vertical-align: top;">
-                            <h3 style="color: #2c5aa0; margin: 0 0 8px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #2c5aa0; padding-bottom: 3px;">Tests Required - Page {{ $pageIndex + 1 }}</h3>
-                        </div>
-                    </div>
-                @endif
-
-                <table style="width: 100%; border-collapse: collapse; border: 2px solid #2c5aa0; border-radius: 6px; overflow: hidden; margin-bottom: {{ $pageIndex < $testChunks->count() - 1 ? '30px' : '15px' }};">
-                    <thead>
-                        <tr style="background: #e9ecef;">
-                            <th style="width: 8%; border: 1px solid #2c5aa0; text-align: center; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 5px;">#</th>
-                            <th style="width: 42%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Test Name</th>
-                            <th style="width: 30%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Instructions</th>
-                            <th style="width: 20%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Result</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($testsChunk as $index => $test)
-                        <tr style="background-color: {{ $loop->even ? '#f8f9fa' : '#ffffff' }};">
-                            <td style="border: 1px solid #2c5aa0; text-align: center; vertical-align: top; background: #e9ecef; font-weight: bold; color: #495057; padding: 8px 5px;">{{ ($pageIndex * 6) + $index + 1 }}</td>
-                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; font-weight: bold; color: #2c5aa0; padding: 8px;">{{ $test->test_name }}</td>
-                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px;">{{ $test->instructions }}</td>
-                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; background: #fff; border-left: 3px solid #28a745; padding: 8px; position: relative;">
-                                <!-- Space for lab results -->
-                            </td>
-                        </tr>
-                        @endforeach
-
-                        @if($testsChunk->count() < 6)
-                            @for($i = $testsChunk->count(); $i < 6; $i++)
-                            <tr style="background-color: {{ $i % 2 == 1 ? '#f8f9fa' : '#ffffff' }};">
-                                <td style="border: 1px solid #2c5aa0; text-align: center; vertical-align: top; background: #e9ecef; font-weight: bold; color: #495057; padding: 8px 5px;">{{ ($pageIndex * 6) + $i + 1 }}</td>
-                                <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px; color: #6c757d; font-style: italic;">-</td>
-                                <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px; color: #6c757d; font-style: italic;">-</td>
-                                <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; background: #fff; border-left: 3px solid #28a745; padding: 8px;">
-                                    <!-- Space for lab results -->
-                                </td>
-                            </tr>
-                            @endfor
-                        @endif
-                    </tbody>
-                </table>
-            @endforeach
-        @elseif($labRequest->tests->count() > 0)
-            <table style="width: 100%; border-collapse: collapse; border: 2px solid #2c5aa0; border-radius: 6px; overflow: hidden;">
-                <thead>
-                    <tr style="background: #e9ecef;">
-                        <th style="width: 8%; border: 1px solid #2c5aa0; text-align: center; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 5px;">#</th>
-                        <th style="width: 42%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Test Name</th>
-                        <th style="width: 30%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Instructions</th>
-                        <th style="width: 20%; border: 1px solid #2c5aa0; text-align: left; vertical-align: top; color: #2c5aa0; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; padding: 10px 8px;">Result</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($labRequest->tests->take(6) as $index => $test)
-                    <tr style="background-color: {{ $loop->even ? '#f8f9fa' : '#ffffff' }};">
-                        <td style="border: 1px solid #2c5aa0; text-align: center; vertical-align: top; background: #e9ecef; font-weight: bold; color: #495057; padding: 8px 5px;">{{ $index + 1 }}</td>
-                        <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; font-weight: bold; color: #2c5aa0; padding: 8px;">{{ $test->test_name }}</td>
-                        <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px;">{{ $test->instructions }}</td>
-                        <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; background: #fff; border-left: 3px solid #28a745; padding: 8px; position: relative;">
-                            <!-- Space for lab results -->
+        @if(isset($groupedTests) && $groupedTests->isNotEmpty())
+            @php
+                $categoryLabels = $groupedTests->keys()->values();
+                $columns = [collect(), collect(), collect()];
+                foreach ($categoryLabels as $i => $label) {
+                    $columns[$i % 3]->put($label, $groupedTests->get($label));
+                }
+            @endphp
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    @foreach($columns as $column)
+                        <td style="width: 33.33%; vertical-align: top; padding: 0 6px 0 0;">
+                            @foreach($column as $categoryLabel => $tests)
+                                <div style="margin-bottom: 10px;">
+                                    <strong style="display: block; color: #2c5aa0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #2c5aa0; padding-bottom: 2px; margin-bottom: 4px;">{{ $categoryLabel }}</strong>
+                                    @foreach($tests as $test)
+                                        <div style="font-size: 11px; margin: 0 0 3px 0; line-height: 1.3;">
+                                            <span style="display: inline-block; width: 10px; height: 10px; border: 1px solid #2c5aa0; margin-right: 4px; vertical-align: middle;"></span>
+                                            {{ $test->test_name }}
+                                            @if($test->instructions)
+                                                <br><span style="font-size: 9px; color: #6c757d; font-style: italic; margin-left: 14px;">{{ $test->instructions }}</span>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endforeach
                         </td>
-                    </tr>
                     @endforeach
-
-                    @if($labRequest->tests->count() < 6)
-                        @for($i = $labRequest->tests->count(); $i < 6; $i++)
-                        <tr style="background-color: {{ $i % 2 == 1 ? '#f8f9fa' : '#ffffff' }};">
-                            <td style="border: 1px solid #2c5aa0; text-align: center; vertical-align: top; background: #e9ecef; font-weight: bold; color: #495057; padding: 8px 5px;">{{ $i + 1 }}</td>
-                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px; color: #6c757d; font-style: italic;">-</td>
-                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; padding: 8px; color: #6c757d; font-style: italic;">-</td>
-                            <td style="border: 1px solid #2c5aa0; text-align: left; vertical-align: top; background: #fff; border-left: 3px solid #28a745; padding: 8px;">
-                                <!-- Space for lab results -->
-                            </td>
-                        </tr>
-                        @endfor
-                    @endif
-                </tbody>
+                </tr>
             </table>
         @else
-            <div style="text-align: center; padding: 20px; color: #6c757d;">
+            <div style="text-align: center; padding: 15px; color: #6c757d;">
                 <em>No tests specified for this request.</em>
             </div>
         @endif

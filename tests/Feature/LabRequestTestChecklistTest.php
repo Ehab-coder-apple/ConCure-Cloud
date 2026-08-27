@@ -9,6 +9,7 @@ use App\Http\Middleware\SetClinicTimezone;
 use App\Http\Middleware\SetLocale;
 use App\Models\Clinic;
 use App\Models\LabRequest;
+use App\Models\LabRequestTest;
 use App\Models\LabTest;
 use App\Models\Patient;
 use App\Models\User;
@@ -308,5 +309,106 @@ class LabRequestTestChecklistTest extends TestCase
             'test_name' => 'Vitamin D',
             'lab_test_id' => $customTest->id,
         ]);
+    }
+
+    public function test_resolve_category_label_matches_builtin_catalog_and_custom_clinic_tests(): void
+    {
+        $labRequest = LabRequest::create([
+            'request_number' => 'LAB-TEST-0001',
+            'patient_id' => $this->patient->id,
+            'doctor_id' => $this->doctor->id,
+            'requested_date' => now()->toDateString(),
+            'priority' => 'normal',
+        ]);
+
+        $customTest = LabTest::create([
+            'name' => 'Custom Panel X',
+            'category' => 'Cardiac Markers',
+            'clinic_id' => $this->clinic->id,
+            'is_active' => true,
+        ]);
+
+        $builtin = LabRequestTest::create([
+            'lab_request_id' => $labRequest->id,
+            'test_name' => 'Thyroid Panel (TSH, Free T3, Free T4)',
+        ]);
+        $custom = LabRequestTest::create([
+            'lab_request_id' => $labRequest->id,
+            'lab_test_id' => $customTest->id,
+            'test_name' => $customTest->name,
+        ]);
+        $freeform = LabRequestTest::create([
+            'lab_request_id' => $labRequest->id,
+            'test_name' => 'Some One-Off Test Nobody Catalogued',
+        ]);
+
+        $this->assertSame('Hormones Tests', LabTest::resolveCategoryLabel($builtin->fresh()));
+        $this->assertSame('Cardiac Markers', LabTest::resolveCategoryLabel($custom->fresh()));
+        $this->assertSame('Additional Tests', LabTest::resolveCategoryLabel($freeform->fresh()));
+    }
+
+    public function test_pdf_download_renders_a_single_grouped_layout_without_forced_pagination(): void
+    {
+        // 15 tests across 4 categories - previously this would have been
+        // chunked into 3 forced pages (6 rows each). It must now render as
+        // one continuous grouped layout with no page-break markup.
+        $labRequest = LabRequest::create([
+            'request_number' => 'LAB-TEST-0002',
+            'patient_id' => $this->patient->id,
+            'doctor_id' => $this->doctor->id,
+            'requested_date' => now()->toDateString(),
+            'priority' => 'normal',
+        ]);
+
+        $testNames = [
+            'Complete Blood Count (CBC)', 'Comprehensive Metabolic Panel (CMP)', 'Basic Metabolic Panel (BMP)',
+            'Lipid Panel / Cholesterol', 'Hemoglobin A1c (HbA1c)', 'Liver Function Tests (LFT)',
+            'Routine Urinalysis', 'Urine Culture & Sensitivity', 'Urine Pregnancy (hCG)',
+            'Thyroid Panel (TSH, Free T3, Free T4)', 'Estrogen / Estradiol', 'Progesterone',
+            'X-Ray (Specify Body Part below)', 'Ultrasound (US)', 'CT Scan (with/without contrast)',
+        ];
+        foreach ($testNames as $name) {
+            LabRequestTest::create(['lab_request_id' => $labRequest->id, 'test_name' => $name]);
+        }
+
+        $response = $this->actingAs($this->doctor)->get(route('recommendations.lab-requests.pdf', $labRequest));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+    }
+
+    public function test_pdf_view_groups_tests_by_category_without_page_break_or_padding(): void
+    {
+        $labRequest = LabRequest::create([
+            'request_number' => 'LAB-TEST-0003',
+            'patient_id' => $this->patient->id,
+            'doctor_id' => $this->doctor->id,
+            'requested_date' => now()->toDateString(),
+            'priority' => 'normal',
+        ]);
+
+        LabRequestTest::create(['lab_request_id' => $labRequest->id, 'test_name' => 'Complete Blood Count (CBC)']);
+        LabRequestTest::create(['lab_request_id' => $labRequest->id, 'test_name' => 'Routine Urinalysis']);
+        LabRequestTest::create(['lab_request_id' => $labRequest->id, 'test_name' => 'Thyroid Panel (TSH, Free T3, Free T4)']);
+
+        $tests = LabRequestTest::where('lab_request_id', $labRequest->id)->with('labTest')->get();
+        $labRequest->setRelation('tests', $tests);
+        $labRequest->setRelation('patient', $this->patient);
+        $labRequest->setRelation('doctor', $this->doctor);
+
+        $groupedTests = $tests->groupBy(fn ($t) => LabTest::resolveCategoryLabel($t));
+
+        $this->actingAs($this->doctor);
+        $html = view('recommendations.lab-request-pdf', [
+            'labRequest' => $labRequest,
+            'groupedTests' => $groupedTests,
+        ])->render();
+
+        $this->assertStringNotContainsString('page-break-before', $html);
+        $this->assertStringNotContainsString('Page {{', $html);
+        $this->assertStringContainsString('Blood Tests', $html);
+        $this->assertStringContainsString('Urine &amp; Stool Tests', $html);
+        $this->assertStringContainsString('Hormones Tests', $html);
+        $this->assertStringContainsString('Complete Blood Count (CBC)', $html);
     }
 }

@@ -452,7 +452,7 @@ class RecommendationController extends Controller
             abort(403, 'You are not allowed to access this doctor\'s lab requests.');
         }
 
-        $labRequest->load(['patient', 'doctor', 'tests']);
+        $labRequest->load(['patient', 'doctor', 'tests.labTest']);
 
         $filename = 'lab-request-' . $labRequest->request_number . '.pdf';
 
@@ -478,15 +478,30 @@ class RecommendationController extends Controller
             ]);
         }
 
-        // Default DomPDF
-        $testChunks = $labRequest->tests->chunk(6);
-        $totalPages = $testChunks->count();
+        // Default DomPDF: group tests by category (same grouping as the
+        // New Lab Request checklist) and lay them out in compact columns
+        // so the whole request fits on a single page instead of being
+        // artificially paginated into 6-row chunks.
+        $byCategory = [];
+        foreach ($labRequest->tests as $test) {
+            $byCategory[LabTest::resolveCategoryLabel($test)][] = $test;
+        }
+
+        $canonicalOrder = array_values(array_slice(LabTest::CATEGORIES, 0, 6, true));
+        uksort($byCategory, function ($a, $b) use ($canonicalOrder) {
+            $ia = array_search($a, $canonicalOrder);
+            $ib = array_search($b, $canonicalOrder);
+            $ia = $ia === false ? ($a === 'Additional Tests' ? 998 : 500) : $ia;
+            $ib = $ib === false ? ($b === 'Additional Tests' ? 998 : 500) : $ib;
+
+            return $ia === $ib ? strcmp($a, $b) : $ia <=> $ib;
+        });
+
+        $groupedTests = collect($byCategory)->map(fn ($tests) => collect($tests));
 
         $pdf = Pdf::loadView('recommendations.lab-request-pdf', [
             'labRequest' => $labRequest,
-            'testChunks' => $testChunks,
-            'totalPages' => $totalPages,
-            'isMultiPage' => $totalPages > 1,
+            'groupedTests' => $groupedTests,
         ]);
 
         return $pdf->download($filename);

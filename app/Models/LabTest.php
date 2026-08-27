@@ -110,6 +110,32 @@ class LabTest extends Model
     ];
 
     /**
+     * Resolve the display category label for a submitted LabRequestTest,
+     * used to group tests on the printed/PDF lab request into the same
+     * categories shown on the New Lab Request checklist. Custom clinic
+     * tests use their stored `category`; built-in checklist tests are
+     * matched back to CATALOG by name (they have no `lab_test_id`, since
+     * the catalog is a static PHP constant, not database rows); anything
+     * else (freeform "Other" rows) falls back to 'Additional Tests'.
+     */
+    public static function resolveCategoryLabel(\App\Models\LabRequestTest $test): string
+    {
+        if ($test->labTest) {
+            return $test->labTest->category_display;
+        }
+
+        foreach (self::CATALOG as $key => $names) {
+            foreach ($names as $name) {
+                if (strcasecmp($name, $test->test_name) === 0) {
+                    return self::CATEGORIES[$key] ?? ucfirst($key);
+                }
+            }
+        }
+
+        return 'Additional Tests';
+    }
+
+    /**
      * Build the checklist catalog for a clinic: the built-in CATALOG groups
      * merged with any custom tests/categories the clinic has added. Custom
      * tests are grouped by their own free-text `category` (slugified into a
