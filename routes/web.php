@@ -601,6 +601,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         // Lab Requests
         Route::get('/lab-requests', [RecommendationController::class, 'labRequests'])->name('lab-requests');
         Route::post('/lab-requests', [RecommendationController::class, 'storeLabRequest'])->name('lab-requests.store');
+        Route::post('/lab-requests/quick-add-test', [RecommendationController::class, 'quickAddLabTest'])->name('lab-requests.quick-add-test');
         Route::get('/lab-requests/{labRequest}', [RecommendationController::class, 'showLabRequest'])->name('lab-requests.show');
         Route::get('/lab-requests/{labRequest}/edit', [RecommendationController::class, 'editLabRequest'])->name('lab-requests.edit');
         Route::put('/lab-requests/{labRequest}', [RecommendationController::class, 'updateLabRequest'])->name('lab-requests.update');

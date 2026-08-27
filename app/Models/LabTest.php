@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class LabTest extends Model
 {
@@ -32,13 +33,21 @@ class LabTest extends Model
     ];
 
     /**
-     * Lab test categories
+     * Lab test categories shown as checklist groups on the New Lab Request
+     * form. The first six keys map 1:1 to the built-in CATALOG groups below;
+     * the rest are kept for backward compatibility with older rows/records
+     * that used the previous (finer-grained) category keys.
      */
     const CATEGORIES = [
-        'blood' => 'Blood',
+        'blood' => 'Blood Tests',
+        'urine_stool' => 'Urine & Stool Tests',
+        'hormones' => 'Hormones Tests',
+        'imaging' => 'Imaging Tests',
+        'genetic_specialty' => 'Genetic & Specialty',
+        'biopsy_pap' => 'Biopsy & Pap Smear',
+        // Legacy keys, kept so older rows still resolve to a readable label.
         'urine' => 'Urine',
         'stool' => 'Stool',
-        'imaging' => 'Imaging',
         'biopsy' => 'Biopsy',
         'culture' => 'Culture',
         'genetic' => 'Genetic',
@@ -46,6 +55,109 @@ class LabTest extends Model
         'cardiac' => 'Cardiac',
         'other' => 'Other',
     ];
+
+    /**
+     * Built-in checklist of common lab/imaging tests, grouped by category
+     * key (see CATEGORIES above). This is a static, curated catalog (not
+     * database rows) so every clinic sees it immediately with zero setup -
+     * mirrors the Medicine::FORMS built-in pattern. Clinics can add their
+     * own tests/categories on top via clinic-scoped `lab_tests` rows (see
+     * catalogForClinic()).
+     */
+    const CATALOG = [
+        'blood' => [
+            'Complete Blood Count (CBC)',
+            'Comprehensive Metabolic Panel (CMP)',
+            'Basic Metabolic Panel (BMP)',
+            'Lipid Panel / Cholesterol',
+            'Hemoglobin A1c (HbA1c)',
+            'Liver Function Tests (LFT)',
+        ],
+        'urine_stool' => [
+            'Routine Urinalysis',
+            'Urine Culture & Sensitivity',
+            'Urine Pregnancy (hCG)',
+            'Fecal Occult Blood (FOBT)',
+            'Stool Culture',
+            'Ova & Parasites (O&P)',
+        ],
+        'hormones' => [
+            'Thyroid Panel (TSH, Free T3, Free T4)',
+            'Estrogen / Estradiol',
+            'Progesterone',
+            'Testosterone (Total/Free)',
+            'Cortisol (AM/PM)',
+            'FSH & LH',
+        ],
+        'imaging' => [
+            'X-Ray (Specify Body Part)',
+            'Ultrasound (US)',
+            'CT Scan (with/without contrast)',
+            'MRI',
+        ],
+        'genetic_specialty' => [
+            'BRCA 1 & BRCA 2 Mutation',
+            'Noninvasive Prenatal (NIPT)',
+            'Whole Exome Sequencing',
+            'HLA Typing',
+        ],
+        'biopsy_pap' => [
+            'Pap Smear (Cervical Screening)',
+            'Skin Punch Biopsy',
+            'Core Needle Biopsy',
+            'Bone Marrow Aspiration',
+        ],
+    ];
+
+    /**
+     * Build the checklist catalog for a clinic: the built-in CATALOG groups
+     * merged with any custom tests/categories the clinic has added. Custom
+     * tests are grouped by their own free-text `category` (slugified into a
+     * key), so a brand-new category typed by a doctor becomes its own group,
+     * while picking an existing category key merges straight into that
+     * built-in group.
+     *
+     * @return array<string, array{label: string, tests: array<int, array{id: int|null, name: string}>}>
+     */
+    public static function catalogForClinic(?int $clinicId): array
+    {
+        $catalog = [];
+
+        foreach (self::CATALOG as $key => $names) {
+            $catalog[$key] = [
+                'label' => self::CATEGORIES[$key] ?? ucfirst($key),
+                'tests' => array_map(fn ($name) => ['id' => null, 'name' => $name], $names),
+            ];
+        }
+
+        if ($clinicId) {
+            self::where('clinic_id', $clinicId)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+                ->each(function ($test) use (&$catalog) {
+                    $key = $test->category ? Str::slug($test->category, '_') : 'custom';
+
+                    if (!isset($catalog[$key])) {
+                        $catalog[$key] = [
+                            'label' => $test->category ?: 'Custom',
+                            'tests' => [],
+                        ];
+                    }
+
+                    // Avoid duplicating a test the clinic re-added that already
+                    // exists (by name) in the built-in list for this group.
+                    $alreadyListed = collect($catalog[$key]['tests'])
+                        ->contains(fn ($t) => strcasecmp($t['name'], $test->name) === 0);
+
+                    if (!$alreadyListed) {
+                        $catalog[$key]['tests'][] = ['id' => $test->id, 'name' => $test->name];
+                    }
+                });
+        }
+
+        return $catalog;
+    }
 
     /**
      * Get the clinic that owns the lab test.

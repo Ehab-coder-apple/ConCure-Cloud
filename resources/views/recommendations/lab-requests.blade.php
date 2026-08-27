@@ -414,32 +414,51 @@
                         <small class="text-muted">{{ __('Choose the primary method for sending this lab request') }}</small>
                     </div>
 
-                    <!-- Tests -->
+                    <!-- Tests Checklist -->
                     <div class="mb-3">
-                        <label class="form-label">{{ __('Tests Required') }} <span class="text-danger">*</span></label>
-                        <div id="tests-container">
-                            <div class="test-item border rounded p-3 mb-2">
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <input type="text" class="form-control" name="tests[0][test_name]"
-                                               placeholder="{{ __('Test name') }}" required>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button type="button" class="btn btn-outline-danger btn-sm remove-test" style="display: none;">
-                                            <i class="fas fa-trash"></i>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">{{ __('Tests Required') }} <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="lr-add-category-btn">
+                                <i class="fas fa-folder-plus me-1"></i>{{ __('Add Category') }}
+                            </button>
+                        </div>
+
+                        <div class="row g-2" id="lr-tests-grid">
+                            @foreach($labTestCatalog ?? [] as $categoryKey => $group)
+                                <div class="col-md-4 lr-category-card" data-category-key="{{ $categoryKey }}">
+                                    <div class="border rounded p-2 h-100">
+                                        <strong class="text-primary text-uppercase small d-block mb-1">{{ $group['label'] }}</strong>
+                                        <div class="lr-tests-list">
+                                            @foreach($group['tests'] as $test)
+                                                <div class="form-check">
+                                                    <input class="form-check-input lr-test-checkbox" type="checkbox"
+                                                           id="lr_test_{{ $categoryKey }}_{{ $loop->index }}"
+                                                           data-test-name="{{ $test['name'] }}"
+                                                           data-lab-test-id="{{ $test['id'] }}">
+                                                    <label class="form-check-label small" for="lr_test_{{ $categoryKey }}_{{ $loop->index }}">
+                                                        {{ $test['name'] }}
+                                                    </label>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                        <button type="button" class="btn btn-link btn-sm p-0 mt-1 lr-add-test-btn"
+                                                data-category-key="{{ $categoryKey }}" data-category-label="{{ $group['label'] }}">
+                                            <i class="fas fa-plus me-1"></i>{{ __('Add test') }}
                                         </button>
                                     </div>
                                 </div>
-                                <div class="mt-2">
-                                    <input type="text" class="form-control" name="tests[0][instructions]"
-                                           placeholder="{{ __('Special instructions (optional)') }}">
-                                </div>
-                            </div>
+                            @endforeach
                         </div>
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="add-test">
-                            <i class="fas fa-plus me-1"></i>
-                            {{ __('Add Another Test') }}
-                        </button>
+
+                        <!-- Other / one-off tests not worth adding to the checklist -->
+                        <div class="mt-3">
+                            <label class="form-label small text-muted mb-1">{{ __('Other / Additional Tests (not listed above)') }}</label>
+                            <div id="tests-container"></div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="add-test">
+                                <i class="fas fa-plus me-1"></i>
+                                {{ __('Add Row') }}
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Notes -->
@@ -461,6 +480,42 @@
     </div>
 </div>
 @endif
+
+<!-- Quick Add Lab Test / Category Modal -->
+<div class="modal fade" id="lrQuickAddTestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="lrQuickAddTestModalLabel">{{ __('Add Test') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="lrQuickAddErrors" class="alert alert-danger d-none"></div>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Test Name') }} <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="lrQuickAddName" placeholder="{{ __('e.g., D-Dimer') }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Category') }} <span class="text-danger">*</span></label>
+                    <select class="form-select" id="lrQuickAddCategorySelect">
+                        @foreach(\App\Models\LabTest::CATEGORIES as $key => $label)
+                            <option value="{{ $key }}">{{ $label }}</option>
+                        @endforeach
+                        <option value="__new__">{{ __('+ Add new category...') }}</option>
+                    </select>
+                    <input type="text" class="form-control mt-2 d-none" id="lrQuickAddNewCategoryName"
+                           placeholder="{{ __('New category name (e.g., Cardiology)') }}">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                <button type="button" class="btn btn-primary" id="lrQuickAddSaveBtn">
+                    <i class="fas fa-save me-1"></i>{{ __('Save') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- View Lab Request Modal -->
 
@@ -603,6 +658,212 @@ setInterval(removeHash, 100);
         if (patientId) {
             const patientSelect = document.getElementById('patient_id');
             if (patientSelect) patientSelect.value = patientId;
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setup);
+    } else {
+        setup();
+    }
+})();
+
+// Tests Required checklist: quick-add-test/category + build hidden inputs on submit
+(function initLabTestChecklist() {
+    let lrQuickAddContext = { categoryKey: null, categoryLabel: null, isNewCategory: false };
+
+    function openQuickAddModal(categoryKey, categoryLabel) {
+        lrQuickAddContext = { categoryKey, categoryLabel, isNewCategory: !categoryKey };
+
+        const nameInput = document.getElementById('lrQuickAddName');
+        const select = document.getElementById('lrQuickAddCategorySelect');
+        const newCategoryInput = document.getElementById('lrQuickAddNewCategoryName');
+        const errorsBox = document.getElementById('lrQuickAddErrors');
+
+        nameInput.value = '';
+        errorsBox.classList.add('d-none');
+
+        if (categoryKey) {
+            select.value = categoryKey;
+            newCategoryInput.classList.add('d-none');
+            newCategoryInput.value = '';
+        } else {
+            select.value = '__new__';
+            newCategoryInput.classList.remove('d-none');
+            newCategoryInput.value = '';
+        }
+
+        const modalEl = document.getElementById('lrQuickAddTestModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+        setTimeout(() => nameInput.focus(), 300);
+    }
+
+    function findOrCreateCategoryCard(categoryKey, categoryLabel) {
+        const grid = document.getElementById('lr-tests-grid');
+        let card = grid.querySelector('.lr-category-card[data-category-key="' + categoryKey + '"]');
+        if (card) return card;
+
+        card = document.createElement('div');
+        card.className = 'col-md-4 lr-category-card';
+        card.dataset.categoryKey = categoryKey;
+        card.innerHTML =
+            '<div class="border rounded p-2 h-100">' +
+                '<strong class="text-primary text-uppercase small d-block mb-1"></strong>' +
+                '<div class="lr-tests-list"></div>' +
+                '<button type="button" class="btn btn-link btn-sm p-0 mt-1 lr-add-test-btn">' +
+                    '<i class="fas fa-plus me-1"></i>{{ __("Add test") }}' +
+                '</button>' +
+            '</div>';
+        card.querySelector('strong').textContent = categoryLabel;
+        card.querySelector('.lr-add-test-btn').dataset.categoryKey = categoryKey;
+        card.querySelector('.lr-add-test-btn').dataset.categoryLabel = categoryLabel;
+        grid.appendChild(card);
+        return card;
+    }
+
+    function appendCheckbox(card, test) {
+        const list = card.querySelector('.lr-tests-list');
+        const idx = list.querySelectorAll('.form-check').length;
+        const id = 'lr_test_' + card.dataset.categoryKey + '_new_' + idx + '_' + test.id;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'form-check';
+        wrap.innerHTML =
+            '<input class="form-check-input lr-test-checkbox" type="checkbox" id="' + id + '" checked>' +
+            '<label class="form-check-label small" for="' + id + '"></label>';
+        const checkbox = wrap.querySelector('input');
+        checkbox.dataset.testName = test.name;
+        checkbox.dataset.labTestId = test.id;
+        wrap.querySelector('label').textContent = test.name;
+        list.appendChild(wrap);
+    }
+
+    function setup() {
+        const select = document.getElementById('lrQuickAddCategorySelect');
+        const newCategoryInput = document.getElementById('lrQuickAddNewCategoryName');
+
+        if (select) {
+            select.addEventListener('change', function () {
+                if (select.value === '__new__') {
+                    newCategoryInput.classList.remove('d-none');
+                } else {
+                    newCategoryInput.classList.add('d-none');
+                    newCategoryInput.value = '';
+                }
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            const addTestBtn = e.target.closest('.lr-add-test-btn');
+            if (addTestBtn) {
+                openQuickAddModal(addTestBtn.dataset.categoryKey, addTestBtn.dataset.categoryLabel);
+                return;
+            }
+
+            const addCategoryBtn = e.target.closest('#lr-add-category-btn');
+            if (addCategoryBtn) {
+                openQuickAddModal(null, null);
+            }
+        });
+
+        const saveBtn = document.getElementById('lrQuickAddSaveBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function () {
+                const nameInput = document.getElementById('lrQuickAddName');
+                const errorsBox = document.getElementById('lrQuickAddErrors');
+                const selectedCategory = select.value;
+
+                const name = nameInput.value.trim();
+                if (!name) {
+                    errorsBox.textContent = '{{ __("Test name is required.") }}';
+                    errorsBox.classList.remove('d-none');
+                    return;
+                }
+
+                const payload = { name: name };
+                if (selectedCategory === '__new__') {
+                    const newName = newCategoryInput.value.trim();
+                    if (!newName) {
+                        errorsBox.textContent = '{{ __("Category name is required.") }}';
+                        errorsBox.classList.remove('d-none');
+                        return;
+                    }
+                    payload.new_category_name = newName;
+                } else {
+                    payload.category_key = selectedCategory;
+                }
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                fetch('{{ route("recommendations.lab-requests.quick-add-test") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify(payload),
+                })
+                .then(async (response) => {
+                    const data = await response.json();
+                    if (!response.ok || !data.success) throw data;
+                    return data;
+                })
+                .then((data) => {
+                    const card = findOrCreateCategoryCard(data.test.category_key, data.test.category_label);
+                    appendCheckbox(card, data.test);
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('lrQuickAddTestModal')).hide();
+                })
+                .catch((error) => {
+                    const message = error?.message || '{{ __("Failed to add test.") }}';
+                    const errorList = error?.errors ? Object.values(error.errors).flat().join(' ') : '';
+                    errorsBox.textContent = errorList || message;
+                    errorsBox.classList.remove('d-none');
+                });
+            });
+        }
+
+        // Build hidden tests[] inputs from checked checkboxes right before submit
+        const form = document.querySelector('#newLabRequestModal form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                form.querySelectorAll('.lr-hidden-test-input').forEach((el) => el.remove());
+
+                const checked = Array.from(document.querySelectorAll('.lr-test-checkbox:checked'));
+                const freeRows = Array.from(document.querySelectorAll('#tests-container input[name$="[test_name]"]'))
+                    .filter((input) => input.value.trim() !== '');
+
+                if (checked.length === 0 && freeRows.length === 0) {
+                    e.preventDefault();
+                    alert('{{ __("Please select at least one test from the checklist or add one below.") }}');
+                    return;
+                }
+
+                let nextIndex = 0;
+                form.querySelectorAll('input[name^="tests["]').forEach((input) => {
+                    const m = input.name.match(/^tests\[(\d+)\]/);
+                    if (m) nextIndex = Math.max(nextIndex, parseInt(m[1], 10) + 1);
+                });
+
+                checked.forEach((cb) => {
+                    const idx = nextIndex++;
+                    addHidden(form, 'tests[' + idx + '][test_name]', cb.dataset.testName);
+                    if (cb.dataset.labTestId) {
+                        addHidden(form, 'tests[' + idx + '][lab_test_id]', cb.dataset.labTestId);
+                    }
+                });
+            });
+        }
+
+        function addHidden(form, name, value) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.className = 'lr-hidden-test-input';
+            input.name = name;
+            input.value = value;
+            form.appendChild(input);
         }
     }
 

@@ -176,7 +176,11 @@ class RecommendationController extends Controller
         $whatsappService = app(WhatsAppService::class);
         $clinicWhatsApp = $whatsappService->getClinicWhatsAppNumber($clinicId);
 
-        return view('recommendations.lab-requests', compact('labRequests', 'patients', 'externalLabs', 'usedLabNames', 'clinicWhatsApp'));
+        // Built-in + clinic-custom lab test checklist, grouped by category,
+        // for the "Tests Required" section of the New Lab Request form.
+        $labTestCatalog = LabTest::catalogForClinic($clinicId);
+
+        return view('recommendations.lab-requests', compact('labRequests', 'patients', 'externalLabs', 'usedLabNames', 'clinicWhatsApp', 'labTestCatalog'));
     }
 
     /**
@@ -204,6 +208,7 @@ class RecommendationController extends Controller
             'notes' => 'nullable|string',
             'tests' => 'required|array|min:1',
             'tests.*.test_name' => 'required|string|max:255',
+            'tests.*.lab_test_id' => 'nullable|integer|exists:lab_tests,id',
             'tests.*.instructions' => 'nullable|string',
         ]);
 
@@ -233,6 +238,78 @@ class RecommendationController extends Controller
         });
 
         return back()->with('success', 'Lab request created successfully.');
+    }
+
+    /**
+     * Quick-add a lab test to the clinic's checklist catalog (used from the
+     * "Tests Required" checklist on the New Lab Request form, either to add
+     * a one-off test to an existing category or to create a brand-new
+     * category for the clinic's specialization). Returns the test so the
+     * form can inject a new checked checkbox without a page reload.
+     */
+    public function quickAddLabTest(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canCreateLabRequests()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to add lab tests.',
+            ], 403);
+        }
+
+        if (!$user->clinic_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You must be assigned to a clinic to add lab tests.',
+            ], 422);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'category_key' => 'nullable|string|max:100',
+            'new_category_name' => 'nullable|string|max:100|required_without:category_key',
+        ]);
+
+        $categoryKey = $request->filled('category_key') ? (string) $request->input('category_key') : null;
+        $categoryLabel = $categoryKey
+            ? (LabTest::CATEGORIES[$categoryKey] ?? $categoryKey)
+            : trim((string) $request->input('new_category_name'));
+
+        if ($categoryLabel === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'A category is required.',
+            ], 422);
+        }
+
+        $name = trim((string) $request->input('name'));
+
+        // Reuse an existing row if this clinic already has this exact test
+        // name, instead of creating a duplicate.
+        $test = LabTest::where('clinic_id', $user->clinic_id)
+            ->whereRaw('LOWER(name) = ?', [strtolower($name)])
+            ->first();
+
+        if (!$test) {
+            $test = LabTest::create([
+                'name' => $name,
+                'category' => $categoryLabel,
+                'clinic_id' => $user->clinic_id,
+                'is_active' => true,
+                'is_frequent' => false,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'test' => [
+                'id' => $test->id,
+                'name' => $test->name,
+                'category_key' => $categoryKey ?: \Illuminate\Support\Str::slug($categoryLabel, '_'),
+                'category_label' => $categoryLabel,
+            ],
+        ]);
     }
 
     /**
