@@ -290,34 +290,24 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Patient Selection -->
-                    <div class="mb-3">
-                        <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
-                        <select class="form-select" id="patient_id" name="patient_id" required>
-                            <option value="">{{ __('Select Patient') }}</option>
-                            @if(isset($patients) && $patients->count() > 0)
-                                @foreach($patients as $patient)
-                                    <option value="{{ $patient->id }}">
-                                        {{ $patient->first_name }} {{ $patient->last_name }} (ID: {{ $patient->patient_id }})
-                                    </option>
-                                @endforeach
-                            @else
-                                <option value="" disabled>{{ __('No patients found') }}</option>
-                            @endif
-                        </select>
-
-                    </div>
-
-                    <!-- Clinical Notes -->
-                    <div class="mb-3">
-                        <label for="clinical_notes" class="form-label">{{ __('Clinical Notes') }}</label>
-                        <textarea class="form-control" id="clinical_notes" name="clinical_notes" rows="3"
-                                  placeholder="{{ __('Clinical indication for tests...') }}"></textarea>
-                    </div>
-
-                    <!-- Priority and Due Date -->
+                    <!-- Patient, Priority and Due Date -->
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-5 mb-3">
+                            <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
+                            <select class="form-select" id="patient_id" name="patient_id" required>
+                                <option value="">{{ __('Select Patient') }}</option>
+                                @if(isset($patients) && $patients->count() > 0)
+                                    @foreach($patients as $patient)
+                                        <option value="{{ $patient->id }}">
+                                            {{ $patient->first_name }} {{ $patient->last_name }} (ID: {{ $patient->patient_id }})
+                                        </option>
+                                    @endforeach
+                                @else
+                                    <option value="" disabled>{{ __('No patients found') }}</option>
+                                @endif
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
                             <label for="priority" class="form-label">{{ __('Priority') }} <span class="text-danger">*</span></label>
                             <select class="form-select" id="priority" name="priority" required>
                                 <option value="normal">{{ __('Normal') }}</option>
@@ -325,7 +315,7 @@
                                 <option value="stat">{{ __('STAT') }}</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4 mb-3">
                             <label for="due_date" class="form-label">{{ __('Due Date') }}</label>
                             <input type="date" class="form-control" id="due_date" name="due_date"
                                    min="{{ date('Y-m-d') }}">
