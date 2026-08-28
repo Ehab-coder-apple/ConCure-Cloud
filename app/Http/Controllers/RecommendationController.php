@@ -554,19 +554,63 @@ class RecommendationController extends Controller
                           ->orderBy('first_name')
                           ->get();
 
-        // Get lab tests for the clinic
-        $labTests = LabTest::where('clinic_id', $user->clinic_id)
-                          ->where('is_active', true)
-                          ->orderBy('name')
-                          ->get();
-
         // Get external labs for the clinic
         $externalLabs = ExternalLab::where('clinic_id', $user->clinic_id)
                                   ->where('is_active', true)
                                   ->ordered()
                                   ->get();
 
-        return view('recommendations.lab-request-edit', compact('labRequest', 'patients', 'labTests', 'externalLabs'));
+        // Built-in + clinic-custom lab test checklist (same as New Lab
+        // Request), used to render the grouped checklist and figure out
+        // which boxes should already be checked for this request.
+        $labTestCatalog = LabTest::catalogForClinic($user->clinic_id);
+
+        $catalogIds = [];
+        $catalogNamesLower = [];
+        foreach ($labTestCatalog as $group) {
+            foreach ($group['tests'] as $catalogTest) {
+                if ($catalogTest['id'] !== null) {
+                    $catalogIds[] = $catalogTest['id'];
+                }
+                $catalogNamesLower[] = strtolower(trim($catalogTest['name']));
+            }
+        }
+
+        // Split the request's existing tests into "matches a checklist
+        // item" (pre-check that box) vs "doesn't match" (render as an
+        // editable freeform row so nothing - including any custom
+        // instructions - is silently lost).
+        $checkedLabTestIds = [];
+        $checkedBuiltinNames = [];
+        $otherTests = collect();
+
+        foreach ($labRequest->tests as $test) {
+            $matched = false;
+
+            if (empty($test->instructions)) {
+                if ($test->lab_test_id && in_array($test->lab_test_id, $catalogIds, true)) {
+                    $checkedLabTestIds[] = $test->lab_test_id;
+                    $matched = true;
+                } elseif (!$test->lab_test_id && in_array(strtolower(trim($test->test_name)), $catalogNamesLower, true)) {
+                    $checkedBuiltinNames[] = strtolower(trim($test->test_name));
+                    $matched = true;
+                }
+            }
+
+            if (!$matched) {
+                $otherTests->push($test);
+            }
+        }
+
+        return view('recommendations.lab-request-edit', compact(
+            'labRequest',
+            'patients',
+            'externalLabs',
+            'labTestCatalog',
+            'checkedLabTestIds',
+            'checkedBuiltinNames',
+            'otherTests'
+        ));
     }
 
     /**
@@ -604,6 +648,7 @@ class RecommendationController extends Controller
             'notes' => 'nullable|string',
             'tests' => 'required|array|min:1',
             'tests.*.test_name' => 'required|string|max:255',
+            'tests.*.lab_test_id' => 'nullable|integer|exists:lab_tests,id',
             'tests.*.instructions' => 'nullable|string',
         ]);
 

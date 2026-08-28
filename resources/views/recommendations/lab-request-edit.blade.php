@@ -24,12 +24,12 @@
                 </div>
             </div>
 
-            <form action="{{ route('recommendations.lab-requests.update', $labRequest) }}" method="POST">
+            <form id="labRequestEditForm" action="{{ route('recommendations.lab-requests.update', $labRequest) }}" method="POST">
                 @csrf
                 @method('PUT')
                 
                 <div class="row">
-                    <div class="col-lg-8">
+                    <div class="col-12">
                         <!-- Basic Information -->
                         <div class="card mb-4">
                             <div class="card-header">
@@ -182,45 +182,74 @@
                         <!-- Tests -->
                         <div class="card mb-4">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">{{ __('Lab Tests') }}</h5>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTest()">
-                                    <i class="fas fa-plus me-1"></i>
-                                    {{ __('Add Test') }}
+                                <h5 class="mb-0">{{ __('Lab Tests') }} <span class="text-danger">*</span></h5>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="lr-add-category-btn">
+                                    <i class="fas fa-folder-plus me-1"></i>{{ __('Add Category') }}
                                 </button>
                             </div>
                             <div class="card-body">
-                                <div id="tests-container">
-                                    @foreach($labRequest->tests as $index => $test)
-                                        <div class="test-item border rounded p-3 mb-3" data-index="{{ $index }}">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <h6 class="mb-0">{{ __('Test :number', ['number' => $index + 1]) }}</h6>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTest(this)">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
+                                <div class="row" id="lr-tests-grid">
+                                    @foreach($labTestCatalog ?? [] as $categoryKey => $group)
+                                        <div class="col-md-4 lr-category-card mb-3" data-category-key="{{ $categoryKey }}">
+                                            <strong class="text-primary text-uppercase small d-block mb-2 pb-1 border-bottom border-primary">{{ $group['label'] }}</strong>
+                                            <div class="lr-tests-list">
+                                                @foreach($group['tests'] as $test)
+                                                    @php
+                                                        $isChecked = $test['id']
+                                                            ? in_array($test['id'], $checkedLabTestIds ?? [], true)
+                                                            : in_array(strtolower(trim($test['name'])), $checkedBuiltinNames ?? [], true);
+                                                    @endphp
+                                                    <div class="form-check">
+                                                        <input class="form-check-input lr-test-checkbox" type="checkbox"
+                                                               id="edit_lr_test_{{ $categoryKey }}_{{ $loop->index }}"
+                                                               data-test-name="{{ $test['name'] }}"
+                                                               data-lab-test-id="{{ $test['id'] }}"
+                                                               {{ $isChecked ? 'checked' : '' }}>
+                                                        <label class="form-check-label small" for="edit_lr_test_{{ $categoryKey }}_{{ $loop->index }}">
+                                                            {{ $test['name'] }}
+                                                        </label>
+                                                    </div>
+                                                @endforeach
                                             </div>
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <label class="form-label">{{ __('Test Name') }} <span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" name="tests[{{ $index }}][test_name]" 
-                                                           value="{{ $test->test_name }}" required 
-                                                           placeholder="{{ __('Enter test name') }}">
+                                            <button type="button" class="btn btn-link btn-sm p-0 mt-1 lr-add-test-btn"
+                                                    data-category-key="{{ $categoryKey }}" data-category-label="{{ $group['label'] }}">
+                                                <i class="fas fa-plus me-1"></i>{{ __('Add test') }}
+                                            </button>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                <!-- Other / one-off tests that don't match the checklist above -->
+                                <div class="mt-1">
+                                    <label class="form-label small text-muted mb-1">{{ __('Other / Additional Tests (not listed above)') }}</label>
+                                    <div id="tests-container">
+                                        @foreach($otherTests ?? [] as $index => $test)
+                                            <div class="test-item border rounded p-3 mb-2">
+                                                <div class="row">
+                                                    <div class="col-md-8">
+                                                        <input type="text" class="form-control" name="tests[{{ $index }}][test_name]"
+                                                               value="{{ $test->test_name }}"
+                                                               placeholder="{{ __('Test name') }}" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm remove-test">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">{{ __('Instructions') }}</label>
-                                                    <input type="text" class="form-control" name="tests[{{ $index }}][instructions]" 
+                                                <div class="mt-2">
+                                                    <input type="text" class="form-control" name="tests[{{ $index }}][instructions]"
                                                            value="{{ $test->instructions }}"
                                                            placeholder="{{ __('Special instructions (optional)') }}">
                                                 </div>
                                             </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                                
-                                @if($labRequest->tests->count() == 0)
-                                    <div class="text-muted text-center py-3">
-                                        {{ __('No tests added yet. Click "Add Test" to get started.') }}
+                                        @endforeach
                                     </div>
-                                @endif
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="add-test">
+                                        <i class="fas fa-plus me-1"></i>
+                                        {{ __('Add Row') }}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -255,44 +284,44 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="col-lg-4">
-                        <!-- Quick Lab Tests -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0">{{ __('Quick Add Tests') }}</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="quick_test_search" class="form-label">{{ __('Search Tests') }}</label>
-                                    <input type="text" class="form-control" id="quick_test_search" 
-                                           placeholder="{{ __('Type to search tests...') }}" 
-                                           onkeyup="filterQuickTests()">
-                                </div>
-                                
-                                <div id="quick-tests-list" style="max-height: 300px; overflow-y: auto;">
-                                    @foreach($labTests as $test)
-                                        <div class="quick-test-item border-bottom py-2" data-test-name="{{ strtolower($test->name) }}">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <strong>{{ $test->name }}</strong>
-                                                    @if($test->category)
-                                                        <br><small class="text-muted">{{ $test->category }}</small>
-                                                    @endif
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-outline-primary" 
-                                                        onclick="addQuickTest('{{ $test->name }}', '{{ $test->id }}')">
-                                                    <i class="fas fa-plus"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Add Lab Test / Category Modal -->
+<div class="modal fade" id="lrQuickAddTestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="lrQuickAddTestModalLabel">{{ __('Add Test') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="lrQuickAddErrors" class="alert alert-danger d-none"></div>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Test Name') }} <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="lrQuickAddName" placeholder="{{ __('e.g., D-Dimer') }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Category') }} <span class="text-danger">*</span></label>
+                    <select class="form-select" id="lrQuickAddCategorySelect">
+                        @foreach(\App\Models\LabTest::CATEGORIES as $key => $label)
+                            <option value="{{ $key }}">{{ $label }}</option>
+                        @endforeach
+                        <option value="__new__">{{ __('+ Add new category...') }}</option>
+                    </select>
+                    <input type="text" class="form-control mt-2 d-none" id="lrQuickAddNewCategoryName"
+                           placeholder="{{ __('New category name (e.g., Cardiology)') }}">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                <button type="button" class="btn btn-primary" id="lrQuickAddSaveBtn">
+                    <i class="fas fa-save me-1"></i>{{ __('Save') }}
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -300,8 +329,6 @@
 
 @push('scripts')
 <script>
-let testIndex = {{ $labRequest->tests->count() }};
-
 // Handle external lab selection
 function handleLabSelection() {
     const labSelect = document.getElementById('external_lab_id');
@@ -365,194 +392,260 @@ function handleLabSelection() {
     }
 }
 
-// Add new test (no template literals)
-function addTest() {
-    const container = document.getElementById('tests-container');
-    if (!container) return;
+// Tests checklist: quick-add-test/category + "Other" freeform rows + sync on submit
+(function initLabTestChecklist() {
+    let lrQuickAddContext = { categoryKey: null, categoryLabel: null };
 
-    const idx = typeof testIndex === 'number' ? testIndex : 0;
+    function openQuickAddModal(categoryKey, categoryLabel) {
+        lrQuickAddContext = { categoryKey, categoryLabel };
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'test-item border rounded p-3 mb-3';
-    wrapper.setAttribute('data-index', String(idx));
+        const nameInput = document.getElementById('lrQuickAddName');
+        const select = document.getElementById('lrQuickAddCategorySelect');
+        const newCategoryInput = document.getElementById('lrQuickAddNewCategoryName');
+        const errorsBox = document.getElementById('lrQuickAddErrors');
 
-    const headerRow = document.createElement('div');
-    headerRow.className = 'd-flex justify-content-between align-items-start mb-2';
+        nameInput.value = '';
+        errorsBox.classList.add('d-none');
 
-    const h6 = document.createElement('h6');
-    h6.className = 'mb-0';
-    h6.textContent = "{{ __('Test') }} " + (idx + 1);
-
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'btn btn-sm btn-outline-danger';
-    removeBtn.setAttribute('onclick', 'removeTest(this)');
-    const icon = document.createElement('i');
-    icon.className = 'fas fa-times';
-    removeBtn.appendChild(icon);
-
-    headerRow.appendChild(h6);
-    headerRow.appendChild(removeBtn);
-
-    const row = document.createElement('div');
-    row.className = 'row';
-
-    const col1 = document.createElement('div');
-    col1.className = 'col-md-6';
-    const label1 = document.createElement('label');
-    label1.className = 'form-label';
-    label1.innerHTML = "{{ __('Test Name') }} <span class=\"text-danger\">*</span>";
-    const input1 = document.createElement('input');
-    input1.type = 'text';
-    input1.className = 'form-control';
-    input1.name = 'tests[' + idx + '][test_name]';
-    input1.required = true;
-    input1.placeholder = "{{ __('Enter test name') }}";
-    col1.appendChild(label1);
-    col1.appendChild(input1);
-
-    const col2 = document.createElement('div');
-    col2.className = 'col-md-6';
-    const label2 = document.createElement('label');
-    label2.className = 'form-label';
-    label2.textContent = "{{ __('Instructions') }}";
-    const input2 = document.createElement('input');
-    input2.type = 'text';
-    input2.className = 'form-control';
-    input2.name = 'tests[' + idx + '][instructions]';
-    input2.placeholder = "{{ __('Special instructions (optional)') }}";
-    col2.appendChild(label2);
-    col2.appendChild(input2);
-
-    row.appendChild(col1);
-    row.appendChild(col2);
-
-    wrapper.appendChild(headerRow);
-    wrapper.appendChild(row);
-
-    container.appendChild(wrapper);
-
-    testIndex = idx + 1;
-
-    const newTestInput = wrapper.querySelector('input[name*="[test_name]"]');
-    if (newTestInput) {
-        newTestInput.focus();
-    }
-}
-
-// Remove test
-function removeTest(button) {
-    const testItem = button.closest('.test-item');
-    if (testItem) {
-        testItem.remove();
-        updateTestNumbers();
-    }
-}
-
-// Update test numbers after removal (no template literals)
-function updateTestNumbers() {
-    const testItems = document.querySelectorAll('.test-item');
-    testItems.forEach((item, index) => {
-        const header = item.querySelector('h6');
-        if (header) {
-            header.textContent = "{{ __('Test') }} " + (index + 1);
-        }
-    });
-}
-
-// Add quick test (no template literals)
-function addQuickTest(testName, testId) {
-    const container = document.getElementById('tests-container');
-    if (!container) return;
-
-    const idx = typeof testIndex === 'number' ? testIndex : 0;
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'test-item border rounded p-3 mb-3';
-    wrapper.setAttribute('data-index', String(idx));
-
-    const headerRow = document.createElement('div');
-    headerRow.className = 'd-flex justify-content-between align-items-start mb-2';
-
-    const h6 = document.createElement('h6');
-    h6.className = 'mb-0';
-    h6.textContent = "{{ __('Test') }} " + (idx + 1);
-
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'btn btn-sm btn-outline-danger';
-    removeBtn.setAttribute('onclick', 'removeTest(this)');
-    const icon = document.createElement('i');
-    icon.className = 'fas fa-times';
-    removeBtn.appendChild(icon);
-
-    headerRow.appendChild(h6);
-    headerRow.appendChild(removeBtn);
-
-    const row = document.createElement('div');
-    row.className = 'row';
-
-    const col1 = document.createElement('div');
-    col1.className = 'col-md-6';
-    const label1 = document.createElement('label');
-    label1.className = 'form-label';
-    label1.innerHTML = "{{ __('Test Name') }} <span class=\"text-danger\">*</span>";
-    const input1 = document.createElement('input');
-    input1.type = 'text';
-    input1.className = 'form-control';
-    input1.name = 'tests[' + idx + '][test_name]';
-    input1.value = testName || '';
-    input1.required = true;
-    input1.placeholder = "{{ __('Enter test name') }}";
-
-    const hiddenId = document.createElement('input');
-    hiddenId.type = 'hidden';
-    hiddenId.name = 'tests[' + idx + '][lab_test_id]';
-    hiddenId.value = String(testId != null ? testId : '');
-
-    col1.appendChild(label1);
-    col1.appendChild(input1);
-    col1.appendChild(hiddenId);
-
-    const col2 = document.createElement('div');
-    col2.className = 'col-md-6';
-    const label2 = document.createElement('label');
-    label2.className = 'form-label';
-    label2.textContent = "{{ __('Instructions') }}";
-    const input2 = document.createElement('input');
-    input2.type = 'text';
-    input2.className = 'form-control';
-    input2.name = 'tests[' + idx + '][instructions]';
-    input2.placeholder = "{{ __('Special instructions (optional)') }}";
-
-    col2.appendChild(label2);
-    col2.appendChild(input2);
-
-    row.appendChild(col1);
-    row.appendChild(col2);
-
-    wrapper.appendChild(headerRow);
-    wrapper.appendChild(row);
-
-    container.appendChild(wrapper);
-
-    testIndex = idx + 1;
-}
-
-// Filter quick tests
-function filterQuickTests() {
-    const searchTerm = document.getElementById('quick_test_search').value.toLowerCase();
-    const testItems = document.querySelectorAll('.quick-test-item');
-
-    testItems.forEach(item => {
-        const testName = item.dataset.testName;
-        if (testName.includes(searchTerm)) {
-            item.style.display = 'block';
+        if (categoryKey) {
+            select.value = categoryKey;
+            newCategoryInput.classList.add('d-none');
+            newCategoryInput.value = '';
         } else {
-            item.style.display = 'none';
+            select.value = '__new__';
+            newCategoryInput.classList.remove('d-none');
+            newCategoryInput.value = '';
         }
-    });
-}
+
+        const modalEl = document.getElementById('lrQuickAddTestModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+        setTimeout(() => nameInput.focus(), 300);
+    }
+
+    function findOrCreateCategoryCard(categoryKey, categoryLabel) {
+        const grid = document.getElementById('lr-tests-grid');
+        let card = grid.querySelector('.lr-category-card[data-category-key="' + categoryKey + '"]');
+        if (card) return card;
+
+        card = document.createElement('div');
+        card.className = 'col-md-4 lr-category-card mb-3';
+        card.dataset.categoryKey = categoryKey;
+        card.innerHTML =
+            '<strong class="text-primary text-uppercase small d-block mb-2 pb-1 border-bottom border-primary"></strong>' +
+            '<div class="lr-tests-list"></div>' +
+            '<button type="button" class="btn btn-link btn-sm p-0 mt-1 lr-add-test-btn">' +
+                '<i class="fas fa-plus me-1"></i>{{ __("Add test") }}' +
+            '</button>';
+        card.querySelector('strong').textContent = categoryLabel;
+        card.querySelector('.lr-add-test-btn').dataset.categoryKey = categoryKey;
+        card.querySelector('.lr-add-test-btn').dataset.categoryLabel = categoryLabel;
+        grid.appendChild(card);
+        return card;
+    }
+
+    function appendCheckbox(card, test) {
+        const list = card.querySelector('.lr-tests-list');
+        const idx = list.querySelectorAll('.form-check').length;
+        const id = 'edit_lr_test_' + card.dataset.categoryKey + '_new_' + idx + '_' + test.id;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'form-check';
+        wrap.innerHTML =
+            '<input class="form-check-input lr-test-checkbox" type="checkbox" id="' + id + '" checked>' +
+            '<label class="form-check-label small" for="' + id + '"></label>';
+        const checkbox = wrap.querySelector('input');
+        checkbox.dataset.testName = test.name;
+        checkbox.dataset.labTestId = test.id;
+        wrap.querySelector('label').textContent = test.name;
+        list.appendChild(wrap);
+    }
+
+    function updateRemoveButtons() {
+        const testItems = document.querySelectorAll('#tests-container .test-item');
+        testItems.forEach((item) => {
+            const removeBtn = item.querySelector('.remove-test');
+            if (removeBtn) removeBtn.style.display = 'inline-block';
+        });
+    }
+
+    function addOtherTestRow() {
+        const container = document.getElementById('tests-container');
+        if (!container) return;
+
+        let nextIndex = 0;
+        document.querySelectorAll('input[name^="tests["]').forEach((input) => {
+            const m = input.name.match(/^tests\[(\d+)\]/);
+            if (m) nextIndex = Math.max(nextIndex, parseInt(m[1], 10) + 1);
+        });
+
+        const item = document.createElement('div');
+        item.className = 'test-item border rounded p-3 mb-2';
+        item.innerHTML =
+            '<div class="row">' +
+                '<div class="col-md-8">' +
+                    '<input type="text" class="form-control" name="tests[' + nextIndex + '][test_name]" placeholder="{{ __("Test name") }}" required>' +
+                '</div>' +
+                '<div class="col-md-4">' +
+                    '<button type="button" class="btn btn-outline-danger btn-sm remove-test"><i class="fas fa-trash"></i></button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="mt-2">' +
+                '<input type="text" class="form-control" name="tests[' + nextIndex + '][instructions]" placeholder="{{ __("Special instructions (optional)") }}">' +
+            '</div>';
+
+        container.appendChild(item);
+        updateRemoveButtons();
+    }
+
+    function setup() {
+        const select = document.getElementById('lrQuickAddCategorySelect');
+        const newCategoryInput = document.getElementById('lrQuickAddNewCategoryName');
+
+        if (select) {
+            select.addEventListener('change', function () {
+                if (select.value === '__new__') {
+                    newCategoryInput.classList.remove('d-none');
+                } else {
+                    newCategoryInput.classList.add('d-none');
+                    newCategoryInput.value = '';
+                }
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            const addTestBtn = e.target.closest('.lr-add-test-btn');
+            if (addTestBtn) {
+                openQuickAddModal(addTestBtn.dataset.categoryKey, addTestBtn.dataset.categoryLabel);
+                return;
+            }
+
+            const addCategoryBtn = e.target.closest('#lr-add-category-btn');
+            if (addCategoryBtn) {
+                openQuickAddModal(null, null);
+                return;
+            }
+
+            const addOtherBtn = e.target.closest('#add-test');
+            if (addOtherBtn) {
+                addOtherTestRow();
+                return;
+            }
+
+            if (e.target.closest('.remove-test')) {
+                const item = e.target.closest('.test-item');
+                if (item) item.remove();
+            }
+        });
+
+        const saveBtn = document.getElementById('lrQuickAddSaveBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function () {
+                const nameInput = document.getElementById('lrQuickAddName');
+                const errorsBox = document.getElementById('lrQuickAddErrors');
+                const selectedCategory = select.value;
+
+                const name = nameInput.value.trim();
+                if (!name) {
+                    errorsBox.textContent = '{{ __("Test name is required.") }}';
+                    errorsBox.classList.remove('d-none');
+                    return;
+                }
+
+                const payload = { name: name };
+                if (selectedCategory === '__new__') {
+                    const newName = newCategoryInput.value.trim();
+                    if (!newName) {
+                        errorsBox.textContent = '{{ __("Category name is required.") }}';
+                        errorsBox.classList.remove('d-none');
+                        return;
+                    }
+                    payload.new_category_name = newName;
+                } else {
+                    payload.category_key = selectedCategory;
+                }
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                fetch('{{ route("recommendations.lab-requests.quick-add-test") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify(payload),
+                })
+                .then(async (response) => {
+                    const data = await response.json();
+                    if (!response.ok || !data.success) throw data;
+                    return data;
+                })
+                .then((data) => {
+                    const card = findOrCreateCategoryCard(data.test.category_key, data.test.category_label);
+                    appendCheckbox(card, data.test);
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('lrQuickAddTestModal')).hide();
+                })
+                .catch((error) => {
+                    const message = error?.message || '{{ __("Failed to add test.") }}';
+                    const errorList = error?.errors ? Object.values(error.errors).flat().join(' ') : '';
+                    errorsBox.textContent = errorList || message;
+                    errorsBox.classList.remove('d-none');
+                });
+            });
+        }
+
+        updateRemoveButtons();
+
+        // Build hidden tests[] inputs from checked checkboxes right before submit
+        const form = document.getElementById('labRequestEditForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                form.querySelectorAll('.lr-hidden-test-input').forEach((el) => el.remove());
+
+                const checked = Array.from(document.querySelectorAll('.lr-test-checkbox:checked'));
+                const freeRows = Array.from(document.querySelectorAll('#tests-container input[name$="[test_name]"]'))
+                    .filter((input) => input.value.trim() !== '');
+
+                if (checked.length === 0 && freeRows.length === 0) {
+                    e.preventDefault();
+                    alert('{{ __("Please select at least one test from the checklist or add one below.") }}');
+                    return;
+                }
+
+                let nextIndex = 0;
+                form.querySelectorAll('input[name^="tests["]').forEach((input) => {
+                    const m = input.name.match(/^tests\[(\d+)\]/);
+                    if (m) nextIndex = Math.max(nextIndex, parseInt(m[1], 10) + 1);
+                });
+
+                checked.forEach((cb) => {
+                    const idx = nextIndex++;
+                    addHidden(form, 'tests[' + idx + '][test_name]', cb.dataset.testName);
+                    if (cb.dataset.labTestId) {
+                        addHidden(form, 'tests[' + idx + '][lab_test_id]', cb.dataset.labTestId);
+                    }
+                });
+            });
+        }
+
+        function addHidden(form, name, value) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.className = 'lr-hidden-test-input';
+            input.name = name;
+            input.value = value;
+            form.appendChild(input);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setup);
+    } else {
+        setup();
+    }
+})();
 
 // Initialize form
 document.addEventListener('DOMContentLoaded', function() {

@@ -411,4 +411,118 @@ class LabRequestTestChecklistTest extends TestCase
         $this->assertStringContainsString('Hormones Tests', $html);
         $this->assertStringContainsString('Complete Blood Count (CBC)', $html);
     }
+
+    public function test_edit_page_preselects_existing_builtin_and_custom_tests(): void
+    {
+        $customTest = LabTest::create([
+            'name' => 'Custom Panel X',
+            'category' => 'Cardiac Markers',
+            'clinic_id' => $this->clinic->id,
+            'is_active' => true,
+        ]);
+
+        $labRequest = LabRequest::create([
+            'request_number' => 'LAB-EDIT-0001',
+            'patient_id' => $this->patient->id,
+            'doctor_id' => $this->doctor->id,
+            'requested_date' => now()->toDateString(),
+            'priority' => 'normal',
+            'status' => 'pending',
+        ]);
+        LabRequestTest::create(['lab_request_id' => $labRequest->id, 'test_name' => 'Complete Blood Count (CBC)']);
+        LabRequestTest::create(['lab_request_id' => $labRequest->id, 'lab_test_id' => $customTest->id, 'test_name' => $customTest->name]);
+
+        $response = $this->actingAs($this->doctor)->get(route('recommendations.lab-requests.edit', $labRequest));
+
+        $response->assertOk();
+        $html = $response->getContent();
+
+        // Checklist grid must be present (same grouped UI as New Lab Request).
+        $this->assertStringContainsString('lr-tests-grid', $html);
+        $this->assertStringContainsString('Blood Tests', $html);
+        $this->assertStringContainsString('Cardiac Markers', $html);
+
+        // The CBC checkbox (built-in, matched by name) must be pre-checked.
+        preg_match('/id="edit_lr_test_blood_\d+"[^>]*data-test-name="Complete Blood Count \(CBC\)"[^>]*checked/', $html, $m1);
+        $this->assertNotEmpty($m1, 'Expected the CBC checkbox to be rendered checked.');
+
+        // The custom test checkbox (matched by lab_test_id) must be pre-checked.
+        $this->assertMatchesRegularExpression(
+            '/data-test-name="Custom Panel X"[^>]*data-lab-test-id="' . $customTest->id . '"[^>]*checked/',
+            $html
+        );
+    }
+
+    public function test_edit_page_shows_unmatched_test_as_editable_other_row(): void
+    {
+        $labRequest = LabRequest::create([
+            'request_number' => 'LAB-EDIT-0002',
+            'patient_id' => $this->patient->id,
+            'doctor_id' => $this->doctor->id,
+            'requested_date' => now()->toDateString(),
+            'priority' => 'normal',
+            'status' => 'pending',
+        ]);
+        LabRequestTest::create([
+            'lab_request_id' => $labRequest->id,
+            'test_name' => 'Some Rare One-Off Test',
+            'instructions' => 'Fasting required',
+        ]);
+
+        $response = $this->actingAs($this->doctor)->get(route('recommendations.lab-requests.edit', $labRequest));
+
+        $response->assertOk();
+        $html = $response->getContent();
+
+        $this->assertStringContainsString('value="Some Rare One-Off Test"', $html);
+        $this->assertStringContainsString('value="Fasting required"', $html);
+    }
+
+    public function test_update_lab_request_syncs_unchecked_and_newly_checked_tests(): void
+    {
+        $customTest = LabTest::create([
+            'name' => 'Custom Panel X',
+            'category' => 'Cardiac Markers',
+            'clinic_id' => $this->clinic->id,
+            'is_active' => true,
+        ]);
+
+        $labRequest = LabRequest::create([
+            'request_number' => 'LAB-EDIT-0003',
+            'patient_id' => $this->patient->id,
+            'doctor_id' => $this->doctor->id,
+            'requested_date' => now()->toDateString(),
+            'priority' => 'normal',
+            'status' => 'pending',
+        ]);
+        LabRequestTest::create(['lab_request_id' => $labRequest->id, 'test_name' => 'Complete Blood Count (CBC)']);
+        LabRequestTest::create(['lab_request_id' => $labRequest->id, 'lab_test_id' => $customTest->id, 'test_name' => $customTest->name]);
+
+        // Simulate the doctor unchecking CBC and Custom Panel X, and instead
+        // checking a different built-in test (Routine Urinalysis).
+        $response = $this->actingAs($this->doctor)->put(route('recommendations.lab-requests.update', $labRequest), [
+            'patient_id' => $this->patient->id,
+            'priority' => 'normal',
+            'communication_method' => 'whatsapp',
+            'tests' => [
+                ['test_name' => 'Routine Urinalysis'],
+            ],
+        ]);
+
+        $response->assertRedirect(route('recommendations.lab-requests.show', $labRequest));
+
+        $this->assertDatabaseHas('lab_request_tests', [
+            'lab_request_id' => $labRequest->id,
+            'test_name' => 'Routine Urinalysis',
+        ]);
+        $this->assertDatabaseMissing('lab_request_tests', [
+            'lab_request_id' => $labRequest->id,
+            'test_name' => 'Complete Blood Count (CBC)',
+        ]);
+        $this->assertDatabaseMissing('lab_request_tests', [
+            'lab_request_id' => $labRequest->id,
+            'test_name' => 'Custom Panel X',
+        ]);
+        $this->assertEquals(1, LabRequestTest::where('lab_request_id', $labRequest->id)->count());
+    }
 }
