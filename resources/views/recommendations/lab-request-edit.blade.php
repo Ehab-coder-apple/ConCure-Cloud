@@ -30,14 +30,16 @@
                 
                 <div class="row">
                     <div class="col-12">
-                        <!-- Basic Information -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">{{ __('Basic Information') }}</h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- Patient, Due Date and Priority -->
-                                <div class="row">
+                        <div class="row">
+                            <!-- Basic Information -->
+                            <div class="col-xl-6 col-lg-6">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">{{ __('Basic Information') }}</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Patient, Due Date and Priority -->
+                                        <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
                                         <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id" required>
@@ -75,14 +77,16 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Laboratory Information -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">{{ __('Laboratory Information') }}</h5>
                             </div>
-                            <div class="card-body">
+                            </div>
+
+                            <!-- Laboratory Information -->
+                            <div class="col-xl-6 col-lg-6">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">{{ __('Laboratory Information') }}</h5>
+                                    </div>
+                                    <div class="card-body">
                                 <!-- External Laboratory Selection -->
                                 <div class="row mb-3">
                                     <div class="col-md-6">
@@ -161,6 +165,8 @@
                                         @error('lab_email')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
+                                    </div>
+                                </div>
                                     </div>
                                 </div>
                             </div>
