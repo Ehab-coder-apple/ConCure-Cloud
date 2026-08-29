@@ -36,36 +36,23 @@
                                 <h5 class="mb-0">{{ __('Basic Information') }}</h5>
                             </div>
                             <div class="card-body">
-                                <!-- Patient Selection -->
-                                <div class="mb-3">
-                                    <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
-                                    <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id" required>
-                                        <option value="">{{ __('Select Patient') }}</option>
-                                        @foreach($patients as $patient)
-                                            <option value="{{ $patient->id }}" {{ $labRequest->patient_id == $patient->id ? 'selected' : '' }}>
-                                                {{ $patient->full_name }} - {{ $patient->patient_id }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('patient_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <!-- Clinical Notes -->
-                                <div class="mb-3">
-                                    <label for="clinical_notes" class="form-label">{{ __('Clinical Notes') }}</label>
-                                    <textarea class="form-control @error('clinical_notes') is-invalid @enderror" 
-                                              id="clinical_notes" name="clinical_notes" rows="3" 
-                                              placeholder="{{ __('Enter clinical notes, symptoms, or relevant medical history') }}">{{ old('clinical_notes', $labRequest->clinical_notes) }}</textarea>
-                                    @error('clinical_notes')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <!-- Due Date and Priority -->
+                                <!-- Patient, Due Date and Priority -->
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
+                                        <select class="form-select @error('patient_id') is-invalid @enderror" id="patient_id" name="patient_id" required>
+                                            <option value="">{{ __('Select Patient') }}</option>
+                                            @foreach($patients as $patient)
+                                                <option value="{{ $patient->id }}" {{ $labRequest->patient_id == $patient->id ? 'selected' : '' }}>
+                                                    {{ $patient->full_name }} - {{ $patient->patient_id }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('patient_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-3 mb-3">
                                         <label for="due_date" class="form-label">{{ __('Due Date') }}</label>
                                         <input type="date" class="form-control @error('due_date') is-invalid @enderror"
                                                id="due_date" name="due_date"
@@ -75,7 +62,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-3 mb-3">
                                         <label for="priority" class="form-label">{{ __('Priority') }} <span class="text-danger">*</span></label>
                                         <select class="form-select @error('priority') is-invalid @enderror" id="priority" name="priority" required>
                                             <option value="normal" {{ old('priority', $labRequest->priority) == 'normal' ? 'selected' : '' }}>{{ __('Normal') }}</option>
