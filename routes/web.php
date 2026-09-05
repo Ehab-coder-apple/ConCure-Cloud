@@ -917,6 +917,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
     // Aesthetic Inventory Routes
     Route::prefix('aesthetic/inventory')->name('aesthetic.inventory.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'index'])->name('index');
+        Route::get('/report', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'report'])->name('report');
         Route::get('/create', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'store'])->name('store');
         Route::get('/{aestheticInventory}/edit', [\App\Http\Controllers\Aesthetic\AestheticInventoryController::class, 'edit'])->name('edit');

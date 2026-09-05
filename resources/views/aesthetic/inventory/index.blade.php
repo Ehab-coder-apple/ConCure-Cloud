@@ -14,10 +14,16 @@
                     </h1>
                     <p class="text-muted mb-0">{{ __('Manage products, consumables, and stock levels') }}</p>
                 </div>
-                <a href="{{ route('aesthetic.inventory.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i>
-                    {{ __('Add Product') }}
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('aesthetic.inventory.report') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-chart-bar me-1"></i>
+                        {{ __('Inventory Report') }}
+                    </a>
+                    <a href="{{ route('aesthetic.inventory.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        {{ __('Add Product') }}
+                    </a>
+                </div>
             </div>
 
             <!-- Alert Cards -->

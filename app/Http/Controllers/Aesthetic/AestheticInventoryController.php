@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Aesthetic;
 
 use App\Http\Controllers\Controller;
 use App\Models\AestheticInventory;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AestheticInventoryController extends Controller
 {
@@ -136,6 +138,81 @@ class AestheticInventoryController extends Controller
 
         return redirect()->route('aesthetic.inventory.index')
             ->with('success', __('Inventory item deleted successfully.'));
+    }
+
+    /**
+     * Sold vs. remaining inventory report for a given period.
+     */
+    public function report(Request $request)
+    {
+        $period = $request->get('period', 'month');
+
+        if ($period === 'week') {
+            $startDate = now()->startOfWeek();
+            $endDate = now()->endOfWeek();
+        } elseif ($period === 'custom') {
+            $startDate = $request->filled('start_date')
+                ? Carbon::parse($request->start_date)->startOfDay()
+                : now()->startOfMonth();
+            $endDate = $request->filled('end_date')
+                ? Carbon::parse($request->end_date)->endOfDay()
+                : now()->endOfMonth();
+        } else {
+            $period = 'month';
+            $startDate = now()->startOfMonth();
+            $endDate = now()->endOfMonth();
+        }
+
+        $items = AestheticInventory::with(['sessionUsages' => function ($query) use ($startDate, $endDate) {
+            $query->whereHas('session', function ($sessionQuery) use ($startDate, $endDate) {
+                $sessionQuery->whereBetween('session_date', [$startDate->toDateString(), $endDate->toDateString()]);
+            });
+        }])->orderBy('product_name')->get();
+
+        $rows = $items->map(function ($item) {
+            $soldQuantity = (int) $item->sessionUsages->sum('quantity_used');
+            $totalSoldValue = $soldQuantity * (float) $item->selling_price;
+            $remainingQuantity = (int) $item->quantity;
+            $currentStockValue = $remainingQuantity * (float) $item->purchase_price;
+
+            return (object) [
+                'product' => $item,
+                'sold_quantity' => $soldQuantity,
+                'total_sold_value' => $totalSoldValue,
+                'remaining_quantity' => $remainingQuantity,
+                'current_stock_value' => $currentStockValue,
+            ];
+        });
+
+        $totals = [
+            'sold_quantity' => $rows->sum('sold_quantity'),
+            'total_sold_value' => $rows->sum('total_sold_value'),
+            'remaining_quantity' => $rows->sum('remaining_quantity'),
+            'current_stock_value' => $rows->sum('current_stock_value'),
+        ];
+
+        $currency = $this->getCurrency();
+
+        return view('aesthetic.inventory.report', compact('rows', 'totals', 'period', 'startDate', 'endDate', 'currency'));
+    }
+
+    /**
+     * Resolve the clinic's configured currency code.
+     */
+    private function getCurrency(): string
+    {
+        $clinicId = Auth::user()?->clinic_id;
+
+        if (!$clinicId) {
+            return 'USD';
+        }
+
+        $code = DB::table('settings')
+            ->where('clinic_id', $clinicId)
+            ->where('key', 'currency')
+            ->value('value');
+
+        return is_string($code) && $code !== '' ? strtoupper($code) : 'USD';
     }
 
     /**
