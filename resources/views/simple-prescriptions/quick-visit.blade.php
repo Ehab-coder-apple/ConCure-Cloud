@@ -47,6 +47,7 @@
                 @csrf
                 <input type="hidden" name="prescribed_date" value="{{ date('Y-m-d') }}">
                 <input type="hidden" name="print_after" id="print_after" value="0">
+                <input type="hidden" name="print_template" id="print_template" value="browser">
 
                 <!-- Patient + Visit Type -->
                 <div class="row g-3 align-items-end mb-2">
@@ -138,9 +139,26 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save me-1"></i>{{ __('Save') }}
                         </button>
-                        <button type="button" class="btn btn-success" id="saveAndPrintBtn">
-                            <i class="fas fa-print me-1"></i>{{ __('Save & Print') }}
-                        </button>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-success" id="saveAndPrintBtn">
+                                <i class="fas fa-print me-1"></i>{{ __('Save & Print') }}
+                            </button>
+                            <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="visually-hidden">{{ __('Toggle Print Options') }}</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="#" id="saveAndPrintBrowserBtn">
+                                        <i class="fas fa-print me-2"></i>{{ __('Browser Print') }}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#" id="saveAndPrintCustomBtn">
+                                        <i class="fas fa-image me-2"></i>{{ __('Custom Template PDF') }}
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -360,9 +378,24 @@ $(document).ready(function () {
 
     $('#patient_id').on('change', qvUpdatePatientInfo);
 
-    // Save & Print
+    // Save & Print (default = browser print, matching previous behavior)
     document.getElementById('saveAndPrintBtn').addEventListener('click', function () {
         document.getElementById('print_after').value = '1';
+        document.getElementById('print_template').value = 'browser';
+        document.getElementById('quickVisitForm').submit();
+    });
+
+    document.getElementById('saveAndPrintBrowserBtn').addEventListener('click', function (e) {
+        e.preventDefault();
+        document.getElementById('print_after').value = '1';
+        document.getElementById('print_template').value = 'browser';
+        document.getElementById('quickVisitForm').submit();
+    });
+
+    document.getElementById('saveAndPrintCustomBtn').addEventListener('click', function (e) {
+        e.preventDefault();
+        document.getElementById('print_after').value = '1';
+        document.getElementById('print_template').value = 'custom_pdf';
         document.getElementById('quickVisitForm').submit();
     });
 

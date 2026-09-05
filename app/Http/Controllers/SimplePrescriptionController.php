@@ -175,6 +175,7 @@ class SimplePrescriptionController extends Controller
             'medicines.*.quantity' => 'nullable|integer|min:0|max:9999',
             'medicines.*.instructions' => 'nullable|string|max:500',
             'print_after' => 'nullable|boolean',
+            'print_template' => 'nullable|string|in:browser,custom_pdf',
         ]);
 
         try {
@@ -232,6 +233,11 @@ class SimplePrescriptionController extends Controller
             DB::commit();
 
             if ($request->boolean('print_after')) {
+                if ($request->input('print_template') === 'custom_pdf') {
+                    return redirect()->route('simple-prescriptions.pdf', [$prescription->id, 'template' => 'custom'])
+                        ->with('success', 'Prescription created successfully!');
+                }
+
                 return redirect()->route('simple-prescriptions.print', $prescription->id)
                     ->with('success', 'Prescription created successfully!');
             }

@@ -292,6 +292,22 @@ class QuickVisitPrescriptionTest extends TestCase
         $response->assertRedirect(route('simple-prescriptions.print', $prescription->id));
     }
 
+    public function test_store_with_print_after_and_custom_template_redirects_to_custom_pdf_route(): void
+    {
+        $response = $this->actingAs($this->doctor)->post(route('simple-prescriptions.store'), [
+            'patient_id' => $this->patient->id,
+            'prescribed_date' => now()->toDateString(),
+            'diagnosis' => 'Common cold',
+            'print_after' => '1',
+            'print_template' => 'custom_pdf',
+            'medicines' => [],
+        ]);
+
+        $prescription = SimplePrescription::where('patient_id', $this->patient->id)->firstOrFail();
+
+        $response->assertRedirect(route('simple-prescriptions.pdf', [$prescription->id, 'template' => 'custom']));
+    }
+
     public function test_store_without_visit_type_or_medicine_extras_still_works_like_before(): void
     {
         // Regression check: the existing (non-quick-visit) create form never
