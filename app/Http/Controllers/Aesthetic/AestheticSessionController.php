@@ -655,6 +655,7 @@ class AestheticSessionController extends Controller
                 'session_id' => $session->id,
                 'product_id' => $product->id,
                 'quantity_used' => $quantityUsed,
+                'unit_price' => $product->selling_price,
             ]);
         }
     }

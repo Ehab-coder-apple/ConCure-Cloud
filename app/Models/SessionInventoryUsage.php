@@ -17,10 +17,12 @@ class SessionInventoryUsage extends Model
         'tenant_id',
         'product_id',
         'quantity_used',
+        'unit_price',
     ];
 
     protected $casts = [
         'quantity_used' => 'integer',
+        'unit_price' => 'decimal:2',
     ];
 
     /**

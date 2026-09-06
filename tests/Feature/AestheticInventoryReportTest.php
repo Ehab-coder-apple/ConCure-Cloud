@@ -152,6 +152,7 @@ class AestheticInventoryReportTest extends TestCase
             $table->string('tenant_id')->nullable();
             $table->unsignedBigInteger('product_id');
             $table->unsignedInteger('quantity_used');
+            $table->decimal('unit_price', 15, 2)->default(0);
             $table->timestamps();
         });
 
@@ -182,7 +183,7 @@ class AestheticInventoryReportTest extends TestCase
         ]);
     }
 
-    private function makeUsage(AestheticInventory $product, int $quantity, string $sessionDate): void
+    private function makeUsage(AestheticInventory $product, int $quantity, string $sessionDate, ?float $unitPrice = null): void
     {
         $patient = Patient::create([
             'clinic_id' => $this->clinic->id,
@@ -209,6 +210,7 @@ class AestheticInventoryReportTest extends TestCase
             'tenant_id' => $this->clinic->tenant_id,
             'product_id' => $product->id,
             'quantity_used' => $quantity,
+            'unit_price' => $unitPrice ?? $product->selling_price,
         ]);
     }
 
@@ -318,5 +320,39 @@ class AestheticInventoryReportTest extends TestCase
 
         $this->assertSame(5, $row->sold_quantity); // 2 + 3
         $this->assertEquals(75.0, $row->total_sold_value); // 5 * 15
+    }
+
+    public function test_total_sold_value_uses_price_at_time_of_sale_not_current_price(): void
+    {
+        $product = AestheticInventory::create([
+            'tenant_id' => $this->clinic->tenant_id,
+            'product_name' => 'Dermal Filler',
+            'type' => 'consumable',
+            'quantity' => 10,
+            'purchased_quantity' => 10,
+            'bonus_quantity' => 0,
+            'purchase_price' => 20,
+            'selling_price' => 50,
+        ]);
+
+        // Sale made while selling price was 50.
+        $this->makeUsage($product, 2, now()->startOfMonth()->addDays(1)->toDateString(), 50);
+
+        // Price increases after the sale was recorded.
+        $product->update(['selling_price' => 80]);
+
+        // Another sale made after the price change, at the new price.
+        $this->makeUsage($product, 1, now()->startOfMonth()->addDays(2)->toDateString(), 80);
+
+        $response = $this->actingAs($this->user)->get(route('aesthetic.inventory.report'));
+
+        $response->assertOk();
+        $rows = $response->viewData('rows');
+        $row = $rows->firstWhere('product.id', $product->id);
+
+        $this->assertSame(3, $row->sold_quantity); // 2 + 1
+        // (2 * 50) + (1 * 80) = 180, NOT 3 * 80 = 240 (which would happen if
+        // the current selling price were used instead of the snapshot).
+        $this->assertEquals(180.0, $row->total_sold_value);
     }
 }

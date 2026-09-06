@@ -171,7 +171,9 @@ class AestheticInventoryController extends Controller
 
         $rows = $items->map(function ($item) {
             $soldQuantity = (int) $item->sessionUsages->sum('quantity_used');
-            $totalSoldValue = $soldQuantity * (float) $item->selling_price;
+            $totalSoldValue = (float) $item->sessionUsages->sum(function ($usage) {
+                return $usage->quantity_used * (float) $usage->unit_price;
+            });
             $remainingQuantity = (int) $item->quantity;
             $currentStockValue = $remainingQuantity * (float) $item->purchase_price;
 
