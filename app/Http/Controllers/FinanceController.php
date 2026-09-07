@@ -2124,7 +2124,14 @@ class FinanceController extends Controller
             'receipt_revenue' => $receiptRevenue,
             'invoice_payments' => $invoicePayments,
             'aesthetic_payments' => $aestheticPayments,
-            'total' => $invoiceRevenue + $aestheticRevenue + $receiptRevenue + $invoicePayments + $aestheticPayments,
+            // Revenue is the invoiced/billed amount (accrual basis) plus
+            // standalone receipts. `invoice_payments` / `aesthetic_payments`
+            // are the amounts actually collected against those SAME
+            // invoices, so they must NOT be added here too - doing so
+            // double-counts fully/partially paid invoices. Those payment
+            // figures are used separately for `monthlyCollectedPayments`
+            // and cash-flow calculations.
+            'total' => $invoiceRevenue + $aestheticRevenue + $receiptRevenue,
         ];
     }
 
