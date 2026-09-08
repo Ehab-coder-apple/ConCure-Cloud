@@ -611,6 +611,78 @@ class AestheticInvoiceTenantResolutionTest extends TestCase
         $thermal58->assertOk();
     }
 
+    public function test_paid_invoice_edit_is_blocked_unless_user_has_override_permission(): void
+    {
+        $clinic = Clinic::create([
+            'name' => 'Paid Invoice Edit Clinic',
+            'tenant_id' => 'TEN-601',
+            'enabled_modules' => ['aesthetic'],
+        ]);
+
+        $patient = Patient::create([
+            'clinic_id' => $clinic->id,
+            'patient_id' => 'P-9010',
+            'first_name' => 'Rana',
+            'last_name' => 'Paid',
+            'is_active' => true,
+        ]);
+
+        $invoice = AestheticInvoice::create([
+            'tenant_id' => $clinic->tenant_id,
+            'clinic_id' => $clinic->id,
+            'invoice_number' => 'AEST-PAID-0001',
+            'patient_id' => $patient->id,
+            'invoice_date' => now()->toDateString(),
+            'subtotal' => 100,
+            'tax_rate' => 0,
+            'discount_amount' => 0,
+            'total_amount' => 100,
+            'paid_amount' => 100,
+            'balance' => 0,
+            'status' => 'paid',
+        ]);
+
+        // Regular staff user without the override permission: edit is blocked.
+        $staff = User::create([
+            'username' => 'paid_invoice_staff',
+            'email' => 'paid-invoice-staff@example.test',
+            'password' => bcrypt('secret'),
+            'first_name' => 'Staff',
+            'last_name' => 'User',
+            'role' => 'receptionist',
+            'clinic_id' => $clinic->id,
+            'is_active' => true,
+            'activated_at' => now(),
+            'permissions' => ['aesthetic_invoices'],
+        ]);
+
+        $blocked = $this->actingAs($staff)->get(route('aesthetic.invoices.edit', $invoice));
+        $blocked->assertRedirect(route('aesthetic.invoices.show', $invoice));
+        $blocked->assertSessionHas('error');
+
+        // Same role, but granted the override permission: edit is allowed.
+        $staff->update(['permissions' => ['aesthetic_invoices', 'aesthetic_edit_paid_invoices']]);
+
+        $allowed = $this->actingAs($staff->fresh())->get(route('aesthetic.invoices.edit', $invoice));
+        $allowed->assertOk();
+
+        // Clinic admins can always edit paid invoices, regardless of explicit permissions.
+        $admin = User::create([
+            'username' => 'paid_invoice_admin',
+            'email' => 'paid-invoice-admin@example.test',
+            'password' => bcrypt('secret'),
+            'first_name' => 'Admin',
+            'last_name' => 'User',
+            'role' => 'admin',
+            'clinic_id' => $clinic->id,
+            'is_active' => true,
+            'activated_at' => now(),
+        ]);
+
+        $adminResponse = $this->actingAs($admin)->get(route('aesthetic.invoices.edit', $invoice));
+        $adminResponse->assertOk();
+    }
+
     public function test_finance_revenue_report_includes_aesthetic_invoices_and_paid_amounts(): void
     {
         $clinic = Clinic::create([

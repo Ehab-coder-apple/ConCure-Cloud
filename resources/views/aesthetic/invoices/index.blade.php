@@ -175,7 +175,7 @@
                                                         <li><a class="dropdown-item" href="{{ route('aesthetic.invoices.thermal-receipt', [$invoice, 'width' => 58]) }}" target="_blank">{{ __('Thermal Receipt 58mm') }}</a></li>
                                                     </ul>
                                                 </div>
-                                                @if(!in_array($invoice->status, ['paid', 'cancelled']))
+                                                @if($invoice->status !== 'cancelled' && ($invoice->status !== 'paid' || auth()->user()->canEditPaidAestheticInvoices()))
                                                     <a href="{{ route('aesthetic.invoices.edit', $invoice) }}"
                                                        class="btn btn-sm btn-outline-info" title="{{ __('Edit') }}">
                                                         <i class="fas fa-edit"></i>

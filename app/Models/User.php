@@ -1273,6 +1273,7 @@ class User extends Authenticatable
             'aesthetic_packages' => 'Manage Aesthetic Packages',
             'aesthetic_inventory' => 'Manage Aesthetic Inventory',
             'aesthetic_invoices' => 'Manage Aesthetic Invoices',
+            'aesthetic_edit_paid_invoices' => 'Edit Paid/Cancelled Aesthetic Invoices',
             'aesthetic_manage' => 'Full Aesthetic Module Management',
         ];
     }
@@ -1298,6 +1299,17 @@ class User extends Authenticatable
             'aesthetic_manage', 'aesthetic_treatments', 'aesthetic_packages',
             'aesthetic_inventory', 'aesthetic_invoices',
         ]);
+    }
+
+    /**
+     * Check if user is allowed to edit already paid/cancelled aesthetic
+     * invoices. Clinic Admins/Super Admins always can (via hasPermission's
+     * built-in override); other users need this permission explicitly
+     * granted by an admin.
+     */
+    public function canEditPaidAestheticInvoices(): bool
+    {
+        return $this->hasAnyPermission(['aesthetic_edit_paid_invoices', 'aesthetic_manage']);
     }
 
     /**
@@ -1461,6 +1473,7 @@ class User extends Authenticatable
                 'aesthetic_packages' => 'Manage Aesthetic Packages',
                 'aesthetic_inventory' => 'Manage Aesthetic Inventory',
                 'aesthetic_invoices' => 'Manage Aesthetic Invoices',
+                'aesthetic_edit_paid_invoices' => 'Edit Paid/Cancelled Aesthetic Invoices',
                 'aesthetic_manage' => 'Full Aesthetic Module Management',
             ],
             'ai_assistant' => [

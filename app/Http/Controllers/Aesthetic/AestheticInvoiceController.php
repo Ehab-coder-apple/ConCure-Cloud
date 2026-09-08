@@ -201,9 +201,14 @@ class AestheticInvoiceController extends Controller
     {
         $this->authorizeTenant($aestheticInvoice);
 
-        if (in_array($aestheticInvoice->status, ['paid', 'cancelled'])) {
+        if ($aestheticInvoice->status === 'cancelled') {
             return redirect()->route('aesthetic.invoices.show', $aestheticInvoice)
-                ->with('error', __('Paid or cancelled invoices cannot be edited.'));
+                ->with('error', __('Cancelled invoices cannot be edited.'));
+        }
+
+        if ($aestheticInvoice->status === 'paid' && !auth()->user()->canEditPaidAestheticInvoices()) {
+            return redirect()->route('aesthetic.invoices.show', $aestheticInvoice)
+                ->with('error', __('Paid invoices cannot be edited. Ask an administrator for the "Edit Paid/Cancelled Aesthetic Invoices" permission.'));
         }
 
         $patients = $this->getTenantPatients();
@@ -229,9 +234,14 @@ class AestheticInvoiceController extends Controller
                 ->withErrors(['error' => __('Unable to update invoice. User clinic or tenant not found. Please contact support.')]);
         }
 
-        if (in_array($aestheticInvoice->status, ['paid', 'cancelled'])) {
+        if ($aestheticInvoice->status === 'cancelled') {
             return redirect()->route('aesthetic.invoices.show', $aestheticInvoice)
-                ->with('error', __('Paid or cancelled invoices cannot be edited.'));
+                ->with('error', __('Cancelled invoices cannot be edited.'));
+        }
+
+        if ($aestheticInvoice->status === 'paid' && !auth()->user()->canEditPaidAestheticInvoices()) {
+            return redirect()->route('aesthetic.invoices.show', $aestheticInvoice)
+                ->with('error', __('Paid invoices cannot be edited. Ask an administrator for the "Edit Paid/Cancelled Aesthetic Invoices" permission.'));
         }
 
         $validated = $request->validate([
