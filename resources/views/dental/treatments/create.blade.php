@@ -42,16 +42,21 @@
                         <!-- Patient Selection -->
                         <div class="mb-3">
                             <label for="patient_id" class="form-label">{{ __('Patient') }} <span class="text-danger">*</span></label>
-                            <select name="patient_id" id="patient_id" class="form-select @error('patient_id') is-invalid @enderror" required>
-                                <option value="">{{ __('Select Patient') }}</option>
-                                @foreach($patients as $p)
-                                    <option value="{{ $p->id }}" {{ (old('patient_id', $patient?->id) == $p->id) ? 'selected' : '' }}>
-                                        {{ $p->full_name }} ({{ $p->patient_id }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            <div class="d-flex gap-2">
+                                <select name="patient_id" id="patient_id" class="form-select @error('patient_id') is-invalid @enderror" required style="flex: 1;">
+                                    <option value="">{{ __('Select Patient') }}</option>
+                                    @foreach($patients as $p)
+                                        <option value="{{ $p->id }}" {{ (old('patient_id', $patient?->id) == $p->id) ? 'selected' : '' }}>
+                                            {{ $p->full_name }} ({{ $p->patient_id }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary" id="newPatientBtn" title="{{ __('Add New Patient') }}">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                            </div>
                             @error('patient_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
 
@@ -368,6 +373,54 @@
         </div>
     </div>
 </div>
+
+<!-- New Patient Modal -->
+<div class="modal fade" id="newPatientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ __('Add New Patient') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="newPatientErrors" class="alert alert-danger d-none"></div>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ __('First Name') }} <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="np_first_name">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ __('Last Name') }} <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="np_last_name">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ __('Phone') }} <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="np_phone">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ __('Gender') }}</label>
+                        <select class="form-select" id="np_gender">
+                            <option value="">--</option>
+                            <option value="male">{{ __('Male') }}</option>
+                            <option value="female">{{ __('Female') }}</option>
+                            <option value="other">{{ __('Other') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ __('Date of Birth') }}</label>
+                        <input type="date" class="form-control" id="np_dob" max="{{ date('Y-m-d') }}">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                <button type="button" class="btn btn-primary" id="np_save">
+                    <i class="fas fa-save me-1"></i>{{ __('Save Patient') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -543,6 +596,64 @@ document.getElementById('patient_id').addEventListener('change', function() {
         // Reload page with patient_id parameter to load their dental charts
         window.location.href = '{{ url("/dental/treatments/create") }}?patient_id=' + patientId;
     }
+});
+
+// Quick "Add New Patient" modal
+const newPatientModalEl = document.getElementById('newPatientModal');
+const newPatientModal = new bootstrap.Modal(newPatientModalEl);
+
+document.getElementById('newPatientBtn').addEventListener('click', function () {
+    document.getElementById('newPatientErrors').classList.add('d-none');
+    document.getElementById('np_first_name').value = '';
+    document.getElementById('np_last_name').value = '';
+    document.getElementById('np_phone').value = '';
+    document.getElementById('np_gender').value = '';
+    document.getElementById('np_dob').value = '';
+    newPatientModal.show();
+});
+
+document.getElementById('np_save').addEventListener('click', function () {
+    const errorsBox = document.getElementById('newPatientErrors');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    const payload = {
+        first_name: document.getElementById('np_first_name').value.trim(),
+        last_name: document.getElementById('np_last_name').value.trim(),
+        phone: document.getElementById('np_phone').value.trim(),
+        gender: document.getElementById('np_gender').value,
+        date_of_birth: document.getElementById('np_dob').value,
+    };
+
+    fetch('{{ route('patients.store') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify(payload),
+    })
+    .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw data;
+        }
+        return data;
+    })
+    .then((data) => {
+        const patient = data.patient;
+        newPatientModal.hide();
+        // Reload with the new patient pre-selected so their (empty) dental
+        // chart list loads the same way as picking an existing patient.
+        window.location.href = '{{ url("/dental/treatments/create") }}?patient_id=' + patient.id;
+    })
+    .catch((error) => {
+        const message = error?.message || '{{ __('Failed to create patient.') }}';
+        const errorList = error?.errors ? Object.values(error.errors).flat().join(' ') : '';
+        errorsBox.textContent = errorList || message;
+        errorsBox.classList.remove('d-none');
+    });
 });
 
 // ── Canal Worksheet logic ──────────────────────────────────────────
