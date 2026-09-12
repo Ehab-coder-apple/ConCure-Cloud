@@ -10,12 +10,20 @@ use App\Models\MedicineSaleInvoice;
 use App\Models\MedicineTransaction;
 use App\Models\Clinic;
 use App\Models\User;
+use App\Models\Conversation;
+use App\Models\ConversationParticipant;
+use App\Models\Message;
+use App\Models\MessageRecipient;
+use App\Models\Transfer;
+use App\Events\MessageReceived;
 use App\Services\PdfKurdishFontService;
 use App\Services\StorageQuotaService;
 use App\Services\ThermalReceiptService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -544,6 +552,8 @@ class SimplePrescriptionController extends Controller
                 $doctorName = optional(User::find($prescription->doctor_id));
                 $doctorLabel = $doctorName ? trim(($doctorName->title_prefix ? $doctorName->title_prefix . ' ' : '') . $doctorName->first_name . ' ' . $doctorName->last_name) : 'the doctor';
 
+                $this->notifyDoctorOfQuickVisit($prescription, (int) $prescription->doctor_id);
+
                 return redirect()->route('simple-prescriptions.quick-visit')
                     ->with('success', "Visit sent to {$doctorLabel} for review.");
             }
@@ -566,6 +576,112 @@ class SimplePrescriptionController extends Controller
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Error creating prescription: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Deliver a "sent to doctor" Quick Visit through the internal Messages
+     * system, so it lands in the doctor's Messages inbox (with the usual
+     * unread badge/alert) as a "transfer" message - not just a silent flag
+     * on the prescription. The message's "Preview" action opens the visit
+     * directly on the editable Quick Visit review page (see reviewVisit()),
+     * instead of a static prescription report.
+     *
+     * Best-effort: if the Messages module/tables aren't available, the
+     * prescription's own sent_to_doctor flag (and the "Review" button on
+     * the Prescriptions list/detail pages) still works as a fallback.
+     */
+    private function notifyDoctorOfQuickVisit(SimplePrescription $prescription, int $doctorId): void
+    {
+        $sender = Auth::user();
+
+        if (!$sender->canAccessModule('messages') || !Schema::hasTable('conversations')) {
+            return;
+        }
+
+        try {
+            $conversation = Conversation::forClinic($sender->clinic_id)
+                ->where('type', 'direct')
+                ->whereHas('participants', fn ($q) => $q->where('user_id', $sender->id))
+                ->whereHas('participants', fn ($q) => $q->where('user_id', $doctorId))
+                ->first();
+
+            if (!$conversation) {
+                $conversation = Conversation::create([
+                    'clinic_id' => $sender->clinic_id,
+                    'type' => 'direct',
+                    'created_by' => $sender->id,
+                    'last_message_at' => now(),
+                ]);
+
+                ConversationParticipant::create([
+                    'conversation_id' => $conversation->id,
+                    'user_id' => $sender->id,
+                    'role' => 'admin',
+                    'joined_at' => now(),
+                ]);
+                ConversationParticipant::create([
+                    'conversation_id' => $conversation->id,
+                    'user_id' => $doctorId,
+                    'role' => 'member',
+                    'joined_at' => now(),
+                ]);
+            }
+
+            $patient = $prescription->patient;
+            $metadata = [
+                'patient_name' => $patient ? trim($patient->first_name . ' ' . $patient->last_name) : null,
+                'prescription_number' => $prescription->prescription_number,
+                'quick_visit' => true,
+                'simple' => true,
+            ];
+
+            $message = Message::create([
+                'conversation_id' => $conversation->id,
+                'sender_id' => $sender->id,
+                'clinic_id' => $sender->clinic_id,
+                'patient_id' => $prescription->patient_id,
+                'message_type' => 'transfer',
+                'body' => null,
+                'metadata' => $metadata,
+            ]);
+
+            $conversation->update(['last_message_at' => now()]);
+
+            MessageRecipient::create([
+                'message_id' => $message->id,
+                'user_id' => $doctorId,
+                'delivered_at' => now(),
+            ]);
+
+            Transfer::create([
+                'clinic_id' => $sender->clinic_id,
+                'conversation_id' => $conversation->id,
+                'message_id' => $message->id,
+                'patient_id' => $prescription->patient_id,
+                'transfer_type' => 'prescription',
+                'source_type' => SimplePrescription::class,
+                'source_id' => $prescription->id,
+                'status' => 'pending',
+                'priority' => Transfer::PRIORITY_NORMAL,
+                'metadata' => $metadata,
+            ]);
+
+            try {
+                broadcast(new MessageReceived($message->fresh(['sender', 'patient', 'transfer']), $doctorId))->toOthers();
+            } catch (\Throwable $e) {
+                Log::warning('MessageReceived broadcast failed for quick visit hand-off', [
+                    'message_id' => $message->id,
+                    'recipient_id' => $doctorId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Failed to deliver quick visit hand-off message', [
+                'prescription_id' => $prescription->id,
+                'doctor_id' => $doctorId,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

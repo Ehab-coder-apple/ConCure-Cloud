@@ -196,10 +196,75 @@ class QuickVisitPrescriptionTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::dropIfExists('transfers');
+        Schema::dropIfExists('message_recipients');
+        Schema::dropIfExists('messages');
+        Schema::dropIfExists('conversation_participants');
+        Schema::dropIfExists('conversations');
+
+        Schema::create('conversations', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('clinic_id');
+            $table->string('type')->default('direct');
+            $table->string('title')->nullable();
+            $table->unsignedBigInteger('created_by');
+            $table->timestamp('last_message_at')->nullable();
+            $table->boolean('is_archived')->default(false);
+            $table->timestamps();
+        });
+
+        Schema::create('conversation_participants', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('conversation_id');
+            $table->unsignedBigInteger('user_id');
+            $table->string('role')->default('member');
+            $table->timestamp('joined_at')->nullable();
+            $table->timestamp('last_read_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('messages', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('conversation_id');
+            $table->unsignedBigInteger('sender_id');
+            $table->unsignedBigInteger('clinic_id');
+            $table->unsignedBigInteger('patient_id')->nullable();
+            $table->string('message_type')->default('text');
+            $table->text('body')->nullable();
+            $table->json('metadata')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('message_recipients', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('message_id');
+            $table->unsignedBigInteger('user_id');
+            $table->timestamp('delivered_at')->nullable();
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('transfers', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('clinic_id');
+            $table->unsignedBigInteger('conversation_id');
+            $table->unsignedBigInteger('message_id');
+            $table->unsignedBigInteger('patient_id');
+            $table->string('transfer_type');
+            $table->string('source_type');
+            $table->unsignedBigInteger('source_id');
+            $table->string('status')->default('pending');
+            $table->string('priority')->default('normal');
+            $table->unsignedBigInteger('acted_by')->nullable();
+            $table->timestamp('acted_at')->nullable();
+            $table->json('metadata')->nullable();
+            $table->timestamps();
+        });
+
         $this->clinic = Clinic::create([
             'name' => 'Quick Visit Test Clinic',
             'tenant_id' => 'TEN-QUICKVISIT',
-            'enabled_modules' => ['prescriptions', 'quick_visit'],
+            'enabled_modules' => ['prescriptions', 'quick_visit', 'messages'],
         ]);
 
         $this->doctor = User::create([
@@ -678,5 +743,74 @@ class QuickVisitPrescriptionTest extends TestCase
 
         $response->assertStatus(403);
         $this->assertNotSame('Hijacked edit attempt', $prescription->fresh()->diagnosis);
+    }
+
+    public function test_sending_a_visit_to_doctor_delivers_it_as_a_message_not_just_a_prescription_flag(): void
+    {
+        $response = $this->actingAs($this->assistant)->post(route('simple-prescriptions.store'), [
+            'patient_id' => $this->patient->id,
+            'prescribed_date' => now()->toDateString(),
+            'send_to_doctor' => '1',
+            'assigned_doctor_id' => $this->doctor->id,
+            // Assistant only entered the patient - nothing else yet.
+            'medicines' => [],
+        ]);
+
+        $response->assertRedirect(route('simple-prescriptions.quick-visit'));
+
+        $prescription = SimplePrescription::where('patient_id', $this->patient->id)->firstOrFail();
+
+        // A real message (not just the sent_to_doctor flag) must exist so it
+        // shows up as an alert in the doctor's Messages inbox.
+        $this->assertDatabaseHas('messages', [
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'message_type' => 'transfer',
+        ]);
+
+        $message = \App\Models\Message::where('patient_id', $this->patient->id)->firstOrFail();
+        $this->assertSame('Jane Doe', $message->metadata['patient_name']);
+        $this->assertTrue($message->metadata['quick_visit']);
+
+        // The doctor is a recipient and it's unread, driving the Messages
+        // unread badge/alert.
+        $this->assertDatabaseHas('message_recipients', [
+            'message_id' => $message->id,
+            'user_id' => $this->doctor->id,
+            'read_at' => null,
+        ]);
+
+        // The transfer links straight back to this prescription so the
+        // Messages page's "Preview" action can open the Quick Visit review
+        // form for it.
+        $this->assertDatabaseHas('transfers', [
+            'clinic_id' => $this->clinic->id,
+            'transfer_type' => 'prescription',
+            'source_type' => SimplePrescription::class,
+            'source_id' => $prescription->id,
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_no_message_is_sent_when_messages_module_is_disabled(): void
+    {
+        $this->clinic->update(['enabled_modules' => ['prescriptions', 'quick_visit']]);
+
+        $this->actingAs($this->assistant)->post(route('simple-prescriptions.store'), [
+            'patient_id' => $this->patient->id,
+            'prescribed_date' => now()->toDateString(),
+            'send_to_doctor' => '1',
+            'assigned_doctor_id' => $this->doctor->id,
+            'medicines' => [],
+        ])->assertRedirect(route('simple-prescriptions.quick-visit'));
+
+        // No message infrastructure required - the prescription's own
+        // sent_to_doctor flag and the Prescriptions list "Review" button
+        // remain the fallback path.
+        $this->assertDatabaseCount('messages', 0);
+        $this->assertDatabaseHas('simple_prescriptions', [
+            'patient_id' => $this->patient->id,
+            'sent_to_doctor' => true,
+        ]);
     }
 }
