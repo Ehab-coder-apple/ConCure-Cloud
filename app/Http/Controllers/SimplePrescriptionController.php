@@ -154,14 +154,213 @@ class SimplePrescriptionController extends Controller
             ->orderBy('first_name')
             ->get();
 
+        // Not reviewing an existing sent-to-doctor visit here - this is a
+        // fresh visit. See reviewVisit() for the pre-filled edit form.
+        $prescription = null;
+
         return view('simple-prescriptions.quick-visit', compact(
             'patients',
             'medicines',
             'medicineForms',
             'visitTypes',
             'selectedPatientId',
-            'doctors'
+            'doctors',
+            'prescription'
         ));
+    }
+
+    /**
+     * Open a visit that an assistant sent to this doctor for review,
+     * pre-filled into the same compact Quick Visit UI (not a static PDF/
+     * report) so the doctor can review, modify, and complete it in place.
+     */
+    public function reviewVisit(SimplePrescription $prescription)
+    {
+        $user = Auth::user();
+
+        if ($prescription->clinic_id !== $user->clinic_id && !$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        if ($prescription->doctor_id !== $user->id && !$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            abort(403, 'You can only review visits assigned to you.');
+        }
+
+        $prescription->load(['medicines', 'patient', 'creator', 'invoice']);
+
+        $clinicId = $prescription->clinic_id;
+
+        $patients = Patient::where('clinic_id', $clinicId)
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->get();
+
+        $medicines = Medicine::where('clinic_id', $clinicId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $medicineForms = Medicine::formsForClinic($clinicId);
+        $visitTypes = SimplePrescription::VISIT_TYPES;
+        $selectedPatientId = $prescription->patient_id;
+
+        $doctors = User::where('clinic_id', $clinicId)
+            ->where('role', 'doctor')
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->get();
+
+        return view('simple-prescriptions.quick-visit', compact(
+            'patients',
+            'medicines',
+            'medicineForms',
+            'visitTypes',
+            'selectedPatientId',
+            'doctors',
+            'prescription'
+        ));
+    }
+
+    /**
+     * Complete the doctor's review of a visit sent by an assistant: apply
+     * the (possibly edited) diagnosis/notes/medicines, mark it reviewed,
+     * and optionally bill/print - all from the same Quick Visit form used
+     * to open it.
+     */
+    public function completeReview(Request $request, SimplePrescription $prescription)
+    {
+        $user = Auth::user();
+
+        if ($prescription->clinic_id !== $user->clinic_id && !$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        if ($prescription->doctor_id !== $user->id && !$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            abort(403, 'You can only review visits assigned to you.');
+        }
+
+        $request->validate([
+            'diagnosis' => 'nullable|string|max:1000',
+            'visit_type' => 'nullable|string|in:' . implode(',', array_keys(SimplePrescription::VISIT_TYPES)),
+            'notes' => 'nullable|string|max:1000',
+            'medicines' => 'nullable|array',
+            'medicines.*.name' => 'nullable|string|max:255',
+            'medicines.*.type' => 'nullable|string|max:50',
+            'medicines.*.dosage' => 'nullable|string|max:100',
+            'medicines.*.frequency' => 'nullable|string|max:100',
+            'medicines.*.duration' => 'nullable|string|max:100',
+            'medicines.*.quantity' => 'nullable|integer|min:0|max:9999',
+            'medicines.*.instructions' => 'nullable|string|max:500',
+            'print_after' => 'nullable|boolean',
+            'print_template' => 'nullable|string|in:browser,custom_pdf',
+            'cost' => 'nullable|numeric|min:0|max:99999999',
+            'payment_status' => 'nullable|in:paid,unpaid',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $prescription->update([
+                'diagnosis' => $request->diagnosis,
+                'visit_type' => $request->visit_type,
+                'notes' => $request->notes,
+                'reviewed_at' => now(),
+            ]);
+
+            // Replace medicines with whatever the doctor left on the form.
+            $prescription->medicines()->delete();
+
+            if ($request->medicines) {
+                foreach ($request->medicines as $medicine) {
+                    if (!empty($medicine['name'])) {
+                        $medicineName = $medicine['name'];
+                        if (strpos($medicineName, 'new:') === 0) {
+                            $newMedicineName = substr($medicineName, 4);
+                            Medicine::create([
+                                'name' => $newMedicineName,
+                                'generic_name' => $newMedicineName,
+                                'dosage' => $medicine['strength'] ?? null,
+                                'form' => 'other',
+                                'is_frequent' => false,
+                                'clinic_id' => $prescription->clinic_id,
+                                'created_by' => Auth::id(),
+                                'is_active' => true,
+                            ]);
+                            $medicineName = $newMedicineName;
+                        }
+
+                        SimplePrescriptionMedicine::create([
+                            'prescription_id' => $prescription->id,
+                            'medicine_name' => $medicineName,
+                            'type' => $medicine['type'] ?? null,
+                            'dosage' => $medicine['dosage'] ?? null,
+                            'frequency' => $medicine['frequency'] ?? null,
+                            'duration' => $medicine['duration'] ?? null,
+                            'quantity' => $medicine['quantity'] ?? null,
+                            'instructions' => $medicine['instructions'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            // Only bill here if the assistant didn't already create an
+            // invoice when sending the visit - avoids double-billing.
+            $cost = (float) ($request->input('cost') ?? 0);
+            if ($cost > 0 && !$prescription->invoice_id) {
+                $invoice = \App\Models\Invoice::create([
+                    'patient_id' => $prescription->patient_id,
+                    'clinic_id' => $prescription->clinic_id,
+                    'source_module' => 'quick_visit',
+                    'invoice_date' => now()->toDateString(),
+                    'subtotal' => 0,
+                    'tax_rate' => 0,
+                    'discount_rate' => 0,
+                    'discount_amount' => 0,
+                    'total_amount' => 0,
+                    'paid_amount' => 0,
+                    'balance' => 0,
+                    'status' => 'draft',
+                    'notes' => "Quick Visit ({$prescription->prescription_number})",
+                    'created_by' => Auth::id(),
+                ]);
+
+                $invoice->addItem([
+                    'description' => 'Quick Visit - Consultation & Prescription Fee',
+                    'quantity' => 1,
+                    'unit_price' => $cost,
+                    'item_type' => 'consultation',
+                ]);
+
+                if ($request->input('payment_status', 'paid') === 'paid') {
+                    $invoice->paid_amount = $invoice->total_amount;
+                    $invoice->calculateTotals();
+                }
+                $invoice->updateStatus();
+                $invoice->save();
+
+                $prescription->update(['invoice_id' => $invoice->id]);
+            }
+
+            DB::commit();
+
+            if ($request->boolean('print_after')) {
+                if ($request->input('print_template') === 'custom_pdf') {
+                    return redirect()->route('simple-prescriptions.pdf', [$prescription->id, 'template' => 'custom'])
+                        ->with('success', 'Visit reviewed and completed successfully!');
+                }
+
+                return redirect()->route('simple-prescriptions.print', $prescription->id)
+                    ->with('success', 'Visit reviewed and completed successfully!');
+            }
+
+            return redirect()->route('simple-prescriptions.show', $prescription->id)
+                ->with('success', 'Visit reviewed and completed successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error completing review: ' . $e->getMessage());
+        }
     }
 
     /**

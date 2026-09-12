@@ -542,4 +542,141 @@ class QuickVisitPrescriptionTest extends TestCase
         $this->assertStringContainsString('Ibuprofen', $visits[0]['treatment']);
         $this->assertSame('Follow-up', $visits[0]['visit_type']);
     }
+
+    private function sendVisitToDoctor(): SimplePrescription
+    {
+        $this->actingAs($this->assistant)->post(route('simple-prescriptions.store'), [
+            'patient_id' => $this->patient->id,
+            'prescribed_date' => now()->toDateString(),
+            'diagnosis' => 'Sore throat',
+            'notes' => 'Started 2 days ago',
+            'send_to_doctor' => '1',
+            'assigned_doctor_id' => $this->doctor->id,
+            'medicines' => [
+                [
+                    'name' => 'new:Paracetamol',
+                    'dosage' => '500mg',
+                    'frequency' => 'TID',
+                    'duration' => '3 days',
+                ],
+            ],
+        ]);
+
+        return SimplePrescription::where('patient_id', $this->patient->id)->firstOrFail();
+    }
+
+    public function test_reviewing_a_sent_visit_opens_the_editable_quick_visit_form_not_a_pdf(): void
+    {
+        $prescription = $this->sendVisitToDoctor();
+
+        $response = $this->actingAs($this->doctor)
+            ->get(route('simple-prescriptions.quick-visit.review', $prescription->id));
+
+        $response->assertOk();
+        // Must render the same editable Quick Visit template, not a
+        // static report/PDF view.
+        $response->assertViewIs('simple-prescriptions.quick-visit');
+        $response->assertViewHas('prescription', function ($viewPrescription) use ($prescription) {
+            return $viewPrescription->id === $prescription->id;
+        });
+
+        $html = $response->getContent();
+        // Pre-filled editable fields, not read-only report markup.
+        $this->assertStringContainsString('Sore throat', $html);
+        $this->assertStringContainsString('Started 2 days ago', $html);
+        $this->assertStringContainsString('Paracetamol', $html);
+        $this->assertStringContainsString(route('simple-prescriptions.quick-visit.update', $prescription->id), $html);
+        $this->assertStringContainsString('Complete Review', $html);
+        // The patient is locked in (via a hidden field) rather than
+        // re-selectable, and the Send-to-Doctor controls are gone.
+        $this->assertStringContainsString('name="patient_id" value="' . $prescription->patient_id . '"', $html);
+        $this->assertStringNotContainsString('id="sendToDoctorBtn"', $html);
+    }
+
+    public function test_only_the_assigned_doctor_or_admin_can_open_the_review_form(): void
+    {
+        $prescription = $this->sendVisitToDoctor();
+
+        $response = $this->actingAs($this->secondDoctor)
+            ->get(route('simple-prescriptions.quick-visit.review', $prescription->id));
+
+        $response->assertStatus(403);
+    }
+
+    public function test_doctor_can_edit_and_complete_a_sent_visit_from_the_quick_visit_form(): void
+    {
+        $prescription = $this->sendVisitToDoctor();
+
+        $response = $this->actingAs($this->doctor)
+            ->put(route('simple-prescriptions.quick-visit.update', $prescription->id), [
+                'diagnosis' => 'Acute tonsillitis (confirmed)',
+                'visit_type' => 'follow_up',
+                'notes' => 'Started 2 days ago; throat culture taken',
+                'medicines' => [
+                    [
+                        'name' => 'new:Amoxicillin',
+                        'type' => 'capsule',
+                        'dosage' => '500mg',
+                        'frequency' => 'BID',
+                        'duration' => '7 days',
+                        'quantity' => 14,
+                    ],
+                ],
+            ]);
+
+        $response->assertRedirect(route('simple-prescriptions.show', $prescription->id));
+        $response->assertSessionHas('success');
+
+        $prescription->refresh();
+        $this->assertSame('Acute tonsillitis (confirmed)', $prescription->diagnosis);
+        $this->assertSame('follow_up', $prescription->visit_type);
+        $this->assertNotNull($prescription->reviewed_at);
+        $this->assertFalse($prescription->isPendingDoctorReview());
+
+        // The old medicine (Paracetamol) was replaced by the doctor's edit.
+        $this->assertDatabaseMissing('simple_prescription_medicines', [
+            'prescription_id' => $prescription->id,
+            'medicine_name' => 'Paracetamol',
+        ]);
+        $this->assertDatabaseHas('simple_prescription_medicines', [
+            'prescription_id' => $prescription->id,
+            'medicine_name' => 'Amoxicillin',
+            'type' => 'capsule',
+            'quantity' => 14,
+        ]);
+    }
+
+    public function test_completing_review_with_cost_creates_an_invoice_when_none_exists_yet(): void
+    {
+        $prescription = $this->sendVisitToDoctor();
+
+        $response = $this->actingAs($this->doctor)
+            ->put(route('simple-prescriptions.quick-visit.update', $prescription->id), [
+                'diagnosis' => 'Acute tonsillitis',
+                'cost' => '15000',
+                'payment_status' => 'paid',
+                'medicines' => [],
+            ]);
+
+        $response->assertRedirect(route('simple-prescriptions.show', $prescription->id));
+
+        $prescription->refresh();
+        $this->assertNotNull($prescription->invoice_id);
+        $this->assertEquals(15000, (float) $prescription->invoice->total_amount);
+        $this->assertSame('paid', $prescription->invoice->status);
+    }
+
+    public function test_only_the_assigned_doctor_or_admin_can_complete_the_review(): void
+    {
+        $prescription = $this->sendVisitToDoctor();
+
+        $response = $this->actingAs($this->secondDoctor)
+            ->put(route('simple-prescriptions.quick-visit.update', $prescription->id), [
+                'diagnosis' => 'Hijacked edit attempt',
+                'medicines' => [],
+            ]);
+
+        $response->assertStatus(403);
+        $this->assertNotSame('Hijacked edit attempt', $prescription->fresh()->diagnosis);
+    }
 }

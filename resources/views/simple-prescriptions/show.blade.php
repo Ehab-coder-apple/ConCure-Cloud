@@ -137,12 +137,9 @@
                                     <i class="fas fa-share me-1"></i>{{ __('Pending Doctor Review') }}
                                 </span>
                                 @if($prescription->doctor_id === auth()->id() || auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin())
-                                    <form action="{{ route('simple-prescriptions.mark-reviewed', $prescription->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-outline-success ms-1">
-                                            <i class="fas fa-check me-1"></i>{{ __('Mark Reviewed') }}
-                                        </button>
-                                    </form>
+                                    <a href="{{ route('simple-prescriptions.quick-visit.review', $prescription->id) }}" class="btn btn-sm btn-warning ms-1">
+                                        <i class="fas fa-share me-1"></i>{{ __('Review & Complete') }}
+                                    </a>
                                 @endif
                             @elseif($prescription->sent_to_doctor && $prescription->reviewed_at)
                                 <span class="badge bg-success fs-6">

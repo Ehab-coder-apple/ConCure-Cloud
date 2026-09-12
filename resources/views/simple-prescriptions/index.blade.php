@@ -198,12 +198,10 @@
                                                     </a>
                                                     @endif
                                                     @if($prescription->isPendingDoctorReview() && ($prescription->doctor_id === auth()->id() || auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin()))
-                                                    <form action="{{ route('simple-prescriptions.mark-reviewed', $prescription->id) }}" method="POST" class="d-inline">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-outline-success" title="{{ __('Mark Reviewed') }}">
-                                                            <i class="fas fa-check"></i>
-                                                        </button>
-                                                    </form>
+                                                    <a href="{{ route('simple-prescriptions.quick-visit.review', $prescription->id) }}"
+                                                       class="btn btn-warning" title="{{ __('Review this visit') }}">
+                                                        <i class="fas fa-share me-1"></i>{{ __('Review') }}
+                                                    </a>
                                                     @endif
                                                     <form action="{{ route('simple-prescriptions.destroy', $prescription->id) }}" 
                                                           method="POST" class="d-inline"

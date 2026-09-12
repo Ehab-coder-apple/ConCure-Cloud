@@ -43,12 +43,35 @@
                 </div>
             @endif
 
-            <form action="{{ route('simple-prescriptions.store') }}" method="POST" id="quickVisitForm">
+            @if($prescription)
+                <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                        <i class="fas fa-share me-2"></i>
+                        <strong>{{ __('Reviewing a visit sent to you for review') }}</strong>
+                        @if($prescription->creator)
+                            &nbsp;{{ __('by') }} {{ $prescription->creator->first_name }} {{ $prescription->creator->last_name }}
+                        @endif
+                        @if($prescription->sent_to_doctor_at)
+                            &nbsp;{{ __('on') }} {{ $prescription->sent_to_doctor_at->format('M d, Y h:i A') }}
+                        @endif
+                        &mdash; {{ __('modify anything below, then complete the visit.') }}
+                    </div>
+                    <span class="badge bg-dark">{{ $prescription->prescription_number }}</span>
+                </div>
+            @endif
+
+            <form action="{{ $prescription ? route('simple-prescriptions.quick-visit.update', $prescription->id) : route('simple-prescriptions.store') }}"
+                  method="POST" id="quickVisitForm">
                 @csrf
-                <input type="hidden" name="prescribed_date" value="{{ date('Y-m-d') }}">
+                @if($prescription)
+                    @method('PUT')
+                @endif
+                <input type="hidden" name="prescribed_date" value="{{ $prescription ? $prescription->prescribed_date->format('Y-m-d') : date('Y-m-d') }}">
                 <input type="hidden" name="print_after" id="print_after" value="0">
                 <input type="hidden" name="print_template" id="print_template" value="browser">
-                <input type="hidden" name="send_to_doctor" id="send_to_doctor" value="0">
+                @unless($prescription)
+                    <input type="hidden" name="send_to_doctor" id="send_to_doctor" value="0">
+                @endunless
 
                 <!-- Patient + Visit Type -->
                 <div class="row g-3 align-items-end mb-2">
@@ -58,7 +81,8 @@
                         </label>
                         <div class="d-flex gap-2">
                             <select class="form-select @error('patient_id') is-invalid @enderror"
-                                    id="patient_id" name="patient_id" required style="flex: 1;">
+                                    id="patient_id" name="patient_id" required style="flex: 1;"
+                                    {{ $prescription ? 'disabled' : '' }}>
                                 <option value="">{{ __('Select a patient...') }}</option>
                                 @foreach($patients as $patient)
                                     <option value="{{ $patient->id }}"
@@ -70,9 +94,13 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <button type="button" class="btn btn-outline-secondary" id="newPatientBtn" title="{{ __('Add New Patient') }}">
-                                <i class="fas fa-user-plus"></i>
-                            </button>
+                            @if($prescription)
+                                <input type="hidden" name="patient_id" value="{{ $prescription->patient_id }}">
+                            @else
+                                <button type="button" class="btn btn-outline-secondary" id="newPatientBtn" title="{{ __('Add New Patient') }}">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                            @endif
                         </div>
                         @error('patient_id')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -88,12 +116,13 @@
                         <select class="form-select" id="visit_type" name="visit_type">
                             <option value="">-- {{ __('Select') }} --</option>
                             @foreach($visitTypes as $key => $label)
-                                <option value="{{ $key }}" {{ old('visit_type') === $key ? 'selected' : '' }}>{{ __($label) }}</option>
+                                <option value="{{ $key }}" {{ old('visit_type', $prescription->visit_type ?? '') === $key ? 'selected' : '' }}>{{ __($label) }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
 
+                @unless($prescription)
                 <!-- Send to Doctor -->
                 <div class="row g-3 align-items-end mb-3">
                     <div class="col-md-4">
@@ -117,18 +146,19 @@
                         <div class="form-text">{{ __('Forwards this visit to the selected doctor for review instead of saving it under your own name.') }}</div>
                     </div>
                 </div>
+                @endunless
 
                 <!-- Diagnosis + Notes -->
                 <div class="row g-3 mb-3" data-auto-voice-scope="quick-visit-notes">
                     <div class="col-md-6">
                         <label for="diagnosis" class="form-label">{{ __('Diagnosis') }}</label>
                         <textarea class="form-control" id="diagnosis" name="diagnosis" rows="2"
-                                  placeholder="{{ __('Enter diagnosis...') }}">{{ old('diagnosis') }}</textarea>
+                                  placeholder="{{ __('Enter diagnosis...') }}">{{ old('diagnosis', $prescription->diagnosis ?? '') }}</textarea>
                     </div>
                     <div class="col-md-6">
                         <label for="notes" class="form-label">{{ __('History / Notes') }}</label>
                         <textarea class="form-control" id="notes" name="notes" rows="2"
-                                  placeholder="{{ __('History or additional notes...') }}">{{ old('notes') }}</textarea>
+                                  placeholder="{{ __('History or additional notes...') }}">{{ old('notes', $prescription->notes ?? '') }}</textarea>
                     </div>
                 </div>
 
@@ -160,21 +190,29 @@
                 <div class="row g-3 align-items-end mb-3">
                     <div class="col-md-3">
                         <label for="cost" class="form-label">{{ __('Cost') }}</label>
-                        <input type="number" step="0.01" min="0" class="form-control @error('cost') is-invalid @enderror"
-                               id="cost" name="cost" value="{{ old('cost') }}" placeholder="0.00">
+                        @if($prescription && $prescription->invoice)
+                            <input type="number" step="0.01" min="0" class="form-control" value="{{ $prescription->invoice->total_amount }}" disabled>
+                        @else
+                            <input type="number" step="0.01" min="0" class="form-control @error('cost') is-invalid @enderror"
+                                   id="cost" name="cost" value="{{ old('cost') }}" placeholder="0.00">
+                        @endif
                         @error('cost')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-md-3">
                         <label for="payment_status" class="form-label">{{ __('Payment') }}</label>
-                        <select class="form-select" id="payment_status" name="payment_status">
+                        <select class="form-select" id="payment_status" name="payment_status" {{ ($prescription && $prescription->invoice) ? 'disabled' : '' }}>
                             <option value="paid" {{ old('payment_status', 'paid') === 'paid' ? 'selected' : '' }}>{{ __('Paid') }}</option>
                             <option value="unpaid" {{ old('payment_status') === 'unpaid' ? 'selected' : '' }}>{{ __('Unpaid') }}</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-text mb-0">{{ __('If entered, this amount is billed to the patient in Finance as a Quick Visit invoice.') }}</div>
+                        @if($prescription && $prescription->invoice)
+                            <div class="form-text mb-0 text-success">{{ __('Already invoiced') }}: {{ $prescription->invoice->invoice_number }}</div>
+                        @else
+                            <div class="form-text mb-0">{{ __('If entered, this amount is billed to the patient in Finance as a Quick Visit invoice.') }}</div>
+                        @endif
                     </div>
                 </div>
 
@@ -184,11 +222,11 @@
                     </a>
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i>{{ __('Save') }}
+                            <i class="fas fa-{{ $prescription ? 'check-double' : 'save' }} me-1"></i>{{ $prescription ? __('Complete Review & Save') : __('Save') }}
                         </button>
                         <div class="btn-group">
                             <button type="button" class="btn btn-success" id="saveAndPrintBtn">
-                                <i class="fas fa-print me-1"></i>{{ __('Save & Print') }}
+                                <i class="fas fa-print me-1"></i>{{ $prescription ? __('Complete & Print') : __('Save & Print') }}
                             </button>
                             <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
                                 <span class="visually-hidden">{{ __('Toggle Print Options') }}</span>
@@ -296,6 +334,20 @@
     </div>
 </div>
 
+@php
+    $qvExistingMedicines = $prescription
+        ? $prescription->medicines->map(function ($m) {
+            return [
+                'name' => $m->medicine_name,
+                'type' => $m->type,
+                'dosage' => $m->dosage,
+                'duration' => $m->duration,
+                'quantity' => $m->quantity,
+                'frequency' => $m->frequency,
+            ];
+        })->values()
+        : [];
+@endphp
 @push('scripts')
 <script>
 let qvMedicineRowCount = 0;
@@ -313,27 +365,48 @@ function qvBuildTypeOptionsHtml(selected) {
     return html;
 }
 
-function addMedicineRow() {
+function qvEscapeHtml(str) {
+    return String(str === null || str === undefined ? '' : str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
+function addMedicineRow(data) {
+    data = data || {};
     const index = qvMedicineRowCount++;
     const tbody = document.getElementById('medicinesTableBody');
     const tr = document.createElement('tr');
     tr.className = 'medicine-row';
+
+    const selectedName = data.name || '';
+    let extraOptionHtml = '';
+    if (selectedName) {
+        const sourceOptions = Array.from(document.getElementById('medicineOptionsSource').options);
+        const alreadyThere = sourceOptions.some(function (opt) {
+            return opt.value.toLowerCase() === selectedName.toLowerCase();
+        });
+        if (!alreadyThere) {
+            extraOptionHtml = `<option value="${qvEscapeHtml(selectedName)}" selected>${qvEscapeHtml(selectedName)}</option>`;
+        }
+    }
+
     tr.innerHTML = `
         <td>
             <select class="form-select form-select-sm medicine-select" name="medicines[${index}][name]">
                 <option value="">{{ __('Select or type...') }}</option>
+                ${extraOptionHtml}
                 ${qvBuildMedicineSelectHtml()}
             </select>
         </td>
         <td>
             <select class="form-select form-select-sm" name="medicines[${index}][type]">
-                ${qvBuildTypeOptionsHtml('')}
+                ${qvBuildTypeOptionsHtml(data.type || '')}
             </select>
         </td>
-        <td><input type="text" class="form-control form-control-sm" name="medicines[${index}][dosage]" placeholder="{{ __('e.g., 500mg') }}"></td>
-        <td><input type="text" class="form-control form-control-sm" name="medicines[${index}][duration]" placeholder="{{ __('e.g., 7 days') }}"></td>
-        <td><input type="number" min="0" class="form-control form-control-sm" name="medicines[${index}][quantity]"></td>
-        <td><input type="text" class="form-control form-control-sm" name="medicines[${index}][frequency]" placeholder="{{ __('e.g., BID') }}"></td>
+        <td><input type="text" class="form-control form-control-sm" name="medicines[${index}][dosage]" placeholder="{{ __('e.g., 500mg') }}" value="${qvEscapeHtml(data.dosage)}"></td>
+        <td><input type="text" class="form-control form-control-sm" name="medicines[${index}][duration]" placeholder="{{ __('e.g., 7 days') }}" value="${qvEscapeHtml(data.duration)}"></td>
+        <td><input type="number" min="0" class="form-control form-control-sm" name="medicines[${index}][quantity]" value="${data.quantity !== undefined && data.quantity !== null ? data.quantity : ''}"></td>
+        <td><input type="text" class="form-control form-control-sm" name="medicines[${index}][frequency]" placeholder="{{ __('e.g., BID') }}" value="${qvEscapeHtml(data.frequency)}"></td>
         <td class="text-center">
             <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMedicineRow(this)">
                 <i class="fas fa-trash"></i>
@@ -342,7 +415,11 @@ function addMedicineRow() {
     `;
     tbody.appendChild(tr);
 
-    initMedicineSelect2(tr.querySelector('.medicine-select'));
+    const selectEl = tr.querySelector('.medicine-select');
+    initMedicineSelect2(selectEl);
+    if (selectedName) {
+        $(selectEl).val(selectedName).trigger('change.select2');
+    }
 }
 
 function removeMedicineRow(button) {
@@ -478,7 +555,14 @@ function qvLoadVisitHistory() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    addMedicineRow();
+    const existingMedicines = @json($qvExistingMedicines);
+
+    if (existingMedicines.length) {
+        existingMedicines.forEach(function (m) { addMedicineRow(m); });
+    } else {
+        addMedicineRow();
+    }
+
     qvUpdatePatientInfo();
     qvLoadVisitHistory();
 
@@ -507,19 +591,23 @@ $(document).ready(function () {
     $('#patient_id').on('change', qvLoadVisitHistory);
 
     // Send to Doctor: forwards the visit to the selected doctor for review
-    // instead of saving it under the current (assistant) user.
-    document.getElementById('sendToDoctorBtn').addEventListener('click', function () {
-        const doctorSelect = document.getElementById('assigned_doctor_id');
-        if (!doctorSelect.value) {
-            doctorSelect.classList.add('is-invalid');
-            doctorSelect.focus();
-            return;
-        }
-        doctorSelect.classList.remove('is-invalid');
-        document.getElementById('send_to_doctor').value = '1';
-        document.getElementById('print_after').value = '0';
-        document.getElementById('quickVisitForm').submit();
-    });
+    // instead of saving it under the current (assistant) user. Not shown
+    // while reviewing an existing sent-to-doctor visit.
+    const sendToDoctorBtn = document.getElementById('sendToDoctorBtn');
+    if (sendToDoctorBtn) {
+        sendToDoctorBtn.addEventListener('click', function () {
+            const doctorSelect = document.getElementById('assigned_doctor_id');
+            if (!doctorSelect.value) {
+                doctorSelect.classList.add('is-invalid');
+                doctorSelect.focus();
+                return;
+            }
+            doctorSelect.classList.remove('is-invalid');
+            document.getElementById('send_to_doctor').value = '1';
+            document.getElementById('print_after').value = '0';
+            document.getElementById('quickVisitForm').submit();
+        });
+    }
 
     // Save & Print (default = browser print, matching previous behavior)
     document.getElementById('saveAndPrintBtn').addEventListener('click', function () {
@@ -546,15 +634,18 @@ $(document).ready(function () {
     const newPatientModalEl = document.getElementById('newPatientModal');
     const newPatientModal = new bootstrap.Modal(newPatientModalEl);
 
-    document.getElementById('newPatientBtn').addEventListener('click', function () {
-        document.getElementById('newPatientErrors').classList.add('d-none');
-        document.getElementById('np_first_name').value = '';
-        document.getElementById('np_last_name').value = '';
-        document.getElementById('np_phone').value = '';
-        document.getElementById('np_gender').value = '';
-        document.getElementById('np_dob').value = '';
-        newPatientModal.show();
-    });
+    const newPatientBtn = document.getElementById('newPatientBtn');
+    if (newPatientBtn) {
+        newPatientBtn.addEventListener('click', function () {
+            document.getElementById('newPatientErrors').classList.add('d-none');
+            document.getElementById('np_first_name').value = '';
+            document.getElementById('np_last_name').value = '';
+            document.getElementById('np_phone').value = '';
+            document.getElementById('np_gender').value = '';
+            document.getElementById('np_dob').value = '';
+            newPatientModal.show();
+        });
+    }
 
     document.getElementById('np_save').addEventListener('click', function () {
         const errorsBox = document.getElementById('newPatientErrors');
