@@ -48,6 +48,7 @@
                 <input type="hidden" name="prescribed_date" value="{{ date('Y-m-d') }}">
                 <input type="hidden" name="print_after" id="print_after" value="0">
                 <input type="hidden" name="print_template" id="print_template" value="browser">
+                <input type="hidden" name="send_to_doctor" id="send_to_doctor" value="0">
 
                 <!-- Patient + Visit Type -->
                 <div class="row g-3 align-items-end mb-2">
@@ -93,6 +94,30 @@
                     </div>
                 </div>
 
+                <!-- Send to Doctor -->
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-md-4">
+                        <label for="assigned_doctor_id" class="form-label">{{ __('Assign to Doctor') }}</label>
+                        <select class="form-select @error('assigned_doctor_id') is-invalid @enderror" id="assigned_doctor_id" name="assigned_doctor_id">
+                            <option value="">-- {{ __('Select doctor...') }} --</option>
+                            @foreach($doctors as $doctor)
+                                <option value="{{ $doctor->id }}" {{ old('assigned_doctor_id') == $doctor->id ? 'selected' : '' }}>
+                                    {{ ($doctor->title_prefix ? $doctor->title_prefix . ' ' : '') . $doctor->first_name . ' ' . $doctor->last_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('assigned_doctor_id')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-outline-primary" id="sendToDoctorBtn">
+                            <i class="fas fa-share me-1"></i>{{ __('Send to Doctor') }}
+                        </button>
+                        <div class="form-text">{{ __('Forwards this visit to the selected doctor for review instead of saving it under your own name.') }}</div>
+                    </div>
+                </div>
+
                 <!-- Diagnosis + Notes -->
                 <div class="row g-3 mb-3" data-auto-voice-scope="quick-visit-notes">
                     <div class="col-md-6">
@@ -131,6 +156,28 @@
                     </table>
                 </div>
 
+                <!-- Direct Cost / Billing -->
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-md-3">
+                        <label for="cost" class="form-label">{{ __('Cost') }}</label>
+                        <input type="number" step="0.01" min="0" class="form-control @error('cost') is-invalid @enderror"
+                               id="cost" name="cost" value="{{ old('cost') }}" placeholder="0.00">
+                        @error('cost')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-3">
+                        <label for="payment_status" class="form-label">{{ __('Payment') }}</label>
+                        <select class="form-select" id="payment_status" name="payment_status">
+                            <option value="paid" {{ old('payment_status', 'paid') === 'paid' ? 'selected' : '' }}>{{ __('Paid') }}</option>
+                            <option value="unpaid" {{ old('payment_status') === 'unpaid' ? 'selected' : '' }}>{{ __('Unpaid') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-text mb-0">{{ __('If entered, this amount is billed to the patient in Finance as a Quick Visit invoice.') }}</div>
+                    </div>
+                </div>
+
                 <div class="d-flex justify-content-between">
                     <a href="{{ route('simple-prescriptions.index') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left me-1"></i>{{ __('Back') }}
@@ -162,6 +209,30 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Previous Visit History -->
+    <div class="card shadow-sm mt-3">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="fas fa-history me-2"></i>{{ __('Previous Visit History') }}</h6>
+        </div>
+        <div class="card-body">
+            <div id="visitHistoryEmpty" class="text-muted small">{{ __('Select a patient to see their previous visits.') }}</div>
+            <div class="table-responsive d-none" id="visitHistoryTableWrap">
+                <table class="table table-sm table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ __('Date of Visit') }}</th>
+                            <th>{{ __('Diagnosis') }}</th>
+                            <th>{{ __('Note') }}</th>
+                            <th>{{ __('Treatment') }}</th>
+                            <th>{{ __('Type of Visit') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="visitHistoryTableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -351,9 +422,65 @@ function qvUpdatePatientInfo() {
     bar.innerHTML = parts.length ? parts.join(' ') : '{{ __("No additional details on file") }}';
 }
 
+// Previous Visit History table
+function qvLoadVisitHistory() {
+    const select = document.getElementById('patient_id');
+    const patientId = select.value;
+    const emptyBox = document.getElementById('visitHistoryEmpty');
+    const tableWrap = document.getElementById('visitHistoryTableWrap');
+    const tbody = document.getElementById('visitHistoryTableBody');
+
+    if (!patientId) {
+        tableWrap.classList.add('d-none');
+        emptyBox.classList.remove('d-none');
+        emptyBox.textContent = '{{ __("Select a patient to see their previous visits.") }}';
+        tbody.innerHTML = '';
+        return;
+    }
+
+    const historyUrlBase = '{{ url("/simple-prescriptions/history") }}';
+
+    fetch(`${historyUrlBase}/${patientId}`, {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        const visits = data.visits || [];
+        tbody.innerHTML = '';
+
+        if (!visits.length) {
+            tableWrap.classList.add('d-none');
+            emptyBox.classList.remove('d-none');
+            emptyBox.textContent = '{{ __("No previous visits on file for this patient.") }}';
+            return;
+        }
+
+        visits.forEach((visit) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${visit.date ?? '-'}</td>
+                <td>${visit.diagnosis ?? '-'}</td>
+                <td>${visit.notes ?? '-'}</td>
+                <td>${visit.treatment || '-'}</td>
+                <td>${visit.visit_type ?? '-'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        emptyBox.classList.add('d-none');
+        tableWrap.classList.remove('d-none');
+    })
+    .catch(() => {
+        tableWrap.classList.add('d-none');
+        emptyBox.classList.remove('d-none');
+        emptyBox.textContent = '{{ __("Unable to load visit history.") }}';
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     addMedicineRow();
     qvUpdatePatientInfo();
+    qvLoadVisitHistory();
 
     // Live clock (display only)
     setInterval(function () {
@@ -377,6 +504,22 @@ $(document).ready(function () {
     });
 
     $('#patient_id').on('change', qvUpdatePatientInfo);
+    $('#patient_id').on('change', qvLoadVisitHistory);
+
+    // Send to Doctor: forwards the visit to the selected doctor for review
+    // instead of saving it under the current (assistant) user.
+    document.getElementById('sendToDoctorBtn').addEventListener('click', function () {
+        const doctorSelect = document.getElementById('assigned_doctor_id');
+        if (!doctorSelect.value) {
+            doctorSelect.classList.add('is-invalid');
+            doctorSelect.focus();
+            return;
+        }
+        doctorSelect.classList.remove('is-invalid');
+        document.getElementById('send_to_doctor').value = '1';
+        document.getElementById('print_after').value = '0';
+        document.getElementById('quickVisitForm').submit();
+    });
 
     // Save & Print (default = browser print, matching previous behavior)
     document.getElementById('saveAndPrintBtn').addEventListener('click', function () {

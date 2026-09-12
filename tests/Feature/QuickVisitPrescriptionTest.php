@@ -21,6 +21,8 @@ class QuickVisitPrescriptionTest extends TestCase
 {
     private Clinic $clinic;
     private User $doctor;
+    private User $secondDoctor;
+    private User $assistant;
     private Patient $patient;
 
     protected function setUp(): void
@@ -45,6 +47,8 @@ class QuickVisitPrescriptionTest extends TestCase
             ]),
         ]);
 
+        Schema::dropIfExists('invoice_items');
+        Schema::dropIfExists('invoices');
         Schema::dropIfExists('simple_prescription_medicines');
         Schema::dropIfExists('simple_prescriptions');
         Schema::dropIfExists('medicine_forms');
@@ -122,6 +126,7 @@ class QuickVisitPrescriptionTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('patient_id');
             $table->unsignedBigInteger('doctor_id');
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('clinic_id');
             $table->string('prescription_number')->unique();
             $table->text('diagnosis')->nullable();
@@ -129,10 +134,52 @@ class QuickVisitPrescriptionTest extends TestCase
             $table->text('notes')->nullable();
             $table->date('prescribed_date');
             $table->string('status')->default('active');
+            $table->boolean('sent_to_doctor')->default(false);
+            $table->timestamp('sent_to_doctor_at')->nullable();
+            $table->timestamp('reviewed_at')->nullable();
+            $table->unsignedBigInteger('invoice_id')->nullable();
             $table->boolean('is_dispensed')->default(false);
             $table->timestamp('dispensed_at')->nullable();
             $table->unsignedBigInteger('dispensed_by')->nullable();
             $table->string('dispense_reference')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('invoices', function (Blueprint $table) {
+            $table->id();
+            $table->string('invoice_number')->unique();
+            $table->unsignedBigInteger('patient_id');
+            $table->unsignedBigInteger('clinic_id');
+            $table->string('source_module')->nullable();
+            $table->date('invoice_date');
+            $table->date('due_date')->nullable();
+            $table->decimal('subtotal', 10, 2)->default(0);
+            $table->decimal('tax_rate', 5, 2)->default(0);
+            $table->decimal('tax_amount', 10, 2)->default(0);
+            $table->decimal('discount_rate', 5, 2)->default(0);
+            $table->decimal('discount_amount', 10, 2)->default(0);
+            $table->decimal('total_amount', 10, 2)->default(0);
+            $table->decimal('paid_amount', 10, 2)->default(0);
+            $table->decimal('balance', 10, 2)->default(0);
+            $table->string('status')->default('draft');
+            $table->string('payment_method')->nullable();
+            $table->text('notes')->nullable();
+            $table->text('terms')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('approved_by')->nullable();
+            $table->timestamp('sent_at')->nullable();
+            $table->timestamp('paid_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('invoice_items', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('invoice_id');
+            $table->string('description');
+            $table->integer('quantity')->default(1);
+            $table->decimal('unit_price', 10, 2);
+            $table->decimal('total_price', 10, 2);
+            $table->string('item_type')->nullable();
             $table->timestamps();
         });
 
@@ -175,6 +222,30 @@ class QuickVisitPrescriptionTest extends TestCase
             'date_of_birth' => now()->subYears(30)->toDateString(),
             'gender' => 'female',
             'phone' => '07701234567',
+        ]);
+
+        $this->secondDoctor = User::create([
+            'username' => 'quickvisit_doctor2',
+            'email' => 'quickvisit-doctor2@example.test',
+            'password' => bcrypt('secret'),
+            'first_name' => 'Second',
+            'last_name' => 'Doctor',
+            'role' => 'doctor',
+            'clinic_id' => $this->clinic->id,
+            'is_active' => true,
+            'activated_at' => now(),
+        ]);
+
+        $this->assistant = User::create([
+            'username' => 'quickvisit_assistant',
+            'email' => 'quickvisit-assistant@example.test',
+            'password' => bcrypt('secret'),
+            'first_name' => 'Quick',
+            'last_name' => 'Assistant',
+            'role' => 'assistant',
+            'clinic_id' => $this->clinic->id,
+            'is_active' => true,
+            'activated_at' => now(),
         ]);
     }
 
@@ -338,5 +409,137 @@ class QuickVisitPrescriptionTest extends TestCase
             'type' => null,
             'quantity' => null,
         ]);
+    }
+
+    public function test_quick_visit_page_lists_doctors_for_send_to_doctor_dropdown(): void
+    {
+        $response = $this->actingAs($this->assistant)->get(route('simple-prescriptions.quick-visit'));
+
+        $response->assertOk();
+        $response->assertSee('id="assigned_doctor_id"', false);
+        $response->assertSee('Quick Doctor', false);
+        $response->assertSee('Second Doctor', false);
+    }
+
+    public function test_assistant_can_send_visit_to_doctor(): void
+    {
+        $response = $this->actingAs($this->assistant)->post(route('simple-prescriptions.store'), [
+            'patient_id' => $this->patient->id,
+            'prescribed_date' => now()->toDateString(),
+            'diagnosis' => 'Fever, needs doctor review',
+            'send_to_doctor' => '1',
+            'assigned_doctor_id' => $this->secondDoctor->id,
+            'medicines' => [],
+        ]);
+
+        $prescription = SimplePrescription::where('patient_id', $this->patient->id)->firstOrFail();
+
+        $response->assertRedirect(route('simple-prescriptions.quick-visit'));
+        $response->assertSessionHas('success');
+
+        $this->assertSame($this->secondDoctor->id, $prescription->doctor_id);
+        $this->assertSame($this->assistant->id, $prescription->created_by);
+        $this->assertTrue($prescription->sent_to_doctor);
+        $this->assertNotNull($prescription->sent_to_doctor_at);
+        $this->assertTrue($prescription->isPendingDoctorReview());
+
+        // The assigned doctor can mark it reviewed, clearing it from the queue.
+        $reviewResponse = $this->actingAs($this->secondDoctor)
+            ->post(route('simple-prescriptions.mark-reviewed', $prescription->id));
+        $reviewResponse->assertRedirect();
+
+        $this->assertFalse($prescription->fresh()->isPendingDoctorReview());
+    }
+
+    public function test_send_to_doctor_requires_a_doctor_to_be_selected(): void
+    {
+        $response = $this->actingAs($this->assistant)->post(route('simple-prescriptions.store'), [
+            'patient_id' => $this->patient->id,
+            'prescribed_date' => now()->toDateString(),
+            'send_to_doctor' => '1',
+            'medicines' => [],
+        ]);
+
+        $response->assertSessionHasErrors('assigned_doctor_id');
+        $this->assertDatabaseMissing('simple_prescriptions', ['patient_id' => $this->patient->id]);
+    }
+
+    public function test_direct_cost_creates_a_linked_invoice(): void
+    {
+        $response = $this->actingAs($this->doctor)->post(route('simple-prescriptions.store'), [
+            'patient_id' => $this->patient->id,
+            'prescribed_date' => now()->toDateString(),
+            'diagnosis' => 'Routine checkup',
+            'cost' => '25000',
+            'payment_status' => 'paid',
+            'medicines' => [],
+        ]);
+
+        $prescription = SimplePrescription::where('patient_id', $this->patient->id)->firstOrFail();
+        $response->assertRedirect(route('simple-prescriptions.show', $prescription->id));
+
+        $this->assertNotNull($prescription->invoice_id);
+
+        $invoice = $prescription->invoice;
+        $this->assertNotNull($invoice);
+        $this->assertEquals(25000, (float) $invoice->total_amount);
+        $this->assertEquals(25000, (float) $invoice->paid_amount);
+        $this->assertSame('paid', $invoice->status);
+        $this->assertSame('quick_visit', $invoice->source_module);
+        $this->assertSame($this->patient->id, $invoice->patient_id);
+
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $invoice->id,
+            'description' => 'Quick Visit - Consultation & Prescription Fee',
+        ]);
+    }
+
+    public function test_no_invoice_created_when_cost_is_omitted(): void
+    {
+        $response = $this->actingAs($this->doctor)->post(route('simple-prescriptions.store'), [
+            'patient_id' => $this->patient->id,
+            'prescribed_date' => now()->toDateString(),
+            'diagnosis' => 'No charge visit',
+            'medicines' => [],
+        ]);
+
+        $prescription = SimplePrescription::where('patient_id', $this->patient->id)->firstOrFail();
+        $response->assertRedirect(route('simple-prescriptions.show', $prescription->id));
+
+        $this->assertNull($prescription->invoice_id);
+        $this->assertDatabaseCount('invoices', 0);
+    }
+
+    public function test_patient_history_endpoint_returns_previous_visits(): void
+    {
+        $olderVisit = SimplePrescription::create([
+            'patient_id' => $this->patient->id,
+            'doctor_id' => $this->doctor->id,
+            'created_by' => $this->doctor->id,
+            'clinic_id' => $this->clinic->id,
+            'prescription_number' => SimplePrescription::generatePrescriptionNumber(),
+            'diagnosis' => 'Low back pain',
+            'visit_type' => 'follow_up',
+            'notes' => 'Improving with treatment',
+            'prescribed_date' => now()->subDays(10)->toDateString(),
+            'status' => 'active',
+        ]);
+        $olderVisit->medicines()->create([
+            'medicine_name' => 'Ibuprofen',
+            'dosage' => '400mg',
+        ]);
+
+        $response = $this->actingAs($this->doctor)
+            ->get(route('simple-prescriptions.patient-history', $this->patient->id));
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+
+        $visits = $response->json('visits');
+        $this->assertCount(1, $visits);
+        $this->assertSame('Low back pain', $visits[0]['diagnosis']);
+        $this->assertSame('Improving with treatment', $visits[0]['notes']);
+        $this->assertStringContainsString('Ibuprofen', $visits[0]['treatment']);
+        $this->assertSame('Follow-up', $visits[0]['visit_type']);
     }
 }

@@ -132,6 +132,35 @@
                             <span class="badge bg-{{ $prescription->status === 'active' ? 'success' : ($prescription->status === 'completed' ? 'primary' : 'secondary') }} fs-6">
                                 {{ ucfirst($prescription->status) }}
                             </span>
+                            @if($prescription->isPendingDoctorReview())
+                                <span class="badge bg-warning text-dark fs-6">
+                                    <i class="fas fa-share me-1"></i>{{ __('Pending Doctor Review') }}
+                                </span>
+                                @if($prescription->doctor_id === auth()->id() || auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin())
+                                    <form action="{{ route('simple-prescriptions.mark-reviewed', $prescription->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-success ms-1">
+                                            <i class="fas fa-check me-1"></i>{{ __('Mark Reviewed') }}
+                                        </button>
+                                    </form>
+                                @endif
+                            @elseif($prescription->sent_to_doctor && $prescription->reviewed_at)
+                                <span class="badge bg-success fs-6">
+                                    <i class="fas fa-check me-1"></i>{{ __('Reviewed') }}
+                                </span>
+                            @endif
+                            @if($prescription->invoice)
+                                <br><br>
+                                @can('manage-finance')
+                                    <a href="{{ route('finance.invoices.print', $prescription->invoice_id) }}" class="badge bg-info text-dark text-decoration-none">
+                                        <i class="fas fa-file-invoice me-1"></i>{{ __('Invoice') }} {{ $prescription->invoice->invoice_number }} ({{ number_format($prescription->invoice->total_amount, 2) }})
+                                    </a>
+                                @else
+                                    <span class="badge bg-info text-dark">
+                                        <i class="fas fa-file-invoice me-1"></i>{{ __('Invoice') }} {{ $prescription->invoice->invoice_number }} ({{ number_format($prescription->invoice->total_amount, 2) }})
+                                    </span>
+                                @endcan
+                            @endif
                             @if($prescription->is_dispensed)
                             <br><br>
                             <div class="alert alert-info mb-0 d-inline-block">

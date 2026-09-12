@@ -148,13 +148,71 @@ class SimplePrescriptionController extends Controller
         $visitTypes = SimplePrescription::VISIT_TYPES;
         $selectedPatientId = $request->get('patient_id');
 
+        $doctors = User::where('clinic_id', $clinicId)
+            ->where('role', 'doctor')
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->get();
+
         return view('simple-prescriptions.quick-visit', compact(
             'patients',
             'medicines',
             'medicineForms',
             'visitTypes',
-            'selectedPatientId'
+            'selectedPatientId',
+            'doctors'
         ));
+    }
+
+    /**
+     * Return a patient's previous visit history (for the Quick Visit page's
+     * "Previous Visit History" table). Excludes nothing by prescription id
+     * since the current visit hasn't been created yet at the time this is
+     * called from the UI.
+     */
+    public function patientHistory(Request $request, Patient $patient)
+    {
+        $user = Auth::user();
+
+        if ($patient->clinic_id !== $user->clinic_id && !$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $visits = SimplePrescription::with('medicines')
+            ->where('patient_id', $patient->id)
+            ->orderByDesc('prescribed_date')
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get()
+            ->map(function (SimplePrescription $visit) {
+                return [
+                    'id' => $visit->id,
+                    'date' => optional($visit->prescribed_date)->format('Y-m-d'),
+                    'diagnosis' => $visit->diagnosis,
+                    'notes' => $visit->notes,
+                    'treatment' => $visit->medicines->pluck('medicine_name')->filter()->implode(', '),
+                    'visit_type' => $visit->visit_type ? (SimplePrescription::VISIT_TYPES[$visit->visit_type] ?? $visit->visit_type) : null,
+                ];
+            });
+
+        return response()->json(['success' => true, 'visits' => $visits]);
+    }
+
+    /**
+     * Mark a visit that was sent to a doctor as reviewed, clearing it from
+     * that doctor's pending queue.
+     */
+    public function markReviewed(SimplePrescription $prescription)
+    {
+        $user = Auth::user();
+
+        if ($prescription->doctor_id !== $user->id && !$user->isSuperAdmin() && !$user->isClinicAdmin()) {
+            abort(403);
+        }
+
+        $prescription->update(['reviewed_at' => now()]);
+
+        return redirect()->back()->with('success', 'Visit marked as reviewed.');
     }
 
     public function store(Request $request)
@@ -176,22 +234,35 @@ class SimplePrescriptionController extends Controller
             'medicines.*.instructions' => 'nullable|string|max:500',
             'print_after' => 'nullable|boolean',
             'print_template' => 'nullable|string|in:browser,custom_pdf',
+            'send_to_doctor' => 'nullable|boolean',
+            'assigned_doctor_id' => 'nullable|required_if:send_to_doctor,1|exists:users,id',
+            'cost' => 'nullable|numeric|min:0|max:99999999',
+            'payment_status' => 'nullable|in:paid,unpaid',
         ]);
+
+        $sendToDoctor = $request->boolean('send_to_doctor');
 
         try {
             DB::beginTransaction();
 
-            // Create prescription
+            // Create prescription. Normally the creator IS the doctor
+            // (doctor_id = Auth::id()). When a clinical assistant sends the
+            // visit to a doctor for review, doctor_id becomes the assigned
+            // doctor while created_by keeps track of who actually logged
+            // the visit.
             $prescription = SimplePrescription::create([
                 'patient_id' => $request->patient_id,
-                'doctor_id' => Auth::id(),
+                'doctor_id' => $sendToDoctor ? $request->assigned_doctor_id : Auth::id(),
+                'created_by' => Auth::id(),
                 'clinic_id' => Auth::user()->clinic_id,
                 'prescription_number' => SimplePrescription::generatePrescriptionNumber(),
                 'diagnosis' => $request->diagnosis,
                 'visit_type' => $request->visit_type,
                 'notes' => $request->notes,
                 'prescribed_date' => $request->prescribed_date,
-                'status' => 'active'
+                'status' => 'active',
+                'sent_to_doctor' => $sendToDoctor,
+                'sent_to_doctor_at' => $sendToDoctor ? now() : null,
             ]);
 
             // Add medicines if provided
@@ -230,7 +301,53 @@ class SimplePrescriptionController extends Controller
                 }
             }
 
+            // Direct cost entry: bill it through the generic Invoice module
+            // so it's visible in Finance reporting for this patient.
+            $cost = (float) ($request->input('cost') ?? 0);
+            if ($cost > 0) {
+                $invoice = \App\Models\Invoice::create([
+                    'patient_id' => $prescription->patient_id,
+                    'clinic_id' => $prescription->clinic_id,
+                    'source_module' => 'quick_visit',
+                    'invoice_date' => now()->toDateString(),
+                    'subtotal' => 0,
+                    'tax_rate' => 0,
+                    'discount_rate' => 0,
+                    'discount_amount' => 0,
+                    'total_amount' => 0,
+                    'paid_amount' => 0,
+                    'balance' => 0,
+                    'status' => 'draft',
+                    'notes' => "Quick Visit ({$prescription->prescription_number})",
+                    'created_by' => Auth::id(),
+                ]);
+
+                $invoice->addItem([
+                    'description' => 'Quick Visit - Consultation & Prescription Fee',
+                    'quantity' => 1,
+                    'unit_price' => $cost,
+                    'item_type' => 'consultation',
+                ]);
+
+                if ($request->input('payment_status', 'paid') === 'paid') {
+                    $invoice->paid_amount = $invoice->total_amount;
+                    $invoice->calculateTotals();
+                }
+                $invoice->updateStatus();
+                $invoice->save();
+
+                $prescription->update(['invoice_id' => $invoice->id]);
+            }
+
             DB::commit();
+
+            if ($sendToDoctor) {
+                $doctorName = optional(User::find($prescription->doctor_id));
+                $doctorLabel = $doctorName ? trim(($doctorName->title_prefix ? $doctorName->title_prefix . ' ' : '') . $doctorName->first_name . ' ' . $doctorName->last_name) : 'the doctor';
+
+                return redirect()->route('simple-prescriptions.quick-visit')
+                    ->with('success', "Visit sent to {$doctorLabel} for review.");
+            }
 
             if ($request->boolean('print_after')) {
                 if ($request->input('print_template') === 'custom_pdf') {

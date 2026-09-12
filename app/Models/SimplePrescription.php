@@ -16,6 +16,7 @@ class SimplePrescription extends Model
     protected $fillable = [
         'patient_id',
         'doctor_id',
+        'created_by',
         'clinic_id',
         'prescription_number',
         'diagnosis',
@@ -23,6 +24,10 @@ class SimplePrescription extends Model
         'notes',
         'prescribed_date',
         'status',
+        'sent_to_doctor',
+        'sent_to_doctor_at',
+        'reviewed_at',
+        'invoice_id',
         'is_dispensed',
         'dispensed_at',
         'dispensed_by',
@@ -44,6 +49,9 @@ class SimplePrescription extends Model
         'prescribed_date' => 'date',
         'is_dispensed' => 'boolean',
         'dispensed_at' => 'datetime',
+        'sent_to_doctor' => 'boolean',
+        'sent_to_doctor_at' => 'datetime',
+        'reviewed_at' => 'datetime',
     ];
 
     // Relationships
@@ -60,6 +68,32 @@ class SimplePrescription extends Model
     public function clinic(): BelongsTo
     {
         return $this->belongsTo(Clinic::class);
+    }
+
+    /**
+     * The staff member (e.g. clinical assistant) who created this visit,
+     * which may differ from `doctor_id` when the visit was sent to a
+     * doctor for review.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * The billing invoice generated for this visit's direct cost, if any.
+     */
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'invoice_id');
+    }
+
+    /**
+     * Whether this visit is still waiting on the assigned doctor's review.
+     */
+    public function isPendingDoctorReview(): bool
+    {
+        return (bool) $this->sent_to_doctor && !$this->reviewed_at;
     }
 
     /**

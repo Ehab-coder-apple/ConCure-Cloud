@@ -179,6 +179,11 @@
                                                 <span class="badge bg-{{ $prescription->status === 'active' ? 'success' : ($prescription->status === 'completed' ? 'primary' : 'secondary') }}">
                                                     {{ ucfirst($prescription->status) }}
                                                 </span>
+                                                @if($prescription->isPendingDoctorReview())
+                                                    <span class="badge bg-warning text-dark" title="{{ __('Sent to doctor, awaiting review') }}">
+                                                        <i class="fas fa-share me-1"></i>{{ __('Pending Review') }}
+                                                    </span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm">
@@ -191,6 +196,14 @@
                                                        class="btn btn-outline-secondary" title="{{ __('Edit') }}">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
+                                                    @endif
+                                                    @if($prescription->isPendingDoctorReview() && ($prescription->doctor_id === auth()->id() || auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin()))
+                                                    <form action="{{ route('simple-prescriptions.mark-reviewed', $prescription->id) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-outline-success" title="{{ __('Mark Reviewed') }}">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                    </form>
                                                     @endif
                                                     <form action="{{ route('simple-prescriptions.destroy', $prescription->id) }}" 
                                                           method="POST" class="d-inline"
