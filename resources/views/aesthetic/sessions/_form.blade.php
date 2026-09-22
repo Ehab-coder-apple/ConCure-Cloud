@@ -65,7 +65,7 @@
                 <option value="{{ $patient->id }}"
                     {{ old('patient_id', $aestheticSession->patient_id ?? ($selectedPatientId ?? '')) == $patient->id ? 'selected' : '' }}>
                     {{ $patient->first_name }} {{ $patient->last_name }}
-                    @if($patient->phone)<small class="text-muted">({{ $patient->phone }})</small>@endif
+                    @if($patient->phone)({{ $patient->phone }})@endif
                 </option>
             @endforeach
         </select>
@@ -358,6 +358,36 @@
 })();
 </script>
 @endif
+
+<script>
+// Full-text searchable Patient dropdown; hides list until a match is found
+$(document).ready(function () {
+    $('#patient_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '{{ __("Select Patient") }}',
+        allowClear: true,
+        width: '100%',
+        matcher: function (params, data) {
+            if ($.trim(params.term) === '') {
+                return data;
+            }
+            if (typeof data.text === 'undefined') {
+                return null;
+            }
+            const term = params.term.toLowerCase();
+            return data.text.toLowerCase().indexOf(term) > -1 ? data : null;
+        },
+        language: {
+            noResults: function () {
+                return '{{ __("No patients found") }}';
+            },
+            searching: function () {
+                return '{{ __("Searching...") }}';
+            }
+        }
+    });
+});
+</script>
 
 <script>
 // Toggle between package and direct treatment modes
