@@ -62,6 +62,21 @@
                 </div>
             </div>
 
+            @if(request()->filled('treatment_id') || request()->filled('package_id'))
+                <div class="alert alert-info d-flex flex-wrap align-items-center gap-4 mb-4">
+                    <div>
+                        <i class="fas fa-chart-line me-1"></i>
+                        <strong>{{ $filteredSummary['label'] ?? __('Selected filter') }}</strong>
+                        {{ __('during selected period') }}:
+                    </div>
+                    <div>{{ __('Invoices') }}: <strong>{{ $filteredSummary['invoice_count'] }}</strong></div>
+                    @if(!is_null($filteredSummary['quantity']))
+                        <div>{{ __('Times Used') }}: <strong>{{ $filteredSummary['quantity'] }}</strong></div>
+                    @endif
+                    <div>{{ __('Earnings') }}: <strong>{{ $currency }} {{ number_format($filteredSummary['total_revenue'], 2) }}</strong></div>
+                </div>
+            @endif
+
             <!-- Filters -->
             <div class="card mb-4">
                 <div class="card-body">
@@ -88,6 +103,28 @@
                                     @foreach($patients as $patient)
                                         <option value="{{ $patient->id }}" {{ request('patient_id') == $patient->id ? 'selected' : '' }}>
                                             {{ $patient->first_name }} {{ $patient->last_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">{{ __('Treatment') }}</label>
+                                <select class="form-select" name="treatment_id">
+                                    <option value="">{{ __('All') }}</option>
+                                    @foreach($treatments as $treatment)
+                                        <option value="{{ $treatment->id }}" {{ request('treatment_id') == $treatment->id ? 'selected' : '' }}>
+                                            {{ $treatment->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">{{ __('Package') }}</label>
+                                <select class="form-select" name="package_id">
+                                    <option value="">{{ __('All') }}</option>
+                                    @foreach($packages as $package)
+                                        <option value="{{ $package->id }}" {{ request('package_id') == $package->id ? 'selected' : '' }}>
+                                            {{ $package->name }}
                                         </option>
                                     @endforeach
                                 </select>

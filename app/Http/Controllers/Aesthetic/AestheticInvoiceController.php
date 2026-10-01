@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AestheticInventory;
 use App\Models\AestheticInvoice;
 use App\Models\AestheticInvoiceItem;
+use App\Models\AestheticPackage;
 use App\Models\AestheticSession;
 use App\Models\Patient;
 use App\Models\PatientPackage;
@@ -47,13 +48,27 @@ class AestheticInvoiceController extends Controller
             $query->where('patient_id', $request->patient_id);
         }
 
+        if ($request->filled('treatment_id')) {
+            $treatmentId = $request->treatment_id;
+            $query->whereHas('items', fn ($q) => $q->where('treatment_id', $treatmentId));
+        }
+
+        if ($request->filled('package_id')) {
+            $packageId = $request->package_id;
+            $query->whereHas('patientPackage', fn ($q) => $q->where('package_id', $packageId));
+        }
+
         if ($request->filled('date_from') && $request->filled('date_to')) {
             $query->whereBetween('invoice_date', [$request->date_from, $request->date_to]);
         }
 
-        $invoices = $query->latest('invoice_date')->paginate(15);
+        $filteredSummary = $this->buildFilteredSummary($request, clone $query);
+
+        $invoices = $query->latest('invoice_date')->paginate(15)->withQueryString();
 
         $patients = $this->getTenantPatients();
+        $treatments = $this->getTenantTreatments();
+        $packages = $this->getTenantPackages();
 
         $stats = [
             'total' => AestheticInvoice::count(),
@@ -67,7 +82,7 @@ class AestheticInvoiceController extends Controller
             'outstanding' => AestheticInvoice::whereIn('status', ['draft', 'sent', 'partial', 'overdue'])->sum('balance'),
         ];
 
-        return view('aesthetic.invoices.index', compact('invoices', 'patients', 'stats'));
+        return view('aesthetic.invoices.index', compact('invoices', 'patients', 'treatments', 'packages', 'stats', 'filteredSummary'));
     }
 
     /**
@@ -474,6 +489,51 @@ class AestheticInvoiceController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
+    }
+
+    private function getTenantPackages()
+    {
+        $tenantId = Auth::user()->clinic?->tenant_id;
+
+        return AestheticPackage::byTenant($tenantId)
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Build a usage/earnings summary for the currently filtered invoices,
+     * scoped further by treatment_id / package_id when provided so the
+     * user can see how many times a treatment/package was billed and
+     * how much it earned during the selected period.
+     */
+    private function buildFilteredSummary(Request $request, $filteredQuery): array
+    {
+        $summary = [
+            'invoice_count' => 0,
+            'total_revenue' => 0,
+            'quantity' => null,
+            'label' => null,
+        ];
+
+        if ($request->filled('treatment_id')) {
+            $treatmentId = $request->treatment_id;
+
+            $itemsQuery = AestheticInvoiceItem::where('treatment_id', $treatmentId)
+                ->whereHas('invoice', function ($q) use ($filteredQuery) {
+                    $q->whereIn('id', (clone $filteredQuery)->select('aesthetic_invoices.id'));
+                });
+
+            $summary['invoice_count'] = (clone $filteredQuery)->count();
+            $summary['quantity'] = (clone $itemsQuery)->sum('quantity');
+            $summary['total_revenue'] = (clone $itemsQuery)->sum('total_price');
+            $summary['label'] = optional(AestheticTreatment::find($treatmentId))->name;
+        } elseif ($request->filled('package_id')) {
+            $summary['invoice_count'] = (clone $filteredQuery)->count();
+            $summary['total_revenue'] = (clone $filteredQuery)->sum('total_amount');
+            $summary['label'] = optional(AestheticPackage::find($request->package_id))->name;
+        }
+
+        return $summary;
     }
 
     private function getTenantSessions()
