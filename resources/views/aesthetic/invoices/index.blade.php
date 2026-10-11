@@ -62,7 +62,7 @@
                 </div>
             </div>
 
-            @if(request()->filled('treatment_id') || request()->filled('package_id'))
+            @if(request()->filled('treatment_id') || request()->filled('package_id') || request()->filled('category'))
                 <div class="alert alert-info d-flex flex-wrap align-items-center gap-4 mb-4">
                     <div>
                         <i class="fas fa-chart-line me-1"></i>
@@ -125,6 +125,17 @@
                                     @foreach($packages as $package)
                                         <option value="{{ $package->id }}" {{ request('package_id') == $package->id ? 'selected' : '' }}>
                                             {{ $package->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">{{ __('Category') }}</label>
+                                <select class="form-select" name="category">
+                                    <option value="">{{ __('All') }}</option>
+                                    @foreach($categories as $key => $label)
+                                        <option value="{{ $key }}" {{ request('category') == $key ? 'selected' : '' }}>
+                                            {{ __($label) }}
                                         </option>
                                     @endforeach
                                 </select>

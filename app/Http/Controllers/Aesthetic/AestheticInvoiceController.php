@@ -58,6 +58,11 @@ class AestheticInvoiceController extends Controller
             $query->whereHas('patientPackage', fn ($q) => $q->where('package_id', $packageId));
         }
 
+        if ($request->filled('category')) {
+            $category = $request->category;
+            $query->whereHas('items.treatment', fn ($q) => $q->where('category', $category));
+        }
+
         if ($request->filled('date_from') && $request->filled('date_to')) {
             $query->whereBetween('invoice_date', [$request->date_from, $request->date_to]);
         }
@@ -69,6 +74,7 @@ class AestheticInvoiceController extends Controller
         $patients = $this->getTenantPatients();
         $treatments = $this->getTenantTreatments();
         $packages = $this->getTenantPackages();
+        $categories = AestheticTreatment::CATEGORIES;
 
         $stats = [
             'total' => AestheticInvoice::count(),
@@ -82,7 +88,7 @@ class AestheticInvoiceController extends Controller
             'outstanding' => AestheticInvoice::whereIn('status', ['draft', 'sent', 'partial', 'overdue'])->sum('balance'),
         ];
 
-        return view('aesthetic.invoices.index', compact('invoices', 'patients', 'treatments', 'packages', 'stats', 'filteredSummary'));
+        return view('aesthetic.invoices.index', compact('invoices', 'patients', 'treatments', 'packages', 'categories', 'stats', 'filteredSummary'));
     }
 
     /**
@@ -531,6 +537,18 @@ class AestheticInvoiceController extends Controller
             $summary['invoice_count'] = (clone $filteredQuery)->count();
             $summary['total_revenue'] = (clone $filteredQuery)->sum('total_amount');
             $summary['label'] = optional(AestheticPackage::find($request->package_id))->name;
+        } elseif ($request->filled('category')) {
+            $category = $request->category;
+
+            $itemsQuery = AestheticInvoiceItem::whereHas('treatment', fn ($q) => $q->where('category', $category))
+                ->whereHas('invoice', function ($q) use ($filteredQuery) {
+                    $q->whereIn('id', (clone $filteredQuery)->select('aesthetic_invoices.id'));
+                });
+
+            $summary['invoice_count'] = (clone $filteredQuery)->count();
+            $summary['quantity'] = (clone $itemsQuery)->sum('quantity');
+            $summary['total_revenue'] = (clone $itemsQuery)->sum('total_price');
+            $summary['label'] = AestheticTreatment::CATEGORIES[$category] ?? $category;
         }
 
         return $summary;
