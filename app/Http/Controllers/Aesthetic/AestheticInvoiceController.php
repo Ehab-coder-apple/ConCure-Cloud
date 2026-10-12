@@ -74,7 +74,7 @@ class AestheticInvoiceController extends Controller
         $patients = $this->getTenantPatients();
         $treatments = $this->getTenantTreatments();
         $packages = $this->getTenantPackages();
-        $categories = AestheticTreatment::CATEGORIES;
+        $categories = $this->getTenantTreatmentCategories();
 
         $stats = [
             'total' => AestheticInvoice::count(),
@@ -495,6 +495,24 @@ class AestheticInvoiceController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Get all distinct treatment categories actually used by this tenant's
+     * treatments, not just the built-in default set, since clinics can
+     * define their own custom categories.
+     */
+    private function getTenantTreatmentCategories()
+    {
+        $tenantId = Auth::user()->clinic?->tenant_id;
+
+        return AestheticTreatment::byTenant($tenantId)
+            ->whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category')
+            ->mapWithKeys(fn ($category) => [$category => AestheticTreatment::CATEGORIES[$category] ?? ucfirst($category)]);
     }
 
     private function getTenantPackages()
