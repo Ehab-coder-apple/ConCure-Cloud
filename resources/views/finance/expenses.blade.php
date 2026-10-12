@@ -357,8 +357,8 @@
                                                     </form>
                                                 @endif
 
-                                                <!-- Delete Button (for admins or creators) -->
-                                                @if(auth()->user()->hasPermission('finance_delete') || $expense->created_by === auth()->id())
+                                                <!-- Delete Button (for admins or creators; approved expenses require finance_delete permission) -->
+                                                @if(auth()->user()->hasPermission('finance_delete') || ($expense->created_by === auth()->id() && $expense->status !== 'approved'))
                                                     <form method="POST" action="{{ route('finance.expenses.destroy', $expense) }}" class="d-inline">
                                                         @csrf
                                                         @method('DELETE')

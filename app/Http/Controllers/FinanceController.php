@@ -540,9 +540,13 @@ class FinanceController extends Controller
             abort(403, 'You can only delete your own expenses.');
         }
 
-        // Don't allow deletion of approved expenses
-        if ($expense->status === 'approved') {
-            return redirect()->route('finance.expenses')->with('error', 'Cannot delete approved expenses.');
+        // Approved expenses affect revenue/margin reports, so only users with
+        // explicit delete permission (not just the original creator) may remove
+        // them. Deleting an approved expense automatically "refunds" it, since
+        // all revenue/expense/margin totals are computed live from the
+        // expenses table rather than from a cached balance.
+        if ($expense->status === 'approved' && !$user->hasPermission('finance_delete')) {
+            return redirect()->route('finance.expenses')->with('error', 'Only users with finance delete permission can delete approved expenses.');
         }
 
         // Delete the receipt file if it exists (supports both Spaces and legacy local)
