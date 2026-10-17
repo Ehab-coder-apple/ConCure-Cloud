@@ -76,7 +76,15 @@ class AestheticSessionController extends Controller
             });
         }
 
-        $sessions = $query->latest('session_date')->paginate(15);
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('session_date', [$request->date_from, $request->date_to]);
+        } elseif ($request->filled('date_from')) {
+            $query->whereDate('session_date', '>=', $request->date_from);
+        } elseif ($request->filled('date_to')) {
+            $query->whereDate('session_date', '<=', $request->date_to);
+        }
+
+        $sessions = $query->latest('session_date')->paginate(15)->withQueryString();
 
         $patientPackages = $this->getTenantPatientPackages();
         $followUpReminders = $this->getOutstandingFollowUpRemindersQuery()

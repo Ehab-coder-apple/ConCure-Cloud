@@ -137,12 +137,12 @@
                 <div class="card-body">
                     <form method="GET" action="{{ route('aesthetic.sessions.index') }}">
                         <div class="row g-3">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">{{ __('Search') }}</label>
                                 <input type="text" class="form-control" name="search" value="{{ request('search') }}"
                                        placeholder="{{ __('Search by patient or treatment...') }}">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label">{{ __('Type') }}</label>
                                 <select class="form-select" name="session_type">
                                     <option value="">{{ __('All Types') }}</option>
@@ -150,7 +150,7 @@
                                     <option value="direct" {{ request('session_type') == 'direct' ? 'selected' : '' }}>{{ __('Direct Treatment') }}</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label">{{ __('Status') }}</label>
                                 <select class="form-select" name="status">
                                     <option value="">{{ __('All Status') }}</option>
@@ -160,6 +160,14 @@
                                         </option>
                                     @endforeach
                                 </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">{{ __('Date Range') }}</label>
+                                <div class="input-group">
+                                    <input type="date" class="form-control" name="date_from" value="{{ request('date_from') }}">
+                                    <span class="input-group-text">to</span>
+                                    <input type="date" class="form-control" name="date_to" value="{{ request('date_to') }}">
+                                </div>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">&nbsp;</label>
