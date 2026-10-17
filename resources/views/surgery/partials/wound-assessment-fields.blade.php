@@ -475,23 +475,6 @@
     <div class="col-md-6 mb-2"><input type="text" name="wound_assessment[followup][complications]" class="form-control" placeholder="Complications" value="{{ old('wound_assessment.followup.complications') }}"></div>
 </div>
 
-<h6 class="mt-3">Outcome</h6>
-@php $outOld = old('wound_assessment.outcome', []); @endphp
-<div class="row">
-    <div class="col-md-6 mb-2">
-        <input type="text" name="wound_assessment[outcome][summary]" class="form-control mb-2" placeholder="Overall outcome" value="{{ data_get($outOld, 'summary') }}">
-        <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="wound_assessment[outcome][completely_healed]" value="1" {{ data_get($outOld, 'completely_healed') ? 'checked' : '' }}><label class="form-check-label">Completely healed</label></div>
-        <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="wound_assessment[outcome][improved]" value="1" {{ data_get($outOld, 'improved') ? 'checked' : '' }}><label class="form-check-label">Improved</label></div>
-        <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="wound_assessment[outcome][no_change]" value="1" {{ data_get($outOld, 'no_change') ? 'checked' : '' }}><label class="form-check-label">No change</label></div>
-        <div class="form-check form-check-inline mt-1"><input class="form-check-input" type="checkbox" name="wound_assessment[outcome][deteriorated]" value="1" {{ data_get($outOld, 'deteriorated') ? 'checked' : '' }}><label class="form-check-label">Deteriorated</label></div>
-        <div class="form-check form-check-inline mt-1"><input class="form-check-input" type="checkbox" name="wound_assessment[outcome][infection_resolved]" value="1" {{ data_get($outOld, 'infection_resolved') ? 'checked' : '' }}><label class="form-check-label">Infection resolved</label></div>
-    </div>
-    <div class="col-md-6 mb-2">
-        <div class="form-check"><input class="form-check-input" type="checkbox" name="wound_assessment[outcome][amputation]" value="1" {{ data_get($outOld, 'amputation') ? 'checked' : '' }}><label class="form-check-label">Amputation</label></div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" name="wound_assessment[outcome][death]" value="1" {{ data_get($outOld, 'death') ? 'checked' : '' }}><label class="form-check-label">Death</label></div>
-    </div>
-</div>
-
 <h6 class="mt-3">Healing Time</h6>
 <div class="row">
     <div class="col-md-4 mb-2">

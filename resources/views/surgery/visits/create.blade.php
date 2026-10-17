@@ -80,6 +80,27 @@
                                 <option value="other" {{ old('wound_status') === 'other' ? 'selected' : '' }}>
                                     Other
                                 </option>
+                                <option value="completely_healed" {{ old('wound_status') === 'completely_healed' ? 'selected' : '' }}>
+                                    Completely healed
+                                </option>
+                                <option value="improved" {{ old('wound_status') === 'improved' ? 'selected' : '' }}>
+                                    Improved
+                                </option>
+                                <option value="no_change" {{ old('wound_status') === 'no_change' ? 'selected' : '' }}>
+                                    No change
+                                </option>
+                                <option value="deteriorated" {{ old('wound_status') === 'deteriorated' ? 'selected' : '' }}>
+                                    Deteriorated
+                                </option>
+                                <option value="infection_resolved" {{ old('wound_status') === 'infection_resolved' ? 'selected' : '' }}>
+                                    Infection resolved
+                                </option>
+                                <option value="amputation" {{ old('wound_status') === 'amputation' ? 'selected' : '' }}>
+                                    Amputation
+                                </option>
+                                <option value="death" {{ old('wound_status') === 'death' ? 'selected' : '' }}>
+                                    Death
+                                </option>
                             </select>
                             @error('wound_status')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
