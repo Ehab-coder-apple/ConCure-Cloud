@@ -96,6 +96,10 @@ class MedicineController extends Controller
             'selling_price' => 'nullable|numeric|min:0',
             'expiry_date' => 'nullable|date',
             'batch_number' => 'nullable|string|max:100',
+            'barcode' => [
+                'nullable', 'string', 'max:100',
+                \Illuminate\Validation\Rule::unique('medicines', 'barcode')->where('clinic_id', $user->clinic_id),
+            ],
         ]);
 
         $form = $this->resolveCustomForm($request, $user->clinic_id, $user->id) ?? $request->form;
@@ -128,6 +132,7 @@ class MedicineController extends Controller
             'selling_price' => $request->selling_price,
             'expiry_date' => $request->expiry_date,
             'batch_number' => $request->batch_number,
+            'barcode' => $request->barcode ?: null,
             'clinic_id' => $user->clinic_id,
             'created_by' => $user->id,
         ]);
@@ -226,6 +231,12 @@ class MedicineController extends Controller
             'selling_price' => 'nullable|numeric|min:0',
             'expiry_date' => 'nullable|date',
             'batch_number' => 'nullable|string|max:100',
+            'barcode' => [
+                'nullable', 'string', 'max:100',
+                \Illuminate\Validation\Rule::unique('medicines', 'barcode')
+                    ->where('clinic_id', $medicine->clinic_id)
+                    ->ignore($medicine->id),
+            ],
         ]);
 
         $form = $this->resolveCustomForm($request, $medicine->clinic_id, Auth::id()) ?? $request->form;
@@ -259,6 +270,7 @@ class MedicineController extends Controller
             'selling_price' => $request->selling_price,
             'expiry_date' => $request->expiry_date,
             'batch_number' => $request->batch_number,
+            'barcode' => $request->barcode ?: null,
         ]);
 
         return redirect()->route('medicines.show', $medicine)

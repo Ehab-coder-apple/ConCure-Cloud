@@ -32,7 +32,7 @@ class MedicineSaleController extends Controller
         $medicines = Medicine::visibleToUser($user)
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'generic_name', 'brand_name', 'dosage', 'form', 'stock_quantity', 'selling_price']);
+            ->get(['id', 'name', 'generic_name', 'brand_name', 'dosage', 'form', 'stock_quantity', 'selling_price', 'barcode']);
 
         return view('medicines.sales.create', compact('patients', 'medicines'));
     }

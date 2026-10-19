@@ -217,6 +217,19 @@
                                                             <div class="invalid-feedback">{{ $message }}</div>
                                                         @enderror
                                                     </div>
+
+                                                    <!-- Barcode -->
+                                                    <div class="col-md-6">
+                                                        <label for="barcode" class="form-label">{{ __('Barcode') }}</label>
+                                                        <input type="text" class="form-control @error('barcode') is-invalid @enderror"
+                                                               id="barcode" name="barcode"
+                                                               value="{{ old('barcode', $medicine->barcode) }}"
+                                                               placeholder="{{ __('Scan or type a barcode') }}">
+                                                        <small class="form-text text-muted">{{ __('Used by the barcode scanner on the Create Sell page.') }}</small>
+                                                        @error('barcode')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

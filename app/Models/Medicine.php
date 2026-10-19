@@ -26,6 +26,7 @@ class Medicine extends Model
         'selling_price',
         'expiry_date',
         'batch_number',
+        'barcode',
         'clinic_id',
         'created_by',
         'is_active',
@@ -191,6 +192,24 @@ class Medicine extends Model
         }
 
         return $query->where('clinic_id', $clinicId);
+    }
+
+    /**
+     * Find a single active medicine belonging to the given clinic by its
+     * assigned barcode. Used by the barcode-scanner lookup on the
+     * Create Sell (multi-item invoice) page.
+     */
+    public static function findByBarcode(?int $clinicId, string $barcode): ?self
+    {
+        $barcode = trim($barcode);
+
+        if ($clinicId === null || $barcode === '') {
+            return null;
+        }
+
+        return static::where('clinic_id', $clinicId)
+            ->where('barcode', $barcode)
+            ->first();
     }
 
     /**

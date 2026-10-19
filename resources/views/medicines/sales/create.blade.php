@@ -61,6 +61,17 @@
                             </div>
                         </div>
 
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="barcodeScanInput" class="form-label">
+                                    <i class="fas fa-barcode me-1"></i>{{ __('Scan Barcode') }}
+                                </label>
+                                <input type="text" id="barcodeScanInput" class="form-control" autocomplete="off"
+                                       placeholder="{{ __('Scan a medicine barcode with a USB/Bluetooth scanner...') }}">
+                                <div id="barcodeScanFeedback" class="form-text"></div>
+                            </div>
+                        </div>
+
                         <div class="table-responsive">
                             <table class="table table-bordered align-middle" id="itemsTable">
                                 <thead class="table-light">
@@ -135,7 +146,13 @@
 (function () {
     const medicines = @json($medicines);
     const medById = {};
-    medicines.forEach(m => { medById[m.id] = m; });
+    const medByBarcode = {};
+    medicines.forEach(m => {
+        medById[m.id] = m;
+        if (m.barcode) {
+            medByBarcode[String(m.barcode).trim()] = m;
+        }
+    });
 
     const tbody = document.getElementById('itemsBody');
     const subtotalCell = document.getElementById('subtotalCell');
@@ -234,6 +251,65 @@
         const total = Math.max(0, subtotal - discount + tax);
         subtotalCell.textContent = subtotal.toFixed(2);
         totalCell.textContent = total.toFixed(2);
+    }
+
+    // ─── Barcode Scanner ───────────────────────────────────────────
+    // Decoupled from the input source: a physical USB/Bluetooth scanner
+    // (keyboard-emulation, fires Enter after the code) calls this today;
+    // a future camera-based scanner can call the same function with its
+    // decoded value, so no lookup/row logic needs to be duplicated.
+    const barcodeInput = document.getElementById('barcodeScanInput');
+    const barcodeFeedback = document.getElementById('barcodeScanFeedback');
+
+    function showBarcodeFeedback(message, isError) {
+        barcodeFeedback.textContent = message;
+        barcodeFeedback.classList.toggle('text-danger', !!isError);
+        barcodeFeedback.classList.toggle('text-success', !isError);
+    }
+
+    function findRowByMedicineId(medicineId) {
+        return Array.from(document.querySelectorAll('#itemsBody tr')).find(tr => {
+            const sel = tr.querySelector('.med-select');
+            return sel && sel.value == medicineId;
+        });
+    }
+
+    function handleScannedCode(code) {
+        const trimmed = String(code || '').trim();
+        if (!trimmed) {
+            return;
+        }
+
+        const medicine = medByBarcode[trimmed];
+        if (!medicine) {
+            showBarcodeFeedback('{{ __('No medicine found for this barcode.') }}', true);
+            return;
+        }
+
+        const existingRow = findRowByMedicineId(medicine.id);
+        if (existingRow) {
+            const qty = existingRow.querySelector('.qty-input');
+            qty.value = (parseFloat(qty.value) || 0) + 1;
+            recalcRow(existingRow);
+        } else {
+            addRow(medicine.id);
+        }
+
+        showBarcodeFeedback('{{ __('Added:') }} ' + medicine.name, false);
+    }
+
+    if (barcodeInput) {
+        barcodeInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleScannedCode(barcodeInput.value);
+                barcodeInput.value = '';
+                barcodeInput.focus();
+            }
+        });
+        // Keep the scan input focused by default so a hardware scanner can
+        // be used immediately without clicking into the field first.
+        barcodeInput.focus();
     }
 
     document.getElementById('addRowBtn').addEventListener('click', () => addRow());
