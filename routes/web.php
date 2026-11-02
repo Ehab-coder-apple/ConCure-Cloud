@@ -460,7 +460,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/{prescription}/pdf', [SimplePrescriptionController::class, 'pdf'])->name('pdf');
         Route::get('/{prescription}/print', [SimplePrescriptionController::class, 'print'])->name('print');
         Route::get('/{prescription}/thermal', [SimplePrescriptionController::class, 'thermal'])->name('thermal');
-        Route::post('/{prescription}/dispense', [SimplePrescriptionController::class, 'convertToSale'])->name('dispense');
+        Route::post('/{prescription}/dispense', [SimplePrescriptionController::class, 'convertToSale'])->name('dispense')->middleware('module:medicines');
     });
 
     // Prescription Template Preview (demo)

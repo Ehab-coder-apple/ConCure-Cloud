@@ -15,14 +15,16 @@
                     <p class="text-muted mb-0">{{ __('Manage and create prescriptions using your clinic\'s medicine inventory') }}</p>
                 </div>
                 <div>
+                    @if(Auth::user()->canAccessModule('medicines'))
                     <a href="{{ route('medicines.index') }}" class="btn btn-outline-primary me-2">
                         <i class="fas fa-warehouse me-1"></i>
-                        {{ __('Manage Medicines') }}
+                        {{ __('Manage Pharmacy / Inventory') }}
                     </a>
                     <a href="{{ route('medicines.create') }}" class="btn btn-outline-success me-2">
                         <i class="fas fa-plus me-1"></i>
                         {{ __('Add Medicine') }}
                     </a>
+                    @endif
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newPrescriptionModal">
                         <i class="fas fa-file-prescription me-1"></i>
                         {{ __('New Prescription') }}

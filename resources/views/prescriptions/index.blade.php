@@ -12,10 +12,12 @@
                     {{ __('Prescriptions') }}
                 </h1>
                 <div>
+                    @if(Auth::user()->canAccessModule('medicines'))
                     <a href="{{ route('medicines.index') }}" class="btn btn-outline-primary me-2">
                         <i class="fas fa-pills me-1"></i>
-                        {{ __('Medicine Inventory') }}
+                        {{ __('Pharmacy / Inventory') }}
                     </a>
+                    @endif
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newPrescriptionModal">
                         <i class="fas fa-plus me-1"></i>
                         {{ __('New Prescription') }}

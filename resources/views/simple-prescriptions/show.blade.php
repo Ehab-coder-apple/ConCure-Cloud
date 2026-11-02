@@ -99,7 +99,7 @@
                             </a>
                             @endif
 
-                            @if((auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin()) && !$prescription->is_dispensed && $prescription->status === 'active')
+                            @if(auth()->user()->canAccessModule('medicines') && (auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin()) && !$prescription->is_dispensed && $prescription->status === 'active')
                             <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#dispenseModal" title="{{ __('Dispense & Create Sale') }}">
                                 <i class="fas fa-pills me-1"></i>{{ __('Dispense') }}
                             </button>
@@ -460,7 +460,7 @@
 </style>
 
 <!-- Dispense Modal -->
-@if((auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin()) && !$prescription->is_dispensed && $prescription->status === 'active')
+@if(auth()->user()->canAccessModule('medicines') && (auth()->user()->role === 'pharmacist' || auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin()) && !$prescription->is_dispensed && $prescription->status === 'active')
 <div class="modal fade" id="dispenseModal" tabindex="-1" aria-labelledby="dispenseModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">

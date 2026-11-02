@@ -427,9 +427,11 @@
                         </h5>
                         <small class="text-muted">{{ __('Completed medicine sale invoices are listed here for finance review.') }}</small>
                     </div>
+                    @if(auth()->user()->canAccessModule('medicines'))
                     <a href="{{ route('medicines.sales.create') }}" class="btn btn-sm btn-outline-success">
                         <i class="fas fa-plus me-1"></i>{{ __('New Medicine Sale') }}
                     </a>
+                    @endif
                 </div>
                 <div class="card-body">
                     @if(isset($medicineSaleInvoices) && $medicineSaleInvoices->count() > 0)
@@ -520,9 +522,11 @@
                             <i class="fas fa-pills fa-2x text-muted mb-3"></i>
                             <h6 class="text-muted">{{ __('No medicine sales found') }}</h6>
                             <p class="text-muted mb-3">{{ __('Completed medicine sale invoices will appear here for finance tracking.') }}</p>
+                            @if(auth()->user()->canAccessModule('medicines'))
                             <a href="{{ route('medicines.sales.create') }}" class="btn btn-outline-success">
                                 <i class="fas fa-plus me-1"></i>{{ __('Create Medicine Sale') }}
                             </a>
+                            @endif
                         </div>
                     @endif
                 </div>

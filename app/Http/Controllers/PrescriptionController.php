@@ -158,28 +158,35 @@ class PrescriptionController extends Controller
             ]);
 
             // Add medications if provided
+            $hasPharmacyInventory = Auth::user()->canAccessModule('medicines');
             if ($request->filled('medications') && is_array($request->medications)) {
                 foreach ($request->medications as $medication) {
                     if (!empty($medication['name']) && trim($medication['name']) !== '') {
-                        // Find or create medicine
-                        $medicineId = DB::table('medicines')
-                            ->where('name', $medication['name'])
-                            ->where('clinic_id', Auth::user()->clinic_id)
-                            ->value('id');
+                        // Only look up/create a Pharmacy/Inventory catalog row
+                        // when that paid add-on is enabled for the clinic.
+                        // Otherwise the medicine stays a plain free-text name
+                        // on the prescription (medicine_id left null).
+                        $medicineId = null;
+                        if ($hasPharmacyInventory) {
+                            $medicineId = DB::table('medicines')
+                                ->where('name', $medication['name'])
+                                ->where('clinic_id', Auth::user()->clinic_id)
+                                ->value('id');
 
-                        if (!$medicineId) {
-                            $medicineId = DB::table('medicines')->insertGetId([
-                                'name' => $medication['name'],
-                                'generic_name' => $medication['name'], // Use name as generic name
-                                'dosage' => $medication['strength'] ?? null,
-                                'form' => 'other', // Default form
-                                'is_frequent' => false,
-                                'clinic_id' => Auth::user()->clinic_id,
-                                'created_by' => Auth::id(),
-                                'is_active' => true,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
+                            if (!$medicineId) {
+                                $medicineId = DB::table('medicines')->insertGetId([
+                                    'name' => $medication['name'],
+                                    'generic_name' => $medication['name'], // Use name as generic name
+                                    'dosage' => $medication['strength'] ?? null,
+                                    'form' => 'other', // Default form
+                                    'is_frequent' => false,
+                                    'clinic_id' => Auth::user()->clinic_id,
+                                    'created_by' => Auth::id(),
+                                    'is_active' => true,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            }
                         }
 
                         // Add to prescription

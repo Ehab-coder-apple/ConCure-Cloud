@@ -1953,12 +1953,12 @@
                         {{-- ─── OPERATIONS ─── --}}
                         <li class="nav-section-label">{{ __('Operations') }}</li>
 
-                        <!-- Medicines -->
+                        <!-- Pharmacy / Inventory -->
                         @if(Auth::user()->canAccessSection('medicines') && Auth::user()->canAccessModule('medicines'))
                         <li class="nav-item">
                             <a href="{{ route('medicines.index') }}" class="nav-link {{ request()->routeIs('medicines.*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-pills"></i>
-                                <span class="nav-text">{{ __('Medicines') }}</span>
+                                <span class="nav-text">{{ __('Pharmacy / Inventory') }}</span>
                             </a>
                         </li>
                         @endif

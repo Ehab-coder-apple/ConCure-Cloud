@@ -123,10 +123,16 @@ class SimplePrescriptionController extends Controller
             ->orderBy('first_name')
             ->get();
 
-        $medicines = Medicine::where('clinic_id', Auth::user()->clinic_id)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+        // Inventory autocomplete is an optional enhancement from the
+        // Pharmacy/Inventory add-on. Without it, doctors still prescribe
+        // using plain free-text medicine names (see create.blade.php's
+        // "+ Add New Medicine" fallback).
+        $medicines = Auth::user()->canAccessModule('medicines')
+            ? Medicine::where('clinic_id', Auth::user()->clinic_id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+            : collect();
 
         $selectedPatientId = $request->get('patient_id');
 
@@ -147,12 +153,15 @@ class SimplePrescriptionController extends Controller
             ->orderBy('first_name')
             ->get();
 
-        $medicines = Medicine::where('clinic_id', $clinicId)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+        $hasPharmacyInventory = Auth::user()->canAccessModule('medicines');
+        $medicines = $hasPharmacyInventory
+            ? Medicine::where('clinic_id', $clinicId)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+            : collect();
 
-        $medicineForms = Medicine::formsForClinic($clinicId);
+        $medicineForms = $hasPharmacyInventory ? Medicine::formsForClinic($clinicId) : collect();
         $visitTypes = SimplePrescription::VISIT_TYPES;
         $selectedPatientId = $request->get('patient_id');
 
@@ -203,12 +212,15 @@ class SimplePrescriptionController extends Controller
             ->orderBy('first_name')
             ->get();
 
-        $medicines = Medicine::where('clinic_id', $clinicId)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+        $hasPharmacyInventory = $user->canAccessModule('medicines');
+        $medicines = $hasPharmacyInventory
+            ? Medicine::where('clinic_id', $clinicId)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+            : collect();
 
-        $medicineForms = Medicine::formsForClinic($clinicId);
+        $medicineForms = $hasPharmacyInventory ? Medicine::formsForClinic($clinicId) : collect();
         $visitTypes = SimplePrescription::VISIT_TYPES;
         $selectedPatientId = $prescription->patient_id;
 
@@ -284,16 +296,21 @@ class SimplePrescriptionController extends Controller
                         $medicineName = $medicine['name'];
                         if (strpos($medicineName, 'new:') === 0) {
                             $newMedicineName = substr($medicineName, 4);
-                            Medicine::create([
-                                'name' => $newMedicineName,
-                                'generic_name' => $newMedicineName,
-                                'dosage' => $medicine['strength'] ?? null,
-                                'form' => 'other',
-                                'is_frequent' => false,
-                                'clinic_id' => $prescription->clinic_id,
-                                'created_by' => Auth::id(),
-                                'is_active' => true,
-                            ]);
+                            // Only persist to the Pharmacy/Inventory catalog when
+                            // that add-on is enabled; otherwise this stays a plain
+                            // free-text medicine name on the prescription.
+                            if (Auth::user()->canAccessModule('medicines')) {
+                                Medicine::create([
+                                    'name' => $newMedicineName,
+                                    'generic_name' => $newMedicineName,
+                                    'dosage' => $medicine['strength'] ?? null,
+                                    'form' => 'other',
+                                    'is_frequent' => false,
+                                    'clinic_id' => $prescription->clinic_id,
+                                    'created_by' => Auth::id(),
+                                    'is_active' => true,
+                                ]);
+                            }
                             $medicineName = $newMedicineName;
                         }
 
@@ -479,18 +496,23 @@ class SimplePrescriptionController extends Controller
                         // Check if it's a new medicine (starts with 'new:')
                         $medicineName = $medicine['name'];
                         if (strpos($medicineName, 'new:') === 0) {
-                            // Create new medicine
-                            $newMedicineName = substr($medicineName, 4); // Remove 'new:' prefix
-                            $newMedicine = Medicine::create([
-                                'name' => $newMedicineName,
-                                'generic_name' => $newMedicineName,
-                                'dosage' => $medicine['strength'] ?? null,
-                                'form' => 'other',
-                                'is_frequent' => false,
-                                'clinic_id' => Auth::user()->clinic_id,
-                                'created_by' => Auth::id(),
-                                'is_active' => true,
-                            ]);
+                            // Remove 'new:' prefix
+                            $newMedicineName = substr($medicineName, 4);
+                            // Only persist to the Pharmacy/Inventory catalog when
+                            // that add-on is enabled; otherwise this stays a plain
+                            // free-text medicine name on the prescription.
+                            if (Auth::user()->canAccessModule('medicines')) {
+                                Medicine::create([
+                                    'name' => $newMedicineName,
+                                    'generic_name' => $newMedicineName,
+                                    'dosage' => $medicine['strength'] ?? null,
+                                    'form' => 'other',
+                                    'is_frequent' => false,
+                                    'clinic_id' => Auth::user()->clinic_id,
+                                    'created_by' => Auth::id(),
+                                    'is_active' => true,
+                                ]);
+                            }
                             $medicineName = $newMedicineName;
                         }
 
@@ -735,10 +757,12 @@ class SimplePrescriptionController extends Controller
             ->orderBy('first_name')
             ->get();
 
-        $medicines = Medicine::where('clinic_id', $user->clinic_id)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+        $medicines = $user->canAccessModule('medicines')
+            ? Medicine::where('clinic_id', $user->clinic_id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+            : collect();
 
         return view('simple-prescriptions.edit', compact('prescription', 'patients', 'medicines'));
     }
@@ -787,18 +811,23 @@ class SimplePrescriptionController extends Controller
                         // Check if it's a new medicine (starts with 'new:')
                         $medicineName = $medicine['name'];
                         if (strpos($medicineName, 'new:') === 0) {
-                            // Create new medicine
-                            $newMedicineName = substr($medicineName, 4); // Remove 'new:' prefix
-                            $newMedicine = Medicine::create([
-                                'name' => $newMedicineName,
-                                'generic_name' => $newMedicineName,
-                                'dosage' => $medicine['strength'] ?? null,
-                                'form' => 'other',
-                                'is_frequent' => false,
-                                'clinic_id' => Auth::user()->clinic_id,
-                                'created_by' => Auth::id(),
-                                'is_active' => true,
-                            ]);
+                            // Remove 'new:' prefix
+                            $newMedicineName = substr($medicineName, 4);
+                            // Only persist to the Pharmacy/Inventory catalog when
+                            // that add-on is enabled; otherwise this stays a plain
+                            // free-text medicine name on the prescription.
+                            if (Auth::user()->canAccessModule('medicines')) {
+                                Medicine::create([
+                                    'name' => $newMedicineName,
+                                    'generic_name' => $newMedicineName,
+                                    'dosage' => $medicine['strength'] ?? null,
+                                    'form' => 'other',
+                                    'is_frequent' => false,
+                                    'clinic_id' => Auth::user()->clinic_id,
+                                    'created_by' => Auth::id(),
+                                    'is_active' => true,
+                                ]);
+                            }
                             $medicineName = $newMedicineName;
                         }
 
@@ -1212,6 +1241,12 @@ class SimplePrescriptionController extends Controller
     public function convertToSale(Request $request, $id)
     {
         $user = Auth::user();
+
+        // Dispensing/selling against stock requires the Pharmacy/Inventory
+        // add-on - without it there is no inventory to deduct from.
+        if (!$user->canAccessModule('medicines')) {
+            abort(403, 'The Pharmacy/Inventory module is not enabled for your clinic.');
+        }
 
         // Only pharmacists and admins can dispense
         if (!in_array($user->role, ['pharmacist', 'admin', 'super_admin'])) {
