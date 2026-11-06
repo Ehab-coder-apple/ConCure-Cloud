@@ -79,6 +79,31 @@ class MedicineTransaction extends Model
     }
 
     /**
+     * Return lines (across one or more return events) filed against this sold line.
+     */
+    public function returnItems(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ReturnItem::class, 'medicine_transaction_id');
+    }
+
+    /**
+     * Total quantity already returned against this sold line.
+     */
+    public function returnedQuantity(): float
+    {
+        return (float) $this->returnItems()->sum('quantity_returned');
+    }
+
+    /**
+     * Quantity still eligible to be returned (sold - already returned).
+     * Never negative.
+     */
+    public function remainingReturnableQuantity(): float
+    {
+        return max(0.0, (float) $this->quantity - $this->returnedQuantity());
+    }
+
+    /**
      * Scope to filter sales transactions.
      */
     public function scopeSales($query)

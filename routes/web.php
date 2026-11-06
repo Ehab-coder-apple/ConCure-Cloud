@@ -495,6 +495,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
             Route::get('/create', [App\Http\Controllers\MedicineSaleController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\MedicineSaleController::class, 'store'])->name('store');
             Route::get('/{invoice}', [App\Http\Controllers\MedicineSaleController::class, 'show'])->name('show');
+            Route::get('/{invoice}/items', [App\Http\Controllers\MedicineSaleController::class, 'itemsJson'])->name('items');
+            Route::put('/{invoice}', [App\Http\Controllers\MedicineSaleController::class, 'update'])->name('update');
+            Route::post('/{invoice}/returns', [App\Http\Controllers\MedicineSaleController::class, 'storeReturn'])->name('returns.store');
+            Route::post('/{invoice}/cancel', [App\Http\Controllers\MedicineSaleController::class, 'cancel'])->name('cancel');
             Route::get('/{invoice}/pdf', [App\Http\Controllers\MedicineSaleController::class, 'pdf'])->name('pdf');
             Route::get('/{invoice}/thermal', [App\Http\Controllers\MedicineSaleController::class, 'thermal'])->name('thermal');
         });

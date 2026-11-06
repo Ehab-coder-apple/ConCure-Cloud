@@ -456,7 +456,7 @@
                                             $isPaid = $remaining <= 0.009;
                                             $isPartial = !$isPaid && (float) $invoice->paid_amount > 0;
                                         @endphp
-                                        <tr>
+                                        <tr data-invoice-row="{{ $invoice->id }}">
                                             <td>
                                                 <strong>{{ $invoice->invoice_number }}</strong>
                                                 <span class="badge bg-success-subtle text-success border border-success-subtle ms-2">{{ __('Medicine') }}</span>
@@ -470,15 +470,21 @@
                                             </td>
                                             <td>{{ $invoice->user->full_name ?? $invoice->user->username ?? '—' }}</td>
                                             <td>{{ $invoice->sold_at ? $invoice->sold_at->format('M d, Y H:i') : '-' }}</td>
-                                            <td>
-                                                <strong>{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->total ?? 0, 2), '0'), '.') }}</strong>
+                                            <td id="invoice-amount-{{ $invoice->id }}">
+                                                <strong class="js-invoice-total">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($invoice->total ?? 0, 2), '0'), '.') }}</strong>
                                                 @if(($invoice->paid_amount ?? 0) > 0)
                                                     <br>
-                                                    <small class="text-muted">{{ __('Paid: :amount', ['amount' => ($currencySymbol ?? '$') . rtrim(rtrim(number_format($invoice->paid_amount ?? 0, 2), '0'), '.')]) }}</small>
+                                                    <small class="text-muted js-invoice-paid">{{ __('Paid: :amount', ['amount' => ($currencySymbol ?? '$') . rtrim(rtrim(number_format($invoice->paid_amount ?? 0, 2), '0'), '.')]) }}</small>
                                                 @endif
                                             </td>
-                                            <td>
-                                                @if($isPaid)
+                                            <td id="invoice-status-{{ $invoice->id }}">
+                                                @if($invoice->status === 'cancelled')
+                                                    <span class="badge bg-dark">{{ __('Cancelled') }}</span>
+                                                @elseif($invoice->status === 'returned')
+                                                    <span class="badge bg-info text-dark">{{ __('Returned') }}</span>
+                                                @elseif($invoice->status === 'partially_returned')
+                                                    <span class="badge bg-info text-dark">{{ __('Partially Returned') }}</span>
+                                                @elseif($isPaid)
                                                     <span class="badge bg-success">{{ __('Paid') }}</span>
                                                 @elseif($isPartial)
                                                     <span class="badge bg-warning text-dark">{{ __('Partial Paid') }}</span>
@@ -486,7 +492,7 @@
                                                     <span class="badge bg-secondary">{{ __('Unpaid') }}</span>
                                                 @endif
                                             </td>
-                                            <td>
+                                            <td id="invoice-remaining-{{ $invoice->id }}">
                                                 @if($remaining > 0)
                                                     <span class="text-danger fw-semibold">{{ $currencySymbol ?? '$' }}{{ rtrim(rtrim(number_format($remaining, 2), '0'), '.') }}</span>
                                                 @else
@@ -494,7 +500,7 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <div class="d-inline-flex gap-2 flex-wrap">
+                                                <div class="d-inline-flex gap-2 flex-wrap align-items-center">
                                                     <a href="{{ route('medicines.sales.show', $invoice) }}" class="btn btn-sm btn-outline-primary" title="{{ __('View Sale') }}">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
@@ -504,6 +510,32 @@
                                                     <a href="{{ route('medicines.sales.thermal', ['invoice' => $invoice, 'width' => 80]) }}" target="_blank" class="btn btn-sm btn-outline-success" title="{{ __('Print Receipt') }}">
                                                         <i class="fas fa-print"></i>
                                                     </a>
+
+                                                    @if(auth()->user()->isSuperAdmin() || auth()->user()->isClinicAdmin() || auth()->user()->role === 'pharmacist')
+                                                        <div class="dropdown">
+                                                            <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" {{ $invoice->isMutable() ? '' : 'disabled' }}>
+                                                                {{ __('Actions') }}
+                                                            </button>
+                                                            <ul class="dropdown-menu">
+                                                                <li>
+                                                                    <a class="dropdown-item js-open-return-modal" href="#" data-invoice-id="{{ $invoice->id }}">
+                                                                        <i class="fas fa-undo me-2"></i>{{ __('Return Items') }}
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item js-open-edit-modal" href="#" data-invoice-id="{{ $invoice->id }}">
+                                                                        <i class="fas fa-edit me-2"></i>{{ __('Edit Invoice') }}
+                                                                    </a>
+                                                                </li>
+                                                                <li><hr class="dropdown-divider"></li>
+                                                                <li>
+                                                                    <a class="dropdown-item text-danger js-open-cancel-modal" href="#" data-invoice-id="{{ $invoice->id }}">
+                                                                        <i class="fas fa-ban me-2"></i>{{ __('Cancel Invoice') }}
+                                                                    </a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             </td>
                                         </tr>
@@ -1379,4 +1411,385 @@ document.getElementById('markAsPaidForm').addEventListener('submit', function(e)
     // Submit the form normally (not AJAX since we want to redirect)
     this.submit();
 });
+</script>
+
+<!-- ─── Medicine Sale: Return / Edit / Cancel modals ─── -->
+<div class="modal fade" id="medicineReturnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-undo me-2"></i>{{ __('Return Items') }} <small class="text-muted" id="return-invoice-number"></small></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="return-modal-alert" class="alert alert-danger d-none"></div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>{{ __('Medicine') }}</th>
+                                <th>{{ __('Sold Qty') }}</th>
+                                <th>{{ __('Remaining') }}</th>
+                                <th style="width:140px;">{{ __('Return Qty') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="return-items-body"></tbody>
+                    </table>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Reason for Return') }} <span class="text-danger">*</span></label>
+                    <select class="form-select" id="return-reason-code">
+                        <option value="">{{ __('Select a reason...') }}</option>
+                        <option value="expired_medication">{{ __('Expired Medication') }}</option>
+                        <option value="wrong_medication_dispensed">{{ __('Wrong Medication Dispensed') }}</option>
+                        <option value="patient_cancelled_refused">{{ __('Patient Cancelled/Refused') }}</option>
+                        <option value="defective_product">{{ __('Defective Product') }}</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Notes (optional)') }}</label>
+                    <textarea class="form-control" id="return-notes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                <button type="button" class="btn btn-danger" id="submit-return-btn" disabled>
+                    <i class="fas fa-undo me-1"></i>{{ __('Submit Return') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="medicineEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>{{ __('Edit Invoice') }} <small class="text-muted" id="edit-invoice-number"></small></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="edit-modal-alert" class="alert alert-danger d-none"></div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>{{ __('Medicine') }}</th>
+                                <th style="width:120px;">{{ __('Quantity') }}</th>
+                                <th style="width:140px;">{{ __('Unit Price') }}</th>
+                                <th>{{ __('Line Total') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="edit-items-body"></tbody>
+                    </table>
+                </div>
+                <small class="text-muted">{{ __('Set a quantity of 0 to remove a line entirely. Stock is adjusted automatically by the difference.') }}</small>
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <label class="form-label">{{ __('Discount') }}</label>
+                        <input type="number" step="0.01" min="0" class="form-control" id="edit-discount">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ __('Tax') }}</label>
+                        <input type="number" step="0.01" min="0" class="form-control" id="edit-tax">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ __('Paid Amount') }}</label>
+                        <input type="number" step="0.01" min="0" class="form-control" id="edit-paid-amount">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                <button type="button" class="btn btn-primary" id="submit-edit-btn">
+                    <i class="fas fa-save me-1"></i>{{ __('Save Changes') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="medicineCancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-ban me-2"></i>{{ __('Cancel Invoice') }} <small class="text-muted" id="cancel-invoice-number"></small></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="cancel-modal-alert" class="alert alert-danger d-none"></div>
+                <p class="text-muted">{{ __('This voids the invoice entirely and returns all remaining (not already returned) items back into stock. This cannot be undone.') }}</p>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Cancellation Reason') }} <span class="text-danger">*</span></label>
+                    <select class="form-select" id="cancel-reason-code">
+                        <option value="">{{ __('Select a reason...') }}</option>
+                        <option value="expired_medication">{{ __('Expired Medication') }}</option>
+                        <option value="wrong_medication_dispensed">{{ __('Wrong Medication Dispensed') }}</option>
+                        <option value="patient_cancelled_refused">{{ __('Patient Cancelled/Refused') }}</option>
+                        <option value="defective_product">{{ __('Defective Product') }}</option>
+                        <option value="other">{{ __('Other') }}</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Notes (optional)') }}</label>
+                    <textarea class="form-control" id="cancel-notes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                <button type="button" class="btn btn-danger" id="submit-cancel-btn" disabled>
+                    <i class="fas fa-ban me-1"></i>{{ __('Confirm Cancellation') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const currencySymbol = @json($currencySymbol ?? '$');
+    let activeInvoiceId = null;
+    let activeItems = [];
+
+    function fmt(n) {
+        return currencySymbol + (Math.round(n * 100) / 100).toFixed(2).replace(/\.00$/, '');
+    }
+
+    function fetchItems(invoiceId) {
+        return fetch(`/medicines/sales/${invoiceId}/items`, {
+            headers: { 'Accept': 'application/json' },
+        }).then(r => r.json());
+    }
+
+    function showAlert(elId, message) {
+        const el = document.getElementById(elId);
+        el.textContent = message;
+        el.classList.remove('d-none');
+    }
+
+    function hideAlert(elId) {
+        document.getElementById(elId).classList.add('d-none');
+    }
+
+    // ── Live badge/total patch on the ledger row, no page reload ──
+    function patchInvoiceRow(invoice) {
+        const amountCell = document.getElementById(`invoice-amount-${invoice.id}`);
+        const statusCell = document.getElementById(`invoice-status-${invoice.id}`);
+        const remainingCell = document.getElementById(`invoice-remaining-${invoice.id}`);
+
+        if (amountCell) {
+            amountCell.querySelector('.js-invoice-total').textContent = fmt(invoice.total);
+            const paidEl = amountCell.querySelector('.js-invoice-paid');
+            if (paidEl) paidEl.textContent = '{{ __("Paid") }}: ' + fmt(invoice.paid_amount);
+        }
+
+        if (statusCell) {
+            let badge = '<span class="badge bg-secondary">{{ __("Unpaid") }}</span>';
+            if (invoice.status === 'cancelled') {
+                badge = '<span class="badge bg-dark">{{ __("Cancelled") }}</span>';
+            } else if (invoice.status === 'returned') {
+                badge = '<span class="badge bg-info text-dark">{{ __("Returned") }}</span>';
+            } else if (invoice.status === 'partially_returned') {
+                badge = '<span class="badge bg-info text-dark">{{ __("Partially Returned") }}</span>';
+            } else if (invoice.balance <= 0.009) {
+                badge = '<span class="badge bg-success">{{ __("Paid") }}</span>';
+            } else if (invoice.paid_amount > 0) {
+                badge = '<span class="badge bg-warning text-dark">{{ __("Partial Paid") }}</span>';
+            }
+            statusCell.innerHTML = badge;
+        }
+
+        if (remainingCell) {
+            remainingCell.innerHTML = invoice.balance > 0
+                ? `<span class="text-danger fw-semibold">${fmt(invoice.balance)}</span>`
+                : `<span class="text-success"><i class="fas fa-check-circle"></i> {{ __('Fully Paid') }}</span>`;
+        }
+
+        // Disable the Actions dropdown toggle once the invoice is voided.
+        if (invoice.status === 'cancelled') {
+            const row = document.querySelector(`tr[data-invoice-row="${invoice.id}"]`);
+            if (row) {
+                const toggle = row.querySelector('.dropdown-toggle');
+                if (toggle) toggle.setAttribute('disabled', 'disabled');
+            }
+        }
+    }
+
+    function postJson(url, method, body) {
+        return fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify(body),
+        }).then(async (r) => {
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.message || '{{ __('Request failed.') }}');
+            return data;
+        });
+    }
+
+    // ── Return Items modal ──
+    document.addEventListener('click', function (e) {
+        const trigger = e.target.closest('.js-open-return-modal');
+        if (!trigger) return;
+        e.preventDefault();
+
+        activeInvoiceId = trigger.dataset.invoiceId;
+        hideAlert('return-modal-alert');
+        document.getElementById('return-reason-code').value = '';
+        document.getElementById('return-notes').value = '';
+        document.getElementById('submit-return-btn').disabled = true;
+        document.getElementById('return-items-body').innerHTML = `<tr><td colspan="4" class="text-center text-muted">{{ __('Loading...') }}</td></tr>`;
+
+        const modal = new bootstrap.Modal(document.getElementById('medicineReturnModal'));
+        modal.show();
+
+        fetchItems(activeInvoiceId).then(({ invoice, items }) => {
+            document.getElementById('return-invoice-number').textContent = `#${invoice.invoice_number}`;
+            activeItems = items;
+
+            const rows = items
+                .filter(i => i.remaining_returnable > 0)
+                .map(i => `
+                    <tr data-transaction-id="${i.transaction_id}" data-max="${i.remaining_returnable}">
+                        <td>${i.medicine_name}${i.medicine_dosage ? ' - ' + i.medicine_dosage : ''}</td>
+                        <td>${i.quantity}</td>
+                        <td>${i.remaining_returnable}</td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm js-return-qty"
+                                   min="0" max="${i.remaining_returnable}" step="0.01" value="0">
+                        </td>
+                    </tr>
+                `).join('');
+
+            document.getElementById('return-items-body').innerHTML = rows
+                || `<tr><td colspan="4" class="text-center text-muted">{{ __('Nothing left to return on this invoice.') }}</td></tr>`;
+        });
+    });
+
+    function updateReturnSubmitState() {
+        const reasonSelected = document.getElementById('return-reason-code').value !== '';
+        document.getElementById('submit-return-btn').disabled = !reasonSelected;
+    }
+    document.getElementById('return-reason-code').addEventListener('change', updateReturnSubmitState);
+
+    document.getElementById('submit-return-btn').addEventListener('click', function () {
+        hideAlert('return-modal-alert');
+        const reasonCode = document.getElementById('return-reason-code').value;
+        if (!reasonCode) return;
+
+        const items = Array.from(document.querySelectorAll('#return-items-body tr[data-transaction-id]'))
+            .map(row => ({
+                transaction_id: parseInt(row.dataset.transactionId, 10),
+                quantity: parseFloat(row.querySelector('.js-return-qty').value || '0'),
+            }))
+            .filter(i => i.quantity > 0);
+
+        if (items.length === 0) {
+            showAlert('return-modal-alert', '{{ __('Enter a quantity greater than 0 for at least one item.') }}');
+            return;
+        }
+
+        postJson(`/medicines/sales/${activeInvoiceId}/returns`, 'POST', {
+            reason_code: reasonCode,
+            notes: document.getElementById('return-notes').value || null,
+            items,
+        }).then(({ invoice }) => {
+            patchInvoiceRow(invoice);
+            bootstrap.Modal.getInstance(document.getElementById('medicineReturnModal')).hide();
+        }).catch(err => showAlert('return-modal-alert', err.message));
+    });
+
+    // ── Edit Invoice modal ──
+    document.addEventListener('click', function (e) {
+        const trigger = e.target.closest('.js-open-edit-modal');
+        if (!trigger) return;
+        e.preventDefault();
+
+        activeInvoiceId = trigger.dataset.invoiceId;
+        hideAlert('edit-modal-alert');
+        document.getElementById('edit-items-body').innerHTML = `<tr><td colspan="4" class="text-center text-muted">{{ __('Loading...') }}</td></tr>`;
+
+        const modal = new bootstrap.Modal(document.getElementById('medicineEditModal'));
+        modal.show();
+
+        fetchItems(activeInvoiceId).then(({ invoice, items }) => {
+            document.getElementById('edit-invoice-number').textContent = `#${invoice.invoice_number}`;
+            document.getElementById('edit-discount').value = invoice.discount;
+            document.getElementById('edit-tax').value = invoice.tax;
+            document.getElementById('edit-paid-amount').value = invoice.paid_amount;
+
+            document.getElementById('edit-items-body').innerHTML = items.map(i => `
+                <tr data-transaction-id="${i.transaction_id}">
+                    <td>${i.medicine_name}${i.medicine_dosage ? ' - ' + i.medicine_dosage : ''}</td>
+                    <td><input type="number" class="form-control form-control-sm js-edit-qty" min="0" step="0.01" value="${i.quantity}"></td>
+                    <td><input type="number" class="form-control form-control-sm js-edit-price" min="0" step="0.01" value="${i.unit_price}"></td>
+                    <td class="js-edit-line-total">${fmt(i.total_amount)}</td>
+                </tr>
+            `).join('');
+        });
+    });
+
+    document.getElementById('submit-edit-btn').addEventListener('click', function () {
+        hideAlert('edit-modal-alert');
+
+        const items = Array.from(document.querySelectorAll('#edit-items-body tr[data-transaction-id]'))
+            .map(row => ({
+                transaction_id: parseInt(row.dataset.transactionId, 10),
+                quantity: parseFloat(row.querySelector('.js-edit-qty').value || '0'),
+                unit_price: parseFloat(row.querySelector('.js-edit-price').value || '0'),
+            }));
+
+        postJson(`/medicines/sales/${activeInvoiceId}`, 'PUT', {
+            items,
+            discount: parseFloat(document.getElementById('edit-discount').value || '0'),
+            tax: parseFloat(document.getElementById('edit-tax').value || '0'),
+            paid_amount: parseFloat(document.getElementById('edit-paid-amount').value || '0'),
+        }).then(({ invoice }) => {
+            patchInvoiceRow(invoice);
+            bootstrap.Modal.getInstance(document.getElementById('medicineEditModal')).hide();
+        }).catch(err => showAlert('edit-modal-alert', err.message));
+    });
+
+    // ── Cancel Invoice modal ──
+    document.addEventListener('click', function (e) {
+        const trigger = e.target.closest('.js-open-cancel-modal');
+        if (!trigger) return;
+        e.preventDefault();
+
+        activeInvoiceId = trigger.dataset.invoiceId;
+        hideAlert('cancel-modal-alert');
+        document.getElementById('cancel-reason-code').value = '';
+        document.getElementById('cancel-notes').value = '';
+        document.getElementById('submit-cancel-btn').disabled = true;
+
+        fetchItems(activeInvoiceId).then(({ invoice }) => {
+            document.getElementById('cancel-invoice-number').textContent = `#${invoice.invoice_number}`;
+        });
+
+        new bootstrap.Modal(document.getElementById('medicineCancelModal')).show();
+    });
+
+    document.getElementById('cancel-reason-code').addEventListener('change', function () {
+        document.getElementById('submit-cancel-btn').disabled = this.value === '';
+    });
+
+    document.getElementById('submit-cancel-btn').addEventListener('click', function () {
+        hideAlert('cancel-modal-alert');
+        const reasonCode = document.getElementById('cancel-reason-code').value;
+        if (!reasonCode) return;
+
+        postJson(`/medicines/sales/${activeInvoiceId}/cancel`, 'POST', {
+            reason_code: reasonCode,
+            notes: document.getElementById('cancel-notes').value || null,
+        }).then(({ invoice }) => {
+            patchInvoiceRow(invoice);
+            bootstrap.Modal.getInstance(document.getElementById('medicineCancelModal')).hide();
+        }).catch(err => showAlert('cancel-modal-alert', err.message));
+    });
+})();
 </script>
