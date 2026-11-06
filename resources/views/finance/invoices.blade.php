@@ -879,6 +879,139 @@
 
 
 
+
+<!-- ─── Medicine Sale: Return / Edit / Cancel modals ─── -->
+<div class="modal fade" id="medicineReturnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-undo me-2"></i>{{ __('Return Items') }} <small class="text-muted" id="return-invoice-number"></small></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="return-modal-alert" class="alert alert-danger d-none"></div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>{{ __('Medicine') }}</th>
+                                <th>{{ __('Sold Qty') }}</th>
+                                <th>{{ __('Remaining') }}</th>
+                                <th style="width:140px;">{{ __('Return Qty') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="return-items-body"></tbody>
+                    </table>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Reason for Return') }} <span class="text-danger">*</span></label>
+                    <select class="form-select" id="return-reason-code">
+                        <option value="">{{ __('Select a reason...') }}</option>
+                        <option value="expired_medication">{{ __('Expired Medication') }}</option>
+                        <option value="wrong_medication_dispensed">{{ __('Wrong Medication Dispensed') }}</option>
+                        <option value="patient_cancelled_refused">{{ __('Patient Cancelled/Refused') }}</option>
+                        <option value="defective_product">{{ __('Defective Product') }}</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Notes (optional)') }}</label>
+                    <textarea class="form-control" id="return-notes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                <button type="button" class="btn btn-danger" id="submit-return-btn" disabled>
+                    <i class="fas fa-undo me-1"></i>{{ __('Submit Return') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="medicineEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>{{ __('Edit Invoice') }} <small class="text-muted" id="edit-invoice-number"></small></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="edit-modal-alert" class="alert alert-danger d-none"></div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>{{ __('Medicine') }}</th>
+                                <th style="width:120px;">{{ __('Quantity') }}</th>
+                                <th style="width:140px;">{{ __('Unit Price') }}</th>
+                                <th>{{ __('Line Total') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="edit-items-body"></tbody>
+                    </table>
+                </div>
+                <small class="text-muted">{{ __('Set a quantity of 0 to remove a line entirely. Stock is adjusted automatically by the difference.') }}</small>
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <label class="form-label">{{ __('Discount') }}</label>
+                        <input type="number" step="0.01" min="0" class="form-control" id="edit-discount">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ __('Tax') }}</label>
+                        <input type="number" step="0.01" min="0" class="form-control" id="edit-tax">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ __('Paid Amount') }}</label>
+                        <input type="number" step="0.01" min="0" class="form-control" id="edit-paid-amount">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                <button type="button" class="btn btn-primary" id="submit-edit-btn">
+                    <i class="fas fa-save me-1"></i>{{ __('Save Changes') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="medicineCancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-ban me-2"></i>{{ __('Cancel Invoice') }} <small class="text-muted" id="cancel-invoice-number"></small></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="cancel-modal-alert" class="alert alert-danger d-none"></div>
+                <p class="text-muted">{{ __('This voids the invoice entirely and returns all remaining (not already returned) items back into stock. This cannot be undone.') }}</p>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Cancellation Reason') }} <span class="text-danger">*</span></label>
+                    <select class="form-select" id="cancel-reason-code">
+                        <option value="">{{ __('Select a reason...') }}</option>
+                        <option value="expired_medication">{{ __('Expired Medication') }}</option>
+                        <option value="wrong_medication_dispensed">{{ __('Wrong Medication Dispensed') }}</option>
+                        <option value="patient_cancelled_refused">{{ __('Patient Cancelled/Refused') }}</option>
+                        <option value="defective_product">{{ __('Defective Product') }}</option>
+                        <option value="other">{{ __('Other') }}</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ __('Notes (optional)') }}</label>
+                    <textarea class="form-control" id="cancel-notes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                <button type="button" class="btn btn-danger" id="submit-cancel-btn" disabled>
+                    <i class="fas fa-ban me-1"></i>{{ __('Confirm Cancellation') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('styles')
@@ -1350,200 +1483,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 </script>
-@endpush
-
-<!-- Mark as Paid Modal -->
-<div class="modal fade" id="markAsPaidModal" tabindex="-1" aria-labelledby="markAsPaidModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="markAsPaidModalLabel">{{ __('Mark Invoice as Paid') }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="markAsPaidForm" method="POST">
-                @csrf
-                <div class="modal-body">
-                    <input type="hidden" id="mark-paid-invoice-id" name="invoice_id">
-
-                    <div class="mb-3">
-                        <strong>{{ __('Invoice:') }}</strong> <span id="mark-paid-invoice-number"></span><br>
-                        <strong>{{ __('Balance Due:') }}</strong> <span id="mark-paid-balance"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="paid_amount" class="form-label">{{ __('Payment Amount') }}</label>
-                        <input type="number" class="form-control" id="paid_amount" name="paid_amount"
-                               step="0.01" min="0" required>
-                        <div class="form-text">{{ __('Enter the amount received for this invoice.') }}</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="payment_method" class="form-label">{{ __('Payment Method') }}</label>
-                        <select class="form-select" id="payment_method" name="payment_method" required>
-                            <option value="cash" selected>{{ __('Cash') }}</option>
-                            <option value="card">{{ __('Card') }}</option>
-                            <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
-                            <option value="check">{{ __('Check') }}</option>
-                            <option value="other">{{ __('Other') }}</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
-                    <button type="submit" class="btn btn-success">{{ __('Mark as Paid') }}</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-// Handle Mark as Paid form submission
-document.getElementById('markAsPaidForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const invoiceId = document.getElementById('mark-paid-invoice-id').value;
-    const formData = new FormData(this);
-
-    // Set the form action dynamically
-    this.action = `/finance/invoices/${invoiceId}/mark-paid`;
-
-    // Submit the form normally (not AJAX since we want to redirect)
-    this.submit();
-});
-</script>
-
-<!-- ─── Medicine Sale: Return / Edit / Cancel modals ─── -->
-<div class="modal fade" id="medicineReturnModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-undo me-2"></i>{{ __('Return Items') }} <small class="text-muted" id="return-invoice-number"></small></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="return-modal-alert" class="alert alert-danger d-none"></div>
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle">
-                        <thead>
-                            <tr>
-                                <th>{{ __('Medicine') }}</th>
-                                <th>{{ __('Sold Qty') }}</th>
-                                <th>{{ __('Remaining') }}</th>
-                                <th style="width:140px;">{{ __('Return Qty') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody id="return-items-body"></tbody>
-                    </table>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">{{ __('Reason for Return') }} <span class="text-danger">*</span></label>
-                    <select class="form-select" id="return-reason-code">
-                        <option value="">{{ __('Select a reason...') }}</option>
-                        <option value="expired_medication">{{ __('Expired Medication') }}</option>
-                        <option value="wrong_medication_dispensed">{{ __('Wrong Medication Dispensed') }}</option>
-                        <option value="patient_cancelled_refused">{{ __('Patient Cancelled/Refused') }}</option>
-                        <option value="defective_product">{{ __('Defective Product') }}</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">{{ __('Notes (optional)') }}</label>
-                    <textarea class="form-control" id="return-notes" rows="2"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
-                <button type="button" class="btn btn-danger" id="submit-return-btn" disabled>
-                    <i class="fas fa-undo me-1"></i>{{ __('Submit Return') }}
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="medicineEditModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>{{ __('Edit Invoice') }} <small class="text-muted" id="edit-invoice-number"></small></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="edit-modal-alert" class="alert alert-danger d-none"></div>
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle">
-                        <thead>
-                            <tr>
-                                <th>{{ __('Medicine') }}</th>
-                                <th style="width:120px;">{{ __('Quantity') }}</th>
-                                <th style="width:140px;">{{ __('Unit Price') }}</th>
-                                <th>{{ __('Line Total') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody id="edit-items-body"></tbody>
-                    </table>
-                </div>
-                <small class="text-muted">{{ __('Set a quantity of 0 to remove a line entirely. Stock is adjusted automatically by the difference.') }}</small>
-                <div class="row mt-3">
-                    <div class="col-md-4">
-                        <label class="form-label">{{ __('Discount') }}</label>
-                        <input type="number" step="0.01" min="0" class="form-control" id="edit-discount">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">{{ __('Tax') }}</label>
-                        <input type="number" step="0.01" min="0" class="form-control" id="edit-tax">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">{{ __('Paid Amount') }}</label>
-                        <input type="number" step="0.01" min="0" class="form-control" id="edit-paid-amount">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
-                <button type="button" class="btn btn-primary" id="submit-edit-btn">
-                    <i class="fas fa-save me-1"></i>{{ __('Save Changes') }}
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="medicineCancelModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-ban me-2"></i>{{ __('Cancel Invoice') }} <small class="text-muted" id="cancel-invoice-number"></small></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="cancel-modal-alert" class="alert alert-danger d-none"></div>
-                <p class="text-muted">{{ __('This voids the invoice entirely and returns all remaining (not already returned) items back into stock. This cannot be undone.') }}</p>
-                <div class="mb-3">
-                    <label class="form-label">{{ __('Cancellation Reason') }} <span class="text-danger">*</span></label>
-                    <select class="form-select" id="cancel-reason-code">
-                        <option value="">{{ __('Select a reason...') }}</option>
-                        <option value="expired_medication">{{ __('Expired Medication') }}</option>
-                        <option value="wrong_medication_dispensed">{{ __('Wrong Medication Dispensed') }}</option>
-                        <option value="patient_cancelled_refused">{{ __('Patient Cancelled/Refused') }}</option>
-                        <option value="defective_product">{{ __('Defective Product') }}</option>
-                        <option value="other">{{ __('Other') }}</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">{{ __('Notes (optional)') }}</label>
-                    <textarea class="form-control" id="cancel-notes" rows="2"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
-                <button type="button" class="btn btn-danger" id="submit-cancel-btn" disabled>
-                    <i class="fas fa-ban me-1"></i>{{ __('Confirm Cancellation') }}
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <script>
 (function () {
@@ -1793,3 +1732,67 @@ document.getElementById('markAsPaidForm').addEventListener('submit', function(e)
     });
 })();
 </script>
+
+@endpush
+
+<!-- Mark as Paid Modal -->
+<div class="modal fade" id="markAsPaidModal" tabindex="-1" aria-labelledby="markAsPaidModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="markAsPaidModalLabel">{{ __('Mark Invoice as Paid') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="markAsPaidForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <input type="hidden" id="mark-paid-invoice-id" name="invoice_id">
+
+                    <div class="mb-3">
+                        <strong>{{ __('Invoice:') }}</strong> <span id="mark-paid-invoice-number"></span><br>
+                        <strong>{{ __('Balance Due:') }}</strong> <span id="mark-paid-balance"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="paid_amount" class="form-label">{{ __('Payment Amount') }}</label>
+                        <input type="number" class="form-control" id="paid_amount" name="paid_amount"
+                               step="0.01" min="0" required>
+                        <div class="form-text">{{ __('Enter the amount received for this invoice.') }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">{{ __('Payment Method') }}</label>
+                        <select class="form-select" id="payment_method" name="payment_method" required>
+                            <option value="cash" selected>{{ __('Cash') }}</option>
+                            <option value="card">{{ __('Card') }}</option>
+                            <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
+                            <option value="check">{{ __('Check') }}</option>
+                            <option value="other">{{ __('Other') }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="submit" class="btn btn-success">{{ __('Mark as Paid') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle Mark as Paid form submission
+document.getElementById('markAsPaidForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const invoiceId = document.getElementById('mark-paid-invoice-id').value;
+    const formData = new FormData(this);
+
+    // Set the form action dynamically
+    this.action = `/finance/invoices/${invoiceId}/mark-paid`;
+
+    // Submit the form normally (not AJAX since we want to redirect)
+    this.submit();
+});
+</script>
+
