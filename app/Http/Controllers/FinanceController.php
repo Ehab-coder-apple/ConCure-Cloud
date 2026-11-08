@@ -1338,6 +1338,210 @@ class FinanceController extends Controller
     }
 
     /**
+     * Display the filterable invoices report: per period, category
+     * (source module), item type, and user (invoice creator).
+     */
+    public function invoicesReport(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to invoices reports.');
+        }
+
+        $request->validate([
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'category' => 'nullable|string|max:100',
+            'item_type' => 'nullable|string|max:100',
+            'user_id' => 'nullable|integer|exists:users,id',
+        ]);
+
+        $filters = $this->resolveInvoicesReportFilters($request);
+
+        $invoices = $this->getInvoicesReportQuery($user, $filters)
+            ->orderByDesc('invoice_date')
+            ->orderByDesc('id')
+            ->paginate(25)
+            ->withQueryString();
+
+        $summary = $this->getInvoicesReportSummary($user, $filters);
+
+        $users = User::where('clinic_id', $user->clinic_id)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get();
+
+        $categories = $this->getInvoiceReportCategories($user);
+
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        return view('finance.reports.invoices', compact(
+            'invoices',
+            'summary',
+            'users',
+            'categories',
+            'currencySymbol',
+            'filters'
+        ));
+    }
+
+    /**
+     * Export the filtered invoices report to Excel.
+     */
+    public function exportInvoicesReport(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to invoices reports.');
+        }
+
+        $filters = $this->resolveInvoicesReportFilters($request);
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\InvoicesReportExport($user, $filters),
+            'invoices-report-' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
+
+    /**
+     * Render the filtered invoices report as a printable PDF.
+     */
+    public function printInvoicesReport(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->canAccessFinance()) {
+            abort(403, 'Access denied to invoices reports.');
+        }
+
+        $filters = $this->resolveInvoicesReportFilters($request);
+
+        $invoices = $this->getInvoicesReportQuery($user, $filters)
+            ->orderByDesc('invoice_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $summary = $this->getInvoicesReportSummary($user, $filters);
+
+        $currency = DB::table('settings')
+            ->where('clinic_id', $user->clinic_id)
+            ->where('key', 'currency')
+            ->value('value') ?? 'USD';
+
+        $currencySymbol = $this->getCurrencySymbol($currency);
+
+        $pdf = Pdf::loadView('finance.reports.invoices-pdf', compact('invoices', 'summary', 'filters', 'currencySymbol'));
+
+        return $pdf->stream('invoices-report-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Normalize the invoices report request filters into a plain array
+     * shared by the screen, Excel export, and PDF print paths.
+     */
+    private function resolveInvoicesReportFilters(Request $request): array
+    {
+        return [
+            'date_from' => $request->date_from
+                ? \Carbon\Carbon::parse($request->date_from)->startOfDay()
+                : now()->startOfMonth(),
+            'date_to' => $request->date_to
+                ? \Carbon\Carbon::parse($request->date_to)->endOfDay()
+                : now()->endOfMonth(),
+            'category' => filled($request->category) ? trim((string) $request->category) : null,
+            'item_type' => filled($request->item_type) ? trim((string) $request->item_type) : null,
+            'user_id' => $request->filled('user_id') ? (int) $request->user_id : null,
+        ];
+    }
+
+    /**
+     * Build the base, filtered invoices query shared by the list, export,
+     * and print actions. "Category" maps to source_module (with dental
+     * treatments normalized to a virtual "dental" category); "item"
+     * filters to invoices containing at least one line of that item type.
+     */
+    private function getInvoicesReportQuery($user, array $filters)
+    {
+        $query = Invoice::with(['patient', 'creator', 'items', 'dentalTreatment'])
+            ->where('clinic_id', $user->clinic_id)
+            ->byDateRange($filters['date_from'], $filters['date_to']);
+
+        if (!empty($filters['category'])) {
+            if ($filters['category'] === 'dental') {
+                $query->whereHas('dentalTreatment');
+            } elseif ($filters['category'] === 'finance') {
+                $query->whereDoesntHave('dentalTreatment')
+                    ->where(function ($q) {
+                        $q->whereNull('source_module')->orWhere('source_module', 'finance');
+                    });
+            } else {
+                $query->where('source_module', $filters['category']);
+            }
+        }
+
+        if (!empty($filters['item_type'])) {
+            $query->whereHas('items', function ($q) use ($filters) {
+                $q->where('item_type', $filters['item_type']);
+            });
+        }
+
+        if (!empty($filters['user_id'])) {
+            $query->where('created_by', $filters['user_id']);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Totals for the filtered invoices report (independent of pagination).
+     */
+    private function getInvoicesReportSummary($user, array $filters): array
+    {
+        $query = $this->getInvoicesReportQuery($user, $filters);
+
+        return [
+            'count' => (clone $query)->count(),
+            'subtotal' => (float) (clone $query)->sum('subtotal'),
+            'tax_amount' => (float) (clone $query)->sum('tax_amount'),
+            'discount_amount' => (float) (clone $query)->sum('discount_amount'),
+            'total_amount' => (float) (clone $query)->sum('total_amount'),
+            'paid_amount' => (float) (clone $query)->sum('paid_amount'),
+            'balance' => (float) (clone $query)->sum('balance'),
+        ];
+    }
+
+    /**
+     * Distinct categories (source modules) available for this clinic's
+     * invoices, for the filter dropdown. Always includes 'dental' and
+     * 'finance' as normalized virtual buckets.
+     */
+    private function getInvoiceReportCategories($user): array
+    {
+        $sourceModules = Invoice::where('clinic_id', $user->clinic_id)
+            ->whereNotNull('source_module')
+            ->distinct()
+            ->pluck('source_module')
+            ->filter()
+            ->values()
+            ->all();
+
+        $categories = array_unique(array_merge(['dental', 'finance'], $sourceModules));
+        sort($categories);
+
+        return array_combine(
+            $categories,
+            array_map(fn ($c) => ucfirst(str_replace('_', ' ', $c)), $categories)
+        );
+    }
+
+    /**
      * Get financial statistics.
      */
     private function getFinancialStats($user): array

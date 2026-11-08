@@ -198,6 +198,35 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-file-invoice-dollar text-primary me-2"></i>
+                                {{ __('Invoices Report') }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">
+                                {{ __('Filter invoices by period, category, item type, or user, then export to Excel or print as PDF.') }}
+                            </p>
+                            <div class="mb-3">
+                                <h6 class="text-primary">{{ __('Features:') }}</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Filter by date range, category, item type, and user') }}</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Totals for subtotal, tax, discount, paid, and balance') }}</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Export to Excel (.xlsx)') }}</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>{{ __('Print / Save as PDF') }}</li>
+                                </ul>
+                            </div>
+                            <a href="{{ route('finance.reports.invoices') }}" class="btn btn-primary">
+                                <i class="fas fa-file-invoice-dollar me-1"></i>
+                                {{ __('View Invoices Report') }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Quick Report Actions -->

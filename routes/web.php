@@ -1160,6 +1160,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/reports/cash-flow', [FinanceController::class, 'cashFlowReport'])->name('reports.cash-flow')->middleware('can:finance-reports');
         Route::get('/reports/profit-loss', [FinanceController::class, 'profitLossReport'])->name('reports.profit-loss')->middleware('can:finance-reports');
         Route::get('/reports/user-performance', [FinanceController::class, 'userPerformanceReport'])->name('reports.user-performance')->middleware('can:finance-reports');
+        Route::get('/reports/invoices', [FinanceController::class, 'invoicesReport'])->name('reports.invoices')->middleware('can:finance-reports');
+        Route::get('/reports/invoices/export', [FinanceController::class, 'exportInvoicesReport'])->name('reports.invoices.export')->middleware(['can:finance-reports', 'export.check']);
+        Route::get('/reports/invoices/print', [FinanceController::class, 'printInvoicesReport'])->name('reports.invoices.print')->middleware('can:finance-reports');
     });
 
     // Advertisements
