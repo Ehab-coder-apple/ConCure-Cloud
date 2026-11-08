@@ -1359,13 +1359,19 @@ class FinanceController extends Controller
 
         $filters = $this->resolveInvoicesReportFilters($request);
 
-        $invoices = $this->getInvoicesReportQuery($user, $filters)
-            ->orderByDesc('invoice_date')
-            ->orderByDesc('id')
-            ->paginate(25)
-            ->withQueryString();
+        $rows = $this->buildInvoicesReportRows($user, $filters);
 
-        $summary = $this->getInvoicesReportSummary($user, $filters);
+        $summary = $this->summarizeInvoicesReportRows($rows);
+
+        $page = (int) $request->input('page', 1);
+        $perPage = 25;
+        $invoices = new \Illuminate\Pagination\LengthAwarePaginator(
+            $rows->forPage($page, $perPage)->values(),
+            $rows->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         $users = User::where('clinic_id', $user->clinic_id)
             ->orderBy('first_name')
@@ -1403,9 +1409,10 @@ class FinanceController extends Controller
         }
 
         $filters = $this->resolveInvoicesReportFilters($request);
+        $rows = $this->buildInvoicesReportRows($user, $filters);
 
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\InvoicesReportExport($user, $filters),
+            new \App\Exports\InvoicesReportExport($rows),
             'invoices-report-' . now()->format('Y-m-d') . '.xlsx'
         );
     }
@@ -1422,13 +1429,8 @@ class FinanceController extends Controller
         }
 
         $filters = $this->resolveInvoicesReportFilters($request);
-
-        $invoices = $this->getInvoicesReportQuery($user, $filters)
-            ->orderByDesc('invoice_date')
-            ->orderByDesc('id')
-            ->get();
-
-        $summary = $this->getInvoicesReportSummary($user, $filters);
+        $invoices = $this->buildInvoicesReportRows($user, $filters);
+        $summary = $this->summarizeInvoicesReportRows($invoices);
 
         $currency = DB::table('settings')
             ->where('clinic_id', $user->clinic_id)
@@ -1462,58 +1464,164 @@ class FinanceController extends Controller
     }
 
     /**
-     * Build the base, filtered invoices query shared by the list, export,
-     * and print actions. "Category" maps to source_module (with dental
-     * treatments normalized to a virtual "dental" category); "item"
-     * filters to invoices containing at least one line of that item type.
+     * Build the unified, filtered rows for the Invoices Report.
+     *
+     * "Invoices" in ConCure actually live in three separate tables:
+     * generic Invoice (finance/quick-visit/dental...), AestheticInvoice,
+     * and MedicineSaleInvoice (Pharmacy/Inventory). This merges all three
+     * into one normalized, sorted collection so the report reflects every
+     * invoice a clinic issues, not just the generic `invoices` table.
+     *
+     * "Category" maps to: 'dental' (generic Invoice linked to a dental
+     * treatment), 'aesthetic' (AestheticInvoice), 'medicine_sale'
+     * (MedicineSaleInvoice/Pharmacy), 'finance' (generic Invoice with no
+     * source_module), or any other source_module value on generic
+     * Invoice. "Item type" only applies to generic Invoice line items
+     * (Aesthetic/Pharmacy invoices don't carry item types), so Aesthetic
+     * and Pharmacy rows are excluded whenever an item_type filter is set.
      */
-    private function getInvoicesReportQuery($user, array $filters)
+    private function buildInvoicesReportRows($user, array $filters): \Illuminate\Support\Collection
     {
-        $query = Invoice::with(['patient', 'creator', 'items', 'dentalTreatment'])
-            ->where('clinic_id', $user->clinic_id)
-            ->byDateRange($filters['date_from'], $filters['date_to']);
+        $rows = collect();
 
-        if (!empty($filters['category'])) {
-            if ($filters['category'] === 'dental') {
-                $query->whereHas('dentalTreatment');
-            } elseif ($filters['category'] === 'finance') {
-                $query->whereDoesntHave('dentalTreatment')
-                    ->where(function ($q) {
-                        $q->whereNull('source_module')->orWhere('source_module', 'finance');
-                    });
-            } else {
-                $query->where('source_module', $filters['category']);
+        $includeGenericInvoices = empty($filters['category'])
+            || in_array($filters['category'], ['dental', 'finance'], true)
+            || !in_array($filters['category'], ['aesthetic', 'medicine_sale'], true);
+
+        if ($includeGenericInvoices) {
+            $query = Invoice::with(['patient', 'creator', 'items', 'dentalTreatment'])
+                ->where('clinic_id', $user->clinic_id)
+                ->byDateRange($filters['date_from'], $filters['date_to']);
+
+            if (!empty($filters['category'])) {
+                if ($filters['category'] === 'dental') {
+                    $query->whereHas('dentalTreatment');
+                } elseif ($filters['category'] === 'finance') {
+                    $query->whereDoesntHave('dentalTreatment')
+                        ->where(function ($q) {
+                            $q->whereNull('source_module')->orWhere('source_module', 'finance');
+                        });
+                } elseif (!in_array($filters['category'], ['aesthetic', 'medicine_sale'], true)) {
+                    $query->where('source_module', $filters['category']);
+                }
+            }
+
+            if (!empty($filters['item_type'])) {
+                $query->whereHas('items', function ($q) use ($filters) {
+                    $q->where('item_type', $filters['item_type']);
+                });
+            }
+
+            if (!empty($filters['user_id'])) {
+                $query->where('created_by', $filters['user_id']);
+            }
+
+            foreach ($query->get() as $invoice) {
+                $category = $invoice->dentalTreatment ? 'dental' : ($invoice->source_module ?: 'finance');
+
+                $rows->push((object) [
+                    'invoice_number' => $invoice->invoice_number,
+                    'date' => $invoice->invoice_date,
+                    'patient_name' => $invoice->patient ? $invoice->patient->full_name : null,
+                    'category' => $category,
+                    'category_label' => ucfirst(str_replace('_', ' ', $category)),
+                    'item_types' => $invoice->items->pluck('item_type')->filter()->unique()
+                        ->map(fn ($t) => ucfirst(str_replace('_', ' ', $t)))->implode(', '),
+                    'user_name' => $invoice->creator ? $invoice->creator->full_name : null,
+                    'status' => $invoice->status,
+                    'subtotal' => (float) $invoice->subtotal,
+                    'tax_amount' => (float) $invoice->tax_amount,
+                    'discount_amount' => (float) $invoice->discount_amount,
+                    'total_amount' => (float) $invoice->total_amount,
+                    'paid_amount' => (float) $invoice->paid_amount,
+                    'balance' => (float) $invoice->balance,
+                    'print_route' => $invoice->invoice_number ? route('finance.invoices.print', $invoice) : null,
+                ]);
             }
         }
 
-        if (!empty($filters['item_type'])) {
-            $query->whereHas('items', function ($q) use ($filters) {
-                $q->where('item_type', $filters['item_type']);
-            });
+        // Aesthetic invoices don't carry item types - skip whenever an
+        // item_type filter is active (there's nothing that could match).
+        if (empty($filters['item_type']) && (empty($filters['category']) || $filters['category'] === 'aesthetic')) {
+            $query = AestheticInvoice::with(['patient', 'creator'])
+                ->where('clinic_id', $user->clinic_id)
+                ->byDateRange($filters['date_from'], $filters['date_to']);
+
+            if (!empty($filters['user_id'])) {
+                $query->where('created_by', $filters['user_id']);
+            }
+
+            foreach ($query->get() as $invoice) {
+                $rows->push((object) [
+                    'invoice_number' => $invoice->invoice_number,
+                    'date' => $invoice->invoice_date,
+                    'patient_name' => $invoice->patient ? $invoice->patient->full_name : null,
+                    'category' => 'aesthetic',
+                    'category_label' => 'Aesthetic',
+                    'item_types' => '',
+                    'user_name' => $invoice->creator ? $invoice->creator->full_name : null,
+                    'status' => $invoice->status,
+                    'subtotal' => (float) $invoice->subtotal,
+                    'tax_amount' => (float) $invoice->tax_amount,
+                    'discount_amount' => (float) $invoice->discount_amount,
+                    'total_amount' => (float) $invoice->total_amount,
+                    'paid_amount' => (float) $invoice->paid_amount,
+                    'balance' => (float) $invoice->balance,
+                    'print_route' => route('aesthetic.invoices.show', $invoice),
+                ]);
+            }
         }
 
-        if (!empty($filters['user_id'])) {
-            $query->where('created_by', $filters['user_id']);
+        // Pharmacy/Inventory sale invoices don't carry item types either.
+        if (empty($filters['item_type']) && (empty($filters['category']) || $filters['category'] === 'medicine_sale')) {
+            $query = MedicineSaleInvoice::with(['patient', 'user'])
+                ->where('clinic_id', $user->clinic_id)
+                ->whereBetween('sold_at', [$filters['date_from'], $filters['date_to']]);
+
+            if (!empty($filters['user_id'])) {
+                $query->where('user_id', $filters['user_id']);
+            }
+
+            foreach ($query->get() as $invoice) {
+                $total = (float) $invoice->total;
+                $paid = (float) $invoice->paid_amount;
+
+                $rows->push((object) [
+                    'invoice_number' => $invoice->invoice_number,
+                    'date' => $invoice->sold_at,
+                    'patient_name' => $invoice->patient ? $invoice->patient->full_name : null,
+                    'category' => 'medicine_sale',
+                    'category_label' => 'Pharmacy / Inventory',
+                    'item_types' => '',
+                    'user_name' => $invoice->user ? $invoice->user->full_name : null,
+                    'status' => $invoice->status,
+                    'subtotal' => (float) $invoice->subtotal,
+                    'tax_amount' => (float) $invoice->tax,
+                    'discount_amount' => (float) $invoice->discount,
+                    'total_amount' => $total,
+                    'paid_amount' => $paid,
+                    'balance' => $total - $paid,
+                    'print_route' => route('medicines.sales.show', $invoice),
+                ]);
+            }
         }
 
-        return $query;
+        return $rows->sortByDesc(fn ($row) => $row->date)->values();
     }
 
     /**
      * Totals for the filtered invoices report (independent of pagination).
      */
-    private function getInvoicesReportSummary($user, array $filters): array
+    private function summarizeInvoicesReportRows(\Illuminate\Support\Collection $rows): array
     {
-        $query = $this->getInvoicesReportQuery($user, $filters);
-
         return [
-            'count' => (clone $query)->count(),
-            'subtotal' => (float) (clone $query)->sum('subtotal'),
-            'tax_amount' => (float) (clone $query)->sum('tax_amount'),
-            'discount_amount' => (float) (clone $query)->sum('discount_amount'),
-            'total_amount' => (float) (clone $query)->sum('total_amount'),
-            'paid_amount' => (float) (clone $query)->sum('paid_amount'),
-            'balance' => (float) (clone $query)->sum('balance'),
+            'count' => $rows->count(),
+            'subtotal' => (float) $rows->sum('subtotal'),
+            'tax_amount' => (float) $rows->sum('tax_amount'),
+            'discount_amount' => (float) $rows->sum('discount_amount'),
+            'total_amount' => (float) $rows->sum('total_amount'),
+            'paid_amount' => (float) $rows->sum('paid_amount'),
+            'balance' => (float) $rows->sum('balance'),
         ];
     }
 
@@ -1532,12 +1640,16 @@ class FinanceController extends Controller
             ->values()
             ->all();
 
-        $categories = array_unique(array_merge(['dental', 'finance'], $sourceModules));
+        $categories = array_unique(array_merge(['dental', 'finance', 'aesthetic', 'medicine_sale'], $sourceModules));
         sort($categories);
+
+        $labels = [
+            'medicine_sale' => 'Pharmacy / Inventory',
+        ];
 
         return array_combine(
             $categories,
-            array_map(fn ($c) => ucfirst(str_replace('_', ' ', $c)), $categories)
+            array_map(fn ($c) => $labels[$c] ?? ucfirst(str_replace('_', ' ', $c)), $categories)
         );
     }
 

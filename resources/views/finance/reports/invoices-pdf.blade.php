@@ -91,17 +91,13 @@
         </thead>
         <tbody>
             @forelse($invoices as $invoice)
-                @php
-                    $category = $invoice->dentalTreatment ? 'Dental' : ucfirst(str_replace('_', ' ', $invoice->source_module ?: 'finance'));
-                    $itemTypes = $invoice->items->pluck('item_type')->filter()->unique()->map(fn ($t) => ucfirst(str_replace('_', ' ', $t)))->implode(', ');
-                @endphp
                 <tr>
                     <td>{{ $invoice->invoice_number }}</td>
-                    <td>{{ $invoice->invoice_date ? $invoice->invoice_date->format('Y-m-d') : '-' }}</td>
-                    <td>{{ $invoice->patient ? $invoice->patient->full_name : '-' }}</td>
-                    <td>{{ $category }}</td>
-                    <td>{{ $itemTypes ?: '-' }}</td>
-                    <td>{{ $invoice->creator ? $invoice->creator->full_name : '-' }}</td>
+                    <td>{{ $invoice->date ? $invoice->date->format('Y-m-d') : '-' }}</td>
+                    <td>{{ $invoice->patient_name ?: '-' }}</td>
+                    <td>{{ $invoice->category_label }}</td>
+                    <td>{{ $invoice->item_types ?: '-' }}</td>
+                    <td>{{ $invoice->user_name ?: '-' }}</td>
                     <td>{{ ucfirst(str_replace('_', ' ', $invoice->status)) }}</td>
                     <td class="text-right">{{ number_format($invoice->total_amount, 2) }}</td>
                     <td class="text-right">{{ number_format($invoice->paid_amount, 2) }}</td>

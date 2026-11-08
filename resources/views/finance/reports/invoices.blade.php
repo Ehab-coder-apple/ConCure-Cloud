@@ -105,17 +105,19 @@
                         </thead>
                         <tbody>
                             @foreach($invoices as $invoice)
-                                @php
-                                    $category = $invoice->dentalTreatment ? __('Dental') : __(ucfirst(str_replace('_', ' ', $invoice->source_module ?: 'finance')));
-                                    $itemTypes = $invoice->items->pluck('item_type')->filter()->unique()->map(fn ($t) => __(ucfirst(str_replace('_', ' ', $t))))->implode(', ');
-                                @endphp
                                 <tr>
-                                    <td><a href="{{ route('finance.invoices.print', $invoice) }}" target="_blank">{{ $invoice->invoice_number }}</a></td>
-                                    <td>{{ $invoice->invoice_date ? $invoice->invoice_date->format('M d, Y') : '-' }}</td>
-                                    <td>{{ $invoice->patient ? $invoice->patient->full_name : '-' }}</td>
-                                    <td><span class="badge bg-light text-dark">{{ $category }}</span></td>
-                                    <td>{{ $itemTypes ?: '-' }}</td>
-                                    <td>{{ $invoice->creator ? $invoice->creator->full_name : '-' }}</td>
+                                    <td>
+                                        @if($invoice->print_route)
+                                            <a href="{{ $invoice->print_route }}" target="_blank">{{ $invoice->invoice_number }}</a>
+                                        @else
+                                            {{ $invoice->invoice_number }}
+                                        @endif
+                                    </td>
+                                    <td>{{ $invoice->date ? $invoice->date->format('M d, Y') : '-' }}</td>
+                                    <td>{{ $invoice->patient_name ?: '-' }}</td>
+                                    <td><span class="badge bg-light text-dark">{{ __($invoice->category_label) }}</span></td>
+                                    <td>{{ $invoice->item_types ?: '-' }}</td>
+                                    <td>{{ $invoice->user_name ?: '-' }}</td>
                                     <td><span class="badge bg-secondary">{{ __(ucfirst(str_replace('_', ' ', $invoice->status))) }}</span></td>
                                     <td>{{ $currencySymbol }}{{ rtrim(rtrim(number_format($invoice->total_amount, 2), '0'), '.') }}</td>
                                     <td>{{ $currencySymbol }}{{ rtrim(rtrim(number_format($invoice->paid_amount, 2), '0'), '.') }}</td>

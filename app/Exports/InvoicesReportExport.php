@@ -2,8 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Invoice;
-use App\Models\User;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -14,71 +13,41 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 /**
- * Exports the filtered Invoices Report (Finance > Reports > Invoices)
- * to Excel, applying the same period/category/item/user filters as the
- * on-screen report.
+ * Exports the filtered Invoices Report (Finance > Reports > Invoices) to
+ * Excel. Accepts the same normalized, merged row collection (generic
+ * Invoice + AestheticInvoice + MedicineSaleInvoice) that the on-screen
+ * report and PDF print use, so all three export the exact same data.
  */
 class InvoicesReportExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
-    protected User $user;
-    protected array $filters;
+    protected Collection $rows;
 
-    public function __construct(User $user, array $filters)
+    public function __construct(Collection $rows)
     {
-        $this->user = $user;
-        $this->filters = $filters;
+        $this->rows = $rows;
     }
 
     public function collection()
     {
-        $query = Invoice::with(['patient', 'creator', 'items', 'dentalTreatment'])
-            ->where('clinic_id', $this->user->clinic_id)
-            ->byDateRange($this->filters['date_from'], $this->filters['date_to']);
-
-        if (!empty($this->filters['category'])) {
-            if ($this->filters['category'] === 'dental') {
-                $query->whereHas('dentalTreatment');
-            } elseif ($this->filters['category'] === 'finance') {
-                $query->whereDoesntHave('dentalTreatment')
-                    ->where(function ($q) {
-                        $q->whereNull('source_module')->orWhere('source_module', 'finance');
-                    });
-            } else {
-                $query->where('source_module', $this->filters['category']);
-            }
-        }
-
-        if (!empty($this->filters['item_type'])) {
-            $query->whereHas('items', function ($q) {
-                $q->where('item_type', $this->filters['item_type']);
-            });
-        }
-
-        if (!empty($this->filters['user_id'])) {
-            $query->where('created_by', $this->filters['user_id']);
-        }
-
-        return $query->orderByDesc('invoice_date')->orderByDesc('id')->get();
+        return $this->rows;
     }
 
-    public function map($invoice): array
+    public function map($row): array
     {
-        $category = $invoice->dentalTreatment ? 'Dental' : ucfirst(str_replace('_', ' ', $invoice->source_module ?: 'finance'));
-
         return [
-            $invoice->invoice_number,
-            $invoice->invoice_date ? $invoice->invoice_date->format('Y-m-d') : '',
-            $invoice->patient ? $invoice->patient->full_name : '',
-            $category,
-            $invoice->items->pluck('item_type')->filter()->unique()->map(fn ($t) => ucfirst(str_replace('_', ' ', $t)))->implode(', '),
-            $invoice->creator ? $invoice->creator->full_name : '',
-            ucfirst(str_replace('_', ' ', $invoice->status)),
-            number_format((float) $invoice->subtotal, 2, '.', ''),
-            number_format((float) $invoice->tax_amount, 2, '.', ''),
-            number_format((float) $invoice->discount_amount, 2, '.', ''),
-            number_format((float) $invoice->total_amount, 2, '.', ''),
-            number_format((float) $invoice->paid_amount, 2, '.', ''),
-            number_format((float) $invoice->balance, 2, '.', ''),
+            $row->invoice_number,
+            $row->date ? $row->date->format('Y-m-d') : '',
+            $row->patient_name ?: '',
+            $row->category_label,
+            $row->item_types ?: '',
+            $row->user_name ?: '',
+            ucfirst(str_replace('_', ' ', $row->status)),
+            number_format($row->subtotal, 2, '.', ''),
+            number_format($row->tax_amount, 2, '.', ''),
+            number_format($row->discount_amount, 2, '.', ''),
+            number_format($row->total_amount, 2, '.', ''),
+            number_format($row->paid_amount, 2, '.', ''),
+            number_format($row->balance, 2, '.', ''),
         ];
     }
 
