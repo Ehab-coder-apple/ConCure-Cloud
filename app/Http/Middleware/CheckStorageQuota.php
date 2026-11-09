@@ -23,8 +23,14 @@ class CheckStorageQuota
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Only check on requests that contain files
-        if (!$request->hasFile('file') && !$request->hasFile('result_file') && !$request->hasFile('receipt_file') && !$request->hasFile('medical_files')) {
+        // Detection gate: run for ANY request carrying file(s), regardless
+        // of field name. Upload field names vary wildly across controllers
+        // (file, image, video, images[], attachment, medicines[0][file],
+        // etc.) - whitelisting specific names let most uploads bypass this
+        // check entirely. allFiles() picks up every file on the request,
+        // including arbitrarily nested array/dot fields.
+        $allFiles = $request->allFiles();
+        if (empty($allFiles)) {
             return $next($request);
         }
 
@@ -35,15 +41,10 @@ class CheckStorageQuota
 
         $clinicId = $user->clinic_id;
 
-        // Calculate total size of all uploaded files
-        $totalSize = 0;
-        foreach ($request->allFiles() as $key => $files) {
-            // Handle both single files and arrays of files
-            $fileArray = is_array($files) ? $files : [$files];
-            foreach ($fileArray as $file) {
-                $totalSize += $file->getSize();
-            }
-        }
+        // Calculate total size of all uploaded files, flattening any level
+        // of nesting (Laravel's allFiles() mirrors the input shape, so a
+        // field like medicines[0][attachment] arrives as a nested array).
+        $totalSize = $this->sumFileSizes($allFiles);
 
         if ($totalSize === 0) {
             return $next($request);
@@ -72,6 +73,30 @@ class CheckStorageQuota
         }
 
         return $next($request);
+    }
+
+    /**
+     * Recursively sum the size of every UploadedFile found in a
+     * (possibly nested) array as returned by Request::allFiles().
+     *
+     * @param  array<int|string, mixed>  $files
+     */
+    protected function sumFileSizes(array $files): int
+    {
+        $total = 0;
+
+        foreach ($files as $file) {
+            if (is_array($file)) {
+                $total += $this->sumFileSizes($file);
+                continue;
+            }
+
+            if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid()) {
+                $total += $file->getSize();
+            }
+        }
+
+        return $total;
     }
 }
 

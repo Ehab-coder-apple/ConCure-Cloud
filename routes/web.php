@@ -232,7 +232,25 @@ Route::get('/subscription/status', function () {
 // Subscription system removed - no longer needed
 
 // Protected routes
-Route::middleware(['auth', 'activation'])->group(function () {
+//
+// 'storage.quota' is attached here, at the top of the entire clinic route
+// tree, rather than on each individual upload route. Every clinic-facing
+// controller that accepts file uploads (patients, dental, radiology, lab,
+// nutrition, aesthetic, vaccination, pediatric, foods, finance,
+// advertisements, forms, etc.) is nested inside this single group, so this
+// one line guarantees 100% coverage - including any upload route added
+// here in the future - without needing to track down and annotate 20+
+// separate route definitions individually (a previous attempt at per-route
+// middleware attachment left the check unapplied anywhere, which is how
+// clinics were able to exceed their storage quota). The middleware itself
+// is a no-op for any request that carries no files, so this adds no
+// overhead to the vast majority of routes in this group.
+//
+// Master/super-admin routes (routes/master.php) are a separate route file
+// and are NOT covered by this group - uploads there (branding logos,
+// payment import spreadsheets) are platform-level, not per-clinic patient
+// storage, and are correctly excluded from this quota.
+Route::middleware(['auth', 'activation', 'storage.quota'])->group(function () {
 
     // Tenant Dashboard (Clinic Users Only)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
