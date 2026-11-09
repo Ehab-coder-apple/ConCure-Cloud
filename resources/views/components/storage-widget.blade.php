@@ -1,4 +1,4 @@
-{{-- Storage Quota Widget --}}
+{{-- Storage Quota Widget (Tenant/clinic-facing) --}}
 @php
     $storageInfo = $storageInfo ?? null;
     if (!$storageInfo && auth()->check() && auth()->user()->clinic_id) {
@@ -17,34 +17,7 @@
         </span>
     </div>
     <div class="card-body">
-        {{-- Warning/Critical Alerts --}}
-        @if($storageInfo['critical'])
-        <div class="alert alert-danger py-2 mb-3">
-            <i class="fas fa-exclamation-triangle me-1"></i>
-            <strong>{{ __('Critical') }}:</strong> {{ __('Storage is almost full! Please contact your administrator.') }}
-        </div>
-        @elseif($storageInfo['warning'])
-        <div class="alert alert-warning py-2 mb-3">
-            <i class="fas fa-exclamation-circle me-1"></i>
-            <strong>{{ __('Warning') }}:</strong> {{ __('Storage usage is above 80%. Consider freeing up space.') }}
-        </div>
-        @endif
-
-        {{-- Progress Bar --}}
-        @php
-            $barColor = $storageInfo['critical'] ? 'bg-danger' : ($storageInfo['warning'] ? 'bg-warning' : 'bg-success');
-            $pct = min($storageInfo['percentage_used'], 100);
-        @endphp
-        <div class="progress mb-3" style="height: 20px;">
-            <div class="progress-bar {{ $barColor }} progress-bar-striped {{ $storageInfo['critical'] ? 'progress-bar-animated' : '' }}"
-                 role="progressbar"
-                 style="width: {{ $pct }}%"
-                 aria-valuenow="{{ $pct }}"
-                 aria-valuemin="0"
-                 aria-valuemax="100">
-                {{ $storageInfo['percentage_used'] }}%
-            </div>
-        </div>
+        @include('components.storage-status-alert', ['storageInfo' => $storageInfo])
 
         {{-- Storage Details --}}
         <div class="row text-center">
@@ -63,5 +36,26 @@
         </div>
     </div>
 </div>
-@endif
 
+@if($storageInfo['critical'])
+    @push('scripts')
+    <script>
+        // Storage capacity is at/over 100% for this clinic: disable upload
+        // affordances on this page so staff can't start an upload that the
+        // CheckStorageQuota middleware will reject anyway (413). Targets:
+        //   - any <input type="file">
+        //   - any element explicitly opted in via [data-requires-storage]
+        //     (e.g. "Upload" buttons that open a modal/file picker)
+        // Native HTML5 "disabled" also stops the file picker dialog itself
+        // from opening, not just form submission.
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('input[type="file"], [data-requires-storage]').forEach(function (el) {
+                el.disabled = true;
+                el.classList.add('disabled');
+                el.setAttribute('title', @json(__('Storage limit exceeded - contact your administrator to upgrade or free up space.')));
+            });
+        });
+    </script>
+    @endpush
+@endif
+@endif

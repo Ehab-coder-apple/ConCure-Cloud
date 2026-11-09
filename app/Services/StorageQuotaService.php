@@ -113,8 +113,13 @@ class StorageQuotaService
             'limit_gb'       => round($limit / (1024 * 1024 * 1024), 2),
             'used_gb'        => round($used / (1024 * 1024 * 1024), 2),
             'remaining_gb'   => round($remaining / (1024 * 1024 * 1024), 2),
-            'warning'        => $percentage >= 80 && $percentage < 95,
-            'critical'       => $percentage >= 95,
+            // Frontend state thresholds (Phase 3 UI):
+            //   < 90%        -> default/ok styling
+            //   90% - 99.99% -> amber warning (approaching the hard block)
+            //   >= 100%      -> red critical (CheckStorageQuota middleware
+            //                    is already hard-blocking uploads at this point)
+            'warning'        => $percentage >= 90 && $percentage < 100,
+            'critical'       => $percentage >= 100,
         ];
     }
 

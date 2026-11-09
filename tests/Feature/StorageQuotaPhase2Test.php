@@ -266,4 +266,25 @@ class StorageQuotaPhase2Test extends TestCase
 
         $this->assertTrue($service->canUpload($this->clinic->id, 100));
     }
+
+    public function test_get_storage_info_flags_match_the_90_and_100_percent_ui_thresholds(): void
+    {
+        $service = app(StorageQuotaService::class);
+        $this->clinic->update(['storage_limit' => 1000]);
+
+        Cache::put("clinic_{$this->clinic->id}_storage_used", 890, 600);
+        $info = $service->getStorageInfo($this->clinic->id);
+        $this->assertFalse($info['warning']);
+        $this->assertFalse($info['critical']);
+
+        Cache::put("clinic_{$this->clinic->id}_storage_used", 900, 600);
+        $info = $service->getStorageInfo($this->clinic->id);
+        $this->assertTrue($info['warning']);
+        $this->assertFalse($info['critical']);
+
+        Cache::put("clinic_{$this->clinic->id}_storage_used", 1000, 600);
+        $info = $service->getStorageInfo($this->clinic->id);
+        $this->assertFalse($info['warning']);
+        $this->assertTrue($info['critical']);
+    }
 }

@@ -173,8 +173,6 @@
     <!-- Storage Usage Card -->
     @php
         $storageInfo = app(\App\Services\StorageQuotaService::class)->getStorageInfo($clinic->id);
-        $barColor = $storageInfo['critical'] ? 'bg-danger' : ($storageInfo['warning'] ? 'bg-warning' : 'bg-success');
-        $pct = min($storageInfo['percentage_used'], 100);
     @endphp
     <div class="row mb-4">
         <div class="col-12">
@@ -196,28 +194,10 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    @if($storageInfo['critical'])
-                    <div class="alert alert-danger py-2 mb-3">
-                        <i class="fas fa-exclamation-triangle me-1"></i>
-                        <strong>Critical:</strong> Storage is almost full for this clinic!
-                    </div>
-                    @elseif($storageInfo['warning'])
-                    <div class="alert alert-warning py-2 mb-3">
-                        <i class="fas fa-exclamation-circle me-1"></i>
-                        <strong>Warning:</strong> Storage usage is above 80%.
-                    </div>
-                    @endif
-
-                    <div class="progress mb-3" style="height: 24px;">
-                        <div class="progress-bar {{ $barColor }} progress-bar-striped {{ $storageInfo['critical'] ? 'progress-bar-animated' : '' }}"
-                             role="progressbar"
-                             style="width: {{ $pct }}%"
-                             aria-valuenow="{{ $pct }}"
-                             aria-valuemin="0"
-                             aria-valuemax="100">
-                            {{ $storageInfo['used_gb'] }} GB / {{ $storageInfo['limit_gb'] }} GB
-                        </div>
-                    </div>
+                    {{-- Shared with the tenant dashboard widget so admins and
+                         clinics see the exact same 3-state (ok/warning/critical)
+                         treatment for a given clinic's storage. --}}
+                    @include('components.storage-status-alert', ['storageInfo' => $storageInfo])
 
                     <div class="row text-center">
                         <div class="col-3">
