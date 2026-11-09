@@ -42,4 +42,12 @@ return [
         'whatsapp_from' => env('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886'),
     ],
 
+    'slack' => [
+        // Incoming webhook URL for the #storage-alerts (or similar) Slack
+        // channel. Used by concure:check-clinic-storage-quotas to post a
+        // daily digest of clinics at/over their storage warning threshold.
+        // Leave unset to skip Slack posting and rely on email only.
+        'storage_alerts_webhook_url' => env('SLACK_STORAGE_ALERTS_WEBHOOK_URL'),
+    ],
+
 ];

@@ -8,6 +8,7 @@ use App\Console\Commands\ResetSuperAdmin;
 use App\Console\Commands\SendSubscriptionRenewalReminders;
 use App\Console\Commands\BackupClinicsWeekly;
 use App\Console\Commands\ProcessScheduledNotifications;
+use App\Console\Commands\CheckClinicStorageQuotas;
 
 class Kernel extends ConsoleKernel
 {
@@ -22,6 +23,7 @@ class Kernel extends ConsoleKernel
         SendSubscriptionRenewalReminders::class,
         BackupClinicsWeekly::class,
         ProcessScheduledNotifications::class,
+        CheckClinicStorageQuotas::class,
     ];
 
     /**
@@ -37,6 +39,14 @@ class Kernel extends ConsoleKernel
 
         // Process scheduled WhatsApp notifications every minute
         $schedule->command('notifications:process')->everyMinute()->withoutOverlapping();
+
+        // Daily clinic storage quota scan: alerts super admins (email +
+        // Slack) about clinics at/over the 90% warning threshold or
+        // already hard-blocked at 100%+.
+        $schedule->command('concure:check-clinic-storage-quotas')
+            ->dailyAt('08:00')
+            ->withoutOverlapping()
+            ->onOneServer();
     }
 
     /**

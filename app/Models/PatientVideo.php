@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Contracts\TracksStorageUsage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Services\StorageQuotaService;
 
-class PatientVideo extends Model
+class PatientVideo extends Model implements TracksStorageUsage
 {
     use HasFactory;
 
@@ -75,6 +76,22 @@ class PatientVideo extends Model
     {
         StorageQuotaService::deleteFromDisk($this->path);
         $this->delete();
+    }
+
+    /**
+     * @see \App\Contracts\TracksStorageUsage
+     */
+    public function getStorageClinicId(): ?int
+    {
+        return $this->clinic_id;
+    }
+
+    /**
+     * @see \App\Contracts\TracksStorageUsage
+     */
+    public function getStorageBytes(): int
+    {
+        return (int) $this->size;
     }
 }
 

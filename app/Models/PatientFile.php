@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Contracts\TracksStorageUsage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 use App\Services\StorageQuotaService;
 
-class PatientFile extends Model
+class PatientFile extends Model implements TracksStorageUsage
 {
     use HasFactory;
 
@@ -166,16 +167,28 @@ class PatientFile extends Model
         parent::boot();
 
         static::deleting(function ($file) {
-            // Delete the actual file when the model is deleted
+            // Delete the actual file when the model is deleted. Clinic
+            // storage_used is decremented separately by StorageUsageObserver
+            // (see TracksStorageUsage below), registered in
+            // AppServiceProvider::boot().
             $file->deleteFile();
-
-            // Decrement clinic storage usage
-            $patient = $file->patient;
-            if ($patient && $patient->clinic_id && $file->file_size > 0) {
-                app(\App\Services\StorageQuotaService::class)
-                    ->decrementUsage($patient->clinic_id, $file->file_size);
-            }
         });
+    }
+
+    /**
+     * @see \App\Contracts\TracksStorageUsage
+     */
+    public function getStorageClinicId(): ?int
+    {
+        return $this->patient?->clinic_id;
+    }
+
+    /**
+     * @see \App\Contracts\TracksStorageUsage
+     */
+    public function getStorageBytes(): int
+    {
+        return (int) $this->file_size;
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\TracksStorageUsage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 use App\Services\StorageQuotaService;
 
-class DentalImage extends Model
+class DentalImage extends Model implements TracksStorageUsage
 {
     use HasFactory, SoftDeletes;
 
@@ -167,6 +168,22 @@ class DentalImage extends Model
     public function scopeByImageType($query, string $imageType)
     {
         return $query->where('image_type', $imageType);
+    }
+
+    /**
+     * @see \App\Contracts\TracksStorageUsage
+     */
+    public function getStorageClinicId(): ?int
+    {
+        return $this->clinic_id;
+    }
+
+    /**
+     * @see \App\Contracts\TracksStorageUsage
+     */
+    public function getStorageBytes(): int
+    {
+        return (int) $this->file_size;
     }
 }
 

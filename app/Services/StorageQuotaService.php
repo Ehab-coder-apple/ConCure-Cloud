@@ -119,13 +119,50 @@ class StorageQuotaService
     }
 
     /**
+     * Seconds to wait for another request's storage lock to be released
+     * before giving up and (conservatively) treating the check as a block.
+     */
+    protected const LOCK_WAIT_SECONDS = 5;
+
+    /**
+     * How long a single lock is held, as a safety net in case a request
+     * dies without releasing it (e.g. worker killed mid-upload).
+     */
+    protected const LOCK_TTL_SECONDS = 10;
+
+    /**
      * Check if a clinic can upload a file of the given size.
+     *
+     * Wrapped in a per-clinic Cache::lock() to close a race condition: two
+     * concurrent uploads near the limit could otherwise both read the same
+     * cached "used" value, both see enough headroom, and both pass - jointly
+     * pushing the clinic over quota. The lock serializes the read-check for
+     * a given clinic so only one request's "can I fit?" decision is made at
+     * a time; combined with incrementUsage() being called synchronously
+     * right after a successful write (and busting the usage cache), the
+     * next request to acquire the lock sees the updated total.
      */
     public function canUpload(int $clinicId, int $fileSize): bool
     {
-        $limit = $this->getStorageLimit($clinicId);
-        $used = $this->getStorageUsed($clinicId);
-        return ($used + $fileSize) <= $limit;
+        $lock = Cache::lock("clinic_{$clinicId}_storage_check", self::LOCK_TTL_SECONDS);
+
+        try {
+            $lock->block(self::LOCK_WAIT_SECONDS);
+        } catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
+            // Couldn't get the lock in time - another upload for this
+            // clinic is being checked right now. Fail closed rather than
+            // risk a double-pass over the limit.
+            return false;
+        }
+
+        try {
+            $limit = $this->getStorageLimit($clinicId);
+            $used = $this->getStorageUsed($clinicId);
+
+            return ($used + $fileSize) <= $limit;
+        } finally {
+            $lock->release();
+        }
     }
 
     /**
