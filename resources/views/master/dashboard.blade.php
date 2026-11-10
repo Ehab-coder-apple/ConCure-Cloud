@@ -25,6 +25,36 @@
         </div>
     </div>
 
+    <!-- Storage Quota Alerts -->
+    @if(!empty($storageAlerts['critical']) || !empty($storageAlerts['warning']))
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-hdd me-2"></i>Clinic Storage Alerts
+                    </h6>
+                    <span class="badge {{ !empty($storageAlerts['critical']) ? 'bg-danger' : 'bg-warning text-dark' }}">
+                        {{ count($storageAlerts['critical']) + count($storageAlerts['warning']) }} clinic(s) flagged
+                    </span>
+                </div>
+                <div class="card-body">
+                    @foreach(array_merge($storageAlerts['critical'], $storageAlerts['warning']) as $row)
+                        <div class="mb-3 pb-3 {{ !$loop->last ? 'border-bottom' : '' }}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <a href="{{ route('master.clinics.show', $row['clinic']->id) }}" class="fw-bold text-decoration-none">
+                                    <i class="fas fa-hospital me-1"></i>{{ $row['clinic']->name }}
+                                </a>
+                            </div>
+                            @include('components.storage-status-alert', ['storageInfo' => $row['info']])
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Statistics Cards -->
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-4">

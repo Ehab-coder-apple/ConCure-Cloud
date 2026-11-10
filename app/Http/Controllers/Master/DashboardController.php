@@ -33,7 +33,59 @@ class DashboardController extends Controller
         // Get growth data for charts
         $growthData = $this->getGrowthData();
 
-        return view('master.dashboard', compact('stats', 'recentClinics', 'recentUsers', 'upcomingRenewals', 'growthData'));
+        // Clinics at/over the storage warning threshold, for the Master
+        // Admin's at-a-glance alert banner (same 90%/100% states as the
+        // tenant/clinic-facing widget and the per-clinic show page).
+        $storageAlerts = $this->getClinicStorageAlerts();
+
+        return view('master.dashboard', compact('stats', 'recentClinics', 'recentUsers', 'upcomingRenewals', 'growthData', 'storageAlerts'));
+    }
+
+    /**
+     * Clinics at/over the 90% storage warning threshold (accessible to the
+     * current admin), split into critical (>=100%, hard-blocked) and
+     * warning (90-99%) buckets - mirrors StorageQuotaService::getStorageInfo()
+     * but computed directly from the clinics table in one query instead of
+     * one service/cache call per clinic, since this runs on every dashboard
+     * load across potentially many clinics.
+     */
+    private function getClinicStorageAlerts(): array
+    {
+        $query = Clinic::query()
+            ->select(['id', 'name', 'storage_limit', 'storage_used'])
+            ->where('storage_limit', '>', 0)
+            // '* 1.0' forces floating-point division on both MySQL and
+            // SQLite (SQLite truncates '/' between two integer columns).
+            ->whereRaw('(storage_used * 1.0 / storage_limit) >= 0.9');
+
+        $this->applyAccessibleClinicScope($query);
+
+        $flagged = $query->orderByRaw('(storage_used * 1.0 / storage_limit) DESC')->get();
+
+        $critical = [];
+        $warning = [];
+
+        foreach ($flagged as $clinic) {
+            $percentage = round(($clinic->storage_used / $clinic->storage_limit) * 100, 2);
+
+            $info = [
+                'percentage_used' => $percentage,
+                'used_gb' => round($clinic->storage_used / (1024 * 1024 * 1024), 2),
+                'limit_gb' => round($clinic->storage_limit / (1024 * 1024 * 1024), 2),
+                'warning' => $percentage >= 90 && $percentage < 100,
+                'critical' => $percentage >= 100,
+            ];
+
+            $row = ['clinic' => $clinic, 'info' => $info];
+
+            if ($info['critical']) {
+                $critical[] = $row;
+            } else {
+                $warning[] = $row;
+            }
+        }
+
+        return ['critical' => $critical, 'warning' => $warning];
     }
 
     /**
