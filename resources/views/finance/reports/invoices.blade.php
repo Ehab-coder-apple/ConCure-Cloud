@@ -55,13 +55,30 @@
                 </div>
             </form>
 
-            <div class="d-flex gap-2 mt-3">
+            <div class="d-flex gap-2 align-items-center mt-3">
                 <a href="{{ route('finance.reports.invoices.export', request()->query()) }}" class="btn btn-outline-success btn-sm">
                     <i class="fas fa-file-excel me-1"></i>{{ __('Export to Excel') }}
                 </a>
-                <a href="{{ route('finance.reports.invoices.print', request()->query()) }}" target="_blank" class="btn btn-outline-danger btn-sm">
-                    <i class="fas fa-file-pdf me-1"></i>{{ __('Print / PDF') }}
-                </a>
+
+                {{-- Small standalone GET form so orientation can be chosen
+                     right before generating the PDF, without needing to
+                     re-submit the main filter form first - it carries the
+                     currently-applied filters as hidden inputs. --}}
+                <form method="GET" action="{{ route('finance.reports.invoices.print') }}" target="_blank" class="d-flex gap-2 align-items-center">
+                    @foreach(request()->query() as $key => $value)
+                        @if($key !== 'orientation' && !is_array($value))
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endif
+                    @endforeach
+                    <label for="orientation" class="form-label mb-0 small text-muted">{{ __('Orientation') }}:</label>
+                    <select id="orientation" name="orientation" class="form-select form-select-sm" style="width: auto;">
+                        <option value="portrait" {{ request('orientation', 'portrait') === 'portrait' ? 'selected' : '' }}>{{ __('Portrait') }}</option>
+                        <option value="landscape" {{ request('orientation') === 'landscape' ? 'selected' : '' }}>{{ __('Landscape') }}</option>
+                    </select>
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-file-pdf me-1"></i>{{ __('Print / PDF') }}
+                    </button>
+                </form>
             </div>
         </div>
     </div>

@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>{{ __('Invoices Report') }}</title>
     <style>
+        @page {
+            size: a4 {{ ($orientation ?? 'portrait') === 'landscape' ? 'landscape' : 'portrait' }};
+        }
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
             font-size: 11px;

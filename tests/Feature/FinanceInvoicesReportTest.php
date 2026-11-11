@@ -424,6 +424,63 @@ class FinanceInvoicesReportTest extends TestCase
         $response->assertHeader('content-type', 'application/pdf');
     }
 
+    public function test_invoices_report_pdf_print_accepts_landscape_orientation(): void
+    {
+        $this->makeInvoice(['total_amount' => 100]);
+
+        $response = $this->actingAs($this->admin)->get(route('finance.reports.invoices.print', ['orientation' => 'landscape']));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_invoices_report_pdf_print_defaults_to_portrait_for_unknown_orientation_value(): void
+    {
+        $this->makeInvoice(['total_amount' => 100]);
+
+        $response = $this->actingAs($this->admin)->get(route('finance.reports.invoices.print', ['orientation' => 'sideways']));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_invoices_report_pdf_print_renders_via_mpdf_with_rtl_when_arabic_locale_active(): void
+    {
+        $this->makeInvoice(['total_amount' => 100]);
+
+        app()->setLocale('ar');
+
+        try {
+            $response = $this->actingAs($this->admin)->get(route('finance.reports.invoices.print'));
+        } finally {
+            app()->setLocale('en');
+        }
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+
+        // mPDF's output starts with a standard PDF header, same as DomPDF's -
+        // the meaningful assertion is that this didn't throw (e.g. a bad
+        // font/config) and produced a real PDF stream for the Arabic path.
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+    }
+
+    public function test_invoices_report_pdf_print_arabic_landscape_renders_successfully(): void
+    {
+        $this->makeInvoice(['total_amount' => 100]);
+
+        app()->setLocale('ar');
+
+        try {
+            $response = $this->actingAs($this->admin)->get(route('finance.reports.invoices.print', ['orientation' => 'landscape']));
+        } finally {
+            app()->setLocale('en');
+        }
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+    }
+
     public function test_demo_clinic_without_export_permission_is_blocked_from_exporting(): void
     {
         $this->clinic->update(['is_demo' => true, 'can_export' => false]);

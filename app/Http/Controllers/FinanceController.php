@@ -1419,6 +1419,17 @@ class FinanceController extends Controller
 
     /**
      * Render the filtered invoices report as a printable PDF.
+     *
+     * Orientation is user-selectable via ?orientation=portrait|landscape
+     * (defaults to portrait; any other value is ignored).
+     *
+     * When the active locale is Arabic, generation is routed through mPDF
+     * instead of DomPDF: DomPDF cannot shape Arabic glyphs into their
+     * connected presentation forms or apply the bidi algorithm, so Arabic
+     * text came out as disconnected, visually-reversed letters (see
+     * printInvoicesReportArabic() for the RTL/shaping setup, mirrored from
+     * Master\DashboardController::featuresPdfArabic()). English/default
+     * locale keeps using the existing DomPDF path unchanged.
      */
     public function printInvoicesReport(Request $request)
     {
@@ -1439,9 +1450,87 @@ class FinanceController extends Controller
 
         $currencySymbol = $this->getCurrencySymbol($currency);
 
-        $pdf = Pdf::loadView('finance.reports.invoices-pdf', compact('invoices', 'summary', 'filters', 'currencySymbol'));
+        $orientation = $request->query('orientation') === 'landscape' ? 'landscape' : 'portrait';
+
+        if (app()->getLocale() === 'ar') {
+            return $this->printInvoicesReportArabic($invoices, $summary, $filters, $currencySymbol, $orientation);
+        }
+
+        $pdf = Pdf::loadView('finance.reports.invoices-pdf', compact('invoices', 'summary', 'filters', 'currencySymbol', 'orientation'));
+        $pdf->setPaper('a4', $orientation);
 
         return $pdf->stream('invoices-report-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Render the Invoices Report PDF with proper Arabic shaping and RTL
+     * layout via mPDF. DomPDF has no bidi/Arabic-presentation-forms support
+     * at all (it renders each letter in isolated form, left-to-right,
+     * which is exactly the "ر ي ت ا و ف ل ا" symptom reported), whereas
+     * mPDF ships native Arabic shaping + bidi reordering once
+     * 'directionality' is set to 'rtl' - no manual glyph reversal needed.
+     *
+     * 'xbriyaz' is mPDF's bundled Arabic-shaping font (same one already
+     * relied on for the Arabic Features PDF) - it has full Arabic OTL
+     * (ligature/joining) support out of the box, unlike the Amiri TTF
+     * shipped in storage/fonts/ which mPDF's parser can't read (see the
+     * comment in featuresPdfArabic()). Kashida (tatweel) insertion is
+     * disabled for the same readability reason as that method.
+     */
+    private function printInvoicesReportArabic(
+        \Illuminate\Support\Collection $invoices,
+        array $summary,
+        array $filters,
+        string $currencySymbol,
+        string $orientation
+    ) {
+        $tempDir = storage_path('mpdf/temp');
+        if (!is_dir($tempDir)) {
+            @mkdir($tempDir, 0755, true);
+        }
+
+        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        $fontDirs = $defaultConfig['fontDir'];
+        $fontDirs[] = storage_path('fonts');
+
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
+
+        foreach ($fontData as $family => &$cfg) {
+            if (is_array($cfg) && array_key_exists('useKashida', $cfg)) {
+                $cfg['useKashida'] = 0;
+            }
+        }
+        unset($cfg);
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode'              => 'utf-8',
+            'format'            => $orientation === 'landscape' ? 'A4-L' : 'A4',
+            'tempDir'           => $tempDir,
+            'fontDir'           => $fontDirs,
+            'fontdata'          => $fontData,
+            'default_font'      => 'xbriyaz',
+            'autoScriptToLang'  => true,
+            'autoLangToFont'    => true,
+            'directionality'    => 'rtl',
+            'margin_left'       => 10,
+            'margin_right'      => 10,
+            'margin_top'        => 12,
+            'margin_bottom'     => 12,
+        ]);
+
+        $mpdf->SetDirectionality('rtl');
+        $mpdf->SetTitle(__('Invoices Report'));
+
+        $html = view('finance.reports.invoices-pdf-ar', compact('invoices', 'summary', 'filters', 'currencySymbol', 'orientation'))->render();
+        $mpdf->WriteHTML($html);
+
+        $filename = 'invoices-report-' . now()->format('Y-m-d') . '.pdf';
+
+        return response($mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
     }
 
     /**
