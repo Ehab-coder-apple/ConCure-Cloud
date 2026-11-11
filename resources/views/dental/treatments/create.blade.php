@@ -588,6 +588,20 @@ function updateTotals() {
     document.getElementById('estimated_duration_minutes').value = totalDuration > 0 ? totalDuration : '';
 }
 
+// Guard against the common mistake of picking a procedure from the
+// dropdown and clicking "Create Treatment Plan" without first clicking
+// the separate "+ Add" button next to it - the dropdown selection alone
+// never reaches selectedProcedures/procedure_ids[], so the server rejects
+// the submission with "Please select at least one procedure." even though
+// a procedure is visibly chosen. If the dropdown still has a value when
+// the form is submitted, add it automatically first.
+document.getElementById('treatment-form').addEventListener('submit', function () {
+    const selector = document.getElementById('procedure_selector');
+    if (selector && selector.value) {
+        addProcedure();
+    }
+});
+
 // Load dental charts when patient is selected
 document.getElementById('patient_id').addEventListener('change', function() {
     const patientId = this.value;
