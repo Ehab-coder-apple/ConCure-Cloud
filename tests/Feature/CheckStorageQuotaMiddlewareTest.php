@@ -79,6 +79,23 @@ class CheckStorageQuotaMiddlewareTest extends TestCase
             $table->timestamps();
         });
 
+        // Minimal patients/patient_files tables so canUpload() - which
+        // recomputes storage usage directly from these tables rather than
+        // trusting a (potentially stale) cached figure - has something
+        // real to sum.
+        Schema::create('patients', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('clinic_id');
+            $table->timestamps();
+        });
+
+        Schema::create('patient_files', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('patient_id');
+            $table->unsignedBigInteger('file_size')->default(0);
+            $table->timestamps();
+        });
+
         $this->clinic = Clinic::create([
             'name' => 'Test Clinic',
             'storage_limit' => 1024, // 1 KB limit, easy to exceed in tests
@@ -107,20 +124,34 @@ class CheckStorageQuotaMiddlewareTest extends TestCase
     }
 
     /**
-     * StorageQuotaService::getStorageUsed() caches its result for 10
-     * minutes rather than hitting patient_files/patient_images/etc. on
-     * every request. Since this test only creates the minimal clinics/
-     * users tables (not the full file tables), pre-seed that cache entry
-     * directly instead of relying on the real aggregate query.
+     * Simulate a clinic already having $bytes of files on disk by inserting
+     * a real patient_files row - canUpload() recomputes usage directly from
+     * this table (bypassing the getStorageUsed() cache) precisely so a
+     * stale cached figure can't let uploads through once a clinic is
+     * genuinely over quota, so tests need real rows rather than a
+     * pre-seeded cache value.
      */
     private function seedCachedStorageUsed(int $bytes): void
     {
-        Cache::put("clinic_{$this->clinic->id}_storage_used", $bytes, 600);
+        $patientId = \Illuminate\Support\Facades\DB::table('patients')->insertGetId([
+            'clinic_id' => $this->clinic->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('patient_files')->insert([
+            'patient_id' => $patientId,
+            'file_size' => $bytes,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Cache::forget("clinic_{$this->clinic->id}_storage_used");
     }
 
     protected function tearDown(): void
     {
-        foreach (['users', 'clinics'] as $table) {
+        foreach (['patient_files', 'patients', 'users', 'clinics'] as $table) {
             Schema::dropIfExists($table);
         }
 

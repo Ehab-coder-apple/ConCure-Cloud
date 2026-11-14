@@ -131,8 +131,8 @@ class DentalImageController extends Controller
                 'uploaded_by' => $user->id,
             ]);
 
-            // Increment storage usage
-            app(StorageQuotaService::class)->incrementUsage($user->clinic_id, $fileSize);
+            // Storage usage is tracked by StorageUsageObserver on
+            // DentalImage::created() - no manual increment needed here.
 
             return redirect()->route('dental.images.show', ['patient' => $patient, 'dentalImage' => $dentalImage])
                            ->with('success', 'Dental image uploaded successfully.');
@@ -181,13 +181,12 @@ class DentalImageController extends Controller
         }
 
         // Delete file from storage (supports both Spaces and legacy local)
-        $fileSize = (int) $dentalImage->file_size;
         StorageQuotaService::deleteFromDisk($dentalImage->file_path);
 
         $dentalImage->delete();
 
-        // Decrement storage usage
-        app(StorageQuotaService::class)->decrementUsage($patient->clinic_id, $fileSize);
+        // Storage usage is tracked by StorageUsageObserver on
+        // DentalImage::deleted()/forceDeleted() - no manual decrement needed here.
 
         return redirect()->route('dental.images.index', $patient)
                        ->with('success', 'Dental image deleted successfully.');

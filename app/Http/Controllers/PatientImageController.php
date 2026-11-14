@@ -73,8 +73,8 @@ class PatientImageController extends Controller
                 ]);
                 $stored[] = $img->id;
 
-                // Increment storage usage
-                app(StorageQuotaService::class)->incrementUsage($patient->clinic_id, $fileSize);
+                // Storage usage is tracked by StorageUsageObserver on
+                // PatientImage::created() - no manual increment needed here.
             }
         }
 
@@ -113,12 +113,11 @@ class PatientImageController extends Controller
         if ($image->patient_id !== $patient->id) {
             abort(404);
         }
-        $fileSize = (int) $image->size;
         StorageQuotaService::deleteFromDisk($image->path);
         $image->delete();
 
-        // Decrement storage usage
-        app(StorageQuotaService::class)->decrementUsage($patient->clinic_id, $fileSize);
+        // Storage usage is tracked by StorageUsageObserver on
+        // PatientImage::deleted() - no manual decrement needed here.
 
         return back()->with('success', __('Image deleted.'));
     }

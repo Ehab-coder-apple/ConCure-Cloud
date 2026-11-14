@@ -162,7 +162,16 @@ class StorageQuotaService
 
         try {
             $limit = $this->getStorageLimit($clinicId);
-            $used = $this->getStorageUsed($clinicId);
+
+            // Bypass the 10-minute getStorageUsed() cache here and recompute
+            // directly from the file tables. The cache is fine for the
+            // read-only display widgets, but using it for the enforcement
+            // decision opens a window where a burst of uploads within the
+            // same 10-minute cache lifetime (e.g. a clinic bulk-uploading
+            // many images back-to-back) could all be checked against the
+            // same stale, lower "used" snapshot and all pass, well past the
+            // real limit, even though the lock serializes the checks.
+            $used = $this->calculateStorageUsed($clinicId);
 
             return ($used + $fileSize) <= $limit;
         } finally {

@@ -479,8 +479,8 @@ class PatientController extends Controller
                     'uploaded_by' => auth()->id(),
                 ]);
 
-                // Increment storage usage
-                app(StorageQuotaService::class)->incrementUsage($clinicId, $fileSize);
+                // Storage usage is tracked by StorageUsageObserver on
+                // PatientFile::created() - no manual increment needed here.
             }
         }
 
@@ -1147,8 +1147,8 @@ class PatientController extends Controller
                     'uploaded_by' => auth()->id(),
                 ]);
 
-                // Increment storage usage
-                app(StorageQuotaService::class)->incrementUsage($patient->clinic_id, $fileSize);
+                // Storage usage is tracked by StorageUsageObserver on
+                // PatientFile::created() - no manual increment needed here.
             }
         }
 
@@ -1428,8 +1428,8 @@ class PatientController extends Controller
             'uploaded_by' => auth()->id(),
         ]);
 
-        // Increment storage usage
-        app(StorageQuotaService::class)->incrementUsage($patient->clinic_id, $fileSize);
+        // Storage usage is tracked by StorageUsageObserver on
+        // PatientFile::created() - no manual increment needed here.
 
         return back()->with('success', 'File uploaded successfully.');
     }

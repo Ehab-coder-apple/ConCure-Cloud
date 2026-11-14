@@ -21,6 +21,13 @@ class PatientVideoController extends Controller
 
     /**
      * Generate a presigned PUT URL for direct browser → Spaces upload.
+     *
+     * This path uploads straight from the browser to DigitalOcean Spaces -
+     * the file bytes never pass through this Laravel app, so the global
+     * CheckStorageQuota middleware (which only inspects $request->allFiles()
+     * on THIS request) never sees them and cannot block anything here. The
+     * quota must therefore be checked explicitly, up front, before a
+     * presigned URL is ever handed out.
      */
     public function presignedUrl(Request $request, Patient $patient): JsonResponse
     {
@@ -31,6 +38,16 @@ class PatientVideoController extends Controller
             'content_type' => 'required|string|max:100',
             'size'         => 'required|integer|min:1',
         ]);
+
+        if (!app(StorageQuotaService::class)->canUpload($patient->clinic_id, (int) $request->input('size'))) {
+            $info = app(StorageQuotaService::class)->getStorageInfo($patient->clinic_id);
+            return response()->json([
+                'error' => __('Storage quota exceeded. Your clinic has used :used GB of :limit GB.', [
+                    'used' => $info['used_gb'],
+                    'limit' => $info['limit_gb'],
+                ]),
+            ], 413);
+        }
 
         $allowedMimes = [
             'video/mp4', 'video/quicktime', 'video/x-msvideo',
@@ -107,8 +124,8 @@ class PatientVideoController extends Controller
             'condition_tags'      => $tags,
         ]);
 
-        // Increment storage usage
-        app(StorageQuotaService::class)->incrementUsage($patient->clinic_id, (int) $file->getSize());
+        // Storage usage is tracked by StorageUsageObserver on
+        // PatientVideo::created() - no manual increment needed here.
 
         return response()->json([
             'success' => true,
@@ -140,6 +157,22 @@ class PatientVideoController extends Controller
             return response()->json(['error' => __('Invalid path.')], 422);
         }
 
+        // The file already landed on Spaces via the presigned URL by the
+        // time this runs, so this can't stop that upload - but it still
+        // guards against persisting/crediting a record (and accepting
+        // whatever was uploaded) for a clinic that's already over quota,
+        // in case presignedUrl() was bypassed and this endpoint called
+        // directly with an arbitrary already-uploaded path.
+        if (!app(StorageQuotaService::class)->canUpload($patient->clinic_id, (int) $request->input('size'))) {
+            $info = app(StorageQuotaService::class)->getStorageInfo($patient->clinic_id);
+            return response()->json([
+                'error' => __('Storage quota exceeded. Your clinic has used :used GB of :limit GB.', [
+                    'used' => $info['used_gb'],
+                    'limit' => $info['limit_gb'],
+                ]),
+            ], 413);
+        }
+
         // Parse tags
         $tagsRaw = (string) $request->input('condition_tags', '');
         $tags = collect(preg_split('/[,]+/', $tagsRaw))
@@ -163,8 +196,8 @@ class PatientVideoController extends Controller
             'condition_tags'      => $tags,
         ]);
 
-        // Increment storage usage
-        app(StorageQuotaService::class)->incrementUsage($patient->clinic_id, (int) $request->input('size'));
+        // Storage usage is tracked by StorageUsageObserver on
+        // PatientVideo::created() - no manual increment needed here.
 
         return response()->json([
             'success' => true,
@@ -216,12 +249,11 @@ class PatientVideoController extends Controller
         if ($video->patient_id !== $patient->id) {
             abort(404);
         }
-        $fileSize = (int) $video->size;
         StorageQuotaService::deleteFromDisk($video->path);
         $video->delete();
 
-        // Decrement storage usage
-        app(StorageQuotaService::class)->decrementUsage($patient->clinic_id, $fileSize);
+        // Storage usage is tracked by StorageUsageObserver on
+        // PatientVideo::deleted() - no manual decrement needed here.
 
         return back()->with('success', __('Video deleted.'));
     }

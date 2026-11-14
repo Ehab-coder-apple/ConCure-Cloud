@@ -170,8 +170,8 @@ class LabTechnicianController extends Controller
                 'uploaded_by' => $user->id,
             ]);
 
-            // Increment storage usage
-            app(StorageQuotaService::class)->incrementUsage($user->clinic_id, $fileSize);
+            // Storage usage is tracked by StorageUsageObserver on
+            // PatientFile::created() - no manual increment needed here.
 
             Log::info('Lab result uploaded directly by lab technician', [
                 'patient_id' => $patient->id,
